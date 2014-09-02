@@ -63,7 +63,18 @@ fetchmail: brew /usr/local/bin/fetchmail
 /usr/local/bin/fetchmail:
 	brew install fetchmail
 
-php56:
+php55:
+
+phpcs: /usr/local/opt/php55/bin/phpcs php55
+/usr/local/opt/php55/bin/phpcs:
+	echo test
+	@sudo pear install PHP_CodeSniffer
+
+phpmd: /usr/local/opt/php55/bin/phpmd php55
+/usr/local/opt/php55/bin/phpmd:
+	@sudo pear channel-discover pear.phpmd.org
+	@sudo pear channel-discover pear.pdepend.org
+	@sudo pear install --alldeps phpmd/PHP_PMD
 
 node: /usr/local/bin/node
 /usr/local/bin/node:
@@ -81,4 +92,6 @@ all: brew \
 	redis \
 	mutt \
 	mariadb \
-	fetchmail
+	fetchmail \
+	phpcs \
+	phpmd
