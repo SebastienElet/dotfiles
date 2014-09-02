@@ -67,7 +67,6 @@ php55:
 
 phpcs: /usr/local/opt/php55/bin/phpcs php55
 /usr/local/opt/php55/bin/phpcs:
-	echo test
 	@sudo pear install PHP_CodeSniffer
 
 phpmd: /usr/local/opt/php55/bin/phpmd php55
