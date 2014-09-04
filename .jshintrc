@@ -1,0 +1,15 @@
+{
+  "node": true,
+  "browser": true,
+  "curly": true,
+  "indent": 2,
+  "strict": true,
+  "trailing": true,
+  "smarttabs": true,
+  "regexp": true,
+  "undef": true,
+  "camelcase": true,
+  "asi": false,
+  "lastsemic": true,
+  "laxcomma": true
+}
