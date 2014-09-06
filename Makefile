@@ -79,6 +79,14 @@ node: /usr/local/bin/node
 /usr/local/bin/node:
 	brew install node
 
+jscs: node
+	@npm install -g jscs
+	ln -s .jscs.json ~/.jscs.json
+
+jshint: node
+	@npm install -g jshint
+	ln -s .jshintrc ~/.jshintrc
+
 all: brew \
 	node \
 	vagrant \
