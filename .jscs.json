@@ -1,6 +1,7 @@
 {
     "excludeFiles": [
     ]
+  , "validateIndentation": 2
   , "requireCurlyBraces": [
         "if"
       , "else"
