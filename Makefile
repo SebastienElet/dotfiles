@@ -81,11 +81,11 @@ node: /usr/local/bin/node
 
 jscs: node
 	@npm install -g jscs
-	ln -s .jscs.json ~/.jscs.json
+	ln -s $(shell pwd)/.jscs.json ~/.jscs.json
 
 jshint: node
 	@npm install -g jshint
-	ln -s .jshintrc ~/.jshintrc
+	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
 all: brew \
 	node \
