@@ -11,5 +11,6 @@
   "camelcase": true,
   "asi": false,
   "lastsemic": true,
+  "maxerr": 1000,
   "laxcomma": true
 }
