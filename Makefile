@@ -69,6 +69,12 @@ phpcs: /usr/local/opt/php55/bin/phpcs php55
 /usr/local/opt/php55/bin/phpcs:
 	@sudo pear install PHP_CodeSniffer
 
+phpcs-rules: phpcs
+	git clone https://github.com/Pheromone/phpcs-security-audit.git \
+		~/.phpcs-security
+	ln -s $(shell pwd)/.phpcs.xml ~/.phpcs.xml
+	sudo phpcs --config-set default_standard ~/.phpcs.xml
+
 phpmd: /usr/local/opt/php55/bin/phpmd php55
 /usr/local/opt/php55/bin/phpmd:
 	@sudo pear channel-discover pear.phpmd.org
@@ -86,6 +92,10 @@ jscs: node
 jshint: node
 	@npm install -g jshint
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
+
+osx:
+	# Disabled shadow in screenshots
+	@defaults write com.apple.screencapture disable-shadow -bool true
 
 all: brew \
 	node \
