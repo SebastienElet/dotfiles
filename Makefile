@@ -96,6 +96,8 @@ jshint: node
 osx:
 	# Disabled shadow in screenshots
 	@defaults write com.apple.screencapture disable-shadow -bool true
+	# Enalble Ctrl+Alt+cmd+t for darkmode
+	@defaults write /Library/Preferences/.GlobalPreferences.plist _HIEnableThemeSwitchHotKey -bool true 
 
 all: brew \
 	node \
