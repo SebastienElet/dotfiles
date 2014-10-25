@@ -1,0 +1,84 @@
+function cc()
+{
+  fs -x 'callcenter_config '$@''
+}
+
+extract () {
+  if [ -f $1 ] ; then
+    case $1 in
+      *.tar.bz2) tar xvjf $1;;
+      *.tar.gz) tar xvzf $1;;
+      *.bz2) bunzip2 $1;;
+      *.rar) unrar x $1;;
+      *.gz) gunzip $1;;
+      *.tar) tar xvf $1;;
+      *.tbz2) tar xvjf $1;;
+      *.tgz) tar xvzf $1;;
+      *.zip) unzip $1;;
+      *.Z) uncompress $1;;
+      *.7z) 7za x $1;;
+      *) echo "'$1' cannot be extracted via >extract<" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+tac () {
+  awk '1 { last = NR; line[last] = $0; } END { for (i = last; i > 0; i--) { print line[i]; } }'
+}
+
+
+alias fs-start='freeswitch -nc -nonat'
+alias fs='fs_cli -p fslocal -P 8022'
+alias fs-stop='fs -x "shutdown now"'
+alias fs-reload='fs -x "reloadxml"'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias .2='...'
+alias ....='cd ../../..'
+alias .3='....'
+alias .....='cd ../../../..'
+alias .4='.....'
+alias ......='cd ../../../../..'
+alias .5='......'
+alias .......='cd ../../../../../..'
+alias .6='.......'
+alias ........='cd ../../../../../../..'
+alias .7='........'
+alias h90='sudo shutdown -h +90'
+alias h120='sudo shutdown -h +120'
+alias dev='/usr/local/bin/memcached -d -p 11211 -m 8 \
+  && redis-server /usr/local/etc/redis.conf \
+  && mongod --fork \
+  && sudo postfix start \
+  && /usr/local/opt/mariadb/bin/mysqld_safe \
+    --datadir=/usr/local/Cellar/mariadb/data \
+    --max_allowed_packet=16MB &'
+alias pomo="pomojs --break 3 --log ~/.pomo.log --tmux "
+alias t5='pomo -w 5'
+alias t10='pomo -w 10'
+alias t15='pomo -w 15'
+alias t20='pomo -w 20'
+alias t30='pomo -w 30'
+alias vim='vim -w ~/.vimlog "$@"'
+alias v='vim'
+alias n='nvim'
+alias o='open'
+alias tm='tmux'
+alias g='grep --color=auto'
+alias ls='ls -G'
+alias :q='exit'
+command -v npm > /dev/null && alias npme="npm --registry http://registry.npmjs.eu"
+command -v fasd > /dev/null && eval \
+  "$(fasd --init posix-alias zsh-hook zsh-ccomp zsh-wcomp)"
+alias hl='highlight \
+  --out-format xterm256 \
+  --style rdark \
+  --line-numbers \
+  --syntax'
+
+
+alias -g V='| vim -'
+alias -g G='| g'
+alias -g A='| ag'
