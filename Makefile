@@ -4,7 +4,9 @@ usage:
 
 brew: /usr/local/bin/brew
 /usr/local/bin/brew:
-	ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
+	chmod +x /tmp/brew-installer.sh
+	/tmp/brew-installer.sh
 	brew install caskroom/cask/brew-cask
 
 chef: brew /usr/bin/chef
@@ -97,7 +99,7 @@ osx:
 	# Disabled shadow in screenshots
 	@defaults write com.apple.screencapture disable-shadow -bool true
 	# Enalble Ctrl+Alt+cmd+t for darkmode
-	@defaults write /Library/Preferences/.GlobalPreferences.plist _HIEnableThemeSwitchHotKey -bool true 
+	@sudo defaults write /Library/Preferences/.GlobalPreferences.plist _HIEnableThemeSwitchHotKey -bool true 
 
 all: brew \
 	node \
