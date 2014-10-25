@@ -1,11 +1,5 @@
 ## Environment {{{
 export PATH=/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:$PATH
-if [ -e /usr/local/freeswitch ]; then
-  export PATH=/usr/local/freeswitch/bin:$PATH
-fi
-if [ -e /usr/local/bin/brew ]; then
-  export PATH="$(brew --prefix josegonzalez/php/php55)/bin:$PATH"
-fi
 ## }}}
 
 ## Modules {{{
@@ -61,8 +55,6 @@ bindkey -v
 ## }}}
 
 # Load alias
-source ~/.dotfiles-zsh/alias
+source ~/.dotfiles/zsh/alias
 # Load syntax hl
-source ~/.dotfiles-zsh/zsh-syntax-highlighting.zsh
-
-source ~/.fzf.zsh
+source ~/.dotfiles/zsh/zsh-syntax-highlighting.zsh
