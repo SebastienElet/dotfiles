@@ -1,3 +1,5 @@
+COMPUTER_NAME := 'MBA'
+
 usage:
 	@echo brew - Install brew and brew-cask
 	@echo vagrant - Install vagrant, packer and plugins
@@ -9,9 +11,22 @@ brew: /usr/local/bin/brew
 	/tmp/brew-installer.sh
 	brew install caskroom/cask/brew-cask
 
+iterm2: /Applications/iTerm.app
+/Applications/iTerm.app:
+	git clone https://github.com/Nasga/iterm2-borderless.git /tmp/iterm2
+	mv /tmp/iterm2/iTerm.app /Applications/
+	rm -rf /tmp/iterm2
+
+zsh: ~/.zshrc
+~/.zshrc:
+	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
+
 chef: brew /usr/bin/chef
 /usr/bin/chef:
 	brew cask install chefdk
+
+slate: brew
+	brew cask install slate
 
 virtualbox: brew /usr/bin/VBoxHeadless
 /usr/bin/VBoxHeadless:
@@ -96,10 +111,35 @@ jshint: node
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
 osx:
+	chsh -s /bin/zsh $(USER)
+	sudo scutil --set ComputerName $(COMPUTER_NAME)
+	sudo scutil --set HostName $(COMPUTER_NAME)
+	sudo scutil --set LocalHostName $(COMPUTER_NAME)
+	sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string $(COMPUTER_NAME)
+	# Allow apps downloaded from "Anywhere"
+	sudo spctl --master-disable
 	# Disabled shadow in screenshots
 	@defaults write com.apple.screencapture disable-shadow -bool true
 	# Enalble Ctrl+Alt+cmd+t for darkmode
 	@sudo defaults write /Library/Preferences/.GlobalPreferences.plist _HIEnableThemeSwitchHotKey -bool true 
+	# no .DS_Store on newtwork
+	defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+	# Disable the “Are you sure you want to open this application?” dialog
+	defaults write com.apple.LaunchServices LSQuarantine -bool false
+	# Don’t automatically rearrange Spaces based on most recent use
+	defaults write com.apple.dock mru-spaces -bool false
+	# Trackpad: enable tap to click for this user and for the login screen
+	defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+	defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+	defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+	# dock size & autohidden dock
+	defaults write com.apple.dock tilesize -int 128
+	defaults write com.apple.dock autohide -bool true
+	# Enable full keyboard access for all controls
+	# (e.g. enable Tab in modal dialogs)
+	defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+
+
 
 all: brew \
 	node \
