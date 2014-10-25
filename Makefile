@@ -52,6 +52,11 @@ vim: brew /usr/local/bin/vim
 /usr/local/bin/vim:
 	brew install vim
 
+vim-config: ~/.vimrc
+~/.vimrc:
+	ln -s ~/.dotfiles/vim ~/.vim
+	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
+
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
 	brew install tmux
