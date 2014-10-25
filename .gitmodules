@@ -1,0 +1,21 @@
+[submodule "vim/bundle/syntax-php5"]
+	path = vim/bundle/syntax-php5
+	url = https://github.com/vim-scripts/php.vim-for-php5.git
+[submodule "vim/bundle/syntax-coffee-script"]
+	path = vim/bundle/syntax-coffee-script
+	url = https://github.com/kchmck/vim-coffee-script.git
+[submodule "vim/bundle/syntax-jade"]
+	path = vim/bundle/syntax-jade
+	url = https://github.com/digitaltoad/vim-jade.git
+[submodule "vim/bundle/syntax-markdown"]
+	path = vim/bundle/syntax-markdown
+	url = https://github.com/tpope/vim-markdown.git
+[submodule "vim/bundle/syntastic"]
+	path = vim/bundle/syntastic
+	url = https://github.com/scrooloose/syntastic.git
+[submodule "vim/bundle/php-cs-fixer"]
+	path = vim/bundle/php-cs-fixer
+	url = https://github.com/stephpy/vim-php-cs-fixer.git
+[submodule "vim/bundle/ctrlp"]
+	path = vim/bundle/ctrlp
+	url = https://github.com/kien/ctrlp.vim
