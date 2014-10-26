@@ -21,12 +21,17 @@ zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
 
+slate: brew /opt/homebrew-cask/Caskroom/slate/latest/Slate.app
+/opt/homebrew-cask/Caskroom/slate/latest/Slate.app:
+	brew cask install slate
+
+slate-config: slate ~/.slate.js
+~/.slate.js:
+	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
+
 chef: brew /usr/bin/chef
 /usr/bin/chef:
 	brew cask install chefdk
-
-slate: brew
-	brew cask install slate
 
 virtualbox: brew /usr/bin/VBoxHeadless
 /usr/bin/VBoxHeadless:
@@ -60,6 +65,10 @@ vim-config: ~/.vimrc
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
 	brew install tmux
+
+tmux-config: tmux ~/.tmux.conf
+~/.tmux.conf:
+	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
 the_silver_searcher: brew /usr/local/bin/ag
 /usr/local/bin/ag:
@@ -161,6 +170,9 @@ osx:
 
 
 all: brew \
+	zsh-config \
+	vim-config \
+	slate-config \
 	node \
 	vagrant \
 	highlight \
