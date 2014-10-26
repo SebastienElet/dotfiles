@@ -64,6 +64,7 @@ vim-config: ~/.vimrc
 
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
+	brew install reattach-to-user-namespace
 	brew install tmux
 
 tmux-config: tmux ~/.tmux.conf
