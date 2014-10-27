@@ -48,12 +48,11 @@ alias ........='cd ../../../../../../..'
 alias .7='........'
 alias h90='sudo shutdown -h +90'
 alias h120='sudo shutdown -h +120'
-alias dev='/usr/local/bin/memcached -d -p 11211 -m 8 \
+alias dev='sudo apachectl start \
+  && /usr/local/bin/memcached -d -p 11211 -m 8 \
   && redis-server /usr/local/etc/redis.conf \
-  && mongod --fork \
   && sudo postfix start \
   && /usr/local/opt/mariadb/bin/mysqld_safe \
-    --datadir=/usr/local/Cellar/mariadb/data \
     --max_allowed_packet=16MB &'
 alias pomo="pomojs --break 3 --log ~/.pomo.log --tmux "
 alias t5='pomo -w 5'

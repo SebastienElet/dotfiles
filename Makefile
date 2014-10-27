@@ -33,6 +33,14 @@ skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 /opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
 	brew cask install skype
 
+keepassx: brew /opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app
+/opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app:
+	brew cask install keepassx
+
+dropbox: brew /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app
+/opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app:
+	brew cask install dropbox
+
 chef: brew /usr/bin/chef
 /usr/bin/chef:
 	brew cask install chefdk
@@ -84,6 +92,10 @@ memcached: brew /usr/local/bin/memcached
 /usr/local/bin/memcached:
 	brew install memcached
 
+redis: brew /usr/local/bin/redis
+/usr/local/bin/redis:
+	brew install redis
+
 redis: brew /usr/local/bin/redis-cli
 /usr/local/bin/redis-cli:
 	brew install redis
@@ -100,7 +112,8 @@ fetchmail: brew /usr/local/bin/fetchmail
 /usr/local/bin/fetchmail:
 	brew install fetchmail
 
-php55:
+php56:
+	brew install homebrew/php/php56
 
 phpcs: /usr/local/opt/php55/bin/phpcs php55
 /usr/local/opt/php55/bin/phpcs:
