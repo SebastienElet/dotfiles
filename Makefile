@@ -33,6 +33,10 @@ skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 /opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
 	brew cask install skype
 
+sequel-pro: brew /opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app
+/opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app:
+	brew cask install sequel-pro
+
 keepassx: brew /opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app
 /opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app:
 	brew cask install keepassx
@@ -48,7 +52,6 @@ chef: brew /usr/bin/chef
 virtualbox: brew /usr/bin/VBoxHeadless
 /usr/bin/VBoxHeadless:
 	brew cask install virtualbox
-
 
 packer: brew /usr/local/bin/packer
 /usr/local/bin/packer:
@@ -114,6 +117,7 @@ fetchmail: brew /usr/local/bin/fetchmail
 
 php56:
 	brew install homebrew/php/php56
+	brew install homebrew/php/php56-memcache
 
 phpcs: /usr/local/opt/php55/bin/phpcs php55
 /usr/local/opt/php55/bin/phpcs:
@@ -135,11 +139,13 @@ node: /usr/local/bin/node
 /usr/local/bin/node:
 	brew install node
 
-jscs: node
+jscs: node ~/.jscs.json
+~/.jscs.json:
 	@npm install -g jscs
-	ln -s $(shell pwd)/.jscs.json ~/.jscs.json
+	ln -s ~/.dotfiles/.jscs.json ~/.jscs.json
 
-jshint: node
+jshint: node ~/.jshintrc
+~/.jshintrc:
 	@npm install -g jshint
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
