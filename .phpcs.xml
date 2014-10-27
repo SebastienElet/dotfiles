@@ -25,12 +25,13 @@
   </rule>
 
   <!-- Squiz -->
-  <!--<rule ref="Squiz">
-    <exclude name="Squiz.Classes.ValidClassName.NotCamelCaps"/>
-  </rule> 
-  -->
+  <rule ref="Squiz">
+    <exclude name="Squiz.Commenting.FileComment.Missing" />
+    <exclude name="Squiz.NamingConventions.ValidVariableName.NotCamelCaps" />
+  </rule>
 
-<rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
-<exclude name="Squiz.Classes.ValidClassName.NotCamelCaps" />
-</rule>
+  <!-- PEAR -->
+  <rule ref="PEAR">
+    <exclude name="PEAR.Commenting.FileComment" />
+  </rule>
 </ruleset>
