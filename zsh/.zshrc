@@ -1,4 +1,5 @@
 ## Environment {{{
+export PATH=/usr/local/Cellar/php56/5.6.2/bin/:$PATH
 export PATH=/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:$PATH
 ## }}}
 
