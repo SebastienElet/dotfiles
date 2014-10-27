@@ -29,6 +29,10 @@ slate-config: slate ~/.slate.js
 ~/.slate.js:
 	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
 
+skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
+/opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
+	brew cask install skype
+
 chef: brew /usr/bin/chef
 /usr/bin/chef:
 	brew cask install chefdk
@@ -36,6 +40,7 @@ chef: brew /usr/bin/chef
 virtualbox: brew /usr/bin/VBoxHeadless
 /usr/bin/VBoxHeadless:
 	brew cask install virtualbox
+
 
 packer: brew /usr/local/bin/packer
 /usr/local/bin/packer:
