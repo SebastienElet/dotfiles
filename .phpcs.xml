@@ -28,6 +28,7 @@
   <rule ref="Squiz">
     <exclude name="Squiz.Commenting.FileComment.Missing" />
     <exclude name="Squiz.NamingConventions.ValidVariableName.NotCamelCaps" />
+    <exclude name="Squiz.NamingConventions.ConstantCase.Found" />
   </rule>
 
   <!-- PEAR -->
