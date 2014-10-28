@@ -33,6 +33,10 @@ skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 /opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
 	brew cask install skype
 
+telephone: brew /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app
+/opt/homebrew-cask/Caskroom/telephone/latest/telephone.app:
+	brew cask install telephone
+
 sequel-pro: brew /opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app
 /opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app:
 	brew cask install sequel-pro
@@ -56,6 +60,9 @@ virtualbox: brew /usr/bin/VBoxHeadless
 packer: brew /usr/local/bin/packer
 /usr/local/bin/packer:
 	brew cask install packer
+
+java: brew
+	brew cask install java
 
 vagrant: brew virtualbox chef packer /usr/bin/vagrant
 /usr/bin/vagrant:
