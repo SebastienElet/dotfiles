@@ -29,10 +29,15 @@
     <exclude name="Squiz.Commenting.FileComment.Missing" />
     <exclude name="Squiz.NamingConventions.ValidVariableName.NotCamelCaps" />
     <exclude name="Squiz.NamingConventions.ConstantCase.Found" />
+    <exclude name="Squiz.Commenting.LongConditionClosingComment.Missing" />
+    <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar" />
+    <exclude name="Squiz.WhiteSpace.SemicolonSpacing.Incorrect" />
+    <exclude name="Squiz.WhiteSpace.ObjectOperatorSpacing.Before" />
   </rule>
 
   <!-- PEAR -->
   <rule ref="PEAR">
     <exclude name="PEAR.Commenting.FileComment" />
+    <exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterCloseBracket" />
   </rule>
 </ruleset>
