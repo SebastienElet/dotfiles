@@ -134,6 +134,9 @@ phpcs-rules: phpcs
 	ln -s $(shell pwd)/.phpcs.xml ~/.phpcs.xml
 	phpcs --config-set default_standard ~/.phpcs.xml
 
+php-cs-fixer: brew
+	brew install php-cs-fixer
+
 phpmd: /usr/local/opt/php55/bin/phpmd
 /usr/local/opt/php55/bin/phpmd:
 	@sudo pear channel-discover pear.phpmd.org

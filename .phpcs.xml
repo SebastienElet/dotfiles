@@ -1,43 +1,20 @@
 <?xml version="1.0"?>
 <ruleset name="MyStandard">
   <description>The PHP Coding Standard description you want.</description>
+  <rule ref="Generic.ControlStructures.InlineControlStructure"/>
+  <rule ref="Generic.Formatting.SpaceAfterCast"/>
+  <!-- Import Zend coding standard (which in turn imports PEAR) -->
+  <rule ref="Zend">
+    <!-- but exclude their code analyzer -->
+    <exclude name="Zend.Debug.CodeAnalyzer"/>
 
-  <rule ref="Generic.Functions.FunctionCallArgumentSpacing"/>
-  <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
-  <rule ref="Generic.PHP.LowerCaseConstant"/>
-  <rule ref="Generic.PHP.DisallowShortOpenTag"/>
-  <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
-  <rule ref="Generic.Files.LineLength.TooLong">
-    <severity>1</severity>
-  </rule>
-  <rule ref="Generic.Files.LineLength.MaxExceeded">
-    <severity>1</severity>
-  </rule>
-  <rule ref="Generic.Commenting.Todo.CommentFound">
-    <message>Please review this TODO comment: %s</message>
-    <severity>3</severity>
-  </rule>
+    <!-- covered by Squiz ControlSignature, which enforces try/catch as well -->
+    <exclude name="PEAR.ControlStructures.ControlSignature"/>
 
-  <!-- PSR2 -->
-  <rule ref="PSR2">
-    <exclude name="PSR1.Classes.ClassDeclaration"/>
-    <exclude name="Zend.Files.ClosingTag"/>
-  </rule>
-
-  <!-- Squiz -->
-  <rule ref="Squiz">
-    <exclude name="Squiz.Commenting.FileComment.Missing" />
-    <exclude name="Squiz.NamingConventions.ValidVariableName.NotCamelCaps" />
-    <exclude name="Squiz.NamingConventions.ConstantCase.Found" />
-    <exclude name="Squiz.Commenting.LongConditionClosingComment.Missing" />
-    <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar" />
-    <exclude name="Squiz.WhiteSpace.SemicolonSpacing.Incorrect" />
-    <exclude name="Squiz.WhiteSpace.ObjectOperatorSpacing.Before" />
-  </rule>
-
-  <!-- PEAR -->
-  <rule ref="PEAR">
-    <exclude name="PEAR.Commenting.FileComment" />
+    <exclude name="PEAR.Commenting.FunctionComment.SpacingBeforeTags"/>
     <exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterCloseBracket" />
+
+    <!-- do not check line length -->
+    <exclude name="Generic.Files.LineLength"/>
   </rule>
 </ruleset>
