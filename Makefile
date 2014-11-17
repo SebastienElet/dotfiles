@@ -199,6 +199,8 @@ osx:
 	# Set wallpaper
 	osascript -e "tell application \"System Events\" to set picture of every \
 		desktop to \"~/.dotfiles/wallpapers/1.png\""
+	# 14 days on ical
+	defaults write com.apple.iCal n\ days\ of\ week 14
 
 
 
