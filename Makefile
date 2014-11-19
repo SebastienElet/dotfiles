@@ -152,6 +152,9 @@ jscs: node ~/.jscs.json
 	@npm install -g jscs
 	ln -s ~/.dotfiles/.jscs.json ~/.jscs.json
 
+pomo:
+	@npm install -g pomo
+
 jshint: node ~/.jshintrc
 ~/.jshintrc:
 	@npm install -g jshint
