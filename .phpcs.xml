@@ -13,6 +13,7 @@
 
     <exclude name="PEAR.Commenting.FunctionComment.SpacingBeforeTags"/>
     <exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterCloseBracket" />
+    <exclude name="Zend.NamingConventions.ValidVariableName.NotCamelCaps" />
 
     <!-- do not check line length -->
     <exclude name="Generic.Files.LineLength"/>
