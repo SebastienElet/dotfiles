@@ -64,6 +64,9 @@ packer: brew /usr/local/bin/packer
 java: brew
 	brew cask install java
 
+cloc: brew
+	brew install cloc
+
 vagrant: brew virtualbox chef packer /usr/bin/vagrant
 /usr/bin/vagrant:
 	brew cask install vagrant
