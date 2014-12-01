@@ -126,12 +126,22 @@ endfunction
 function! MakeSpacelessIabbrev(from, to)
   execute "iabbrev <silent> ".a:from." ".a:to."<C-R>=EatChar('\\s')<CR>"
 endfunction
+
+let mapleader = "-"
+nnoremap <Tab> %
+nnoremap H ^
+nnoremap L g_
 nnoremap Q <nop>
+cnoremap <C-a> <home>
+cnoremap <C-e> <end>
+nnoremap <leader>h :left<CR>
+nnoremap <leader>c :center<CR>
+nnoremap <leader>l :right<CR>
+
 " iabbrev </ </<C-x><C-o>
 call MakeSpacelessIabbrev('</', '</<C-x><C-o>')
 inoremap jk <Esc>
 inoremap {<CR>  {<CR>}<Esc>O<Tab>
-let mapleader = "-"
 " }}}
 
 " Plugin:Pathogen {{{
