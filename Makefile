@@ -164,6 +164,7 @@ jshint: node ~/.jshintrc
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
 osx:
+	# See secrets.blacktree.com
 	chsh -s /bin/zsh $(USER)
 	sudo scutil --set ComputerName $(COMPUTER_NAME)
 	sudo scutil --set HostName $(COMPUTER_NAME)
@@ -207,6 +208,9 @@ osx:
 		desktop to \"~/.dotfiles/wallpapers/1.png\""
 	# 14 days on ical
 	defaults write com.apple.iCal n\ days\ of\ week 14
+	# Finder
+	defaults write com.apple.finder NewWindowTarget -string "PfLo"
+	defaults write com.apple.finder NewWindowTargetPath -string "file://$(HOME)/Downloads/"
 
 
 
