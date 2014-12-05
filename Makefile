@@ -21,6 +21,11 @@ zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
 
+fzf: ~/.fzf
+~/.fzf:
+	git clone https://github.com/junegunn/fzf.git ~/.fzf
+	~/.fzf/install
+
 slate: brew /opt/homebrew-cask/Caskroom/slate/latest/Slate.app
 /opt/homebrew-cask/Caskroom/slate/latest/Slate.app:
 	brew cask install slate

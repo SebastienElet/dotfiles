@@ -59,3 +59,6 @@ bindkey -v
 source ~/.dotfiles/zsh/alias
 # Load syntax hl
 source ~/.dotfiles/zsh/zsh-syntax-highlighting.zsh
+
+export FZF_DEFAULT_COMMAND='ag -l -g ""'
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
