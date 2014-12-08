@@ -168,6 +168,9 @@ jshint: node ~/.jshintrc
 	@npm install -g jshint
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
+recess:
+	@npm install -g recess
+
 osx:
 	# See secrets.blacktree.com
 	chsh -s /bin/zsh $(USER)
