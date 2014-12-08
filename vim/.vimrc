@@ -153,6 +153,8 @@ let g:syntastic_error_symbol='✗'
 let g:syntastic_warning_symbol='⚠'
 let g:syntastic_php_checkers = ['php', 'phpcs', 'phpmd']
 let g:syntastic_javascript_checkers = ['jshint', 'jscs']
+let g:syntastic_css_checkers = ['recess']
+let g:syntastic_less_checkers = ['recess']
 " }}}
 " Plugin:Php-cs-fixer {{{
 let g:php_cs_fixer_path = "/usr/local/bin/php-cs-fixer"
