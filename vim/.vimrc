@@ -173,7 +173,7 @@ autocmd BufWritePre *.php %s/foreach(/foreach (/ge
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
 " Plugin:ctrlp {{{
-let g:ctrlp_user_command = 'ag --nogroup --nobreak --noheading --nocolor --hidden -g "" %s '
+let g:ctrlp_user_command = 'ag --nogroup --nobreak --noheading --nocolor -g "" %s '
 " }}}
 
 " Colors {{{
