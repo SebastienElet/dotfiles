@@ -149,8 +149,10 @@ call pathogen#runtime_append_all_bundles()
 call pathogen#infect()
 " }}}
 " Plugin:Syntastic {{{
-let g:syntastic_error_symbol='✗'
+let g:syntastic_error_symbol='✘'
 let g:syntastic_warning_symbol='⚠'
+let g:syntastic_style_error_symbol="✗"
+let g:syntastic_style_warning_symbol="⚑"
 let g:syntastic_php_checkers = ['php', 'phpcs', 'phpmd']
 let g:syntastic_javascript_checkers = ['jshint', 'jscs']
 let g:syntastic_css_checkers = ['recess']
