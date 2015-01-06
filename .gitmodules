@@ -1,6 +1,3 @@
-[submodule "vim/bundle/syntax-php5"]
-	path = vim/bundle/syntax-php5
-	url = https://github.com/vim-scripts/php.vim-for-php5.git
 [submodule "vim/bundle/syntax-coffee-script"]
 	path = vim/bundle/syntax-coffee-script
 	url = https://github.com/kchmck/vim-coffee-script.git
