@@ -178,6 +178,10 @@ recess:
 pm2:
 	@npm install -g pm2
 
+cmus: brew /usr/local/bin/cmus
+/usr/local/bin/cmus:
+	brew install cmus
+
 osx:
 	# See secrets.blacktree.com
 	chsh -s /bin/zsh $(USER)
