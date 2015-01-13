@@ -171,6 +171,9 @@ jshint: node ~/.jshintrc
 recess:
 	@npm install -g recess
 
+pm2:
+	@npm install -g pm2
+
 osx:
 	# See secrets.blacktree.com
 	chsh -s /bin/zsh $(USER)
