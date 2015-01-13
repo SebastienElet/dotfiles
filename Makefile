@@ -72,6 +72,10 @@ java: brew
 cloc: brew
 	brew install cloc
 
+jq: brew /usr/local/bin/jq
+/usr/local/bin/jq:
+	brew install jq
+
 vagrant: brew virtualbox chef packer /usr/bin/vagrant
 /usr/bin/vagrant:
 	brew cask install vagrant
