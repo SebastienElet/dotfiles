@@ -80,6 +80,11 @@ vagrant: brew virtualbox chef packer /usr/bin/vagrant
 /usr/bin/vagrant:
 	brew cask install vagrant
 
+docker: brew virtualbox
+	brew install docker
+	brew install boot2docker
+	/usr/local/bin/boot2docker init
+
 highlight: brew /usr/local/bin/highlight
 /usr/local/bin/highlight:
 	brew install highlight
