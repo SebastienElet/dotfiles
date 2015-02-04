@@ -9,7 +9,9 @@ curl -fsSL \
 
 # Manual install
 ````bash
-cd && git clone https://github.com/Nasga/dotfiles.git .dotfiles
+cd && \
+  git clone https://github.com/Nasga/dotfiles.git .dotfiles &&
+  make all
 ````
 
 My dev env
