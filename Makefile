@@ -178,10 +178,23 @@ jshint: node ~/.jshintrc
 	@npm install -g jshint
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
+jsinspect: node /usr/local/bin/jsinspect
+/usr/local/bin/jsinspect:
+	@npm install -g jsinspect
+
+david: node /usr/local/bin/david
+/usr/local/bin/david:
+	@npm install -g david
+
+nsp: node /usr/local/bin/nsp
+/usr/local/bin/nsp:
+	@npm install -g nsp
+
 recess:
 	@npm install -g recess
 
-pm2:
+pm2: node /usr/local/bin/pm2
+/usr/local/bin/pm2:
 	@npm install -g pm2
 
 cmus: brew /usr/local/bin/cmus
@@ -256,4 +269,7 @@ all: brew \
 	mariadb \
 	fetchmail \
 	phpcs \
-	phpmd
+	phpmd \
+	jsinspect \
+	david \
+	nsp
