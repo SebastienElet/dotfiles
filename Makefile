@@ -10,6 +10,7 @@ brew: /usr/local/bin/brew
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew install caskroom/cask/brew-cask
+	brew tap gapple/services
 
 iterm2: /Applications/iTerm.app
 /Applications/iTerm.app:
