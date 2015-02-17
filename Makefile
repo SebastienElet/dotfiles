@@ -182,6 +182,10 @@ jsinspect: node /usr/local/bin/jsinspect
 /usr/local/bin/jsinspect:
 	@npm install -g jsinspect
 
+retire: node /usr/local/bin/retire
+/usr/local/bin/retire:
+	@npm install -g retire
+
 david: node /usr/local/bin/david
 /usr/local/bin/david:
 	@npm install -g david
@@ -272,4 +276,5 @@ all: brew \
 	phpmd \
 	jsinspect \
 	david \
-	nsp
+	nsp \
+	retire
