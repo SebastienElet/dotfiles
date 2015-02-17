@@ -49,11 +49,11 @@ alias .7='........'
 alias h90='sudo shutdown -h +90'
 alias h120='sudo shutdown -h +120'
 alias dev='sudo apachectl start \
-  && /usr/local/bin/memcached -d -p 11211 -m 8 \
+  && brew services start memcached \
+  && brew services start redis \
   && redis-server /usr/local/etc/redis.conf \
   && sudo postfix start \
-  && /usr/local/opt/mariadb/bin/mysqld_safe \
-    --max_allowed_packet=16MB &'
+  && brew services start mariadb
 alias pomo="pomojs --break 3 --log ~/.pomo.log --tmux "
 alias t5='pomo -w 5'
 alias t10='pomo -w 10'
