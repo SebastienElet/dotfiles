@@ -53,7 +53,7 @@ alias dev='sudo apachectl start \
   && brew services start redis \
   && redis-server /usr/local/etc/redis.conf \
   && sudo postfix start \
-  && brew services start mariadb
+  && brew services start mariadb'
 alias pomo="pomojs --break 3 --log ~/.pomo.log --tmux "
 alias t5='pomo -w 5'
 alias t10='pomo -w 10'
