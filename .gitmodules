@@ -22,3 +22,6 @@
 [submodule "vim/bundle/syntax-php5"]
 	path = vim/bundle/syntax-php5
 	url = https://github.com/StanAngeloff/php.vim.git
+[submodule "vim/bundle/syntax-twig"]
+	path = vim/bundle/syntax-twig
+	url = https://github.com/evidens/vim-twig.git
