@@ -120,13 +120,12 @@ memcached: brew /usr/local/bin/memcached
 /usr/local/bin/memcached:
 	brew install memcached
 
-redis: brew /usr/local/bin/redis
-/usr/local/bin/redis:
+redis: brew /usr/local/bin/redis-server
+/usr/local/bin/redis-server:
 	brew install redis
 
-redis: brew /usr/local/bin/redis-cli
-/usr/local/bin/redis-cli:
-	brew install redis
+mongodb: brew
+	brew install mongodb
 
 mariadb: brew /usr/local/bin/mysql
 /usr/local/bin/mysql:
@@ -271,6 +270,7 @@ all: brew \
 	redis \
 	mutt \
 	mariadb \
+	mongodb \
 	fetchmail \
 	phpcs \
 	phpmd \
