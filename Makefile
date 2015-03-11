@@ -31,6 +31,10 @@ slate: brew /opt/homebrew-cask/Caskroom/slate/latest/Slate.app
 /opt/homebrew-cask/Caskroom/slate/latest/Slate.app:
 	brew cask install slate
 
+keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
+/opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
+	brew cask install keycastr
+
 slate-config: slate ~/.slate.js
 ~/.slate.js:
 	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
