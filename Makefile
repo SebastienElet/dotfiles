@@ -29,7 +29,7 @@ fzf: ~/.fzf
 
 slate: brew /opt/homebrew-cask/Caskroom/slate/latest/Slate.app
 /opt/homebrew-cask/Caskroom/slate/latest/Slate.app:
-	brew cask install slate
+	brew cask install mattr-slate
 
 keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
 /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
