@@ -1,0 +1,19 @@
+globals:
+  angular: true
+  jQuery: true
+  $: true
+  define: true
+  require: true
+  exports: true
+  module: true
+  describe: true
+  before: true
+  beforeEach: true
+  after: true
+  afterEach: true
+  it: true
+  inject: true
+  expect: true
+
+rules:
+  quotes: simple
