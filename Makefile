@@ -181,6 +181,11 @@ jshint: node ~/.jshintrc
 	@npm install -g jshint
 	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
 
+eslint: node ~/.eslintrc
+~/.eslintrc:
+	@npm install -g eslint
+	ln -s $(shell pwd)/.eslintrc ~/.eslintrc
+
 jsinspect: node /usr/local/bin/jsinspect
 /usr/local/bin/jsinspect:
 	@npm install -g jsinspect
