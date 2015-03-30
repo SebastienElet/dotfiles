@@ -14,8 +14,12 @@ globals:
   it: true
   inject: true
   expect: true
+  process: true
   ApplicationConfiguration: true
 
 rules:
   quotes: simple
   max-len: [1, 80, 2]
+  comma-style: [2, "first"]
+  global-strict: [2, "always"]
+  strict: [2, "global"]
