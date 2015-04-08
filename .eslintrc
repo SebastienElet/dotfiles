@@ -16,6 +16,9 @@ globals:
   expect: true
   process: true
   ApplicationConfiguration: true
+  console: true
+  Buffer: true
+  __dirname: true
 
 rules:
   quotes: simple
@@ -23,3 +26,4 @@ rules:
   comma-style: [2, "first"]
   global-strict: [2, "always"]
   strict: [2, "global"]
+  no-console: false
