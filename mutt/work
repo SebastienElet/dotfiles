@@ -6,7 +6,8 @@ set spoolfile = '+INBOX'
 set postponed = '+Drafts'
 set postponed = '+Sent'
 
-
 set smtp_authenticators = 'gssapi:login'
 set smtp_url = 'smtp://sebastien.elet@denaroo.com@smtp.gmail.com:587/'
 set smtp_pass = `security find-internet-password -g -a "sebastien.elet@denaroo.com" -s "smtp.gmail.com" -w`
+
+color status green default
