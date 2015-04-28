@@ -1,0 +1,19 @@
+set header_cache = ~/.mutt/cache/headers
+set message_cachedir = ~/.mutt/cache/bodies
+set certificate_file = ~/.mutt/certificates
+set mail_check = 60
+set mbox_type = MailDir
+
+# https://wiki.archlinux.org/index.php/mutt#Multiple_accounts
+# sebastien.elet@denaroo.com
+source ~/.dotfiles/mutt/work
+folder-hook sebastien.elet@denaroo.com 'source ~/.dotfiles/mutt/work'
+# sebastien@elet.fr
+folder-hook sebastien@elet.fr 'source ~/.dotfiles/mutt/personnal'
+
+macro index <f2> '<sync-mailbox><enter-command>source ~/.dotfiles/mutt/personnal<enter><change-folder>!<enter>'
+macro index <f3> '<sync-mailbox><enter-command>source ~/.dotfiles/mutt/work<enter><change-folder>!<enter>'
+
+set sort = reverse-threads
+set sort_aux = last-date-received
+set pager_index_lines = 10	
