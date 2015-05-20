@@ -176,6 +176,10 @@ jscs: node ~/.jscs.json
 pomo:
 	@npm install -g pomo
 
+clif: /usr/local/bin/clif
+/usr/local/bin/clif:
+	@npm install -g clif
+
 jshint: node ~/.jshintrc
 ~/.jshintrc:
 	@npm install -g jshint
