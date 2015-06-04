@@ -147,9 +147,9 @@ php56:
 	brew install homebrew/php/php56
 	brew install homebrew/php/php56-memcache
 
-phpcs: /usr/local/opt/php55/bin/phpcs
-/usr/local/opt/php55/bin/phpcs:
-	@sudo pear install PHP_CodeSniffer
+phpcs: ~/.composer/vendor/bin/phpcs
+~/.composer/vendor/bin/phpcs:
+	@composer global require "squizlabs/php_codesniffer=*"
 
 phpcs-rules: phpcs
 	ln -s $(shell pwd)/.phpcs.xml ~/.phpcs.xml
@@ -158,11 +158,9 @@ phpcs-rules: phpcs
 php-cs-fixer: brew
 	brew install php-cs-fixer
 
-phpmd: /usr/local/opt/php55/bin/phpmd
-/usr/local/opt/php55/bin/phpmd:
-	@sudo pear channel-discover pear.phpmd.org
-	@sudo pear channel-discover pear.pdepend.org
-	@sudo pear install --alldeps phpmd/PHP_PMD
+phpmd: ~/.composer/vendor/bin/phpmd
+~/.composer/vendor/bin/phpmd:
+	@composer global require "phpmd/phpmd=*"
 
 node: /usr/local/bin/node
 /usr/local/bin/node:
@@ -257,14 +255,16 @@ osx:
 	defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 	# Set a blazingly fast keyboard repeat rate
 	defaults write NSGlobalDomain KeyRepeat -int 0
-	# Set wallpaper
-	osascript -e "tell application \"System Events\" to set picture of every \
-		desktop to \"~/.dotfiles/wallpapers/1.png\""
 	# 14 days on ical
 	defaults write com.apple.iCal n\ days\ of\ week 14
 	# Finder
 	defaults write com.apple.finder NewWindowTarget -string "PfLo"
 	defaults write com.apple.finder NewWindowTargetPath -string "file://$(HOME)/Downloads/"
+
+wallpaper:
+	# Set wallpaper
+	osascript -e "tell application \"System Events\" to set picture of every \
+		desktop to \"~/.dotfiles/wallpapers/2.png\""
 
 
 
