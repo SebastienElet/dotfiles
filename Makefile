@@ -94,6 +94,10 @@ highlight: brew /usr/local/bin/highlight
 /usr/local/bin/highlight:
 	brew install highlight
 
+ncdu: brew /usr/local/bin/ncdu
+/usr/local/bin/ncdu:
+	brew install ncdu
+
 tig: brew /usr/local/bin/tig
 /usr/local/bin/tig:
 	brew install tig
