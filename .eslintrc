@@ -18,6 +18,8 @@ globals:
   ApplicationConfiguration: true
   console: true
   Buffer: true
+  setInterval: true
+  setTimeout: true
   __dirname: true
 
 rules:
