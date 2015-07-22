@@ -23,9 +23,10 @@ globals:
   __dirname: true
 
 rules:
-  quotes: simple
+  quotes: [1, "single"]
   max-len: [1, 80, 2]
   comma-style: [2, "first"]
   global-strict: [2, "always"]
   strict: [2, "global"]
-  no-console: false
+  no-process-exit: 0
+  no-console: 0
