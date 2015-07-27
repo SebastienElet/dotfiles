@@ -139,6 +139,10 @@ mariadb: brew /usr/local/bin/mysql
 /usr/local/bin/mysql:
 	brew install mariadb
 
+mycli: brew /usr/local/bin/mycli
+/usr/local/bin/mycli:
+	brew install mycli
+
 mutt: brew /usr/local/bin/mutt
 /usr/local/bin/mutt:
 	brew install mutt
@@ -287,6 +291,7 @@ all: brew \
 	redis \
 	mutt \
 	mariadb \
+	mycli \
 	mongodb \
 	fetchmail \
 	phpcs \
