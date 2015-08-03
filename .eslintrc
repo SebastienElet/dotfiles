@@ -27,6 +27,7 @@ rules:
   block-scoped-var: 2
   camelcase: 2
   comma-dangle: 0
+  comma-spacing: 1
   comma-style: [2, "first"]
   complexity: [1, 5]
   curly: 2
