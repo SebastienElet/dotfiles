@@ -111,6 +111,10 @@ vim-config: ~/.vimrc
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
 
+instant-markdown: /usr/local/bin/instant-markdown-d
+/usr/local/bin/instant-markdown-d:
+	npm -g install instant-markdown-d
+
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
 	brew install reattach-to-user-namespace
@@ -285,6 +289,7 @@ all: brew \
 	highlight \
 	tig \
 	vim \
+	instant-markdown \
 	tmux \
 	the_silver_searcher \
 	memcached \
