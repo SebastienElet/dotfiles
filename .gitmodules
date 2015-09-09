@@ -25,3 +25,6 @@
 [submodule "vim/bundle/syntax-twig"]
 	path = vim/bundle/syntax-twig
 	url = https://github.com/evidens/vim-twig.git
+[submodule "vim/bundle/syntax-json"]
+	path = vim/bundle/syntax-json
+	url = https://github.com/elzr/vim-json.git

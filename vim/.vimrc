@@ -90,7 +90,6 @@ augroup ft_javascript
 augroup END
 " }}}
 " Files {{{ 
-autocmd BufNewFile,BufRead *.json set ft=javascript
 autocmd BufNewFile,BufRead *.vue.php set ft=html
 filetype on
 filetype plugin on
