@@ -200,6 +200,14 @@ eslint: node ~/.eslintrc
 	@npm install -g eslint
 	ln -s $(shell pwd)/.eslintrc ~/.eslintrc
 
+jsonlint: node /usr/local/bin/jsonlint
+/usr/local/bin/jsonlint:
+	@npm install -g jsonlint
+
+js-yaml: /usr/local/bin/js-yaml
+/usr/local/bin/js-yaml:
+	@npm install -g js-yaml
+
 jsinspect: node /usr/local/bin/jsinspect
 /usr/local/bin/jsinspect:
 	@npm install -g jsinspect
@@ -278,8 +286,6 @@ wallpaper:
 	osascript -e "tell application \"System Events\" to set picture of every \
 		desktop to \"~/.dotfiles/wallpapers/2.png\""
 
-
-
 all: brew \
 	zsh-config \
 	vim-config \
@@ -290,6 +296,7 @@ all: brew \
 	tig \
 	vim \
 	instant-markdown \
+	js-yaml \
 	tmux \
 	the_silver_searcher \
 	memcached \
@@ -304,4 +311,6 @@ all: brew \
 	jsinspect \
 	david \
 	nsp \
+	jsonlint \
+	eslint \
 	retire
