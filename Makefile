@@ -74,6 +74,10 @@ packer: brew /usr/local/bin/packer
 java: brew
 	brew cask install java
 
+slack: brew $(HOME)/Applications/Slack.app
+$(HOME)/Applications/Slack.app:
+	brew cask install slack
+
 cloc: brew
 	brew install cloc
 
@@ -313,4 +317,5 @@ all: brew \
 	nsp \
 	jsonlint \
 	eslint \
-	retire
+	retire \
+	slack
