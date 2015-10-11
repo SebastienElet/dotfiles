@@ -295,27 +295,19 @@ wallpaper:
 		desktop to \"~/.dotfiles/wallpapers/2.png\""
 
 all: brew \
-	zsh-config \
+	zsh \
+	osx \
 	vim-config \
 	slate-config \
+	tmux-config \
 	node \
-	vagrant \
 	highlight \
 	tig \
 	vim \
 	instant-markdown \
 	js-yaml \
-	tmux \
 	the_silver_searcher \
-	memcached \
-	redis \
 	mutt \
-	mariadb \
-	mycli \
-	mongodb \
-	fetchmail \
-	phpcs \
-	phpmd \
 	jsinspect \
 	david \
 	nsp \
