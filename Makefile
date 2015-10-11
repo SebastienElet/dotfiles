@@ -43,6 +43,10 @@ skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 /opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
 	brew cask install skype
 
+vlc: brew ~/Applications/VLC.app
+~/Applications/VLC.app:
+	brew cask install vlc
+
 telephone: brew /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app
 /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app:
 	brew cask install telephone
