@@ -204,6 +204,14 @@ pomo: node /usr/local/bin/pomojs
 /usr/local/bin/pomojs:
 	@npm install -g pomo
 
+bower: node /usr/local/bin/bower
+/usr/local/bin/bower:
+	@npm install -g bower
+
+gulp: node /usr/local/bin/gulp
+/usr/local/bin/gulp:
+	@npm install -g gulp
+
 clif: /usr/local/bin/clif
 /usr/local/bin/clif:
 	@npm install -g clif
@@ -325,4 +333,6 @@ all: brew \
 	eslint \
 	retire \
 	slack \
-	pomo
+	pomo \
+	bower \
+	gulp
