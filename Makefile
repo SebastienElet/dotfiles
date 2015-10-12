@@ -212,6 +212,14 @@ gulp: node /usr/local/bin/gulp
 /usr/local/bin/gulp:
 	@npm install -g gulp
 
+cordova: node /usr/local/bin/cordova
+/usr/local/bin/cordova:
+	@npm install -g cordova
+
+ionic: node /usr/local/bin/ionic
+/usr/local/bin/ionic:
+	@npm install -g ionic
+
 clif: /usr/local/bin/clif
 /usr/local/bin/clif:
 	@npm install -g clif
@@ -335,4 +343,6 @@ all: brew \
 	slack \
 	pomo \
 	bower \
-	gulp
+	gulp \
+	cordova \
+	ionic
