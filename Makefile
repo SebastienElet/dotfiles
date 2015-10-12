@@ -11,12 +11,21 @@ brew: /usr/local/bin/brew
 	/tmp/brew-installer.sh
 	brew install caskroom/cask/brew-cask
 	brew tap gapple/services
+	brew tap caskroom/fonts
 
-iterm2: /Applications/iTerm.app
+iterm2: font-sourcecode /Applications/iTerm.app
 /Applications/iTerm.app:
 	git clone https://github.com/Nasga/iterm2-borderless.git /tmp/iterm2
 	mv /tmp/iterm2/iTerm.app /Applications/
 	rm -rf /tmp/iterm2
+
+font-sourcecode: ~/Library/Fonts/SourceCodePro-Light.otf
+~/Library/Fonts/SourceCodePro-Light.otf:
+	brew cask install font-source-code-pro
+
+imagemagick: brew /usr/local/bin/jpegtran
+/usr/local/bin/jpegtran:
+	brew install imagemagick
 
 zsh: ~/.zshrc
 ~/.zshrc:
