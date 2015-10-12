@@ -153,7 +153,8 @@ redis: brew /usr/local/bin/redis-server
 /usr/local/bin/redis-server:
 	brew install redis
 
-mongodb: brew
+mongodb: brew /usr/local/bin/mongo
+/usr/local/bin/mongo:
 	brew install mongodb
 
 mariadb: brew /usr/local/bin/mysql
@@ -345,4 +346,5 @@ all: brew \
 	bower \
 	gulp \
 	cordova \
-	ionic
+	ionic \
+	mongodb
