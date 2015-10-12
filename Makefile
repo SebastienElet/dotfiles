@@ -56,6 +56,10 @@ vlc: brew ~/Applications/VLC.app
 ~/Applications/VLC.app:
 	brew cask install vlc
 
+google-chrome: brew ~/Applications/Google Chrome.app
+~/Applications/Google Chrome.app:
+	brew cask install google-chrome
+
 telephone: brew /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app
 /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app:
 	brew cask install telephone
