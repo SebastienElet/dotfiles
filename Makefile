@@ -200,7 +200,8 @@ jscs: node ~/.jscs.json
 	@npm install -g jscs
 	ln -s ~/.dotfiles/.jscs.json ~/.jscs.json
 
-pomo:
+pomo: node /usr/local/bin/pomojs
+/usr/local/bin/pomojs:
 	@npm install -g pomo
 
 clif: /usr/local/bin/clif
@@ -323,4 +324,5 @@ all: brew \
 	jsonlint \
 	eslint \
 	retire \
-	slack
+	slack \
+	pomo
