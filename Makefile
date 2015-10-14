@@ -76,12 +76,8 @@ dropbox: brew /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app
 /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app:
 	brew cask install dropbox
 
-chef: brew /usr/bin/chef
-/usr/bin/chef:
-	brew cask install chefdk
-
-virtualbox: brew /usr/bin/VBoxHeadless
-/usr/bin/VBoxHeadless:
+virtualbox: brew /usr/local/bin/VBoxHeadless
+/usr/local/bin/VBoxHeadless:
 	brew cask install virtualbox
 
 packer: brew /usr/local/bin/packer
