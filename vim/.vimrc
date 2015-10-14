@@ -156,6 +156,15 @@ let g:syntastic_php_checkers = ['php', 'phpcs', 'phpmd']
 let g:syntastic_javascript_checkers = ['eslint', 'jscs']
 let g:syntastic_css_checkers = ['recess']
 let g:syntastic_less_checkers = ['recess']
+
+let local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
+if matchstr(local_eslint, "^\/\\w") == ''
+    let local_eslint = getcwd() . "/" . local_eslint
+endif
+if executable(local_eslint)
+    let g:syntastic_javascript_eslint_exec = local_eslint
+endif
+
 " }}}
 " Plugin:Php-cs-fixer {{{
 let g:php_cs_fixer_path = "/usr/local/bin/php-cs-fixer"
