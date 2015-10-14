@@ -98,9 +98,13 @@ jq: brew /usr/local/bin/jq
 /usr/local/bin/jq:
 	brew install jq
 
-vagrant: brew virtualbox chef packer /usr/bin/vagrant
-/usr/bin/vagrant:
+vagrant: brew virtualbox ansible packer /usr/local/bin/vagrant
+/usr/local/bin/vagrant:
 	brew cask install vagrant
+
+ansible: brew /usr/local/bin/ansible
+/usr/local/bin/ansible:
+	brew install ansible
 
 docker: brew virtualbox
 	brew install docker
@@ -347,4 +351,6 @@ all: brew \
 	gulp \
 	cordova \
 	ionic \
-	mongodb
+	mongodb \
+	vagrant \
+	skype
