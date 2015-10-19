@@ -31,6 +31,14 @@ zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
 
+watch: brew /usr/local/bin/watch
+/usr/local/bin/watch:
+	brew install watch
+
+lftp: brew /usr/local/bin/lftp
+/usr/local/bin/lftp:
+	brew install lftp
+
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
@@ -327,6 +335,7 @@ wallpaper:
 
 all: brew \
 	zsh \
+	watch \
 	osx \
 	vim-config \
 	slate-config \
