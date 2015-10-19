@@ -114,10 +114,11 @@ ansible: brew /usr/local/bin/ansible
 /usr/local/bin/ansible:
 	brew install ansible
 
-docker: brew virtualbox
+docker: brew virtualbox /usr/local/bin/docker
+/usr/local/bin/docker:
 	brew install docker
-	brew install boot2docker
-	/usr/local/bin/boot2docker init
+	brew install docker-machine
+	docker-machine create --driver virtualbox dev
 
 highlight: brew /usr/local/bin/highlight
 /usr/local/bin/highlight:
