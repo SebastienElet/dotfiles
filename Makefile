@@ -48,6 +48,10 @@ slate: brew ~/Applications/Slate.app
 ~/Applications/Slate.app:
 	brew cask install mattr-slate
 
+flux: brew ~/Applications/Flux.app
+~/Applications/Flux.app:
+	brew cask install flux
+
 keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
 /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
 	brew cask install keycastr
