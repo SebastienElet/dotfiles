@@ -27,6 +27,10 @@ imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
 
+youtube-dl: brew /usr/local/bin/youtube-dl
+/usr/local/bin/youtube-dl:
+	brew install youtube-dl
+
 zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
