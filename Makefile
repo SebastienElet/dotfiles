@@ -23,6 +23,10 @@ font-sourcecode: ~/Library/Fonts/SourceCodePro-Light.otf
 ~/Library/Fonts/SourceCodePro-Light.otf:
 	brew cask install font-source-code-pro
 
+robomongo: ~/Applications/Robomongo.app
+~/Applications/Robomongo.app:
+	brew cask install robomongo
+
 imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
