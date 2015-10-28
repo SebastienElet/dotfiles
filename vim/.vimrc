@@ -146,6 +146,12 @@ inoremap {<CR>  {<CR>}<Esc>O<Tab>
 " Plugin:Pathogen {{{
 call pathogen#runtime_append_all_bundles()
 call pathogen#infect()
+
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+Bundle "Valloric/YouCompleteMe"
+Bundle "marijnh/tern_for_vim"
+
 " }}}
 " Plugin:Syntastic {{{
 let g:syntastic_error_symbol='✘'
