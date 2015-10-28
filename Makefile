@@ -13,6 +13,10 @@ brew: /usr/local/bin/brew
 	brew tap gapple/services
 	brew tap caskroom/fonts
 
+cmake: brew /usr/local/bin/cmake
+/usr/local/bin/cmake:
+	brew install cmake
+
 iterm2: font-sourcecode /Applications/iTerm.app
 /Applications/iTerm.app:
 	git clone https://github.com/Nasga/iterm2-borderless.git /tmp/iterm2
@@ -354,6 +358,7 @@ all: brew \
 	slate-config \
 	tmux-config \
 	node \
+	cmake \
 	highlight \
 	tig \
 	vim \
