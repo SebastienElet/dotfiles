@@ -29,10 +29,6 @@ tac () {
 }
 
 
-alias fs-start='freeswitch -nc -nonat'
-alias fs='fs_cli -p fslocal -P 8022'
-alias fs-stop='fs -x "shutdown now"'
-alias fs-reload='fs -x "reloadxml"'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias .2='...'
@@ -48,11 +44,6 @@ alias ........='cd ../../../../../../..'
 alias .7='........'
 alias h90='sudo shutdown -h +90'
 alias h120='sudo shutdown -h +120'
-alias dev='sudo apachectl start \
-  ;brew services start memcached \
-  ;brew services start redis \
-  ;brew services start mariadb \
-  ;sudo postfix start'
 alias pomo="pomojs --break 3 --quiet --log ~/.pomo.log --tmux "
 alias t5='pomo -w 5'
 alias t10='pomo -w 10'
