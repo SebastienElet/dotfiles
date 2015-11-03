@@ -31,6 +31,10 @@ robomongo: ~/Applications/Robomongo.app
 ~/Applications/Robomongo.app:
 	brew cask install robomongo
 
+soulseek: ~/Applications/SoulseekQt.app
+~/Applications/SoulseekQt.app:
+	brew cask install soulseek
+
 imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
