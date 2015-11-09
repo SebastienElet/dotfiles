@@ -151,6 +151,7 @@ set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 Bundle "Valloric/YouCompleteMe"
 Bundle "marijnh/tern_for_vim"
+Bundle "henrik/vim-qargs"
 
 " }}}
 " Plugin:Syntastic {{{
