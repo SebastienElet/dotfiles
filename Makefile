@@ -27,6 +27,10 @@ font-sourcecode: ~/Library/Fonts/SourceCodePro-Light.otf
 ~/Library/Fonts/SourceCodePro-Light.otf:
 	brew cask install font-source-code-pro
 
+mancy: ~/Applications/Mancy.app
+~/Applications/Mancy.app:
+	brew cask install mancy
+
 robomongo: ~/Applications/Robomongo.app
 ~/Applications/Robomongo.app:
 	brew cask install robomongo
@@ -156,7 +160,7 @@ vim: brew /usr/local/bin/vim
 /usr/local/bin/vim:
 	brew install vim
 
-vim-config: ~/.vimrc
+vim-config: ~/.vimrc vim
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
