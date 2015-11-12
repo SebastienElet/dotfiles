@@ -194,6 +194,10 @@ mongodb: brew /usr/local/bin/mongo
 /usr/local/bin/mongo:
 	brew install mongodb
 
+rabbitmq: brew /usr/local/bin/rabbitmq
+/usr/local/bin/rabbitmq:
+	brew install rabbitmq
+
 mariadb: brew /usr/local/bin/mysql
 /usr/local/bin/mysql:
 	brew install mariadb
