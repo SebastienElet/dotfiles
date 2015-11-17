@@ -43,6 +43,10 @@ imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
 
+ghi: brew /usr/local/bin/ghi
+/usr/local/bin/ghi:
+	brew install ghi
+
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
