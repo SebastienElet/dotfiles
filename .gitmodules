@@ -1,36 +1,3 @@
-[submodule "vim/bundle/syntax-coffee-script"]
-	path = vim/bundle/syntax-coffee-script
-	url = https://github.com/kchmck/vim-coffee-script.git
-[submodule "vim/bundle/syntax-jade"]
-	path = vim/bundle/syntax-jade
-	url = https://github.com/digitaltoad/vim-jade.git
-[submodule "vim/bundle/syntax-markdown"]
-	path = vim/bundle/syntax-markdown
-	url = https://github.com/tpope/vim-markdown.git
-[submodule "vim/bundle/syntastic"]
-	path = vim/bundle/syntastic
-	url = https://github.com/scrooloose/syntastic.git
-[submodule "vim/bundle/php-cs-fixer"]
-	path = vim/bundle/php-cs-fixer
-	url = https://github.com/stephpy/vim-php-cs-fixer.git
-[submodule "vim/bundle/ctrlp"]
-	path = vim/bundle/ctrlp
-	url = https://github.com/kien/ctrlp.vim
-[submodule "vim/bundle/syntax-less"]
-	path = vim/bundle/syntax-less
-	url = https://github.com/groenewege/vim-less.git
-[submodule "vim/bundle/syntax-php5"]
-	path = vim/bundle/syntax-php5
-	url = https://github.com/StanAngeloff/php.vim.git
-[submodule "vim/bundle/syntax-twig"]
-	path = vim/bundle/syntax-twig
-	url = https://github.com/evidens/vim-twig.git
-[submodule "vim/bundle/syntax-json"]
-	path = vim/bundle/syntax-json
-	url = https://github.com/elzr/vim-json.git
-[submodule "vim/bundle/ag"]
-	path = vim/bundle/ag
-	url = https://github.com/rking/ag.vim.git
 [submodule "vim/bundle/Vundle.vim"]
 	path = vim/bundle/Vundle.vim
 	url = https://github.com/VundleVim/Vundle.vim.git
