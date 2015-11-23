@@ -164,9 +164,9 @@ let g:syntastic_javascript_checkers = ['eslint', 'jscs']
 let g:syntastic_css_checkers = ['recess']
 let g:syntastic_less_checkers = ['recess']
 
-let local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
+let g:local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
 if matchstr(local_eslint, "^\/\\w") == ''
-    let local_eslint = getcwd() . "/" . local_eslint
+    let g:local_eslint = getcwd() . "/" . local_eslint
 endif
 if executable(local_eslint)
     let g:syntastic_javascript_eslint_exec = local_eslint
