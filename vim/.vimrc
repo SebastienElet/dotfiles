@@ -1,6 +1,7 @@
 " vim:fdm=marker
 
 " Editor {{{
+scriptencoding utf-8
 set nocompatible                "Non compatiblity with vi
 set encoding=utf-8              "Default encoding
 set ttyfast                     "More move while redraw
@@ -126,7 +127,7 @@ function! MakeSpacelessIabbrev(from, to)
   execute "iabbrev <silent> ".a:from." ".a:to."<C-R>=EatChar('\\s')<CR>"
 endfunction
 
-let mapleader = "-"
+let g:mapleader = "-"
 nnoremap <Tab> %
 nnoremap H ^
 nnoremap L g_
