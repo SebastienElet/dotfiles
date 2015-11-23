@@ -182,6 +182,8 @@ nnoremap <silent><leader>pcf :call PhpCsFixerFixFile()<CR>
 
 autocmd BufWritePre *.php %s/\s\+$//ge
 autocmd BufWritePre *.yml %s/\s\+$//ge
+autocmd BufWritePre *.js %s/\s\+$//ge
+autocmd BufWritePre *.json %s/\s\+$//ge
 autocmd BufWritePre *.php %s/if ( /if (/ge
 autocmd BufWritePre *.php %s/if(/if (/ge
 autocmd BufWritePre *.php %s/,\$/, \$/ge
