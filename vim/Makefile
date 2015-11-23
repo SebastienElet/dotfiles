@@ -5,6 +5,7 @@ all: \
   bundle/ctrlp \
   bundle/ag \
   bundle/syntastic \
+  bundle/editorconfig \
   bundle/syntax-json \
   bundle/syntax-less \
   bundle/syntax-markdown \
@@ -27,6 +28,9 @@ bundle/ag:
 
 bundle/syntastic:
 	git clone https://github.com/scrooloose/syntastic.git $@
+
+bundle/editorconfig:
+	git clone https://github.com/editorconfig/editorconfig-vim.git $@
 
 bundle/ctrlp:
 	git clone https://github.com/kien/ctrlp.vim $@
