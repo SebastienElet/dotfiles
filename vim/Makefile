@@ -7,7 +7,8 @@ all: \
   bundle/syntastic \
   bundle/syntax-json \
   bundle/syntax-less \
-  bundle/syntax-markdown
+  bundle/syntax-markdown \
+  bundle/viml-linter
 
 bundle/youcompleteme:
 	git clone https://github.com/Valloric/YouCompleteMe.git $@
@@ -41,6 +42,12 @@ bundle/syntax-less:
 
 bundle/syntax-markdown:
 	git clone https://github.com/tpope/vim-markdown.git $@
+
+bundle/viml-linter: bundle/viml-parser
+	git clone https://github.com/syngan/vim-vimlint.git $@
+
+bundle/viml-parser:
+	git clone https://github.com/ynkdir/vim-vimlparser.git $@
 
 clean:
 	rm -rf bundle/*
