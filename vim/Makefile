@@ -6,6 +6,7 @@ all: \
   bundle/ag \
   bundle/syntastic \
   bundle/editorconfig \
+  bundle/airline \
   bundle/syntax-json \
   bundle/syntax-less \
   bundle/syntax-markdown \
@@ -31,6 +32,9 @@ bundle/syntastic:
 
 bundle/editorconfig:
 	git clone https://github.com/editorconfig/editorconfig-vim.git $@
+
+bundle/airline:
+	git clone https://github.com/bling/vim-airline.git $@
 
 bundle/ctrlp:
 	git clone https://github.com/kien/ctrlp.vim $@
