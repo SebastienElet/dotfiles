@@ -10,7 +10,9 @@ all: \
   bundle/syntax-json \
   bundle/syntax-less \
   bundle/syntax-markdown \
-  bundle/viml-linter
+  bundle/viml-linter \
+  bundle/syntax-js \
+  bundle/syntax-js-libs
 
 bundle/youcompleteme:
 	git clone https://github.com/Valloric/YouCompleteMe.git $@
@@ -56,6 +58,12 @@ bundle/viml-linter: bundle/viml-parser
 
 bundle/viml-parser:
 	git clone https://github.com/ynkdir/vim-vimlparser.git $@
+
+bundle/syntax-js:
+	git clone https://github.com/othree/yajs.git $@
+
+bundle/syntax-js-libs:
+	git clone https://github.com/othree/javascript-libraries-syntax.vim.git $@
 
 clean:
 	rm -rf bundle/*
