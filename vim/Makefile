@@ -9,6 +9,7 @@ all: \
   bundle/airline \
   bundle/syntax-json \
   bundle/syntax-less \
+  bundle/syntax-jade \
   bundle/syntax-markdown \
   bundle/viml-linter \
   bundle/syntax-js \
