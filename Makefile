@@ -23,9 +23,9 @@ iterm2: font-sourcecode /Applications/iTerm.app
 	mv /tmp/iterm2/iTerm.app /Applications/
 	rm -rf /tmp/iterm2
 
-font-sourcecode: ~/Library/Fonts/SourceCodePro-Light.otf
-~/Library/Fonts/SourceCodePro-Light.otf:
-	brew cask install font-source-code-pro
+font-sourcecode: ~/Library/Fonts/Sauce Code Powerline Light.otf
+~/Library/Fonts/Sauce Code Powerline Light.otf:
+	brew cask install font-source-code-pro-for-powerline
 
 mancy: ~/Applications/Mancy.app
 ~/Applications/Mancy.app:
