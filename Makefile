@@ -385,6 +385,7 @@ all: brew \
 	jsinspect \
 	david \
 	nsp \
+	jq \
 	jsonlint \
 	eslint \
 	retire \
@@ -396,4 +397,3 @@ all: brew \
 	ionic \
 	mongodb \
 	vagrant \
-	skype
