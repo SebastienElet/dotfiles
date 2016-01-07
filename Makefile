@@ -31,10 +31,6 @@ mancy: ~/Applications/Mancy.app
 ~/Applications/Mancy.app:
 	brew cask install mancy
 
-robomongo: ~/Applications/Robomongo.app
-~/Applications/Robomongo.app:
-	brew cask install robomongo
-
 soulseek: ~/Applications/SoulseekQt.app
 ~/Applications/SoulseekQt.app:
 	brew cask install soulseek
@@ -197,6 +193,10 @@ redis: brew /usr/local/bin/redis-server
 mongodb: brew /usr/local/bin/mongo
 /usr/local/bin/mongo:
 	brew install mongodb
+
+mongohacker: node /usr/local/lib/node_modules/mongo-hacker
+/usr/local/lib/node_modules/mongo-hacker:
+	@npm install -g mongo-hacker
 
 rabbitmq: brew /usr/local/bin/rabbitmq
 /usr/local/bin/rabbitmq:
@@ -396,4 +396,5 @@ all: brew \
 	cordova \
 	ionic \
 	mongodb \
+	mongohacker \
 	vagrant \
