@@ -1,6 +1,4 @@
 all: \
-  bundle/ternjs \
-  bundle/youcompleteme \
   bundle/qargs \
   bundle/ctrlp \
   bundle/ag \
