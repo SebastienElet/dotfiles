@@ -95,6 +95,9 @@ filetype plugin on
 map <C-j> <C-W>j
 map <C-k> <C-W>k
 map <C-h> <C-W>h
+if has('nvim')
+  nmap <BS> <C-W>h
+endif
 map <C-l> <C-W>l
 autocmd VimResized * tabdo wincmd =
 " }}}
