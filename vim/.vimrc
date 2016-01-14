@@ -84,11 +84,6 @@ augroup ft_html
     au FileType html setlocal foldmethod=manual
 augroup END
 
-augroup ft_javascript
-    au!
-    au FileType javascript setlocal foldmethod=marker
-    au FileType javascript setlocal foldmarker={,}
-augroup END
 " }}}
 " Files {{{ 
 autocmd BufNewFile,BufRead *.vue.php set ft=html
