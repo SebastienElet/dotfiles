@@ -160,10 +160,19 @@ vim: brew /usr/local/bin/vim
 /usr/local/bin/vim:
 	brew install vim
 
-vim-config: ~/.vimrc vim
+neovim: brew /usr/local/bin/nvim
+/usr/local/bin/nvim:
+	brew install neovim/neovim/neovim
+
+~/.config:
+	mkdir $@
+
+vim-config: ~/.vimrc ~/.config vim neovim
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
+	ln -s ~/.vim ~/.config/nvim
+	ln -s ~/.vimrc ~/.config/nvim/init.vim
 
 instant-markdown: /usr/local/bin/instant-markdown-d
 /usr/local/bin/instant-markdown-d:
