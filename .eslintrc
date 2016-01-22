@@ -30,7 +30,7 @@ rules:
   camelcase: 2
   comma-dangle: 0
   comma-spacing: 1
-  comma-style: [2, "first"]
+  comma-style: [2, "last"]
   complexity: [1, 5]
   curly: 2
   dot-notation: 2
@@ -71,4 +71,4 @@ rules:
   strict: [2, "global"]
   vars-on-top: 2
   wrap-regex: 2
-  yoda: [1, "never"]
+  yoda: [1, "always"]
