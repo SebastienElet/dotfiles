@@ -59,6 +59,7 @@ set softtabstop=2
 set copyindent
 set smarttab
 set list listchars=tab:→\ ,trail:·,eol:↩,extends:»,precedes:«,nbsp:×
+set showbreak=…
 
 " Indent with tabs
 vmap <Tab> >gv
