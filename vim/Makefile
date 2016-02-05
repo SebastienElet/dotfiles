@@ -4,7 +4,6 @@ all: \
   bundle/ag \
   bundle/syntastic \
   bundle/editorconfig \
-  bundle/airline \
   bundle/syntax-ansible \
   bundle/syntax-jade \
   bundle/syntax-js \
