@@ -45,7 +45,6 @@ PROMPT_HOST="%{$fg_bold[grey]%}%n@%m "
 PROMPT_PWD="%{$fg[black]%}%{$fg[blue]%} %20<… <%/%<< %{$fg[blue]%}❯ "
 
 export PROMPT=$PROMPT_BEFORE$PROMPT_STATUS$PROMPT_PWD
-export RPROMPT="%{$fg_bold[grey]%}%n@%m%{$reset_color%}"
 ## }}}
 
 ### Misc options {{{
