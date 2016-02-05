@@ -5,13 +5,14 @@ all: \
   bundle/syntastic \
   bundle/editorconfig \
   bundle/airline \
+  bundle/syntax-ansible \
+  bundle/syntax-jade \
+  bundle/syntax-js \
+  bundle/syntax-js-libs \
   bundle/syntax-json \
   bundle/syntax-less \
-  bundle/syntax-jade \
   bundle/syntax-markdown \
-  bundle/viml-linter \
-  bundle/syntax-js \
-  bundle/syntax-js-libs
+  bundle/viml-linter
 
 bundle/youcompleteme:
 	git clone https://github.com/Valloric/YouCompleteMe.git $@
@@ -63,6 +64,9 @@ bundle/syntax-js:
 
 bundle/syntax-js-libs:
 	git clone https://github.com/othree/javascript-libraries-syntax.vim.git $@
+
+bundle/syntax-ansible:
+	git clone https://github.com/pearofducks/ansible-vim $@
 
 clean:
 	rm -rf bundle/*
