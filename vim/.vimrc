@@ -185,9 +185,6 @@ autocmd BufWritePre *.php %s/foreach(/foreach (/ge
 " Plugin:matchit {{{
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
-" Plugin powerline {{{
-let g:airline_powerline_fonts = 1
-" }
 " Plugin:ctrlp {{{
 let g:ctrlp_user_command = 'ag --nogroup --nobreak --noheading --nocolor -g "" %s '
 " }}}
