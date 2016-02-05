@@ -43,6 +43,10 @@ ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
 	brew install ghi
 
+ranger: brew /usr/local/bin/ranger
+/usr/local/bin/ranger:
+	brew install ranger
+
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
@@ -387,6 +391,7 @@ all: brew \
 	highlight \
 	tig \
 	vim \
+	ranger \
 	instant-markdown \
 	js-yaml \
 	the_silver_searcher \
