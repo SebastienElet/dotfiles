@@ -1,6 +1,6 @@
 all: \
   bundle/qargs \
-  bundle/ctrlp \
+  bundle/fzf \
   bundle/ag \
   bundle/syntastic \
   bundle/editorconfig \
@@ -39,6 +39,9 @@ bundle/airline:
 
 bundle/ctrlp:
 	git clone https://github.com/kien/ctrlp.vim $@
+
+bundle/fzf:
+	ln -s ~/.fzf $@
 
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
