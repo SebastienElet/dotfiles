@@ -41,7 +41,7 @@ bundle/ctrlp:
 	git clone https://github.com/kien/ctrlp.vim $@
 
 bundle/fzf:
-	ln -s ~/.fzf $@
+	git clone https://github.com/junegunn/fzf.vim.git $@
 
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
