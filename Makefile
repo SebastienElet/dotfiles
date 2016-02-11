@@ -195,6 +195,10 @@ tmux-config: tmux ~/.tmux.conf
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
+tmuxinator: /usr/local/bin/tmuxinator
+/usr/local/bin/tmuxinator:
+	sudo gem install tmuxinator
+
 the_silver_searcher: brew /usr/local/bin/ag
 /usr/local/bin/ag:
 	brew install the_silver_searcher
