@@ -23,9 +23,13 @@ iterm2: font-sourcecode /Applications/iTerm.app
 	mv /tmp/iterm2/iTerm.app /Applications/
 	rm -rf /tmp/iterm2
 
-font-sourcecode: ~/Library/Fonts/Sauce Code Powerline Light.otf
-~/Library/Fonts/Sauce Code Powerline Light.otf:
+font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
+~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf:
 	brew cask install font-source-code-pro-for-powerline
+
+font-anonymous: ~/Library/Fonts/Anonymice\ Powerline.ttf
+~/Library/Fonts/Anonymice\ Powerline.ttf:
+	brew cask install font-anonymous-pro-for-powerline
 
 mancy: ~/Applications/Mancy.app
 ~/Applications/Mancy.app:
