@@ -32,6 +32,7 @@ zstyle ':completion:*' original true
 ## History {{{
 export HISTSIZE=SAVEHIST=4096
 export HISTFILE=~/.zsh_history
+export EDITOR=nvim
 setopt hist_ignore_all_dups
 setopt append_history
 setopt extended_history
