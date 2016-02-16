@@ -58,8 +58,10 @@ youtube-dl: brew /usr/local/bin/youtube-dl
 prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc
 ~/.zprezto:
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
-~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc:
+~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
 	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
+~/.zshrc:
+	ln -s ~/.dotfiles/zsh/zshrc $@
 ~/.zpreztorc:
 	ln -s ~/.dotfiles/zsh/zpreztorc $@
 
@@ -74,7 +76,7 @@ lftp: brew /usr/local/bin/lftp
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install
+	~/.fzf/install --no-update-rc
 
 slate: brew ~/Applications/Slate.app
 ~/Applications/Slate.app:
