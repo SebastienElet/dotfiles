@@ -1,0 +1,10 @@
+# Source Prezto.
+if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+fi
+
+# Load alias
+source ~/.dotfiles/zsh/alias
+
+export FZF_DEFAULT_COMMAND='ag -l -g ""'
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
