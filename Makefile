@@ -55,9 +55,13 @@ youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
 
-zsh: ~/.zshrc
-~/.zshrc:
-	ln -s ~/.dotfiles/zsh/.zshrc ~/.zshrc
+prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc
+~/.zprezto:
+	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
+~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc:
+	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
+~/.zpreztorc:
+	ln -s ~/.dotfiles/zsh/zpreztorc $@
 
 watch: brew /usr/local/bin/watch
 /usr/local/bin/watch:
