@@ -73,6 +73,10 @@ lftp: brew /usr/local/bin/lftp
 /usr/local/bin/lftp:
 	brew install lftp
 
+siege: brew /usr/local/bin/siege
+/usr/local/bin/siege:
+	brew install siege
+
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
@@ -411,6 +415,7 @@ all: brew \
 	js-yaml \
 	the_silver_searcher \
 	mutt \
+	siege \
 	jsinspect \
 	david \
 	nsp \
