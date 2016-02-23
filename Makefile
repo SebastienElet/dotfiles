@@ -196,6 +196,12 @@ instant-markdown: /usr/local/bin/instant-markdown-d
 /usr/local/bin/instant-markdown-d:
 	npm -g install instant-markdown-d
 
+cli-tools: how2
+
+how2: node /usr/local/bin/how2
+/usr/local/bin/how2:
+	@npm -g install how2
+
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
 	brew install reattach-to-user-namespace
@@ -410,6 +416,7 @@ all: brew \
 	highlight \
 	tig \
 	vim \
+	cli-tools \
 	ranger \
 	instant-markdown \
 	js-yaml \
