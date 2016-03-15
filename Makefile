@@ -202,6 +202,10 @@ how2: node /usr/local/bin/how2
 /usr/local/bin/how2:
 	@npm -g install how2
 
+devtool: node /usr/local/bin/devtool
+/usr/local/bin/devtool:
+	@npm -g install devtool
+
 tmux: brew /usr/local/bin/tmux
 /usr/local/bin/tmux:
 	brew install reattach-to-user-namespace
