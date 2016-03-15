@@ -43,6 +43,9 @@ bundle/ctrlp:
 bundle/fzf:
 	git clone https://github.com/junegunn/fzf.vim.git $@
 
+bundle/surround:
+	git clone https://github.com/tpope/vim-surround.git $@
+
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
 
