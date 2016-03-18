@@ -6,7 +6,6 @@ all: \
   bundle/editorconfig \
   bundle/syntax-ansible \
   bundle/syntax-jade \
-  bundle/syntax-js \
   bundle/syntax-js-libs \
   bundle/syntax-json \
   bundle/syntax-less \
