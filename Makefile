@@ -110,6 +110,10 @@ google-chrome: brew ~/Applications/Google Chrome.app
 ~/Applications/Google Chrome.app:
 	brew cask install google-chrome
 
+postman: brew ~/Applications/Postman.app
+~/Applications/Postman.app:
+	brew install Caskroom/cask/postman
+
 telephone: brew /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app
 /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app:
 	brew cask install telephone
@@ -255,6 +259,11 @@ mycli: brew /usr/local/bin/mycli
 mutt: brew /usr/local/bin/mutt
 /usr/local/bin/mutt:
 	brew install mutt
+
+mutt-config: ~/.muttrc
+~/.muttrc:
+	ln -s ~/.dotfiles/muttrc ~/.muttrc
+	ln -s ~/.dotfiles/mutt ~/.mutt
 
 fetchmail: brew /usr/local/bin/fetchmail
 /usr/local/bin/fetchmail:
@@ -443,3 +452,5 @@ all: brew \
 	mongodb \
 	mongohacker \
 	vagrant \
+	chrome \
+	postman
