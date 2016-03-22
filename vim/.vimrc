@@ -187,6 +187,7 @@ runtime macros/matchit.vim      " Enable jump betwen tags
 " Plugin:fzf {{{
 set rtp+=~/.fzf
 noremap <silent><C-p> :FZF<CR>
+cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 " }}}
 
 " Colors {{{
