@@ -43,6 +43,10 @@ imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
 
+gpg: brew /usr/local/bin/gpg
+/usr/local/bin/gpg:
+	brew install gpg
+
 ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
 	brew install ghi
@@ -429,6 +433,7 @@ all: brew \
 	highlight \
 	tig \
 	vim \
+	gpg \
 	cli-tools \
 	ranger \
 	instant-markdown \
