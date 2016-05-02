@@ -43,9 +43,18 @@ imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
 
-gpg: brew /usr/local/bin/gpg
+gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-mac
 /usr/local/bin/gpg:
 	brew install gpg
+/usr/local/bin/gpg-agent:
+	brew install gpg-agent
+/usr/local/bin/pinentry-mac:
+	brew install pinentry-mac
+
+gpg-config:
+	sed -i .bck 's/^# use-agent/use-agent/' ~/.gnupg/gpg.conf
+	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
+	echo 'pinentry-program /usr/local/bin/pinentry-mac' > ~/.gnupg/gpg-agent.conf
 
 ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
