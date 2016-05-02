@@ -2,6 +2,7 @@ all: \
   bundle/qargs \
   bundle/fzf \
   bundle/ag \
+  bundle/beautify-js \
   bundle/syntastic \
   bundle/editorconfig \
   bundle/syntax-ansible \
@@ -44,6 +45,10 @@ bundle/fzf:
 
 bundle/surround:
 	git clone https://github.com/tpope/vim-surround.git $@
+
+bundle/beautify-js:
+	git clone https://github.com/maksimr/vim-jsbeautify.git $@
+	cd $@ && git submodule update --init --recursive
 
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
