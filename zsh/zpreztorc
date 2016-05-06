@@ -164,7 +164,7 @@ zstyle ':prezto:module:syntax-highlighting' styles \
 # Gpg
 #
 if [ -f ~/.gnupg/.gpg-agent-info ] && [ -n "$(pgrep gpg-agent)" ]; then
-    source ~/.gnupg/.gpg-agent-info
+    source ~/.gnupg/.gpg-agent-info > /dev/null
     export GPG_AGENT_INFO
 else
     eval $(gpg-agent -vvvv --daemon --write-env-file ~/.gnupg/.gpg-agent-info)
