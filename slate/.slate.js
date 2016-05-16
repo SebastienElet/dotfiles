@@ -54,11 +54,3 @@ slate.bind("e:shift;cmd", slate.op(
     "screen": "next"
   }
 ));
-
-slate.bindAll({
-  "h:cmd": slate.op("focus", { "direction" : "left" }),
-  "j:cmd": slate.op("focus", { "direction" : "up" }),
-  "k:cmd": slate.op("focus", { "direction" : "down" }),
-  "l:cmd": slate.op("focus", { "direction" : "right" }),
-  "r:shift;cmd": slate.op("relaunch")
-});
