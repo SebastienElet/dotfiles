@@ -82,6 +82,9 @@ watch: brew /usr/local/bin/watch
 /usr/local/bin/watch:
 	brew install watch
 
+/usr/local/bin/mtr:
+	brew install mtr
+
 lftp: brew /usr/local/bin/lftp
 /usr/local/bin/lftp:
 	brew install lftp
