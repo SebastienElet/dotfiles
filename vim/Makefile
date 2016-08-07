@@ -9,6 +9,7 @@ all: \
   bundle/syntax-jade \
   bundle/syntax-js-libs \
   bundle/syntax-json \
+  bundle/syntax-jsx \
   bundle/syntax-less \
   bundle/syntax-markdown \
   bundle/viml-linter
@@ -52,6 +53,9 @@ bundle/beautify-js:
 
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
+
+bundle/syntax-jsx:
+	git clone https://github.com/mxw/vim-jsx.git $@
 
 bundle/syntax-jade:
 	git clone https://github.com/digitaltoad/vim-jade.git $@
