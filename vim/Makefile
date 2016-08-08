@@ -1,10 +1,11 @@
 all: \
-  bundle/qargs \
-  bundle/fzf \
   bundle/ag \
   bundle/beautify-js \
-  bundle/syntastic \
   bundle/editorconfig \
+  bundle/fugitive \
+  bundle/fzf \
+  bundle/qargs \
+  bundle/syntastic \
   bundle/syntax-ansible \
   bundle/syntax-jade \
   bundle/syntax-js-libs \
@@ -40,6 +41,9 @@ bundle/airline:
 
 bundle/ctrlp:
 	git clone https://github.com/kien/ctrlp.vim $@
+
+bundle/fugitive:
+	git clone https://github.com/tpope/vim-fugitive $@
 
 bundle/fzf:
 	git clone https://github.com/junegunn/fzf.vim.git $@
