@@ -285,6 +285,10 @@ fetchmail: brew /usr/local/bin/fetchmail
 /usr/local/bin/fetchmail:
 	brew install fetchmail
 
+offlineimap: brew /usr/local/bin/offlineimap
+/usr/local/bin/offlineimap:
+	brew install offlineimap
+
 php56:
 	brew install homebrew/php/php56
 	brew install homebrew/php/php56-memcache
