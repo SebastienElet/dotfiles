@@ -82,6 +82,7 @@ watch: brew /usr/local/bin/watch
 /usr/local/bin/watch:
 	brew install watch
 
+mtr: brew /usr/local/bin/mtr
 /usr/local/bin/mtr:
 	brew install mtr
 
@@ -243,6 +244,10 @@ tmuxinator: /usr/local/bin/tmuxinator
 the_silver_searcher: brew /usr/local/bin/ag
 /usr/local/bin/ag:
 	brew install the_silver_searcher
+
+pgcli: brew /usr/local/bin/pgcli
+/usr/local/bin/pgcli:
+	brew install pgcli
 
 memcached: brew /usr/local/bin/memcached
 /usr/local/bin/memcached:
