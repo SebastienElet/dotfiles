@@ -86,6 +86,9 @@ mtr: brew /usr/local/bin/mtr
 /usr/local/bin/mtr:
 	brew install mtr
 
+travis:
+	gem install travis
+
 lftp: brew /usr/local/bin/lftp
 /usr/local/bin/lftp:
 	brew install lftp
