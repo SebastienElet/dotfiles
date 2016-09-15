@@ -383,6 +383,10 @@ nsp: node /usr/local/bin/nsp
 recess:
 	@npm install -g recess
 
+sqlint: /usr/local/bin/sqlint
+/usr/local/bin/sqlint:
+	@gem install sqlint
+
 pm2: node /usr/local/bin/pm2
 /usr/local/bin/pm2:
 	@npm install -g pm2
@@ -468,6 +472,7 @@ all: brew \
 	jq \
 	jsonlint \
 	eslint \
+	sqlint \
 	retire \
 	slack \
 	pomo \
