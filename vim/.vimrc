@@ -18,7 +18,7 @@ let &titleold=getcwd()          "Reset term title when exit vim
 set wildmenu                    "Autocomplete filenames
 set wildmode=longest:full,list:full
 set showcmd                     "Display cmd
-set scrolloff=999               "Cursor at the center of the screen
+set scrolloff=7                 "Cursor at the center of the screen
 set timeout timeoutlen=1000 ttimeoutlen=100
 " 80 chars limit
 if exists("&colorcolumn")
