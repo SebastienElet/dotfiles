@@ -11,6 +11,7 @@ set visualbell                  "No sound
 set title                       "Change term title
 set autoread                    "Reload files changed outside vim
 set noswapfile
+set nowrap                      "Do not wrap long lines
 set clipboard=unnamed           "Use alt to paste in osx
 set backspace=indent,eol,start  "Delete w/ insert
 let &titleold=getcwd()          "Reset term title when exit vim
