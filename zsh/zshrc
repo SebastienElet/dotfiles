@@ -6,6 +6,13 @@ fi
 # Editor
 export EDITOR=vim
 
+# Ctrl-z for fg
+foreground() {
+  fg
+}
+zle -N foreground
+bindkey '^Z' foreground
+
 # Load alias
 source ~/.dotfiles/zsh/alias
 
