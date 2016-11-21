@@ -23,6 +23,10 @@ iterm2: font-sourcecode /Applications/iTerm.app
 	mv /tmp/iterm2/iTerm.app /Applications/
 	rm -rf /tmp/iterm2
 
+kwmc: brew /usr/local/bin/kwmc
+/usr/local/bin/kwmc:
+	brew install koekeishiya/kwm/kwm
+
 font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
 ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf:
 	brew cask install font-source-code-pro-for-powerline
