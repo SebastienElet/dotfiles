@@ -87,7 +87,6 @@ augroup END
 
 " }}}
 " Files {{{ 
-autocmd BufNewFile,BufRead *.vue.php set ft=html
 filetype on
 filetype plugin on
 " }}}
@@ -152,7 +151,6 @@ let g:syntastic_error_symbol='✘'
 let g:syntastic_warning_symbol='⚠'
 let g:syntastic_style_error_symbol="✗"
 let g:syntastic_style_warning_symbol="⚑"
-let g:syntastic_php_checkers = ['php', 'phpcs', 'phpmd']
 let g:syntastic_javascript_checkers = ['eslint', 'jscs']
 let g:syntastic_css_checkers = ['recess']
 let g:syntastic_less_checkers = ['recess']
@@ -166,22 +164,6 @@ if executable(local_eslint)
 endif
 
 " }}}
-" Plugin:Php-cs-fixer {{{
-let g:php_cs_fixer_path = "/usr/local/bin/php-cs-fixer"
-let g:php_cs_fixer_level = "all"
-let g:php_cs_fixer_config = "default"
-nnoremap <silent><leader>pcd :call PhpCsFixerFixDirectory()<CR>
-nnoremap <silent><leader>pcf :call PhpCsFixerFixFile()<CR>
-
-autocmd BufWritePre *.php %s/\s\+$//ge
-autocmd BufWritePre *.yml %s/\s\+$//ge
-autocmd BufWritePre *.js %s/\s\+$//ge
-autocmd BufWritePre *.json %s/\s\+$//ge
-autocmd BufWritePre *.php %s/if ( /if (/ge
-autocmd BufWritePre *.php %s/if(/if (/ge
-autocmd BufWritePre *.php %s/,\$/, \$/ge
-autocmd BufWritePre *.php %s/foreach(/foreach (/ge
-" }}}
 " Plugin:matchit {{{
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
@@ -190,7 +172,12 @@ set rtp+=~/.fzf
 noremap <silent><C-p> :FZF<CR>
 cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 " }}}
-
+" Autocmd {{{
+autocmd BufWritePre *.yml %s/\s\+$//ge
+autocmd BufWritePre *.js %s/\s\+$//ge
+autocmd BufWritePre *.js %s/if (/if(/ge
+autocmd BufWritePre *.json %s/\s\+$//ge
+" }}}
 " Colors {{{
 set background=dark
 syntax on
