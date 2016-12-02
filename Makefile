@@ -453,6 +453,10 @@ wallpaper:
 	osascript -e "tell application \"System Events\" to set picture of every \
 		desktop to \"~/.dotfiles/wallpapers/2.png\""
 
+xz: brew
+/usr/local/bin/xz:
+	brew install xz
+
 all: brew \
 	zsh \
 	watch \
