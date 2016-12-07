@@ -86,5 +86,8 @@ bundle/syntax-js-libs:
 bundle/syntax-ansible:
 	git clone https://github.com/pearofducks/ansible-vim $@
 
+bundle/test:
+	git clone https://github.com/janko-m/vim-test.git $@
+
 clean:
 	rm -rf bundle/*
