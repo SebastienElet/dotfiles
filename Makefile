@@ -1,8 +1,22 @@
-COMPUTER_NAME := 'MBA'
-
 usage:
 	@echo brew - Install brew and brew-cask
 	@echo vagrant - Install vagrant, packer and plugins
+
+
+all: \
+	1password \
+	fantastical \
+	flux \
+	google-chrome \
+	gpg \
+	prezto \
+	slack \
+	tadam
+
+
+1password: mas /Applications/1password.app
+/Applications/1password.app:
+	mas install 443987910
 
 brew: /usr/local/bin/brew
 /usr/local/bin/brew:
@@ -13,12 +27,73 @@ brew: /usr/local/bin/brew
 	brew tap gapple/services
 	brew tap caskroom/fonts
 
+fantastical: mas /Applications/Fantastical\ 2.app
+/Applications/Fantastical\ 2.app:
+	mas install 975937182
+
+flux: brew /Applications/Flux.app
+/Applications/Flux.app:
+	brew cask install flux
+
+google-chrome: brew /Applications/Google\ Chrome.app
+/Applications/Google\ Chrome.app:
+	brew cask install google-chrome
+
+gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-mac
+/usr/local/bin/gpg:
+	brew install gpg
+/usr/local/bin/gpg-agent:
+	brew install gpg-agent
+/usr/local/bin/pinentry-mac:
+	brew install pinentry-mac
+
+gpg-config:
+	echo 'use-agent' > ~/.gnupg/gpg.conf
+	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
+	echo 'pinentry-program /usr/local/bin/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
+
+iterm2: brew
+	brew cask install iterm2
+
+mas: brew /usr/local/bin/mas/
+/usr/local/bin/mas/:
+	brew install mas
+
+prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc
+~/.zprezto:
+	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
+~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
+	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
+~/.zshrc:
+	ln -s ~/.dotfiles/zsh/zshrc $@
+~/.zpreztorc:
+	ln -s ~/.dotfiles/zsh/zpreztorc $@
+
+
+slack: mas /Applications/Slack.app
+/Applications/Slack.app:
+	mas install 803453959
+
+tadam: mas /Applications/Tadam.app
+/Applications/Tadam.app:
+	mas install 531349534
+
+
+
+
+
+
+
+
+
+
+
+
 cmake: brew /usr/local/bin/cmake
 /usr/local/bin/cmake:
 	brew install cmake
 
-iterm2: font-sourcecode /Applications/iTerm.app
-/Applications/iTerm.app:
+disabled-iterm2: font-sourcecode 
 	git clone https://github.com/Nasga/iterm2-borderless.git /tmp/iterm2
 	mv /tmp/iterm2/iTerm.app /Applications/
 	rm -rf /tmp/iterm2
@@ -47,19 +122,6 @@ imagemagick: brew /usr/local/bin/jpegtran
 /usr/local/bin/jpegtran:
 	brew install imagemagick
 
-gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-mac
-/usr/local/bin/gpg:
-	brew install gpg
-/usr/local/bin/gpg-agent:
-	brew install gpg-agent
-/usr/local/bin/pinentry-mac:
-	brew install pinentry-mac
-
-gpg-config:
-	sed -i .bck 's/^# use-agent/use-agent/' ~/.gnupg/gpg.conf
-	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
-	echo 'pinentry-program /usr/local/bin/pinentry-mac' > ~/.gnupg/gpg-agent.conf
-
 ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
 	brew install ghi
@@ -74,16 +136,6 @@ ranger: brew ~/.config/ranger /usr/local/bin/ranger
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
-
-prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc
-~/.zprezto:
-	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
-~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
-	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
-~/.zshrc:
-	ln -s ~/.dotfiles/zsh/zshrc $@
-~/.zpreztorc:
-	ln -s ~/.dotfiles/zsh/zpreztorc $@
 
 watch: brew /usr/local/bin/watch
 /usr/local/bin/watch:
@@ -113,10 +165,6 @@ slate: brew ~/Applications/Slate.app
 ~/Applications/Slate.app:
 	brew cask install mattr-slate
 
-flux: brew ~/Applications/Flux.app
-~/Applications/Flux.app:
-	brew cask install flux
-
 keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
 /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
 	brew cask install keycastr
@@ -132,10 +180,6 @@ skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 vlc: brew ~/Applications/VLC.app
 ~/Applications/VLC.app:
 	brew cask install vlc
-
-google-chrome: brew ~/Applications/Google Chrome.app
-~/Applications/Google Chrome.app:
-	brew cask install google-chrome
 
 postman: brew ~/Applications/Postman.app
 ~/Applications/Postman.app:
@@ -167,10 +211,6 @@ packer: brew /usr/local/bin/packer
 
 java: brew
 	brew cask install java
-
-slack: brew $(HOME)/Applications/Slack.app
-$(HOME)/Applications/Slack.app:
-	brew cask install slack
 
 cloc: brew
 	brew install cloc
@@ -405,51 +445,6 @@ cmus: brew /usr/local/bin/cmus
 /usr/local/bin/cmus:
 	brew install cmus
 
-osx:
-	# See secrets.blacktree.com
-	chsh -s /bin/zsh $(USER)
-	sudo scutil --set ComputerName $(COMPUTER_NAME)
-	sudo scutil --set HostName $(COMPUTER_NAME)
-	sudo scutil --set LocalHostName $(COMPUTER_NAME)
-	sudo defaults write \
-		/Library/Preferences/SystemConfiguration/com.apple.smb.server \
-		NetBIOSName -string $(COMPUTER_NAME)
-	# Allow apps downloaded from "Anywhere"
-	sudo spctl --master-disable
-	# Disabled shadow in screenshots
-	@defaults write com.apple.screencapture disable-shadow -bool true
-	# Enalble Ctrl+Alt+cmd+t for darkmode
-	@sudo defaults write /Library/Preferences/.GlobalPreferences.plist \
-		_HIEnableThemeSwitchHotKey -bool true 
-	# no .DS_Store on network
-	defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-	# Disable the “Are you sure you want to open this application?” dialog
-	defaults write com.apple.LaunchServices LSQuarantine -bool false
-	# Don’t automatically rearrange Spaces based on most recent use
-	defaults write com.apple.dock mru-spaces -bool false
-	# Trackpad: enable tap to click for this user and for the login screen
-	defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad \
-		Clicking -bool true
-	defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-	defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-	# Disable "Natural" scroll
-	defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
-	# Enable move with 3 fingers
-	defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad \
-		TrackpadThreeFingerDrag -bool true
-	# dock size & autohidden dock
-	defaults write com.apple.dock tilesize -int 128
-	defaults write com.apple.dock autohide -bool true
-	# Enable full keyboard access for all controls
-	# (e.g. enable Tab in modal dialogs)
-	defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
-	# Set a blazingly fast keyboard repeat rate
-	defaults write NSGlobalDomain KeyRepeat -int 0
-	# 14 days on ical
-	defaults write com.apple.iCal n\ days\ of\ week 14
-	# Finder
-	defaults write com.apple.finder NewWindowTarget -string "PfLo"
-	defaults write com.apple.finder NewWindowTargetPath -string "file://$(HOME)/Downloads/"
 
 wallpaper:
 	# Set wallpaper
@@ -460,42 +455,3 @@ xz: brew
 /usr/local/bin/xz:
 	brew install xz
 
-all: brew \
-	zsh \
-	watch \
-	osx \
-	vim-config \
-	slate-config \
-	tmux-config \
-	node \
-	cmake \
-	highlight \
-	tig \
-	vim \
-	gpg \
-	cli-tools \
-	ranger \
-	instant-markdown \
-	js-yaml \
-	the_silver_searcher \
-	mutt \
-	siege \
-	jsinspect \
-	david \
-	nsp \
-	jq \
-	jsonlint \
-	eslint \
-	sqlint \
-	retire \
-	slack \
-	pomo \
-	bower \
-	gulp \
-	cordova \
-	ionic \
-	mongodb \
-	mongohacker \
-	vagrant \
-	chrome \
-	postman
