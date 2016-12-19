@@ -64,9 +64,12 @@ ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
 	brew install ghi
 
-ranger: brew /usr/local/bin/ranger
+ranger: brew ~/.config/ranger /usr/local/bin/ranger
 /usr/local/bin/ranger:
 	brew install ranger
+
+~/.config/ranger: ~/.config
+	ln -s ~/.dotfiles/ranger $@
 
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
