@@ -12,10 +12,12 @@ all: \
 	google-chrome \
 	gpg \
 	iterm2 \
+	kwmc \
 	node \
 	prezto \
 	ranger \
 	slack \
+	spotify \
 	tadam \
 	tmux \
 	the_silver_searcher \
@@ -70,8 +72,13 @@ gpg-config:
 	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
 	echo 'pinentry-program /usr/local/bin/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
 
-iterm2: brew
+iterm2: brew /Applications/iTerm.app
+/Applications/iTerm.app:
 	brew cask install iterm2
+
+kwmc: brew /usr/local/bin/kwmc
+/usr/local/bin/kwmc:
+	brew install koekeishiya/kwm/kwm
 
 mas: brew /usr/local/bin/mas/
 /usr/local/bin/mas/:
@@ -106,6 +113,10 @@ ranger: brew ~/.config/ranger /usr/local/bin/ranger
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	mas install 803453959
+
+spotify: brew /Applications/Spotify.app
+/Applications/Spotify.app:
+	brew cask install spotify
 
 tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
@@ -150,10 +161,6 @@ vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 cmake: brew /usr/local/bin/cmake
 /usr/local/bin/cmake:
 	brew install cmake
-
-kwmc: brew /usr/local/bin/kwmc
-/usr/local/bin/kwmc:
-	brew install koekeishiya/kwm/kwm
 
 font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
 ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf:
@@ -312,17 +319,9 @@ redis: brew /usr/local/bin/redis-server
 /usr/local/bin/redis-server:
 	brew install redis
 
-mongodb: brew /usr/local/bin/mongo
-/usr/local/bin/mongo:
-	brew install mongodb
-
 mongohacker: node /usr/local/lib/node_modules/mongo-hacker
 /usr/local/lib/node_modules/mongo-hacker:
 	@npm install -g mongo-hacker
-
-rabbitmq: brew /usr/local/bin/rabbitmq
-/usr/local/bin/rabbitmq:
-	brew install rabbitmq
 
 mariadb: brew /usr/local/bin/mysql
 /usr/local/bin/mysql:
