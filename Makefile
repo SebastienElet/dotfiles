@@ -5,13 +5,21 @@ usage:
 
 all: \
 	1password \
+	daisydisk \
 	fantastical \
 	flux \
+	fzf \
 	google-chrome \
 	gpg \
+	iterm2 \
+	node \
 	prezto \
+	ranger \
 	slack \
-	tadam
+	tadam \
+	tmux \
+	the_silver_searcher \
+	vim
 
 
 1password: mas /Applications/1password.app
@@ -27,6 +35,10 @@ brew: /usr/local/bin/brew
 	brew tap gapple/services
 	brew tap caskroom/fonts
 
+daisydisk: mas /Applications/DaisyDisk.app
+/Applications/DaisyDisk.app:
+	mas install 411643860
+
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
 	mas install 975937182
@@ -34,6 +46,12 @@ fantastical: mas /Applications/Fantastical\ 2.app
 flux: brew /Applications/Flux.app
 /Applications/Flux.app:
 	brew cask install flux
+
+fzf: ~/.fzf
+~/.fzf:
+	git clone https://github.com/junegunn/fzf.git ~/.fzf
+	~/.fzf/install --no-update-rc
+
 
 google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
@@ -59,6 +77,10 @@ mas: brew /usr/local/bin/mas/
 /usr/local/bin/mas/:
 	brew install mas
 
+node: /usr/local/bin/node
+/usr/local/bin/node:
+	brew install node
+
 prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc \
 	~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup \
 	~/.zprezto/modules/prompt/functions/prompt_seb_setup
@@ -75,6 +97,11 @@ prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zs
 ~/.zprezto/modules/prompt/functions/prompt_seb_setup:
 	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_setup $@
 
+ranger: brew ~/.config/ranger /usr/local/bin/ranger
+/usr/local/bin/ranger:
+	brew install ranger
+~/.config/ranger: ~/.config
+	ln -s ~/.dotfiles/ranger $@
 
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
@@ -84,6 +111,31 @@ tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
 	mas install 531349534
 
+tmux: brew /usr/local/bin/tmux ~/.tmux.conf
+/usr/local/bin/tmux:
+	brew install reattach-to-user-namespace
+	brew install tmux
+~/.tmux.conf:
+	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+	
+the_silver_searcher: brew /usr/local/bin/ag
+/usr/local/bin/ag:
+	brew install the_silver_searcher
+
+vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
+/usr/local/bin/vim:
+	brew install vim
+
+/usr/local/bin/nvim:
+	brew install neovim/neovim/neovim
+~/.config:
+	mkdir $@
+~/.vimrc:
+	ln -s ~/.dotfiles/vim ~/.vim
+	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
+	ln -s ~/.vim ~/.config/nvim
+	ln -s ~/.vimrc ~/.config/nvim/init.vim
+	cd ~/.vim && make
 
 
 
@@ -98,11 +150,6 @@ tadam: mas /Applications/Tadam.app
 cmake: brew /usr/local/bin/cmake
 /usr/local/bin/cmake:
 	brew install cmake
-
-disabled-iterm2: font-sourcecode 
-	git clone https://github.com/Nasga/iterm2-borderless.git /tmp/iterm2
-	mv /tmp/iterm2/iTerm.app /Applications/
-	rm -rf /tmp/iterm2
 
 kwmc: brew /usr/local/bin/kwmc
 /usr/local/bin/kwmc:
@@ -132,13 +179,6 @@ ghi: brew /usr/local/bin/ghi
 /usr/local/bin/ghi:
 	brew install ghi
 
-ranger: brew ~/.config/ranger /usr/local/bin/ranger
-/usr/local/bin/ranger:
-	brew install ranger
-
-~/.config/ranger: ~/.config
-	ln -s ~/.dotfiles/ranger $@
-
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
@@ -161,11 +201,6 @@ lftp: brew /usr/local/bin/lftp
 siege: brew /usr/local/bin/siege
 /usr/local/bin/siege:
 	brew install siege
-
-fzf: ~/.fzf
-~/.fzf:
-	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install --no-update-rc
 
 slate: brew ~/Applications/Slate.app
 ~/Applications/Slate.app:
@@ -251,24 +286,6 @@ tig: brew /usr/local/bin/tig
 /usr/local/bin/tig:
 	brew install tig
 
-vim: brew /usr/local/bin/vim
-/usr/local/bin/vim:
-	brew install vim
-
-neovim: brew /usr/local/bin/nvim
-/usr/local/bin/nvim:
-	brew install neovim/neovim/neovim
-
-~/.config:
-	mkdir $@
-
-vim-config: ~/.vimrc ~/.config vim neovim
-~/.vimrc:
-	ln -s ~/.dotfiles/vim ~/.vim
-	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-	ln -s ~/.vim ~/.config/nvim
-	ln -s ~/.vimrc ~/.config/nvim/init.vim
-
 instant-markdown: /usr/local/bin/instant-markdown-d
 /usr/local/bin/instant-markdown-d:
 	npm -g install instant-markdown-d
@@ -282,24 +299,6 @@ how2: node /usr/local/bin/how2
 devtool: node /usr/local/bin/devtool
 /usr/local/bin/devtool:
 	@npm -g install devtool
-
-tmux: brew /usr/local/bin/tmux
-/usr/local/bin/tmux:
-	brew install reattach-to-user-namespace
-	brew install tmux
-
-tmux-config: tmux ~/.tmux.conf
-~/.tmux.conf:
-	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
-
-tmuxinator: /usr/local/bin/tmuxinator
-/usr/local/bin/tmuxinator:
-	sudo gem install tmuxinator
-	ln -s ~/.dotfiles/tmuxinator ~/.tmuxinator
-
-the_silver_searcher: brew /usr/local/bin/ag
-/usr/local/bin/ag:
-	brew install the_silver_searcher
 
 pgcli: brew /usr/local/bin/pgcli
 /usr/local/bin/pgcli:
@@ -368,10 +367,6 @@ php-cs-fixer: brew
 phpmd: ~/.composer/vendor/bin/phpmd
 ~/.composer/vendor/bin/phpmd:
 	@composer global require "phpmd/phpmd=*"
-
-node: /usr/local/bin/node
-/usr/local/bin/node:
-	brew install node
 
 jscs: node ~/.jscs.json
 ~/.jscs.json:
