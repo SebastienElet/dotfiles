@@ -59,7 +59,9 @@ mas: brew /usr/local/bin/mas/
 /usr/local/bin/mas/:
 	brew install mas
 
-prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc
+prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc \
+	~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup \
+	~/.zprezto/modules/prompt/functions/prompt_seb_setup
 ~/.zprezto:
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
 ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
@@ -68,6 +70,10 @@ prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zs
 	ln -s ~/.dotfiles/zsh/zshrc $@
 ~/.zpreztorc:
 	ln -s ~/.dotfiles/zsh/zpreztorc $@
+~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup:
+	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_mini_setup $@
+~/.zprezto/modules/prompt/functions/prompt_seb_setup:
+	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_setup $@
 
 
 slack: mas /Applications/Slack.app

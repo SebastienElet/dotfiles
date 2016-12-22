@@ -20,6 +20,6 @@ then
 fi
 
 cd 
-git clone https://github.com/Nasga/dotfiles.git .dotfiles
+git clone https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
 make all
