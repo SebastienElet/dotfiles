@@ -5,6 +5,7 @@ usage:
 
 all: \
 	1password \
+	boom2 \
 	daisydisk \
 	fantastical \
 	flux \
@@ -27,6 +28,10 @@ all: \
 1password: mas /Applications/1password.app
 /Applications/1password.app:
 	mas install 443987910
+
+boom2: mas /Applications/Boom\ 2.app
+/Applications/Boom\ 2.app:
+	mas install 948176063
 
 brew: /usr/local/bin/brew
 /usr/local/bin/brew:
