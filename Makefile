@@ -84,7 +84,7 @@ gpg-config:
 
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
-	brew cask install iterm2
+	brew install Caskroom/versions/iterm2-nightly
 
 kwmc: brew /usr/local/bin/kwmc
 /usr/local/bin/kwmc:
