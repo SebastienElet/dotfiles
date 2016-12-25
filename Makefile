@@ -9,6 +9,7 @@ all: \
 	daisydisk \
 	fantastical \
 	flux \
+	font-firacode \
 	fzf \
 	google-chrome \
 	gpg \
@@ -53,6 +54,10 @@ fantastical: mas /Applications/Fantastical\ 2.app
 flux: brew /Applications/Flux.app
 /Applications/Flux.app:
 	brew cask install flux
+
+font-firacode: ~/Library/Fonts/FiraCode-bold.otf
+~/Library/Fonts/FiraCode-bold.otf:
+	brew cask install font-fira-code
 
 fzf: ~/.fzf
 ~/.fzf:
