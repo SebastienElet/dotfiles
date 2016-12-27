@@ -147,6 +147,7 @@ nnoremap <leader>f :call EslintFix()<CR>
 call MakeSpacelessIabbrev('</', '</<C-x><C-o>')
 inoremap jk <Esc>
 inoremap {<CR>  {<CR>}<Esc>O<Tab>
+inoremap co<space> console.log();<Esc>hi
 " }}}
 
 " Plugin:Pathogen {{{
