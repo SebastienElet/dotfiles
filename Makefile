@@ -1,7 +1,5 @@
 usage:
-	@echo brew - Install brew and brew-cask
-	@echo vagrant - Install vagrant, packer and plugins
-
+	@echo all - Setup dev env
 
 all: \
 	1password \
@@ -23,12 +21,17 @@ all: \
 	tadam \
 	tmux \
 	the_silver_searcher \
+	vagrant \
 	vim
 
 
 1password: mas /Applications/1password.app
 /Applications/1password.app:
 	mas install 443987910
+
+ansible: brew /usr/local/bin/ansible
+/usr/local/bin/ansible:
+	brew install ansible
 
 boom2: mas /Applications/Boom\ 2.app
 /Applications/Boom\ 2.app:
@@ -143,6 +146,10 @@ the_silver_searcher: brew /usr/local/bin/ag
 /usr/local/bin/ag:
 	brew install the_silver_searcher
 
+vagrant: brew virtualbox ansible /usr/local/bin/vagrant
+/usr/local/bin/vagrant:
+	brew cask install vagrant
+
 vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 /usr/local/bin/vim:
 	brew install vim
@@ -157,6 +164,10 @@ vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 	ln -s ~/.vim ~/.config/nvim
 	ln -s ~/.vimrc ~/.config/nvim/init.vim
 	cd ~/.vim && make
+
+virtualbox: brew /usr/local/bin/VBoxHeadless
+/usr/local/bin/VBoxHeadless:
+	brew cask install virtualbox
 
 
 
@@ -259,9 +270,6 @@ dropbox: brew /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app
 /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app:
 	brew cask install dropbox
 
-virtualbox: brew /usr/local/bin/VBoxHeadless
-/usr/local/bin/VBoxHeadless:
-	brew cask install virtualbox
 
 packer: brew /usr/local/bin/packer
 /usr/local/bin/packer:
@@ -276,20 +284,6 @@ cloc: brew
 jq: brew /usr/local/bin/jq
 /usr/local/bin/jq:
 	brew install jq
-
-vagrant: brew virtualbox ansible packer /usr/local/bin/vagrant
-/usr/local/bin/vagrant:
-	brew cask install vagrant
-
-ansible: brew /usr/local/bin/ansible
-/usr/local/bin/ansible:
-	brew install ansible
-
-docker: brew virtualbox /usr/local/bin/docker
-/usr/local/bin/docker:
-	brew install docker
-	brew install docker-machine
-	docker-machine create --driver virtualbox dev
 
 highlight: brew /usr/local/bin/highlight
 /usr/local/bin/highlight:
@@ -358,42 +352,6 @@ offlineimap: brew /usr/local/bin/offlineimap
 /usr/local/bin/offlineimap:
 	brew install offlineimap
 
-php56:
-	brew install homebrew/php/php56
-	brew install homebrew/php/php56-memcache
-
-phpcs: ~/.composer/vendor/bin/phpcs
-~/.composer/vendor/bin/phpcs:
-	@composer global require "squizlabs/php_codesniffer=*"
-
-phpcs-rules: phpcs
-	ln -s $(shell pwd)/.phpcs.xml ~/.phpcs.xml
-	phpcs --config-set default_standard ~/.phpcs.xml
-
-php-cs-fixer: brew
-	brew install php-cs-fixer
-
-phpmd: ~/.composer/vendor/bin/phpmd
-~/.composer/vendor/bin/phpmd:
-	@composer global require "phpmd/phpmd=*"
-
-jscs: node ~/.jscs.json
-~/.jscs.json:
-	@npm install -g jscs
-	ln -s ~/.dotfiles/.jscs.json ~/.jscs.json
-
-pomo: node /usr/local/bin/pomojs
-/usr/local/bin/pomojs:
-	@npm install -g pomo
-
-bower: node /usr/local/bin/bower
-/usr/local/bin/bower:
-	@npm install -g bower
-
-gulp: node /usr/local/bin/gulp
-/usr/local/bin/gulp:
-	@npm install -g gulp
-
 cordova: node /usr/local/bin/cordova
 /usr/local/bin/cordova:
 	@npm install -g cordova
@@ -405,16 +363,6 @@ ionic: node /usr/local/bin/ionic
 clif: /usr/local/bin/clif
 /usr/local/bin/clif:
 	@npm install -g clif
-
-jshint: node ~/.jshintrc
-~/.jshintrc:
-	@npm install -g jshint
-	ln -s $(shell pwd)/.jshintrc ~/.jshintrc
-
-eslint: node ~/.eslintrc
-~/.eslintrc:
-	@npm install -g eslint
-	ln -s $(shell pwd)/.eslintrc ~/.eslintrc
 
 jsonlint: node /usr/local/bin/jsonlint
 /usr/local/bin/jsonlint:
