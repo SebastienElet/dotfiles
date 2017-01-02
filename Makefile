@@ -407,7 +407,7 @@ cmus: brew /usr/local/bin/cmus
 wallpaper:
 	# Set wallpaper
 	osascript -e "tell application \"System Events\" to set picture of every \
-		desktop to \"~/.dotfiles/wallpapers/2.png\""
+		desktop to \"/Library/Desktop Pictures/Color Burst 2.jpg\""
 
 xz: brew
 /usr/local/bin/xz:
