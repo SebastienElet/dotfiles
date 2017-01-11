@@ -13,6 +13,7 @@ all: \
 	gpg \
 	iterm2 \
 	kwmc \
+	lftp \
 	node \
 	prezto \
 	ranger \
@@ -92,6 +93,10 @@ iterm2: brew /Applications/iTerm.app
 kwmc: brew /usr/local/bin/kwmc
 /usr/local/bin/kwmc:
 	brew install koekeishiya/kwm/kwm
+
+lftp: brew /usr/local/bin/lftp
+/usr/local/bin/lftp:
+	brew install homebrew/boneyard/lftp
 
 mas: brew /usr/local/bin/mas/
 /usr/local/bin/mas/:
@@ -221,10 +226,6 @@ mtr: brew /usr/local/bin/mtr
 
 travis:
 	gem install travis
-
-lftp: brew /usr/local/bin/lftp
-/usr/local/bin/lftp:
-	brew install lftp
 
 siege: brew /usr/local/bin/siege
 /usr/local/bin/siege:
