@@ -12,12 +12,12 @@ all: \
 	google-chrome \
 	gpg \
 	iterm2 \
-	kwmc \
 	lftp \
 	node \
 	prezto \
 	ranger \
 	slack \
+	slate \
 	spotify \
 	tadam \
 	tmux \
@@ -132,6 +132,12 @@ slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	mas install 803453959
 
+slate: brew ~/Applications/Slate.app ~/.slate.js
+~/Applications/Slate.app:
+	brew cask install mattr-slate
+~/.slate.js:
+	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
+
 spotify: brew /Applications/Spotify.app
 /Applications/Spotify.app:
 	brew cask install spotify
@@ -184,10 +190,6 @@ virtualbox: brew /usr/local/bin/VBoxHeadless
 
 
 
-cmake: brew /usr/local/bin/cmake
-/usr/local/bin/cmake:
-	brew install cmake
-
 font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
 ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf:
 	brew cask install font-source-code-pro-for-powerline
@@ -195,10 +197,6 @@ font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
 font-anonymous: ~/Library/Fonts/Anonymice\ Powerline.ttf
 ~/Library/Fonts/Anonymice\ Powerline.ttf:
 	brew cask install font-anonymous-pro-for-powerline
-
-mancy: ~/Applications/Mancy.app
-~/Applications/Mancy.app:
-	brew cask install mancy
 
 soulseek: ~/Applications/SoulseekQt.app
 ~/Applications/SoulseekQt.app:
@@ -231,17 +229,10 @@ siege: brew /usr/local/bin/siege
 /usr/local/bin/siege:
 	brew install siege
 
-slate: brew ~/Applications/Slate.app
-~/Applications/Slate.app:
-	brew cask install mattr-slate
 
 keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
 /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
 	brew cask install keycastr
-
-slate-config: slate ~/.slate.js
-~/.slate.js:
-	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
 
 skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
 /opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
