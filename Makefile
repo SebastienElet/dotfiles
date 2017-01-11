@@ -3,7 +3,6 @@ usage:
 
 all: \
 	1password \
-	boom2 \
 	daisydisk \
 	fantastical \
 	flux \
@@ -33,10 +32,6 @@ all: \
 ansible: brew /usr/local/bin/ansible
 /usr/local/bin/ansible:
 	brew install ansible
-
-boom2: mas /Applications/Boom\ 2.app
-/Applications/Boom\ 2.app:
-	mas install 948176063
 
 brew: /usr/local/bin/brew
 /usr/local/bin/brew:
