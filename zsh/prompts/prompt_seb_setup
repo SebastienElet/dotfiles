@@ -3,8 +3,8 @@
 # Characters
 SEGMENT_SEPARATOR="\ue0b0"
 PLUSMINUS="\u00b1"
-# BRANCH="\ue0a0"
-BRANCH="\u271d"
+BRANCH="\ue0a0"
+# BRANCH="\u271d"
 DETACHED="\u27a6"
 CROSS="\u2718"
 LIGHTNING="\u26a1"
@@ -30,7 +30,7 @@ prompt_git() {
       ref="$DETACHED ${ref/.../}"
     fi
     # prompt_segment $color $PRIMARY_FG
-    print -Pn $color" \e[3m$ref\e[23m"
+    print -Pn $color" $ref"
   fi
 }
 
