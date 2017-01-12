@@ -136,10 +136,18 @@ nnoremap <leader>h :left<CR>
 nnoremap <leader>c :center<CR>
 nnoremap <leader>l :right<CR>
 
+function! EslintFix()
+  let root_path = substitute(system("git rev-parse --show-toplevel"), '\n\+$', '', '')
+  let local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
+  execute "!" . local_eslint . " --fix " . bufname("%")
+endfunction
+nnoremap <leader>f :call EslintFix()<CR>
+
 " iabbrev </ </<C-x><C-o>
 call MakeSpacelessIabbrev('</', '</<C-x><C-o>')
 inoremap jk <Esc>
 inoremap {<CR>  {<CR>}<Esc>O<Tab>
+inoremap co<space> console.log();<Esc>hi
 " }}}
 
 " Plugin:Pathogen {{{
@@ -183,7 +191,4 @@ set background=dark
 syntax on
 let &t_Co=256
 color default
-set t_ZH=[3m
-set t_ZR=[23m
-highlight Comment cterm=italic
 " }}}
