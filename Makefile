@@ -191,26 +191,6 @@ xcode: mas /Applications/XCode.app
 
 
 
-font-sourcecode: ~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf
-~/Library/Fonts/Sauce\ Code\ Powerline\ Light.otf:
-	brew cask install font-source-code-pro-for-powerline
-
-font-anonymous: ~/Library/Fonts/Anonymice\ Powerline.ttf
-~/Library/Fonts/Anonymice\ Powerline.ttf:
-	brew cask install font-anonymous-pro-for-powerline
-
-soulseek: ~/Applications/SoulseekQt.app
-~/Applications/SoulseekQt.app:
-	brew cask install soulseek
-
-imagemagick: brew /usr/local/bin/jpegtran
-/usr/local/bin/jpegtran:
-	brew install imagemagick
-
-ghi: brew /usr/local/bin/ghi
-/usr/local/bin/ghi:
-	brew install ghi
-
 youtube-dl: brew /usr/local/bin/youtube-dl
 /usr/local/bin/youtube-dl:
 	brew install youtube-dl
@@ -226,19 +206,6 @@ mtr: brew /usr/local/bin/mtr
 travis:
 	gem install travis
 
-siege: brew /usr/local/bin/siege
-/usr/local/bin/siege:
-	brew install siege
-
-
-keycastr: brew /opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app
-/opt/homebrew-cask/Caskroom/keycastr/0.0.2-bezel/KeyCastr.app:
-	brew cask install keycastr
-
-skype: brew /opt/homebrew-cask/Caskroom/skype/latest/Skype.app
-/opt/homebrew-cask/Caskroom/skype/latest/Skype.app:
-	brew cask install skype
-
 vlc: brew ~/Applications/VLC.app
 ~/Applications/VLC.app:
 	brew cask install vlc
@@ -247,29 +214,9 @@ postman: brew ~/Applications/Postman.app
 ~/Applications/Postman.app:
 	brew install Caskroom/cask/postman
 
-telephone: brew /opt/homebrew-cask/Caskroom/telephone/latest/telephone.app
-/opt/homebrew-cask/Caskroom/telephone/latest/telephone.app:
-	brew cask install telephone
-
-sequel-pro: brew /opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app
-/opt/homebrew-cask/Caskroom/sequel-pro/latest/sequel-pro.app:
-	brew cask install sequel-pro
-
-keepassx: brew /opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app
-/opt/homebrew-cask/Caskroom/keepassx/latest/keepassx.app:
-	brew cask install keepassx
-
-dropbox: brew /opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app
-/opt/homebrew-cask/Caskroom/dropbox/latest/dropbox.app:
-	brew cask install dropbox
-
-
 packer: brew /usr/local/bin/packer
 /usr/local/bin/packer:
 	brew cask install packer
-
-java: brew
-	brew cask install java
 
 cloc: brew
 	brew install cloc
@@ -290,68 +237,19 @@ tig: brew /usr/local/bin/tig
 /usr/local/bin/tig:
 	brew install tig
 
-instant-markdown: /usr/local/bin/instant-markdown-d
-/usr/local/bin/instant-markdown-d:
-	npm -g install instant-markdown-d
-
 cli-tools: how2
 
 how2: node /usr/local/bin/how2
 /usr/local/bin/how2:
 	@npm -g install how2
 
-devtool: node /usr/local/bin/devtool
-/usr/local/bin/devtool:
-	@npm -g install devtool
-
 pgcli: brew /usr/local/bin/pgcli
 /usr/local/bin/pgcli:
 	brew install pgcli
 
-memcached: brew /usr/local/bin/memcached
-/usr/local/bin/memcached:
-	brew install memcached
-
-redis: brew /usr/local/bin/redis-server
-/usr/local/bin/redis-server:
-	brew install redis
-
 mongohacker: node /usr/local/lib/node_modules/mongo-hacker
 /usr/local/lib/node_modules/mongo-hacker:
 	@npm install -g mongo-hacker
-
-mariadb: brew /usr/local/bin/mysql
-/usr/local/bin/mysql:
-	brew install mariadb
-
-mycli: brew /usr/local/bin/mycli
-/usr/local/bin/mycli:
-	brew install mycli
-
-mutt: brew /usr/local/bin/mutt
-/usr/local/bin/mutt:
-	brew install mutt
-
-mutt-config: ~/.muttrc
-~/.muttrc:
-	ln -s ~/.dotfiles/muttrc ~/.muttrc
-	ln -s ~/.dotfiles/mutt ~/.mutt
-
-fetchmail: brew /usr/local/bin/fetchmail
-/usr/local/bin/fetchmail:
-	brew install fetchmail
-
-offlineimap: brew /usr/local/bin/offlineimap
-/usr/local/bin/offlineimap:
-	brew install offlineimap
-
-cordova: node /usr/local/bin/cordova
-/usr/local/bin/cordova:
-	@npm install -g cordova
-
-ionic: node /usr/local/bin/ionic
-/usr/local/bin/ionic:
-	@npm install -g ionic
 
 clif: /usr/local/bin/clif
 /usr/local/bin/clif:
@@ -387,15 +285,6 @@ recess:
 sqlint: /usr/local/bin/sqlint
 /usr/local/bin/sqlint:
 	@gem install sqlint
-
-pm2: node /usr/local/bin/pm2
-/usr/local/bin/pm2:
-	@npm install -g pm2
-
-cmus: brew /usr/local/bin/cmus
-/usr/local/bin/cmus:
-	brew install cmus
-
 
 wallpaper:
 	# Set wallpaper
