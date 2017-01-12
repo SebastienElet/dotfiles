@@ -41,6 +41,7 @@ brew: /usr/local/bin/brew
 	brew install caskroom/cask/brew-cask
 	brew tap gapple/services
 	brew tap caskroom/fonts
+	brew tap homebrew/versions
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
