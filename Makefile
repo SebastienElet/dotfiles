@@ -22,7 +22,8 @@ all: \
 	tmux \
 	the_silver_searcher \
 	vagrant \
-	vim
+	vim \
+	xcode
 
 
 1password: mas /Applications/1password.app
@@ -175,6 +176,10 @@ vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 virtualbox: brew /usr/local/bin/VBoxHeadless
 /usr/local/bin/VBoxHeadless:
 	brew cask install virtualbox
+
+xcode: mas /Applications/XCode.app
+/Applications/XCode.app:
+	mas install 497799835
 
 
 
