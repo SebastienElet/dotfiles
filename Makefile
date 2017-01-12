@@ -110,6 +110,7 @@ prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zs
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
 ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
 	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
+	chsh -s /bin/zsh
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
 ~/.zpreztorc:
