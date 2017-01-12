@@ -171,7 +171,6 @@ vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
 	ln -s ~/.vim ~/.config/nvim
-	ln -s ~/.vimrc ~/.config/nvim/init.vim
 	cd ~/.vim && make
 
 virtualbox: brew /usr/local/bin/VBoxHeadless
