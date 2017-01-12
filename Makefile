@@ -19,12 +19,13 @@ all: \
 	slate \
 	spotify \
 	tadam \
-	tmux \
 	the_silver_searcher \
+	tmux \
+	trymodule \
 	vagrant \
 	vim \
-	xcode
-
+	xcode \
+	yarn
 
 1password: mas /Applications/1password.app
 /Applications/1password.app:
@@ -150,6 +151,10 @@ tmux: brew /usr/local/bin/tmux ~/.tmux.conf
 	brew install tmux
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+
+trymodule: node /usr/local/bin/trymodule
+/usr/local/bin/trymodule:
+	npm install -g trymodule
 	
 the_silver_searcher: brew /usr/local/bin/ag
 /usr/local/bin/ag:
@@ -181,13 +186,9 @@ xcode: mas /Applications/XCode.app
 /Applications/XCode.app:
 	mas install 497799835
 
-
-
-
-
-
-
-
+yarn: node /usr/local/bin/yarn
+/usr/local/bin/yarn:
+	npm install -g yarn
 
 
 
