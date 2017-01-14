@@ -60,7 +60,8 @@ bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
 
 bundle/syntax-jsx:
-	git clone https://github.com/mxw/vim-jsx.git $@
+	git clone https://github.com/jelera/vim-javascript-syntax.git $@
+	# git clone https://github.com/mxw/vim-jsx.git $@
 
 bundle/syntax-jade:
 	git clone https://github.com/digitaltoad/vim-jade.git $@
