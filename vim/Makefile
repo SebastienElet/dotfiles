@@ -14,6 +14,7 @@ all: \
   bundle/syntax-jsx \
   bundle/syntax-less \
   bundle/syntax-markdown \
+  bundle/test \
   bundle/viml-linter
 
 bundle/youcompleteme:
