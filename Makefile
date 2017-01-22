@@ -4,6 +4,7 @@ usage:
 all: \
 	1password \
 	daisydisk \
+	docker \
 	fantastical \
 	flux \
 	font-firacode \
@@ -48,6 +49,10 @@ brew: /usr/local/bin/brew
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
 	mas install 411643860
+
+docker: brew /Applications/Docker.app
+/Applications/Docker.app:
+	brew cask install docker-beta
 
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
