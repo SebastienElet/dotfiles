@@ -137,17 +137,15 @@ nnoremap <leader>c :center<CR>
 nnoremap <leader>l :right<CR>
 
 function! EslintFix()
-  let root_path = substitute(system("git rev-parse --show-toplevel"), '\n\+$', '', '')
   let local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
   execute "!" . local_eslint . " --fix " . bufname("%")
 endfunction
 nnoremap <leader>f :call EslintFix()<CR>
+nnoremap <leader>t :TestFile<CR>
 
 " iabbrev </ </<C-x><C-o>
 call MakeSpacelessIabbrev('</', '</<C-x><C-o>')
-inoremap jk <Esc>
 inoremap {<CR>  {<CR>}<Esc>O<Tab>
-inoremap co<space> console.log();<Esc>hi
 " }}}
 
 " Plugin:Pathogen {{{
