@@ -15,7 +15,8 @@ all: \
   bundle/syntax-less \
   bundle/syntax-markdown \
   bundle/test \
-  bundle/viml-linter
+  bundle/viml-linter \
+  help
 
 bundle/youcompleteme:
 	git clone https://github.com/Valloric/YouCompleteMe.git $@
@@ -91,5 +92,10 @@ bundle/syntax-ansible:
 bundle/test:
 	git clone https://github.com/janko-m/vim-test.git $@
 
+help:
+	@vim -c "call pathogen#helptags()" -c "qall"
+
 clean:
 	rm -rf bundle/*
+
+.PHONY: help
