@@ -11,8 +11,10 @@ all: \
 	fzf \
 	google-chrome \
 	gpg \
+	hub \
 	iterm2 \
 	lftp \
+	ncdu \
 	node \
 	prezto \
 	ranger \
@@ -71,7 +73,6 @@ fzf: ~/.fzf
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
 	~/.fzf/install --no-update-rc
 
-
 google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew cask install google-chrome
@@ -83,6 +84,10 @@ gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-ma
 	brew install gpg-agent
 /usr/local/bin/pinentry-mac:
 	brew install pinentry-mac
+
+hub: brew /usr/local/bin/hub
+/usr/local/bin/hub:
+	brew install hub
 
 gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
@@ -104,6 +109,10 @@ lftp: brew /usr/local/bin/lftp
 mas: brew /usr/local/bin/mas/
 /usr/local/bin/mas/:
 	brew install mas
+
+ncdu: brew /usr/local/bin/ncdu
+/usr/local/bin/ncdu:
+	brew install ncdu
 
 node: /usr/local/bin/node
 /usr/local/bin/node:
@@ -234,10 +243,6 @@ jq: brew /usr/local/bin/jq
 highlight: brew /usr/local/bin/highlight
 /usr/local/bin/highlight:
 	brew install highlight
-
-ncdu: brew /usr/local/bin/ncdu
-/usr/local/bin/ncdu:
-	brew install ncdu
 
 tig: brew /usr/local/bin/tig
 /usr/local/bin/tig:
