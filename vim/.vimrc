@@ -190,4 +190,5 @@ set background=dark
 syntax on
 let &t_Co=256
 color default
+colorscheme desert
 " }}}
