@@ -182,7 +182,6 @@ cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 " Autocmd {{{
 autocmd BufWritePre *.yml %s/\s\+$//ge
 autocmd BufWritePre *.js %s/\s\+$//ge
-autocmd BufWritePre *.js %s/if (/if(/ge
 autocmd BufWritePre *.json %s/\s\+$//ge
 " }}}
 " Colors {{{
