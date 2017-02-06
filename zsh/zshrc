@@ -18,3 +18,6 @@ source ~/.dotfiles/zsh/alias
 
 export FZF_DEFAULT_COMMAND='ag -l -g ""'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+export NVM_DIR="$HOME/.nvm"
+[ -f /usr/local/opt/nvm/nvm.sh ] && . "/usr/local/opt/nvm/nvm.sh"

@@ -16,6 +16,7 @@ all: \
 	lftp \
 	ncdu \
 	node \
+	nvm \
 	prezto \
 	ranger \
 	slack \
@@ -117,6 +118,12 @@ ncdu: brew /usr/local/bin/ncdu
 node: /usr/local/bin/node
 /usr/local/bin/node:
 	brew install node
+
+nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
+/usr/local/opt/nvm/nvm.sh:
+	brew install nvm
+~/.nvm:
+	mkdir $@
 
 prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc \
 	~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup \
