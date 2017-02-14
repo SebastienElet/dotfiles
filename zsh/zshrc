@@ -13,6 +13,9 @@ foreground() {
 zle -N foreground
 bindkey '^Z' foreground
 
+bindkey -M viins '^v' vi-cmd-mode
+
+
 # Load alias
 source ~/.dotfiles/zsh/alias
 
