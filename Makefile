@@ -12,6 +12,7 @@ all: \
 	google-chrome \
 	gpg \
 	hub \
+	hyper \
 	iterm2 \
 	lftp \
 	ncdu \
@@ -22,6 +23,7 @@ all: \
 	slack \
 	slate \
 	spotify \
+	shellcheck \
 	tadam \
 	the_silver_searcher \
 	tmux \
@@ -89,6 +91,10 @@ gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-ma
 hub: brew /usr/local/bin/hub
 /usr/local/bin/hub:
 	brew install hub
+
+hyper: brew /Applications/Hyper.app
+/Applications/Hyper.app:
+	brew cask install hyper
 
 gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
@@ -161,6 +167,10 @@ slate: brew /Applications/Slate.app ~/.slate.js
 spotify: brew /Applications/Spotify.app
 /Applications/Spotify.app:
 	brew cask install spotify
+
+shellcheck: brew /usr/local/bin/shellcheck
+/usr/local/bin/shellcheck: 
+	brew install shellcheck
 
 tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
