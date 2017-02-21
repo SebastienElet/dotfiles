@@ -1,3 +1,5 @@
+BREW_BIN:=/usr/local/bin
+
 usage:
 	@echo all - Setup dev env
 
@@ -37,12 +39,12 @@ all: \
 /Applications/1password.app:
 	mas install 443987910
 
-ansible: brew /usr/local/bin/ansible
-/usr/local/bin/ansible:
+ansible: brew ${BREW_BIN}/ansible
+${BREW_BIN}/ansible:
 	brew install ansible
 
-brew: /usr/local/bin/brew
-/usr/local/bin/brew:
+brew: ${BREW_BIN}/brew
+${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
@@ -80,16 +82,16 @@ google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew cask install google-chrome
 
-gpg: brew /usr/local/bin/gpg-agent /usr/local/bin/gpg /usr/local/bin/pinentry-mac
-/usr/local/bin/gpg:
+gpg: brew ${BREW_BIN}/gpg-agent ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
+${BREW_BIN}/gpg:
 	brew install gpg
-/usr/local/bin/gpg-agent:
+${BREW_BIN}/gpg-agent:
 	brew install gpg-agent
-/usr/local/bin/pinentry-mac:
+${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
-hub: brew /usr/local/bin/hub
-/usr/local/bin/hub:
+hub: brew ${BREW_BIN}/hub
+${BREW_BIN}/hub:
 	brew install hub
 
 hyper: brew /Applications/Hyper.app
@@ -99,30 +101,30 @@ hyper: brew /Applications/Hyper.app
 gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
 	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
-	echo 'pinentry-program /usr/local/bin/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
+	echo 'pinentry-program ${BREW_BIN}/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
 
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
 
-kwmc: brew /usr/local/bin/kwmc
-/usr/local/bin/kwmc:
+kwmc: brew ${BREW_BIN}/kwmc
+${BREW_BIN}/kwmc:
 	brew install koekeishiya/kwm/kwm
 
-lftp: brew /usr/local/bin/lftp
-/usr/local/bin/lftp:
+lftp: brew ${BREW_BIN}/lftp
+${BREW_BIN}/lftp:
 	brew install homebrew/boneyard/lftp
 
-mas: brew /usr/local/bin/mas/
-/usr/local/bin/mas/:
+mas: brew ${BREW_BIN}/mas/
+${BREW_BIN}/mas/:
 	brew install mas
 
-ncdu: brew /usr/local/bin/ncdu
-/usr/local/bin/ncdu:
+ncdu: brew ${BREW_BIN}/ncdu
+${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: /usr/local/bin/node
-/usr/local/bin/node:
+node: ${BREW_BIN}/node
+${BREW_BIN}/node:
 	brew install node
 
 nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
@@ -148,8 +150,8 @@ prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zs
 ~/.zprezto/modules/prompt/functions/prompt_seb_setup:
 	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_setup $@
 
-ranger: brew ~/.config/ranger /usr/local/bin/ranger
-/usr/local/bin/ranger:
+ranger: brew ~/.config/ranger ${BREW_BIN}/ranger
+${BREW_BIN}/ranger:
 	brew install ranger
 ~/.config/ranger: ~/.config
 	ln -s ~/.dotfiles/ranger $@
@@ -168,38 +170,38 @@ spotify: brew /Applications/Spotify.app
 /Applications/Spotify.app:
 	brew cask install spotify
 
-shellcheck: brew /usr/local/bin/shellcheck
-/usr/local/bin/shellcheck: 
+shellcheck: brew ${BREW_BIN}/shellcheck
+${BREW_BIN}/shellcheck: 
 	brew install shellcheck
 
 tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
 	mas install 531349534
 
-tmux: brew /usr/local/bin/tmux ~/.tmux.conf
-/usr/local/bin/tmux:
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+${BREW_BIN}/tmux:
 	brew install reattach-to-user-namespace
 	brew install tmux
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
-trymodule: node /usr/local/bin/trymodule
-/usr/local/bin/trymodule:
+trymodule: node ${BREW_BIN}/trymodule
+${BREW_BIN}/trymodule:
 	npm install -g trymodule
 	
-the_silver_searcher: brew /usr/local/bin/ag
-/usr/local/bin/ag:
+the_silver_searcher: brew ${BREW_BIN}/ag
+${BREW_BIN}/ag:
 	brew install the_silver_searcher
 
-vagrant: brew virtualbox ansible /usr/local/bin/vagrant
-/usr/local/bin/vagrant:
+vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
+${BREW_BIN}/vagrant:
 	brew cask install vagrant
 
-vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
-/usr/local/bin/vim:
+vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc
+${BREW_BIN}/vim:
 	brew install vim
 
-/usr/local/bin/nvim:
+${BREW_BIN}/nvim:
 	brew install neovim/neovim/neovim
 ~/.config:
 	mkdir $@
@@ -209,30 +211,30 @@ vim: brew /usr/local/bin/vim /usr/local/bin/nvim ~/.vimrc
 	ln -s ~/.vim ~/.config/nvim
 	cd ~/.vim && make
 
-virtualbox: brew /usr/local/bin/VBoxHeadless
-/usr/local/bin/VBoxHeadless:
+virtualbox: brew ${BREW_BIN}/VBoxHeadless
+${BREW_BIN}/VBoxHeadless:
 	brew cask install virtualbox
 
 xcode: mas /Applications/XCode.app
 /Applications/XCode.app:
 	mas install 497799835
 
-yarn: node /usr/local/bin/yarn
-/usr/local/bin/yarn:
+yarn: node ${BREW_BIN}/yarn
+${BREW_BIN}/yarn:
 	npm install -g yarn
 
 
 
-youtube-dl: brew /usr/local/bin/youtube-dl
-/usr/local/bin/youtube-dl:
+youtube-dl: brew ${BREW_BIN}/youtube-dl
+${BREW_BIN}/youtube-dl:
 	brew install youtube-dl
 
-watch: brew /usr/local/bin/watch
-/usr/local/bin/watch:
+watch: brew ${BREW_BIN}/watch
+${BREW_BIN}/watch:
 	brew install watch
 
-mtr: brew /usr/local/bin/mtr
-/usr/local/bin/mtr:
+mtr: brew ${BREW_BIN}/mtr
+${BREW_BIN}/mtr:
 	brew install mtr
 
 travis:
@@ -246,80 +248,81 @@ postman: brew ~/Applications/Postman.app
 ~/Applications/Postman.app:
 	brew install Caskroom/cask/postman
 
-packer: brew /usr/local/bin/packer
-/usr/local/bin/packer:
+packer: brew ${BREW_BIN}/packer
+${BREW_BIN}/packer:
 	brew cask install packer
 
 cloc: brew
 	brew install cloc
 
-jq: brew /usr/local/bin/jq
-/usr/local/bin/jq:
+jq: brew ${BREW_BIN}/jq
+${BREW_BIN}/jq:
 	brew install jq
 
-highlight: brew /usr/local/bin/highlight
-/usr/local/bin/highlight:
+highlight: brew ${BREW_BIN}/highlight
+${BREW_BIN}/highlight:
 	brew install highlight
 
-tig: brew /usr/local/bin/tig
-/usr/local/bin/tig:
+tig: brew ${BREW_BIN}/tig
+${BREW_BIN}/tig:
 	brew install tig
 
 cli-tools: how2
 
-how2: node /usr/local/bin/how2
-/usr/local/bin/how2:
+how2: node ${BREW_BIN}/how2
+${BREW_BIN}/how2:
 	@npm -g install how2
 
-pgcli: brew /usr/local/bin/pgcli
-/usr/local/bin/pgcli:
+pgcli: brew ${BREW_BIN}/pgcli
+${BREW_BIN}/pgcli:
 	brew install pgcli
 
 mongohacker: node /usr/local/lib/node_modules/mongo-hacker
 /usr/local/lib/node_modules/mongo-hacker:
 	@npm install -g mongo-hacker
 
-clif: /usr/local/bin/clif
-/usr/local/bin/clif:
+clif: ${BREW_BIN}/clif
+${BREW_BIN}/clif:
 	@npm install -g clif
 
-jsonlint: node /usr/local/bin/jsonlint
-/usr/local/bin/jsonlint:
+jsonlint: node ${BREW_BIN}/jsonlint
+${BREW_BIN}/jsonlint:
 	@npm install -g jsonlint
 
-js-yaml: /usr/local/bin/js-yaml
-/usr/local/bin/js-yaml:
+js-yaml: ${BREW_BIN}/js-yaml
+${BREW_BIN}/js-yaml:
 	@npm install -g js-yaml
 
-jsinspect: node /usr/local/bin/jsinspect
-/usr/local/bin/jsinspect:
+jsinspect: node ${BREW_BIN}/jsinspect
+${BREW_BIN}/jsinspect:
 	@npm install -g jsinspect
 
-retire: node /usr/local/bin/retire
-/usr/local/bin/retire:
+retire: node ${BREW_BIN}/retire
+${BREW_BIN}/retire:
 	@npm install -g retire
 
-david: node /usr/local/bin/david
-/usr/local/bin/david:
+david: node ${BREW_BIN}/david
+${BREW_BIN}/david:
 	@npm install -g david
 
-nsp: node /usr/local/bin/nsp
-/usr/local/bin/nsp:
+nsp: node ${BREW_BIN}/nsp
+${BREW_BIN}/nsp:
 	@npm install -g nsp
 
 recess:
 	@npm install -g recess
 
-sqlint: /usr/local/bin/sqlint
-/usr/local/bin/sqlint:
+sqlint: ${BREW_BIN}/sqlint
+${BREW_BIN}/sqlint:
 	@gem install sqlint
 
 wallpaper:
 	# Set wallpaper
-	osascript -e "tell application \"System Events\" to set picture of every \
-		desktop to \"/Library/Desktop Pictures/Color Burst 2.jpg\""
+	# osascript -e "tell application \"Finder\" to set desktop picture \
+	#	to POSIX file \"/Library/Desktop Pictures/Color Burst 2.jpg\""
+	osascript -e "tell application \"System Events\" to set picture of every desktop to \"/Library/Desktop Pictures/Color Burst 2.jpg\""
 
 xz: brew
-/usr/local/bin/xz:
+${BREW_BIN}/xz:
 	brew install xz
 
