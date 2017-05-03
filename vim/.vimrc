@@ -159,6 +159,7 @@ let g:syntastic_style_error_symbol="✗"
 let g:syntastic_style_warning_symbol="⚑"
 let g:syntastic_always_populate_loc_list=1
 let g:syntastic_javascript_checkers = ['eslint', 'jscs']
+let g:syntastic_html_checkers = []
 let g:syntastic_css_checkers = ['recess']
 let g:syntastic_less_checkers = ['recess']
 
