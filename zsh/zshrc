@@ -14,6 +14,8 @@ zle -N foreground
 bindkey '^Z' foreground
 
 bindkey -M viins '^v' vi-cmd-mode
+bindkey '^b' vi-backward-word
+bindkey '^w' vi-forward-word
 
 
 # Load alias
