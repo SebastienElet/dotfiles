@@ -184,6 +184,16 @@ cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 autocmd BufWritePre *.yml %s/\s\+$//ge
 autocmd BufWritePre *.js %s/\s\+$//ge
 autocmd BufWritePre *.json %s/\s\+$//ge
+autocmd BufRead *.mjs set filetype=javascript
+" }}}
+" Formaters {{{
+autocmd FileType javascript set formatprg=prettier
+  \\ --stdin
+  \\ --print-width\ 80
+  \\ --tab-width\ 2
+  \\ --single-quote
+  \\ --trailing-comma
+  \\ --bracket-spacing
 " }}}
 " Colors {{{
 set background=dark
