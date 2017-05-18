@@ -1,4 +1,5 @@
 BREW_BIN:=/usr/local/bin
+NPM_BIN:=/usr/local/bin
 
 usage:
 	@echo all - Setup dev env
@@ -20,6 +21,7 @@ all: \
 	ncdu \
 	node \
 	nvm \
+	prettier \
 	prezto \
 	ranger \
 	slack \
@@ -107,9 +109,15 @@ iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
 
-kwmc: brew ${BREW_BIN}/kwmc
+kwm: brew ${BREW_BIN}/kwmc ~/.kwm
 ${BREW_BIN}/kwmc:
-	brew install koekeishiya/kwm/kwm
+	brew install koekeishiya/formulae/kwm
+~/.kwm:
+	ln -s ~/.dotfiles/kwm $@
+
+khd: brew ${BREW_BIN}/khd
+${BREW_BIN}/khd:
+	brew install koekeishiya/formulae/khd
 
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
@@ -132,6 +140,10 @@ nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 	brew install nvm
 ~/.nvm:
 	mkdir $@
+
+prettier: node ${NPM_BIN}/prettier
+${NPM_BIN}/prettier:
+	npm i -g prettier
 
 prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc \
 	~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup \
@@ -197,7 +209,7 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew cask install vagrant
 
-vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc
+vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc prettier
 ${BREW_BIN}/vim:
 	brew install vim
 
