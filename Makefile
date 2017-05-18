@@ -8,8 +8,8 @@ all: \
 	1password \
 	daisydisk \
 	docker \
+	emacs \
 	fantastical \
-	flux \
 	font-firacode \
 	fzf \
 	google-chrome \
@@ -63,13 +63,13 @@ docker: brew /Applications/Docker.app
 /Applications/Docker.app:
 	brew cask install docker-beta
 
+emacs: brew ${BREW_BIN}/emacs
+${BREW_BIN}/emacs:
+	brew install emacs
+
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
 	mas install 975937182
-
-flux: brew /Applications/Flux.app
-/Applications/Flux.app:
-	brew cask install flux
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
 ~/Library/Fonts/FiraCode-bold.otf:
