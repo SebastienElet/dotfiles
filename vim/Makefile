@@ -23,10 +23,6 @@ bundle/youcompleteme:
 	cd $@ && git submodule update --init --recursive
 	cd $@ && ./install.py --clang-completer
 
-bundle/ternjs:
-	git clone https://github.com/ternjs/tern_for_vim.git $@
-	cd $@ && npm i
-
 bundle/qargs:
 	git clone https://github.com/henrik/vim-qargs.git $@
 
@@ -91,6 +87,11 @@ bundle/syntax-ansible:
 
 bundle/test:
 	git clone https://github.com/janko-m/vim-test.git $@
+
+bundle/ternjs:
+	git clone https://github.com/ternjs/tern_for_vim.git $@
+	cd $@ && npm i
+
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"
