@@ -63,9 +63,16 @@ docker: brew /Applications/Docker.app
 /Applications/Docker.app:
 	brew cask install docker-beta
 
-emacs: brew ${BREW_BIN}/emacs
+emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
 	brew install emacs
+~/.emacs.d:
+	mkdir $@
+~/.emacs.d/custom.el: ~/.emacs.d
+	touch $@
+~/.emacs:
+	ln -s ~/.dotfiles/.emacs ~/.emacs
+
 
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
@@ -84,10 +91,10 @@ google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew cask install google-chrome
 
-gpg: brew ${BREW_BIN}/gpg-agent ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
+gpg: brew /usr/local/opt/gpg-agent/bin/gpg-agent ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
 ${BREW_BIN}/gpg:
 	brew install gpg
-${BREW_BIN}/gpg-agent:
+/usr/local/opt/gpg-agent/bin/gpg-agent:
 	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
