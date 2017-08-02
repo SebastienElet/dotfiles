@@ -13,6 +13,10 @@ kwmc config cycle-focus on
 kwmc config split-ratio 0.5
 kwmc config spawn left
 kwmc rule owner="iTerm2" properties={role="AXDialog"}
+kwmc config add-role AXWindow Emacs
+kwmc rule owner="Emacs" properties={role="AXStandardWindow"}
+kwmc rule owner="LICEcap" properties={float="true"}
+kwmc rule owner="Safari" properties={space="1"}
 kwmc config border focused on
 kwmc config border focused size 2
 kwmc config border focused color 0xFF686757
