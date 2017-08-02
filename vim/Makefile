@@ -10,6 +10,7 @@ all: \
   bundle/syntax-ansible \
   bundle/syntax-jade \
   bundle/syntax-js \
+  bundle/syntax-ts \
   bundle/syntax-js-libs \
   bundle/syntax-json \
   bundle/syntax-jsx \
@@ -64,6 +65,10 @@ bundle/syntax-json:
 bundle/syntax-jsx:
 	git clone https://github.com/jelera/vim-javascript-syntax.git $@
 	# git clone https://github.com/mxw/vim-jsx.git $@
+	#
+
+bundle/syntax-ts:
+	git clone git@github.com:HerringtonDarkholme/yats.vim.git $@
 
 bundle/syntax-jade:
 	git clone https://github.com/digitaltoad/vim-jade.git $@
