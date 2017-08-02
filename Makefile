@@ -6,6 +6,7 @@ usage:
 
 all: \
 	1password \
+	alfred \
 	daisydisk \
 	docker \
 	emacs \
@@ -40,6 +41,9 @@ all: \
 1password: mas /Applications/1password.app
 /Applications/1password.app:
 	mas install 443987910
+
+alfred: brew
+	brew cask install alfred
 
 ansible: brew ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
@@ -91,11 +95,11 @@ google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew cask install google-chrome
 
-gpg: brew /usr/local/opt/gpg-agent/bin/gpg-agent ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
+gpg: brew ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
 ${BREW_BIN}/gpg:
 	brew install gpg
-/usr/local/opt/gpg-agent/bin/gpg-agent:
-	brew install gpg-agent
+# /usr/local/opt/gpg-agent/bin/gpg-agent:
+#	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
