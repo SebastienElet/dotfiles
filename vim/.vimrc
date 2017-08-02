@@ -175,6 +175,17 @@ endif
 " Plugin:matchit {{{
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
+" Plugin:neoformat {{{
+" autocmd FileType javascript setlocal formatprg=prettier\ --stdin\ --parser\ flow\ --single-quote\ --trailing-comma\ es5
+autocmd FileType javascript setlocal formatprg=prettier
+  \\ --stdin
+  \\ --parser\ flow
+  \\ --single-quote
+  \\ --trailing-comma\ es5
+  \\ --print-width\ 80
+" Use formatprg when available
+let g:neoformat_try_formatprg = 1
+" }}}
 " Plugin:fzf {{{
 set rtp+=~/.fzf
 noremap <silent><C-p> :FZF<CR>
@@ -185,15 +196,16 @@ autocmd BufWritePre *.yml %s/\s\+$//ge
 autocmd BufWritePre *.js %s/\s\+$//ge
 autocmd BufWritePre *.json %s/\s\+$//ge
 autocmd BufRead *.mjs set filetype=javascript
+" autocmd BufWritePre *.js Neoformat
 " }}}
 " Formaters {{{
-autocmd FileType javascript set formatprg=prettier
-  \\ --stdin
-  \\ --print-width\ 80
-  \\ --tab-width\ 2
-  \\ --single-quote
-  \\ --trailing-comma
-  \\ --bracket-spacing
+" autocmd FileType javascript set formatprg=prettier
+" \\ --stdin
+"  \\ --print-width\ 80
+"  \\ --tab-width\ 2
+"  \\ --single-quote
+"  \\ --trailing-comma
+"  \\ --bracket-spacing
 " }}}
 " Colors {{{
 set background=dark

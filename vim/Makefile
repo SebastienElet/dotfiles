@@ -5,6 +5,7 @@ all: \
   bundle/fugitive \
   bundle/fzf \
   bundle/qargs \
+  bundle/neoformat \
   bundle/syntastic \
   bundle/syntax-ansible \
   bundle/syntax-jade \
@@ -25,6 +26,9 @@ bundle/youcompleteme:
 
 bundle/qargs:
 	git clone https://github.com/henrik/vim-qargs.git $@
+
+bundle/neoformat:
+	git clone git@github.com:sbdchd/neoformat.git $@
 
 bundle/ag:
 	git clone https://github.com/rking/ag.vim.git $@
