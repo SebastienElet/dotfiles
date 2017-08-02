@@ -61,11 +61,36 @@
 (use-package zenburn-theme
   :ensure t
   :config
-  (load-theme 'zenburn)
-)
+  (load-theme 'zenburn))
 
 (use-package evil
   :ensure t
   :config
-  (evil-mode 1)
-)
+  (evil-mode 1))
+
+(use-package org
+  :ensure org-plus-contrib
+  :defer 7)
+
+(use-package helm
+  :ensure t
+  :diminish helm-mode
+  :commands helm-mode
+  :config
+  (helm-mode 1))
+
+(use-package projectile
+  :ensure t
+  :defer 1
+  :config
+  (projectile-global-mode)
+  (setq projectile-enable-caching t))
+
+(use-package helm-projectile
+  :commands (helm-projectile helm-projectile-switch-project)
+  :ensure t)
+
+(use-package yaml-mode
+  :ensure t)
+(use-package ansible
+  :ensure t)
