@@ -1,42 +1,15 @@
 " vim:fdm=marker
 
 " Editor {{{
-scriptencoding utf-8
 set nocompatible                "Non compatiblity with vi
-set encoding=utf-8              "Default encoding
-set ttyfast                     "More move while redraw
-set lazyredraw                  "No redraw while doing macro
-set hidden                      "Buffer are hide when abandoned
-set visualbell                  "No sound
-set title                       "Change term title
-set autoread                    "Reload files changed outside vim
-set noswapfile
-set nowrap                      "Do not wrap long lines
 set clipboard=unnamed           "Use alt to paste in osx
 set backspace=indent,eol,start  "Delete w/ insert
-let &titleold=getcwd()          "Reset term title when exit vim
-set wildmenu                    "Autocomplete filenames
-set wildmode=longest:full,list:full
-set showcmd                     "Display cmd
-set scrolloff=7                 "Cursor at the center of the screen
-set timeout timeoutlen=1000 ttimeoutlen=100
-" 80 chars limit
-if exists("&colorcolumn")
-  set colorcolumn=80
-endif
+set noswapfile                  "No swap file !
 " }}}
 " Mouse {{{
 set mouse=
 " }}}
 " Statusline {{{
-set statusline=[%n]\ %<         "Buffer Number
-set statusline+=%<%w%f\ %=%y[%{&ff}] "FileName
-set statusline+=[%6c]           "Filetype
-set statusline+=[%{printf('%'.strlen(line('$')).'s',line('.'))}/%L]
-set statusline+=[%3p%%]
-set statusline+=%{'['.(&readonly?'RO':'\ \ ').']'}
-set statusline+=%{'['.(&modified?'+':'-').']'}
-set laststatus=2                "Always show status bar
 " }}}
 " Search {{{
 set hlsearch                    "Hihlight matches
@@ -70,21 +43,13 @@ vnoremap > >gv
 " }}}
 " Folds {{{
 set foldmethod=syntax
-set foldlevelstart=0
-
+set foldlevelstart=1
+" }}}
 " Space to toggle folds.
 nnoremap <Space> za
 vnoremap <Space> za
-
 " Make zO recursively open whatever fold we're in, even if it's partially open.
 nnoremap zO zczO
-
-let g:html_indent_tags = ['p', 'li']
-augroup ft_html
-    au!
-    au FileType html setlocal foldmethod=manual
-augroup END
-
 " }}}
 " Files {{{ 
 filetype on
@@ -129,62 +94,45 @@ let g:mapleader = "-"
 nnoremap <Tab> %
 nnoremap H ^
 nnoremap L g_
-nnoremap Q <nop>
-cnoremap <C-a> <home>
-cnoremap <C-e> <end>
-nnoremap <leader>h :left<CR>
-nnoremap <leader>c :center<CR>
-nnoremap <leader>l :right<CR>
-
-function! EslintFix()
-  let local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
-  execute "!" . local_eslint . " --fix " . bufname("%")
-endfunction
-nnoremap <leader>f :call EslintFix()<CR>
-nnoremap <leader>t :TestFile<CR>
-
-" iabbrev </ </<C-x><C-o>
-call MakeSpacelessIabbrev('</', '</<C-x><C-o>')
-inoremap {<CR>  {<CR>}<Esc>O<Tab>
 " }}}
 
-" Plugin:Pathogen {{{
-call pathogen#runtime_append_all_bundles()
-call pathogen#infect()
-" }}}
-" Plugin:Syntastic {{{
-let g:syntastic_error_symbol='✘'
-let g:syntastic_warning_symbol='⚠'
-let g:syntastic_style_error_symbol="✗"
-let g:syntastic_style_warning_symbol="⚑"
-let g:syntastic_always_populate_loc_list=1
-let g:syntastic_javascript_checkers = ['eslint', 'jscs']
-let g:syntastic_html_checkers = []
-let g:syntastic_css_checkers = ['recess']
-let g:syntastic_less_checkers = ['recess']
+" Plugin:dein {{{
+set runtimepath+=~/.dotfiles/vim2/bundle/dein/
+if dein#load_state('~/.vim/bundle/dein/')
+  call dein#begin('~/.vim/bundle/')
 
-let g:local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
-if matchstr(local_eslint, "^\/\\w") == ''
-    let g:local_eslint = getcwd() . "/" . local_eslint
-endif
-if executable(local_eslint)
-    let g:syntastic_javascript_eslint_exec = local_eslint
-endif
+  call dein#add('~/.vim/bundle/neomake')
+  call dein#add('~/.vim/bundle/neoformat')
+  call dein#add('~/.vim/bundle/fzf')
+  call dein#add('~/.vim/bundle/syntax-js')
 
+  call dein#end()
+  call dein#save_state()
+endif
 " }}}
 " Plugin:matchit {{{
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
 " Plugin:neoformat {{{
-" autocmd FileType javascript setlocal formatprg=prettier\ --stdin\ --parser\ flow\ --single-quote\ --trailing-comma\ es5
 autocmd FileType javascript setlocal formatprg=prettier
   \\ --stdin
   \\ --parser\ flow
   \\ --single-quote
   \\ --trailing-comma\ es5
   \\ --print-width\ 80
-" Use formatprg when available
 let g:neoformat_try_formatprg = 1
+" }}}
+" Public:neomake {{{
+let g:local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
+if matchstr(local_eslint, "^\/\\w") == ''
+  let g:local_eslint = getcwd() . "/" . local_eslint
+endif
+if executable(local_eslint)
+  let g:neomake_javascript_eslint_exe = local_eslint
+endif
+autocmd! BufWritePost * Neomake
+" }}}
+" Plugin:neoformat {{{
 " }}}
 " Plugin:fzf {{{
 set rtp+=~/.fzf
@@ -192,20 +140,8 @@ noremap <silent><C-p> :FZF<CR>
 cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 " }}}
 " Autocmd {{{
-autocmd BufWritePre *.yml %s/\s\+$//ge
-autocmd BufWritePre *.js %s/\s\+$//ge
-autocmd BufWritePre *.json %s/\s\+$//ge
 autocmd BufRead *.mjs set filetype=javascript
 " autocmd BufWritePre *.js Neoformat
-" }}}
-" Formaters {{{
-" autocmd FileType javascript set formatprg=prettier
-" \\ --stdin
-"  \\ --print-width\ 80
-"  \\ --tab-width\ 2
-"  \\ --single-quote
-"  \\ --trailing-comma
-"  \\ --bracket-spacing
 " }}}
 " Colors {{{
 set background=dark
