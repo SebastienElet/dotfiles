@@ -20,6 +20,8 @@ bindkey '^w' vi-forward-word
 
 # Load alias
 source ~/.dotfiles/zsh/alias
+# Load bin
+export PATH=~/.dotfiles/zsh/bin:$PATH
 
 export FZF_DEFAULT_COMMAND='ag -l -g ""'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
