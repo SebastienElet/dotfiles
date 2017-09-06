@@ -7,6 +7,7 @@ usage:
 all: \
 	1password \
 	alfred \
+	chunkwm \
 	daisydisk \
 	docker \
 	emacs \
@@ -58,6 +59,13 @@ ${BREW_BIN}/brew:
 	brew tap gapple/services
 	brew tap caskroom/fonts
 	brew tap homebrew/versions
+
+chunkwm: brew ~/.chunkwmrc ${BREW_BIN}/chunkwm
+${BREW_BIN}/chunkwm:
+	brew tap crisidev/homebrew-chunkwm
+	brew install chunkwm
+~/.chunkwmrc:
+	ln -s ~/.dotfiles/.chunkwmrc $@
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
@@ -119,12 +127,6 @@ gpg-config:
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
-
-kwm: brew ${BREW_BIN}/kwmc ~/.kwm
-${BREW_BIN}/kwmc:
-	brew install koekeishiya/formulae/kwm
-~/.kwm:
-	ln -s ~/.dotfiles/kwm $@
 
 khd: brew ${BREW_BIN}/khd
 ${BREW_BIN}/khd:

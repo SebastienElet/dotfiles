@@ -97,7 +97,7 @@ nnoremap L g_
 " }}}
 
 " Plugin:dein {{{
-set runtimepath+=~/.dotfiles/vim2/bundle/dein/
+set runtimepath+=~/.dotfiles/vim/bundle/dein/
 if dein#load_state('~/.vim/bundle/dein/')
   call dein#begin('~/.vim/bundle/')
 
