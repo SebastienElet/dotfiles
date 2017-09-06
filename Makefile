@@ -7,6 +7,7 @@ usage:
 all: \
 	1password \
 	alfred \
+	chunkwm \
 	daisydisk \
 	docker \
 	emacs \
@@ -58,6 +59,11 @@ ${BREW_BIN}/brew:
 	brew tap gapple/services
 	brew tap caskroom/fonts
 	brew tap homebrew/versions
+
+chunkwm: brew ${BREW_BIN}/chunkwm
+${BREW_BIN}/chunkwm:
+	brew tap crisidev/homebrew-chunkwm
+	brew install chunkwm
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
