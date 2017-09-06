@@ -126,12 +126,6 @@ iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
 
-kwm: brew ${BREW_BIN}/kwmc ~/.kwm
-${BREW_BIN}/kwmc:
-	brew install koekeishiya/formulae/kwm
-~/.kwm:
-	ln -s ~/.dotfiles/kwm $@
-
 khd: brew ${BREW_BIN}/khd
 ${BREW_BIN}/khd:
 	brew install koekeishiya/formulae/khd
