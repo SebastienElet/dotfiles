@@ -5,11 +5,11 @@ then
   exit 1
 fi
 
-if [[ "$(which git2)" == "" ]]
+if [[ "$(which git)" == "" ]]
 then
   echo "This installer need git"
   echo "Do you want to install xcode ?"
-  read -s answer
+  read answer
   if [[ $answer != [yY] ]]
   then
     exit 0
@@ -17,6 +17,7 @@ then
 
   echo "Install install xcode"
   xcode-select --install
+  exit 0
 fi
 
 cd 
