@@ -1,4 +1,4 @@
-chunkc core::plugin_dir /usr/local/opt/chunkwm/share/chunkwm_plugins
+chunkc core::plugin_dir /usr/local/opt/chunkwm/share/chunkwm/plugins
 
 chunkc set global_desktop_mode           monocle
 
@@ -16,6 +16,7 @@ chunkc set bsp_optimal_ratio             1.618
 chunkc set bsp_split_mode                optimal
 chunkc set bsp_split_ratio               0.5
 
+chunkc set mouse_modifier                fn
 chunkc set window_focus_cycle            monitor
 chunkc set mouse_follows_focus           1
 chunkc set window_float_next             0
