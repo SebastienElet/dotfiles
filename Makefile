@@ -72,7 +72,7 @@ daisydisk: mas /Applications/DaisyDisk.app
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
-	brew cask install docker-beta
+	brew cask install docker
 
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
