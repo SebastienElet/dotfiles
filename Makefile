@@ -38,6 +38,7 @@ all: \
 
 1password: mas /Applications/1password.app
 /Applications/1password.app:
+	echo "Install 1password"
 	mas install 443987910
 
 alfred: brew /Applications/Alfred\ 3.app
@@ -67,6 +68,7 @@ ${BREW_BIN}/chunkwm:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
+	echo "Install DaisyDisk"
 	mas install 411643860
 
 docker: brew /Applications/Docker.app
@@ -86,6 +88,7 @@ ${BREW_BIN}/emacs:
 
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
+	echo "Install Fantastical"
 	mas install 975937182
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
@@ -183,6 +186,7 @@ ${BREW_BIN}/ranger:
 
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
+	echo "Install slack"
 	mas install 803453959
 
 spotify: brew /Applications/Spotify.app
@@ -195,6 +199,7 @@ ${BREW_BIN}/shellcheck:
 
 tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
+	echo "Install tadam"
 	mas install 531349534
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
@@ -236,6 +241,7 @@ ${BREW_BIN}/VBoxHeadless:
 
 xcode: mas /Applications/XCode.app
 /Applications/XCode.app:
+	echo "Install Xcode"
 	mas install 497799835
 
 yarn: node ${BREW_BIN}/yarn
