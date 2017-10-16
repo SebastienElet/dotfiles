@@ -20,6 +20,7 @@ all: \
 	khd \
 	ncdu \
 	node \
+	notion \
 	nvm \
 	prettier \
 	prezto \
@@ -150,6 +151,10 @@ ${BREW_BIN}/ncdu:
 node: ${BREW_BIN}/node
 ${BREW_BIN}/node:
 	brew install node
+
+notion: brew /Applications/Notion.app
+/Applications/Notion.app:
+	brew cask install notion
 
 nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 /usr/local/opt/nvm/nvm.sh:
