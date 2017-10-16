@@ -127,9 +127,11 @@ iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
 
-khd: brew ${BREW_BIN}/khd
+khd: brew ${BREW_BIN}/khd ~/.khdrc
 ${BREW_BIN}/khd:
 	brew install koekeishiya/formulae/khd
+~/.khdrc:
+	ln -s ~/.dotfiles/.khdrc $@
 
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
