@@ -25,7 +25,6 @@ all: \
 	prezto \
 	ranger \
 	slack \
-	slate \
 	spotify \
 	shellcheck \
 	tadam \
@@ -185,12 +184,6 @@ ${BREW_BIN}/ranger:
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	mas install 803453959
-
-slate: brew /Applications/Slate.app ~/.slate.js
-/Applications/Slate.app:
-	brew cask install mattr-slate
-~/.slate.js:
-	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
 
 spotify: brew /Applications/Spotify.app
 /Applications/Spotify.app:
