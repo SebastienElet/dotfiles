@@ -10,16 +10,14 @@ all: \
 	chunkwm \
 	daisydisk \
 	docker \
-	emacs \
 	fantastical \
 	font-firacode \
 	fzf \
 	google-chrome \
 	gpg \
 	hub \
-	hyper \
 	iterm2 \
-	lftp \
+	khd \
 	ncdu \
 	node \
 	nvm \
@@ -43,7 +41,8 @@ all: \
 /Applications/1password.app:
 	mas install 443987910
 
-alfred: brew
+alfred: brew /Applications/Alfred\ 3.app
+/Applications/Alfred\ 3.app:
 	brew cask install alfred
 
 ansible: brew ${BREW_BIN}/ansible
