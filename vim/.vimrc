@@ -111,6 +111,7 @@ if dein#load_state('~/.vim/bundle/dein/')
   call dein#add('~/.vim/bundle/syntax-jsx')
   call dein#add('~/.vim/bundle/syntax-less')
   call dein#add('~/.vim/bundle/syntax-markdown')
+  call dein#add('~/.vim/bundle/syntax-terraform')
   call dein#add('~/.vim/bundle/syntax-ts')
 
   call dein#end()
