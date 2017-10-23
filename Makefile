@@ -22,6 +22,7 @@ all: \
 	node \
 	notion \
 	nvm \
+	mindnode \
 	prettier \
 	prezto \
 	ranger \
@@ -161,6 +162,10 @@ nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 	brew install nvm
 ~/.nvm:
 	mkdir $@
+
+mindnode: mas /Applications/MindNode.app
+/Applications/MindNode.app:
+	mas install 992076693
 
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
