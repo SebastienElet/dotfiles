@@ -10,6 +10,7 @@ all: \
 	bundle/syntax-jsx \
 	bundle/syntax-less \
 	bundle/syntax-markdown \
+	bundle/syntax-terraform \
 	bundle/syntax-ts \
 	help
 
@@ -45,6 +46,9 @@ bundle/syntax-less:
 
 bundle/syntax-markdown:
 	git clone https://github.com/tpope/vim-markdown.git $@
+
+bundle/syntax-terraform:
+	git clone git@github.com:hashivim/vim-terraform.git $@
 
 bundle/syntax-ts:
 	git clone git@github.com:HerringtonDarkholme/yats.vim.git $@

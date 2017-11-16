@@ -10,24 +10,23 @@ all: \
 	chunkwm \
 	daisydisk \
 	docker \
-	emacs \
 	fantastical \
 	font-firacode \
 	fzf \
 	google-chrome \
 	gpg \
 	hub \
-	hyper \
 	iterm2 \
-	lftp \
+	khd \
 	ncdu \
 	node \
+	notion \
 	nvm \
+	mindnode \
 	prettier \
 	prezto \
 	ranger \
 	slack \
-	slate \
 	spotify \
 	shellcheck \
 	tadam \
@@ -41,9 +40,11 @@ all: \
 
 1password: mas /Applications/1password.app
 /Applications/1password.app:
+	echo "Install 1password"
 	mas install 443987910
 
-alfred: brew
+alfred: brew /Applications/Alfred\ 3.app
+/Applications/Alfred\ 3.app:
 	brew cask install alfred
 
 ansible: brew ${BREW_BIN}/ansible
@@ -69,11 +70,12 @@ ${BREW_BIN}/chunkwm:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
+	echo "Install DaisyDisk"
 	mas install 411643860
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
-	brew cask install docker-beta
+	brew cask install docker
 
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
@@ -88,6 +90,7 @@ ${BREW_BIN}/emacs:
 
 fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
+	echo "Install Fantastical"
 	mas install 975937182
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
@@ -128,9 +131,11 @@ iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
 
-khd: brew ${BREW_BIN}/khd
+khd: brew ${BREW_BIN}/khd ~/.khdrc
 ${BREW_BIN}/khd:
 	brew install koekeishiya/formulae/khd
+~/.khdrc:
+	ln -s ~/.dotfiles/.khdrc $@
 
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
@@ -148,11 +153,19 @@ node: ${BREW_BIN}/node
 ${BREW_BIN}/node:
 	brew install node
 
+notion: brew /Applications/Notion.app
+/Applications/Notion.app:
+	brew cask install notion
+
 nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 /usr/local/opt/nvm/nvm.sh:
 	brew install nvm
 ~/.nvm:
 	mkdir $@
+
+mindnode: mas /Applications/MindNode.app
+/Applications/MindNode.app:
+	mas install 992076693
 
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
@@ -183,13 +196,8 @@ ${BREW_BIN}/ranger:
 
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
+	echo "Install slack"
 	mas install 803453959
-
-slate: brew /Applications/Slate.app ~/.slate.js
-/Applications/Slate.app:
-	brew cask install mattr-slate
-~/.slate.js:
-	ln -s ~/.dotfiles/slate/.slate.js ~/.slate.js
 
 spotify: brew /Applications/Spotify.app
 /Applications/Spotify.app:
@@ -201,6 +209,7 @@ ${BREW_BIN}/shellcheck:
 
 tadam: mas /Applications/Tadam.app
 /Applications/Tadam.app:
+	echo "Install tadam"
 	mas install 531349534
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
@@ -242,6 +251,7 @@ ${BREW_BIN}/VBoxHeadless:
 
 xcode: mas /Applications/XCode.app
 /Applications/XCode.app:
+	echo "Install Xcode"
 	mas install 497799835
 
 yarn: node ${BREW_BIN}/yarn

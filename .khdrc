@@ -1,0 +1,2 @@
+ctrl + cmd - b : chunkc tiling::desktop --layout bsp
+ctrl + cmd - m : chunkc tiling::desktop --layout monocle
