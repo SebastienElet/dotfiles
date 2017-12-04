@@ -21,6 +21,7 @@ all: \
 	ncdu \
 	node \
 	notion \
+	numbers \
 	nvm \
 	mindnode \
 	prettier \
@@ -156,6 +157,10 @@ ${BREW_BIN}/node:
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
 	brew cask install notion
+
+numbers: mas /Applications/Numbers.app
+/Applications/Numbers.app:
+	mas install 409203825
 
 nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 /usr/local/opt/nvm/nvm.sh:
