@@ -8,6 +8,7 @@ all: \
 	1password \
 	alfred \
 	chunkwm \
+	ctop \
 	daisydisk \
 	docker \
 	fantastical \
@@ -71,6 +72,10 @@ ${BREW_BIN}/chunkwm:
 	brew install chunkwm
 ~/.chunkwmrc:
 	ln -s ~/.dotfiles/.chunkwmrc $@
+
+ctop: ${BREW_BIN}/ctop
+${BREW_BIN}/ctop:
+	brew install ctop
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
