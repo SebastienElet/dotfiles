@@ -48,9 +48,12 @@ alfred: brew /Applications/Alfred\ 3.app
 /Applications/Alfred\ 3.app:
 	brew cask install alfred
 
-ansible: brew ${BREW_BIN}/ansible
+ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
 	brew install ansible
+
+${BREW_BIN}/molecule:
+	brew install molecule
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
