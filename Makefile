@@ -18,6 +18,7 @@ all: \
 	gpg \
 	hub \
 	iterm2 \
+	jscpd \
 	khd \
 	ncdu \
 	node \
@@ -139,6 +140,10 @@ gpg-config:
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
+
+jscpd: node ${BREW_BIN}/jscpd
+${BREW_BIN}/jscpd:
+	@npm install -g jscpd
 
 khd: brew ${BREW_BIN}/khd ~/.khdrc
 ${BREW_BIN}/khd:
