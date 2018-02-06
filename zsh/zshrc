@@ -1,87 +1,35 @@
-# Source Prezto.
-if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-fi
+source ~/.dotfiles/zsh/antigen.zsh
 
-# Editor
-export EDITOR=vim
+# Repo
+antigen use oh-my-zsh
 
-# Ctrl-z for fg
-foreground() {
-  fg
-}
-zle -N foreground
-bindkey '^Z' foreground
-
-bindkey -M viins '^v' vi-cmd-mode
-bindkey '^b' vi-backward-word
-bindkey '^w' vi-forward-word
+# Bundles
+antigen bundle git
+antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle robbyrussell/oh-my-zsh plugins/docker-compose/docker-compose.plugin.zsh
+antigen bundle sparsick/ansible-zsh
+antigen bundle webyneter/docker-aliases.git
+antigen bundle laurenkt/zsh-vimto
+antigen bundle zsh-users/zsh-autosuggestions
+# antigen bundle sharat87/zsh-vim-mode
 
 
-# Load alias
-source ~/.dotfiles/zsh/alias
-# Load bin
-export PATH=~/.dotfiles/zsh/bin:$PATH
+
+# Theme
+# DEFAULT_USER=sebastien
+# antigen theme robbyrussell/oh-my-zsh themes/agnoster
+# antigen theme ~/Dev/clear-zsh-theme --no-local-clone
+antigen theme subnixr/minimal
+# antigen bundle sindresorhus/pure
+
+antigen apply
+
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
 export FZF_DEFAULT_COMMAND='ag -l -g ""'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-export NVM_DIR="$HOME/.nvm"
-[ -f /usr/local/opt/nvm/nvm.sh ] && . "/usr/local/opt/nvm/nvm.sh"
-###-begin-npm-completion-###
-#
-# npm command completion script
-#
-# Installation: npm completion >> ~/.bashrc  (or ~/.zshrc)
-# Or, maybe: npm completion > /usr/local/etc/bash_completion.d/npm
-#
+source ~/.dotfiles/zsh/alias
 
-if type complete &>/dev/null; then
-  _npm_completion () {
-    local words cword
-    if type _get_comp_words_by_ref &>/dev/null; then
-      _get_comp_words_by_ref -n = -n @ -w words -i cword
-    else
-      cword="$COMP_CWORD"
-      words=("${COMP_WORDS[@]}")
-    fi
-
-    local si="$IFS"
-    IFS=$'\n' COMPREPLY=($(COMP_CWORD="$cword" \
-                           COMP_LINE="$COMP_LINE" \
-                           COMP_POINT="$COMP_POINT" \
-                           npm completion -- "${words[@]}" \
-                           2>/dev/null)) || return $?
-    IFS="$si"
-  }
-  complete -o default -F _npm_completion npm
-elif type compdef &>/dev/null; then
-  _npm_completion() {
-    local si=$IFS
-    compadd -- $(COMP_CWORD=$((CURRENT-1)) \
-                 COMP_LINE=$BUFFER \
-                 COMP_POINT=0 \
-                 npm completion -- "${words[@]}" \
-                 2>/dev/null)
-    IFS=$si
-  }
-  compdef _npm_completion npm
-elif type compctl &>/dev/null; then
-  _npm_completion () {
-    local cword line point words si
-    read -Ac words
-    read -cn cword
-    let cword-=1
-    read -l line
-    read -ln point
-    si="$IFS"
-    IFS=$'\n' reply=($(COMP_CWORD="$cword" \
-                       COMP_LINE="$line" \
-                       COMP_POINT="$point" \
-                       npm completion -- "${words[@]}" \
-                       2>/dev/null)) || return $?
-    IFS="$si"
-  }
-  compctl -K _npm_completion npm
-fi
-###-end-npm-completion-###
+EDITOR=vim
