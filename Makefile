@@ -8,6 +8,7 @@ all: \
 	1password \
 	alfred \
 	chunkwm \
+	ctop \
 	daisydisk \
 	docker \
 	fantastical \
@@ -17,6 +18,7 @@ all: \
 	gpg \
 	hub \
 	iterm2 \
+	jscpd \
 	khd \
 	ncdu \
 	node \
@@ -48,9 +50,12 @@ alfred: brew /Applications/Alfred\ 3.app
 /Applications/Alfred\ 3.app:
 	brew cask install alfred
 
-ansible: brew ${BREW_BIN}/ansible
+ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
 	brew install ansible
+
+${BREW_BIN}/molecule:
+	brew install molecule
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
@@ -68,6 +73,10 @@ ${BREW_BIN}/chunkwm:
 	brew install chunkwm
 ~/.chunkwmrc:
 	ln -s ~/.dotfiles/.chunkwmrc $@
+
+ctop: ${BREW_BIN}/ctop
+${BREW_BIN}/ctop:
+	brew install ctop
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
@@ -131,6 +140,10 @@ gpg-config:
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
 	brew install Caskroom/versions/iterm2-nightly
+
+jscpd: node ${BREW_BIN}/jscpd
+${BREW_BIN}/jscpd:
+	@npm install -g jscpd
 
 khd: brew ${BREW_BIN}/khd ~/.khdrc
 ${BREW_BIN}/khd:
