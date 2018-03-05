@@ -38,6 +38,7 @@ all: \
 	trymodule \
 	vagrant \
 	vim \
+	visidata \
 	xcode \
 	yarn
 
@@ -266,6 +267,9 @@ ${BREW_BIN}/nvim:
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
 	brew cask install virtualbox
+
+visidata: brew ${BREW_BIN}/vd
+	brew install saulpw/vd/visidata
 
 xcode: mas /Applications/XCode.app
 /Applications/XCode.app:
