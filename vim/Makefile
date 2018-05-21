@@ -1,6 +1,7 @@
 all: \
 	bundle/dein \
 	bundle/editorconfig \
+	bundle/fugitive \
 	bundle/fzf \
 	bundle/neoformat \
 	bundle/neomake \
@@ -19,6 +20,9 @@ bundle/dein:
 
 bundle/editorconfig:
 	git clone https://github.com/editorconfig/editorconfig-vim.git $@
+
+bundle/fugitive:
+	git clone https://github.com/tpope/vim-fugitive.git $@
 
 bundle/fzf:
 	git clone https://github.com/junegunn/fzf.vim.git $@

@@ -102,6 +102,7 @@ if dein#load_state('~/.vim/bundle/dein/')
   call dein#begin('~/.vim/bundle/')
 
   call dein#add('~/.vim/bundle/editorconfig')
+  call dein#add('~/.vim/bundle/fugitive')
   call dein#add('~/.vim/bundle/fzf')
   call dein#add('~/.vim/bundle/neoformat')
   call dein#add('~/.vim/bundle/neomake')
