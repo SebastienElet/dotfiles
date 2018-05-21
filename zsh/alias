@@ -78,3 +78,4 @@ alias hl='highlight \
 alias -g V='| vim -'
 alias -g G='| g'
 alias -g A='| ag'
+alias upgrade=~/.dotfiles/zsh/bin/upgrade
