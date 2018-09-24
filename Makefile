@@ -255,7 +255,7 @@ ${BREW_BIN}/vim:
 	brew install vim
 
 ${BREW_BIN}/nvim:
-	brew install neovim/neovim/neovim
+	brew install neovim
 ~/.config:
 	mkdir $@
 ~/.vimrc:
