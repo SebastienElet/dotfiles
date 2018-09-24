@@ -154,7 +154,7 @@ ${BREW_BIN}/khd:
 
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
-	brew install homebrew/boneyard/lftp
+	brew install lftp
 
 mas: brew ${BREW_BIN}/mas/
 ${BREW_BIN}/mas/:
