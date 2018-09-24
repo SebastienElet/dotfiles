@@ -28,7 +28,7 @@ bundle/fzf:
 	git clone https://github.com/junegunn/fzf.vim.git $@
 
 bundle/neoformat:
-	git clone git@github.com:sbdchd/neoformat.git $@
+	git clone https://github.com/sbdchd/neoformat.git $@
 
 bundle/neomake:
 	git clone https://github.com/neomake/neomake $@
@@ -37,7 +37,7 @@ bundle/syntax-ansible:
 	git clone https://github.com/pearofducks/ansible-vim $@
 
 bundle/syntax-js:
-	git clone git@github.com:jelera/vim-javascript-syntax.git $@
+	git clone https://github.com/jelera/vim-javascript-syntax.git $@
 
 bundle/syntax-json:
 	git clone https://github.com/elzr/vim-json.git $@
@@ -52,10 +52,10 @@ bundle/syntax-markdown:
 	git clone https://github.com/tpope/vim-markdown.git $@
 
 bundle/syntax-terraform:
-	git clone git@github.com:hashivim/vim-terraform.git $@
+	git clone https://github.com/hashivim/vim-terraform.git $@
 
 bundle/syntax-ts:
-	git clone git@github.com:HerringtonDarkholme/yats.vim.git $@
+	git clone https://github.com/HerringtonDarkholme/yats.vim.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"
