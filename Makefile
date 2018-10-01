@@ -42,10 +42,9 @@ all: \
 	xcode \
 	yarn
 
-1password: mas /Applications/1password.app
-/Applications/1password.app:
-	echo "Install 1password"
-	mas install 443987910
+1password: /Applications/1password\ 7.app
+/Applications/1password\ 7.app:
+	brew cask install 1password
 
 alfred: brew /Applications/Alfred\ 3.app
 /Applications/Alfred\ 3.app:
