@@ -10,6 +10,7 @@ all: \
 	chunkwm \
 	ctop \
 	daisydisk \
+	dash \
 	docker \
 	fantastical \
 	font-firacode \
@@ -76,6 +77,10 @@ daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
 	echo "Install DaisyDisk"
 	mas install 411643860
+
+dash: /Applications/Dash.app
+/Applications/Dash.app:
+	brew cask install dash
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
