@@ -22,12 +22,8 @@ all: \
 	khd \
 	ncdu \
 	node \
-	notion \
 	numbers \
-	nvm \
 	mindnode \
-	prettier \
-	prezto \
 	ranger \
 	slack \
 	spotify \
@@ -35,8 +31,6 @@ all: \
 	tadam \
 	the_silver_searcher \
 	tmux \
-	trymodule \
-	vagrant \
 	vim \
 	visidata \
 	xcode \
@@ -249,7 +243,7 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew cask install vagrant
 
-vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc prettier
+vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc
 ${BREW_BIN}/vim:
 	brew install vim
 
@@ -268,6 +262,7 @@ ${BREW_BIN}/VBoxHeadless:
 	brew cask install virtualbox
 
 visidata: brew ${BREW_BIN}/vd
+${BREW_BIN}/vd:
 	brew install saulpw/vd/visidata
 
 xcode: mas /Applications/XCode.app
