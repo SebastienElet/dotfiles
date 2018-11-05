@@ -13,6 +13,7 @@ all: \
 	dash \
 	docker \
 	fantastical \
+	fd \
 	font-firacode \
 	fzf \
 	google-chrome \
@@ -101,6 +102,10 @@ fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
 	echo "Install Fantastical"
 	mas install 975937182
+
+fd: brew ${BREW_BIN}/fd 
+${BREW_BIN}/fd:
+	brew install fd
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
 ~/Library/Fonts/FiraCode-bold.otf:
