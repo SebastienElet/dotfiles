@@ -11,6 +11,7 @@ antigen bundle sparsick/ansible-zsh
 antigen bundle webyneter/docker-aliases.git
 antigen bundle laurenkt/zsh-vimto
 antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle wfxr/forgit
 # antigen bundle sharat87/zsh-vim-mode
 
 
