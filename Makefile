@@ -159,6 +159,10 @@ ${BREW_BIN}/khd:
 ~/.khdrc:
 	ln -s ~/.dotfiles/.khdrc $@
 
+libjpeg: brew ${BREW_BIN}/libjpeg
+${BREW_BIN}/libjpeg:
+	brew install libjpeg
+
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
 	brew install lftp
@@ -256,6 +260,10 @@ ${BREW_BIN}/trymodule:
 the_silver_searcher: brew ${BREW_BIN}/ag
 ${BREW_BIN}/ag:
 	brew install the_silver_searcher
+
+tldr: brew ${BREW_BIN}/tldr
+${BREW_BIN}/tldr:
+	brew install tldr
 
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
