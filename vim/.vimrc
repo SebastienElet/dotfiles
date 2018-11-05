@@ -112,6 +112,7 @@ if dein#load_state('~/.vim/bundle/dein/')
   call dein#add('~/.vim/bundle/syntax-jsx')
   call dein#add('~/.vim/bundle/syntax-less')
   call dein#add('~/.vim/bundle/syntax-markdown')
+  call dein#add('~/.vim/bundle/syntax-rust')
   call dein#add('~/.vim/bundle/syntax-terraform')
   call dein#add('~/.vim/bundle/syntax-ts')
 
@@ -123,7 +124,7 @@ endif
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
 " Plugin:neoformat {{{
-autocmd FileType javascript setlocal formatprg=prettier
+autocmd FileType javascript setlocal formatprg=npx\ prettier
   \\ --stdin
   \\ --parser\ flow
   \\ --single-quote
@@ -158,4 +159,7 @@ syntax on
 let &t_Co=256
 color default
 colorscheme desert
+set t_ZH=[3m
+set t_ZR=[23m
+highlight Comment cterm=italic
 " }}}
