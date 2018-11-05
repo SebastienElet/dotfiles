@@ -13,6 +13,7 @@ all: \
 	dash \
 	docker \
 	fantastical \
+	fd \
 	font-firacode \
 	fzf \
 	google-chrome \
@@ -82,6 +83,10 @@ dash: /Applications/Dash.app
 /Applications/Dash.app:
 	brew cask install dash
 
+diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy 
+${BREW_BIN}/diff-so-fancy:
+	brew install diff-so-fancy
+
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
 	brew cask install docker
@@ -101,6 +106,10 @@ fantastical: mas /Applications/Fantastical\ 2.app
 /Applications/Fantastical\ 2.app:
 	echo "Install Fantastical"
 	mas install 975937182
+
+fd: brew ${BREW_BIN}/fd 
+${BREW_BIN}/fd:
+	brew install fd
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
 ~/Library/Fonts/FiraCode-bold.otf:
@@ -150,6 +159,10 @@ ${BREW_BIN}/khd:
 ~/.khdrc:
 	ln -s ~/.dotfiles/.khdrc $@
 
+libjpeg: brew ${BREW_BIN}/libjpeg
+${BREW_BIN}/libjpeg:
+	brew install libjpeg
+
 lftp: brew ${BREW_BIN}/lftp
 ${BREW_BIN}/lftp:
 	brew install lftp
@@ -183,6 +196,10 @@ nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 mindnode: mas /Applications/MindNode.app
 /Applications/MindNode.app:
 	mas install 992076693
+
+prettyping: brew ${BREW_BIN}/prettyping 
+${BREW_BIN}/prettyping:
+	brew install prettyping
 
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
@@ -243,6 +260,10 @@ ${BREW_BIN}/trymodule:
 the_silver_searcher: brew ${BREW_BIN}/ag
 ${BREW_BIN}/ag:
 	brew install the_silver_searcher
+
+tldr: brew ${BREW_BIN}/tldr
+${BREW_BIN}/tldr:
+	brew install tldr
 
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:

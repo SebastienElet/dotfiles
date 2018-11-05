@@ -11,6 +11,7 @@ all: \
 	bundle/syntax-jsx \
 	bundle/syntax-less \
 	bundle/syntax-markdown \
+	bundle/syntax-rust \
 	bundle/syntax-terraform \
 	bundle/syntax-ts \
 	help
@@ -50,6 +51,9 @@ bundle/syntax-less:
 
 bundle/syntax-markdown:
 	git clone https://github.com/tpope/vim-markdown.git $@
+
+bundle/syntax-rust:
+	git clone https://github.com/rust-lang/rust.vim $@
 
 bundle/syntax-terraform:
 	git clone https://github.com/hashivim/vim-terraform.git $@
