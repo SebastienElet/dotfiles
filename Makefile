@@ -189,6 +189,10 @@ mindnode: mas /Applications/MindNode.app
 /Applications/MindNode.app:
 	mas install 992076693
 
+prettyping: brew ${BREW_BIN}/prettyping 
+${BREW_BIN}/prettyping:
+	brew install prettyping
+
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier

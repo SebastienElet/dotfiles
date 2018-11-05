@@ -67,6 +67,7 @@ alias tmux='env TERM=screen-256color tmux'
 alias ls='ls -G'
 alias :q='exit'
 alias cat='bat'
+alias ping='prettyping'
 command -v npm > /dev/null && alias npme="npm --registry http://registry.npmjs.eu"
 command -v fasd > /dev/null && eval \
   "$(fasd --init posix-alias zsh-hook zsh-ccomp zsh-wcomp)"
