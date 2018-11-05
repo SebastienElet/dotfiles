@@ -83,6 +83,10 @@ dash: /Applications/Dash.app
 /Applications/Dash.app:
 	brew cask install dash
 
+diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy 
+${BREW_BIN}/diff-so-fancy:
+	brew install diff-so-fancy
+
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
 	brew cask install docker
