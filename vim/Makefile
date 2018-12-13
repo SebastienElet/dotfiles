@@ -14,6 +14,7 @@ all: \
 	bundle/syntax-rust \
 	bundle/syntax-terraform \
 	bundle/syntax-ts \
+	bundle/tsuquyomi \
 	help
 
 bundle/dein:
@@ -59,7 +60,10 @@ bundle/syntax-terraform:
 	git clone https://github.com/hashivim/vim-terraform.git $@
 
 bundle/syntax-ts:
-	git clone https://github.com/HerringtonDarkholme/yats.vim.git $@
+	git clone https://github.com/leafgarland/typescript-vim.git $@
+
+bundle/tsuquyomi:
+	git clone https://github.com/Quramy/tsuquyomi.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"
