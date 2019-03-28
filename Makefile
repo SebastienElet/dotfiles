@@ -265,6 +265,10 @@ tldr: brew ${BREW_BIN}/tldr
 ${BREW_BIN}/tldr:
 	brew install tldr
 
+typescript: node ${BREW_BIN}/tsc
+${BREW_BIN}/tsc:
+	npm install -g typescript
+
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew cask install vagrant

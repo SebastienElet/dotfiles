@@ -115,6 +115,7 @@ if dein#load_state('~/.vim/bundle/dein/')
   call dein#add('~/.vim/bundle/syntax-rust')
   call dein#add('~/.vim/bundle/syntax-terraform')
   call dein#add('~/.vim/bundle/syntax-ts')
+  call dein#add('~/.vim/bundle/tsuquyomi')
 
   call dein#end()
   call dein#save_state()
