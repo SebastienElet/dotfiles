@@ -1,3 +1,6 @@
+LC_ALL="fr_FR.UTF-8"
+LANG="fr_FR.UTF-8"
+LC_COLLATE="fr_FR.UTF-8"
 source ~/.dotfiles/zsh/antigen.zsh
 
 # Repo
