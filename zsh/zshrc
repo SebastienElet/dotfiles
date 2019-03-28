@@ -1,3 +1,6 @@
+LC_ALL="fr_FR.UTF-8"
+LANG="fr_FR.UTF-8"
+LC_COLLATE="fr_FR.UTF-8"
 source ~/.dotfiles/zsh/antigen.zsh
 
 # Repo
@@ -12,7 +15,7 @@ antigen bundle webyneter/docker-aliases.git
 antigen bundle laurenkt/zsh-vimto
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle wfxr/forgit
-# antigen bundle sharat87/zsh-vim-mode
+antigen bundle sharat87/zsh-vim-mode
 
 
 
