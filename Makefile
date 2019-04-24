@@ -59,10 +59,8 @@ ${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
-	brew install caskroom/cask/brew-cask
 	brew tap gapple/services
 	brew tap caskroom/fonts
-	brew tap homebrew/versions
 
 chunkwm: brew ~/.chunkwmrc ${BREW_BIN}/chunkwm
 ${BREW_BIN}/chunkwm:
