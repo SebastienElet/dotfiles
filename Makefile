@@ -204,22 +204,10 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier
 
-prezto: ~/.zprezto ~/.zpreztorc ~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv ~/.zshrc \
-	~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup \
-	~/.zprezto/modules/prompt/functions/prompt_seb_setup
-~/.zprezto:
-	git clone --recursive https://github.com/sorin-ionescu/prezto.git $@
-~/.zlogin ~/.zlogout ~/.zprofile ~/.zshenv:
-	ln -s ~/.zprezto/runcoms/$(subst .,,$(notdir $@)) $@
-	chsh -s /bin/zsh
+zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
-~/.zpreztorc:
-	ln -s ~/.dotfiles/zsh/zpreztorc $@
-~/.zprezto/modules/prompt/functions/prompt_seb_mini_setup:
-	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_mini_setup $@
-~/.zprezto/modules/prompt/functions/prompt_seb_setup:
-	ln -s ~/.dotfiles/zsh/prompts/prompt_seb_setup $@
+	chsh -s /bin/zsh
 
 ranger: brew ~/.config/ranger ${BREW_BIN}/ranger
 ${BREW_BIN}/ranger:
