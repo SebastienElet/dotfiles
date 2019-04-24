@@ -64,7 +64,7 @@ ${BREW_BIN}/brew:
 
 chunkwm: brew ~/.chunkwmrc ${BREW_BIN}/chunkwm
 ${BREW_BIN}/chunkwm:
-	brew tap crisidev/homebrew-chunkwm
+	brew tap koekeishiya/formulae
 	brew install chunkwm
 ~/.chunkwmrc:
 	ln -s ~/.dotfiles/.chunkwmrc $@
