@@ -4,7 +4,7 @@ all: \
 	bundle/fugitive \
 	bundle/fzf \
 	bundle/neoformat \
-	bundle/neomake \
+	bundle/ale \
 	bundle/syntax-ansible \
 	bundle/syntax-js \
 	bundle/syntax-json \
@@ -34,6 +34,9 @@ bundle/neoformat:
 
 bundle/neomake:
 	git clone https://github.com/neomake/neomake $@
+
+bundle/ale:
+	git clone https://github.com/w0rp/ale $@
 
 bundle/syntax-ansible:
 	git clone https://github.com/pearofducks/ansible-vim $@

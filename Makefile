@@ -22,17 +22,18 @@ all: \
 	iterm2 \
 	jscpd \
 	khd \
+	mindnode \
 	ncdu \
 	node \
 	numbers \
-	mindnode \
 	ranger \
+	shellcheck \
 	slack \
 	spotify \
-	shellcheck \
 	tadam \
 	the_silver_searcher \
 	tmux \
+	typescript \
 	vim \
 	visidata \
 	xcode \
