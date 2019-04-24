@@ -105,7 +105,7 @@ if dein#load_state('~/.vim/bundle/dein/')
   call dein#add('~/.vim/bundle/fugitive')
   call dein#add('~/.vim/bundle/fzf')
   call dein#add('~/.vim/bundle/neoformat')
-  call dein#add('~/.vim/bundle/neomake')
+  call dein#add('~/.vim/bundle/ale')
   call dein#add('~/.vim/bundle/syntax-ansible')
   call dein#add('~/.vim/bundle/syntax-js')
   call dein#add('~/.vim/bundle/syntax-json')
@@ -132,18 +132,6 @@ autocmd FileType javascript setlocal formatprg=npx\ prettier
   \\ --trailing-comma\ es5
   \\ --print-width\ 80
 let g:neoformat_try_formatprg = 1
-" }}}
-" Public:neomake {{{
-let g:local_eslint = finddir('node_modules', '.;') . '/.bin/eslint'
-if matchstr(local_eslint, "^\/\\w") == ''
-  let g:local_eslint = getcwd() . "/" . local_eslint
-endif
-if executable(local_eslint)
-  let g:neomake_javascript_eslint_exe = local_eslint
-endif
-autocmd! BufWritePost * Neomake
-" }}}
-" Plugin:neoformat {{{
 " }}}
 " Plugin:fzf {{{
 set rtp+=~/.fzf
