@@ -125,7 +125,7 @@ endif
 runtime macros/matchit.vim      " Enable jump betwen tags
 " }}}
 " Plugin:neoformat {{{
-autocmd FileType javascript setlocal formatprg=npx\ prettier
+autocmd FileType javascript,typescript setlocal formatprg=npx\ prettier
   \\ --stdin
   \\ --parser\ flow
   \\ --single-quote
@@ -137,6 +137,9 @@ let g:neoformat_try_formatprg = 1
 set rtp+=~/.fzf
 noremap <silent><C-p> :FZF<CR>
 cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
+" }}}
+" Plugin:ale {{{
+let g:ale_lint_on_text_changed = 'never'
 " }}}
 " Autocmd {{{
 autocmd BufRead *.mjs set filetype=javascript
@@ -151,4 +154,8 @@ colorscheme desert
 set t_ZH=[3m
 set t_ZR=[23m
 highlight Comment cterm=italic
+hi DiffAdd guifg=NONE ctermfg=NONE guibg=#464632 ctermbg=238 gui=NONE cterm=NONE
+hi DiffChange guifg=NONE ctermfg=NONE guibg=#335261 ctermbg=239 gui=NONE cterm=NONE
+hi DiffDelete guifg=#f43753 ctermfg=203 guibg=#79313c ctermbg=237 gui=NONE cterm=NONE
+hi DiffText guifg=NONE ctermfg=NONE guibg=NONE ctermbg=NONE gui=reverse cterm=reverse
 " }}}

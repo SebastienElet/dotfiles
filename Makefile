@@ -268,6 +268,11 @@ ${BREW_BIN}/nvim:
 	brew install neovim
 ~/.config:
 	mkdir $@
+~/.config/nvim:
+	ln -s ~/.vim ~/.config/nvim
+~/.config/nvim/init.vim:
+	ln -s ~/.vimrc ~/.config/nvim/init.vim
+	
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
