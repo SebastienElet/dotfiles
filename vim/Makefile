@@ -10,6 +10,7 @@ all: \
 	bundle/syntax-json \
 	bundle/syntax-jsx \
 	bundle/syntax-less \
+	bundle/syntax-graphql \
 	bundle/syntax-markdown \
 	bundle/syntax-rust \
 	bundle/syntax-terraform \
@@ -52,6 +53,9 @@ bundle/syntax-jsx:
 
 bundle/syntax-less:
 	git clone https://github.com/groenewege/vim-less.git $@
+
+bundle/syntax-graphql:
+	git clone git@github.com:jparise/vim-graphql.git $@
 
 bundle/syntax-markdown:
 	git clone https://github.com/tpope/vim-markdown.git $@
