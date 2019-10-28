@@ -140,6 +140,7 @@ cabbrev ls <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Buffers' : 'ls')<CR>
 " }}}
 " Plugin:ale {{{
 let g:ale_lint_on_text_changed = 'never'
+let g:ale_set_highlights = 0
 " }}}
 " Autocmd {{{
 autocmd BufRead *.mjs set filetype=javascript
