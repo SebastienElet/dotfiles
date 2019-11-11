@@ -34,7 +34,7 @@ all: \
 	the_silver_searcher \
 	tmux \
 	typescript \
-	vim \
+	nvim \
 	visidata \
 	xcode \
 	yarn
@@ -264,23 +264,21 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew cask install vagrant
 
-vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc
+vim: brew ${BREW_BIN}/vim ~/.vimrc
 ${BREW_BIN}/vim:
 	brew install vim
 
+nvim : brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	brew install neovim
 ~/.config:
 	mkdir $@
 ~/.config/nvim:
-	ln -s ~/.vim ~/.config/nvim
-~/.config/nvim/init.vim:
-	ln -s ~/.vimrc ~/.config/nvim/init.vim
-	
+	ln -s ~/nvim ~/.config/nvim
+
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-	ln -s ~/.vim ~/.config/nvim
 	cd ~/.vim && make
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
