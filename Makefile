@@ -14,7 +14,7 @@ all: \
 	docker \
 	fantastical \
 	fd \
-	font-firacode \
+	font-nerd-font \
 	fzf \
 	google-chrome \
 	gpg \
@@ -113,6 +113,10 @@ ${BREW_BIN}/fd:
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
 ~/Library/Fonts/FiraCode-bold.otf:
 	brew cask install font-fira-code
+
+font-nerd-font: ~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf
+~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf:
+	brew cask install font-hack-nerd-font
 
 fzf: ~/.fzf
 ~/.fzf:
