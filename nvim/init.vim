@@ -53,6 +53,15 @@ endif
 map <C-l> <C-W>l
 autocmd VimResized * tabdo wincmd =
 " }}}
+" Plugin:neoformat {{{
+autocmd FileType javascript,typescript setlocal formatprg=yarn\ run\ --silent\ prettier
+  \\ --stdin
+  \\ --parser\ flow
+  \\ --single-quote
+  \\ --trailing-comma\ es5
+  \\ --print-width\ 80
+let g:neoformat_try_formatprg = 1
+" }}}
 " Plugin:dein {{{
 set runtimepath+=~/.config/nvim/bundle/dein/
 if dein#load_state('~/.config/nvim/bundle/dein/')
