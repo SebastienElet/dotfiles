@@ -26,7 +26,9 @@ all: \
 	ncdu \
 	node \
 	numbers \
+	nvim \
 	ranger \
+	ripgrep \
 	shellcheck \
 	slack \
 	spotify \
@@ -34,7 +36,6 @@ all: \
 	the_silver_searcher \
 	tmux \
 	typescript \
-	nvim \
 	visidata \
 	xcode \
 	yarn
@@ -219,6 +220,9 @@ ${BREW_BIN}/ranger:
 ~/.config/ranger: ~/.config
 	ln -s ~/.dotfiles/ranger $@
 
+ripgrep: brew
+	brew install ripgrep
+
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	echo "Install slack"
@@ -268,13 +272,15 @@ vim: brew ${BREW_BIN}/vim ~/.vimrc
 ${BREW_BIN}/vim:
 	brew install vim
 
-nvim : brew ${BREW_BIN}/nvim
+nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	brew install neovim
+	pip3 install neovim
+	npm i -g neovim
 ~/.config:
 	mkdir $@
 ~/.config/nvim:
-	ln -s ~/nvim ~/.config/nvim
+	ln -s ~/.dotfiles/nvim ~/.config/nvim
 
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
