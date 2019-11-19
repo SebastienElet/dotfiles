@@ -8,6 +8,12 @@ set cmdheight=1
 " Mouse {{{
 set mouse=
 " }}}
+" Search {{{
+set hlsearch                    "Hihlight matches
+set incsearch                   "Incremental searching
+set ignorecase                  "Searches are case insisensitive
+set smartcase                   " ... unless they contain one capital letter
+" }}}
 " Tabs & Indent {{{
 set autoindent
 set expandtab                   "Convert tab -> spacei
