@@ -1,7 +1,6 @@
 all: \
 	bundle/coc \
 	bundle/dein \
-	bundle/denite \
 	bundle/neoformat \
 	bundle/theme-oceanic \
 	help
@@ -14,9 +13,6 @@ bundle/coc:
 
 bundle/dein:
 	git clone https://github.com/Shougo/dein.vim $@
-
-bundle/denite:
-	git clone https://github.com/Shougo/denite.nvim.git $@
 
 bundle/neoformat:
 	git clone https://github.com/sbdchd/neoformat.git $@

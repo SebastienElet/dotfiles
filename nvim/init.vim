@@ -67,7 +67,6 @@ set runtimepath+=~/.config/nvim/bundle/dein/
 if dein#load_state('~/.config/nvim/bundle/dein/')
   call dein#begin('~/.config/nvim/bundle/')
   call dein#add('~/.config/nvim/bundle/coc')
-  call dein#add('~/.config/nvim/bundle/denite')
   call dein#add('~/.config/nvim/bundle/editorconfig')
   call dein#add('~/.config/nvim/bundle/neoformat')
   call dein#add('~/.config/nvim/bundle/theme-oceanic')
@@ -75,37 +74,8 @@ if dein#load_state('~/.config/nvim/bundle/dein/')
   call dein#save_state()
 endif
 " }}}
-" Plugin:denite {{{
-autocmd FileType denite call s:denite_settings()
-function! s:denite_settings() abort
-  nnoremap <silent><buffer><expr> <CR>
-        \ denite#do_map('do_action')
-  nnoremap <silent><buffer><expr> <C-v>
-        \ denite#do_map('do_action', 'vsplit')
-  nnoremap <silent><buffer><expr> d
-        \ denite#do_map('do_action', 'delete')
-  nnoremap <silent><buffer><expr> p
-        \ denite#do_map('do_action', 'preview')
-  nnoremap <silent><buffer><expr> <Esc>
-        \ denite#do_map('quit')
-  nnoremap <silent><buffer><expr> q
-        \ denite#do_map('quit')
-  nnoremap <silent><buffer><expr> i
-        \ denite#do_map('open_filter_buffer')
-endfunction
-function! Setup_denite_mappings()
-  inoremap <silent><buffer><expr> <CR> denite#do_map('do_action')
-endfunction
-autocmd FileType denite-filter call Setup_denite_mappings()
-nnoremap <silent><C-p> :Denite file/rec -start-filter<CR>
-call denite#custom#var('file/rec', 'command',
-  \ ['rg', '--files'])
-" call denite#custom#var('grep', 'command', ['rg', '--threads', '1'])
-" call denite#custom#var('grep', 'recursive_opts', [])
-" call denite#custom#var('grep', 'final_opts', [])
-" call denite#custom#var('grep', 'separator', ['--'])
-" call denite#custom#var('grep', 'default_opts',
-"  \ ['--vimgrep', '--no-heading'])
+" Plugin:Coc {{{
+nnoremap <silent><C-p> :CocList files<CR>
 " }}}
 " Colors {{{
 set background=dark
