@@ -54,7 +54,7 @@ map <C-l> <C-W>l
 autocmd VimResized * tabdo wincmd =
 " }}}
 " Plugin:neoformat {{{
-autocmd FileType javascript,typescript setlocal formatprg=yarn\ run\ --silent\ prettier
+autocmd FileType javascript,typescript setlocal formatprg=yarn\ --offline\ --silent\ run\ prettier
   \\ --stdin
   \\ --parser\ flow
   \\ --single-quote
