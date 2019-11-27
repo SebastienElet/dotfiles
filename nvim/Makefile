@@ -2,11 +2,9 @@ all: \
 	bundle/coc \
 	bundle/dein \
 	bundle/neoformat \
+	bundle/polyglot \
 	bundle/theme-oceanic \
 	help
-
-bundle/theme-oceanic:
-	git clone https://github.com/mhartington/oceanic-next.git $@
 
 bundle/coc:
 	git clone https://github.com/neoclide/coc.nvim.git $@
@@ -16,6 +14,12 @@ bundle/dein:
 
 bundle/neoformat:
 	git clone https://github.com/sbdchd/neoformat.git $@
+
+bundle/polyglot:
+	git clone https://github.com/sheerun/vim-polyglot.git $@
+
+bundle/theme-oceanic:
+	git clone https://github.com/mhartington/oceanic-next.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"
