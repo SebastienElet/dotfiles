@@ -42,6 +42,9 @@ inoremap <down> <nop>
 inoremap <left> <nop>
 inoremap <right> <nop>
 " }}}
+" Binds {{{
+nnoremap <Tab> %
+" }}}
 " Windows {{{
 " Smart moving between windows r
 map <C-j> <C-W>j
