@@ -1,5 +1,6 @@
 {
   "javascript.suggestionActions.enabled": false,
+  "coc.preferences.formatOnSaveFiletypes": ["typescript", "javascript", "css", "Markdown"],
   "list.normalMappings": {
     "<C-c>": "do:exit"
   },
