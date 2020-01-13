@@ -26,7 +26,9 @@ all: \
 	ncdu \
 	node \
 	numbers \
+	nvim \
 	ranger \
+	ripgrep \
 	shellcheck \
 	slack \
 	spotify \
@@ -34,7 +36,6 @@ all: \
 	the_silver_searcher \
 	tmux \
 	typescript \
-	vim \
 	visidata \
 	xcode \
 	yarn
@@ -219,6 +220,9 @@ ${BREW_BIN}/ranger:
 ~/.config/ranger: ~/.config
 	ln -s ~/.dotfiles/ranger $@
 
+ripgrep: brew
+	brew install ripgrep
+
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	echo "Install slack"
@@ -264,23 +268,23 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew cask install vagrant
 
-vim: brew ${BREW_BIN}/vim ${BREW_BIN}/nvim ~/.vimrc
+vim: brew ${BREW_BIN}/vim ~/.vimrc
 ${BREW_BIN}/vim:
 	brew install vim
 
+nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	brew install neovim
+	pip3 install neovim
+	npm i -g neovim
 ~/.config:
 	mkdir $@
 ~/.config/nvim:
-	ln -s ~/.vim ~/.config/nvim
-~/.config/nvim/init.vim:
-	ln -s ~/.vimrc ~/.config/nvim/init.vim
-	
+	ln -s ~/.dotfiles/nvim ~/.config/nvim
+
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
 	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-	ln -s ~/.vim ~/.config/nvim
 	cd ~/.vim && make
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
