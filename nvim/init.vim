@@ -44,6 +44,7 @@ inoremap <right> <nop>
 " }}}
 " Binds {{{
 nnoremap <Tab> %
+nnoremap <silent> <CR> :nohlsearch<CR>:w<CR>
 " }}}
 " Windows {{{
 " Smart moving between windows r
