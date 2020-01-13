@@ -3,3 +3,5 @@ ranger/history
 ranger/tagged
 vim/.netrwhist
 vim/bundle/
+nvim/.netrwhist
+nvim/bundle/
