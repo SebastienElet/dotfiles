@@ -119,6 +119,10 @@ font-nerd-font: ~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf
 ~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf:
 	brew cask install font-hack-nerd-font
 
+font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
+~/Library/Fonts/JetBrainsMono-Regular.ttf:
+	brew cask install font-jetbrains-mono
+
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
