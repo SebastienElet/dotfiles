@@ -14,6 +14,7 @@ all: \
 	docker \
 	fantastical \
 	fd \
+	fnm \
 	font-nerd-font \
 	fzf \
 	google-chrome \
@@ -110,6 +111,10 @@ fantastical: mas /Applications/Fantastical\ 2.app
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
+
+fnm: brew ${BREW_BIN}/fnm 
+${BREW_BIN}/fnm:
+	brew install Schniz/tap/fnm
 
 font-firacode: ~/Library/Fonts/FiraCode-bold.otf
 ~/Library/Fonts/FiraCode-bold.otf:
