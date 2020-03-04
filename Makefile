@@ -7,6 +7,7 @@ usage:
 all: \
 	1password \
 	alfred \
+	bash-language-server \
 	chunkwm \
 	ctop \
 	daisydisk \
@@ -48,6 +49,10 @@ all: \
 alfred: brew /Applications/Alfred\ 3.app
 /Applications/Alfred\ 3.app:
 	brew cask install alfred
+
+bash-language-server: node ${NPM_BIN}/bash-language-server
+${NPM_BIN}/bash-language-server:
+	@npm -g install bash-language-server
 
 ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
@@ -188,9 +193,9 @@ ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: ${BREW_BIN}/node
+node: ${BREW_BIN}/fnm
 ${BREW_BIN}/node:
-	brew install node
+	fnm install latest
 
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
