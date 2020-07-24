@@ -21,6 +21,7 @@ all: \
 	google-chrome \
 	gpg \
 	hub \
+	gh \
 	iterm2 \
 	jscpd \
 	khd \
@@ -37,6 +38,7 @@ all: \
 	tadam \
 	the_silver_searcher \
 	tmux \
+	translate-shell \
 	typescript \
 	visidata \
 	xcode \
@@ -153,6 +155,10 @@ ${BREW_BIN}/pinentry-mac:
 hub: brew ${BREW_BIN}/hub
 ${BREW_BIN}/hub:
 	brew install hub
+
+gh: brew ${BREW_BIN}/gh
+${BREW_BIN}/gh:
+	brew install github/gh/gh
 
 hyper: brew /Applications/Hyper.app
 /Applications/Hyper.app:
@@ -273,6 +279,10 @@ ${BREW_BIN}/ag:
 tldr: brew ${BREW_BIN}/tldr
 ${BREW_BIN}/tldr:
 	brew install tldr
+
+translate-shell: ${BREW_BIN}/trans
+${BREW_BIN}/trans:
+	brew install translate-shell
 
 typescript: node ${BREW_BIN}/tsc
 ${BREW_BIN}/tsc:
