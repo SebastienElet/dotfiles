@@ -69,7 +69,6 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
-	brew tap caskroom/fonts
 
 chunkwm: brew ~/.chunkwmrc ${BREW_BIN}/chunkwm
 ${BREW_BIN}/chunkwm:
@@ -171,7 +170,7 @@ gpg-config:
 
 iterm2: brew /Applications/iTerm.app
 /Applications/iTerm.app:
-	brew install Caskroom/versions/iterm2-nightly
+	brew install iterm2
 
 jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
@@ -351,7 +350,7 @@ vlc: brew ~/Applications/VLC.app
 
 postman: brew ~/Applications/Postman.app
 ~/Applications/Postman.app:
-	brew install Caskroom/cask/postman
+	brew install postman
 
 packer: brew ${BREW_BIN}/packer
 ${BREW_BIN}/packer:
