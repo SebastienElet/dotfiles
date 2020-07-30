@@ -381,10 +381,6 @@ pgcli: brew ${BREW_BIN}/pgcli
 ${BREW_BIN}/pgcli:
 	brew install pgcli
 
-mongohacker: node /usr/local/lib/node_modules/mongo-hacker
-/usr/local/lib/node_modules/mongo-hacker:
-	@npm install -g mongo-hacker
-
 clif: ${BREW_BIN}/clif
 ${BREW_BIN}/clif:
 	@npm install -g clif
