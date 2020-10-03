@@ -8,6 +8,7 @@ all: \
 	1password \
 	alfred \
 	bash-language-server \
+	bat \
 	chunkwm \
 	ctop \
 	daisydisk \
@@ -55,6 +56,10 @@ alfred: brew /Applications/Alfred\ 3.app
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
 	@npm -g install bash-language-server
+
+bat: brew ${BREW_BIN}/bat
+${BREW_BIN}/bat:
+	brew install bat
 
 ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
