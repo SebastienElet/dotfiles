@@ -6,6 +6,7 @@ usage:
 
 all: \
 	1password \
+	alacritty \
 	alfred \
 	bash-language-server \
 	bat \
@@ -42,8 +43,12 @@ all: \
 /Applications/1password\ 7.app:
 	brew cask install 1password
 
-alfred: brew /Applications/Alfred\ 3.app
-/Applications/Alfred\ 3.app:
+alacritty: /Applications/alacritty.app
+/Applications/alacritty.app:
+	brew cask install alacritty
+
+alfred: brew /Applications/Alfred\ 4.app
+/Applications/Alfred\ 4.app:
 	brew cask install alfred
 
 bash-language-server: node ${NPM_BIN}/bash-language-server
