@@ -14,35 +14,28 @@ all: \
 	daisydisk \
 	dash \
 	docker \
-	fantastical \
 	fd \
 	fnm \
 	font-nerd-font \
 	fzf \
 	google-chrome \
 	gpg \
-	hub \
-	gh \
 	iterm2 \
 	jscpd \
 	khd \
 	mindnode \
 	ncdu \
 	node \
-	numbers \
 	nvim \
 	ranger \
 	ripgrep \
 	shellcheck \
 	slack \
-	spotify \
 	tadam \
-	the_silver_searcher \
 	tmux \
 	translate-shell \
 	typescript \
 	visidata \
-	xcode \
 	yarn
 
 1password: /Applications/1password\ 7.app
@@ -114,11 +107,6 @@ ${BREW_BIN}/emacs:
 	ln -s ~/.dotfiles/.emacs ~/.emacs
 
 
-fantastical: mas /Applications/Fantastical\ 2.app
-/Applications/Fantastical\ 2.app:
-	echo "Install Fantastical"
-	mas install 975937182
-
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
@@ -155,10 +143,6 @@ ${BREW_BIN}/gpg:
 #	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
-
-hub: brew ${BREW_BIN}/hub
-${BREW_BIN}/hub:
-	brew install hub
 
 gh: brew ${BREW_BIN}/gh
 ${BREW_BIN}/gh:
@@ -252,10 +236,6 @@ slack: mas /Applications/Slack.app
 	echo "Install slack"
 	mas install 803453959
 
-spotify: brew /Applications/Spotify.app
-/Applications/Spotify.app:
-	brew cask install spotify
-
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
 	brew install shellcheck
@@ -276,10 +256,6 @@ trymodule: node ${BREW_BIN}/trymodule
 ${BREW_BIN}/trymodule:
 	npm install -g trymodule
 	
-the_silver_searcher: brew ${BREW_BIN}/ag
-${BREW_BIN}/ag:
-	brew install the_silver_searcher
-
 tldr: brew ${BREW_BIN}/tldr
 ${BREW_BIN}/tldr:
 	brew install tldr
@@ -321,11 +297,6 @@ ${BREW_BIN}/VBoxHeadless:
 visidata: brew ${BREW_BIN}/vd
 ${BREW_BIN}/vd:
 	brew install saulpw/vd/visidata
-
-xcode: mas /Applications/XCode.app
-/Applications/XCode.app:
-	echo "Install Xcode"
-	mas install 497799835
 
 yarn: node ${BREW_BIN}/yarn
 ${BREW_BIN}/yarn:
