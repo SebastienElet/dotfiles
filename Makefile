@@ -303,7 +303,6 @@ ${BREW_BIN}/vim:
 nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	brew install neovim
-	pip3 install neovim
 	npm i -g neovim
 ~/.config:
 	mkdir $@
