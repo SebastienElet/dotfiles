@@ -3,9 +3,8 @@
 echo Brew upgrade
 brew update
 brew upgrade
-brew upgrade
+brew upgrade --cask
 brew cleanup -s
-brew cask cleanup
 
 echo Brew diagnostic
 brew doctor
