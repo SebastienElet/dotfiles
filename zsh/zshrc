@@ -4,7 +4,7 @@ LC_COLLATE="fr_FR.UTF-8"
 source ~/.dotfiles/zsh/antigen.zsh
 
 export PATH=/usr/local/opt/python/libexec/bin:$PATH
-eval "`fnm env --multi`"
+eval "`fnm env`"
 
 # Repo
 antigen use oh-my-zsh
