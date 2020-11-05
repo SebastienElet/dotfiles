@@ -1,0 +1,35 @@
+yabai -m config top_padding                  12
+yabai -m config bottom_padding               12
+yabai -m config left_padding                 12
+yabai -m config right_padding                12
+yabai -m config window_gap                   06
+
+yabai -m config layout float
+yabai -m config --space 2 layout bsp
+yabai -m config --space 3 layout bsp
+yabai -m config --space 4 layout bsp
+yabai -m config --space 5 layout bsp
+
+# Space labels
+yabai -m space 1 --label "Primary"
+yabai -m space 2 --label "Productivity"
+yabai -m space 3 --label "Media"
+yabai -m space 4 --label "Calendar"
+yabai -m space 5 --label "Music"
+yabai -m space 2 --ratio abs:0.75
+
+yabai -m rule --add app="Chrome" space=2 
+yabai -m rule --add app="Notes" space=2
+
+yabai -m rule --add app="Slack" space=3
+yabai -m rule --add app="Discord" space=3
+yabai -m rule --add app="Front" space=3
+
+yabai -m rule --add app="Calendrier" space=4
+yabai -m rule --add app="Mail" space=4
+
+yabai -m rule --add app="Musique" space=5
+yabai -m rule --add app="Podcast" space=5
+
+yabai -m rule --add app="iTerm2" native-fullscreen=on
+yabai -m rule --add app="TablePlus" native-fullscreen=on

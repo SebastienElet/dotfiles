@@ -10,7 +10,7 @@ all: \
 	alfred \
 	bash-language-server \
 	bat \
-	chunkwm \
+	yabai \
 	ctop \
 	daisydisk \
 	dash \
@@ -73,12 +73,11 @@ ${BREW_BIN}/brew:
 	/tmp/brew-installer.sh
 	brew tap gapple/services
 
-chunkwm: brew ~/.chunkwmrc ${BREW_BIN}/chunkwm
-${BREW_BIN}/chunkwm:
-	brew tap koekeishiya/formulae
-	brew install chunkwm
-~/.chunkwmrc:
-	ln -s ~/.dotfiles/.chunkwmrc $@
+yabai: ~/.yabairc ${BREW_BIN}/yabai
+${BREW_BIN}/yabai:
+	brew install koekeishiya/formulae/yabai
+~/.yabairc:
+	ln -s ~/.dotfiles/.yabairc $@
 
 ctop: ${BREW_BIN}/ctop
 ${BREW_BIN}/ctop:
