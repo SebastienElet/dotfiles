@@ -1,6 +1,13 @@
 {
   "javascript.suggestionActions.enabled": false,
-  "coc.preferences.formatOnSaveFiletypes": ["typescript", "javascript", "css", "Markdown"],
+  "coc.preferences.formatOnSaveFiletypes": [
+    "typescript",
+    "typescriptreact",
+    "javascript",
+    "css",
+    "Markdown",
+    "json"
+  ],
   "list.normalMappings": {
     "<C-c>": "do:exit"
   },
