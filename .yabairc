@@ -32,4 +32,5 @@ yabai -m rule --add app="Musique" space=5
 yabai -m rule --add app="Podcast" space=5
 
 yabai -m rule --add app="iTerm2" native-fullscreen=on
+yabai -m rule --add app="Alacritty" native-fullscreen=on
 yabai -m rule --add app="TablePlus" native-fullscreen=on
