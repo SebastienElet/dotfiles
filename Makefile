@@ -21,7 +21,6 @@ all: \
 	fzf \
 	google-chrome \
 	gpg \
-	iterm2 \
 	jscpd \
 	khd \
 	mindnode \
@@ -43,9 +42,11 @@ all: \
 /Applications/1password\ 7.app:
 	brew cask install 1password
 
-alacritty: /Applications/alacritty.app
+alacritty: /Applications/alacritty.app ~/.alacritty.yml
 /Applications/alacritty.app:
 	brew cask install alacritty
+~/.alacritty.yml:
+	ln -s ~/.dotfiles/.alacritty.yml $@
 
 alfred: brew /Applications/Alfred\ 4.app
 /Applications/Alfred\ 4.app:
@@ -160,10 +161,6 @@ gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
 	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
 	echo 'pinentry-program ${BREW_BIN}/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
-
-iterm2: brew /Applications/iTerm.app
-/Applications/iTerm.app:
-	brew install iterm2
 
 jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
