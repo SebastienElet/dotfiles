@@ -10,7 +10,6 @@ all: \
 	alfred \
 	bash-language-server \
 	bat \
-	yabai \
 	ctop \
 	daisydisk \
 	dash \
@@ -22,6 +21,7 @@ all: \
 	google-chrome \
 	gpg \
 	jscpd \
+	kap \
 	khd \
 	mindnode \
 	ncdu \
@@ -36,6 +36,7 @@ all: \
 	translate-shell \
 	typescript \
 	visidata \
+	yabai \
 	yarn
 
 1password: /Applications/1password\ 7.app
@@ -165,6 +166,10 @@ gpg-config:
 jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
 	@npm install -g jscpd
+
+kap: brew /Applications/Kap.app
+/Applications/Kap.app:
+	brew install kap
 
 khd: brew ${BREW_BIN}/khd ~/.khdrc
 ${BREW_BIN}/khd:
