@@ -23,7 +23,6 @@ all: \
 	ncdu \
 	node \
 	nvim \
-	ranger \
 	ripgrep \
 	shellcheck \
 	tmux \
@@ -215,12 +214,6 @@ zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
 	chsh -s /bin/zsh
-
-ranger: brew ~/.config/ranger ${BREW_BIN}/ranger
-${BREW_BIN}/ranger:
-	brew install ranger
-~/.config/ranger/: ~/.config
-	ln -s ~/.dotfiles/ranger ~/.config/ranger
 
 ripgrep: brew
 	brew install ripgrep
