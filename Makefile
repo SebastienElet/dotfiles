@@ -15,7 +15,7 @@ all: \
 	docker \
 	fd \
 	fnm \
-	font-nerd-font \
+	font-jetbrains-mono \
 	fzf \
 	google-chrome \
 	gpg \
@@ -71,6 +71,7 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
+	brew tap homebrew/cask-fonts
 
 yabai: ~/.yabairc ${BREW_BIN}/yabai
 ${BREW_BIN}/yabai:
@@ -118,17 +119,10 @@ fnm: brew ${BREW_BIN}/fnm
 ${BREW_BIN}/fnm:
 	brew install Schniz/tap/fnm
 
-font-firacode: ~/Library/Fonts/FiraCode-bold.otf
-~/Library/Fonts/FiraCode-bold.otf:
-	brew cask install font-fira-code
-
-font-nerd-font: ~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf
-~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf:
-	brew cask install font-hack-nerd-font
-
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
 ~/Library/Fonts/JetBrainsMono-Regular.ttf:
-	brew cask install font-jetbrains-mono
+	brew tap homebrew/cask-fonts
+	brew install font-jetbrains-mono
 
 fzf: ~/.fzf
 ~/.fzf:
