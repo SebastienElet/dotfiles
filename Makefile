@@ -20,7 +20,6 @@ all: \
 	gpg \
 	jscpd \
 	kap \
-	khd \
 	ncdu \
 	node \
 	nvim \
@@ -165,12 +164,6 @@ ${BREW_BIN}/jscpd:
 kap: brew /Applications/Kap.app
 /Applications/Kap.app:
 	brew install kap
-
-khd: brew ${BREW_BIN}/khd ~/.khdrc
-${BREW_BIN}/khd:
-	brew install koekeishiya/formulae/khd
-~/.khdrc:
-	ln -s ~/.dotfiles/.khdrc $@
 
 libjpeg: brew ${BREW_BIN}/libjpeg
 ${BREW_BIN}/libjpeg:
