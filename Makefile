@@ -15,7 +15,6 @@ all: \
 	docker \
 	fd \
 	fnm \
-	font-jetbrains-mono \
 	fzf \
 	google-chrome \
 	gpg \
@@ -35,6 +34,11 @@ all: \
 	visidata \
 	yabai \
 	yarn
+
+extra: \
+	daisydisk \
+	font-jetbrains-mono \
+	mindnode
 
 1password: /Applications/1password\ 7.app
 /Applications/1password\ 7.app:
