@@ -119,7 +119,7 @@ ${BREW_BIN}/fd:
 
 fnm: brew ${BREW_BIN}/fnm 
 ${BREW_BIN}/fnm:
-	brew install Schniz/tap/fnm
+	brew install fnm
 
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
 ~/Library/Fonts/JetBrainsMono-Regular.ttf:
