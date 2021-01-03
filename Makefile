@@ -11,7 +11,6 @@ all: \
 	bash-language-server \
 	bat \
 	ctop \
-	daisydisk \
 	dash \
 	docker \
 	fd \
@@ -23,7 +22,6 @@ all: \
 	jscpd \
 	kap \
 	khd \
-	mindnode \
 	ncdu \
 	node \
 	nvim \
@@ -31,7 +29,6 @@ all: \
 	ripgrep \
 	shellcheck \
 	slack \
-	tadam \
 	tmux \
 	translate-shell \
 	typescript \
@@ -231,8 +228,8 @@ zsh: ~/.zshrc
 ranger: brew ~/.config/ranger ${BREW_BIN}/ranger
 ${BREW_BIN}/ranger:
 	brew install ranger
-~/.config/ranger: ~/.config
-	ln -s ~/.dotfiles/ranger $@
+~/.config/ranger/: ~/.config
+	ln -s ~/.dotfiles/ranger ~/.config/ranger
 
 ripgrep: brew
 	brew install ripgrep
