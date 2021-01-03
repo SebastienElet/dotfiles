@@ -26,7 +26,6 @@ all: \
 	ranger \
 	ripgrep \
 	shellcheck \
-	slack \
 	tmux \
 	translate-shell \
 	typescript \
@@ -37,7 +36,8 @@ all: \
 extra: \
 	daisydisk \
 	font-jetbrains-mono \
-	mindnode
+	mindnode \
+	slack
 
 1password: /Applications/1password\ 7.app
 /Applications/1password\ 7.app:
@@ -233,11 +233,6 @@ slack: mas /Applications/Slack.app
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
 	brew install shellcheck
-
-tadam: mas /Applications/Tadam.app
-/Applications/Tadam.app:
-	echo "Install tadam"
-	mas install 531349534
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
