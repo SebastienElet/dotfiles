@@ -10,47 +10,47 @@ all: \
 	alfred \
 	bash-language-server \
 	bat \
-	yabai \
 	ctop \
-	daisydisk \
 	dash \
 	docker \
 	fd \
 	fnm \
-	font-nerd-font \
 	fzf \
 	google-chrome \
 	gpg \
 	jscpd \
-	khd \
-	mindnode \
+	kap \
 	ncdu \
 	node \
 	nvim \
-	ranger \
 	ripgrep \
 	shellcheck \
-	slack \
-	tadam \
 	tmux \
 	translate-shell \
 	typescript \
 	visidata \
+	yabai \
 	yarn
+
+extra: \
+	daisydisk \
+	font-jetbrains-mono \
+	mindnode \
+	slack
 
 1password: /Applications/1password\ 7.app
 /Applications/1password\ 7.app:
-	brew cask install 1password
+	brew install 1password
 
 alacritty: /Applications/alacritty.app ~/.alacritty.yml
 /Applications/alacritty.app:
-	brew cask install alacritty
+	brew install alacritty
 ~/.alacritty.yml:
 	ln -s ~/.dotfiles/.alacritty.yml $@
 
 alfred: brew /Applications/Alfred\ 4.app
 /Applications/Alfred\ 4.app:
-	brew cask install alfred
+	brew install alfred
 
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
@@ -73,6 +73,7 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
+	brew tap homebrew/cask-fonts
 
 yabai: ~/.yabairc ${BREW_BIN}/yabai
 ${BREW_BIN}/yabai:
@@ -91,7 +92,7 @@ daisydisk: mas /Applications/DaisyDisk.app
 
 dash: /Applications/Dash.app
 /Applications/Dash.app:
-	brew cask install dash
+	brew install dash
 
 diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy 
 ${BREW_BIN}/diff-so-fancy:
@@ -99,7 +100,7 @@ ${BREW_BIN}/diff-so-fancy:
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
-	brew cask install docker
+	brew install docker
 
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
@@ -118,19 +119,12 @@ ${BREW_BIN}/fd:
 
 fnm: brew ${BREW_BIN}/fnm 
 ${BREW_BIN}/fnm:
-	brew install Schniz/tap/fnm
-
-font-firacode: ~/Library/Fonts/FiraCode-bold.otf
-~/Library/Fonts/FiraCode-bold.otf:
-	brew cask install font-fira-code
-
-font-nerd-font: ~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf
-~/Library/Fonts/Hack\ Regular\ Nerd\ Font\ Complete.ttf:
-	brew cask install font-hack-nerd-font
+	brew install fnm
 
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
 ~/Library/Fonts/JetBrainsMono-Regular.ttf:
-	brew cask install font-jetbrains-mono
+	brew tap homebrew/cask-fonts
+	brew install font-jetbrains-mono
 
 fzf: ~/.fzf
 ~/.fzf:
@@ -139,7 +133,7 @@ fzf: ~/.fzf
 
 google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
-	brew cask install google-chrome
+	brew install google-chrome
 
 gpg: brew ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
 ${BREW_BIN}/gpg:
@@ -153,10 +147,6 @@ gh: brew ${BREW_BIN}/gh
 ${BREW_BIN}/gh:
 	brew install github/gh/gh
 
-hyper: brew /Applications/Hyper.app
-/Applications/Hyper.app:
-	brew cask install hyper
-
 gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
 	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
@@ -166,11 +156,9 @@ jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
 	@npm install -g jscpd
 
-khd: brew ${BREW_BIN}/khd ~/.khdrc
-${BREW_BIN}/khd:
-	brew install koekeishiya/formulae/khd
-~/.khdrc:
-	ln -s ~/.dotfiles/.khdrc $@
+kap: brew /Applications/Kap.app
+/Applications/Kap.app:
+	brew install kap
 
 libjpeg: brew ${BREW_BIN}/libjpeg
 ${BREW_BIN}/libjpeg:
@@ -223,12 +211,6 @@ zsh: ~/.zshrc
 	ln -s ~/.dotfiles/zsh/zshrc $@
 	chsh -s /bin/zsh
 
-ranger: brew ~/.config/ranger ${BREW_BIN}/ranger
-${BREW_BIN}/ranger:
-	brew install ranger
-~/.config/ranger: ~/.config
-	ln -s ~/.dotfiles/ranger $@
-
 ripgrep: brew
 	brew install ripgrep
 
@@ -240,11 +222,6 @@ slack: mas /Applications/Slack.app
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
 	brew install shellcheck
-
-tadam: mas /Applications/Tadam.app
-/Applications/Tadam.app:
-	echo "Install tadam"
-	mas install 531349534
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
@@ -271,7 +248,7 @@ ${BREW_BIN}/tsc:
 
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
-	brew cask install vagrant
+	brew install vagrant
 
 vim: brew ${BREW_BIN}/vim ~/.vimrc
 ${BREW_BIN}/vim:
@@ -293,7 +270,7 @@ ${BREW_BIN}/nvim:
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
-	brew cask install virtualbox
+	brew install virtualbox
 
 visidata: brew ${BREW_BIN}/vd
 ${BREW_BIN}/vd:
@@ -322,7 +299,7 @@ travis:
 
 vlc: brew ~/Applications/VLC.app
 ~/Applications/VLC.app:
-	brew cask install vlc
+	brew install vlc
 
 postman: brew ~/Applications/Postman.app
 ~/Applications/Postman.app:
@@ -330,7 +307,7 @@ postman: brew ~/Applications/Postman.app
 
 packer: brew ${BREW_BIN}/packer
 ${BREW_BIN}/packer:
-	brew cask install packer
+	brew install packer
 
 cloc: brew
 	brew install cloc
