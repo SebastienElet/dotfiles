@@ -1,5 +1,6 @@
 {
   "javascript.suggestionActions.enabled": false,
+  "eslint.autoFixOnSave": true,
   "coc.preferences.formatOnSaveFiletypes": [
     "typescript",
     "typescriptreact",
