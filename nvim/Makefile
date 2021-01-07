@@ -1,6 +1,7 @@
 all: \
 	bundle/coc \
 	bundle/dein \
+	bundle/fugitive \
 	bundle/polyglot \
 	bundle/theme-oceanic \
 	help
@@ -10,6 +11,9 @@ bundle/coc:
 
 bundle/dein:
 	git clone https://github.com/Shougo/dein.vim $@
+
+bundle/fugitive:
+	git clone https://github.com/tpope/vim-fugitive.git $@
 
 bundle/polyglot:
 	git clone https://github.com/sheerun/vim-polyglot.git $@
