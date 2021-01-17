@@ -1,16 +1,17 @@
 #!/bin/bash
 
-echo Brew upgrade
+echo "ℹ️  Brew upgrade"
 brew update
 brew upgrade
 brew upgrade --cask
 brew cleanup -s
 
-echo Brew diagnostic
+echo "ℹ️  Brew diagnostic"
 brew doctor
 brew missing
 
-echo Mas upgrade
+echo "ℹ️  Mas upgrade"
 mas outdated
 
-echo Npm upgrade
+echo "ℹ️  Npm upgrade"
+npm-check -g -y
