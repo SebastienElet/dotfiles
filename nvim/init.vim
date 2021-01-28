@@ -77,17 +77,18 @@ endif
 " python -m pip install --user --upgrade pynvim
 
 let g:coc_global_extensions = [
-  \ 'coc-sh',
   \ 'coc-css',
   \ 'coc-git',
-  \ 'coc-sql',
-  \ 'coc-json',
   \ 'coc-html',
-  \ 'coc-vimlsp',
+  \ 'coc-json',
   \ 'coc-lists',
-  \ 'coc-snippets',
-  \ 'coc-tsserver',
   \ 'coc-prettier',
+  \ 'coc-react-refactor',
+  \ 'coc-sh',
+  \ 'coc-snippets',
+  \ 'coc-sql',
+  \ 'coc-tsserver',
+  \ 'coc-vimlsp',
 \ ]
 nnoremap <silent><C-p> :CocList files<CR>
 command! -nargs=0 Prettier :call CocAction('runCommand', 'prettier.formatFile')
