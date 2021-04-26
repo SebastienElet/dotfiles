@@ -3,8 +3,11 @@ all: \
 	bundle/dein \
 	bundle/fugitive \
 	bundle/polyglot \
+	bundle/prisma \
 	bundle/theme-oceanic \
 	help
+
+#	bundle/telescope \
 
 bundle/coc:
 	git clone https://github.com/neoclide/coc.nvim.git $@
@@ -18,8 +21,18 @@ bundle/fugitive:
 bundle/polyglot:
 	git clone https://github.com/sheerun/vim-polyglot.git $@
 
+bundle/prisma:
+	git clone https://github.com/pantharshit00/vim-prisma.git $@
+
 bundle/theme-oceanic:
 	git clone https://github.com/mhartington/oceanic-next.git $@
+
+bundle/popup:
+	git clone https://github.com/nvim-lua/popup.nvim.git $@
+bundle/plenary:
+	git clone https://github.com/nvim-lua/plenary.nvim.git $@
+bundle/telescope/: bundle/popup bundle/plenary
+	git clone https://github.com/nvim-telescope/telescope.nvim.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"

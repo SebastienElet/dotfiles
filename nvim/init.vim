@@ -66,6 +66,7 @@ if dein#load_state('~/.config/nvim/bundle/dein/')
   call dein#add('~/.config/nvim/bundle/fugitive')
   call dein#add('~/.config/nvim/bundle/neoformat')
   call dein#add('~/.config/nvim/bundle/polyglot')
+  call dein#add('~/.config/nvim/bundle/prisma')
   call dein#add('~/.config/nvim/bundle/theme-oceanic')
   call dein#end()
   call dein#save_state()
@@ -83,6 +84,7 @@ let g:coc_global_extensions = [
   \ 'coc-json',
   \ 'coc-lists',
   \ 'coc-prettier',
+  \ 'coc-prisma',
   \ 'coc-react-refactor',
   \ 'coc-sh',
   \ 'coc-snippets',
