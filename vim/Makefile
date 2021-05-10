@@ -19,58 +19,58 @@ all: \
 	help
 
 bundle/dein:
-	git clone https://github.com/Shougo/dein.vim $@
+	git clone --depth 1 https://github.com/Shougo/dein.vim $@
 
 bundle/editorconfig:
-	git clone https://github.com/editorconfig/editorconfig-vim.git $@
+	git clone --depth 1 https://github.com/editorconfig/editorconfig-vim.git $@
 
 bundle/fugitive:
-	git clone https://github.com/tpope/vim-fugitive.git $@
+	git clone --depth 1 https://github.com/tpope/vim-fugitive.git $@
 
 bundle/fzf:
-	git clone https://github.com/junegunn/fzf.vim.git $@
+	git clone --depth 1 https://github.com/junegunn/fzf.vim.git $@
 
 bundle/neoformat:
-	git clone https://github.com/sbdchd/neoformat.git $@
+	git clone --depth 1 https://github.com/sbdchd/neoformat.git $@
 
 bundle/neomake:
-	git clone https://github.com/neomake/neomake $@
+	git clone --depth 1 https://github.com/neomake/neomake $@
 
 bundle/ale:
-	git clone https://github.com/w0rp/ale $@
+	git clone --depth 1 https://github.com/w0rp/ale $@
 
 bundle/syntax-ansible:
-	git clone https://github.com/pearofducks/ansible-vim $@
+	git clone --depth 1 https://github.com/pearofducks/ansible-vim $@
 
 bundle/syntax-js:
-	git clone https://github.com/jelera/vim-javascript-syntax.git $@
+	git clone --depth 1 https://github.com/jelera/vim-javascript-syntax.git $@
 
 bundle/syntax-json:
-	git clone https://github.com/elzr/vim-json.git $@
+	git clone --depth 1 https://github.com/elzr/vim-json.git $@
 
 bundle/syntax-jsx:
-	git clone https://github.com/jelera/vim-javascript-syntax.git $@
+	git clone --depth 1 https://github.com/jelera/vim-javascript-syntax.git $@
 
 bundle/syntax-less:
-	git clone https://github.com/groenewege/vim-less.git $@
+	git clone --depth 1 https://github.com/groenewege/vim-less.git $@
 
 bundle/syntax-graphql:
-	git clone git@github.com:jparise/vim-graphql.git $@
+	git clone --depth 1 git@github.com:jparise/vim-graphql.git $@
 
 bundle/syntax-markdown:
-	git clone https://github.com/tpope/vim-markdown.git $@
+	git clone --depth 1 https://github.com/tpope/vim-markdown.git $@
 
 bundle/syntax-rust:
-	git clone https://github.com/rust-lang/rust.vim $@
+	git clone --depth 1 https://github.com/rust-lang/rust.vim $@
 
 bundle/syntax-terraform:
-	git clone https://github.com/hashivim/vim-terraform.git $@
+	git clone --depth 1 https://github.com/hashivim/vim-terraform.git $@
 
 bundle/syntax-ts:
-	git clone https://github.com/leafgarland/typescript-vim.git $@
+	git clone --depth 1 https://github.com/leafgarland/typescript-vim.git $@
 
 bundle/tsuquyomi:
-	git clone https://github.com/Quramy/tsuquyomi.git $@
+	git clone --depth 1 https://github.com/Quramy/tsuquyomi.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"

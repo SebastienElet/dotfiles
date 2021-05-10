@@ -10,6 +10,6 @@ curl -fsSL \
 # Manual install
 ````bash
 cd && \
-  git clone https://github.com/SebastienElet/dotfiles.git .dotfiles &&
+  git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles &&
   make all
 ````

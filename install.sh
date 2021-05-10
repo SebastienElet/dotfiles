@@ -21,6 +21,6 @@ then
 fi
 
 cd 
-git clone https://github.com/SebastienElet/dotfiles.git .dotfiles
+git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
 make all

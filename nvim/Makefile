@@ -10,29 +10,29 @@ all: \
 #	bundle/telescope \
 
 bundle/coc:
-	git clone https://github.com/neoclide/coc.nvim.git $@
+	git clone --depth 1 https://github.com/neoclide/coc.nvim.git $@
 
 bundle/dein:
-	git clone https://github.com/Shougo/dein.vim $@
+	git clone --depth 1 https://github.com/Shougo/dein.vim $@
 
 bundle/fugitive:
-	git clone https://github.com/tpope/vim-fugitive.git $@
+	git clone --depth 1 https://github.com/tpope/vim-fugitive.git $@
 
 bundle/polyglot:
-	git clone https://github.com/sheerun/vim-polyglot.git $@
+	git clone --depth 1 https://github.com/sheerun/vim-polyglot.git $@
 
 bundle/prisma:
-	git clone https://github.com/pantharshit00/vim-prisma.git $@
+	git clone --depth 1 https://github.com/pantharshit00/vim-prisma.git $@
 
 bundle/theme-oceanic:
-	git clone https://github.com/mhartington/oceanic-next.git $@
+	git clone --depth 1 https://github.com/mhartington/oceanic-next.git $@
 
 bundle/popup:
-	git clone https://github.com/nvim-lua/popup.nvim.git $@
+	git clone --depth 1 https://github.com/nvim-lua/popup.nvim.git $@
 bundle/plenary:
-	git clone https://github.com/nvim-lua/plenary.nvim.git $@
+	git clone --depth 1 https://github.com/nvim-lua/plenary.nvim.git $@
 bundle/telescope/: bundle/popup bundle/plenary
-	git clone https://github.com/nvim-telescope/telescope.nvim.git $@
+	git clone --depth 1 https://github.com/nvim-telescope/telescope.nvim.git $@
 
 help:
 	@vim -c "call pathogen#helptags()" -c "qall"
