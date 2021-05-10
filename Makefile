@@ -29,6 +29,7 @@ all: \
 	translate-shell \
 	typescript \
 	visidata \
+	volta \
 	yabai \
 	yarn
 
@@ -275,6 +276,11 @@ ${BREW_BIN}/VBoxHeadless:
 visidata: brew ${BREW_BIN}/vd
 ${BREW_BIN}/vd:
 	brew install saulpw/vd/visidata
+
+volta: brew ${BREW_BIN}/volta
+${BREW_BIN}/volta:
+	brew install volta
+
 
 yarn: node ${BREW_BIN}/yarn
 ${BREW_BIN}/yarn:
