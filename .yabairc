@@ -13,24 +13,29 @@ yabai -m config --space 5 layout bsp
 # Space labels
 yabai -m space 1 --label "Primary"
 yabai -m space 2 --label "Productivity"
-yabai -m space 3 --label "Media"
-yabai -m space 4 --label "Calendar"
-yabai -m space 5 --label "Music"
+yabai -m space 3 --label "Terminal"
+yabai -m space 4 --label "Media"
+yabai -m space 5 --label "Calendar"
+yabai -m space 6 --label "Music"
 yabai -m space 2 --ratio abs:0.75
 
 yabai -m rule --add app="Chrome" space=2 
+yabai -m rule --add app="Brave" space=2 
 yabai -m rule --add app="Safari" space=2
 
-yabai -m rule --add app="Slack" space=3
-yabai -m rule --add app="Discord" space=3
-yabai -m rule --add app="Front" space=3
+yabai -m rule --add app="Alacritty" space=3
+# yabai -m rule --add app="Alacritty" native-fullscreen=on
 
-yabai -m rule --add app="Calendrier" space=4
-yabai -m rule --add app="Mail" space=4
+yabai -m rule --add app="Slack" space=4
+yabai -m rule --add app="Discord" space=4
+yabai -m rule --add app="Front" space=4
 
-yabai -m rule --add app="Musique" space=5
-yabai -m rule --add app="Podcast" space=5
+yabai -m rule --add app="Calendrier" space=5
+yabai -m rule --add app="Mail" space=5
+
+yabai -m rule --add app="Musique" space=6
+yabai -m rule --add app="Podcast" space=6
+
 
 yabai -m rule --add app="iTerm2" native-fullscreen=on
-yabai -m rule --add app="Alacritty" native-fullscreen=on
 yabai -m rule --add app="TablePlus" native-fullscreen=on
