@@ -38,7 +38,7 @@ zstyle ':completion:*:*:docker-*:*' option-stacking yes
 # source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
 
 # Fzf
-export FZF_DEFAULT_COMMAND='rg --files --hidden --follow --no-ingore-vcs'
+export FZF_DEFAULT_COMMAND='rg --files --no-ignore-vcs --hidden'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Gpg
@@ -58,4 +58,10 @@ fi
 # Alias
 source ~/.dotfiles/zsh/alias
 
-EDITOR=vim
+EDITOR=nvim
+
+source /Users/sebastien/.config/broot/launcher/bash/br
+
+export PATH="$PATH:/Users/sebastien/.simple/bin"
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
