@@ -22,5 +22,6 @@
       "filetypes": ["sh"],
       "ignoredRootPaths": ["~"]
     }
-  }
+  },
+  "sql.database": "postgresql"
 }
