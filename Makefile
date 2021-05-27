@@ -10,6 +10,7 @@ all: \
 	alfred \
 	bash-language-server \
 	bat \
+	comby \
 	ctop \
 	dash \
 	docker \
@@ -60,6 +61,10 @@ ${NPM_BIN}/bash-language-server:
 bat: brew ${BREW_BIN}/bat
 ${BREW_BIN}/bat:
 	brew install bat
+
+comby: brew ${BREW_BIN}/comby
+${BREW_BIN}/comby:
+	brew install comby
 
 ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
 ${BREW_BIN}/ansible:
