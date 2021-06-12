@@ -68,6 +68,9 @@ if dein#load_state('~/.config/nvim/bundle/dein/')
   call dein#add('~/.config/nvim/bundle/polyglot')
   call dein#add('~/.config/nvim/bundle/prisma')
   call dein#add('~/.config/nvim/bundle/theme-oceanic')
+  call dein#add('~/.config/nvim/bundle/popup')
+  call dein#add('~/.config/nvim/bundle/plenary')
+  call dein#add('~/.config/nvim/bundle/telescope')
   call dein#end()
   call dein#save_state()
 endif
@@ -92,7 +95,7 @@ let g:coc_global_extensions = [
   \ 'coc-tsserver',
   \ 'coc-vimlsp',
 \ ]
-nnoremap <silent><C-p> :CocList files<CR>
+" nnoremap <silent><C-p> :CocList files<CR>
 command! -nargs=0 Prettier :call CocAction('runCommand', 'prettier.formatFile')
 
 " Use <c-space> to trigger completion.
@@ -147,6 +150,13 @@ imap <C-j> <Plug>(coc-snippets-expand-jump)
 
 " Use <leader>x for convert visual selected code to snippet
 xmap <leader>x  <Plug>(coc-convert-snippet)
+" }}}
+" Telescope {{{
+nnoremap <silent><C-p> <cmd>Telescope find_files<CR>
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fb <cmd>Telescope buffers<cr>
+nnoremap <leader>fh <cmd>Telescope help_tags<cr>
 " }}}
 " Colors {{{
 set background=dark
