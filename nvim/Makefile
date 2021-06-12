@@ -4,10 +4,9 @@ all: \
 	bundle/fugitive \
 	bundle/polyglot \
 	bundle/prisma \
+	bundle/telescope \
 	bundle/theme-oceanic \
 	help
-
-#	bundle/telescope \
 
 bundle/coc:
 	git clone --depth 1 https://github.com/neoclide/coc.nvim.git $@
@@ -29,8 +28,10 @@ bundle/theme-oceanic:
 
 bundle/popup:
 	git clone --depth 1 https://github.com/nvim-lua/popup.nvim.git $@
+
 bundle/plenary:
 	git clone --depth 1 https://github.com/nvim-lua/plenary.nvim.git $@
+
 bundle/telescope/: bundle/popup bundle/plenary
 	git clone --depth 1 https://github.com/nvim-telescope/telescope.nvim.git $@
 
