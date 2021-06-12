@@ -262,6 +262,9 @@ ${BREW_BIN}/vim:
 
 nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
+	# To use neovim 0.5
+	# Install cmake luarocks
+	# brew install --HEAD neovim
 	brew install neovim
 	npm i -g neovim
 ~/.config:
