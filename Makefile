@@ -21,6 +21,7 @@ all: \
 	gpg \
 	jscpd \
 	kap \
+	mosh \
 	ncdu \
 	node \
 	nvim \
@@ -177,6 +178,10 @@ ${BREW_BIN}/lftp:
 mas: brew ${BREW_BIN}/mas/
 ${BREW_BIN}/mas/:
 	brew install mas
+
+mosh: brew ${BREW_BIN}/mosh/
+${BREW_BIN}/mosh/:
+	brew install mosh
 
 ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
