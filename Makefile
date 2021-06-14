@@ -273,7 +273,7 @@ vim: brew ${BREW_BIN}/vim ~/.vimrc
 ${BREW_BIN}/vim:
 	brew install vim
 
-nvim : node brew ${BREW_BIN}/nvim
+nvim : node brew ${BREW_BIN}/nvim ~/.config/nvim
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -283,7 +283,8 @@ ${BREW_BIN}/nvim:
 ~/.config:
 	mkdir $@
 ~/.config/nvim:
-	ln -s ~/.dotfiles/nvim ~/.config/nvim
+	ln -s ~/.dotfiles/nvim $@
+	cd $@ && make
 
 ~/.vimrc:
 	ln -s ~/.dotfiles/vim ~/.vim
