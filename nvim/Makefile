@@ -32,7 +32,7 @@ bundle/popup:
 bundle/plenary:
 	git clone --depth 1 https://github.com/nvim-lua/plenary.nvim.git $@
 
-bundle/telescope/: bundle/popup bundle/plenary
+bundle/telescope: bundle/popup bundle/plenary
 	git clone --depth 1 https://github.com/nvim-telescope/telescope.nvim.git $@
 
 help:
