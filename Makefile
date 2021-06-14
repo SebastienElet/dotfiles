@@ -1,4 +1,12 @@
-BREW_BIN:=/usr/local/bin
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S), Darwin)
+	BREW_BIN:=/usr/local/bin
+endif
+ifeq ($(UNAME_S), Linux) 
+	BREW_BIN:=${HOMEBREW_PREFIX}/bin
+endif
+VOLTA_BIN:=${HOME}/.volta/bin
 NPM_BIN:=/usr/local/bin
 
 usage:
@@ -76,9 +84,7 @@ ${BREW_BIN}/molecule:
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
-	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
-	chmod +x /tmp/brew-installer.sh
-	/tmp/brew-installer.sh
+	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 	brew tap gapple/services
 	brew tap homebrew/cask-fonts
 
@@ -187,9 +193,11 @@ ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: ${BREW_BIN}/fnm
-${BREW_BIN}/node:
-	fnm install latest
+node: ${BREW_BIN}/volta ${VOLTA_BIN}/node.set
+${VOLTA_BIN}/node.set:
+	volta install node
+	# Avoid to reinstall it
+	touch $@
 
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
