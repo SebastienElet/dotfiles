@@ -17,6 +17,7 @@ all: \
 	fd \
 	fnm \
 	fzf \
+	git-heatmap \
 	google-chrome \
 	gpg \
 	jscpd \
@@ -82,6 +83,10 @@ ${BREW_BIN}/brew:
 	brew tap gapple/services
 	brew tap homebrew/cask-fonts
 
+bars: node ${NPM_BIN}/bars
+${NPM_BIN}/bars:
+	@npm install -g https://github.com/jez/bars.git
+
 yabai: ~/.yabairc ${BREW_BIN}/yabai
 ${BREW_BIN}/yabai:
 	brew install koekeishiya/formulae/yabai
@@ -137,6 +142,10 @@ fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
 	~/.fzf/install --no-update-rc
+
+git-heatmap: brew bars ${BREW_BIN}/git-heatmap
+${BREW_BIN}/git-heatmap:
+	brew install jez/formulae/git-heatmap
 
 google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
