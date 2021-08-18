@@ -23,5 +23,27 @@
       "ignoredRootPaths": ["~"]
     }
   },
-  "sql.database": "postgresql"
+  "sql.database": "postgresql",
+  "cSpellExt.enableDictionaries": ["french"],
+  "cSpell.language": "en,fr",
+  "cSpell.userWords": [
+    "Frontapp",
+    "Iban",
+    "Onboarded",
+    "SEPA",
+    "Unicity",
+    "fundcall",
+    "hubspot",
+    "immo",
+    "microservices",
+    "middlewares",
+    "pdfs",
+    "pino",
+    "postgresql",
+    "quickbooks",
+    "rlmc",
+    "stepfunction",
+    "upsert",
+    "yolo"
+  ],
 }
