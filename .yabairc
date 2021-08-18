@@ -22,6 +22,7 @@ yabai -m space 2 --ratio abs:0.75
 yabai -m rule --add app="Chrome" space=2 
 yabai -m rule --add app="Brave" space=2 
 yabai -m rule --add app="Safari" space=2
+yabai -m rule --add app="Obsidian" space=2
 
 yabai -m rule --add app="Alacritty" space=3
 # yabai -m rule --add app="Alacritty" native-fullscreen=on
