@@ -270,10 +270,6 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew install vagrant
 
-vim: brew ${BREW_BIN}/vim ~/.vimrc
-${BREW_BIN}/vim:
-	brew install vim
-
 nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
@@ -285,11 +281,6 @@ ${BREW_BIN}/nvim:
 	mkdir $@
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
-
-~/.vimrc:
-	ln -s ~/.dotfiles/vim ~/.vim
-	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-	cd ~/.vim && make
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
