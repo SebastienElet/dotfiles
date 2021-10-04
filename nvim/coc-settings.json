@@ -27,10 +27,12 @@
   "cSpellExt.enableDictionaries": ["french"],
   "cSpell.language": "en,fr",
   "cSpell.userWords": [
+    "ALUR",
     "Frontapp",
     "Iban",
     "Onboarded",
     "SEPA",
+    "Sepas",
     "Taitbout",
     "Unicity",
     "fundcall",
