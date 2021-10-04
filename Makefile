@@ -15,7 +15,6 @@ all: \
 	dash \
 	docker \
 	fd \
-	fnm \
 	fzf \
 	git-heatmap \
 	google-chrome \
@@ -129,10 +128,6 @@ fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
-fnm: brew ${BREW_BIN}/fnm 
-${BREW_BIN}/fnm:
-	brew install fnm
-
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
 ~/Library/Fonts/JetBrainsMono-Regular.ttf:
 	brew tap homebrew/cask-fonts
@@ -196,9 +191,9 @@ ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: ${BREW_BIN}/fnm
+node: ${BREW_BIN}/volta
 ${BREW_BIN}/node:
-	fnm install latest
+	volta install latest
 
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
