@@ -30,7 +30,6 @@ all: \
 	tmux \
 	translate-shell \
 	typescript \
-	visidata \
 	volta \
 	yabai \
 	yarn
@@ -281,10 +280,6 @@ virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
 	brew install virtualbox
 
-visidata: brew ${BREW_BIN}/vd
-${BREW_BIN}/vd:
-	brew install saulpw/vd/visidata
-
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
@@ -295,6 +290,9 @@ ${BREW_BIN}/yarn:
 	npm install -g yarn
 
 
+visidata: brew ${BREW_BIN}/vd
+${BREW_BIN}/vd:
+	brew install saulpw/vd/visidata
 
 youtube-dl: brew ${BREW_BIN}/youtube-dl
 ${BREW_BIN}/youtube-dl:
