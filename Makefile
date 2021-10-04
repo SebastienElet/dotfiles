@@ -15,7 +15,6 @@ all: \
 	dash \
 	docker \
 	fd \
-	fnm \
 	fzf \
 	git-heatmap \
 	google-chrome \
@@ -31,7 +30,6 @@ all: \
 	tmux \
 	translate-shell \
 	typescript \
-	visidata \
 	volta \
 	yabai \
 	yarn
@@ -129,10 +127,6 @@ fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
-fnm: brew ${BREW_BIN}/fnm 
-${BREW_BIN}/fnm:
-	brew install fnm
-
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
 ~/Library/Fonts/JetBrainsMono-Regular.ttf:
 	brew tap homebrew/cask-fonts
@@ -196,9 +190,9 @@ ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: ${BREW_BIN}/fnm
+node: ${BREW_BIN}/volta
 ${BREW_BIN}/node:
-	fnm install latest
+	volta install latest
 
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
@@ -270,10 +264,6 @@ vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew install vagrant
 
-vim: brew ${BREW_BIN}/vim ~/.vimrc
-${BREW_BIN}/vim:
-	brew install vim
-
 nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
@@ -286,18 +276,9 @@ ${BREW_BIN}/nvim:
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
 
-~/.vimrc:
-	ln -s ~/.dotfiles/vim ~/.vim
-	ln -s ~/.dotfiles/vim/.vimrc ~/.vimrc
-	cd ~/.vim && make
-
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
 	brew install virtualbox
-
-visidata: brew ${BREW_BIN}/vd
-${BREW_BIN}/vd:
-	brew install saulpw/vd/visidata
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
@@ -309,6 +290,9 @@ ${BREW_BIN}/yarn:
 	npm install -g yarn
 
 
+visidata: brew ${BREW_BIN}/vd
+${BREW_BIN}/vd:
+	brew install saulpw/vd/visidata
 
 youtube-dl: brew ${BREW_BIN}/youtube-dl
 ${BREW_BIN}/youtube-dl:
