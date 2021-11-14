@@ -1,5 +1,6 @@
 all: \
 	bundle/coc \
+	bundle/copilot \
 	bundle/dein \
 	bundle/fugitive \
 	bundle/polyglot \
@@ -10,6 +11,9 @@ all: \
 
 bundle/coc:
 	git clone --depth 1 https://github.com/neoclide/coc.nvim.git $@
+
+bundle/copilot:
+	git clone --depth 1 https://github.com/github/copilot.vim.git $@
 
 bundle/dein:
 	git clone --depth 1 https://github.com/Shougo/dein.vim $@
