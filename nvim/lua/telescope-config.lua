@@ -7,7 +7,9 @@ end
 local telescope = require "telescope"
 telescope.setup{
   defaults = {
-    mappings = {}
+    mappings = {},
+    generic_sorter = require'telescope.sorters'.get_fzy_sorter,
+    file_sorter = require'telescope.sorters'.get_fzy_sorter,
   }
 }
 
