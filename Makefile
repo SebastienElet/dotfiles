@@ -27,6 +27,7 @@ all: \
 	nvim \
 	ripgrep \
 	shellcheck \
+	tmate \
 	tmux \
 	translate-shell \
 	typescript \
@@ -236,6 +237,10 @@ slack: mas /Applications/Slack.app
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
 	brew install shellcheck
+
+tmate: brew ${BREW_BIN}/tmate
+${BREW_BIN}/tmate:
+	brew install tmate
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
