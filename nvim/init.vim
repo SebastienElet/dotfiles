@@ -87,6 +87,7 @@ let g:coc_global_extensions = [
   \ 'coc-html',
   \ 'coc-json',
   \ 'coc-lists',
+  \ 'coc-pairs',
   \ 'coc-prettier',
   \ 'coc-prisma',
   \ 'coc-react-refactor',
