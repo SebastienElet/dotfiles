@@ -82,7 +82,9 @@ endif
 " python -m pip install --user --upgrade pynvim
 
 let g:coc_global_extensions = [
+  \ 'coc-cspell-dicts',
   \ 'coc-css',
+  \ 'coc-flutter',
   \ 'coc-git',
   \ 'coc-html',
   \ 'coc-json',
@@ -91,7 +93,7 @@ let g:coc_global_extensions = [
   \ 'coc-prettier',
   \ 'coc-prisma',
   \ 'coc-react-refactor',
-  \ 'coc-cspell-dicts',
+  \ 'coc-rust-analyzer',
   \ 'coc-sh',
   \ 'coc-snippets',
   \ 'coc-spell-checker',
