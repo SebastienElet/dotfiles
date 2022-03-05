@@ -5,6 +5,7 @@
     "typescript",
     "typescriptreact",
     "javascript",
+    "graphql",
     "css",
     "Markdown",
     "json"
@@ -21,6 +22,11 @@
       "args": ["start"],
       "filetypes": ["sh"],
       "ignoredRootPaths": ["~"]
+    },
+    "graphql": {
+      "command": "graphql-lsp",
+      "args": ["server", "-m", "stream"],
+      "filetypes": ["typescript", "typescriptreact", "graphql"]
     }
   },
   "sql.database": "postgresql",
@@ -29,6 +35,7 @@
   "cSpell.userWords": [
     "ALUR",
     "Aircall",
+    "CLOUDCONVERT",
     "Clarkson",
     "Frontapp",
     "ILIKE",
@@ -39,9 +46,17 @@
     "SSOT",
     "Sepas",
     "Taitbout",
+    "Trustpilot",
     "Unicity",
+    "anonymizing",
+    "apikey",
+    "bankin",
+    "caticon",
+    "conver",
     "creditmemo",
+    "datasources",
     "datetime",
+    "docupilot",
     "fundcall",
     "hubspot",
     "immo",
@@ -54,6 +69,8 @@
     "rlmc",
     "stepfunction",
     "upsert",
+    "xlarge",
+    "xsmall",
     "yolo"
   ],
 }
