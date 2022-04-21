@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+FILES=`fd -e test.ts`
+AUTHORS=""
+
+echo Number of test files `echo $FILES | tr " " "\n" | wc -l`
+
+for FILE in $FILES; do
+    AUTHORS+=`git log --reverse --format="%cn" "$FILE" | head -1`"|"
+done
+
+echo "Test files by authors"
+echo $AUTHORS | tr "|" "\n" | sed '/^$/d' | sort | uniq -c
