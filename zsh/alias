@@ -75,3 +75,4 @@ alias -g V='| vim -'
 alias -g G='| g'
 alias -g A='| rg'
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
+alias git-test-review=~/.dotfiles/zsh/bin/git-test-review
