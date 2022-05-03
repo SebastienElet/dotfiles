@@ -1,3 +1,5 @@
+# Fig pre block. Keep at the top of this file.
+. "$HOME/.fig/shell/zshrc.pre.zsh"
 LC_ALL="fr_FR.UTF-8"
 LANG="fr_FR.UTF-8"
 LC_COLLATE="fr_FR.UTF-8"
@@ -64,3 +66,8 @@ source /Users/sebastien/.config/broot/launcher/bash/br
 export PATH="$PATH:/Users/sebastien/.simple/bin"
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
+
+function gam() { "/Users/sebastien/bin/gam/gam" "$@" ; }
+
+# Fig post block. Keep at the bottom of this file.
+. "$HOME/.fig/shell/zshrc.post.zsh"
