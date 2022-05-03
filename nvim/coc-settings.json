@@ -9,6 +9,7 @@
     "rust",
     "css",
     "Markdown",
+    "prisma",
     "json"
   ],
   "list.normalMappings": {
@@ -23,11 +24,6 @@
       "args": ["start"],
       "filetypes": ["sh"],
       "ignoredRootPaths": ["~"]
-    },
-    "graphql": {
-      "command": "graphql-lsp",
-      "args": ["server", "-m", "stream"],
-      "filetypes": ["typescript", "typescriptreact", "graphql"]
     }
   },
   "sql.database": "postgresql",
@@ -46,11 +42,13 @@
     "RGDD",
     "Rustfmt",
     "SEPA",
+    "SQLX",
     "SSOT",
     "Sepas",
     "Taitbout",
     "Trustpilot",
     "Unicity",
+    "actix",
     "anonymizing",
     "apikey",
     "bankin",
@@ -61,6 +59,7 @@
     "datetime",
     "docupilot",
     "fundcall",
+    "gmail",
     "hubspot",
     "immo",
     "microservices",
@@ -69,6 +68,7 @@
     "pino",
     "postgresql",
     "quickbooks",
+    "reqwest",
     "rlmc",
     "stepfunction",
     "upsert",
