@@ -19,6 +19,7 @@ all: \
 	git-heatmap \
 	google-chrome \
 	gpg \
+	graphql-language-service-cli \
 	jscpd \
 	kap \
 	mosh \
@@ -162,6 +163,10 @@ gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
 	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
 	echo 'pinentry-program ${BREW_BIN}/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
+
+graphql-language-service-cli: node ${NPM_BIN}/graphql-language-service-cli
+${NPM_BIN}/graphql-language-service-cli:
+	@npm -g install graphql-language-service-cli
 
 jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
