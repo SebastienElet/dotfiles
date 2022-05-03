@@ -11,6 +11,7 @@ all: \
 
 bundle/coc:
 	git clone --depth 1 https://github.com/neoclide/coc.nvim.git $@
+	cd bundle/coc && yarn
 
 bundle/copilot:
 	git clone --depth 1 https://github.com/github/copilot.vim.git $@
