@@ -1,25 +1,25 @@
 # Fig pre block. Keep at the top of this file.
-[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
-LC_ALL="fr_FR.UTF-8"
-LANG="fr_FR.UTF-8"
-LC_COLLATE="fr_FR.UTF-8"
-source ~/.dotfiles/zsh/antigen.zsh
+# [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
+# LC_ALL="fr_FR.UTF-8"
+# LANG="fr_FR.UTF-8"
+# LC_COLLATE="fr_FR.UTF-8"
+# source ~/.dotfiles/zsh/antigen.zsh
 
-export PATH=/usr/local/opt/python/libexec/bin:$PATH
+# export PATH=/usr/local/opt/python/libexec/bin:$PATH
 
 # Repo
-antigen use oh-my-zsh
+# antigen use oh-my-zsh
 
 # Bundles
-antigen bundle git
-antigen bundle zsh-users/zsh-syntax-highlighting
-antigen bundle robbyrussell/oh-my-zsh plugins/docker-compose/docker-compose.plugin.zsh
-antigen bundle sparsick/ansible-zsh
-antigen bundle webyneter/docker-aliases.git
-antigen bundle laurenkt/zsh-vimto
-antigen bundle zsh-users/zsh-autosuggestions
-antigen bundle wfxr/forgit
-antigen bundle sharat87/zsh-vim-mode
+# antigen bundle git
+# antigen bundle zsh-users/zsh-syntax-highlighting
+# antigen bundle robbyrussell/oh-my-zsh plugins/docker-compose/docker-compose.plugin.zsh
+# antigen bundle sparsick/ansible-zsh
+# antigen bundle webyneter/docker-aliases.git
+# antigen bundle laurenkt/zsh-vimto
+# antigen bundle zsh-users/zsh-autosuggestions
+# antigen bundle wfxr/forgit
+# antigen bundle sharat87/zsh-vim-mode
 
 
 
@@ -27,53 +27,57 @@ antigen bundle sharat87/zsh-vim-mode
 # DEFAULT_USER=sebastien
 # antigen theme robbyrussell/oh-my-zsh themes/agnoster
 # antigen theme ~/Dev/clear-zsh-theme --no-local-clone
-antigen theme subnixr/minimal
+# antigen theme subnixr/minimal
 # antigen bundle sindresorhus/pure
 
-antigen apply
+# antigen apply
 
-zstyle ':completion:*:*:docker:*' option-stacking yes
-zstyle ':completion:*:*:docker-*:*' option-stacking yes
+# zstyle ':completion:*:*:docker:*' option-stacking yes
+# zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
 # source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc'
 # source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
 
 # Fzf
-export FZF_DEFAULT_COMMAND='rg --files --no-ignore-vcs --hidden'
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# export FZF_DEFAULT_COMMAND='rg --files --no-ignore-vcs --hidden'
+# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Gpg
-if ! type "gpg-agent" > /dev/null; then
-  if [ -S "${GPG_AGENT_INFO%%:*}" ]; then
-    export GPG_AGENT_INFO
-  else
-    eval $(gpg-agent --daemon --log-file /tmp/gpg.log --write-env-file ~/.gnupg/gpg-agent.env)
-  fi
-fi
+# if ! type "gpg-agent" > /dev/null; then
+  # if [ -S "${GPG_AGENT_INFO%%:*}" ]; then
+    # export GPG_AGENT_INFO
+  # else
+    # eval $(gpg-agent --daemon --log-file /tmp/gpg.log --write-env-file ~/.gnupg/gpg-agent.env)
+  # fi
+# fi
 
 # Gh
-if ! type "gh" > /dev/null; then
-  gh completion -s zsh
-fi
+# if ! type "gh" > /dev/null; then
+  # gh completion -s zsh
+# fi
 
 # Alias
-source ~/.dotfiles/zsh/alias
+# source ~/.dotfiles/zsh/alias
 
-EDITOR=nvim
+# EDITOR=nvim
 
-source /Users/sebastien/.config/broot/launcher/bash/br
+# source /Users/sebastien/.config/broot/launcher/bash/br
 
-export PATH="$PATH:/Users/sebastien/.simple/bin"
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
+# export PATH="$PATH:/Users/sebastien/.simple/bin"
+# export VOLTA_HOME="$HOME/.volta"
+# export PATH="$VOLTA_HOME/bin:$PATH"
 
-function gam() { "/Users/sebastien/bin/gam/gam" "$@" ; }
+# function gam() { "/Users/sebastien/bin/gam/gam" "$@" ; }
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/sebastien/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/sebastien/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+# if [ -f '/Users/sebastien/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/sebastien/Downloads/google-cloud-sdk/path.zsh.inc'; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/sebastien/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/sebastien/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+# if [ -f '/Users/sebastien/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/sebastien/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
 
 # Fig post block. Keep at the bottom of this file.
-[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"
+# [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"
+
+
+# Homebrew
+[[ -d /opt/homebrew/bin ]] && export PATH=$PATH:/opt/homebrew/bin
