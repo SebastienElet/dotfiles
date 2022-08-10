@@ -1,40 +1,11 @@
-BREW_BIN:=/usr/local/bin
+BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 NPM_BIN:=/usr/local/bin
 
 usage:
 	@echo all - Setup dev env
 
 all: \
-	1password \
-	alacritty \
-	alfred \
-	bash-language-server \
-	bat \
-	comby \
-	ctop \
-	dash \
-	docker \
-	fd \
-	fzf \
-	git-heatmap \
-	google-chrome \
-	gpg \
-	graphql-language-service-cli \
-	jscpd \
-	kap \
-	mosh \
-	ncdu \
-	node \
-	nvim \
-	ripgrep \
-	shellcheck \
-	tmate \
-	tmux \
-	translate-shell \
-	typescript \
-	volta \
-	yabai \
-	yarn
+	obsidian
 
 extra: \
 	daisydisk \
@@ -285,6 +256,10 @@ ${BREW_BIN}/nvim:
 	mkdir $@
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
+
+obsidian: brew /Applications/Obsidian.app
+/Applications/Obsidian.app:
+	brew install obsidian
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
