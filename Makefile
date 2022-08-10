@@ -40,12 +40,6 @@ zsh: ~/.zshrc
 /Applications/1password\ 7.app:
 	brew install 1password
 
-alacritty: /Applications/alacritty.app ~/.alacritty.yml
-/Applications/alacritty.app:
-	brew install alacritty
-~/.alacritty.yml:
-	ln -s ~/.dotfiles/.alacritty.yml $@
-
 alfred: brew /Applications/Alfred\ 4.app
 /Applications/Alfred\ 4.app:
 	brew install alfred
