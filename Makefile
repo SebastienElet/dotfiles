@@ -6,6 +6,7 @@ usage:
 
 all: \
 	obsidian \
+	starship \
 	wezterm \
 	zsh
 
@@ -23,6 +24,13 @@ font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Compl
 ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
 	brew tap homebrew/cask-fonts
 	brew install font-jetbrains-mono-nerd-font
+
+starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
+${BREW_BIN}/starship:
+	brew install starship
+~/.config/starship.toml: ~/.config
+	echo $@
+	# ln -s ~/.dotfiles/.config/starship.toml $@
 
 wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:

@@ -81,3 +81,6 @@
 
 # Homebrew
 [[ -d /opt/homebrew/bin ]] && export PATH=$PATH:/opt/homebrew/bin
+
+# Starship
+eval "$(starship init zsh)"
