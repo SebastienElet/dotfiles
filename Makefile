@@ -77,7 +77,7 @@ ${BREW_BIN}/molecule:
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
-	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
+	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
