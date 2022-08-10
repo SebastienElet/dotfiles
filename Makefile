@@ -5,13 +5,34 @@ usage:
 	@echo all - Setup dev env
 
 all: \
-	obsidian
+	obsidian \
+	wezterm \
+	zsh
 
 extra: \
 	daisydisk \
 	font-jetbrains-mono \
 	mindnode \
 	slack
+
+obsidian: brew /Applications/Obsidian.app
+/Applications/Obsidian.app:
+	brew install obsidian
+
+font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
+~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
+	brew tap homebrew/cask-fonts
+	brew install font-jetbrains-mono-nerd-font
+
+wezterm: brew font-jetbrains-mono /Applications/WezTerm.app
+/Applications/WezTerm.app:
+	brew install --cask wez/wezterm/wezterm
+
+zsh: ~/.zshrc
+~/.zshrc:
+	ln -s ~/.dotfiles/zsh/zshrc $@
+	chsh -s /bin/zsh
+
 
 1password: /Applications/1password\ 7.app
 /Applications/1password\ 7.app:
@@ -99,11 +120,6 @@ ${BREW_BIN}/emacs:
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
-
-font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
-~/Library/Fonts/JetBrainsMono-Regular.ttf:
-	brew tap homebrew/cask-fonts
-	brew install font-jetbrains-mono
 
 fzf: ~/.fzf
 ~/.fzf:
@@ -197,11 +213,6 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier
 
-zsh: ~/.zshrc
-~/.zshrc:
-	ln -s ~/.dotfiles/zsh/zshrc $@
-	chsh -s /bin/zsh
-
 ripgrep: brew
 	brew install ripgrep
 
@@ -256,10 +267,6 @@ ${BREW_BIN}/nvim:
 	mkdir $@
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
-
-obsidian: brew /Applications/Obsidian.app
-/Applications/Obsidian.app:
-	brew install obsidian
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
