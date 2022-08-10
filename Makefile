@@ -24,9 +24,11 @@ font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Compl
 	brew tap homebrew/cask-fonts
 	brew install font-jetbrains-mono-nerd-font
 
-wezterm: brew font-jetbrains-mono /Applications/WezTerm.app
+wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew install --cask wez/wezterm/wezterm
+~/.wezterm.lua:
+	ln -s ~/.dotfiles/.wezterm.lua $@
 
 zsh: ~/.zshrc
 ~/.zshrc:
