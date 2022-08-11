@@ -65,3 +65,6 @@ eval "$(starship init zsh)"
 # Syntax
 [[ -f ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 [[ -d ~/.zsh/zsh-completions ]] && fpath=(~/.zsh/zsh-completions $fpath)
+
+# Fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

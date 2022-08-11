@@ -8,7 +8,6 @@ all: \
 	~/.config \
 	nvim \
 	obsidian \
-	starship \
 	tmux \
 	wezterm \
 	zsh
@@ -55,6 +54,11 @@ font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Compl
 	brew tap homebrew/cask-fonts
 	brew install font-jetbrains-mono-nerd-font
 
+fzf: ~/.fzf
+~/.fzf:
+	git clone https://github.com/junegunn/fzf.git ~/.fzf
+	~/.fzf/install --no-update-rc
+
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
@@ -73,7 +77,7 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 ~/.wezterm.lua:
 	ln -s ~/.dotfiles/.wezterm.lua $@
 
-zsh: ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
+zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
 	@echo 'If you want to switch your shell to zsh, please run the following command'
@@ -161,11 +165,6 @@ ${BREW_BIN}/emacs:
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
-
-fzf: ~/.fzf
-~/.fzf:
-	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install --no-update-rc
 
 git-heatmap: brew bars ${BREW_BIN}/git-heatmap
 ${BREW_BIN}/git-heatmap:
