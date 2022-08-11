@@ -5,6 +5,8 @@ usage:
 	@echo all - Setup dev env
 
 all: \
+	~/.config \
+	nvim \
 	obsidian \
 	starship \
 	wezterm \
@@ -16,10 +18,37 @@ extra: \
 	mindnode \
 	slack
 
+# Local vault on 1password does not work with 1password
+# app from the app store. We need to manually download
+# 1password from the website
+# 1password: /Applications/1password\ 7.app
+# /Applications/1password\ 7.app:
+#	brew install 1password
+
+nvim : node brew ${BREW_BIN}/nvim
+${BREW_BIN}/nvim:
+	# To use neovim 0.5
+	# Install cmake luarocks
+	# brew install --HEAD neovim
+	brew install neovim
+	npm i -g neovim
+~/.config:
+	mkdir $@
+~/.config/nvim:
+	ln -s ~/.dotfiles/nvim ~/.config/nvim
+
 obsidian: brew /Applications/Obsidian.app
 /Applications/Obsidian.app:
 	brew install obsidian
 
+font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
+~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
+	brew tap homebrew/cask-fonts
+	brew install font-fira-code-nerd-font
+font-iosevka: ~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf
+~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf:
+	brew tap homebrew/cask-fonts
+	brew install font-iosevka-nerd-font
 font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
 ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
 	brew tap homebrew/cask-fonts
@@ -28,9 +57,8 @@ font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Compl
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: ~/.config
-	echo $@
-	# ln -s ~/.dotfiles/.config/starship.toml $@
+~/.config/starship.toml:
+	ln -s ~/.dotfiles/.config/starship.toml $@
 
 wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
@@ -41,12 +69,9 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 zsh: ~/.zshrc
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
-	chsh -s /bin/zsh
+	@echo 'If you want to switch your shell to zsh, please run the following command'
+	@echo '$> chsh -s /bin/zsh
 
-
-1password: /Applications/1password\ 7.app
-/Applications/1password\ 7.app:
-	brew install 1password
 
 alfred: brew /Applications/Alfred\ 4.app
 /Applications/Alfred\ 4.app:
@@ -235,7 +260,6 @@ ${BREW_BIN}/tmate:
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
-	brew install reattach-to-user-namespace
 	brew install tmux
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
@@ -259,18 +283,6 @@ ${BREW_BIN}/tsc:
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew install vagrant
-
-nvim : node brew ${BREW_BIN}/nvim
-${BREW_BIN}/nvim:
-	# To use neovim 0.5
-	# Install cmake luarocks
-	# brew install --HEAD neovim
-	brew install neovim
-	npm i -g neovim
-~/.config:
-	mkdir $@
-~/.config/nvim:
-	ln -s ~/.dotfiles/nvim ~/.config/nvim
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
