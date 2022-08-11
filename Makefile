@@ -9,6 +9,7 @@ all: \
 	nvim \
 	obsidian \
 	starship \
+	tmux \
 	wezterm \
 	zsh
 
@@ -60,18 +61,29 @@ ${BREW_BIN}/starship:
 ~/.config/starship.toml:
 	ln -s ~/.dotfiles/.config/starship.toml $@
 
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+${BREW_BIN}/tmux:
+	brew install tmux
+~/.tmux.conf:
+	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+
 wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew install --cask wez/wezterm/wezterm
 ~/.wezterm.lua:
 	ln -s ~/.dotfiles/.wezterm.lua $@
 
-zsh: ~/.zshrc
+zsh: ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
 ~/.zshrc:
 	ln -s ~/.dotfiles/zsh/zshrc $@
 	@echo 'If you want to switch your shell to zsh, please run the following command'
-	@echo '$> chsh -s /bin/zsh
-
+	@echo '$> chsh -s /bin/zsh'
+~/.zsh/zsh-autosuggestions:
+	git clone https://github.com/zsh-users/zsh-autosuggestions $@
+~/.zsh/zsh-syntax-highlighting:
+	git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $@
+~/.zsh/zsh-completions:
+	git clone https://github.com/zsh-users/zsh-completions $@
 
 alfred: brew /Applications/Alfred\ 4.app
 /Applications/Alfred\ 4.app:
@@ -257,12 +269,6 @@ ${BREW_BIN}/shellcheck:
 tmate: brew ${BREW_BIN}/tmate
 ${BREW_BIN}/tmate:
 	brew install tmate
-
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
-${BREW_BIN}/tmux:
-	brew install tmux
-~/.tmux.conf:
-	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
 trymodule: node ${BREW_BIN}/trymodule
 ${BREW_BIN}/trymodule:
