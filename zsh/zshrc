@@ -1,30 +1,52 @@
-# Repo
-# antigen use oh-my-zsh
-
-# Bundles
-# antigen bundle git
-# antigen bundle zsh-users/zsh-syntax-highlighting
-# antigen bundle robbyrussell/oh-my-zsh plugins/docker-compose/docker-compose.plugin.zsh
-# antigen bundle sparsick/ansible-zsh
-# antigen bundle webyneter/docker-aliases.git
-# antigen bundle laurenkt/zsh-vimto
-# antigen bundle zsh-users/zsh-autosuggestions
-# antigen bundle wfxr/forgit
-# antigen bundle sharat87/zsh-vim-mode
-
-
-
-# Theme
-# antigen theme subnixr/minimal
-# antigen bundle sindresorhus/pure
-
-# antigen apply
-
-# zstyle ':completion:*:*:docker:*' option-stacking yes
-# zstyle ':completion:*:*:docker-*:*' option-stacking yes
-
 # Alias
-# source ~/.dotfiles/zsh/alias
+alias upgrade=~/.dotfiles/zsh/bin/upgrade
+alias ..='cd ..'
+alias :q='exit'
+alias vim='nvim'
+alias v='nvim'
+alias n='nvim'
+alias t='tmux'
+alias tm='tmux'
+
+# Oh-my-zsh git aliases
+alias g='git'
+
+alias gs='git status'
+alias ga='git add'
+alias gaa='git add --all'
+alias gapa='git add --patch'
+alias gau='git add --update'
+alias gav='git add --verbose'
+alias gap='git apply'
+alias gapt='git apply --3way'
+
+alias gb='git branch'
+alias gba='git branch -a'
+alias gbd='git branch -d'
+alias gbda='git branch --no-color --merged | command grep -vE "^([+*]|\s*($(git_main_branch)|$(git_develop_branch))\s*$)" | command xargs git branch -d 2>/dev/null'
+alias gbD='git branch -D'
+alias gbl='git blame -b -w'
+alias gbnm='git branch --no-merged'
+alias gbr='git branch --remote'
+alias gbs='git bisect'
+alias gbsb='git bisect bad'
+alias gbsg='git bisect good'
+alias gbsr='git bisect reset'
+alias gbss='git bisect start'
+
+alias gc='git commit -v'
+alias gc!='git commit -v --amend'
+alias gcn!='git commit -v --no-edit --amend'
+alias gca='git commit -v -a'
+alias gca!='git commit -v -a --amend'
+alias gcan!='git commit -v -a --no-edit --amend'
+alias gcans!='git commit -v -a -s --no-edit --amend'
+alias gcam='git commit -a -m'
+alias gcsm='git commit -s -m'
+alias gcas='git commit -a -s'
+alias gcasm='git commit -a -s -m'
+alias gcb='git checkout -b'
+alias gcf='git config --list'
 
 # Homebrew
 [[ -d /opt/homebrew/bin ]] && export PATH=$PATH:/opt/homebrew/bin
