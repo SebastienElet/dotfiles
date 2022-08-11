@@ -79,7 +79,7 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 
 zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
 ~/.zshrc:
-	ln -s ~/.dotfiles/zsh/zshrc $@
+	ln -s ~/.dotfiles/.zshrc $@
 	@echo 'If you want to switch your shell to zsh, please run the following command'
 	@echo '$> chsh -s /bin/zsh'
 ~/.zsh/zsh-autosuggestions:
