@@ -6,10 +6,12 @@ usage:
 
 all: \
 	~/.config \
+	alfred \
 	nvim \
 	obsidian \
 	tmux \
 	wezterm \
+	yabai \
 	zsh
 
 extra: \
@@ -18,12 +20,17 @@ extra: \
 	mindnode \
 	slack
 
+
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
 # 1password from the website
 # 1password: /Applications/1password\ 7.app
 # /Applications/1password\ 7.app:
 #	brew install 1password
+
+alfred: brew /Applications/Alfred\ 5.app
+/Applications/Alfred\ 5.app:
+	brew install alfred
 
 nvim : node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
@@ -77,6 +84,12 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 ~/.wezterm.lua:
 	ln -s ~/.dotfiles/.wezterm.lua $@
 
+yabai: ~/.yabairc ${BREW_BIN}/yabai
+${BREW_BIN}/yabai:
+	brew install koekeishiya/formulae/yabai
+~/.yabairc:
+	ln -s ~/.dotfiles/.yabairc $@
+
 zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
 ~/.zshrc:
 	ln -s ~/.dotfiles/.zshrc $@
@@ -88,10 +101,6 @@ zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highligh
 	git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $@
 ~/.zsh/zsh-completions:
 	git clone https://github.com/zsh-users/zsh-completions $@
-
-alfred: brew /Applications/Alfred\ 4.app
-/Applications/Alfred\ 4.app:
-	brew install alfred
 
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
@@ -123,12 +132,6 @@ ${BREW_BIN}/brew:
 bars: node ${NPM_BIN}/bars
 ${NPM_BIN}/bars:
 	@npm install -g https://github.com/jez/bars.git
-
-yabai: ~/.yabairc ${BREW_BIN}/yabai
-${BREW_BIN}/yabai:
-	brew install koekeishiya/formulae/yabai
-~/.yabairc:
-	ln -s ~/.dotfiles/.yabairc $@
 
 ctop: ${BREW_BIN}/ctop
 ${BREW_BIN}/ctop:
