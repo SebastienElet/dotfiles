@@ -32,7 +32,7 @@ alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
 
-nvim : node brew ${BREW_BIN}/nvim
+nvim : ripgrep node brew ${BREW_BIN}/nvim
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -65,6 +65,10 @@ fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
 	~/.fzf/install --no-update-rc
+
+ripgrep: brew ${BREW_BIN}/rg
+${BREW_BIN}/rg:
+	brew install ripgrep
 
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
@@ -255,9 +259,6 @@ ${BREW_BIN}/prettyping:
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier
-
-ripgrep: brew
-	brew install ripgrep
 
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
