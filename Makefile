@@ -32,7 +32,7 @@ alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
 
-nvim : ripgrep node brew ${BREW_BIN}/nvim
+nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim/lua/custom
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -42,7 +42,10 @@ ${BREW_BIN}/nvim:
 ~/.config:
 	mkdir $@
 ~/.config/nvim:
-	ln -s ~/.dotfiles/nvim ~/.config/nvim
+	git clone https://github.com/NvChad/NvChad $@ --depth 1
+	# ln -s ~/.dotfiles/nvim ~/.config/nvim
+~/.config/nvim/lua/custom: ~/.config/nvim
+	ln -s ~/.dotfiles/nvim/lua/custom $@
 
 obsidian: brew /Applications/Obsidian.app
 /Applications/Obsidian.app:
@@ -408,3 +411,6 @@ xz: brew
 ${BREW_BIN}/xz:
 	brew install xz
 
+
+clean: 
+	rm -rf ~/.config/nvim
