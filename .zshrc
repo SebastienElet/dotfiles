@@ -7,6 +7,7 @@ alias v='nvim'
 alias n='nvim'
 alias t='tmux'
 alias tm='tmux'
+alias top='htop'
 
 # Oh-my-zsh git aliases
 alias g='git'

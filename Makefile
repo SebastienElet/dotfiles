@@ -1,18 +1,20 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
-NPM_BIN:=/usr/local/bin
+NPM_BIN:=~/.volta/bin
 
 usage:
 	@echo all - Setup dev env
 
-all: \
-	~/.config \
+utils: \
 	alfred \
-	nvim \
+	yabai
+personal: \
 	obsidian \
-	tmux \
-	wezterm \
-	yabai \
-	zsh
+	rust
+all: \
+	terminal \
+	work \
+	utils \
+	personal
 
 extra: \
 	daisydisk \
@@ -20,6 +22,77 @@ extra: \
 	mindnode \
 	slack
 
+################################################################################
+# Terminal section
+################################################################################
+terminal: \
+	~/.config \
+	bottom \
+	htop \
+	nvim \
+	tmux \
+	wezterm \
+	zsh
+
+~/.config:
+	mkdir $@
+
+bottom: brew ${BREW_BIN}/btm
+${BREW_BIN}/btm:
+	brew install bottom
+
+htop: brew ${BREW_BIN}/htop
+${BREW_BIN}/htop:
+	brew install htop
+
+wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
+/Applications/WezTerm.app:
+	brew install --cask wez/wezterm/wezterm
+~/.wezterm.lua:
+	ln -s ~/.dotfiles/.wezterm.lua $@
+
+################################################################################
+# End of the terminal section
+################################################################################
+
+################################################################################
+# Work section
+################################################################################
+work: \
+	aws \
+	brave \
+	docker \
+	doppler \
+	javascript \
+	postgresql
+
+aws: brew ${BREW_BIN}/aws
+${BREW_BIN}/aws:
+	brew install awscli
+
+brave: brew /Applications/Brave\ Browser.app
+/Applications/Brave\ Browser.app:
+	brew install --cask brave-browser
+
+docker: brew /Applications/Docker.app
+/Applications/Docker.app:
+	brew install --cask docker
+
+doppler: gnupg ${BREW_BIN}/doppler
+${BREW_BIN}/doppler:
+	brew install dopplerhq/cli/doppler
+
+gnupg: brew ${BREW_BIN}/gpg
+${BREW_BIN}/gpg:
+	brew install gnupg
+
+postgresql: brew ${BREW_BIN}/psql
+${BREW_BIN}/psql:
+	brew install postgresql
+
+################################################################################
+# End of work section
+################################################################################
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -32,6 +105,11 @@ alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
 
+javascript: prettier
+prettier: node ${NPM_BIN}/prettier
+${NPM_BIN}/prettier:
+	npm i -g prettier @fsouza/prettierd
+
 nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim/lua/custom
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
@@ -39,8 +117,6 @@ ${BREW_BIN}/nvim:
 	# brew install --HEAD neovim
 	brew install neovim
 	npm i -g neovim
-~/.config:
-	mkdir $@
 ~/.config/nvim:
 	git clone https://github.com/NvChad/NvChad $@ --depth 1
 	# ln -s ~/.dotfiles/nvim ~/.config/nvim
@@ -84,12 +160,6 @@ ${BREW_BIN}/tmux:
 	brew install tmux
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
-
-wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
-/Applications/WezTerm.app:
-	brew install --cask wez/wezterm/wezterm
-~/.wezterm.lua:
-	ln -s ~/.dotfiles/.wezterm.lua $@
 
 yabai: ~/.yabairc ${BREW_BIN}/yabai
 ${BREW_BIN}/yabai:
@@ -157,10 +227,6 @@ diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy
 ${BREW_BIN}/diff-so-fancy:
 	brew install diff-so-fancy
 
-docker: brew /Applications/Docker.app
-/Applications/Docker.app:
-	brew install docker
-
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
 	brew install emacs
@@ -184,9 +250,6 @@ google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew install google-chrome
 
-gpg: brew ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
-${BREW_BIN}/gpg:
-	brew install gpg
 # /usr/local/opt/gpg-agent/bin/gpg-agent:
 #	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
@@ -258,10 +321,6 @@ mindnode: mas /Applications/MindNode.app
 prettyping: brew ${BREW_BIN}/prettyping 
 ${BREW_BIN}/prettyping:
 	brew install prettyping
-
-prettier: node ${NPM_BIN}/prettier
-${NPM_BIN}/prettier:
-	npm i -g prettier
 
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
