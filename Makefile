@@ -28,6 +28,7 @@ extra: \
 terminal: \
 	~/.config \
 	bottom \
+	broot \
 	htop \
 	nvim \
 	tmux \
@@ -40,6 +41,10 @@ terminal: \
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
+
+broot: brew ${BREW_BIN}/br
+${BREW_BIN}/br:
+	brew install broot
 
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
@@ -64,7 +69,8 @@ work: \
 	docker \
 	doppler \
 	javascript \
-	postgresql
+	postgresql \
+	tableplus
 
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
@@ -90,6 +96,10 @@ postgresql: brew ${BREW_BIN}/psql
 ${BREW_BIN}/psql:
 	brew install postgresql
 
+tableplus: brew ${BREW_BIN}/tableplus
+${BREW_BIN}/tableplus:
+	brew install tableplus
+
 ################################################################################
 # End of work section
 ################################################################################
@@ -106,7 +116,7 @@ ${BREW_BIN}/psql:
 #	brew install 1password
 
 rust: brew ~/.cargo
-~/.cargo
+~/.cargo:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ################################################################################

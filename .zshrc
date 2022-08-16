@@ -72,3 +72,6 @@ eval "$(starship init zsh)"
 
 # Fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Broot
+[ -f ~/.config/broot/launcher/bash/br ] && source ~/.config/broot/launcher/bash/br
