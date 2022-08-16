@@ -1,5 +1,6 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 NPM_BIN:=~/.volta/bin
+APP_BIN:=/Applications
 
 usage:
 	@echo all - Setup dev env
@@ -7,9 +8,6 @@ usage:
 utils: \
 	alfred \
 	yabai
-personal: \
-	obsidian \
-	rust
 all: \
 	terminal \
 	work \
@@ -42,8 +40,8 @@ bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
 
-broot: brew ${BREW_BIN}/br
-${BREW_BIN}/br:
+broot: brew ${BREW_BIN}/broot
+${BREW_BIN}/broot:
 	brew install broot
 
 htop: brew ${BREW_BIN}/htop
@@ -96,8 +94,8 @@ postgresql: brew ${BREW_BIN}/psql
 ${BREW_BIN}/psql:
 	brew install postgresql
 
-tableplus: brew ${BREW_BIN}/tableplus
-${BREW_BIN}/tableplus:
+tableplus: brew ${APP_BIN}/TablePlus.app
+${APP_BIN}/TablePlus.app:
 	brew install tableplus
 
 ################################################################################
@@ -107,6 +105,11 @@ ${BREW_BIN}/tableplus:
 ################################################################################
 # Personal section
 ################################################################################
+
+personal: \
+	obsidian \
+	rust \
+	spotify
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -118,6 +121,10 @@ ${BREW_BIN}/tableplus:
 rust: brew ~/.cargo
 ~/.cargo:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+spotify: brew ${APP_BIN}/Spotify.app
+${APP_BIN}/Spotify.app:
+	brew install spotify
 
 ################################################################################
 # End of personal section

@@ -39,6 +39,7 @@ yabai -m rule --add app="Mail" space=5
 yabai -m rule --add app="TablePlus" space=6
 
 yabai -m rule --add app="Musique" space=7
+yabai -m rule --add app="Spotify" space=7
 yabai -m rule --add app="Podcast" space=7
 
 
