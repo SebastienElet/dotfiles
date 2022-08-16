@@ -8,6 +8,7 @@ alias n='nvim'
 alias t='tmux'
 alias tm='tmux'
 alias top='htop'
+alias gpsup='git push --set-upstream origin $(git branch --show-current)'
 
 # Oh-my-zsh git aliases
 alias g='git'
