@@ -94,6 +94,10 @@ ${BREW_BIN}/psql:
 # End of work section
 ################################################################################
 
+################################################################################
+# Personal section
+################################################################################
+
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
 # 1password from the website
@@ -101,9 +105,25 @@ ${BREW_BIN}/psql:
 # /Applications/1password\ 7.app:
 #	brew install 1password
 
+rust: brew ~/.cargo
+~/.cargo
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+################################################################################
+# End of personal section
+################################################################################
+
+################################################################################
+# Utils section
+################################################################################
+
 alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
+
+################################################################################
+# End of utils section
+################################################################################
 
 javascript: prettier
 prettier: node ${NPM_BIN}/prettier
