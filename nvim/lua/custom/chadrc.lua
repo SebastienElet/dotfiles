@@ -26,7 +26,8 @@ M.plugins = {
 					-- webdev stuff
 					b.formatting.deno_fmt,
 					b.formatting.prettierd,
-					b.formatting.eslintd,
+					b.formatting.eslint,
+					b.formatting.rustfmt,
 
 					-- Lua
 					b.formatting.stylua,
@@ -67,9 +68,10 @@ M.plugins = {
 				"deno",
 				"emmet-ls",
 				"json-lsp",
+				"rust-analyzer",
 
 				-- shell
-				"shfmt",
+				-- "shfmt",
 				"shellcheck",
 			},
 		},
@@ -89,9 +91,6 @@ M.mappings = {
 			["<"] = { "<gv", "Unindent the selected block", {} },
 		},
 	},
-	--[[
-  ]]
-	--
 }
 
 return M
