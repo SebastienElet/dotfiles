@@ -28,6 +28,7 @@ terminal: \
 	bottom \
 	broot \
 	exa \
+	fd \
 	htop \
 	nvim \
 	tmux \
@@ -49,6 +50,10 @@ ${BREW_BIN}/broot:
 exa: brew ${BREW_BIN}/exa
 ${BREW_BIN}/exa:
 	brew install exa
+
+fd: brew ${BREW_BIN}/fd 
+${BREW_BIN}/fd:
+	brew install fd
 
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
@@ -76,6 +81,7 @@ work: \
 	brave \
 	docker \
 	doppler \
+	heroku \
 	javascript \
 	postgresql \
 	tableplus
@@ -95,6 +101,10 @@ docker: brew /Applications/Docker.app
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
 	brew install dopplerhq/cli/doppler
+
+heroku: brew ${BREW_BIN}/heroku
+${BREW_BIN}/heroku:
+	brew install heroku/brew/heroku
 
 gnupg: brew ${BREW_BIN}/gpg
 ${BREW_BIN}/gpg:
@@ -283,11 +293,6 @@ ${BREW_BIN}/emacs:
 	touch $@
 ~/.emacs:
 	ln -s ~/.dotfiles/.emacs ~/.emacs
-
-
-fd: brew ${BREW_BIN}/fd 
-${BREW_BIN}/fd:
-	brew install fd
 
 git-heatmap: brew bars ${BREW_BIN}/git-heatmap
 ${BREW_BIN}/git-heatmap:
