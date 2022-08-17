@@ -27,9 +27,11 @@ terminal: \
 	~/.config \
 	bottom \
 	broot \
+	exa \
 	htop \
 	nvim \
 	tmux \
+	tokei \
 	wezterm \
 	zsh
 
@@ -44,9 +46,17 @@ broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
 	brew install broot
 
+exa: brew ${BREW_BIN}/exa
+${BREW_BIN}/exa:
+	brew install exa
+
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
 	brew install htop
+
+tokei: brew ${BREW_BIN}/tokei
+${BREW_BIN}/tokei:
+	brew install tokei
 
 wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:

@@ -2,12 +2,16 @@
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
 alias ..='cd ..'
 alias :q='exit'
-alias vim='nvim'
-alias v='nvim'
-alias n='nvim'
+[[ ! -z `command -v nvim` ]] && alias vim 'nvim'
+[[ ! -z `command -v nvim` ]] && alias vim='nvim'
+[[ ! -z `command -v nvim` ]] && alias v='nvim'
+[[ ! -z `command -v nvim` ]] && alias n='nvim'
+[[ ! -z `command -v tokei` ]] && alias loc='tokei'
+[[ ! -z `command -v exa` ]] && alias ls='exa'
 alias t='tmux'
 alias tm='tmux'
-alias top='htop'
+[[ ! -z `command -v htop` ]] && alias top='htop'
+
 alias gpsup='git push --set-upstream origin $(git branch --show-current)'
 
 # Oh-my-zsh git aliases
