@@ -7,6 +7,7 @@ usage:
 
 utils: \
 	alfred \
+	cleanshot \
 	yabai
 all: \
 	terminal \
@@ -158,6 +159,10 @@ alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
 
+cleanshot: brew ${APP_BIN}/CleanShot\ X.app
+${APP_BIN}/CleanShot\ X.app:
+	brew install cleanshot
+
 ################################################################################
 # End of utils section
 ################################################################################
@@ -175,6 +180,8 @@ ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
 ~/.config/nvim:
+	# Here is my developer version to try new PRs
+	# git clone git@github.com:SebastienElet/NvChad.git $@ --depth 1
 	git clone https://github.com/NvChad/NvChad $@ --depth 1
 	# ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/.config/nvim/lua/custom: ~/.config/nvim
@@ -525,3 +532,5 @@ ${BREW_BIN}/xz:
 
 clean: 
 	rm -rf ~/.config/nvim
+	rm -rf ~/.local/share/nvim
+	rm -rf ~/.cache/nvim
