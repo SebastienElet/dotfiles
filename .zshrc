@@ -2,7 +2,6 @@
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
 alias ..='cd ..'
 alias :q='exit'
-[[ ! -z `command -v nvim` ]] && alias vim 'nvim'
 [[ ! -z `command -v nvim` ]] && alias vim='nvim'
 [[ ! -z `command -v nvim` ]] && alias v='nvim'
 [[ ! -z `command -v nvim` ]] && alias n='nvim'
@@ -12,10 +11,24 @@ alias t='tmux'
 alias tm='tmux'
 [[ ! -z `command -v htop` ]] && alias top='htop'
 
-alias gpsup='git push --set-upstream origin $(git branch --show-current)'
-
 # Oh-my-zsh git aliases
 alias g='git'
+
+function git_main_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+  local ref
+  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
+    if command git show-ref -q --verify $ref; then
+      echo ${ref:t}
+      return
+    fi
+  done
+  echo master
+}
+
+alias gpsup='git push --set-upstream origin $(git branch --show-current)'
+alias grbm='git rebase $(git_main_branch)'
+alias gco='git checkout'
 
 alias gs='git status'
 alias ga='git add'
@@ -58,7 +71,8 @@ alias gcf='git config --list'
 bindkey -v
 
 # Homebrew
-[[ -d /opt/homebrew/bin ]] && export PATH=$PATH:/opt/homebrew/bin
+[[ -d /opt/homebrew/bin ]] && export PATH=/opt/homebrew/bin:$PATH
+[[ -d /opt/homebrew/sbin ]] && export PATH=/opt/homebrew/sbin:$PATH
 
 # Starship
 eval "$(starship init zsh)"
