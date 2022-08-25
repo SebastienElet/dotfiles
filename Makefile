@@ -143,6 +143,11 @@ rust: brew ~/.cargo
 ~/.cargo:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
+# Faster linking for rust build
+# This require xcode
+zld:
+	brew install michaeleisel/zld/zld
+
 spotify: brew ${APP_BIN}/Spotify.app
 ${APP_BIN}/Spotify.app:
 	brew install spotify
