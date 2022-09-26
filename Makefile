@@ -128,6 +128,8 @@ ${APP_BIN}/TablePlus.app:
 ################################################################################
 
 personal: \
+	calibre \
+	doctl \
 	obsidian \
 	rust \
 	spotify
@@ -138,6 +140,22 @@ personal: \
 # 1password: /Applications/1password\ 7.app
 # /Applications/1password\ 7.app:
 #	brew install 1password
+
+calibre: brew ${APP_BIN}/Calibre.app
+${APP_BIN}/Calibre.app:
+	brew install calibre
+
+doctl: brew ${BREW_BIN}/doctl
+${BREW_BIN}/doctl:
+	brew install doctl
+
+obsidian: brew /Applications/Obsidian.app
+/Applications/Obsidian.app:
+	brew install obsidian
+
+todoist: brew ${APP_BIN}/Todoist.app
+${APP_BIN}/Todoist.app:
+	brew install todoist
 
 rust: brew ~/.cargo
 ~/.cargo:
@@ -191,10 +209,6 @@ ${BREW_BIN}/nvim:
 	# ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/.config/nvim/lua/custom: ~/.config/nvim
 	ln -s ~/.dotfiles/nvim/lua/custom $@
-
-obsidian: brew /Applications/Obsidian.app
-/Applications/Obsidian.app:
-	brew install obsidian
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
