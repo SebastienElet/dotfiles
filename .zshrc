@@ -1,3 +1,7 @@
+# Homebrew
+[[ -d /opt/homebrew/bin ]] && export PATH=/opt/homebrew/bin:$PATH
+[[ -d /opt/homebrew/sbin ]] && export PATH=/opt/homebrew/sbin:$PATH
+
 # Alias
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
 alias ..='cd ..'
@@ -70,9 +74,12 @@ alias gcf='git config --list'
 # Vim
 bindkey -v
 
-# Homebrew
-[[ -d /opt/homebrew/bin ]] && export PATH=/opt/homebrew/bin:$PATH
-[[ -d /opt/homebrew/sbin ]] && export PATH=/opt/homebrew/sbin:$PATH
+# History
+export HISTSIZE=10000     # Set history size
+export SAVEHIST=10000     # Save history after logo
+setopt INC_APPEND_HISTORY # Append into history file
+setopt HIST_IGNORE_DUPS   # Save only one command if 2 common are same and consistent
+setopt EXTENDED_HISTORY   # Add timestamp for each entry
 
 # Starship
 eval "$(starship init zsh)"
