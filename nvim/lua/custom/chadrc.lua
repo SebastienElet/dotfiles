@@ -8,7 +8,6 @@ M.plugins = {
 				require("custom.lspconfig")
 			end,
 		},
-
 		["jose-elias-alvarez/null-ls.nvim"] = {
 			after = "nvim-lspconfig",
 			config = function()
@@ -24,17 +23,42 @@ M.plugins = {
 				local sources = {
 
 					-- webdev stuff
-					b.formatting.deno_fmt,
+					-- b.formatting.deno_fmt,
 					b.formatting.prettierd,
-					b.formatting.eslint,
-					b.formatting.rustfmt,
+					b.formatting.eslint_d,
+					b.diagnostics.eslint_d,
+					b.code_actions.eslint_d,
+					-- b.formatting.eslint_d,
+					b.formatting.rustfmt.with({
+						extra_args = function(params)
+							local Path = require("plenary.path")
+							local cargo_toml = Path:new(params.root .. "/" .. "Cargo.toml")
+
+							if cargo_toml:exists() and cargo_toml:is_file() then
+								for _, line in ipairs(cargo_toml:readlines()) do
+									local edition = line:match([[^edition%s*=%s*%"(%d+)%"]])
+									if edition then
+										return { "--edition=" .. edition }
+									end
+								end
+							end
+							-- default edition when we don't find `Cargo.toml` or the `edition` in it.
+							return { "--edition=2021" }
+						end,
+					}),
 
 					-- Lua
 					b.formatting.stylua,
 
 					-- Shell
-					b.formatting.shfmt,
-					b.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
+					-- b.formatting.shfmt,
+					-- b.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
+
+					-- Codespell
+					-- TODO: cspell output error code instead of information
+					-- TODO: install cspell french dictionnary
+					-- TODO: how to add new words
+					-- b.diagnostics.cspell,
 				}
 
 				null_ls.setup({
@@ -47,12 +71,14 @@ M.plugins = {
 	override = {
 		["nvim-treesitter/nvim-treesitter"] = {
 			ensure_installed = {
-				"html",
 				"css",
-				"typescript",
+				"html",
 				"javascript",
 				"json",
 				"rust",
+				"typescript",
+				"graphql",
+				"prisma",
 			},
 		},
 		["williamboman/mason.nvim"] = {
@@ -63,16 +89,24 @@ M.plugins = {
 
 				-- web dev
 				"css-lsp",
-				"html-lsp",
-				"typescript-language-server",
 				"deno",
 				"emmet-ls",
+				"html-lsp",
 				"json-lsp",
+				"eslint_d",
+				"typescript-language-server",
+				"prisma-language-server",
+				"graphql-language-service-cli",
+
+				-- rust
 				"rust-analyzer",
 
 				-- shell
 				-- "shfmt",
 				"shellcheck",
+
+				-- spell checker
+				"cspell",
 			},
 		},
 	},
@@ -81,8 +115,11 @@ M.plugins = {
 M.mappings = {
 	usage = {
 		n = {
-			["<CR>"] = { ":nohlsearch<CR>:w<CR>", "Save file", {} },
+			-- Bad idea, this is conflicting with quickfix
+			-- ["<CR>"] = { ":nohlsearch<CR>:w<CR>", "Save file", {} },
 			["<Tab>"] = { "%", "Find the next item", {} },
+			-- cargo install typos-cli
+			["<Leader>t"] = { ':execute "!typos" @%<CR>', "Run typos cli on the current file", {} },
 		},
 		v = {
 			["<Tab>"] = { ">gv", "Indent the selected block", {} },
