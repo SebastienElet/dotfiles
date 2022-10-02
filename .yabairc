@@ -11,7 +11,7 @@ yabai -m config --space 4 layout bsp
 yabai -m config --space 5 layout bsp
 yabai -m config --space 6 layout bsp
 yabai -m config --space 7 layout bsp
-yabai -m config --space 8 layout bsp
+yabai -m config --space 8 layout bsp display=2
 
 # Space labels
 yabai -m space 1 --label "Primary"
@@ -28,6 +28,8 @@ yabai -m rule --add app="Safari" space=2
 yabai -m rule --add app="Obsidian" space=2
 
 yabai -m rule --add app="Alacritty" space=3
+yabai -m rule --add app="WezTerm" space=3
+yabai -m rule --add app="WezTerm" space=8 display=2
 
 yabai -m rule --add app="Slack" space=4
 yabai -m rule --add app="Discord" space=4
@@ -39,6 +41,7 @@ yabai -m rule --add app="Mail" space=5
 yabai -m rule --add app="TablePlus" space=6
 
 yabai -m rule --add app="Musique" space=7
+yabai -m rule --add app="Spotify" space=7
 yabai -m rule --add app="Podcast" space=7
 
 

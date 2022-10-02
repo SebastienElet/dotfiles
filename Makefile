@@ -1,40 +1,19 @@
-BREW_BIN:=/usr/local/bin
-NPM_BIN:=/usr/local/bin
+BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
+NPM_BIN:=~/.volta/bin
+APP_BIN:=/Applications
 
 usage:
 	@echo all - Setup dev env
 
-all: \
-	1password \
-	alacritty \
+utils: \
 	alfred \
-	bash-language-server \
-	bat \
-	comby \
-	ctop \
-	dash \
-	docker \
-	fd \
-	fzf \
-	git-heatmap \
-	google-chrome \
-	gpg \
-	graphql-language-service-cli \
-	jscpd \
-	kap \
-	mosh \
-	ncdu \
-	node \
-	nvim \
-	ripgrep \
-	shellcheck \
-	tmate \
-	tmux \
-	translate-shell \
-	typescript \
-	volta \
-	yabai \
-	yarn
+	cleanshot \
+	yabai
+all: \
+	terminal \
+	work \
+	utils \
+	personal
 
 extra: \
 	daisydisk \
@@ -42,19 +21,246 @@ extra: \
 	mindnode \
 	slack
 
-1password: /Applications/1password\ 7.app
-/Applications/1password\ 7.app:
-	brew install 1password
+################################################################################
+# Terminal section
+################################################################################
+terminal: \
+	~/.config \
+	bottom \
+	broot \
+	exa \
+	fd \
+	htop \
+	nvim \
+	tmux \
+	tokei \
+	wezterm \
+	zsh
 
-alacritty: /Applications/alacritty.app ~/.alacritty.yml
-/Applications/alacritty.app:
-	brew install alacritty
-~/.alacritty.yml:
-	ln -s ~/.dotfiles/.alacritty.yml $@
+~/.config:
+	mkdir $@
 
-alfred: brew /Applications/Alfred\ 4.app
-/Applications/Alfred\ 4.app:
+bottom: brew ${BREW_BIN}/btm
+${BREW_BIN}/btm:
+	brew install bottom
+
+broot: brew ${BREW_BIN}/broot
+${BREW_BIN}/broot:
+	brew install broot
+
+exa: brew ${BREW_BIN}/exa
+${BREW_BIN}/exa:
+	brew install exa
+
+fd: brew ${BREW_BIN}/fd 
+${BREW_BIN}/fd:
+	brew install fd
+
+htop: brew ${BREW_BIN}/htop
+${BREW_BIN}/htop:
+	brew install htop
+
+tokei: brew ${BREW_BIN}/tokei
+${BREW_BIN}/tokei:
+	brew install tokei
+
+wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
+/Applications/WezTerm.app:
+	brew install --cask wez/wezterm/wezterm
+~/.wezterm.lua:
+	ln -s ~/.dotfiles/.wezterm.lua $@
+
+################################################################################
+# End of the terminal section
+################################################################################
+
+################################################################################
+# Work section
+################################################################################
+work: \
+	aws \
+	brave \
+	docker \
+	doppler \
+	heroku \
+	javascript \
+	postgresql \
+	tableplus
+
+aws: brew ${BREW_BIN}/aws
+${BREW_BIN}/aws:
+	brew install awscli
+
+brave: brew /Applications/Brave\ Browser.app
+/Applications/Brave\ Browser.app:
+	brew install --cask brave-browser
+
+docker: brew /Applications/Docker.app
+/Applications/Docker.app:
+	brew install --cask docker
+
+doppler: gnupg ${BREW_BIN}/doppler
+${BREW_BIN}/doppler:
+	brew install dopplerhq/cli/doppler
+
+heroku: brew ${BREW_BIN}/heroku
+${BREW_BIN}/heroku:
+	brew install heroku/brew/heroku
+
+gnupg: brew ${BREW_BIN}/gpg
+${BREW_BIN}/gpg:
+	brew install gnupg
+
+postgresql: brew ${BREW_BIN}/psql
+${BREW_BIN}/psql:
+	brew install postgresql
+
+tableplus: brew ${APP_BIN}/TablePlus.app
+${APP_BIN}/TablePlus.app:
+	brew install tableplus
+
+################################################################################
+# End of work section
+################################################################################
+
+################################################################################
+# Personal section
+################################################################################
+
+personal: \
+	calibre \
+	doctl \
+	obsidian \
+	rust \
+	spotify
+
+# Local vault on 1password does not work with 1password
+# app from the app store. We need to manually download
+# 1password from the website
+# 1password: /Applications/1password\ 7.app
+# /Applications/1password\ 7.app:
+#	brew install 1password
+
+calibre: brew ${APP_BIN}/Calibre.app
+${APP_BIN}/Calibre.app:
+	brew install calibre
+
+doctl: brew ${BREW_BIN}/doctl
+${BREW_BIN}/doctl:
+	brew install doctl
+
+obsidian: brew /Applications/Obsidian.app
+/Applications/Obsidian.app:
+	brew install obsidian
+
+todoist: brew ${APP_BIN}/Todoist.app
+${APP_BIN}/Todoist.app:
+	brew install todoist
+
+rust: brew ~/.cargo
+~/.cargo:
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Faster linking for rust build
+# This require xcode
+zld:
+	brew install michaeleisel/zld/zld
+
+spotify: brew ${APP_BIN}/Spotify.app
+${APP_BIN}/Spotify.app:
+	brew install spotify
+
+################################################################################
+# End of personal section
+################################################################################
+
+################################################################################
+# Utils section
+################################################################################
+
+alfred: brew /Applications/Alfred\ 5.app
+/Applications/Alfred\ 5.app:
 	brew install alfred
+
+cleanshot: brew ${APP_BIN}/CleanShot\ X.app
+${APP_BIN}/CleanShot\ X.app:
+	brew install cleanshot
+
+################################################################################
+# End of utils section
+################################################################################
+
+javascript: prettier
+prettier: node ${NPM_BIN}/prettier
+${NPM_BIN}/prettier:
+	npm i -g prettier @fsouza/prettierd
+
+nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim/lua/custom
+${BREW_BIN}/nvim:
+	# To use neovim 0.5
+	# Install cmake luarocks
+	# brew install --HEAD neovim
+	brew install neovim
+	npm i -g neovim
+~/.config/nvim:
+	# Here is my developer version to try new PRs
+	# git clone git@github.com:SebastienElet/NvChad.git $@ --depth 1
+	git clone https://github.com/NvChad/NvChad $@ --depth 1
+	# ln -s ~/.dotfiles/nvim ~/.config/nvim
+~/.config/nvim/lua/custom: ~/.config/nvim
+	ln -s ~/.dotfiles/nvim/lua/custom $@
+
+font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
+~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
+	brew tap homebrew/cask-fonts
+	brew install font-fira-code-nerd-font
+font-iosevka: ~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf
+~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf:
+	brew tap homebrew/cask-fonts
+	brew install font-iosevka-nerd-font
+font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
+~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
+	brew tap homebrew/cask-fonts
+	brew install font-jetbrains-mono-nerd-font
+
+fzf: ~/.fzf
+~/.fzf:
+	git clone https://github.com/junegunn/fzf.git ~/.fzf
+	~/.fzf/install --no-update-rc
+
+ripgrep: brew ${BREW_BIN}/rg
+${BREW_BIN}/rg:
+	brew install ripgrep
+
+starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
+${BREW_BIN}/starship:
+	brew install starship
+~/.config/starship.toml:
+	ln -s ~/.dotfiles/.config/starship.toml $@
+
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+${BREW_BIN}/tmux:
+	brew install tmux
+~/.tmux.conf:
+	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+
+yabai: ~/.yabairc ${BREW_BIN}/yabai
+${BREW_BIN}/yabai:
+	brew install koekeishiya/formulae/yabai
+~/.yabairc:
+	ln -s ~/.dotfiles/.yabairc $@
+
+zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
+~/.zshrc:
+	ln -s ~/.dotfiles/.zshrc $@
+	@echo 'If you want to switch your shell to zsh, please run the following command'
+	@echo '$> chsh -s /bin/zsh'
+~/.zsh/zsh-autosuggestions:
+	git clone https://github.com/zsh-users/zsh-autosuggestions $@
+~/.zsh/zsh-syntax-highlighting:
+	git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $@
+~/.zsh/zsh-completions:
+	git clone https://github.com/zsh-users/zsh-completions $@
 
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
@@ -77,7 +283,7 @@ ${BREW_BIN}/molecule:
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
-	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install > /tmp/brew-installer.sh
+	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
@@ -86,12 +292,6 @@ ${BREW_BIN}/brew:
 bars: node ${NPM_BIN}/bars
 ${NPM_BIN}/bars:
 	@npm install -g https://github.com/jez/bars.git
-
-yabai: ~/.yabairc ${BREW_BIN}/yabai
-${BREW_BIN}/yabai:
-	brew install koekeishiya/formulae/yabai
-~/.yabairc:
-	ln -s ~/.dotfiles/.yabairc $@
 
 ctop: ${BREW_BIN}/ctop
 ${BREW_BIN}/ctop:
@@ -110,10 +310,6 @@ diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy
 ${BREW_BIN}/diff-so-fancy:
 	brew install diff-so-fancy
 
-docker: brew /Applications/Docker.app
-/Applications/Docker.app:
-	brew install docker
-
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
 	brew install emacs
@@ -124,21 +320,6 @@ ${BREW_BIN}/emacs:
 ~/.emacs:
 	ln -s ~/.dotfiles/.emacs ~/.emacs
 
-
-fd: brew ${BREW_BIN}/fd 
-${BREW_BIN}/fd:
-	brew install fd
-
-font-jetbrains-mono: ~/Library/Fonts/JetBrainsMono-Regular.ttf
-~/Library/Fonts/JetBrainsMono-Regular.ttf:
-	brew tap homebrew/cask-fonts
-	brew install font-jetbrains-mono
-
-fzf: ~/.fzf
-~/.fzf:
-	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install --no-update-rc
-
 git-heatmap: brew bars ${BREW_BIN}/git-heatmap
 ${BREW_BIN}/git-heatmap:
 	brew install jez/formulae/git-heatmap
@@ -147,9 +328,6 @@ google-chrome: brew /Applications/Google\ Chrome.app
 /Applications/Google\ Chrome.app:
 	brew install google-chrome
 
-gpg: brew ${BREW_BIN}/gpg ${BREW_BIN}/pinentry-mac
-${BREW_BIN}/gpg:
-	brew install gpg
 # /usr/local/opt/gpg-agent/bin/gpg-agent:
 #	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
@@ -222,18 +400,6 @@ prettyping: brew ${BREW_BIN}/prettyping
 ${BREW_BIN}/prettyping:
 	brew install prettyping
 
-prettier: node ${NPM_BIN}/prettier
-${NPM_BIN}/prettier:
-	npm i -g prettier
-
-zsh: ~/.zshrc
-~/.zshrc:
-	ln -s ~/.dotfiles/zsh/zshrc $@
-	chsh -s /bin/zsh
-
-ripgrep: brew
-	brew install ripgrep
-
 slack: mas /Applications/Slack.app
 /Applications/Slack.app:
 	echo "Install slack"
@@ -246,13 +412,6 @@ ${BREW_BIN}/shellcheck:
 tmate: brew ${BREW_BIN}/tmate
 ${BREW_BIN}/tmate:
 	brew install tmate
-
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
-${BREW_BIN}/tmux:
-	brew install reattach-to-user-namespace
-	brew install tmux
-~/.tmux.conf:
-	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
 trymodule: node ${BREW_BIN}/trymodule
 ${BREW_BIN}/trymodule:
@@ -273,18 +432,6 @@ ${BREW_BIN}/tsc:
 vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew install vagrant
-
-nvim : node brew ${BREW_BIN}/nvim
-${BREW_BIN}/nvim:
-	# To use neovim 0.5
-	# Install cmake luarocks
-	# brew install --HEAD neovim
-	brew install neovim
-	npm i -g neovim
-~/.config:
-	mkdir $@
-~/.config/nvim:
-	ln -s ~/.dotfiles/nvim ~/.config/nvim
 
 virtualbox: brew ${BREW_BIN}/VBoxHeadless
 ${BREW_BIN}/VBoxHeadless:
@@ -401,3 +548,8 @@ xz: brew
 ${BREW_BIN}/xz:
 	brew install xz
 
+
+clean: 
+	rm -rf ~/.config/nvim
+	rm -rf ~/.local/share/nvim
+	rm -rf ~/.cache/nvim
