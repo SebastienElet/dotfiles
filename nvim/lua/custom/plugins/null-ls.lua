@@ -9,12 +9,10 @@ local b = null_ls.builtins
 local sources = {
 
 	-- webdev stuff
-	-- b.formatting.deno_fmt,
 	b.formatting.prettierd,
 	b.formatting.eslint_d,
 	b.diagnostics.eslint_d,
 	b.code_actions.eslint_d,
-	-- b.formatting.eslint_d,
 	b.formatting.rustfmt.with({
 		extra_args = function(params)
 			local Path = require("plenary.path")
