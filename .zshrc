@@ -32,6 +32,7 @@ function git_main_branch() {
 
 alias gpsup='git push --set-upstream origin $(git branch --show-current)'
 alias grbm='git rebase $(git_main_branch)'
+alias grbc='git rebase --continue'
 alias gco='git checkout'
 
 alias gs='git status'
@@ -85,7 +86,7 @@ setopt EXTENDED_HISTORY   # Add timestamp for each entry
 eval "$(starship init zsh)"
 
 # Volta
-[[ -d $HOME/.volta ]] && export PATH=$HOME/.volta/bin:$PATH
+[[ -d $HOME/.volta ]] && export VOLTA_HOME="$HOME/.volta" && export PATH="$VOLTA_HOME/bin:$PATH"
 
 # Setup default editor
 [[ ! -z `command -v nvim` ]] && export EDITOR=nvim
