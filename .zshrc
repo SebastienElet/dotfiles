@@ -30,7 +30,21 @@ function git_main_branch() {
   echo master
 }
 
+function assert_typos () {
+  echo 'Check for typos'
+  start=$(git_main_branch)
+  git diff origin/${start}... --name-only --diff-filter=d | grep -v '__fixtures__' | xargs typos
+}
+function assert_eslint () {
+  # TODO
+  # git diff origin/master... --name-only --diff-filter=d -- '*.ts' | grep -v 'prisma-client' | xargs eslint --max-warnings=8
+}
+function git_push_hook() {
+  [[ ! -z command -v typos ]] && assert_typos
+}
+
 alias gpsup='git push --set-upstream origin $(git branch --show-current)'
+alias gp='git_push_hook && git push'
 alias grbm='git rebase $(git_main_branch)'
 alias grbc='git rebase --continue'
 alias gco='git checkout'
