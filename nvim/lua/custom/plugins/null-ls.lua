@@ -35,14 +35,16 @@ local sources = {
 	b.formatting.stylua,
 
 	-- Shell
-	-- b.formatting.shfmt,
-	-- b.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
+	b.formatting.shfmt,
+	b.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
+  b.code_actions.shellcheck,
 
 	-- Codespell
 	-- TODO: cspell output error code instead of information
 	-- TODO: install cspell french dictionnary
 	-- TODO: how to add new words
 	-- b.diagnostics.cspell,
+  -- b.code_actions.cspell
 }
 
 null_ls.setup({
