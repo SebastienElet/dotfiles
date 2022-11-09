@@ -11,6 +11,26 @@ return {
 			require("custom.plugins.null-ls")
 		end,
 	},
+	["github/copilot.vim"] = {},
+	["hrsh7th/cmp-copilot"] = {
+		after = "nvim-cmp",
+		config = function()
+			-- require("copilot_cmp").setup()
+		end,
+	},
+	["hrsh7th/nvim-cmp"] = {
+    after = "copilot.vim",
+		override_options = {
+			sources = {
+				{ name = "luasnip" },
+				{ name = "nvim_lsp" },
+				{ name = "buffer" },
+				{ name = "nvim_lua" },
+				{ name = "path" },
+				{ name = "copilot" },
+			},
+		},
+	},
 	["nvim-treesitter/nvim-treesitter"] = {
 		override_options = {
 			ensure_installed = {
@@ -48,6 +68,7 @@ return {
 
 				-- shell
 				"shellcheck",
+				"shfmt",
 
 				-- spell checker
 				"cspell",
