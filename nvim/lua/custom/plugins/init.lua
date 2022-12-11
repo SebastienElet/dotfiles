@@ -19,7 +19,7 @@ return {
 		end,
 	},
 	["hrsh7th/nvim-cmp"] = {
-    after = "copilot.vim",
+		after = "copilot.vim",
 		override_options = {
 			sources = {
 				{ name = "luasnip" },
@@ -37,6 +37,7 @@ return {
 				"css",
 				"html",
 				"javascript",
+				"lua",
 				"json",
 				"rust",
 				"typescript",
