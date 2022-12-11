@@ -11,15 +11,26 @@ return {
 			require("custom.plugins.null-ls")
 		end,
 	},
-	["github/copilot.vim"] = {},
-	["hrsh7th/cmp-copilot"] = {
-		after = "nvim-cmp",
+	["zbirenbaum/copilot.lua"] = {
 		config = function()
-			-- require("copilot_cmp").setup()
+			require("copilot").setup()
+		end,
+	},
+	["zbirenbaum/copilot-cmp"] = {
+		after = "copilot.lua",
+		config = function()
+			require("copilot_cmp").setup({
+				method = "getCompletionsCycling",
+				formatters = {
+					label = require("copilot_cmp.format").format_label_text,
+					insert_text = require("copilot_cmp.format").format_insert_text,
+					preview = require("copilot_cmp.format").deindent,
+				},
+			})
 		end,
 	},
 	["hrsh7th/nvim-cmp"] = {
-		after = "copilot.vim",
+		after = "copilot.lua",
 		override_options = {
 			sources = {
 				{ name = "luasnip" },
