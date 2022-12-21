@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+function git_hook_assert_typos () {
+  echo 'Check for typos'
+  start=$(git_main_branch)
+  git diff origin/${start}... \
+    --name-only \
+    --diff-filter=d \
+    --relative \
+    | grep -v '__fixtures__' \
+    | grep -v '__FIXTURES__' \
+    | grep -v '__snapshots__' \
+    | xargs typos
+}
