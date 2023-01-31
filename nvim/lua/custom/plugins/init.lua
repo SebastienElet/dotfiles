@@ -1,4 +1,5 @@
 return {
+	["windwp/nvim-autopairs"] = false,
 	["neovim/nvim-lspconfig"] = {
 		config = function()
 			require("plugins.configs.lspconfig")
@@ -13,7 +14,21 @@ return {
 	},
 	["zbirenbaum/copilot.lua"] = {
 		config = function()
-			require("copilot").setup()
+			require("copilot").setup({
+				-- Apply the Github support recommandations
+        -- From this issue https://github.com/zbirenbaum/copilot-cmp/issues/10
+				-- server_opts_overrides = {
+				-- 	trace = "verbose",
+				-- 	settings = {
+				-- 		advanced = {
+				-- 			indentationMode = {
+				-- 				javascript = "client",
+				-- 				typescript = "client",
+				-- 			},
+				-- 		},
+				-- 	},
+				-- },
+			})
 		end,
 	},
 	["zbirenbaum/copilot-cmp"] = {
