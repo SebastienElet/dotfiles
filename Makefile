@@ -7,6 +7,7 @@ usage:
 
 utils: \
 	alfred \
+	bartender \
 	cleanshot \
 	yabai
 all: \
@@ -181,6 +182,10 @@ ${APP_BIN}/Spotify.app:
 alfred: brew /Applications/Alfred\ 5.app
 /Applications/Alfred\ 5.app:
 	brew install alfred
+
+bartender: brew ${APP_BIN}/Bartender\ 4.app
+${APP_BIN}/Bartender\ 4.app:
+	brew install bartender
 
 cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
