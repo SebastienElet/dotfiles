@@ -12,9 +12,12 @@ for _, lsp in ipairs(servers) do
 end
 
 lspconfig.tsserver.setup({
-  settings = {
-    maxTsServerMemory = 8192,
-  },
-  on_attach = on_attach,
-  capabilities = capabilities,
+	settings = {
+		maxTsServerMemory = 8192,
+		preferences = {
+			importModuleSpecifierPreference = "project-relative",
+		},
+	},
+	on_attach = on_attach,
+	capabilities = capabilities,
 })
