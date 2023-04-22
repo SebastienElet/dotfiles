@@ -16,7 +16,7 @@ return {
 	["zbirenbaum/copilot.lua"] = {
 		config = function()
 			require("copilot").setup({
-				-- Apply the Github support recommandations
+				-- Apply the Github support recommendations
 				-- From this issue https://github.com/zbirenbaum/copilot-cmp/issues/10
 				-- server_opts_overrides = {
 				-- 	trace = "verbose",
