@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+function git_hook_assert_empty_files () {
+  echo 'Check for empty files'
+  start=$(git_main_branch)
+  git diff origin/${start}... \
+    --name-only \
+    --relative \
+    --diff-filter=d \
+    -- ':!.yarn*' \
+    | tr \\n \\0 \
+    | xargs -0 -I {} find {} -type f -empty
+}

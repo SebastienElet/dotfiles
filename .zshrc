@@ -18,33 +18,11 @@ alias tm='tmux'
 # Oh-my-zsh git aliases
 alias g='git'
 
-function git_main_branch() {
-  command git rev-parse --git-dir &>/dev/null || return
-  local ref
-  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
-    if command git show-ref -q --verify $ref; then
-      echo ${ref:t}
-      return
-    fi
-  done
-  echo master
-}
-
-function assert_typos () {
-  echo 'Check for typos'
-  start=$(git_main_branch)
-  git diff origin/${start}... --name-only --diff-filter=d | grep -v '__fixtures__' | xargs typos
-}
-function assert_eslint () {
-  # TODO
-  # git diff origin/master... --name-only --diff-filter=d -- '*.ts' | grep -v 'prisma-client' | xargs eslint --max-warnings=8
-}
-function git_push_hook() {
-  [[ ! -z command -v typos ]] && assert_typos
-}
+source ~/.dotfiles/zsh/bin/git_main_branch
+source ~/.dotfiles/zsh/bin/git_hook_push
 
 alias gpsup='git push --set-upstream origin $(git branch --show-current)'
-alias gp='git_push_hook && git push'
+alias gp='git_hook_push && git push'
 alias grbm='git rebase $(git_main_branch)'
 alias grbc='git rebase --continue'
 alias gco='git checkout'

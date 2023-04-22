@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 
-function git_hook_assert_typos () {
-  echo 'Check for typos'
+function git_hook_detect_copy_paste () {
+  echo 'Check for copy paste'
   start=$(git_main_branch)
   git diff origin/${start}... \
     --name-only \
-    --diff-filter=d \
     --relative \
-    -- ':!*.csv' \
-    ':!*.xls' \
-    ':!*.png' \
-    ':!.yarn*' \
+    --diff-filter=d \
+    -- ':!.yarn*' \
     | grep -v '__fixtures__' \
     | grep -v '__FIXTURES__' \
     | grep -v '__snapshots__' \
-    | xargs typos
+    | grep -v '.test.' \
+    | xargs jscpd --reporters consoleFull
 }

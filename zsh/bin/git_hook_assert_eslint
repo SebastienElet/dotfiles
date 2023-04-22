@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+function git_hook_assert_eslint () {
+  echo 'Check for eslint'
+  # start=$(git_main_branch)
+  start='main'
+
+  # Yarn is missing
+  [[ -z $(command -v yarn) ]] && exit 0
+
+  if yarn workspaces list &> /dev/null; then
+    # Some of my project are using differents eslints pattern accross
+    echo "Yarn is using workspaces"
+  else
+    echo "No workspace detected for yarn"
+  fi
+
+
+  # TODO: detect workspaces
+  # TODO: for each workspace detect file change
+  # TODO: for each workspace detect if eslint is available
+
+  git diff origin/${start}... --name-only --diff-filter=d -- '*.ts' \
+    | grep -v 'prisma-client' \
+    | grep 'services/api-graphql' \
+    | sed 's/.*services\/api-graphql\///' \
+    | xargs yarn workspace api-graphql eslint --max-warnings=8
+  git diff origin/${start}... --name-only --diff-filter=d -- '*.ts' \
+    | grep -v 'prisma-client' \
+    | grep 'services/lobby' \
+    | sed 's/.*services\/lobby\///' \
+    | xargs yarn workspace lobby eslint --max-warnings=8
+}
