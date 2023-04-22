@@ -29,6 +29,8 @@ return {
 				-- 		},
 				-- 	},
 				-- },
+				suggestion = { enabled = false },
+				panel = { enabled = false },
 			})
 		end,
 	},
@@ -49,12 +51,12 @@ return {
 		after = "copilot.lua",
 		override_options = {
 			sources = {
+				{ name = "copilot" },
 				{ name = "luasnip" },
 				{ name = "nvim_lsp" },
 				{ name = "buffer" },
 				{ name = "nvim_lua" },
 				{ name = "path" },
-				{ name = "copilot" },
 			},
 		},
 	},
@@ -118,6 +120,15 @@ return {
 				-- shell
 				"shellcheck",
 				"shfmt",
+
+				-- docker
+				"dockerfile-language-server",
+				"docker-compose-language-service",
+
+				-- yaml
+				"yaml-language-server",
+				"yamlfmt",
+				"yamllint",
 
 				-- spell checker
 				"cspell",

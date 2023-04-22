@@ -15,7 +15,8 @@ lspconfig.tsserver.setup({
 	settings = {
 		maxTsServerMemory = 8192,
 		preferences = {
-			importModuleSpecifierPreference = "project-relative",
+			importModuleSpecifierPreference = "non-relative",
+			upddateImportsOnFileMove = "always",
 		},
 	},
 	on_attach = on_attach,
