@@ -9,7 +9,7 @@ function git_hook_assert_eslint () {
   [[ -z $(command -v yarn) ]] && exit 0
 
   if yarn workspaces list &> /dev/null; then
-    # Some of my project are using differents eslints pattern accross
+    # Some of my project are using different eslints pattern across
     echo "Yarn is using workspaces"
   else
     echo "No workspace detected for yarn"
