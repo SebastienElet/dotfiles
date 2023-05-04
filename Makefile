@@ -210,7 +210,7 @@ ${BREW_BIN}/nvim:
 ~/.config/nvim:
 	# Here is my developer version to try new PRs
 	# git clone git@github.com:SebastienElet/NvChad.git $@ --depth 1
-	git clone https://github.com/NvChad/NvChad $@ --depth 1
+	git clone -b main https://github.com/NvChad/NvChad $@ --depth 1
 	# ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/.config/nvim/lua/custom: ~/.config/nvim
 	ln -s ~/.dotfiles/nvim/lua/custom $@
