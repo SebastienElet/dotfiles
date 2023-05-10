@@ -12,10 +12,10 @@ return {
           require("telescope").setup({
             extensions = {
               fzf = {
-                fuzzy = true,                   -- false will only do exact matching
+                fuzzy = true,           -- false will only do exact matching
                 override_generic_sorter = true, -- override the generic sorter
-                override_file_sorter = true,    -- override the file sorter
-                case_mode = "smart_case",       -- or "ignore_case" or "respect_case"
+                override_file_sorter = true, -- override the file sorter
+                case_mode = "smart_case", -- or "ignore_case" or "respect_case"
                 -- the default case_mode is "smart_case"
               },
             },
@@ -24,9 +24,9 @@ return {
           -- load_extension, somewhere after setup function:
           require("telescope").load_extension("fzf")
         end,
-      }
+      },
     },
-    opts = {}
+    opts = {},
   },
   {
     "hrsh7th/nvim-cmp",
@@ -46,8 +46,7 @@ return {
                 },
               })
             end,
-          }
-
+          },
         },
         config = function()
           require("copilot").setup({
@@ -90,15 +89,15 @@ return {
       {
         "jose-elias-alvarez/null-ls.nvim",
         config = function()
-          local null_ls = require "null-ls"
-          local b = null_ls.builtins
+          local null_ls = require("null-ls")
+          local builtins = null_ls.builtins
           local sources = {
             -- webdev stuff
-            b.formatting.prettierd,
-            b.formatting.eslint_d,
-            b.diagnostics.eslint_d,
-            b.code_actions.eslint_d,
-            b.formatting.rustfmt.with({
+            builtins.formatting.prettierd,
+            builtins.formatting.eslint_d,
+            builtins.diagnostics.eslint_d,
+            builtins.code_actions.eslint_d,
+            builtins.formatting.rustfmt.with({
               extra_args = function(params)
                 local Path = require("plenary.path")
                 local cargo_toml = Path:new(params.root .. "/" .. "Cargo.toml")
@@ -117,12 +116,12 @@ return {
             }),
 
             -- Lua
-            b.formatting.stylua,
+            builtins.formatting.stylua,
 
             -- Shell
-            b.formatting.shfmt,
-            b.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
-            b.code_actions.shellcheck,
+            builtins.formatting.shfmt,
+            builtins.diagnostics.shellcheck.with({ diagnostics_format = "#{m} [#{c}]" }),
+            builtins.code_actions.shellcheck,
 
             -- Codespell
             -- TODO: cspell output error code instead of information
@@ -139,9 +138,24 @@ return {
       },
     },
     config = function()
-      require "plugins.configs.lspconfig"
+      require("plugins.configs.lspconfig")
       -- require "custom.configs.lspconfig"
-      local on_attach = require("plugins.configs.lspconfig").on_attach
+      -- local on_attach = require("plugins.configs.lspconfig").on_attach
+      local utils = require("core.utils")
+      local on_attach = function(client, bufnr)
+        client.server_capabilities.documentFormattingProvider = false
+        client.server_capabilities.documentRangeFormattingProvider = false
+
+        utils.load_mappings("lspconfig", { buffer = bufnr })
+
+        if client.server_capabilities.signatureHelpProvider then
+          require("nvchad_ui.signature").setup(client)
+        end
+
+        if not utils.load_config().ui.lsp_semantic_tokens then
+          client.server_capabilities.semanticTokensProvider = nil
+        end
+      end
       local capabilities = require("plugins.configs.lspconfig").capabilities
       local lspconfig = require("lspconfig")
 
@@ -184,7 +198,7 @@ return {
           },
         },
       },
-    }
+    },
   },
   {
     "nvim-treesitter/nvim-treesitter",
@@ -201,7 +215,7 @@ return {
         "terraform",
         "prisma",
       },
-    }
+    },
   },
   {
     "williamboman/mason.nvim",
@@ -241,6 +255,6 @@ return {
         -- spell checker
         "cspell",
       },
-    }
+    },
   },
 }
