@@ -200,7 +200,7 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier @fsouza/prettierd
 
-nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim/lua/custom
+nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -208,12 +208,7 @@ ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
 ~/.config/nvim:
-	# Here is my developer version to try new PRs
-	# git clone git@github.com:SebastienElet/NvChad.git $@ --depth 1
-	git clone -b main https://github.com/NvChad/NvChad $@ --depth 1
-	# ln -s ~/.dotfiles/nvim ~/.config/nvim
-~/.config/nvim/lua/custom: ~/.config/nvim
-	ln -s ~/.dotfiles/nvim/lua/custom $@
+	ln -s ~/.dotfiles/nvim ~/.config/nvim
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
