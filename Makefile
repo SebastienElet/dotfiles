@@ -1,4 +1,5 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
+BREW_GNU_BIN:=/opt/homebrew/opt/
 NPM_BIN:=~/.volta/bin
 APP_BIN:=/Applications
 
@@ -31,6 +32,7 @@ terminal: \
 	broot \
 	exa \
 	fd \
+	gnu-sed \
 	htop \
 	nvim \
 	tmux \
@@ -56,6 +58,10 @@ ${BREW_BIN}/exa:
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
+
+gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
+${BREW_GNU_BIN}/gnu-sed:
+	brew install gnu-sed
 
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:

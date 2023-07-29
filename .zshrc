@@ -1,6 +1,7 @@
 # Homebrew
 [[ -d /opt/homebrew/bin ]] && export PATH=/opt/homebrew/bin:$PATH
 [[ -d /opt/homebrew/sbin ]] && export PATH=/opt/homebrew/sbin:$PATH
+[[ -d /opt/homebrew/opt/gnu-sed/libexec/gnubin ]] && export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
 
 # Alias
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
