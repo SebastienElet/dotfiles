@@ -80,7 +80,6 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 ################################################################################
 work: \
 	aws \
-	brave \
 	docker \
 	doppler \
 	heroku \
@@ -91,10 +90,6 @@ work: \
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
-
-brave: brew /Applications/Brave\ Browser.app
-/Applications/Brave\ Browser.app:
-	brew install --cask brave-browser
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
