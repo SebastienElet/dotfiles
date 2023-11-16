@@ -35,6 +35,7 @@ terminal: \
 	gnu-sed \
 	htop \
 	nvim \
+	tldr \
 	tmux \
 	tokei \
 	wezterm \
@@ -210,6 +211,10 @@ ${BREW_BIN}/nvim:
 	npm i -g neovim
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
+
+tldr: brew ${BREW_BIN}/tldr
+${BREW_BIN}/tldr:
+	brew install tldr
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
@@ -418,10 +423,6 @@ trymodule: node ${BREW_BIN}/trymodule
 ${BREW_BIN}/trymodule:
 	npm install -g trymodule
 	
-tldr: brew ${BREW_BIN}/tldr
-${BREW_BIN}/tldr:
-	brew install tldr
-
 translate-shell: ${BREW_BIN}/trans
 ${BREW_BIN}/trans:
 	brew install translate-shell
