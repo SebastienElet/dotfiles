@@ -81,6 +81,9 @@ eval "$(starship init zsh)"
 # Volta
 [[ -d $HOME/.volta ]] && export VOLTA_HOME="$HOME/.volta" && export PATH="$VOLTA_HOME/bin:$PATH"
 
+# Krew
+[[ -d $HOME/.krew ]] && export PATH="$HOME/.krew/bin:$PATH"
+
 # Setup default editor
 [[ ! -z `command -v nvim` ]] && export EDITOR=nvim
 
