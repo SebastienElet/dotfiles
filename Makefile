@@ -202,7 +202,7 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier @fsouza/prettierd
 
-nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim
+nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -211,6 +211,8 @@ ${BREW_BIN}/nvim:
 	npm i -g neovim
 ~/.config/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
+~/cspell.json:
+	ln -s ~/.dotfiles/cspell.json $@
 
 tldr: brew ${BREW_BIN}/tldr
 ${BREW_BIN}/tldr:
