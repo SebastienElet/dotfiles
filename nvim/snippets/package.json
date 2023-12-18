@@ -1,0 +1,22 @@
+{
+  "name": "custom-snippets",
+  "author": "Sébastien Elet",
+  "engines": {
+    "vscode": "*"
+  },
+  "contributes": {
+    "snippets": [
+      {
+        "language": [
+          "plaintext",
+          "markdown",
+          "tex",
+          "html",
+          "global",
+          "all"
+        ],
+        "path": "./global.json"
+      }
+    ]
+  }
+}

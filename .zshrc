@@ -1,6 +1,7 @@
 # Homebrew
 [[ -d /opt/homebrew/bin ]] && export PATH=/opt/homebrew/bin:$PATH
 [[ -d /opt/homebrew/sbin ]] && export PATH=/opt/homebrew/sbin:$PATH
+[[ -d /opt/homebrew/opt/gnu-sed/libexec/gnubin ]] && export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
 
 # Alias
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
@@ -79,6 +80,9 @@ eval "$(starship init zsh)"
 
 # Volta
 [[ -d $HOME/.volta ]] && export VOLTA_HOME="$HOME/.volta" && export PATH="$VOLTA_HOME/bin:$PATH"
+
+# Krew
+[[ -d $HOME/.krew ]] && export PATH="$HOME/.krew/bin:$PATH"
 
 # Setup default editor
 [[ ! -z `command -v nvim` ]] && export EDITOR=nvim
