@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en",
+  "globRoot": ".",
+  "dictionaryDefinitions": [
+    {
+      "name": "user-dictionary",
+      "path": "~/.dotfiles/dict/user.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["user-dictionary"],
+  "ignorePaths": ["node_modules", "dist", "build"]
+}

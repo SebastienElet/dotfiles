@@ -1,4 +1,5 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
+BREW_GNU_BIN:=/opt/homebrew/opt/
 NPM_BIN:=~/.volta/bin
 APP_BIN:=/Applications
 
@@ -31,8 +32,10 @@ terminal: \
 	broot \
 	exa \
 	fd \
+	gnu-sed \
 	htop \
 	nvim \
+	tldr \
 	tmux \
 	tokei \
 	wezterm \
@@ -57,6 +60,10 @@ fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
+gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
+${BREW_GNU_BIN}/gnu-sed:
+	brew install gnu-sed
+
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
 	brew install htop
@@ -80,7 +87,6 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 ################################################################################
 work: \
 	aws \
-	brave \
 	docker \
 	doppler \
 	heroku \
@@ -91,10 +97,6 @@ work: \
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
-
-brave: brew /Applications/Brave\ Browser.app
-/Applications/Brave\ Browser.app:
-	brew install --cask brave-browser
 
 docker: brew /Applications/Docker.app
 /Applications/Docker.app:
@@ -200,7 +202,7 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier @fsouza/prettierd
 
-nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim/lua/custom
+nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
 	# To use neovim 0.5
 	# Install cmake luarocks
@@ -208,12 +210,13 @@ ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
 ~/.config/nvim:
-	# Here is my developer version to try new PRs
-	# git clone git@github.com:SebastienElet/NvChad.git $@ --depth 1
-	git clone -b main https://github.com/NvChad/NvChad $@ --depth 1
-	# ln -s ~/.dotfiles/nvim ~/.config/nvim
-~/.config/nvim/lua/custom: ~/.config/nvim
-	ln -s ~/.dotfiles/nvim/lua/custom $@
+	ln -s ~/.dotfiles/nvim ~/.config/nvim
+~/cspell.json:
+	ln -s ~/.dotfiles/cspell.json $@
+
+tldr: brew ${BREW_BIN}/tldr
+${BREW_BIN}/tldr:
+	brew install tldr
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
@@ -422,10 +425,6 @@ trymodule: node ${BREW_BIN}/trymodule
 ${BREW_BIN}/trymodule:
 	npm install -g trymodule
 	
-tldr: brew ${BREW_BIN}/tldr
-${BREW_BIN}/tldr:
-	brew install tldr
-
 translate-shell: ${BREW_BIN}/trans
 ${BREW_BIN}/trans:
 	brew install translate-shell
