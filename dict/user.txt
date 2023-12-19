@@ -1,3 +1,10 @@
 nvim
 lazyvim
 Quickbooks
+Cfonb
+exabanque
+iban
+SEPA
+Pennylane
+sendgrid
+Ebics
