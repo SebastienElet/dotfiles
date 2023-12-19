@@ -98,7 +98,7 @@ aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
 
-docker: brew /Applications/Docker.app
+docker: brew lazydocker /Applications/Docker.app
 /Applications/Docker.app:
 	brew install --cask docker
 
@@ -113,6 +113,10 @@ ${BREW_BIN}/heroku:
 gnupg: brew ${BREW_BIN}/gpg
 ${BREW_BIN}/gpg:
 	brew install gnupg
+
+lazydocker: brew ${BREW_BIN}/lazydocker
+${BREW_BIN}/lazydocker:
+	brew install jesseduffield/lazydocker/lazydocker
 
 postgresql: brew ${BREW_BIN}/psql
 ${BREW_BIN}/psql:
