@@ -8,3 +8,5 @@ SEPA
 Pennylane
 sendgrid
 Ebics
+tableplus
+psql
