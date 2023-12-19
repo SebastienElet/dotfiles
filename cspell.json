@@ -10,6 +10,6 @@
       "addWords": true
     }
   ],
-  "dictionaries": ["user-dictionary"],
+  "dictionaries": ["user-dictionary", "fr-fr"],
   "ignorePaths": ["node_modules", "dist", "build"]
 }
