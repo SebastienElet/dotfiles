@@ -1,13 +1,13 @@
 # Dotfiles
 
-# Install
+## Install
 
 ```bash
 curl -fsSL \
   https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | sh
 ```
 
-# Manual install
+## Manual install
 
 ```bash
 cd && \
