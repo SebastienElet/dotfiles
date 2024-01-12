@@ -12,3 +12,13 @@ tableplus
 psql
 immo
 DDMMYYY
+broot
+wezterm
+tokei
+tldr
+mindnode
+jetbrains
+daisydisk
+cleanshot
+awscli
+lazydocker
