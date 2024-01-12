@@ -9,8 +9,7 @@ usage:
 utils: \
 	alfred \
 	bartender \
-	cleanshot \
-	yabai
+	cleanshot
 all: \
 	terminal \
 	work \
@@ -118,9 +117,11 @@ lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
 	brew install jesseduffield/lazydocker/lazydocker
 
-postgresql: brew ${BREW_BIN}/psql
+postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
 ${BREW_BIN}/psql:
 	brew install postgresql
+~/.psqlrc:
+	ln -s ~/.dotfiles/.psqlrc $@
 
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
