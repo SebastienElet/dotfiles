@@ -1,12 +1,4 @@
 return {
-  -- Auto install those tools with mason
-  {
-    "williamboman/mason.nvim",
-    opts = {
-      ensure_installed = { "cspell" },
-    },
-  },
-  -- Set up null-ls to check spelling
   {
     "nvimtools/none-ls.nvim",
     dependencies = { "mason.nvim", "davidmh/cspell.nvim" },
@@ -17,6 +9,8 @@ return {
       if not ok then
         return
       end
+
+      local null_ls = require("null-ls")
 
       -- local b = none_ls.builtins
 
@@ -32,9 +26,12 @@ return {
           end,
         }),
         cspell.code_actions,
+        null_ls.builtins.diagnostics.sqlfluff.with({
+          extra_args = { "--dialect", "postgres" }, -- change to your dialect
+        }),
       }
       -- Define the debounce value
-      local debounce_value = 200
+      local debounce_value = 300
       return {
         sources = sources,
         debounce = debounce_value,
