@@ -22,3 +22,5 @@ daisydisk
 cleanshot
 awscli
 lazydocker
+rlmc
+codegen
