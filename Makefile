@@ -29,7 +29,7 @@ terminal: \
 	~/.config \
 	bottom \
 	broot \
-	exa \
+	eza \
 	fd \
 	gnu-sed \
 	htop \
@@ -51,9 +51,9 @@ broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
 	brew install broot
 
-exa: brew ${BREW_BIN}/exa
-${BREW_BIN}/exa:
-	brew install exa
+eza: brew ${BREW_BIN}/eza
+${BREW_BIN}/eza:
+	brew install eza
 
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
