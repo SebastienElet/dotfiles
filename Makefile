@@ -97,9 +97,9 @@ aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
 
-docker: brew lazydocker /Applications/Docker.app
-/Applications/Docker.app:
-	brew install --cask docker
+docker: brew lazydocker /Applications/Orbstack.app
+/Applications/Orbstack.app:
+	brew install orbstack
 
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
