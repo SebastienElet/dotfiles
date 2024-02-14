@@ -24,3 +24,4 @@ awscli
 lazydocker
 rlmc
 codegen
+Qovery
