@@ -4,8 +4,9 @@ return {
     dependencies = { "mason.nvim" },
     opts = {
       formatters_by_ft = {
-        sql = { "sqlfluff" },
         sh = { "shfmt" },
+        sql = { "sqlfluff" },
+        xml = { "xmlformatter" },
       },
       formatters = {
         sqlfluff = {
@@ -13,6 +14,10 @@ return {
         },
         shfmt = {
           prepend_args = { "-i", "2", "-ci" },
+        },
+        xmlformatter = {
+          command = "xmlformat",
+          args = { "-" },
         },
       },
     },

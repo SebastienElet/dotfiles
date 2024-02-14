@@ -3,11 +3,13 @@ return {
     "williamboman/mason.nvim",
     opts = {
       ensure_installed = {
-        "stylua",
+        "cspell",
         "shellcheck",
         "shfmt",
-        "cspell",
         "sqlfluff",
+        "sqlls",
+        "stylua",
+        "xmlformatter",
       },
     },
   },
