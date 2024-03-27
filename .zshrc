@@ -51,6 +51,7 @@ alias gbsg='git bisect good'
 alias gbsr='git bisect reset'
 alias gbss='git bisect start'
 
+alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistral opencommit'
 alias gc='git commit -v'
 alias gc!='git commit -v --amend'
 alias gcn!='git commit -v --no-edit --amend'
