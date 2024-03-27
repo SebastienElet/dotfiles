@@ -33,6 +33,7 @@ terminal: \
 	fd \
 	gnu-sed \
 	htop \
+	lazygit \
 	nvim \
 	tldr \
 	tmux \
@@ -66,6 +67,10 @@ ${BREW_GNU_BIN}/gnu-sed:
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
 	brew install htop
+
+lazygit: brew ${BREW_BIN}/lazygit
+${BREW_BIN}/lazygit:
+	brew install lazygit
 
 tokei: brew ${BREW_BIN}/tokei
 ${BREW_BIN}/tokei:
