@@ -93,7 +93,6 @@ work: \
 	aws \
 	docker \
 	doppler \
-	heroku \
 	javascript \
 	postgresql \
 	tableplus
@@ -109,10 +108,6 @@ docker: brew lazydocker /Applications/Orbstack.app
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
 	brew install dopplerhq/cli/doppler
-
-heroku: brew ${BREW_BIN}/heroku
-${BREW_BIN}/heroku:
-	brew install heroku/brew/heroku
 
 gnupg: brew ${BREW_BIN}/gpg
 ${BREW_BIN}/gpg:
