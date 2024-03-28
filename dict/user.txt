@@ -27,3 +27,4 @@ codegen
 Qovery
 TLMC
 DELUBAC
+hubspot
