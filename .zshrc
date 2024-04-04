@@ -88,6 +88,9 @@ eval "$(starship init zsh)"
 # Setup default editor
 [[ ! -z `command -v nvim` ]] && export EDITOR=nvim
 
+# Setup python
+[[ ! -z `brew --prefix python` ]] && export PATH="$(brew --prefix python)/libexec/bin:$PATH"
+
 # Auto suggestion
 [[ -f ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Syntax
