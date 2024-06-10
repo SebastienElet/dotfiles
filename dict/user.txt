@@ -30,3 +30,10 @@ DELUBAC
 hubspot
 immopen
 graphile
+typesense
+Gesteam
+Thetrawin
+partnerimmo
+LOGILINK
+VILOGI
+GERCOP
