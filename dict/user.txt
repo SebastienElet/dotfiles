@@ -38,3 +38,4 @@ LOGILINK
 VILOGI
 GERCOP
 cuid
+alur
