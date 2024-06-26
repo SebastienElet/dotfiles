@@ -2,9 +2,9 @@ local wezterm = require("wezterm")
 
 function scheme_for_appearance(appearance)
 	if appearance:find("Dark") then
-		return "nord"
+		return "tokyonight"
 	else
-		return "nord-light"
+		return "tokyonight-day"
 	end
 end
 
@@ -20,6 +20,6 @@ end)
 
 return {
 	font = wezterm.font("Iosevka Nerd Font"),
-	color_scheme = "nord",
+	color_scheme = "tokyonight",
 	hide_tab_bar_if_only_one_tab = true,
 }

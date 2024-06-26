@@ -98,6 +98,7 @@ work: \
 	aws \
 	docker \
 	doppler \
+	gh \
 	javascript \
 	postgresql \
 	tableplus
@@ -117,6 +118,11 @@ ${BREW_BIN}/doppler:
 gnupg: brew ${BREW_BIN}/gpg
 ${BREW_BIN}/gpg:
 	brew install gnupg
+
+gh: brew ${BREW_BIN}/gh
+${BREW_BIN}/gh:
+	brew install gh
+	gh extension install github/gh-copilot
 
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
@@ -230,15 +236,12 @@ ${BREW_BIN}/tldr:
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
-	brew tap homebrew/cask-fonts
 	brew install font-fira-code-nerd-font
 font-iosevka: ~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf
 ~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf:
-	brew tap homebrew/cask-fonts
 	brew install font-iosevka-nerd-font
 font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
 ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
-	brew tap homebrew/cask-fonts
 	brew install font-jetbrains-mono-nerd-font
 
 fzf: ~/.fzf
@@ -305,7 +308,6 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
-	brew tap homebrew/cask-fonts
 
 bars: node ${NPM_BIN}/bars
 ${NPM_BIN}/bars:
@@ -350,10 +352,6 @@ google-chrome: brew /Applications/Google\ Chrome.app
 #	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
-
-gh: brew ${BREW_BIN}/gh
-${BREW_BIN}/gh:
-	brew install github/gh/gh
 
 gpg-config:
 	echo 'use-agent' > ~/.gnupg/gpg.conf
