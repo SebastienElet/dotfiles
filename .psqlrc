@@ -2,3 +2,5 @@
 \pset null '(null)'
 \x
 \pset format wrapped
+-- Always show query time
+\timing
