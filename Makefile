@@ -101,7 +101,8 @@ work: \
 	gh \
 	javascript \
 	postgresql \
-	tableplus
+	tableplus \
+	terraform
 
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
@@ -137,6 +138,11 @@ ${BREW_BIN}/psql:
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
 	brew install tableplus
+
+terraform: brew ${BREW_BIN}/terraform
+${BREW_BIN}/terraform:
+	brew tap hashicorp/tap
+	brew install hashicorp/tap/terraform
 
 ################################################################################
 # End of work section
