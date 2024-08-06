@@ -226,9 +226,6 @@ ${NPM_BIN}/prettier:
 
 nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
-	# To use neovim 0.5
-	# Install cmake luarocks
-	# brew install --HEAD neovim
 	brew install neovim
 	npm i -g neovim
 ~/.config/nvim:
