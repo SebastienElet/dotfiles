@@ -12,6 +12,7 @@ brew missing
 
 echo "ℹ️  Mas upgrade"
 mas outdated
+mas upgrade
 
 echo "ℹ️  Npm upgrade"
 npm-check -g -y
