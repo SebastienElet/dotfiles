@@ -5,7 +5,7 @@ return {
     opts = {
       formatters = {
         sqlfluff = {
-          args = { "fix", "--dialect=postgresql", "-" },
+          args = { "fix", "--dialect=postgres", "-" },
         },
       },
     },
