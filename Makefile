@@ -101,6 +101,7 @@ work: \
 	gh \
 	javascript \
 	postgresql \
+	renovate \
 	tableplus \
 	terraform
 
@@ -134,6 +135,10 @@ ${BREW_BIN}/psql:
 	brew install postgresql
 ~/.psqlrc:
 	ln -s ~/.dotfiles/.psqlrc $@
+
+renovate: brew node ${NPM_BIN}/renovate
+${NPM_BIN}/renovate:
+	npm i -g renovate
 
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
