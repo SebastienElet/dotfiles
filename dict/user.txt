@@ -40,3 +40,9 @@ GERCOP
 cuid
 alur
 Elet
+Chromedriver
+frontapp
+mercifacteur
+fortawesome
+iframe
+copro
