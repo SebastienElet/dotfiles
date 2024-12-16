@@ -1,15 +1,1 @@
-{
-  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
-  "version": "0.2",
-  "language": "en",
-  "globRoot": ".",
-  "dictionaryDefinitions": [
-    {
-      "name": "user-dictionary",
-      "path": "~/.dotfiles/dict/user.txt",
-      "addWords": true
-    }
-  ],
-  "dictionaries": ["user-dictionary", "fr-fr"],
-  "ignorePaths": ["node_modules", "dist", "build"]
-}
+{"$schema":"https:\/\/raw.githubusercontent.com\/streetsidesoftware\/cspell\/main\/cspell.schema.json","words":["yarnrc","rclone"],"version":"0.2","globRoot":".","dictionaries":["user-dictionary","fr-fr"],"dictionaryDefinitions":[{"name":"user-dictionary","path":"~\/.dotfiles\/dict\/user.txt","addWords":true}],"ignorePaths":["node_modules","dist","build"],"language":"en"}
