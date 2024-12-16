@@ -89,6 +89,9 @@ eval "$(starship init zsh)"
 # Setup python
 [[ ! -z `brew --prefix python` ]] && export PATH="$(brew --prefix python)/libexec/bin:$PATH"
 
+# Setup ruby
+[[ ! -z `brew --prefix ruby` ]] && export PATH="$(brew --prefix ruby)/bin:$PATH"
+
 # Auto suggestion
 [[ -f ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Syntax
