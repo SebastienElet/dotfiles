@@ -100,6 +100,7 @@ work: \
 	doppler \
 	gh \
 	javascript \
+	mosh \
 	postgresql \
 	renovate \
 	tableplus \
@@ -129,6 +130,10 @@ ${BREW_BIN}/gh:
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
 	brew install jesseduffield/lazydocker/lazydocker
+
+mosh: brew ${BREW_BIN}/mosh/
+${BREW_BIN}/mosh/:
+	brew install mosh
 
 postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
 ${BREW_BIN}/psql:
@@ -389,10 +394,6 @@ ${BREW_BIN}/lftp:
 mas: brew ${BREW_BIN}/mas/
 ${BREW_BIN}/mas/:
 	brew install mas
-
-mosh: brew ${BREW_BIN}/mosh/
-${BREW_BIN}/mosh/:
-	brew install mosh
 
 ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
