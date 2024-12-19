@@ -98,6 +98,9 @@ eval "$(starship init zsh)"
 [[ -f ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 [[ -d ~/.zsh/zsh-completions ]] && fpath=(~/.zsh/zsh-completions $fpath)
 
+# Postgresql
+[[ -d $(brew --prefix)/opt/postgresql@16 ]] && export PATH="$(brew --prefix)/opt/postgresql@16/bin:$PATH"
+
 # Fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
