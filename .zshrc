@@ -4,6 +4,8 @@
 [[ -d /opt/homebrew/opt/gnu-sed/libexec/gnubin ]] && export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
 
 # Alias
+alias import-instance-start=~/.dotfiles/zsh/bin/import-instance-start
+alias import-instance-stop=~/.dotfiles/zsh/bin/import-instance-stop
 alias upgrade=~/.dotfiles/zsh/bin/upgrade
 alias ..='cd ..'
 alias :q='exit'
