@@ -1,0 +1,18 @@
+#!/bin/bash
+
+INSTANCE_NAME="Import Server"
+
+# Retrieve instance Id
+INSTANCE_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=$INSTANCE_NAME" \
+  --query "Reservations[].Instances[?State.Name=='running'].InstanceId" \
+  --output text)
+
+if [ -z "$INSTANCE_ID" ]; then
+  echo "No instance running with name $INSTANCE_NAME."
+  exit 1
+fi
+
+aws ec2 stop-instances --instance-ids $INSTANCE_ID
+
+echo "Instance $INSTANCE_NAME ($INSTANCE_ID) is stoping..."
