@@ -46,3 +46,5 @@ mercifacteur
 fortawesome
 iframe
 copro
+lazygit
+opencommit
