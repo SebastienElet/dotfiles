@@ -31,6 +31,7 @@ terminal: \
 	broot \
 	eza \
 	fd \
+	fish \
 	gnu-sed \
 	htop \
 	lazygit \
@@ -60,6 +61,13 @@ ${BREW_BIN}/eza:
 fd: brew ${BREW_BIN}/fd 
 ${BREW_BIN}/fd:
 	brew install fd
+
+fish: brew ${BREW_BIN}/fish ~/.config/fish
+${BREW_BIN}/fish:
+	brew install fish
+
+~/.config/fish:
+	ln -s ~/.dotfiles/fish $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
 ${BREW_GNU_BIN}/gnu-sed:
