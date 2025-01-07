@@ -27,6 +27,7 @@ extra: \
 ################################################################################
 terminal: \
 	~/.config \
+	bat \
 	bottom \
 	broot \
 	eza \
@@ -46,6 +47,10 @@ terminal: \
 ~/.config:
 	mkdir $@
 
+bat: brew ${BREW_BIN}/bat
+${BREW_BIN}/bat:
+	brew install bat
+
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
@@ -64,7 +69,8 @@ ${BREW_BIN}/fd:
 
 fish: brew ${BREW_BIN}/fish ~/.config/fish
 ${BREW_BIN}/fish:
-	brew install fish
+	brew install fish fisher
+	fisher install PatrickF1/fzf.fish
 
 ~/.config/fish:
 	ln -s ~/.dotfiles/fish $@
@@ -307,10 +313,6 @@ zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highligh
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
 	@npm -g install bash-language-server
-
-bat: brew ${BREW_BIN}/bat
-${BREW_BIN}/bat:
-	brew install bat
 
 comby: brew ${BREW_BIN}/comby
 ${BREW_BIN}/comby:
