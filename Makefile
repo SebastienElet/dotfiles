@@ -70,7 +70,7 @@ ${BREW_BIN}/fd:
 fish: brew ${BREW_BIN}/fish ~/.config/fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
-	fisher install PatrickF1/fzf.fish
+	fish -c 'fisher install PatrickF1/fzf.fish'
 
 ~/.config/fish:
 	ln -s ~/.dotfiles/fish $@
