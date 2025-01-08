@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Find all modified files
+FILES=$(git diff --cached --name-only --diff-filter=ACM main -- | grep '\.ts$')
+
+if [ -z "$FILES" ]; then
+  echo "No typescript files to check."
+  exit 0
+fi
+
+# Clean the review.md file before starting
+>review.md
+
+# Review each modified file
+for FILE in $FILES; do
+  content=$(cat "$FILE")
+  prompt="\n "
+  prompt+="Review this code, "
+  prompt+="provide suggestions for improvement, "
+  prompt+="coding best practices, "
+  prompt+="improve readability "
+  prompt+="and maintainability. "
+  prompt+="Remove any code smells and anti-patterns. "
+  prompt+="Provide code examples for your suggestion. "
+  prompt+="Do not check for indentation because we are using prettier. "
+  prompt+="Suggest using async/await instead of promises. "
+  prompt+="Suggest type inference over type annotations. "
+  prompt+="Suggest functional programming patterns rather than object. "
+  prompt+="Respond in markdown format. "
+  prompt+="If the file does not have any code or does not need any changes, say 'No changes needed'."
+
+  # get model review suggestions
+  suggestions=$(OLLAMA_KEEP_ALIVE=-1 ollama run llama3 "Code: $content $prompt")
+
+  echo "## Review for $FILE" >>review.md
+  echo "" >>review.md
+  echo "$suggestions" >>review.md
+  echo "" >>review.md
+  echo "---" >>review.md
+  echo "" >>review.md
+done
+
+echo "All typescript files were applied the code review."
+exit 0
