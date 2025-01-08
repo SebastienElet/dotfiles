@@ -4,9 +4,9 @@
 [[ -d /opt/homebrew/opt/gnu-sed/libexec/gnubin ]] && export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
 
 # Alias
-alias import-instance-start=~/.dotfiles/zsh/bin/import-instance-start
-alias import-instance-stop=~/.dotfiles/zsh/bin/import-instance-stop
-alias upgrade=~/.dotfiles/zsh/bin/upgrade
+alias import-instance-start=~/.dotfiles/scripts/import-instance-start
+alias import-instance-stop=~/.dotfiles/scripts/import-instance-stop
+alias upgrade=~/.dotfiles/scripts/upgrade
 alias ..='cd ..'
 alias :q='exit'
 [[ ! -z `command -v nvim` ]] && alias vim='nvim'
@@ -21,8 +21,8 @@ alias tm='tmux'
 # Oh-my-zsh git aliases
 alias g='git'
 
-source ~/.dotfiles/zsh/bin/git_main_branch
-source ~/.dotfiles/zsh/bin/git_hook_push
+source ~/.dotfiles/scripts/git_main_branch
+source ~/.dotfiles/scripts/git_hook_push
 
 alias '??'='ghcs'
 alias ga='git add'
