@@ -1,10 +1,15 @@
 #!/bin/bash
 
-echo "ℹ️  Brew upgrade"
+echo "ℹ️  Brew"
 brew update
 brew upgrade
 brew upgrade --cask
 brew cleanup -s
+
+if [[ ! -z $(command -v gh copilot) ]]; then
+  echo "ℹ️  Copilot"
+  gh extension upgrade copilot
+fi
 
 echo "ℹ️  Brew diagnostic"
 brew doctor
