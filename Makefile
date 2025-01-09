@@ -114,11 +114,17 @@ work: \
 	doppler \
 	gh \
 	javascript \
+	k9s \
+	lazydocker \
 	mosh \
 	postgresql \
 	renovate \
 	tableplus \
 	terraform
+
+atac: brew ${BREW_BIN}/atac
+${BREW_BIN}/atac:
+	brew install atac
 
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
@@ -140,6 +146,10 @@ gh: brew ${BREW_BIN}/gh
 ${BREW_BIN}/gh:
 	brew install gh
 	gh extension install github/gh-copilot
+
+k9s: brew ${BREW_BIN}/k9s
+${BREW_BIN}/k9s:
+	brew install k9s
 
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
@@ -335,6 +345,10 @@ ${BREW_BIN}/brew:
 bars: node ${NPM_BIN}/bars
 ${NPM_BIN}/bars:
 	@npm install -g https://github.com/jez/bars.git
+
+btop: ${BREW_BIN}/btop
+${BREW_BIN}/btop:
+	brew install btop
 
 ctop: ${BREW_BIN}/ctop
 ${BREW_BIN}/ctop:
