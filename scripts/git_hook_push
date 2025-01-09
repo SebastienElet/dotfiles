@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-source ~/.dotfiles/zsh/bin/git_hook_assert_typos
-source ~/.dotfiles/zsh/bin/git_hook_assert_todoes
-source ~/.dotfiles/zsh/bin/git_hook_assert_eslint
-source ~/.dotfiles/zsh/bin/git_hook_assert_empty_files
-source ~/.dotfiles/zsh/bin/git_hook_detect_copy_paste
+source ~/.dotfiles/scripts/git_hook_assert_typos
+source ~/.dotfiles/scripts/git_hook_assert_todoes
+source ~/.dotfiles/scripts/git_hook_assert_eslint
+source ~/.dotfiles/scripts/git_hook_assert_empty_files
+source ~/.dotfiles/scripts/git_hook_detect_copy_paste
 
 function git_hook_push() {
   # Execute in a subprocess to avoid to close the window on exit code
