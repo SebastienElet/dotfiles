@@ -18,3 +18,5 @@ function git_hook_push() {
     echo "Git hook push ✅"
   )
 }
+
+git_hook_push
