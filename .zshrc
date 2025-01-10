@@ -21,9 +21,6 @@ alias tm='tmux'
 # Oh-my-zsh git aliases
 alias g='git'
 
-source ~/.dotfiles/scripts/git_main_branch
-source ~/.dotfiles/scripts/git_hook_push
-
 alias '??'='ghcs'
 alias ga='git add'
 alias gaa='git add --all'
