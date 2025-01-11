@@ -33,17 +33,17 @@ alias gcf='git config --list'
 alias gcn!='git commit -v --no-edit --amend'
 alias gco='git checkout'
 alias gcsm='git commit -s -m'
-alias gp=~/.dotfiles/scripts/git_hook_push && git push
+alias gp='~/.dotfiles/scripts/git_hook_push && git push'
 alias gpsup='git push --set-upstream origin $(git branch --show-current)'
 alias grbc='git rebase --continue'
 alias grbm='git rebase $(git rev-parse --abbrev-ref HEAD 2>/dev/null)'
 alias gs='git status'
-alias import-instance-start=~/.dotfiles/scripts/import-instance-start
-alias import-instance-stop=~/.dotfiles/scripts/import-instance-stop
+alias import-instance-start='~/.dotfiles/scripts/import-instance-start'
+alias import-instance-stop='~/.dotfiles/scripts/import-instance-stop'
 alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistral opencommit'
 alias t='tmux'
 alias tm='tmux'
-alias upgrade=~/.dotfiles/scripts/upgrade
+alias upgrade='~/.dotfiles/scripts/upgrade'
 
 if test -n (type -q nvim)
     alias vim='nvim'
