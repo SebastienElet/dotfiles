@@ -4,6 +4,8 @@ end
 
 # Enable vi bindings
 set -g fish_key_bindings fish_vi_key_bindings
+# Disable welcome message
+set fish_greeting
 
 # Ensure Starship is installed
 if test -n (type -q starship)
