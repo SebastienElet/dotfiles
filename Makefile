@@ -71,6 +71,8 @@ fish: brew ${BREW_BIN}/fish ~/.config/fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
 	fish -c 'fisher install PatrickF1/fzf.fish'
+	@echo 'If you want to switch your shell to fish, please run the following command'
+	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
 ~/.config/fish:
 	ln -s ~/.dotfiles/fish $@
