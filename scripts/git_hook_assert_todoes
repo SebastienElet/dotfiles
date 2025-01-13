@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
+source ~/.dotfiles/scripts/git_main_branch
+
 function git_hook_assert_todoes {
   echo 'Check for todoes'
   start=$(git_main_branch)
   git diff origin/${start}... \
     -G 'TODO' \
     --name-only \
-    --relative \
-     | xargs -n1 git blame -f -n -w \
-     | grep "$(git config user.name)" \
-     | grep TODO \
-     | sed "s/.\{9\}//" \
-     | sed "s/(.*)[[:space:]]*//"
+    --relative |
+    xargs -n1 git blame -f -n -w |
+    grep "$(git config user.name)" |
+    grep TODO |
+    sed "s/.\{9\}//" |
+    sed "s/(.*)[[:space:]]*//"
 }
