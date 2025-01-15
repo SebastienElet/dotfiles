@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+INSTANCE_NAME="Cheque Parser"
+export AWS_PROFILE="prod"
+
+# Retrieve instance Id
+INSTANCE_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=$INSTANCE_NAME" \
+  --query "Reservations[].Instances[].InstanceId" \
+  --output text)
+
+if [ -z "$INSTANCE_ID" ]; then
+  echo "No instance with name $INSTANCE_NAME."
+  exit 1
+fi
+
+aws ec2 reboot-instances --instance-ids $INSTANCE_ID
+
+echo "Instance $INSTANCE_NAME ($INSTANCE_ID) is rebooting..."
