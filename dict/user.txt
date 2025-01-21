@@ -48,3 +48,4 @@ iframe
 copro
 lazygit
 opencommit
+qrcodes
