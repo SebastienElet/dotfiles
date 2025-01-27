@@ -67,7 +67,7 @@ fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
-fish: brew ${BREW_BIN}/fish ~/.config/fish
+fish: brew starship ~/.config/fish ${BREW_BIN}/fish 
 ${BREW_BIN}/fish:
 	brew install fish fisher
 	fish -c 'fisher install PatrickF1/fzf.fish'
