@@ -41,8 +41,7 @@ terminal: \
 	tldr \
 	tmux \
 	tokei \
-	wezterm \
-	zsh
+	wezterm
 
 ~/.config:
 	mkdir $@
@@ -309,18 +308,6 @@ ${BREW_BIN}/yabai:
 	brew install koekeishiya/formulae/yabai
 ~/.yabairc:
 	ln -s ~/.dotfiles/.yabairc $@
-
-zsh: starship fzf ~/.zshrc ~/.zsh/zsh-autosuggestions ~/.zsh/zsh-syntax-highlighting ~/.zsh/zsh-completions
-~/.zshrc:
-	ln -s ~/.dotfiles/.zshrc $@
-	@echo 'If you want to switch your shell to zsh, please run the following command'
-	@echo '$> chsh -s /bin/zsh'
-~/.zsh/zsh-autosuggestions:
-	git clone https://github.com/zsh-users/zsh-autosuggestions $@
-~/.zsh/zsh-syntax-highlighting:
-	git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $@
-~/.zsh/zsh-completions:
-	git clone https://github.com/zsh-users/zsh-completions $@
 
 bash-language-server: node ${NPM_BIN}/bash-language-server
 ${NPM_BIN}/bash-language-server:
