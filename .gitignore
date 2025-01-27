@@ -1,3 +1,6 @@
 nvim/.netrwhist
 nvim/bundle/
 nvim/pack/
+fish/fish_plugins
+fish/functions
+fish/completions
