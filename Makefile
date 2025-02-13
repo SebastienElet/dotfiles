@@ -7,9 +7,8 @@ usage:
 	@echo all - Setup dev env
 
 utils: \
-	alfred \
-	bartender \
-	cleanshot
+	cleanshot \
+	keycast
 all: \
 	terminal \
 	work \
@@ -249,6 +248,10 @@ ${APP_BIN}/Bartender\ 4.app:
 cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
 	brew install cleanshot
+
+keycast: brew ${APP_BIN}/KeyCastr.app
+${APP_BIN}/KeyCastr.app:
+	brew install keycastr
 
 ################################################################################
 # End of utils section
