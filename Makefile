@@ -37,7 +37,6 @@ terminal: \
 	lazygit \
 	nvim \
 	opencommit \
-	tldr \
 	tmux \
 	tokei \
 	wezterm
@@ -270,10 +269,6 @@ ${BREW_BIN}/nvim:
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/cspell.json:
 	ln -s ~/.dotfiles/cspell.json $@
-
-tldr: brew ${BREW_BIN}/tldr
-${BREW_BIN}/tldr:
-	brew install tldr
 
 font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
 ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
