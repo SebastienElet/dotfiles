@@ -28,7 +28,8 @@ Usage: $0 [OPTIONS] [PATH]
 
 Checks if directories follow Johnny Decimal naming conventions:
 - Format: NN-name (where NN is 10-99) or NN-NN - Name (range format)
-- Names should be lowercase with hyphens (strict) or Title Case (range)
+- Subdirectories: NN - Name, NN.NN - Name, or NN.NNNNN - Name (decimal format)
+- Names should be lowercase with hyphens (strict) or Title Case (range/decimal)
 - No spaces or special characters except hyphens
 - Exception: "Inbox" folder is allowed at root level
 
@@ -109,7 +110,7 @@ is_johnny_decimal() {
     fi
 
     # Check if it matches the pattern: NN-NN - Name (range format)
-    if [[ "$dirname" =~ ^([1-9][0-9])-([1-9][0-9])\ -([A-Za-z0-9\ -]+)$ ]]; then
+    if [[ "$dirname" =~ ^([1-9][0-9])-([1-9][0-9])\ -(.+)$ ]]; then
         local start_number="${BASH_REMATCH[1]}"
         local end_number="${BASH_REMATCH[2]}"
         local name="${BASH_REMATCH[3]}"
@@ -118,6 +119,53 @@ is_johnny_decimal() {
         if [[ "$start_number" -ge 10 && "$start_number" -le 99 &&
             "$end_number" -ge 10 && "$end_number" -le 99 &&
             "$start_number" -le "$end_number" ]]; then
+            # Trim leading/trailing spaces from name
+            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [[ -n "$name" ]]; then
+                return 0
+            fi
+        fi
+    fi
+
+    # Check if it matches the pattern: NN.NNNNN - Name (decimal format)
+    if [[ "$dirname" =~ ^([1-9][0-9])\.([0-9]{5})\ -(.+)$ ]]; then
+        local category="${BASH_REMATCH[1]}"
+        local sub_number="${BASH_REMATCH[2]}"
+        local name="${BASH_REMATCH[3]}"
+
+        # Check if category is in valid range (10-99)
+        if [[ "$category" -ge 10 && "$category" -le 99 ]]; then
+            # Trim leading/trailing spaces from name
+            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [[ -n "$name" ]]; then
+                return 0
+            fi
+        fi
+    fi
+
+    # Check if it matches the pattern: NN.NN - Name (decimal format)
+    if [[ "$dirname" =~ ^([1-9][0-9])\.([0-9]{2})\ -(.+)$ ]]; then
+        local category="${BASH_REMATCH[1]}"
+        local sub_number="${BASH_REMATCH[2]}"
+        local name="${BASH_REMATCH[3]}"
+
+        # Check if category is in valid range (10-99)
+        if [[ "$category" -ge 10 && "$category" -le 99 ]]; then
+            # Trim leading/trailing spaces from name
+            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [[ -n "$name" ]]; then
+                return 0
+            fi
+        fi
+    fi
+
+    # Check if it matches the pattern: NN - Name (simple format)
+    if [[ "$dirname" =~ ^([1-9][0-9])\ -(.+)$ ]]; then
+        local number="${BASH_REMATCH[1]}"
+        local name="${BASH_REMATCH[2]}"
+
+        # Check if number is in valid range (10-99)
+        if [[ "$number" -ge 10 && "$number" -le 99 ]]; then
             # Trim leading/trailing spaces from name
             name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             if [[ -n "$name" ]]; then
@@ -255,8 +303,10 @@ show_summary() {
     echo "  • NN should be a number between 10-99"
     echo "  • Strict format: lowercase with hyphens (e.g., 10-projects)"
     echo "  • Range format: Title Case with spaces (e.g., 10-19 - Projects)"
+    echo "  • Simple format: NN - Name (e.g., 10 - Bigfoot)"
+    echo "  • Decimal format: NN.NN - Name or NN.NNNNN - Name (e.g., 10.25006 - Import)"
     echo "  • No spaces or special characters except hyphens"
-    echo "  • Examples: 10-projects, 20-documents, 99-archive, 10-19 - Projects"
+    echo "  • Examples: 10-projects, 20-documents, 99-archive, 10-19 - Projects, 10 - Bigfoot, 10.25006 - Import"
     echo "  • Exception: 'Inbox' folder is allowed at root level"
     echo
 }
