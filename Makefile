@@ -590,7 +590,9 @@ clean:
 	rm -rf ~/.config/Cursor/User/extensions.json
 	rm -rf ~/.config/Cursor/User/keybindings.json
 
-cursor: ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+cursor: brew ${APP_BIN}/Cursor.app ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+${APP_BIN}/Cursor.app:
+	brew install --cask cursor
 ~/.config/Cursor/User/settings.json:
 	mkdir -p ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/settings.json $@
