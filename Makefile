@@ -29,6 +29,7 @@ terminal: \
 	bat \
 	bottom \
 	broot \
+	cursor \
 	eza \
 	fd \
 	fish \
@@ -585,3 +586,17 @@ clean:
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim
+	rm -rf ~/.config/Cursor/User/settings.json
+	rm -rf ~/.config/Cursor/User/extensions.json
+	rm -rf ~/.config/Cursor/User/keybindings.json
+
+cursor: ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+~/.config/Cursor/User/settings.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/settings.json $@
+~/.config/Cursor/User/extensions.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/extensions.json $@
+~/.config/Cursor/User/keybindings.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/keybindings.json $@
