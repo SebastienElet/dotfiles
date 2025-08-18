@@ -1,0 +1,17 @@
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "cmd+i",
+        "command": "composerMode.agent"
+    },
+    // Jump to next error with ] then e
+    {
+        "key": "] e",
+        "command": "editor.action.marker.next",
+        "when": "editorTextFocus && vim.mode == 'Normal'"
+    },
+    {
+        "key": "cmd+e",
+        "command": "composerMode.background"
+    },
+]

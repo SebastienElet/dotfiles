@@ -1,0 +1,45 @@
+{
+  "window.commandCenter": true,
+  "typescript.tsserver.maxTsServerMemory": 16000,
+  "typescript.tsserver.web.projectWideIntellisense.enabled": false,
+  "cSpell.userWords": ["alur", "ALUR", "basecode"],
+  "pgsql.serverGroups": [
+    {
+      "name": "Servers",
+      "id": "7C4D6D5F-409D-4016-9CF6-3FDAE106ED1B",
+      "isDefault": true
+    }
+  ],
+  "pgsql.connections": [
+    {
+      "id": "C0A58CDB-FB1C-4218-A626-79DF2B3DF2FA",
+      "groupId": "7C4D6D5F-409D-4016-9CF6-3FDAE106ED1B",
+      "authenticationType": "SqlLogin",
+      "connectTimeout": 15,
+      "applicationName": "vscode-pgsql",
+      "clientEncoding": "utf8",
+      "sslmode": "prefer",
+      "server": "localhost",
+      "user": "prisma",
+      "password": "",
+      "savePassword": true,
+      "database": "prisma",
+      "profileName": "localhost",
+      "options": "--search_path=default$default,public",
+      "expiresOn": 0
+    }
+  ],
+  "Prettier-SQL.indentStyle": "tabularRight",
+  "[sql]": {
+    "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
+  },
+  "editor.formatOnSave": true,
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "Prettier-SQL.SQLFlavourOverride": "postgresql",
+  "git.autofetch": true,
+  "Prettier-SQL.keywordCase": "upper",
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredLightColorTheme": "Quiet Light"
+}

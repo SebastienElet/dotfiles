@@ -1,0 +1,20 @@
+{
+  "recommendations": [
+    "christian-kohler.path-intellisense",
+    "dbaeumer.vscode-eslint",
+    "dotenv.dotenvx-vscode",
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "golang.go",
+    "inferrinizzard.prettier-sql-vscode",
+    "mads-hartmann.bash-ide-vscode",
+    "mechatroner.rainbow-csv",
+    "ms-ossdata.vscode-pgsql",
+    "ms-vscode.makefile-tools",
+    "prisma.prisma",
+    "redhat.vscode-xml",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-french",
+    "vscodevim.vim"
+  ]
+}

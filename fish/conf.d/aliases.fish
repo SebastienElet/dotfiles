@@ -56,6 +56,10 @@ if test -n (type -q nvim)
     alias n='nvim'
 end
 
+if test -n (type -q cursor)
+    alias c='cursor'
+end
+
 if test -n (type -q tokei)
     alias loc='tokei'
 end
