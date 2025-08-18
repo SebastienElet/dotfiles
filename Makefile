@@ -29,7 +29,6 @@ terminal: \
 	bat \
 	bottom \
 	broot \
-	cursor \
 	eza \
 	fd \
 	fish \
@@ -110,6 +109,7 @@ wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 ################################################################################
 work: \
 	aws \
+	cursor \
 	docker \
 	doppler \
 	gh \
@@ -177,6 +177,19 @@ terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
 	brew install hashicorp/tap/terraform
+
+cursor: brew ${APP_BIN}/Cursor.app ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+${APP_BIN}/Cursor.app:
+	brew install --cask cursor
+~/.config/Cursor/User/settings.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/settings.json $@
+~/.config/Cursor/User/extensions.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/extensions.json $@
+~/.config/Cursor/User/keybindings.json:
+	mkdir -p ~/.config/Cursor/User
+	ln -s ~/.dotfiles/cursor/keybindings.json $@
 
 ################################################################################
 # End of work section
@@ -589,16 +602,3 @@ clean:
 	rm -rf ~/.config/Cursor/User/settings.json
 	rm -rf ~/.config/Cursor/User/extensions.json
 	rm -rf ~/.config/Cursor/User/keybindings.json
-
-cursor: brew ${APP_BIN}/Cursor.app ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
-${APP_BIN}/Cursor.app:
-	brew install --cask cursor
-~/.config/Cursor/User/settings.json:
-	mkdir -p ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/settings.json $@
-~/.config/Cursor/User/extensions.json:
-	mkdir -p ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/extensions.json $@
-~/.config/Cursor/User/keybindings.json:
-	mkdir -p ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/keybindings.json $@
