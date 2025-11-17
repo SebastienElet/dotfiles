@@ -49,3 +49,4 @@ copro
 lazygit
 opencommit
 qrcodes
+Sepa
