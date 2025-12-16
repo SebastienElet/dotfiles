@@ -14,3 +14,7 @@ if test -n (type -q starship)
 else
     echo "Starship is not installed. Please install it from https://starship.rs/"
 end
+
+# bun
+set --export BUN_INSTALL "$HOME/.bun"
+set --export PATH $BUN_INSTALL/bin $PATH
