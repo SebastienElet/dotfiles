@@ -48,11 +48,40 @@ Example: `10.25001 — Website Redesign` (first project of 2025)
 - Use **descriptive titles** after the number
 - Move completed projects to **90-99 Archives**
 
+## File Naming Convention
+
+Files inherit their prefix from the folder path:
+
+```
+{Category} - {Subcategory} - {Date} - {Description}.{ext}
+    │            │             │           │
+    │            │             │           └── Free-form description
+    │            │             └── ISO date YYYY-MM-DD (optional)
+    │            └── From parent folder name (e.g., "27.05 - Fiscalité" → "Fiscalité")
+    └── From grandparent folder name (e.g., "27 - Finances" → "Finances")
+```
+
+### Examples
+
+| Folder Path                            | File Name                                                  |
+| -------------------------------------- | ---------------------------------------------------------- |
+| `27 - Finances/27.05 - Fiscalité/`     | `Finances - Fiscalité - 2024-04-15 - Déclaration 2042.pdf` |
+| `23 - Sport/23.01 - Tir à l'arc/`      | `Sport - Tir à l'arc - 2024-09-14 - Licence FFTA.pdf`      |
+| `34 - Administratif/34.03 - Identité/` | `Administratif - Identité - Passeport.pdf`                 |
+
+### Rules
+
+- **Separator**: `-` (space-dash-space)
+- **Date**: Optional, ISO format `YYYY-MM-DD`
+- **Description**: Title Case, accents allowed
+- **No date** for reference documents (rules, templates)
+
 ## Best Practices
 
 - Start simple — add categories only when needed
 - Use consistent naming conventions across all items
 - Prefer flat structures over deep nesting
+- Keep **Inbox at zero** — process and file items regularly
 
 ## Index Location
 
