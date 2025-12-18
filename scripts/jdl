@@ -18,6 +18,7 @@ VERBOSE=false
 RECURSIVE=false
 FIX_MODE=false
 ERRORS_ONLY=false
+CHECK_FILES=false
 TARGET_PATH="."
 
 # Help function
@@ -27,27 +28,33 @@ Johnny Decimal Linter (jdl)
 
 Usage: $0 [OPTIONS] [PATH]
 
-Checks if directories follow Johnny Decimal naming conventions:
+Checks if directories and files follow Johnny Decimal naming conventions.
+
+DIRECTORY NAMING:
 - Format: NN-name (where NN is 10-99) or NN-NN - Name (range format)
 - Subdirectories: NN - Name, NN.NN - Name, or NN.NNNNN - Name (decimal format)
-- Names should be lowercase with hyphens (strict) or Title Case (range/decimal)
-- No spaces or special characters except hyphens
 - Exception: "Inbox" folder is allowed at root level
+
+FILE NAMING (with --files):
+- Format: {Category} - {Subcategory} - {Date} - {Description}.{ext}
+- Category/Subcategory derived from parent folder names
+- Date is optional, format: YYYY-MM-DD
+- Example: Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx
 
 OPTIONS:
     -h, --help          Show this help message
-    -v, --verbose       Verbose output (shows all directories)
-    -e, --errors-only   Show only errors (invalid directories)
+    -v, --verbose       Verbose output (shows all directories/files)
+    -e, --errors-only   Show only errors (invalid items)
     -r, --recursive     Check subdirectories recursively
     -f, --fix           Attempt to fix naming issues (interactive)
+    --files             Also check file naming conventions
     PATH                Target path to check (default: current directory)
 
 EXAMPLES:
-    $0                    # Check current directory
-    $0 /path/to/check     # Check specific path
-    $0 -r /path/to/check  # Check recursively
-    $0 -v -r .            # Verbose recursive check (shows all)
-    $0 -e -r .            # Show only errors recursively
+    $0                    # Check current directory (dirs only)
+    $0 -r /path/to/check  # Check recursively (dirs only)
+    $0 --files -r .       # Check dirs and files recursively
+    $0 -e --files -r .    # Show only errors for dirs and files
 
 EXIT CODES:
     0 - All paths follow Johnny Decimal conventions
@@ -78,6 +85,10 @@ while [[ $# -gt 0 ]]; do
         ;;
     -f | --fix)
         FIX_MODE=true
+        shift
+        ;;
+    --files)
+        CHECK_FILES=true
         shift
         ;;
     -*)
@@ -184,6 +195,132 @@ is_johnny_decimal() {
     return 1
 }
 
+# Extract the descriptive name from a JD folder name
+# "21 - Bigfoot" -> "Bigfoot"
+# "21.03 - Meeting" -> "Meeting"
+# "10.25001 - Import Quadral" -> "Import Quadral"
+extract_jd_name() {
+    local dirname="$1"
+
+    # Pattern: NN - Name, NN.NN - Name, NN.NNNNN - Name, NN-NN - Name
+    if [[ "$dirname" =~ ^[0-9]+(\.[0-9]+)?\ -\ (.+)$ ]]; then
+        echo "${BASH_REMATCH[2]}"
+        return 0
+    fi
+
+    # Pattern: NN-NN - Name (range format)
+    if [[ "$dirname" =~ ^[0-9]+-[0-9]+\ -\ (.+)$ ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return 0
+    fi
+
+    # Not a JD folder, return as-is
+    echo "$dirname"
+}
+
+# Build the expected file prefix from the folder path
+# /path/to/21 - Bigfoot/21.03 - Meeting/ -> "Bigfoot - Meeting"
+build_file_prefix() {
+    local file_path="$1"
+    local parent_dir=$(dirname "$file_path")
+    local grandparent_dir=$(dirname "$parent_dir")
+
+    local parent_name=$(basename "$parent_dir")
+    local grandparent_name=$(basename "$grandparent_dir")
+
+    # Extract JD names
+    local subcategory=$(extract_jd_name "$parent_name")
+    local category=$(extract_jd_name "$grandparent_name")
+
+    # Skip if we're at root level (grandparent is the JD root like "20-29 - Areas")
+    if [[ "$grandparent_name" =~ ^[0-9]+-[0-9]+\ - ]]; then
+        # Only one level deep, use just the category
+        echo "$subcategory"
+    else
+        echo "$category - $subcategory"
+    fi
+}
+
+# Check if a filename follows the JD file naming convention
+# Format: {Prefix} - {Date}? - {Description}.{ext}
+is_valid_jd_filename() {
+    local filename="$1"
+    local expected_prefix="$2"
+
+    # Remove extension for checking
+    local basename="${filename%.*}"
+
+    # Check if it starts with the expected prefix
+    if [[ ! "$basename" == "$expected_prefix"* ]]; then
+        return 1
+    fi
+
+    # Get the part after the prefix
+    local remainder="${basename#$expected_prefix}"
+
+    # Should start with " - " if there's more content
+    if [[ -n "$remainder" && ! "$remainder" =~ ^\ -\  ]]; then
+        return 1
+    fi
+
+    # Remove leading " - "
+    remainder="${remainder#\ -\ }"
+
+    # Check if next part is a date (YYYY-MM-DD) or description
+    if [[ -n "$remainder" ]]; then
+        # Optional date pattern
+        if [[ "$remainder" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2})\ -\ (.+)$ ]]; then
+            # Has date and description - valid
+            return 0
+        elif [[ "$remainder" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
+            # Just a date - valid but unusual
+            return 0
+        elif [[ "$remainder" =~ ^[^-] ]]; then
+            # Description without date - valid
+            return 0
+        fi
+    fi
+
+    # Just the prefix is also valid (though unusual)
+    return 0
+}
+
+# Check a single file
+check_file() {
+    local file_path="$1"
+    local filename=$(basename "$file_path")
+    local parent_dir=$(dirname "$file_path")
+
+    # Skip hidden files
+    if [[ "$filename" =~ ^\. ]]; then
+        return 0
+    fi
+
+    # Skip if parent is Inbox (files there are not yet organized)
+    if [[ "$(basename "$parent_dir")" == "Inbox" ]]; then
+        return 0
+    fi
+
+    # Skip if parent is a range folder (like "10-19 - Projets")
+    if [[ "$(basename "$parent_dir")" =~ ^[0-9]+-[0-9]+\ - ]]; then
+        return 0
+    fi
+
+    # Build expected prefix
+    local expected_prefix=$(build_file_prefix "$file_path")
+
+    if is_valid_jd_filename "$filename" "$expected_prefix"; then
+        if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
+            echo -e "${GREEN}✓${NC} $file_path"
+        fi
+        return 0
+    else
+        echo -e "${RED}✗${NC} $file_path"
+        echo -e "  ${YELLOW}Expected prefix: ${expected_prefix} - ...${NC}"
+        return 1
+    fi
+}
+
 # Get suggested name for a directory
 suggest_name() {
     local dirname="$1"
@@ -265,10 +402,14 @@ check_directory() {
 check_paths() {
     local target="$1"
     local has_errors=false
-    local error_count=0
+    local dir_error_count=0
+    local file_error_count=0
 
     if [[ "$VERBOSE" == "true" || "$ERRORS_ONLY" == "true" ]]; then
         echo -e "${BLUE}Checking Johnny Decimal compliance for: $target${NC}"
+        if [[ "$CHECK_FILES" == "true" ]]; then
+            echo -e "${BLUE}(including file naming)${NC}"
+        fi
         echo
     fi
 
@@ -287,22 +428,46 @@ check_paths() {
     while IFS= read -r -d '' dir; do
         if ! check_directory "$dir"; then
             has_errors=true
-            ((error_count++))
+            ((dir_error_count++))
         fi
     done < <(eval "$find_cmd -print0")
 
+    # Check files if requested
+    if [[ "$CHECK_FILES" == "true" ]]; then
+        local find_files_cmd="find \"$target\" -maxdepth 2 -type f"
+        if [[ "$RECURSIVE" == "true" ]]; then
+            find_files_cmd="find \"$target\" -type f"
+        fi
+
+        while IFS= read -r -d '' file; do
+            if ! check_file "$file"; then
+                has_errors=true
+                ((file_error_count++))
+            fi
+        done < <(eval "$find_files_cmd -print0")
+    fi
+
     if [[ "$has_errors" == "true" ]]; then
         echo
-        if [[ "$error_count" -eq 1 ]]; then
-            echo -e "${RED}1 directory does not follow Johnny Decimal conventions${NC}"
-        else
-            echo -e "${RED}$error_count directories do not follow Johnny Decimal conventions${NC}"
+        if [[ "$dir_error_count" -gt 0 ]]; then
+            if [[ "$dir_error_count" -eq 1 ]]; then
+                echo -e "${RED}1 directory does not follow Johnny Decimal conventions${NC}"
+            else
+                echo -e "${RED}$dir_error_count directories do not follow Johnny Decimal conventions${NC}"
+            fi
+        fi
+        if [[ "$file_error_count" -gt 0 ]]; then
+            if [[ "$file_error_count" -eq 1 ]]; then
+                echo -e "${RED}1 file does not follow naming conventions${NC}"
+            else
+                echo -e "${RED}$file_error_count files do not follow naming conventions${NC}"
+            fi
         fi
         return 1
     else
         if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
             echo
-            echo -e "${GREEN}All directories follow Johnny Decimal conventions!${NC}"
+            echo -e "${GREEN}All items follow Johnny Decimal conventions!${NC}"
         fi
         return 0
     fi
@@ -312,15 +477,20 @@ check_paths() {
 show_summary() {
     echo
     echo -e "${BLUE}Johnny Decimal Rules:${NC}"
-    echo "  • Directory names should follow the format: NN-name or NN-NN - Name"
+    echo
+    echo -e "  ${YELLOW}Directories:${NC}"
+    echo "  • Format: NN-name, NN - Name, NN-NN - Name, or NN.NN - Name"
     echo "  • NN should be a number between 10-99"
-    echo "  • Strict format: lowercase with hyphens (e.g., 10-projects)"
-    echo "  • Range format: Title Case with spaces (e.g., 10-19 - Projects)"
-    echo "  • Simple format: NN - Name (e.g., 10 - Bigfoot)"
-    echo "  • Decimal format: NN.NN - Name or NN.NNNNN - Name (e.g., 10.25006 - Import)"
-    echo "  • No spaces or special characters except hyphens"
-    echo "  • Examples: 10-projects, 20-documents, 99-archive, 10-19 - Projects, 10 - Bigfoot, 10.25006 - Import"
+    echo "  • Examples: 10-19 - Projects, 21 - Bigfoot, 21.03 - Meeting"
     echo "  • Exception: 'Inbox' folder is allowed at root level"
+    if [[ "$CHECK_FILES" == "true" ]]; then
+        echo
+        echo -e "  ${YELLOW}Files:${NC}"
+        echo "  • Format: {Category} - {Subcategory} - {Date} - {Description}.{ext}"
+        echo "  • Prefix derived from parent folder names"
+        echo "  • Date is optional, format: YYYY-MM-DD"
+        echo "  • Example: Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx"
+    fi
     echo
 }
 
