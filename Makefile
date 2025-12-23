@@ -30,6 +30,7 @@ terminal: \
 	eza \
 	fd \
 	fish \
+	fzf \
 	gnu-sed \
 	htop \
 	lazygit \
