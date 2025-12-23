@@ -33,6 +33,7 @@ terminal: \
 	fzf \
 	gnu-sed \
 	htop \
+	jq \
 	lazygit \
 	nvim \
 	tmux \
