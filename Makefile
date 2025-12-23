@@ -9,6 +9,7 @@ usage:
 utils: \
 	cleanshot
 all: \
+	extra \
 	terminal \
 	work \
 	utils \
@@ -113,10 +114,6 @@ work: \
 	renovate \
 	tableplus \
 	terraform
-
-atac: brew ${BREW_BIN}/atac
-${BREW_BIN}/atac:
-	brew install atac
 
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
