@@ -211,14 +211,6 @@ ${APP_BIN}/Calibre.app:
 # Utils section
 ################################################################################
 
-alfred: brew /Applications/Alfred\ 5.app
-/Applications/Alfred\ 5.app:
-	brew install alfred
-
-bartender: brew ${APP_BIN}/Bartender\ 4.app
-${APP_BIN}/Bartender\ 4.app:
-	brew install bartender
-
 cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
 	brew install cleanshot
@@ -278,20 +270,9 @@ ${BREW_BIN}/yabai:
 ~/.yabairc:
 	ln -s ~/.dotfiles/.yabairc $@
 
-bash-language-server: node ${NPM_BIN}/bash-language-server
-${NPM_BIN}/bash-language-server:
-	@npm -g install bash-language-server
-
 comby: brew ${BREW_BIN}/comby
 ${BREW_BIN}/comby:
 	brew install comby
-
-ansible: brew ${BREW_BIN}/molecule ${BREW_BIN}/ansible
-${BREW_BIN}/ansible:
-	brew install ansible
-
-${BREW_BIN}/molecule:
-	brew install molecule
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
@@ -299,10 +280,6 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
-
-bars: node ${NPM_BIN}/bars
-${NPM_BIN}/bars:
-	@npm install -g https://github.com/jez/bars.git
 
 btop: ${BREW_BIN}/btop
 ${BREW_BIN}/btop:
@@ -335,7 +312,7 @@ ${BREW_BIN}/emacs:
 ~/.emacs:
 	ln -s ~/.dotfiles/.emacs ~/.emacs
 
-git-heatmap: brew bars ${BREW_BIN}/git-heatmap
+git-heatmap: brew ${BREW_BIN}/git-heatmap
 ${BREW_BIN}/git-heatmap:
 	brew install jez/formulae/git-heatmap
 
@@ -425,7 +402,7 @@ typescript: node ${BREW_BIN}/tsc
 ${BREW_BIN}/tsc:
 	npm install -g typescript
 
-vagrant: brew virtualbox ansible ${BREW_BIN}/vagrant
+vagrant: brew virtualbox ${BREW_BIN}/vagrant
 ${BREW_BIN}/vagrant:
 	brew install vagrant
 
