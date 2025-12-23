@@ -270,10 +270,6 @@ ${BREW_BIN}/yabai:
 ~/.yabairc:
 	ln -s ~/.dotfiles/.yabairc $@
 
-comby: brew ${BREW_BIN}/comby
-${BREW_BIN}/comby:
-	brew install comby
-
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
@@ -281,26 +277,10 @@ ${BREW_BIN}/brew:
 	/tmp/brew-installer.sh
 	brew tap gapple/services
 
-btop: ${BREW_BIN}/btop
-${BREW_BIN}/btop:
-	brew install btop
-
-ctop: ${BREW_BIN}/ctop
-${BREW_BIN}/ctop:
-	brew install ctop
-
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
 	echo "Install DaisyDisk"
 	mas install 411643860
-
-dash: /Applications/Dash.app
-/Applications/Dash.app:
-	brew install dash
-
-diff-so-fancy: brew ${BREW_BIN}/diff-so-fancy 
-${BREW_BIN}/diff-so-fancy:
-	brew install diff-so-fancy
 
 emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
 ${BREW_BIN}/emacs:
@@ -451,9 +431,6 @@ packer: brew ${BREW_BIN}/packer
 ${BREW_BIN}/packer:
 	brew install packer
 
-cloc: brew
-	brew install cloc
-
 jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
@@ -466,8 +443,6 @@ tig: brew ${BREW_BIN}/tig
 ${BREW_BIN}/tig:
 	brew install tig
 
-cli-tools: how2
-
 how2: node ${BREW_BIN}/how2
 ${BREW_BIN}/how2:
 	@npm -g install how2
@@ -475,10 +450,6 @@ ${BREW_BIN}/how2:
 pgcli: brew ${BREW_BIN}/pgcli
 ${BREW_BIN}/pgcli:
 	brew install pgcli
-
-clif: node ${BREW_BIN}/clif
-${BREW_BIN}/clif:
-	@npm install -g clif
 
 jsonlint: node ${BREW_BIN}/jsonlint
 ${BREW_BIN}/jsonlint:
@@ -495,10 +466,6 @@ ${BREW_BIN}/jsinspect:
 retire: node ${BREW_BIN}/retire
 ${BREW_BIN}/retire:
 	@npm install -g retire
-
-david: node ${BREW_BIN}/david
-${BREW_BIN}/david:
-	@npm install -g david
 
 nsp: node ${BREW_BIN}/nsp
 ${BREW_BIN}/nsp:
