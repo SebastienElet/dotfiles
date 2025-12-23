@@ -288,17 +288,6 @@ jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
 	@npm install -g jscpd
 
-kap: brew /Applications/Kap.app
-/Applications/Kap.app:
-	brew install kap
-
-libjpeg: brew ${BREW_BIN}/libjpeg
-${BREW_BIN}/libjpeg:
-	brew install libjpeg
-
-lftp: brew ${BREW_BIN}/lftp
-${BREW_BIN}/lftp:
-	brew install lftp
 
 mas: brew ${BREW_BIN}/mas/
 ${BREW_BIN}/mas/:
@@ -405,33 +394,13 @@ jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
 
-highlight: brew ${BREW_BIN}/highlight
-${BREW_BIN}/highlight:
-	brew install highlight
-
 tig: brew ${BREW_BIN}/tig
 ${BREW_BIN}/tig:
 	brew install tig
 
-how2: node ${BREW_BIN}/how2
-${BREW_BIN}/how2:
-	@npm -g install how2
-
 pgcli: brew ${BREW_BIN}/pgcli
 ${BREW_BIN}/pgcli:
 	brew install pgcli
-
-jsonlint: node ${BREW_BIN}/jsonlint
-${BREW_BIN}/jsonlint:
-	@npm install -g jsonlint
-
-js-yaml: node ${BREW_BIN}/js-yaml
-${BREW_BIN}/js-yaml:
-	@npm install -g js-yaml
-
-jsinspect: node ${BREW_BIN}/jsinspect
-${BREW_BIN}/jsinspect:
-	@npm install -g jsinspect
 
 retire: node ${BREW_BIN}/retire
 ${BREW_BIN}/retire:
