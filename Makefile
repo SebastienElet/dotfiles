@@ -585,12 +585,6 @@ sqlint: ${BREW_BIN}/sqlint
 ${BREW_BIN}/sqlint:
 	@gem install sqlint
 
-wallpaper:
-	# Set wallpaper
-	# osascript -e "tell application \"Finder\" to set desktop picture \
-	#	to POSIX file \"/Library/Desktop Pictures/Color Burst 2.jpg\""
-	osascript -e "tell application \"System Events\" to set picture of every desktop to \"/Library/Desktop Pictures/Color Burst 2.jpg\""
-
 xz: brew
 ${BREW_BIN}/xz:
 	brew install xz
