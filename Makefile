@@ -38,6 +38,7 @@ terminal: \
 	lazygit \
 	mtr \
 	nvim \
+	ripgrep \
 	tmux \
 	tokei \
 	wezterm
