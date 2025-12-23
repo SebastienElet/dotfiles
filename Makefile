@@ -294,33 +294,12 @@ mas: brew ${BREW_BIN}/mas/
 ${BREW_BIN}/mas/:
 	brew install mas
 
-ncdu: brew ${BREW_BIN}/ncdu
-${BREW_BIN}/ncdu:
-	brew install ncdu
-
 node: volta ${NPM_BIN}/node ${NPM_BIN}/pnpm
 ${NPM_BIN}/node:
 	${BREW_BIN}/volta install node@lts
 ${NPM_BIN}/pnpm:
 	${BREW_BIN}/volta install pnpm
 
-notion: brew /Applications/Notion.app
-/Applications/Notion.app:
-	brew cask install notion
-
-numbers: mas /Applications/Numbers.app
-/Applications/Numbers.app:
-	mas install 409203825
-
-nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
-/usr/local/opt/nvm/nvm.sh:
-	brew install nvm
-~/.nvm:
-	mkdir $@
-
-prettyping: brew ${BREW_BIN}/prettyping 
-${BREW_BIN}/prettyping:
-	brew install prettyping
 
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
@@ -383,14 +362,6 @@ vlc: brew ~/Applications/VLC.app
 ~/Applications/VLC.app:
 	brew install vlc
 
-postman: brew ~/Applications/Postman.app
-~/Applications/Postman.app:
-	brew install postman
-
-packer: brew ${BREW_BIN}/packer
-${BREW_BIN}/packer:
-	brew install packer
-
 jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
@@ -398,21 +369,6 @@ ${BREW_BIN}/jq:
 tig: brew ${BREW_BIN}/tig
 ${BREW_BIN}/tig:
 	brew install tig
-
-pgcli: brew ${BREW_BIN}/pgcli
-${BREW_BIN}/pgcli:
-	brew install pgcli
-
-retire: node ${BREW_BIN}/retire
-${BREW_BIN}/retire:
-	@npm install -g retire
-
-nsp: node ${BREW_BIN}/nsp
-${BREW_BIN}/nsp:
-	@npm install -g nsp
-
-recess: node
-	@npm install -g recess
 
 sqlint: ${BREW_BIN}/sqlint
 ${BREW_BIN}/sqlint:
