@@ -193,11 +193,7 @@ ${APP_BIN}/Cursor.app:
 ################################################################################
 
 personal: \
-	calibre \
-	doctl \
-	obsidian \
-	rust \
-	spotify
+	calibre
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -209,31 +205,6 @@ personal: \
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
-
-doctl: brew ${BREW_BIN}/doctl
-${BREW_BIN}/doctl:
-	brew install doctl
-
-obsidian: brew /Applications/Obsidian.app
-/Applications/Obsidian.app:
-	brew install obsidian
-
-todoist: brew ${APP_BIN}/Todoist.app
-${APP_BIN}/Todoist.app:
-	brew install todoist
-
-rust: brew ~/.cargo
-~/.cargo:
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Faster linking for rust build
-# This require xcode
-zld:
-	brew install michaeleisel/zld/zld
-
-spotify: brew ${APP_BIN}/Spotify.app
-${APP_BIN}/Spotify.app:
-	brew install spotify
 
 ################################################################################
 # End of personal section
