@@ -413,9 +413,11 @@ ncdu: brew ${BREW_BIN}/ncdu
 ${BREW_BIN}/ncdu:
 	brew install ncdu
 
-node: ${BREW_BIN}/volta
-${BREW_BIN}/node:
-	volta install latest
+node: volta ${NPM_BIN}/node ${NPM_BIN}/pnpm
+${NPM_BIN}/node:
+	${BREW_BIN}/volta install node@lts
+${NPM_BIN}/pnpm:
+	${BREW_BIN}/volta install pnpm
 
 notion: brew /Applications/Notion.app
 /Applications/Notion.app:
@@ -529,7 +531,7 @@ pgcli: brew ${BREW_BIN}/pgcli
 ${BREW_BIN}/pgcli:
 	brew install pgcli
 
-clif: ${BREW_BIN}/clif
+clif: node ${BREW_BIN}/clif
 ${BREW_BIN}/clif:
 	@npm install -g clif
 
@@ -537,7 +539,7 @@ jsonlint: node ${BREW_BIN}/jsonlint
 ${BREW_BIN}/jsonlint:
 	@npm install -g jsonlint
 
-js-yaml: ${BREW_BIN}/js-yaml
+js-yaml: node ${BREW_BIN}/js-yaml
 ${BREW_BIN}/js-yaml:
 	@npm install -g js-yaml
 
@@ -557,7 +559,7 @@ nsp: node ${BREW_BIN}/nsp
 ${BREW_BIN}/nsp:
 	@npm install -g nsp
 
-recess:
+recess: node
 	@npm install -g recess
 
 sqlint: ${BREW_BIN}/sqlint
