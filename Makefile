@@ -75,7 +75,7 @@ ${BREW_BIN}/fish:
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
-~/.config/fish: ~/.config
+~/.config/fish: ~/.dotfiles/fish | ~/.config
 	ln -s ~/.dotfiles/fish $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
@@ -178,13 +178,13 @@ ${APP_BIN}/Cursor.app:
 	brew install --cask cursor
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
-~/.config/Cursor/User: ~/.config
+~/.config/Cursor/User: | ~/.config
 	mkdir -p $@
-~/.config/Cursor/User/settings.json: ~/.config/Cursor/User
+~/.config/Cursor/User/settings.json: ~/.dotfiles/cursor/settings.json | ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/settings.json $@
-~/.config/Cursor/User/extensions.json: ~/.config/Cursor/User
+~/.config/Cursor/User/extensions.json: ~/.dotfiles/cursor/extensions.json | ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/extensions.json $@
-~/.config/Cursor/User/keybindings.json: ~/.config/Cursor/User
+~/.config/Cursor/User/keybindings.json: ~/.dotfiles/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/keybindings.json $@
 
 ################################################################################
@@ -234,7 +234,7 @@ nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
-~/.config/nvim: ~/.config
+~/.config/nvim: ~/.dotfiles/nvim | ~/.config
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/cspell.json:
 	ln -s ~/.dotfiles/cspell.json $@
@@ -255,7 +255,7 @@ ${BREW_BIN}/rg:
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: ~/.config
+~/.config/starship.toml: ~/.dotfiles/.config/starship.toml | ~/.config
 	ln -s ~/.dotfiles/.config/starship.toml $@
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
