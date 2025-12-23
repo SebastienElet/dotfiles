@@ -234,12 +234,6 @@ ${BREW_BIN}/nvim:
 ~/cspell.json:
 	ln -s ~/.dotfiles/cspell.json $@
 
-font-fira-code: ~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf
-~/Library/Fonts/Fira\ Code\ Retina\ Nerd\ Font\ Complete.otf:
-	brew install font-fira-code-nerd-font
-font-iosevka: ~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf
-~/Library/Fonts/Iosevka\ Thin\ Nerd\ Font\ Complete.ttf:
-	brew install font-iosevka-nerd-font
 font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
 ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
 	brew install font-jetbrains-mono-nerd-font
@@ -283,37 +277,10 @@ daisydisk: mas /Applications/DaisyDisk.app
 	echo "Install DaisyDisk"
 	mas install 411643860
 
-emacs: brew ${BREW_BIN}/emacs ~/.emacs.d/custom.el ~/.emacs
-${BREW_BIN}/emacs:
-	brew install emacs
-~/.emacs.d:
-	mkdir $@
-~/.emacs.d/custom.el: ~/.emacs.d
-	touch $@
-~/.emacs:
-	ln -s ~/.dotfiles/.emacs ~/.emacs
-
-git-heatmap: brew ${BREW_BIN}/git-heatmap
-${BREW_BIN}/git-heatmap:
-	brew install jez/formulae/git-heatmap
-
-google-chrome: brew /Applications/Google\ Chrome.app
-/Applications/Google\ Chrome.app:
-	brew install google-chrome
-
 # /usr/local/opt/gpg-agent/bin/gpg-agent:
 #	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
-
-gpg-config:
-	echo 'use-agent' > ~/.gnupg/gpg.conf
-	echo 'use-standard-socket' > ~/.gnupg/gpg-agent.conf
-	echo 'pinentry-program ${BREW_BIN}/pinentry-mac' >> ~/.gnupg/gpg-agent.conf
-
-graphql-language-service-cli: node ${NPM_BIN}/graphql-language-service-cli
-${NPM_BIN}/graphql-language-service-cli:
-	@npm -g install graphql-language-service-cli
 
 jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
