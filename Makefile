@@ -7,8 +7,7 @@ usage:
 	@echo all - Setup dev env
 
 utils: \
-	cleanshot \
-	keycast
+	cleanshot
 all: \
 	terminal \
 	work \
@@ -17,9 +16,7 @@ all: \
 
 extra: \
 	daisydisk \
-	font-jetbrains-mono \
-	mindnode \
-	slack
+	font-jetbrains-mono
 
 ################################################################################
 # Terminal section
@@ -263,10 +260,6 @@ cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
 	brew install cleanshot
 
-keycast: brew ${APP_BIN}/KeyCastr.app
-${APP_BIN}/KeyCastr.app:
-	brew install keycastr
-
 ################################################################################
 # End of utils section
 ################################################################################
@@ -443,18 +436,9 @@ nvm: /usr/local/opt/nvm/nvm.sh ~/.nvm
 ~/.nvm:
 	mkdir $@
 
-mindnode: mas /Applications/MindNode.app
-/Applications/MindNode.app:
-	mas install 992076693
-
 prettyping: brew ${BREW_BIN}/prettyping 
 ${BREW_BIN}/prettyping:
 	brew install prettyping
-
-slack: mas /Applications/Slack.app
-/Applications/Slack.app:
-	echo "Install slack"
-	mas install 803453959
 
 shellcheck: brew ${BREW_BIN}/shellcheck
 ${BREW_BIN}/shellcheck: 
