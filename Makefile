@@ -34,6 +34,7 @@ terminal: \
 	gnu-sed \
 	htop \
 	jq \
+	jscpd \
 	lazygit \
 	nvim \
 	tmux \
