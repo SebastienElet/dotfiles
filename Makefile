@@ -36,6 +36,7 @@ terminal: \
 	jq \
 	jscpd \
 	lazygit \
+	mtr \
 	nvim \
 	tmux \
 	tokei \
