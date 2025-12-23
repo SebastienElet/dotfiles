@@ -1,7 +1,9 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
-BREW_GNU_BIN:=/opt/homebrew/opt/
+BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 NPM_BIN:=~/.volta/bin
 APP_BIN:=/Applications
+
+.PHONY: usage all extra terminal work personal utils clean
 
 usage:
 	@echo all - Setup dev env
@@ -44,7 +46,7 @@ terminal: \
 	wezterm
 
 ~/.config:
-	mkdir $@
+	mkdir -p $@
 
 bat: brew ${BREW_BIN}/bat
 ${BREW_BIN}/bat:
@@ -62,18 +64,18 @@ eza: brew ${BREW_BIN}/eza
 ${BREW_BIN}/eza:
 	brew install eza
 
-fd: brew ${BREW_BIN}/fd 
+fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
-fish: brew starship ~/.config/fish ${BREW_BIN}/fish 
+fish: brew starship ~/.config/fish ${BREW_BIN}/fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
 	fish -c 'fisher install PatrickF1/fzf.fish'
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
-~/.config/fish:
+~/.config/fish: ~/.config
 	ln -s ~/.dotfiles/fish $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
@@ -148,8 +150,8 @@ lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
 	brew install jesseduffield/lazydocker/lazydocker
 
-mosh: brew ${BREW_BIN}/mosh/
-${BREW_BIN}/mosh/:
+mosh: brew ${BREW_BIN}/mosh
+${BREW_BIN}/mosh:
 	brew install mosh
 
 postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
@@ -176,14 +178,13 @@ ${APP_BIN}/Cursor.app:
 	brew install --cask cursor
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
-~/.config/Cursor/User/settings.json:
-	mkdir -p ~/.config/Cursor/User
+~/.config/Cursor/User: ~/.config
+	mkdir -p $@
+~/.config/Cursor/User/settings.json: ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/settings.json $@
-~/.config/Cursor/User/extensions.json:
-	mkdir -p ~/.config/Cursor/User
+~/.config/Cursor/User/extensions.json: ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/extensions.json $@
-~/.config/Cursor/User/keybindings.json:
-	mkdir -p ~/.config/Cursor/User
+~/.config/Cursor/User/keybindings.json: ~/.config/Cursor/User
 	ln -s ~/.dotfiles/cursor/keybindings.json $@
 
 ################################################################################
@@ -229,11 +230,11 @@ prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier @fsouza/prettierd
 
-nvim : ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
+nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
-~/.config/nvim:
+~/.config/nvim: ~/.config
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
 ~/cspell.json:
 	ln -s ~/.dotfiles/cspell.json $@
@@ -254,7 +255,7 @@ ${BREW_BIN}/rg:
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml:
+~/.config/starship.toml: ~/.config
 	ln -s ~/.dotfiles/.config/starship.toml $@
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
@@ -262,7 +263,6 @@ ${BREW_BIN}/tmux:
 	brew install tmux
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
-
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
@@ -276,8 +276,6 @@ daisydisk: mas /Applications/DaisyDisk.app
 	echo "Install DaisyDisk"
 	mas install 411643860
 
-# /usr/local/opt/gpg-agent/bin/gpg-agent:
-#	brew install gpg-agent
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
@@ -285,9 +283,8 @@ jscpd: node ${BREW_BIN}/jscpd
 ${BREW_BIN}/jscpd:
 	@npm install -g jscpd
 
-
-mas: brew ${BREW_BIN}/mas/
-${BREW_BIN}/mas/:
+mas: brew ${BREW_BIN}/mas
+${BREW_BIN}/mas:
 	brew install mas
 
 node: volta ${NPM_BIN}/node ${NPM_BIN}/pnpm
@@ -296,26 +293,19 @@ ${NPM_BIN}/node:
 ${NPM_BIN}/pnpm:
 	${BREW_BIN}/volta install pnpm
 
-
-
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
-
-
 
 mtr: brew ${BREW_BIN}/mtr
 ${BREW_BIN}/mtr:
 	brew install mtr
 
-
 jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
 
-
-
-clean: 
+clean:
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim
