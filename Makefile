@@ -33,7 +33,6 @@ terminal: \
 	htop \
 	lazygit \
 	nvim \
-	opencommit \
 	tmux \
 	tokei \
 	wezterm
@@ -82,10 +81,6 @@ ${BREW_BIN}/htop:
 lazygit: brew ${BREW_BIN}/lazygit
 ${BREW_BIN}/lazygit:
 	brew install lazygit
-
-opencommit: brew node ${BREW_BIN}/opencommit
-${BREW_BIN}/opencommit:
-	npm i -g opencommit
 
 tokei: brew ${BREW_BIN}/tokei
 ${BREW_BIN}/tokei:
