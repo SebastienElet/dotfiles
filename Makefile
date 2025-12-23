@@ -263,11 +263,6 @@ ${BREW_BIN}/tmux:
 ~/.tmux.conf:
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
-yabai: ~/.yabairc ${BREW_BIN}/yabai
-${BREW_BIN}/yabai:
-	brew install koekeishiya/formulae/yabai
-~/.yabairc:
-	ln -s ~/.dotfiles/.yabairc $@
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
@@ -302,82 +297,22 @@ ${NPM_BIN}/pnpm:
 	${BREW_BIN}/volta install pnpm
 
 
-shellcheck: brew ${BREW_BIN}/shellcheck
-${BREW_BIN}/shellcheck: 
-	brew install shellcheck
-
-tmate: brew ${BREW_BIN}/tmate
-${BREW_BIN}/tmate:
-	brew install tmate
-
-trymodule: node ${BREW_BIN}/trymodule
-${BREW_BIN}/trymodule:
-	npm install -g trymodule
-	
-translate-shell: ${BREW_BIN}/trans
-${BREW_BIN}/trans:
-	brew install translate-shell
-
-typescript: node ${BREW_BIN}/tsc
-${BREW_BIN}/tsc:
-	npm install -g typescript
-
-vagrant: brew virtualbox ${BREW_BIN}/vagrant
-${BREW_BIN}/vagrant:
-	brew install vagrant
-
-virtualbox: brew ${BREW_BIN}/VBoxHeadless
-${BREW_BIN}/VBoxHeadless:
-	brew install virtualbox
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
 
 
-yarn: node ${BREW_BIN}/yarn
-${BREW_BIN}/yarn:
-	npm install -g yarn
-
-
-visidata: brew ${BREW_BIN}/vd
-${BREW_BIN}/vd:
-	brew install saulpw/vd/visidata
-
-youtube-dl: brew ${BREW_BIN}/youtube-dl
-${BREW_BIN}/youtube-dl:
-	brew install youtube-dl
-
-watch: brew ${BREW_BIN}/watch
-${BREW_BIN}/watch:
-	brew install watch
 
 mtr: brew ${BREW_BIN}/mtr
 ${BREW_BIN}/mtr:
 	brew install mtr
 
-travis:
-	gem install travis
-
-vlc: brew ~/Applications/VLC.app
-~/Applications/VLC.app:
-	brew install vlc
 
 jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
 
-tig: brew ${BREW_BIN}/tig
-${BREW_BIN}/tig:
-	brew install tig
-
-sqlint: ${BREW_BIN}/sqlint
-${BREW_BIN}/sqlint:
-	@gem install sqlint
-
-xz: brew
-${BREW_BIN}/xz:
-	brew install xz
 
 
 clean: 
