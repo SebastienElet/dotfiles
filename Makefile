@@ -97,7 +97,7 @@ ${BREW_BIN}/tokei:
 wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew install --cask wez/wezterm/wezterm
-~/.wezterm.lua:
+~/.wezterm.lua: ~/.dotfiles/.wezterm.lua
 	ln -s ~/.dotfiles/.wezterm.lua $@
 
 ################################################################################
@@ -157,7 +157,7 @@ ${BREW_BIN}/mosh:
 postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
 ${BREW_BIN}/psql:
 	brew install postgresql
-~/.psqlrc:
+~/.psqlrc: ~/.dotfiles/.psqlrc
 	ln -s ~/.dotfiles/.psqlrc $@
 
 renovate: brew node ${NPM_BIN}/renovate
@@ -236,11 +236,11 @@ ${BREW_BIN}/nvim:
 	npm i -g neovim
 ~/.config/nvim: ~/.dotfiles/nvim | ~/.config
 	ln -s ~/.dotfiles/nvim ~/.config/nvim
-~/cspell.json:
+~/cspell.json: ~/.dotfiles/cspell.json
 	ln -s ~/.dotfiles/cspell.json $@
 
-font-jetbrains-mono: ~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf
-~/Library/Fonts/JetBrains\ Mono\ Regular\ Nerd\ Font\ Complete.ttf:
+font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
+~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf:
 	brew install font-jetbrains-mono-nerd-font
 
 fzf: ~/.fzf
@@ -261,7 +261,7 @@ ${BREW_BIN}/starship:
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf:
+~/.tmux.conf: ~/.dotfiles/tmux/.tmux.conf
 	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
 
 brew: ${BREW_BIN}/brew
@@ -279,8 +279,8 @@ daisydisk: mas /Applications/DaisyDisk.app
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
-jscpd: node ${BREW_BIN}/jscpd
-${BREW_BIN}/jscpd:
+jscpd: node ${NPM_BIN}/jscpd
+${NPM_BIN}/jscpd:
 	@npm install -g jscpd
 
 mas: brew ${BREW_BIN}/mas
