@@ -28,6 +28,7 @@ terminal: \
 	~/.config \
 	bat \
 	bottom \
+	btop \
 	broot \
 	eza \
 	fd \
@@ -55,6 +56,10 @@ ${BREW_BIN}/bat:
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
+
+btop: brew ${BREW_BIN}/btop
+${BREW_BIN}/btop:
+	brew install btop
 
 broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
@@ -94,7 +99,7 @@ tokei: brew ${BREW_BIN}/tokei
 ${BREW_BIN}/tokei:
 	brew install tokei
 
-wezterm: brew font-jetbrains-mono /Applications/WezTerm.app ~/.wezterm.lua
+wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew install --cask wez/wezterm/wezterm
 ~/.wezterm.lua: ~/.dotfiles/.wezterm.lua
@@ -247,6 +252,10 @@ ${BREW_BIN}/nvim:
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
 ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf:
 	brew install font-jetbrains-mono-nerd-font
+
+font-iosevka-nerd-font: ~/Library/Fonts/IosevkaNerdFont-Regular.ttf
+~/Library/Fonts/IosevkaNerdFont-Regular.ttf:
+	brew install font-iosevka-nerd-font
 
 fzf: ~/.fzf
 ~/.fzf:
