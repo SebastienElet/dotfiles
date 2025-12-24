@@ -297,8 +297,8 @@ volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
 
-mtr: brew ${BREW_BIN}/mtr
-${BREW_BIN}/mtr:
+mtr: brew ${BREW_BIN}/../sbin/mtr
+${BREW_BIN}/../sbin/mtr:
 	brew install mtr
 
 jq: brew ${BREW_BIN}/jq
