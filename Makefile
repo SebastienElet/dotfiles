@@ -114,6 +114,7 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 # Work section
 ################################################################################
 work: \
+	arc \
 	aws \
 	cursor \
 	docker \
@@ -127,6 +128,10 @@ work: \
 	renovate \
 	tableplus \
 	terraform
+
+arc: brew ${APP_BIN}/Arc.app
+${APP_BIN}/Arc.app:
+	brew install --cask arc
 
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
