@@ -9,7 +9,8 @@ usage:
 	@echo all - Setup dev env
 
 utils: \
-	cleanshot
+	cleanshot \
+	rectangle-pro
 all: \
 	extra \
 	terminal \
@@ -202,7 +203,7 @@ ${APP_BIN}/Cursor.app:
 
 personal: \
 	calibre \
-	rectangle-pro
+	flow
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -215,9 +216,10 @@ calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
 
-rectangle-pro: brew /Applications/Rectangle\ Pro.app
-/Applications/Rectangle\ Pro.app:
-	brew install --cask rectangle-pro
+flow: mas /Applications/Flow.app
+/Applications/Flow.app:
+	echo "Install Flow"
+	mas install 1423210932
 
 ################################################################################
 # End of personal section
@@ -230,6 +232,10 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
 	brew install cleanshot
+
+rectangle-pro: brew /Applications/Rectangle\ Pro.app
+/Applications/Rectangle\ Pro.app:
+	brew install --cask rectangle-pro
 
 ################################################################################
 # End of utils section
