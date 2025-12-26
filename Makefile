@@ -223,8 +223,34 @@ ${APP_BIN}/Calibre.app:
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
-	echo "Install Flow"
-	mas install 1423210932
+	@if mas account >/dev/null 2>&1; then \
+		echo "Installing Flow (ID: 1423210932)..."; \
+		echo "Debug: Starting mas install in background"; \
+		mas install 1423210932 2>&1 & PID=$$!; \
+		TIMEOUT=300; \
+		ELAPSED=0; \
+		while kill -0 $$PID 2>/dev/null && [ $$ELAPSED -lt $$TIMEOUT ]; do \
+			sleep 5; \
+			ELAPSED=$$((ELAPSED + 5)); \
+			echo "Debug: Waiting for mas install ($$ELAPSED/$$TIMEOUT seconds)..."; \
+		done; \
+		if kill -0 $$PID 2>/dev/null; then \
+			echo "ERROR: Flow installation timed out after 5 minutes"; \
+			echo "Debug: Killing process $$PID"; \
+			kill -9 $$PID 2>/dev/null || true; \
+			echo "Debug: Checking if mas process is still running"; \
+			ps aux | grep -i mas | grep -v grep || echo "Debug: No mas processes found"; \
+			exit 1; \
+		fi; \
+		wait $$PID; EXIT_CODE=$$?; \
+		if [ $$EXIT_CODE -ne 0 ]; then \
+			echo "ERROR: Flow installation failed with exit code $$EXIT_CODE"; \
+			exit $$EXIT_CODE; \
+		fi; \
+		echo "Successfully installed Flow"; \
+	else \
+		echo "Skipping Flow installation: mas not signed in"; \
+	fi
 
 ################################################################################
 # End of personal section
@@ -298,8 +324,34 @@ ${BREW_BIN}/brew:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
-	echo "Install DaisyDisk"
-	mas install 411643860
+	@if mas account >/dev/null 2>&1; then \
+		echo "Installing DaisyDisk (ID: 411643860)..."; \
+		echo "Debug: Starting mas install in background"; \
+		mas install 411643860 2>&1 & PID=$$!; \
+		TIMEOUT=300; \
+		ELAPSED=0; \
+		while kill -0 $$PID 2>/dev/null && [ $$ELAPSED -lt $$TIMEOUT ]; do \
+			sleep 5; \
+			ELAPSED=$$((ELAPSED + 5)); \
+			echo "Debug: Waiting for mas install ($$ELAPSED/$$TIMEOUT seconds)..."; \
+		done; \
+		if kill -0 $$PID 2>/dev/null; then \
+			echo "ERROR: DaisyDisk installation timed out after 5 minutes"; \
+			echo "Debug: Killing process $$PID"; \
+			kill -9 $$PID 2>/dev/null || true; \
+			echo "Debug: Checking if mas process is still running"; \
+			ps aux | grep -i mas | grep -v grep || echo "Debug: No mas processes found"; \
+			exit 1; \
+		fi; \
+		wait $$PID; EXIT_CODE=$$?; \
+		if [ $$EXIT_CODE -ne 0 ]; then \
+			echo "ERROR: DaisyDisk installation failed with exit code $$EXIT_CODE"; \
+			exit $$EXIT_CODE; \
+		fi; \
+		echo "Successfully installed DaisyDisk"; \
+	else \
+		echo "Skipping DaisyDisk installation: mas not signed in"; \
+	fi
 
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
