@@ -306,8 +306,14 @@ ${BREW_BIN}/rg:
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: ~/.dotfiles/.config/starship.toml | ~/.config
-	ln -s ~/.dotfiles/.config/starship.toml $@
+~/.config/starship.toml: | ~/.config
+	@if [ -f ~/.dotfiles/.config/starship.toml ]; then \
+		ln -sf ~/.dotfiles/.config/starship.toml $@; \
+		echo "Created starship.toml symlink"; \
+	else \
+		echo "Skipping starship.toml symlink: source file ~/.dotfiles/.config/starship.toml not found"; \
+		touch $@; \
+	fi
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
