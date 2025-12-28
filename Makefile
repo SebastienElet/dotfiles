@@ -233,7 +233,7 @@ flow: mas /Applications/Flow.app
 		mkdir -p "$@"; \
 	else \
 		echo "Installing Flow"; \
-		-mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
+		mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
 
 ################################################################################
@@ -259,7 +259,7 @@ things-3: mas /Applications/Things3.app
 		mkdir -p "$@"; \
 	else \
 		echo "Installing Things 3"; \
-		-mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
+		mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
 	fi
 
 ################################################################################
@@ -329,7 +329,7 @@ daisydisk: mas /Applications/DaisyDisk.app
 		mkdir -p "$@"; \
 	else \
 		echo "Installing DaisyDisk"; \
-		-mas install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"; \
+		mas install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"; \
 	fi
 
 ${BREW_BIN}/pinentry-mac:
