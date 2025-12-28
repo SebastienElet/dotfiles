@@ -12,7 +12,8 @@ usage:
 
 utils: \
 	cleanshot \
-	rectangle-pro
+	rectangle-pro \
+	things-3
 all: \
 	extra \
 	terminal \
@@ -225,12 +226,8 @@ ${APP_BIN}/Calibre.app:
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
-	@if mas account >/dev/null 2>&1; then \
-		echo "Installing Flow"; \
-		mas install 1423210932; \
-	else \
-		echo "Skipping Flow installation: mas not signed in"; \
-	fi
+	@echo "Installing Flow"
+	-@mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"
 
 ################################################################################
 # End of personal section
@@ -247,6 +244,11 @@ ${APP_BIN}/CleanShot\ X.app:
 rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
+
+things-3: mas /Applications/Things\ 3.app
+/Applications/Things\ 3.app:
+	@echo "Installing Things 3"
+	-@mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"
 
 ################################################################################
 # End of utils section
@@ -310,12 +312,8 @@ ${BREW_BIN}/brew:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
-	@if mas account >/dev/null 2>&1; then \
-		echo "Install DaisyDisk"; \
-		mas install 411643860; \
-	else \
-		echo "Skipping DaisyDisk installation: mas not signed in"; \
-	fi
+	@echo "Installing DaisyDisk"
+	-@mas install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"
 
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
