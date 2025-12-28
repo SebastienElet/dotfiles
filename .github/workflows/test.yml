@@ -8,7 +8,9 @@ jobs:
     - uses: actions/checkout@v1
     - name: Link repository to ~/.dotfiles
       run: |
-        ln -sf ${{ github.workspace }} ~/.dotfiles
+        ln -sf ${{ github.workspace }} $HOME/.dotfiles
     - name: Execute full install
-      working-directory: ~/.dotfiles
+      env:
+        DOTFILES_DIR: ${{ env.HOME }}/.dotfiles
+      working-directory: ${{ env.DOTFILES_DIR }}
       run: make all
