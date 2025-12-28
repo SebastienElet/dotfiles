@@ -7,4 +7,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Execute full install
-      run: make all
+      run: make all SKIP_PAID_APPS=1

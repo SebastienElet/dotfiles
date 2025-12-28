@@ -4,6 +4,8 @@ NPM_BIN:=~/.volta/bin
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
+# SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
+SKIP_PAID_APPS?=0
 
 .PHONY: usage all extra terminal work personal utils clean
 
@@ -12,7 +14,8 @@ usage:
 
 utils: \
 	cleanshot \
-	rectangle-pro
+	rectangle-pro \
+	things-3
 all: \
 	extra \
 	terminal \
@@ -225,11 +228,12 @@ ${APP_BIN}/Calibre.app:
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
-	@if mas account >/dev/null 2>&1; then \
-		echo "Installing Flow"; \
-		mas install 1423210932; \
+	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
+		echo "Skipping Flow installation (SKIP_PAID_APPS=1)"; \
+		mkdir -p "$@"; \
 	else \
-		echo "Skipping Flow installation: mas not signed in"; \
+		echo "Installing Flow"; \
+		-mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
 
 ################################################################################
@@ -247,6 +251,16 @@ ${APP_BIN}/CleanShot\ X.app:
 rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
+
+things-3: mas /Applications/Things3.app
+/Applications/Things3.app:
+	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
+		echo "Skipping Things 3 installation (SKIP_PAID_APPS=1)"; \
+		mkdir -p "$@"; \
+	else \
+		echo "Installing Things 3"; \
+		-mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
+	fi
 
 ################################################################################
 # End of utils section
@@ -310,11 +324,12 @@ ${BREW_BIN}/brew:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
-	@if mas account >/dev/null 2>&1; then \
-		echo "Install DaisyDisk"; \
-		mas install 411643860; \
+	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
+		echo "Skipping DaisyDisk installation (SKIP_PAID_APPS=1)"; \
+		mkdir -p "$@"; \
 	else \
-		echo "Skipping DaisyDisk installation: mas not signed in"; \
+		echo "Installing DaisyDisk"; \
+		-mas install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"; \
 	fi
 
 ${BREW_BIN}/pinentry-mac:
