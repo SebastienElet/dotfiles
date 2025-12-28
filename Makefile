@@ -245,8 +245,8 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
 
-things-3: mas /Applications/Things\ 3.app
-/Applications/Things\ 3.app:
+things-3: mas /Applications/Things3.app
+/Applications/Things3.app:
 	@echo "Installing Things 3"
 	-@mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"
 
