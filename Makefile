@@ -2,6 +2,8 @@ BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/b
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 NPM_BIN:=~/.volta/bin
 APP_BIN:=/Applications
+# DOTFILES_PATH should be ~/.dotfiles when installed normally
+DOTFILES_PATH:=$(shell pwd)
 
 .PHONY: usage all extra terminal work personal utils clean
 
@@ -81,8 +83,8 @@ ${BREW_BIN}/fish:
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
-~/.config/fish: ~/.dotfiles/fish | ~/.config
-	ln -s ~/.dotfiles/fish $@
+~/.config/fish: ${DOTFILES_PATH}/fish | ~/.config
+	ln -s ${DOTFILES_PATH}/fish $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
 ${BREW_GNU_BIN}/gnu-sed:
@@ -103,8 +105,8 @@ ${BREW_BIN}/tokei:
 wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew install --cask wez/wezterm/wezterm
-~/.wezterm.lua: ~/.dotfiles/.wezterm.lua
-	ln -s ~/.dotfiles/.wezterm.lua $@
+~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
+	ln -s ${DOTFILES_PATH}/.wezterm.lua $@
 
 ################################################################################
 # End of the terminal section
@@ -168,8 +170,8 @@ ${BREW_BIN}/mosh:
 postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
 ${BREW_BIN}/psql:
 	brew install postgresql
-~/.psqlrc: ~/.dotfiles/.psqlrc
-	ln -s ~/.dotfiles/.psqlrc $@
+~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
+	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
 renovate: brew node ${NPM_BIN}/renovate
 ${NPM_BIN}/renovate:
@@ -191,12 +193,12 @@ ${APP_BIN}/Cursor.app:
 	curl https://cursor.com/install -fsS | bash
 ~/.config/Cursor/User: | ~/.config
 	mkdir -p $@
-~/.config/Cursor/User/settings.json: ~/.dotfiles/cursor/settings.json | ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/settings.json $@
-~/.config/Cursor/User/extensions.json: ~/.dotfiles/cursor/extensions.json | ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/extensions.json $@
-~/.config/Cursor/User/keybindings.json: ~/.dotfiles/cursor/keybindings.json | ~/.config/Cursor/User
-	ln -s ~/.dotfiles/cursor/keybindings.json $@
+~/.config/Cursor/User/settings.json: ${DOTFILES_PATH}/cursor/settings.json | ~/.config/Cursor/User
+	ln -s ${DOTFILES_PATH}/cursor/settings.json $@
+~/.config/Cursor/User/extensions.json: ${DOTFILES_PATH}/cursor/extensions.json | ~/.config/Cursor/User
+	ln -s ${DOTFILES_PATH}/cursor/extensions.json $@
+~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
+	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
 ################################################################################
 # End of work section
@@ -223,8 +225,12 @@ ${APP_BIN}/Calibre.app:
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
-	echo "Install Flow"
-	mas install 1423210932
+	@if mas account >/dev/null 2>&1; then \
+		echo "Installing Flow"; \
+		mas install 1423210932; \
+	else \
+		echo "Skipping Flow installation: mas not signed in"; \
+	fi
 
 ################################################################################
 # End of personal section
@@ -255,10 +261,10 @@ nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
 	brew install neovim
 	npm i -g neovim
-~/.config/nvim: ~/.dotfiles/nvim | ~/.config
-	ln -s ~/.dotfiles/nvim ~/.config/nvim
-~/cspell.json: ~/.dotfiles/cspell.json
-	ln -s ~/.dotfiles/cspell.json $@
+~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
+	ln -s ${DOTFILES_PATH}/nvim ~/.config/nvim
+~/cspell.json: ${DOTFILES_PATH}/cspell.json
+	ln -s ${DOTFILES_PATH}/cspell.json $@
 
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
 ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf:
@@ -280,14 +286,20 @@ ${BREW_BIN}/rg:
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: ~/.dotfiles/.config/starship.toml | ~/.config
-	ln -s ~/.dotfiles/.config/starship.toml $@
+~/.config/starship.toml: | ~/.config
+	@if [ -f ${DOTFILES_PATH}/.config/starship.toml ]; then \
+		ln -sf ${DOTFILES_PATH}/.config/starship.toml $@; \
+		echo "Created starship.toml symlink"; \
+	else \
+		echo "Skipping starship.toml symlink: source file ${DOTFILES_PATH}/.config/starship.toml not found"; \
+		touch $@; \
+	fi
 
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf: ~/.dotfiles/tmux/.tmux.conf
-	ln -s ~/.dotfiles/tmux/.tmux.conf ~/.tmux.conf
+~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
+	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
 
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
@@ -298,8 +310,12 @@ ${BREW_BIN}/brew:
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
-	echo "Install DaisyDisk"
-	mas install 411643860
+	@if mas account >/dev/null 2>&1; then \
+		echo "Install DaisyDisk"; \
+		mas install 411643860; \
+	else \
+		echo "Skipping DaisyDisk installation: mas not signed in"; \
+	fi
 
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
