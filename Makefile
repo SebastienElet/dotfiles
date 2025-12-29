@@ -40,7 +40,6 @@ terminal: \
 	fd \
 	fish \
 	fzf \
-	gitconfig \
 	gnu-sed \
 	htop \
 	jq \
@@ -89,10 +88,6 @@ ${BREW_BIN}/fish:
 
 ~/.config/fish: ${DOTFILES_PATH}/fish | ~/.config
 	ln -s ${DOTFILES_PATH}/fish $@
-
-gitconfig: ~/.gitconfig
-~/.gitconfig: ${DOTFILES_PATH}/.gitconfig
-	ln -s ${DOTFILES_PATH}/.gitconfig $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
 ${BREW_GNU_BIN}/gnu-sed:
