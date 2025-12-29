@@ -40,6 +40,7 @@ terminal: \
 	fd \
 	fish \
 	fzf \
+	gitconfig \
 	gnu-sed \
 	htop \
 	jq \
@@ -88,6 +89,10 @@ ${BREW_BIN}/fish:
 
 ~/.config/fish: ${DOTFILES_PATH}/fish | ~/.config
 	ln -s ${DOTFILES_PATH}/fish $@
+
+gitconfig: ~/.gitconfig
+~/.gitconfig: ${DOTFILES_PATH}/.gitconfig
+	ln -s ${DOTFILES_PATH}/.gitconfig $@
 
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
 ${BREW_GNU_BIN}/gnu-sed:
@@ -213,6 +218,7 @@ ${APP_BIN}/Cursor.app:
 
 personal: \
 	calibre \
+	chatgpt \
 	flow
 
 # Local vault on 1password does not work with 1password
@@ -225,6 +231,10 @@ personal: \
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
+
+chatgpt: brew ${APP_BIN}/ChatGPT.app
+${APP_BIN}/ChatGPT.app:
+	brew install --cask chatgpt
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
