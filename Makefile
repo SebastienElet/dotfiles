@@ -170,9 +170,9 @@ mosh: brew ${BREW_BIN}/mosh
 ${BREW_BIN}/mosh:
 	brew install mosh
 
-postgresql: brew ${BREW_BIN}/psql ~/.psqlrc
-${BREW_BIN}/psql:
-	brew install postgresql
+postgresql: brew ${BREW_GNU_BIN}/postgresql@16/bin/psql ~/.psqlrc
+${BREW_GNU_BIN}/postgresql@16/bin/psql:
+	brew install postgresql@16
 ~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
 	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
