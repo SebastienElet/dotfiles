@@ -285,6 +285,75 @@ is_valid_jd_filename() {
     return 0
 }
 
+# Suggest a proper filename based on the expected prefix
+# Tries to extract date and description from the current filename
+suggest_filename() {
+    local filename="$1"
+    local expected_prefix="$2"
+    local file_path="$3"
+
+    # Extract extension
+    local extension="${filename##*.}"
+    local basename="${filename%.*}"
+
+    # If extension is the same as basename, there's no extension
+    if [[ "$extension" == "$basename" ]]; then
+        extension=""
+        basename="$filename"
+    fi
+
+    # Try to extract date from current filename (YYYY-MM-DD pattern)
+    local date_part=""
+    local description=""
+
+    # Look for date pattern in the basename
+    if [[ "$basename" =~ ([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+        date_part="${BASH_REMATCH[1]}"
+        # Remove date from basename for description extraction
+        # Replace date pattern and clean up surrounding separators
+        basename=$(echo "$basename" | sed "s/\([[:space:]]*-\?[[:space:]]*\)\?$date_part\([[:space:]]*-\?[[:space:]]*\)\?/ /g" | sed 's/[[:space:]]\+/ /g' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
+    fi
+
+    # Try to extract description from current filename
+    # Remove common prefixes that might be wrong (numbers, dots, underscores, hyphens)
+    description=$(echo "$basename" | sed 's/^[0-9]*[-._]*//' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
+
+    # If no meaningful description found, try to use the original filename (cleaned)
+    if [[ -z "$description" ]]; then
+        local original_basename=$(basename "$file_path")
+        if [[ "$original_basename" =~ \. ]]; then
+            original_basename="${original_basename%.*}"
+        fi
+        # Remove date and numeric prefixes
+        description=$(echo "$original_basename" | sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}//' | sed 's/^[0-9]*[-._]*//' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
+    fi
+
+    # Clean up description: remove multiple spaces/hyphens, trim
+    description=$(echo "$description" | sed 's/[[:space:]]\+/ /g' | sed 's/-[[:space:]]*-/-/g' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
+
+    # If still no description, use a generic one
+    if [[ -z "$description" ]]; then
+        description="Document"
+    fi
+
+    # Build the suggested filename
+    local suggested_name="$expected_prefix"
+    
+    if [[ -n "$date_part" ]]; then
+        suggested_name="$suggested_name - $date_part"
+    fi
+    
+    # Always add description (even if it's "Document")
+    suggested_name="$suggested_name - $description"
+
+    # Add extension if it exists
+    if [[ -n "$extension" && "$extension" != "$filename" ]]; then
+        suggested_name="$suggested_name.$extension"
+    fi
+
+    echo "$suggested_name"
+}
+
 # Check a single file
 check_file() {
     local file_path="$1"
@@ -317,6 +386,23 @@ check_file() {
     else
         echo -e "${RED}✗${NC} $file_path"
         echo -e "  ${YELLOW}Expected prefix: ${expected_prefix} - ...${NC}"
+
+        if [[ "$FIX_MODE" == "true" ]]; then
+            local suggested_name=$(suggest_filename "$filename" "$expected_prefix" "$file_path")
+            echo -e "  ${BLUE}Suggested name: $suggested_name${NC}"
+
+            read -p "  Rename to '$suggested_name'? (y/n): " -n 1 -r </dev/tty
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                local new_path="$parent_dir/$suggested_name"
+                if [[ -e "$new_path" ]]; then
+                    echo -e "  ${RED}Error: '$new_path' already exists${NC}"
+                else
+                    mv "$file_path" "$new_path"
+                    echo -e "  ${GREEN}Renamed to: $new_path${NC}"
+                fi
+            fi
+        fi
         return 1
     fi
 }
@@ -382,7 +468,7 @@ check_directory() {
             local suggested_name=$(suggest_name "$dir_path")
             echo -e "  ${BLUE}Suggested name: $suggested_name${NC}"
 
-            read -p "  Rename to '$suggested_name'? (y/n): " -n 1 -r
+            read -p "  Rename to '$suggested_name'? (y/n): " -n 1 -r </dev/tty
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
                 local new_path="$parent_path/$suggested_name"
