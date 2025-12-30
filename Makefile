@@ -219,6 +219,7 @@ ${APP_BIN}/Cursor.app:
 personal: \
 	calibre \
 	chatgpt \
+	claude \
 	flow
 
 # Local vault on 1password does not work with 1password
@@ -235,6 +236,10 @@ ${APP_BIN}/Calibre.app:
 chatgpt: brew ${APP_BIN}/ChatGPT.app
 ${APP_BIN}/ChatGPT.app:
 	brew install --cask chatgpt
+
+claude: brew ${APP_BIN}/Claude.app
+${APP_BIN}/Claude.app:
+	brew install --cask claude
 
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
