@@ -132,7 +132,8 @@ work: \
 	postgresql \
 	renovate \
 	tableplus \
-	terraform
+	terraform \
+	1password
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
@@ -188,6 +189,10 @@ terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
 	brew install hashicorp/tap/terraform
+
+1password: brew ${APP_BIN}/1Password.app
+${APP_BIN}/1Password.app:
+	brew install --cask 1password
 
 cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
 ${APP_BIN}/Cursor.app:
