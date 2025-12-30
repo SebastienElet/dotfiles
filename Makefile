@@ -121,6 +121,7 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 work: \
 	arc \
 	aws \
+	claude-code \
 	cursor \
 	docker \
 	doppler \
@@ -207,6 +208,10 @@ ${APP_BIN}/Cursor.app:
 	ln -s ${DOTFILES_PATH}/cursor/extensions.json $@
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
+
+claude-code: brew ${BREW_BIN}/claude
+${BREW_BIN}/claude:
+	brew install --cask claude-code
 
 ################################################################################
 # End of work section
