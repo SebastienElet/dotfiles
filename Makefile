@@ -286,10 +286,13 @@ things-3: mas /Applications/Things3.app
 # End of utils section
 ################################################################################
 
-javascript: prettier
+javascript: prettier cspell
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier:
 	npm i -g prettier @fsouza/prettierd
+cspell: node ${NPM_BIN}/cspell
+${NPM_BIN}/cspell:
+	npm i -g cspell
 
 nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim:
