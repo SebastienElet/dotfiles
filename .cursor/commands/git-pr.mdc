@@ -109,7 +109,7 @@ The PR description must follow the exact format from `.github/pull_request_templ
 
 8. **Fill PR template**
    - **Read the template**: First, read `.github/pull_request_template.md` to get the current template structure
-   - **Useful Links**: Extract issue numbers from branch name or commits
+   - **Useful Links**: Extract issue numbers from branch name or commits. **If no issue numbers are found, remove the entire "Useful Links" section** (do not include an empty section)
    - **Description**: Summarize changes from commits/changes or ask user
    - **How to Test**: Ask user for testing steps or infer from changes
    - **Checklist**: Pre-fill based on what can be verified (tests, migrations, etc.)
@@ -130,7 +130,7 @@ The PR description must follow the exact format from `.github/pull_request_templ
 - **Always use the PR template**: Follow the exact format from `.github/pull_request_template.md`
 - **Descriptive title**: Should clearly indicate what the PR does (must be in English)
 - **Complete description**: Fill all sections of the template, even if brief
-- **Link issues**: If branch name or commits reference issues, include them in the description
+- **Link issues**: If branch name or commits reference issues, include them in the description. **If no issue numbers are found, remove the entire "Useful Links" section** (do not include an empty section with placeholders)
 - **Check for breaking changes**: Review changes to identify any breaking changes
 - **Verify base branch**: Ensure PR targets the base branch (default: `main`)
 
@@ -150,9 +150,10 @@ Agent:
 8. Generates title → "Feat: Add OAuth support (#123)"
 9. Reads PR template from .github/pull_request_template.md
 10. Fills PR template:
-    - Problem: "Add OAuth2 authentication support"
-    - Solution: "Implemented OAuth2 flow with Google provider..."
+    - Useful Links: Includes #123 from branch name
+    - Description: "Add OAuth2 authentication support. Implemented OAuth2 flow with Google provider..."
     - Testing: "Test login flow with Google account..."
+    - Note: If no issue number found, removes "Useful Links" section entirely
 11. Creates PR via GitHub API
 12. Confirms PR created with link
 ```
