@@ -225,7 +225,8 @@ personal: \
 	calibre \
 	chatgpt \
 	claude \
-	flow
+	flow \
+	language-tool
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -255,6 +256,10 @@ flow: mas /Applications/Flow.app
 		echo "Installing Flow"; \
 		mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
+
+language-tool: brew ${APP_BIN}/LanguageTool.app
+${APP_BIN}/LanguageTool.app:
+	brew install --cask languagetool
 
 ################################################################################
 # End of personal section
