@@ -201,21 +201,23 @@ is_johnny_decimal() {
 # "10.25001 - Import Quadral" -> "Import Quadral"
 extract_jd_name() {
     local dirname="$1"
+    local extracted_name=""
 
     # Pattern: NN - Name, NN.NN - Name, NN.NNNNN - Name, NN-NN - Name
     if [[ "$dirname" =~ ^[0-9]+(\.[0-9]+)?\ -\ (.+)$ ]]; then
-        echo "${BASH_REMATCH[2]}"
-        return 0
-    fi
-
+        extracted_name="${BASH_REMATCH[2]}"
     # Pattern: NN-NN - Name (range format)
-    if [[ "$dirname" =~ ^[0-9]+-[0-9]+\ -\ (.+)$ ]]; then
-        echo "${BASH_REMATCH[1]}"
+    elif [[ "$dirname" =~ ^[0-9]+-[0-9]+\ -\ (.+)$ ]]; then
+        extracted_name="${BASH_REMATCH[1]}"
+    else
+        # Not a JD folder, return as-is
+        echo "$dirname"
         return 0
     fi
 
-    # Not a JD folder, return as-is
-    echo "$dirname"
+    # Clean up double spaces in the extracted name
+    extracted_name=$(echo "$extracted_name" | sed 's/[[:space:]][[:space:]]\+/ /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    echo "$extracted_name"
 }
 
 # Build the expected file prefix from the folder path
@@ -231,6 +233,10 @@ build_file_prefix() {
     # Extract JD names
     local subcategory=$(extract_jd_name "$parent_name")
     local category=$(extract_jd_name "$grandparent_name")
+
+    # Clean up double spaces in extracted names
+    subcategory=$(echo "$subcategory" | sed 's/[[:space:]][[:space:]]\+/ /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    category=$(echo "$category" | sed 's/[[:space:]][[:space:]]\+/ /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
     # Skip if we're at root level (grandparent is the JD root like "20-29 - Areas")
     if [[ "$grandparent_name" =~ ^[0-9]+-[0-9]+\ - ]]; then
@@ -314,6 +320,19 @@ suggest_filename() {
         basename=$(echo "$basename" | sed "s/\([[:space:]]*-\?[[:space:]]*\)\?$date_part\([[:space:]]*-\?[[:space:]]*\)\?/ /g" | sed 's/[[:space:]]\+/ /g' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
     fi
 
+    # Remove any existing prefix pattern (Category - Subcategory - ...)
+    # This handles cases where the file already has a prefix that needs to be replaced
+    # Pattern: "Word - Word - " (at least two words separated by " - ")
+    # First, check if there's a prefix with content after it: "Category - Subcategory - Description"
+    if [[ "$basename" =~ ^[^[:space:]-]+[[:space:]]+-\ +[^[:space:]-]+[[:space:]]+-\ + ]]; then
+        # Remove the prefix pattern (everything up to and including the second " - ")
+        basename=$(echo "$basename" | sed -E 's/^[^[:space:]-]+[[:space:]]+-\ +[^[:space:]-]+[[:space:]]+-\ +//')
+    # Check if the entire basename is just a prefix: "Category - Subcategory"
+    elif [[ "$basename" =~ ^[^[:space:]-]+[[:space:]]+-\ +[^[:space:]-]+$ ]]; then
+        # The entire name is a prefix, clear it so description will be set to "Document"
+        basename=""
+    fi
+
     # Try to extract description from current filename
     # Remove common prefixes that might be wrong (numbers, dots, underscores, hyphens)
     description=$(echo "$basename" | sed 's/^[0-9]*[-._]*//' | sed 's/^[[:space:]-]*//' | sed 's/[[:space:]-]*$//')
@@ -351,6 +370,9 @@ suggest_filename() {
         suggested_name="$suggested_name.$extension"
     fi
 
+    # Clean up any double spaces that might have been introduced
+    suggested_name=$(echo "$suggested_name" | sed 's/[[:space:]][[:space:]]\+/ /g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
     echo "$suggested_name"
 }
 
@@ -359,6 +381,7 @@ check_file() {
     local file_path="$1"
     local filename=$(basename "$file_path")
     local parent_dir=$(dirname "$file_path")
+    local has_errors=false
 
     # Skip hidden files
     if [[ "$filename" =~ ^\. ]]; then
@@ -375,16 +398,47 @@ check_file() {
         return 0
     fi
 
+    # Check for double spaces in filename
+    if [[ "$filename" =~ [[:space:]][[:space:]] ]]; then
+        echo -e "${RED}✗${NC} $file_path"
+        echo -e "  ${YELLOW}Filename contains double spaces${NC}"
+        has_errors=true
+
+        if [[ "$FIX_MODE" == "true" ]]; then
+            local fixed_name=$(echo "$filename" | sed 's/[[:space:]][[:space:]]\+/ /g')
+            echo -e "  ${BLUE}Suggested name: $fixed_name${NC}"
+
+            read -p "  Rename to '$fixed_name'? (y/n): " -n 1 -r </dev/tty
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                local new_path="$parent_dir/$fixed_name"
+                if [[ -e "$new_path" ]]; then
+                    echo -e "  ${RED}Error: '$new_path' already exists${NC}"
+                else
+                    mv "$file_path" "$new_path"
+                    echo -e "  ${GREEN}Renamed to: $new_path${NC}"
+                    # Update filename and file_path for subsequent checks
+                    filename="$fixed_name"
+                    file_path="$new_path"
+                fi
+            fi
+        fi
+    fi
+
     # Build expected prefix
     local expected_prefix=$(build_file_prefix "$file_path")
 
     if is_valid_jd_filename "$filename" "$expected_prefix"; then
-        if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
-            echo -e "${GREEN}✓${NC} $file_path"
+        if [[ "$has_errors" != "true" ]]; then
+            if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
+                echo -e "${GREEN}✓${NC} $file_path"
+            fi
         fi
-        return 0
+        return $([ "$has_errors" == "true" ] && echo 1 || echo 0)
     else
-        echo -e "${RED}✗${NC} $file_path"
+        if [[ "$has_errors" != "true" ]]; then
+            echo -e "${RED}✗${NC} $file_path"
+        fi
         echo -e "  ${YELLOW}Expected prefix: ${expected_prefix} - ...${NC}"
 
         if [[ "$FIX_MODE" == "true" ]]; then
@@ -432,6 +486,7 @@ check_directory() {
     local dir_path="$1"
     local dir_name=$(basename "$dir_path")
     local parent_path=$(dirname "$dir_path")
+    local has_errors=false
 
     # Skip hidden directories and common system directories
     if [[ "$dir_name" =~ ^\. ]] || [[ "$dir_name" =~ ^(node_modules|\.git|\.svn|\.hg)$ ]]; then
@@ -455,13 +510,44 @@ check_directory() {
         return 0
     fi
 
-    if is_johnny_decimal "$dir_name"; then
-        if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
-            echo -e "${GREEN}✓${NC} $dir_path"
-        fi
-        return 0
-    else
+    # Check for double spaces in directory name
+    if [[ "$dir_name" =~ [[:space:]][[:space:]] ]]; then
         echo -e "${RED}✗${NC} $dir_path"
+        echo -e "  ${YELLOW}Directory name contains double spaces${NC}"
+        has_errors=true
+
+        if [[ "$FIX_MODE" == "true" ]]; then
+            local fixed_name=$(echo "$dir_name" | sed 's/[[:space:]][[:space:]]\+/ /g')
+            echo -e "  ${BLUE}Suggested name: $fixed_name${NC}"
+
+            read -p "  Rename to '$fixed_name'? (y/n): " -n 1 -r </dev/tty
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                local new_path="$parent_path/$fixed_name"
+                if [[ -e "$new_path" ]]; then
+                    echo -e "  ${RED}Error: '$new_path' already exists${NC}"
+                else
+                    mv "$dir_path" "$new_path"
+                    echo -e "  ${GREEN}Renamed to: $new_path${NC}"
+                    # Update dir_name for subsequent checks
+                    dir_name="$fixed_name"
+                    dir_path="$new_path"
+                fi
+            fi
+        fi
+    fi
+
+    if is_johnny_decimal "$dir_name"; then
+        if [[ "$has_errors" != "true" ]]; then
+            if [[ "$VERBOSE" == "true" && "$ERRORS_ONLY" != "true" ]]; then
+                echo -e "${GREEN}✓${NC} $dir_path"
+            fi
+        fi
+        return $([ "$has_errors" == "true" ] && echo 1 || echo 0)
+    else
+        if [[ "$has_errors" != "true" ]]; then
+            echo -e "${RED}✗${NC} $dir_path"
+        fi
         echo -e "  ${YELLOW}Expected format: NN-name (where NN is 10-99)${NC}"
 
         if [[ "$FIX_MODE" == "true" ]]; then
