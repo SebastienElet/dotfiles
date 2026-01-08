@@ -14,5 +14,20 @@ echo "ℹ️  Mas upgrade"
 mas outdated
 mas upgrade
 
-echo "ℹ️  Npm upgrade"
-npm-check -g -y
+echo "ℹ️  Pnpm upgrade"
+if command -v pnpm &> /dev/null; then
+  pnpm update -g
+else
+  if command -v volta &> /dev/null; then
+    echo "  Installing pnpm via Volta..."
+    volta install pnpm@latest 2>&1 || true
+    
+    if command -v pnpm &> /dev/null; then
+      pnpm update -g
+    else
+      echo "  Warning: pnpm installation failed, skipping npm/pnpm package updates"
+    fi
+  else
+    echo "  Warning: pnpm not found and Volta is not available, skipping npm/pnpm package updates"
+  fi
+fi
