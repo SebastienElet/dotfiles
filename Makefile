@@ -15,6 +15,7 @@ usage:
 utils: \
 	cleanshot \
 	rectangle-pro \
+	superwhisper \
 	things-3
 all: \
 	extra \
@@ -281,6 +282,10 @@ ${APP_BIN}/CleanShot\ X.app:
 rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
+
+superwhisper: brew ${APP_BIN}/SuperWhisper.app
+${APP_BIN}/SuperWhisper.app:
+	brew install --cask superwhisper
 
 things-3: mas /Applications/Things3.app
 /Applications/Things3.app:
