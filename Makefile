@@ -226,7 +226,8 @@ personal: \
 	chatgpt \
 	claude \
 	flow \
-	language-tool
+	language-tool \
+	whatsapp
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
@@ -260,6 +261,10 @@ flow: mas /Applications/Flow.app
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
+
+whatsapp: brew ${APP_BIN}/WhatsApp.app
+${APP_BIN}/WhatsApp.app:
+	brew install --cask whatsapp
 
 ################################################################################
 # End of personal section
