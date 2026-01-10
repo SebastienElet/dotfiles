@@ -20,6 +20,17 @@ end)
 
 return {
 	font = wezterm.font("Iosevka Nerd Font"),
+	font_size = 13.0,
 	color_scheme = "tokyonight",
 	hide_tab_bar_if_only_one_tab = true,
+	scrollback_lines = 200000,
+	window_padding = {
+		left = 4,
+		right = 4,
+		top = 4,
+		bottom = 4,
+	},
+	default_cursor_style = "BlinkingBlock",
+	cursor_blink_rate = 500,
+	enable_wayland = false,
 }
