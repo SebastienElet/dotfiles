@@ -16,7 +16,8 @@ utils: \
 	cleanshot \
 	rectangle-pro \
 	superwhisper \
-	things-3
+	things-3 \
+	voiceink
 all: \
 	extra \
 	terminal \
@@ -288,6 +289,10 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 superwhisper: brew ${APP_BIN}/SuperWhisper.app
 ${APP_BIN}/SuperWhisper.app:
 	brew install --cask superwhisper
+
+voiceink: brew ${APP_BIN}/VoiceInk.app
+${APP_BIN}/VoiceInk.app:
+	brew install --cask voiceink
 
 things-3: mas /Applications/Things3.app
 /Applications/Things3.app:
