@@ -7,7 +7,7 @@ globs:
 
 - All comments and documentation must be written in **English**
 - Keep configurations **simple and minimal** — avoid over-engineering
-- Prefer **self-documenting code** over excessive comments
+- **Avoid unnecessary comments** — prefer self-documenting code. Only add comments when they explain *why* something is done, not *what* it does. Configuration option names are usually self-explanatory.
 - Primary platform: **macOS** (Darwin), but keep configs **portable to Linux** (EC2, servers)
 - Avoid macOS-specific features when a cross-platform alternative exists
 - Use `uname` or similar checks when platform-specific code is unavoidable
@@ -25,6 +25,14 @@ Configuration files are symlinked from this repo:
 - `~/.config/Cursor/User/*` → `~/.dotfiles/cursor/*`
 
 Always update the Makefile when adding new symlinked configurations.
+
+## Code Style
+
+### Comments
+- **Minimal comments**: Only comment when explaining non-obvious behavior or important context
+- **No obvious comments**: Don't comment what the code already clearly shows (e.g., `scrollback_lines = 200000` doesn't need a comment)
+- **Self-documenting**: Prefer clear variable/option names over comments
+- **When to comment**: Only when explaining *why* something is configured a certain way, not *what* it does
 
 ## Primary Work Context
 
