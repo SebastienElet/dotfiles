@@ -19,6 +19,11 @@ end
 set --export BUN_INSTALL "$HOME/.bun"
 set --export PATH $BUN_INSTALL/bin $PATH
 
+# zoxide - smarter cd command
+if type -q zoxide
+    zoxide init fish | source
+end
+
 # Added by OrbStack: command-line tools and integration
 # This won't be added again if you remove it.
 if test -f ~/.orbstack/shell/init2.fish

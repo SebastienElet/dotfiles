@@ -51,7 +51,8 @@ terminal: \
 	ripgrep \
 	tmux \
 	tokei \
-	wezterm
+	wezterm \
+	zoxide
 
 ~/.config:
 	mkdir -p $@
@@ -334,6 +335,10 @@ fzf: ~/.fzf
 ripgrep: brew ${BREW_BIN}/rg
 ${BREW_BIN}/rg:
 	brew install ripgrep
+
+zoxide: brew ${BREW_BIN}/zoxide
+${BREW_BIN}/zoxide:
+	brew install zoxide
 
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
