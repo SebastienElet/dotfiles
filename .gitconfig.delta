@@ -3,7 +3,7 @@
 
 [delta]
 	features = side-by-side line-numbers decorations
-	syntax-theme = TokyoNight
+	syntax-theme = Nord
 	navigate = true
 	light = false
 
