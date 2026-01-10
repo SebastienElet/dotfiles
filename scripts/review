@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # Find all modified files
-FILES=$(git diff --cached --name-only --diff-filter=ACM main -- | grep '\.ts$')
+MAIN_BRANCH=$(~/.dotfiles/scripts/git_main_branch)
+FILES=$(git diff --cached --name-only --diff-filter=ACM "$MAIN_BRANCH" -- | grep -E '\.(ts|tsx|js|jsx)$')
 
 if [ -z "$FILES" ]; then
-  echo "No typescript files to check."
+  echo "No JavaScript/TypeScript files to check."
   exit 0
 fi
 
@@ -40,5 +41,5 @@ for FILE in $FILES; do
   echo "" >>review.md
 done
 
-echo "All typescript files were applied the code review."
+echo "All JavaScript/TypeScript files were applied the code review."
 exit 0
