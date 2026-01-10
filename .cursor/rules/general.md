@@ -12,6 +12,10 @@ globs:
 - Avoid macOS-specific features when a cross-platform alternative exists
 - Use `uname` or similar checks when platform-specific code is unavoidable
 
+## Installation & Package Management
+
+**CRITICAL**: Always use the Makefile for installing tools and applications. Never install packages directly with `brew install`, `npm install -g`, or other package managers. See `makefile.md` for details.
+
 ## Symlink Conventions
 
 Configuration files are symlinked from this repo:
