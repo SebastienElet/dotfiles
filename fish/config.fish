@@ -8,7 +8,7 @@ set -g fish_key_bindings fish_vi_key_bindings
 set fish_greeting
 
 # Ensure Starship is installed
-if test -n (type -q starship)
+if type -q starship
     # Enable Starship
     starship init fish | source
 else
