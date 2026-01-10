@@ -1,5 +1,6 @@
 alias ..='cd ..'
 alias :q='exit'
+alias abbr='abbreviations'
 alias cheque-parser-instance-reboot='~/.dotfiles/scripts/cheque-parser-instance-reboot'
 alias import-instance-start='~/.dotfiles/scripts/import-instance-start'
 alias import-instance-stop='~/.dotfiles/scripts/import-instance-stop'
