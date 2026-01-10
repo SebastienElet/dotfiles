@@ -341,11 +341,15 @@ zoxide: brew ${BREW_BIN}/zoxide
 ${BREW_BIN}/zoxide:
 	brew install zoxide
 
-git-delta: brew ${BREW_BIN}/delta ~/.gitconfig
+git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
 ${BREW_BIN}/delta:
 	brew install git-delta
-~/.gitconfig: ${DOTFILES_PATH}/.gitconfig
-	ln -s ${DOTFILES_PATH}/.gitconfig ~/.gitconfig
+~/.gitconfig.delta: ${DOTFILES_PATH}/.gitconfig.delta
+	ln -s ${DOTFILES_PATH}/.gitconfig.delta ~/.gitconfig.delta
+	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
+		git config --global include.path "~/.gitconfig.delta"; \
+		echo "Added include.path to ~/.gitconfig"; \
+	fi
 
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
