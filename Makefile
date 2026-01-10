@@ -41,6 +41,7 @@ terminal: \
 	fd \
 	fish \
 	fzf \
+	git-delta \
 	gnu-sed \
 	htop \
 	jq \
@@ -339,6 +340,12 @@ ${BREW_BIN}/rg:
 zoxide: brew ${BREW_BIN}/zoxide
 ${BREW_BIN}/zoxide:
 	brew install zoxide
+
+git-delta: brew ${BREW_BIN}/delta ~/.gitconfig
+${BREW_BIN}/delta:
+	brew install git-delta
+~/.gitconfig: ${DOTFILES_PATH}/.gitconfig
+	ln -s ${DOTFILES_PATH}/.gitconfig ~/.gitconfig
 
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
