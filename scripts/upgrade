@@ -31,3 +31,10 @@ else
     echo "  Warning: pnpm not found and Volta is not available, skipping npm/pnpm package updates"
   fi
 fi
+
+echo "ℹ️  NeoVim plugins"
+if command -v nvim &> /dev/null; then
+  nvim --headless "+Lazy! sync" +qa
+else
+  echo "  Warning: nvim not found, skipping NeoVim plugin updates"
+fi
