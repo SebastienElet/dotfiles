@@ -1,0 +1,74 @@
+name: Lint
+on: [push, pull_request]
+
+jobs:
+  fish:
+    name: Fish shell
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Fish
+        run: brew install fish
+
+      - name: Check Fish syntax
+        run: |
+          echo "Checking Fish syntax..."
+          git ls-files 'fish/*.fish' 'fish/**/*.fish' | xargs -I{} fish --no-execute {}
+          echo "✅ Fish syntax OK"
+
+      - name: Check Fish formatting
+        run: |
+          echo "Checking Fish formatting..."
+          ERRORS=0
+          for file in $(git ls-files 'fish/*.fish' 'fish/**/*.fish'); do
+            if ! fish_indent --check "$file" 2>/dev/null; then
+              echo "❌ $file needs formatting"
+              fish_indent "$file" | diff -u "$file" - || true
+              ERRORS=1
+            fi
+          done
+          if [ "$ERRORS" -eq 1 ]; then
+            echo ""
+            echo "Run 'fish_indent -w <file>' to fix formatting"
+            exit 1
+          fi
+          echo "✅ Fish formatting OK"
+
+  lua:
+    name: Lua (NeoVim)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install luacheck
+        run: brew install luacheck
+
+      - name: Lint Lua files
+        run: |
+          echo "Checking Lua syntax..."
+          luacheck nvim/lua --no-unused-args --no-max-line-length --globals vim
+          echo "✅ Lua syntax OK"
+
+  shellcheck:
+    name: Shell scripts
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: brew install shellcheck
+
+      - name: Lint shell scripts
+        run: |
+          echo "Checking shell scripts..."
+          # Find scripts with bash/sh shebang or .sh extension
+          SCRIPTS=$(find scripts -type f -exec grep -l '^#!/.*\(bash\|sh\)' {} \; 2>/dev/null || true)
+          SCRIPTS="$SCRIPTS $(find . -name "*.sh" -type f 2>/dev/null || true)"
+          SCRIPTS="$SCRIPTS install.sh"
+          
+          if [ -n "$SCRIPTS" ]; then
+            echo "Found scripts: $SCRIPTS"
+            echo "$SCRIPTS" | xargs -n1 shellcheck --severity=error || true
+          fi
+          echo "✅ Shell scripts OK"
