@@ -14,10 +14,10 @@ usage:
 
 utils: \
 	cleanshot \
+	opensuperwhisper \
 	rectangle-pro \
 	superwhisper \
-	things-3 \
-	voiceink
+	things-3
 all: \
 	extra \
 	terminal \
@@ -286,13 +286,13 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
 
+opensuperwhisper: brew ${APP_BIN}/OpenSuperWhisper.app
+${APP_BIN}/OpenSuperWhisper.app:
+	brew install --cask opensuperwhisper
+
 superwhisper: brew ${APP_BIN}/SuperWhisper.app
 ${APP_BIN}/SuperWhisper.app:
 	brew install --cask superwhisper
-
-voiceink: brew ${APP_BIN}/VoiceInk.app
-${APP_BIN}/VoiceInk.app:
-	brew install --cask voiceink
 
 things-3: mas /Applications/Things3.app
 /Applications/Things3.app:
