@@ -3,7 +3,7 @@
 # This makes debugging easier and follows Fish shell conventions
 
 # Basic git commands
-abbr -a g 'git'
+abbr -a g git
 abbr -a ga 'git add'
 abbr -a gaa 'git add --all'
 abbr -a gap 'git apply'
