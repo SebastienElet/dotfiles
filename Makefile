@@ -59,9 +59,15 @@ terminal: \
 ~/.config:
 	mkdir -p $@
 
-bat: brew ${BREW_BIN}/bat
+bat: brew ${BREW_BIN}/bat ~/.config/bat/themes/Catppuccin\ Latte.tmTheme
 ${BREW_BIN}/bat:
 	brew install bat
+~/.config/bat/themes:
+	mkdir -p $@
+~/.config/bat/themes/Catppuccin\ Latte.tmTheme: | ~/.config/bat/themes
+	curl -L -o ~/.config/bat/themes/Catppuccin\ Latte.tmTheme https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Latte.tmTheme
+	curl -L -o ~/.config/bat/themes/Catppuccin\ Mocha.tmTheme https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
+	bat cache --build
 
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
