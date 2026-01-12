@@ -3,9 +3,9 @@
 
 [delta]
 	features = side-by-side line-numbers decorations
-	syntax-theme = Nord
+	syntax-theme = Catppuccin Latte
 	navigate = true
-	light = false
+	light = true
 
 [interactive]
 	diffFilter = delta --color-only
