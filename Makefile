@@ -132,6 +132,7 @@ work: \
 	arc \
 	aws \
 	claude-code \
+	codex \
 	cursor \
 	docker \
 	doppler \
@@ -222,6 +223,10 @@ ${APP_BIN}/Cursor.app:
 claude-code: brew ${BREW_BIN}/claude
 ${BREW_BIN}/claude:
 	brew install --cask claude-code
+
+codex: node ${NPM_BIN}/codex
+${NPM_BIN}/codex:
+	npm i -g @openai/codex
 
 ################################################################################
 # End of work section
