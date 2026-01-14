@@ -54,7 +54,8 @@ terminal: \
 	tmux \
 	tokei \
 	wezterm \
-	zoxide
+	zoxide \
+	zsh
 
 ~/.config:
 	mkdir -p $@
@@ -356,6 +357,10 @@ ${BREW_BIN}/rg:
 zoxide: brew ${BREW_BIN}/zoxide
 ${BREW_BIN}/zoxide:
 	brew install zoxide
+
+zsh: ~/.zshrc
+~/.zshrc: ${DOTFILES_PATH}/.zshrc
+	ln -s ${DOTFILES_PATH}/.zshrc $@
 
 git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
 ${BREW_BIN}/delta:
