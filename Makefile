@@ -37,6 +37,7 @@ terminal: \
 	bat \
 	bottom \
 	broot \
+	procs \
 	eza \
 	fd \
 	fish \
@@ -76,6 +77,10 @@ ${BREW_BIN}/btm:
 broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
 	brew install broot
+
+procs: brew ${BREW_BIN}/procs
+${BREW_BIN}/procs:
+	brew install procs
 
 eza: brew ${BREW_BIN}/eza
 ${BREW_BIN}/eza:

@@ -27,6 +27,10 @@ if type -q tokei
     alias loc='tokei'
 end
 
+if type -q procs
+    alias ps='procs'
+end
+
 if type -q eza
     alias ls='eza'
 end
