@@ -23,9 +23,6 @@ if type -q cursor
     alias c='cursor'
 end
 
-if type -q codex
-    alias codex='env TERM=dumb codex'
-end
 
 if type -q tokei
     alias loc='tokei'
