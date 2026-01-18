@@ -50,4 +50,4 @@ abbr -a gs 'git status'
 
 # Rebase operations
 abbr -a grbc 'git rebase --continue'
-abbr -a grbm 'git rebase main'
+abbr -a grbm 'git rebase (~/.dotfiles/scripts/git_main_branch)'
