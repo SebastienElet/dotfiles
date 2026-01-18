@@ -36,7 +36,6 @@ terminal: \
 	~/.config \
 	bat \
 	bottom \
-	btop \
 	broot \
 	eza \
 	fd \
@@ -73,10 +72,6 @@ ${BREW_BIN}/bat:
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
-
-btop: brew ${BREW_BIN}/btop
-${BREW_BIN}/btop:
-	brew install btop
 
 broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
