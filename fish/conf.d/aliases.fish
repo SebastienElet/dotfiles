@@ -23,7 +23,6 @@ if type -q cursor
     alias c='cursor'
 end
 
-
 if type -q tokei
     alias loc='tokei'
 end
