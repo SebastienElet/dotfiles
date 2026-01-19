@@ -192,7 +192,7 @@ ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 
 renovate: brew node ${NPM_BIN}/renovate
 ${NPM_BIN}/renovate: ${NPM_BIN}/pnpm
-	pnpm add -g renovate
+	${NPM_BIN}/pnpm add -g renovate
 
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
@@ -227,7 +227,7 @@ ${BREW_BIN}/claude:
 
 codex: node ${NPM_BIN}/codex
 ${NPM_BIN}/codex: ${NPM_BIN}/pnpm
-	pnpm add -g @openai/codex
+	${NPM_BIN}/pnpm add -g @openai/codex
 
 ################################################################################
 # End of work section
@@ -323,15 +323,15 @@ things-3: mas /Applications/Things3.app
 javascript: prettier cspell
 prettier: node ${NPM_BIN}/prettier
 ${NPM_BIN}/prettier: ${NPM_BIN}/pnpm
-	pnpm add -g prettier @fsouza/prettierd
+	${NPM_BIN}/pnpm add -g prettier @fsouza/prettierd
 cspell: node ${NPM_BIN}/cspell
 ${NPM_BIN}/cspell: ${NPM_BIN}/pnpm
-	pnpm add -g cspell
+	${NPM_BIN}/pnpm add -g cspell
 
 nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim: ${NPM_BIN}/pnpm
 	brew install neovim
-	pnpm add -g neovim
+	${NPM_BIN}/pnpm add -g neovim
 ~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
 	ln -s ${DOTFILES_PATH}/nvim ~/.config/nvim
 ~/cspell.json: ${DOTFILES_PATH}/cspell.json
@@ -412,7 +412,7 @@ ${BREW_BIN}/pinentry-mac:
 
 jscpd: node ${NPM_BIN}/jscpd
 ${NPM_BIN}/jscpd: ${NPM_BIN}/pnpm
-	@pnpm add -g jscpd
+	@${NPM_BIN}/pnpm add -g jscpd
 
 mas: brew ${BREW_BIN}/mas
 ${BREW_BIN}/mas:
