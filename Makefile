@@ -431,6 +431,7 @@ ${NPM_BIN}/node:
 	${BREW_BIN}/volta install node@lts
 ${NPM_BIN}/pnpm: ${NPM_BIN}/node
 	${BREW_BIN}/volta install pnpm
+	${NPM_BIN}/pnpm setup
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
