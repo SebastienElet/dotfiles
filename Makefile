@@ -2,13 +2,14 @@ BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/b
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
+export PNPM_HOME:=$(PNPM_BIN)
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew node pnpm volta javascript mas
+.PHONY: usage all extra terminal work personal utils clean brew node volta javascript mas
 
 usage:
 	@echo all - Setup dev env
@@ -192,7 +193,7 @@ ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
 renovate: brew node ${PNPM_BIN}/renovate
-${PNPM_BIN}/renovate: pnpm
+${PNPM_BIN}/renovate: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g renovate
 
 tableplus: brew ${APP_BIN}/TablePlus.app
@@ -231,7 +232,7 @@ ${BREW_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
 codex: node ${PNPM_BIN}/codex ~/.codex/AGENTS.md
-${PNPM_BIN}/codex: pnpm
+${PNPM_BIN}/codex: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g @openai/codex
 ~/.codex:
 	mkdir -p $@
@@ -331,14 +332,14 @@ things-3: mas /Applications/Things3.app
 
 javascript: prettier cspell
 prettier: node ${PNPM_BIN}/prettier
-${PNPM_BIN}/prettier: pnpm
+${PNPM_BIN}/prettier: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g prettier @fsouza/prettierd
 cspell: node ${PNPM_BIN}/cspell
-${PNPM_BIN}/cspell: pnpm
+${PNPM_BIN}/cspell: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g cspell
 
 nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
-${BREW_BIN}/nvim: pnpm
+${BREW_BIN}/nvim: ${VOLTA_BIN}/pnpm
 	brew install neovim
 	${VOLTA_BIN}/pnpm add -g neovim
 ~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
@@ -420,7 +421,7 @@ ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
 jscpd: node ${PNPM_BIN}/jscpd
-${PNPM_BIN}/jscpd: pnpm
+${PNPM_BIN}/jscpd: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g jscpd
 
 mas: brew ${BREW_BIN}/mas
@@ -431,11 +432,9 @@ node: volta ${VOLTA_BIN}/node
 ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
 
-pnpm: ${VOLTA_BIN}/node
+${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
 	mkdir -p ${PNPM_BIN}
-	${VOLTA_BIN}/pnpm setup || true
-	${VOLTA_BIN}/pnpm --version
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
