@@ -418,10 +418,10 @@ mas: brew ${BREW_BIN}/mas
 ${BREW_BIN}/mas:
 	brew install mas
 
-node: volta ${NPM_BIN}/node ${NPM_BIN}/pnpm
+node: volta ${NPM_BIN}/node
 ${NPM_BIN}/node:
 	${BREW_BIN}/volta install node@lts
-${NPM_BIN}/pnpm:
+${NPM_BIN}/pnpm: node
 	${BREW_BIN}/volta install pnpm
 
 volta: brew ${BREW_BIN}/volta
