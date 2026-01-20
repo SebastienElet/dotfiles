@@ -428,11 +428,12 @@ ${BREW_BIN}/mas:
 	brew install mas
 
 node: volta ${VOLTA_BIN}/node
-${VOLTA_BIN}/node:
+${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
 ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
-	${VOLTA_BIN}/pnpm setup
+	mkdir -p ${PNPM_BIN}
+	${VOLTA_BIN}/pnpm setup || true
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
