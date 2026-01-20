@@ -1,6 +1,7 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
+PNPM_BIN:=$(HOME)/Library/pnpm
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
@@ -190,8 +191,8 @@ ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 ~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
 	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
-renovate: brew node ${VOLTA_BIN}/renovate
-${VOLTA_BIN}/renovate: ${VOLTA_BIN}/pnpm
+renovate: brew node ${PNPM_BIN}/renovate
+${PNPM_BIN}/renovate: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g renovate
 
 tableplus: brew ${APP_BIN}/TablePlus.app
@@ -229,8 +230,8 @@ ${BREW_BIN}/claude:
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
-codex: node $(HOME)/Library/pnpm/codex ~/.codex/AGENTS.md
-$(HOME)/Library/pnpm/codex: ${VOLTA_BIN}/pnpm
+codex: node ${PNPM_BIN}/codex ~/.codex/AGENTS.md
+${PNPM_BIN}/codex: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g @openai/codex
 ~/.codex:
 	mkdir -p $@
@@ -329,11 +330,11 @@ things-3: mas /Applications/Things3.app
 ################################################################################
 
 javascript: prettier cspell
-prettier: node ${VOLTA_BIN}/prettier
-${VOLTA_BIN}/prettier: ${VOLTA_BIN}/pnpm
+prettier: node ${PNPM_BIN}/prettier
+${PNPM_BIN}/prettier: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g prettier @fsouza/prettierd
-cspell: node ${VOLTA_BIN}/cspell
-${VOLTA_BIN}/cspell: ${VOLTA_BIN}/pnpm
+cspell: node ${PNPM_BIN}/cspell
+${PNPM_BIN}/cspell: ${VOLTA_BIN}/pnpm
 	${VOLTA_BIN}/pnpm add -g cspell
 
 nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
@@ -418,8 +419,8 @@ daisydisk: mas /Applications/DaisyDisk.app
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
-jscpd: node ${VOLTA_BIN}/jscpd
-${VOLTA_BIN}/jscpd: ${VOLTA_BIN}/pnpm
+jscpd: node ${PNPM_BIN}/jscpd
+${PNPM_BIN}/jscpd: ${VOLTA_BIN}/pnpm
 	@${VOLTA_BIN}/pnpm add -g jscpd
 
 mas: brew ${BREW_BIN}/mas
