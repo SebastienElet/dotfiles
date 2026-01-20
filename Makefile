@@ -1,13 +1,13 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
-NPM_BIN:=~/.volta/bin
+NPM_BIN:=$(HOME)/.volta/bin
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean
+.PHONY: usage all extra terminal work personal utils clean brew node volta javascript mas
 
 usage:
 	@echo all - Setup dev env
@@ -221,13 +221,21 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: brew ${BREW_BIN}/claude
+claude-code: brew ${BREW_BIN}/claude ~/.claude/CLAUDE.md
 ${BREW_BIN}/claude:
 	brew install --cask claude-code
+~/.claude:
+	mkdir -p $@
+~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
+	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
-codex: node ${NPM_BIN}/codex
-${NPM_BIN}/codex: ${NPM_BIN}/pnpm
+codex: node $(HOME)/Library/pnpm/codex ~/.codex/AGENTS.md
+$(HOME)/Library/pnpm/codex: ${NPM_BIN}/pnpm
 	${NPM_BIN}/pnpm add -g @openai/codex
+~/.codex:
+	mkdir -p $@
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
+	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
 ################################################################################
 # End of work section
@@ -421,7 +429,7 @@ ${BREW_BIN}/mas:
 node: volta ${NPM_BIN}/node
 ${NPM_BIN}/node:
 	${BREW_BIN}/volta install node@lts
-${NPM_BIN}/pnpm: node
+${NPM_BIN}/pnpm: ${NPM_BIN}/node
 	${BREW_BIN}/volta install pnpm
 
 volta: brew ${BREW_BIN}/volta
