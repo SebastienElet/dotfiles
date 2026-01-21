@@ -1,38 +1,18 @@
 #!/usr/bin/env bash
 
-function git_main_branch() {
-  # Check if we're in a git repository
-  if ! command git rev-parse --git-dir &>/dev/null; then
-    echo "Not a git repository" >&2
-    return 1
-  fi
-
-  # Try to get the default branch from git config
-  local default_branch
-  default_branch=$(git config --get init.defaultBranch 2>/dev/null)
-  
-  # If no default branch is set, try common branch names
-  if [ -z "$default_branch" ]; then
-    for branch in main master trunk; do
-      if git show-ref -q --verify "refs/heads/$branch" 2>/dev/null; then
-        echo "$branch"
-        return 0
-      fi
-    done
-  else
-    echo "$default_branch"
-    return 0
-  fi
-
-  # If we still haven't found a branch, try remote branches
-  for remote in origin upstream; do
-    if git ls-remote --heads "$remote" main 2>/dev/null | grep -q "refs/heads/main"; then
-      echo "main"
-      return 0
-    fi
-  done
-
-  # If all else fails, return main as it's the most common default now
+# Check if we're in a git repository
+if ! command git rev-parse --git-dir &>/dev/null; then
   echo "main"
-  return 0
-}
+  exit 0
+fi
+
+# Try common branch names that exist locally
+for branch in main master trunk; do
+  if git show-ref -q --verify "refs/heads/$branch" 2>/dev/null; then
+    echo "$branch"
+    exit 0
+  fi
+done
+
+# Default to main
+echo "main"
