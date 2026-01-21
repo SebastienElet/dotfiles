@@ -344,7 +344,7 @@ ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
 
 nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
-${BREW_BIN}/nvim: ${VOLTA_BIN}/node
+${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim
 	${VOLTA_BIN}/npm install -g neovim
 ~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
