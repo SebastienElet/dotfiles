@@ -139,6 +139,7 @@ work: \
 	docker \
 	doppler \
 	gh \
+	google-chrome \
 	javascript \
 	k9s \
 	lazydocker \
@@ -173,6 +174,10 @@ ${BREW_BIN}/gpg:
 gh: brew ${BREW_BIN}/gh
 ${BREW_BIN}/gh:
 	brew install gh
+
+google-chrome: brew ${APP_BIN}/Google\ Chrome.app
+${APP_BIN}/Google\ Chrome.app:
+	brew install --cask google-chrome
 
 k9s: brew ${BREW_BIN}/k9s
 ${BREW_BIN}/k9s:
