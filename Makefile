@@ -2,14 +2,13 @@ BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/b
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
-export PNPM_HOME:=$(PNPM_BIN)
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew node volta javascript mas
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas
 
 usage:
 	@echo all - Setup dev env
@@ -144,6 +143,7 @@ work: \
 	k9s \
 	lazydocker \
 	mosh \
+	pnpm \
 	postgresql \
 	renovate \
 	tableplus \
@@ -192,9 +192,9 @@ ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 ~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
 	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
-renovate: brew node ${PNPM_BIN}/renovate
-${PNPM_BIN}/renovate: ${VOLTA_BIN}/pnpm
-	${VOLTA_BIN}/pnpm add -g renovate
+renovate: brew ${VOLTA_BIN}/renovate
+${VOLTA_BIN}/renovate: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g renovate
 
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
@@ -231,9 +231,9 @@ ${BREW_BIN}/claude:
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
-codex: node ${PNPM_BIN}/codex ~/.codex/AGENTS.md
-${PNPM_BIN}/codex: ${VOLTA_BIN}/pnpm
-	${VOLTA_BIN}/pnpm add -g @openai/codex
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
+${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
@@ -331,17 +331,17 @@ things-3: mas /Applications/Things3.app
 ################################################################################
 
 javascript: prettier cspell
-prettier: node ${PNPM_BIN}/prettier
-${PNPM_BIN}/prettier: ${VOLTA_BIN}/pnpm
-	${VOLTA_BIN}/pnpm add -g prettier @fsouza/prettierd
-cspell: node ${PNPM_BIN}/cspell
-${PNPM_BIN}/cspell: ${VOLTA_BIN}/pnpm
-	${VOLTA_BIN}/pnpm add -g cspell
+prettier: ${VOLTA_BIN}/prettier
+${VOLTA_BIN}/prettier: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g prettier @fsouza/prettierd
+cspell: ${VOLTA_BIN}/cspell
+${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g cspell
 
-nvim: ripgrep node brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
-${BREW_BIN}/nvim: ${VOLTA_BIN}/pnpm
+nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
+${BREW_BIN}/nvim: ${VOLTA_BIN}/node
 	brew install neovim
-	${VOLTA_BIN}/pnpm add -g neovim
+	${VOLTA_BIN}/npm install -g neovim
 ~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
 	ln -s ${DOTFILES_PATH}/nvim ~/.config/nvim
 ~/cspell.json: ${DOTFILES_PATH}/cspell.json
@@ -420,21 +420,23 @@ daisydisk: mas /Applications/DaisyDisk.app
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
-jscpd: node ${PNPM_BIN}/jscpd
-${PNPM_BIN}/jscpd: ${VOLTA_BIN}/pnpm
-	${VOLTA_BIN}/pnpm add -g jscpd
+jscpd: ${VOLTA_BIN}/jscpd
+${VOLTA_BIN}/jscpd: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g jscpd
 
 mas: brew ${BREW_BIN}/mas
 ${BREW_BIN}/mas:
 	brew install mas
 
-node: volta ${VOLTA_BIN}/node
+node: ${VOLTA_BIN}/node
 ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
+	touch $@
 
+pnpm: ${VOLTA_BIN}/pnpm
 ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
-	mkdir -p ${PNPM_BIN}
+	touch $@
 
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
