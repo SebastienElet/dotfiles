@@ -135,6 +135,7 @@ work: \
 	aws \
 	claude-code \
 	codex \
+	skills \
 	cursor \
 	docker \
 	doppler \
@@ -243,6 +244,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+skills: ${VOLTA_BIN}/skills
+${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g skills
 
 ################################################################################
 # End of work section
