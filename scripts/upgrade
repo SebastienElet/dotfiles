@@ -21,6 +21,13 @@ else
   echo "  Warning: npm not found, skipping npm global package updates"
 fi
 
+echo "ℹ️  Skills update"
+if command -v skills &> /dev/null; then
+  skills update
+else
+  echo "  Warning: skills not found, skipping skills updates"
+fi
+
 echo "ℹ️  NeoVim plugins"
 if command -v nvim &> /dev/null; then
   nvim --headless '+Lazy! sync' +qa
