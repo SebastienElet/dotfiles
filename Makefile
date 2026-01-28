@@ -136,6 +136,7 @@ work: \
 	claude-code \
 	codex \
 	skills \
+	skill-supabase-postgres-best-practices \
 	cursor \
 	docker \
 	doppler \
@@ -248,6 +249,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g skills
+
+skill-supabase-postgres-best-practices: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/supabase-postgres-best-practices
+${HOME}/.codex/skills/supabase-postgres-best-practices: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add supabase/agent-skills -g --skill supabase-postgres-best-practices --yes
 
 ################################################################################
 # End of work section
