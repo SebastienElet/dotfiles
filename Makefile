@@ -138,6 +138,7 @@ work: \
 	skills \
 	skill-supabase-postgres-best-practices \
 	skill-git-commit \
+	skill-next-best-practices \
 	cursor \
 	docker \
 	doppler \
@@ -258,6 +259,10 @@ ${HOME}/.codex/skills/supabase-postgres-best-practices: ${VOLTA_BIN}/skills
 skill-git-commit: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/git-commit
 ${HOME}/.codex/skills/git-commit: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/github/awesome-copilot -g --skill git-commit --yes
+
+skill-next-best-practices: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/next-best-practices
+${HOME}/.codex/skills/next-best-practices: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/vercel-labs/next-skills -g --skill next-best-practices --yes
 
 ################################################################################
 # End of work section
