@@ -139,6 +139,7 @@ work: \
 	skill-supabase-postgres-best-practices \
 	skill-git-commit \
 	skill-next-best-practices \
+	skill-typescript \
 	cursor \
 	docker \
 	doppler \
@@ -263,6 +264,10 @@ ${HOME}/.codex/skills/git-commit: ${VOLTA_BIN}/skills
 skill-next-best-practices: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/next-best-practices
 ${HOME}/.codex/skills/next-best-practices: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/vercel-labs/next-skills -g --skill next-best-practices --yes
+
+skill-typescript: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/typescript
+${HOME}/.codex/skills/typescript: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/pproenca/dot-skills -g --skill typescript --yes
 
 ################################################################################
 # End of work section
