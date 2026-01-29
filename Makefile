@@ -142,6 +142,7 @@ work: \
 	skill-typescript \
 	skill-shadcn-ui-expert \
 	skill-bash-pro \
+	skill-find-skills \
 	cursor \
 	docker \
 	doppler \
@@ -278,6 +279,10 @@ ${HOME}/.codex/skills/shadcn-ui-expert: ${VOLTA_BIN}/skills
 skill-bash-pro: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/bash-pro
 ${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/rmyndharis/antigravity-skills -g --skill bash-pro --yes
+
+skill-find-skills: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/find-skills
+${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/vercel-labs/skills -g --skill find-skills --yes
 
 ################################################################################
 # End of work section
