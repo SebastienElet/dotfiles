@@ -140,6 +140,7 @@ work: \
 	skill-git-commit \
 	skill-next-best-practices \
 	skill-typescript \
+	skill-shadcn-ui-expert \
 	cursor \
 	docker \
 	doppler \
@@ -268,6 +269,10 @@ ${HOME}/.codex/skills/next-best-practices: ${VOLTA_BIN}/skills
 skill-typescript: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/typescript
 ${HOME}/.codex/skills/typescript: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/pproenca/dot-skills -g --skill typescript --yes
+
+skill-shadcn-ui-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/shadcn-ui-expert
+${HOME}/.codex/skills/shadcn-ui-expert: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/majesteitbart/talentmatcher -g --skill shadcn-ui-expert --yes
 
 ################################################################################
 # End of work section
