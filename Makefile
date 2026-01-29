@@ -141,6 +141,7 @@ work: \
 	skill-next-best-practices \
 	skill-typescript \
 	skill-shadcn-ui-expert \
+	skill-bash-pro \
 	cursor \
 	docker \
 	doppler \
@@ -273,6 +274,10 @@ ${HOME}/.codex/skills/typescript: ${VOLTA_BIN}/skills
 skill-shadcn-ui-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/shadcn-ui-expert
 ${HOME}/.codex/skills/shadcn-ui-expert: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/majesteitbart/talentmatcher -g --skill shadcn-ui-expert --yes
+
+skill-bash-pro: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/bash-pro
+${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/rmyndharis/antigravity-skills -g --skill bash-pro --yes
 
 ################################################################################
 # End of work section
