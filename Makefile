@@ -143,6 +143,7 @@ work: \
 	skill-shadcn-ui-expert \
 	skill-bash-pro \
 	skill-find-skills \
+	skill-prisma-expert \
 	cursor \
 	docker \
 	doppler \
@@ -283,6 +284,10 @@ ${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
 skill-find-skills: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/find-skills
 ${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/vercel-labs/skills -g --skill find-skills --yes
+
+skill-prisma-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/prisma-expert
+${HOME}/.codex/skills/prisma-expert: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/sickn33/antigravity-awesome-skills -g --skill prisma-expert --yes
 
 ################################################################################
 # End of work section
