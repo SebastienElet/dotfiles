@@ -144,6 +144,7 @@ work: \
 	skill-bash-pro \
 	skill-find-skills \
 	skill-prisma-expert \
+	skill-turborepo \
 	cursor \
 	docker \
 	doppler \
@@ -288,6 +289,10 @@ ${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
 skill-prisma-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/prisma-expert
 ${HOME}/.codex/skills/prisma-expert: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/sickn33/antigravity-awesome-skills -g --skill prisma-expert --yes
+
+skill-turborepo: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/turborepo
+${HOME}/.codex/skills/turborepo: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/vercel/turborepo -g --skill turborepo --yes
 
 ################################################################################
 # End of work section
