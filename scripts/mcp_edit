@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if ! command -v nvim >/dev/null 2>&1; then
+  echo "Error: nvim not found in PATH" >&2
+  exit 127
+fi
+
+codex_config="${HOME}/.codex/config.toml"
+cursor_config="${HOME}/.cursor/mcp.json"
+claude_config="${HOME}/.claude.json"
+
+mkdir -p "$(dirname "${codex_config}")"
+mkdir -p "$(dirname "${cursor_config}")"
+mkdir -p "$(dirname "${claude_config}")"
+
+touch "${codex_config}" "${cursor_config}" "${claude_config}"
+
+nvim -O "${codex_config}" "${cursor_config}" "${claude_config}"

@@ -12,6 +12,7 @@ alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistr
 alias t='tmux'
 alias tm='tmux'
 alias upgrade='~/.dotfiles/scripts/upgrade'
+alias mcp_edit='~/.dotfiles/scripts/mcp_edit'
 
 if type -q nvim
     alias vim='nvim'
