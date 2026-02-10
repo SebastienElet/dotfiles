@@ -145,6 +145,7 @@ work: \
 	skill-find-skills \
 	skill-prisma-expert \
 	skill-turborepo \
+	skill-xstate \
 	cursor \
 	docker \
 	doppler \
@@ -293,6 +294,10 @@ ${HOME}/.codex/skills/prisma-expert: ${VOLTA_BIN}/skills
 skill-turborepo: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/turborepo
 ${HOME}/.codex/skills/turborepo: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/vercel/turborepo -g --skill turborepo --yes
+
+skill-xstate: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/xstate
+${HOME}/.codex/skills/xstate: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add https://github.com/seed-hypermedia/seed -g --skill xstate --yes
 
 ################################################################################
 # End of work section
