@@ -15,7 +15,7 @@ usage:
 
 utils: \
 	cleanshot \
-	opensuperwhisper \
+	handy \
 	rectangle-pro \
 	superwhisper \
 	things-3
@@ -368,9 +368,9 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
 
-opensuperwhisper: brew ${APP_BIN}/OpenSuperWhisper.app
-${APP_BIN}/OpenSuperWhisper.app:
-	brew install --cask opensuperwhisper
+handy: brew ${APP_BIN}/Handy.app
+${APP_BIN}/Handy.app:
+	brew install --cask handy
 
 superwhisper: brew ${APP_BIN}/SuperWhisper.app
 ${APP_BIN}/SuperWhisper.app:
