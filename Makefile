@@ -160,6 +160,7 @@ work: \
 	renovate \
 	tableplus \
 	terraform \
+	uv \
 	1password
 
 arc: brew ${APP_BIN}/Arc.app
@@ -220,6 +221,10 @@ terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
 	brew install hashicorp/tap/terraform
+
+uv: brew ${BREW_BIN}/uv
+${BREW_BIN}/uv:
+	brew install uv
 
 1password: brew ${APP_BIN}/1Password.app
 ${APP_BIN}/1Password.app:
