@@ -3,7 +3,7 @@
 echo "ℹ️  Brew"
 brew update
 brew upgrade
-brew upgrade --cask
+brew upgrade --cask --greedy
 brew cleanup -s
 
 echo "ℹ️  Brew diagnostic"
