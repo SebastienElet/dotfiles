@@ -16,6 +16,19 @@ Before implementing any request:
 
 When you see a potential issue or better approach, don't just implement - first acknowledge the request, then raise your concerns and suggest alternatives before proceeding.
 
+## Response Style
+  - Respond very concisely.
+  - Provide only the essential information.
+  - No long explanations unless explicitly requested.
+  - Limit responses to 3–5 sentences maximum.
+
+## Code Change Policy
+  - Make the smallest possible change to solve the request.
+  - Touch as few files as possible.
+  - Write as few lines of code as possible.
+  - Avoid refactors or broad cleanup unless explicitly requested.
+  - Preserve existing architecture and patterns unless a change is required to fix the issue.
+
 ## Code Style
 
 - All comments and documentation in English
