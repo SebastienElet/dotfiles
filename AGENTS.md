@@ -1,9 +1,15 @@
 # Cursor rules and commands
 
-This file points Codex to the Cursor Rules and Commands used in this repo.
+This file points Codex to the Cursor Skills, Rules and Commands used in this repo.
+
+## Agent Skills
+
+Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` file. Codex and Claude see them via symlinks (`.codex/skills` → `.cursor/skills`, `.claude/skills` → `.cursor/skills`).
+
+- `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
 
 ## Cursor Rules
-- [rules/cli-tools.md](.cursor/rules/cli-tools.md)
+
 - [rules/commits.md](.cursor/rules/commits.md)
 - [rules/cursor.md](.cursor/rules/cursor.md)
 - [rules/fish.md](.cursor/rules/fish.md)
@@ -14,6 +20,7 @@ This file points Codex to the Cursor Rules and Commands used in this repo.
 - [rules/scripts.md](.cursor/rules/scripts.md)
 
 ## Cursor Commands
+
 - [commands/code-review.md](.cursor/commands/code-review.md)
 - [commands/git-commit.md](.cursor/commands/git-commit.md)
 - [commands/git-pr.md](.cursor/commands/git-pr.md)
