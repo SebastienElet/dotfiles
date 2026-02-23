@@ -1,6 +1,8 @@
 ---
-description: Shell scripts conventions
-globs: scripts/*
+name: scripts
+description: Bash scripts conventions
+metadata:
+  globs: "scripts/*"
 ---
 
 # Scripts

@@ -2,11 +2,25 @@
 
 This file points Codex to the Cursor Skills, Rules and Commands used in this repo.
 
+## Agent behavior (scope)
+
+- **Prefer small iterations.** Do only what was asked; avoid expanding to "all" or "everything" unless the user explicitly says so.
+- **Minimal scope.** If the request could apply to one item or many (e.g. "migrate the X rule"), assume **one** and change only that item. If in doubt, ask.
+- **No big refactors by default.** Do not refactor or migrate other similar items in the same change; the user will ask for further steps if they want them.
+
 ## Agent Skills
 
 Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` file. Codex and Claude see them via symlinks (`.codex/skills` → `.cursor/skills`, `.claude/skills` → `.cursor/skills`).
 
 - `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
+- `commits` — Conventional Commits format and scopes
+- `cursor` — Cursor editor config (settings, keybindings, extensions)
+- `fish` — Fish shell conventions
+- `general` — Dotfiles guidelines (English, minimal config, Makefile for installs)
+- `johnny-decimal` — Johnny Decimal + PARA organization
+- `makefile` — Makefile structure and install workflow
+- `neovim` — LazyVim config and plugin layout
+- `scripts` — Bash scripts conventions
 
 ## Cursor Rules
 
@@ -17,7 +31,6 @@ Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` f
 - [rules/johnny-decimal.md](.cursor/rules/johnny-decimal.md)
 - [rules/makefile.md](.cursor/rules/makefile.md)
 - [rules/neovim.md](.cursor/rules/neovim.md)
-- [rules/scripts.md](.cursor/rules/scripts.md)
 
 ## Cursor Commands
 
