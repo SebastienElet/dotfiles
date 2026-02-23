@@ -30,7 +30,6 @@ Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` f
 - [rules/general.md](.cursor/rules/general.md)
 - [rules/johnny-decimal.md](.cursor/rules/johnny-decimal.md)
 - [rules/makefile.md](.cursor/rules/makefile.md)
-- [rules/neovim.md](.cursor/rules/neovim.md)
 
 ## Cursor Commands
 
