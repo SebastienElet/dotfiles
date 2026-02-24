@@ -1,6 +1,8 @@
 ---
-description: Johnny Decimal organization system for notes and documents
-globs:
+name: johnny-decimal
+description: Johnny Decimal + PARA organization
+metadata:
+  globs: ""
 ---
 
 # Johnny Decimal + PARA Organization System
