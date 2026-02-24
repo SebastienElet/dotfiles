@@ -1,6 +1,8 @@
 ---
+name: fish
 description: Fish shell conventions
-globs: fish/**/*.fish
+metadata:
+  globs: "fish/**/*.fish"
 ---
 
 # Fish Shell Conventions
