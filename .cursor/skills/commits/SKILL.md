@@ -1,6 +1,8 @@
 ---
-description: Git commit message conventions
-globs:
+name: commits
+description: Git commit message conventions (Conventional Commits). Use when writing or reviewing commit messages.
+metadata:
+  globs: ""
 ---
 
 # Commit Message Conventions

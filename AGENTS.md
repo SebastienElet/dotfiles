@@ -23,7 +23,6 @@ Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` f
 
 ## Cursor Rules
 
-- [rules/commits.md](.cursor/rules/commits.md)
 - [rules/general.md](.cursor/rules/general.md)
 
 ## Cursor Commands
