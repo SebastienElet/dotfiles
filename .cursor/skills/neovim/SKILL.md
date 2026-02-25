@@ -1,6 +1,8 @@
 ---
+name: neovim
 description: Neovim LazyVim configuration conventions
-globs: nvim/**/*.lua
+metadata:
+  globs: "nvim/**/*.lua"
 ---
 
 # Neovim (LazyVim)

@@ -1,6 +1,8 @@
 ---
-description: Prefer modern Rust-based CLI tools
-globs:
+name: cli-tools
+description: Prefer modern Rust-based CLI tools over traditional Unix utilities. Use when suggesting commands or writing scripts.
+metadata:
+  globs: ""
 ---
 
 # Modern CLI Tools (Prefer Rust alternatives)
