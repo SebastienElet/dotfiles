@@ -14,7 +14,6 @@ Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` f
 
 - `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
 - `commits` — Conventional Commits format and scopes
-- `cursor` — Cursor editor config (settings, keybindings, extensions)
 - `fish` — Fish shell conventions
 - `general` — Dotfiles guidelines (English, minimal config, Makefile for installs)
 - `johnny-decimal` — Johnny Decimal + PARA organization
