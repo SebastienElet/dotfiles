@@ -15,15 +15,11 @@ Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` f
 - `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
 - `commits` — Conventional Commits format and scopes
 - `fish` — Fish shell conventions
-- `general` — Dotfiles guidelines (English, minimal config, Makefile for installs)
+- `dotfiles` — Project guidelines (English, minimal config, Makefile for installs)
 - `johnny-decimal` — Johnny Decimal + PARA organization
 - `makefile` — Makefile structure and install workflow
 - `neovim` — LazyVim config and plugin layout
 - `scripts` — Bash scripts conventions
-
-## Cursor Rules
-
-- [rules/general.md](.cursor/rules/general.md)
 
 ## Cursor Commands
 

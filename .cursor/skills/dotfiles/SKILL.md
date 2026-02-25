@@ -1,9 +1,11 @@
 ---
-description: General guidelines for dotfiles configuration
-globs:
+name: dotfiles
+description: Dotfiles project guidelines (English, minimal config, Makefile for installs)
+metadata:
+  globs: ""
 ---
 
-# General Guidelines
+# Dotfiles Guidelines
 
 - All comments and documentation must be written in **English**
 - Keep configurations **simple and minimal** — avoid over-engineering
