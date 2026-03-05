@@ -36,6 +36,14 @@ When you see a potential issue or better approach, don't just implement - first 
 - Prefer self-documenting code over comments
 - Only comment when explaining *why*, not *what*
 
+## Token usage (RTK)
+
+- Always prefer manual RTK mode for verbose terminal commands; do not assume hook-based rewriting is configured.
+- Use `rtk <subcommand>` first whenever possible.
+- Supported RTK subcommands (current baseline): `ls`, `tree`, `read`, `smart`, `git`, `gh`, `pnpm`, `err`, `test`, `json`, `deps`, `env`, `find`, `diff`, `log`, `docker`, `kubectl`, `summary`, `grep`, `init`, `wget`, `wc`, `gain`, `cc-economics`, `config`, `vitest`, `prisma`, `tsc`, `next`, `lint`, `prettier`, `format`, `playwright`, `cargo`, `npm`, `npx`, `curl`, `discover`, `learn`, `proxy`, `ruff`, `pytest`, `mypy`, `pip`, `go`, `golangci-lint`, `hook-audit`, `help`.
+- Fall back to native commands only when a needed operation is not supported by RTK or RTK fails.
+- Use `rtk gain` to verify that RTK usage is being tracked.
+
 ## Commits
 
 Follow Conventional Commits: `<type>(<scope>): <subject>`

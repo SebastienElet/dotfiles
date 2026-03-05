@@ -135,6 +135,7 @@ work: \
 	aws \
 	claude-code \
 	codex \
+	rtk \
 	skills \
 	skill-supabase-postgres-best-practices \
 	skill-git-commit \
@@ -259,6 +260,11 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+rtk: brew ${BREW_BIN}/rtk
+${BREW_BIN}/rtk:
+	brew tap rtk-ai/tap
+	brew install rtk-ai/tap/rtk
 
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
