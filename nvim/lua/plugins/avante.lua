@@ -1,3 +1,5 @@
+-- Cursor ACP via avante.nvim (https://cursor.com/docs/cli/acp#neovim-avantenvim)
+-- Requires: Cursor CLI installed (e.g. ~/.local/bin/agent). Run `agent login` once to authenticate.
 return {
   "yetone/avante.nvim",
   build = vim.fn.has("win32") ~= 0
@@ -8,7 +10,7 @@ return {
   dependencies = {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
-    "ibhagwan/fzf-lua", -- file_selector provider (already in config)
+    "echasnovski/mini.icons", -- already in config; or nvim-tree/nvim-web-devicons
     {
       "MeanderingProgrammer/render-markdown.nvim",
       opts = { file_types = { "markdown", "Avante" } },
@@ -18,23 +20,16 @@ return {
   ---@type avante.Config
   opts = {
     instructions_file = "avante.md",
-    provider = "claude",
-    --- ACP (Agent Client Protocol) for Cursor-like agent capabilities in Neovim.
+    provider = "cursor",
+    mode = "agentic",
     acp_providers = {
-      ["claude-code"] = {
-        command = "npx",
-        args = { "@zed-industries/claude-code-acp" },
+      cursor = {
+        command = os.getenv("HOME") .. "/.local/bin/agent",
+        args = { "acp" },
+        auth_method = "cursor_login",
         env = {
-          NODE_NO_WARNINGS = "1",
-          ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY") or os.getenv("AVANTE_ANTHROPIC_API_KEY"),
-        },
-      },
-      ["codex"] = {
-        command = "npx",
-        args = { "@zed-industries/codex-acp" },
-        env = {
-          NODE_NO_WARNINGS = "1",
-          OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("AVANTE_OPENAI_API_KEY"),
+          HOME = os.getenv("HOME"),
+          PATH = os.getenv("PATH"),
         },
       },
     },
