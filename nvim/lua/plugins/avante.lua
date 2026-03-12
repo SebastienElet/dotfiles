@@ -10,7 +10,7 @@ return {
   dependencies = {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
-    "echasnovski/mini.icons", -- already in config; or nvim-tree/nvim-web-devicons
+    "nvim-mini/mini.icons", -- already in config; or nvim-tree/nvim-web-devicons
     {
       "MeanderingProgrammer/render-markdown.nvim",
       opts = { file_types = { "markdown", "Avante" } },
