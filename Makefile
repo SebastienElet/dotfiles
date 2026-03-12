@@ -133,8 +133,12 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 work: \
 	arc \
 	aws \
+	chatgpt \
+	claude \
 	claude-code \
 	codex \
+	flow \
+	language-tool \
 	rtk \
 	skills \
 	skill-supabase-postgres-best-practices \
@@ -310,33 +314,6 @@ skill-xstate: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/xstate
 ${HOME}/.codex/skills/xstate: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/seed-hypermedia/seed -g --skill xstate --yes
 
-################################################################################
-# End of work section
-################################################################################
-
-################################################################################
-# Personal section
-################################################################################
-
-personal: \
-	calibre \
-	chatgpt \
-	claude \
-	flow \
-	language-tool \
-	whatsapp
-
-# Local vault on 1password does not work with 1password
-# app from the app store. We need to manually download
-# 1password from the website
-# 1password: /Applications/1password\ 7.app
-# /Applications/1password\ 7.app:
-#	brew install 1password
-
-calibre: brew ${APP_BIN}/Calibre.app
-${APP_BIN}/Calibre.app:
-	brew install calibre
-
 chatgpt: brew ${APP_BIN}/ChatGPT.app
 ${APP_BIN}/ChatGPT.app:
 	brew install --cask chatgpt
@@ -358,6 +335,29 @@ flow: mas /Applications/Flow.app
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
+
+################################################################################
+# End of work section
+################################################################################
+
+################################################################################
+# Personal section
+################################################################################
+
+personal: \
+	calibre \
+	whatsapp
+
+# Local vault on 1password does not work with 1password
+# app from the app store. We need to manually download
+# 1password from the website
+# 1password: /Applications/1password\ 7.app
+# /Applications/1password\ 7.app:
+#	brew install 1password
+
+calibre: brew ${APP_BIN}/Calibre.app
+${APP_BIN}/Calibre.app:
+	brew install calibre
 
 whatsapp: brew ${APP_BIN}/WhatsApp.app
 ${APP_BIN}/WhatsApp.app:
