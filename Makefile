@@ -17,7 +17,6 @@ utils: \
 	cleanshot \
 	handy \
 	rectangle-pro \
-	superwhisper \
 	things-3
 all: \
 	extra \
@@ -384,10 +383,6 @@ rectangle-pro: brew /Applications/Rectangle\ Pro.app
 handy: brew ${APP_BIN}/Handy.app
 ${APP_BIN}/Handy.app:
 	brew install --cask handy
-
-superwhisper: brew ${APP_BIN}/SuperWhisper.app
-${APP_BIN}/SuperWhisper.app:
-	brew install --cask superwhisper
 
 things-3: mas /Applications/Things3.app
 /Applications/Things3.app:
