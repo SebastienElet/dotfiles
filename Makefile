@@ -257,7 +257,9 @@ ${BREW_BIN}/claude:
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
+codex: ${APP_BIN}/Codex.app ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
+${APP_BIN}/Codex.app:
+	brew install --cask codex-app
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
