@@ -1,5 +1,12 @@
 #!/bin/bash
 
+echo "ℹ️  Dotfiles"
+if [[ -d ~/.dotfiles && -d ~/.dotfiles/.git ]]; then
+  (cd ~/.dotfiles && git pull)
+else
+  echo "  Warning: ~/.dotfiles not a git repo, skipping"
+fi
+
 echo "ℹ️  Brew"
 brew update
 brew upgrade
