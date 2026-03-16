@@ -13,7 +13,7 @@
   "cspell.nvim": { "branch": "main", "commit": "5feecef8d109f5460c576596aba44a6253127aa4" },
   "flash.nvim": { "branch": "main", "commit": "fcea7ff883235d9024dc41e638f164a450c14ca2" },
   "friendly-snippets": { "branch": "main", "commit": "6cd7280adead7f586db6fccbd15d2cac7e2188b9" },
-  "fzf-lua": { "branch": "main", "commit": "bf59dcee2a8d894724b060401d2abf3d71d4bd47" },
+  "fzf-lua": { "branch": "main", "commit": "6e41ba7505f35a6f054ca682b043aa0cea36c2ef" },
   "github-theme": { "branch": "main", "commit": "c106c9472154d6b2c74b74565616b877ae8ed31d" },
   "gitsigns.nvim": { "branch": "main", "commit": "7c4faa3540d0781a28588cafbd4dd187a28ac6e3" },
   "grug-far.nvim": { "branch": "main", "commit": "dc4684e163971bb1f5bfb93fbd4bb3e892bf9b15" },
