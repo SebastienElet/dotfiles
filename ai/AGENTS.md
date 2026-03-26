@@ -54,3 +54,5 @@ Types: `fix`, `feat`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`
 - Imperative mood ("add" not "added")
 - No period at end
 - Keep under 72 characters
+
+@RTK.md
