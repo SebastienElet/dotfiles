@@ -8,7 +8,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity
 
 usage:
 	@echo all - Setup dev env
@@ -347,6 +347,7 @@ ${APP_BIN}/LanguageTool.app:
 
 personal: \
 	calibre \
+	perplexity \
 	whatsapp
 
 # Local vault on 1password does not work with 1password
@@ -359,6 +360,10 @@ personal: \
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
+
+perplexity: mas ${APP_BIN}/Perplexity.app
+${APP_BIN}/Perplexity.app:
+	mas install 6714467650
 
 whatsapp: brew ${APP_BIN}/WhatsApp.app
 ${APP_BIN}/WhatsApp.app:
