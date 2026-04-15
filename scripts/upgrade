@@ -30,7 +30,7 @@ fi
 
 echo "ℹ️  Skills update"
 if command -v skills &> /dev/null; then
-  skills update
+  skills update -g
 else
   echo "  Warning: skills not found, skipping skills updates"
 fi
