@@ -1,4 +1,5 @@
 return {
-  -- disable mini pairs
   { "nvim-mini/mini.pairs", enabled = false },
+  { "catppuccin/nvim", enabled = false },
+  { "folke/tokyonight.nvim", enabled = false },
 }
