@@ -21,12 +21,6 @@ return {
           },
         },
       },
-      ts_ls = {
-        enabled = false,
-        init_options = {
-          maxTsServerMemory = 16384,
-        },
-      },
     },
   },
 }
