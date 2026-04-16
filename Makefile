@@ -165,7 +165,8 @@ work: \
 	tableplus \
 	terraform \
 	uv \
-	1password
+	1password \
+	vibe-island
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
@@ -336,6 +337,14 @@ flow: mas /Applications/Flow.app
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
+
+vibe-island: /Applications/Vibe\ Island.app
+/Applications/Vibe\ Island.app:
+	curl -L https://dl.vibeisland.app/VibeIsland.dmg -o /tmp/VibeIsland.dmg
+	hdiutil attach /tmp/VibeIsland.dmg -nobrowse -quiet -mountpoint /tmp/VibeIsland-mount
+	cp -R /tmp/VibeIsland-mount/Vibe\ Island.app /Applications/
+	hdiutil detach /tmp/VibeIsland-mount -quiet
+	rm -f /tmp/VibeIsland.dmg
 
 ################################################################################
 # End of work section
