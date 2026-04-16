@@ -5,11 +5,6 @@ return {
     event = { "BufReadPre", "BufNewFile" },
     opts = function()
       local cspell = require("cspell")
-      local ok = pcall(require, "null-ls")
-      if not ok then
-        return
-      end
-
       local sources = {
         -- cspell
         cspell.diagnostics.with({
