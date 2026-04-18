@@ -8,7 +8,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor
 
 usage:
 	@echo all - Setup dev env
@@ -203,6 +203,10 @@ ${BREW_BIN}/k9s:
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
 	brew install jesseduffield/lazydocker/lazydocker
+
+meteor: ~/.meteor/meteor
+~/.meteor/meteor:
+	curl https://install.meteor.com/ | sh
 
 mosh: brew ${BREW_BIN}/mosh
 ${BREW_BIN}/mosh:
