@@ -6,7 +6,9 @@ return {
       default_format_opts = {
         timeout_ms = 5000,
       },
-      formatters_by_ft = {},
+      formatters_by_ft = {
+        sql = { "prettier" },
+      },
     },
   },
 }
