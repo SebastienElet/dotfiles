@@ -8,7 +8,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec
 
 usage:
 	@echo all - Setup dev env
@@ -167,7 +167,8 @@ work: \
 	terraform \
 	uv \
 	1password \
-	vibe-island
+	vibe-island \
+	openspec
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
@@ -350,6 +351,10 @@ flow: mas /Applications/Flow.app
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
+
+openspec: ${VOLTA_BIN}/openspec
+${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g @fission-ai/openspec@latest
 
 vibe-island: /Applications/Vibe\ Island.app
 /Applications/Vibe\ Island.app:
