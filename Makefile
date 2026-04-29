@@ -138,6 +138,7 @@ work: \
 	codex \
 	flow \
 	language-tool \
+	qovery-cli \
 	rtk \
 	skills \
 	skill-supabase-postgres-best-practices \
@@ -274,6 +275,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+qovery-cli:
+	# Homebrew version is outdated, use the upstream installer
+	curl -s https://get.qovery.com | bash
 
 rtk: brew ${BREW_BIN}/rtk
 ${BREW_BIN}/rtk:
