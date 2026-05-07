@@ -132,26 +132,11 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 work: \
 	arc \
 	aws \
-	chatgpt \
-	claude \
-	claude-code \
-	codex \
+	ai \
 	flow \
 	language-tool \
 	qovery-cli \
 	rtk \
-	skills \
-	skill-supabase-postgres-best-practices \
-	skill-git-commit \
-	skill-next-best-practices \
-	skill-typescript \
-	skill-shadcn-ui-expert \
-	skill-bash-pro \
-	skill-find-skills \
-	skill-prisma-expert \
-	skill-turborepo \
-	skill-xstate \
-	cursor \
 	docker \
 	doppler \
 	gh \
@@ -167,8 +152,27 @@ work: \
 	terraform \
 	uv \
 	1password \
-	vibe-island \
-	openspec
+	vibe-island
+
+ai: \
+	chatgpt \
+	claude \
+	claude-code \
+	codex \
+	cursor \
+	openspec \
+	skills \
+	skill-bash-pro \
+	skill-caveman \
+	skill-find-skills \
+	skill-git-commit \
+	skill-next-best-practices \
+	skill-prisma-expert \
+	skill-shadcn-ui-expert \
+	skill-supabase-postgres-best-practices \
+	skill-turborepo \
+	skill-typescript \
+	skill-xstate
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
