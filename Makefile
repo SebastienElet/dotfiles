@@ -320,17 +320,23 @@ ${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
 
 skill-caveman: skill-caveman-codex skill-caveman-cursor skill-caveman-claude
 
-skill-caveman-codex: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/caveman
-${HOME}/.codex/skills/caveman: ${VOLTA_BIN}/skills
+skill-caveman-codex: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/codex
+${HOME}/.local/state/dotfiles/caveman/codex: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a codex -g --yes
+	mkdir -p $(dir $@)
+	touch $@
 
-skill-caveman-cursor: ${VOLTA_BIN}/skills ${HOME}/.cursor/skills/caveman
-${HOME}/.cursor/skills/caveman: ${VOLTA_BIN}/skills
+skill-caveman-cursor: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/cursor
+${HOME}/.local/state/dotfiles/caveman/cursor: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a cursor -g --yes
+	mkdir -p $(dir $@)
+	touch $@
 
-skill-caveman-claude: ${VOLTA_BIN}/skills ${HOME}/.claude/skills/caveman
-${HOME}/.claude/skills/caveman: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a claude -g --yes
+skill-caveman-claude: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/claude-code
+${HOME}/.local/state/dotfiles/caveman/claude-code: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a claude-code -g --yes
+	mkdir -p $(dir $@)
+	touch $@
 
 skill-find-skills: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/find-skills
 ${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
