@@ -8,7 +8,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd
 
 usage:
 	@echo all - Setup dev env
@@ -355,6 +355,9 @@ ${APP_BIN}/LanguageTool.app:
 openspec: ${VOLTA_BIN}/openspec
 ${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @fission-ai/openspec@latest
+
+specsmd:
+	npx specsmd@latest install
 
 vibe-island: /Applications/Vibe\ Island.app
 /Applications/Vibe\ Island.app:
