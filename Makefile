@@ -314,6 +314,20 @@ skill-bash-pro: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/bash-pro
 ${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/rmyndharis/antigravity-skills -g --skill bash-pro --yes
 
+skill-caveman: skill-caveman-codex skill-caveman-cursor skill-caveman-claude
+
+skill-caveman-codex: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/caveman
+${HOME}/.codex/skills/caveman: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a codex -g --yes
+
+skill-caveman-cursor: ${VOLTA_BIN}/skills ${HOME}/.cursor/skills/caveman
+${HOME}/.cursor/skills/caveman: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a cursor -g --yes
+
+skill-caveman-claude: ${VOLTA_BIN}/skills ${HOME}/.claude/skills/caveman
+${HOME}/.claude/skills/caveman: ${VOLTA_BIN}/skills
+	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a claude -g --yes
+
 skill-find-skills: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/find-skills
 ${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add https://github.com/vercel-labs/skills -g --skill find-skills --yes
