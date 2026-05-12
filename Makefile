@@ -417,7 +417,7 @@ ${APP_BIN}/Calibre.app:
 
 perplexity: mas ${APP_BIN}/Perplexity.app
 ${APP_BIN}/Perplexity.app:
-	mas install 6714467650
+	mas install 6714467650 || echo "Warning: Failed to install Perplexity (may not be available in this App Store region)"
 
 whatsapp: brew ${APP_BIN}/WhatsApp.app
 ${APP_BIN}/WhatsApp.app:
