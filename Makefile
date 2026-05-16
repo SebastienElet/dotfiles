@@ -290,30 +290,6 @@ skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g skills
 
-skill-supabase-postgres-best-practices: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/supabase-postgres-best-practices
-${HOME}/.codex/skills/supabase-postgres-best-practices: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add supabase/agent-skills -g --skill supabase-postgres-best-practices --yes
-
-skill-git-commit: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/git-commit
-${HOME}/.codex/skills/git-commit: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/github/awesome-copilot -g --skill git-commit --yes
-
-skill-next-best-practices: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/next-best-practices
-${HOME}/.codex/skills/next-best-practices: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/vercel-labs/next-skills -g --skill next-best-practices --yes
-
-skill-typescript: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/typescript
-${HOME}/.codex/skills/typescript: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/pproenca/dot-skills -g --skill typescript --yes
-
-skill-shadcn-ui-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/shadcn-ui-expert
-${HOME}/.codex/skills/shadcn-ui-expert: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/majesteitbart/talentmatcher -g --skill shadcn-ui-expert --yes
-
-skill-bash-pro: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/bash-pro
-${HOME}/.codex/skills/bash-pro: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/rmyndharis/antigravity-skills -g --skill bash-pro --yes
-
 skill-caveman: skill-caveman-codex skill-caveman-cursor skill-caveman-claude
 
 skill-caveman-codex: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/codex
@@ -333,22 +309,6 @@ ${HOME}/.local/state/dotfiles/caveman/claude-code: ${VOLTA_BIN}/skills
 	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a claude-code -g --yes
 	mkdir -p $(dir $@)
 	touch $@
-
-skill-find-skills: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/find-skills
-${HOME}/.codex/skills/find-skills: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/vercel-labs/skills -g --skill find-skills --yes
-
-skill-prisma-expert: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/prisma-expert
-${HOME}/.codex/skills/prisma-expert: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/sickn33/antigravity-awesome-skills -g --skill prisma-expert --yes
-
-skill-turborepo: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/turborepo
-${HOME}/.codex/skills/turborepo: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/vercel/turborepo -g --skill turborepo --yes
-
-skill-xstate: ${VOLTA_BIN}/skills ${HOME}/.codex/skills/xstate
-${HOME}/.codex/skills/xstate: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add https://github.com/seed-hypermedia/seed -g --skill xstate --yes
 
 chatgpt: brew ${APP_BIN}/ChatGPT.app
 ${APP_BIN}/ChatGPT.app:
