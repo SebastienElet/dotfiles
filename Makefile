@@ -162,17 +162,7 @@ ai: \
 	cursor \
 	openspec \
 	skills \
-	skill-bash-pro \
-	skill-caveman \
-	skill-find-skills \
-	skill-git-commit \
-	skill-next-best-practices \
-	skill-prisma-expert \
-	skill-shadcn-ui-expert \
-	skill-supabase-postgres-best-practices \
-	skill-turborepo \
-	skill-typescript \
-	skill-xstate
+	skill-caveman
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
