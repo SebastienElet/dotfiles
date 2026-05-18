@@ -10,8 +10,9 @@ This file points Codex to the Cursor Skills, Rules and Commands used in this rep
 
 ## Agent Skills
 
-Skills live in **`.cursor/skills/`**. Each skill is a folder with a `SKILL.md` file. Codex and Claude see them via symlinks (`.codex/skills` → `.cursor/skills`, `.claude/skills` → `.cursor/skills`).
+Shared skills live in **`.agents/skills/`**. Each skill is a folder with a `SKILL.md` file. Keep `.cursor/skills/` for existing Cursor-specific skills until they are migrated explicitly.
 
+- `skill-manager` — Audit, create, and update shared agent skills
 - `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
 - `commits` — Conventional Commits format and scopes
 - `fish` — Fish shell conventions
