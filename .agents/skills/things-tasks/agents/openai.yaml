@@ -1,0 +1,4 @@
+interface:
+  display_name: "Things Tasks"
+  short_description: "Manage Things tasks with thangs CLI"
+  default_prompt: "Use $things-tasks to list today's tasks and update my Things 3 task list."
