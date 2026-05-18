@@ -139,6 +139,7 @@ work: \
 	rtk \
 	docker \
 	doppler \
+	frontcli \
 	gh \
 	google-chrome \
 	javascript \
@@ -361,6 +362,10 @@ flow: mas /Applications/Flow.app
 		echo "Installing Flow"; \
 		mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
+
+frontcli: brew ${BREW_BIN}/frontcli
+${BREW_BIN}/frontcli:
+	brew install dedene/tap/frontcli
 
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
