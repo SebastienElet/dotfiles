@@ -433,7 +433,7 @@ handy: brew ${APP_BIN}/Handy.app
 ${APP_BIN}/Handy.app:
 	brew install --cask handy
 
-things-3: mas /Applications/Things3.app
+things-3: mas /Applications/Things3.app things3-cli-wrapper
 /Applications/Things3.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
 		echo "Skipping Things 3 installation (SKIP_PAID_APPS=1)"; \
@@ -442,6 +442,10 @@ things-3: mas /Applications/Things3.app
 		echo "Installing Things 3"; \
 		mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
 	fi
+
+things3-cli-wrapper: ${VOLTA_BIN}/thangs
+${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g @dougskinner/thangs
 
 ################################################################################
 # End of utils section
