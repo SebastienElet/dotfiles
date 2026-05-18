@@ -8,7 +8,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli
 
 usage:
 	@echo all - Setup dev env
@@ -161,6 +161,7 @@ ai: \
 	claude-code \
 	codex \
 	cursor \
+	googleworkspace-cli \
 	openspec \
 	skills \
 	skill-caveman
@@ -271,6 +272,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+googleworkspace-cli: ${VOLTA_BIN}/gws
+${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g @googleworkspace/cli
 
 qovery-cli:
 	# Homebrew version is outdated, use the upstream installer
