@@ -1,0 +1,23 @@
+feeds:
+  - https://openai.com/news/rss.xml
+  - https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml
+  - https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml
+  - https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_google_ai.xml
+  - https://www.microsoft.com/en-us/research/blog/feed/
+  - https://deepmind.google/blog/rss.xml
+  - https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_meta_ai.xml
+  - https://techcrunch.com/tag/startups/feed/
+  - https://news.ycombinator.com/rss
+  - https://www.technologyreview.com/topnews.rss
+  - https://www.marktechpost.com/feed/
+  - https://towardsdatascience.com/feed/
+  # Disabled: feedmd currently fails to parse France Num's official RSS items.
+  # - https://www.francenum.gouv.fr/flux-rss-principal
+  - https://roia.centre-mersenne.org/fr/latest/feed/roia/
+  - https://github.com/DIYgod/RSSHub/commits/master.atom
+  - https://github.com/RSS-Renaissance/awesome-AI-feeds/commits/master.atom
+  - https://github.com/taielab/awesome-ai-news/commits/main.atom
+  - https://github.com/tuan3w/awesome-tech-rss/commits/main.atom
+  - https://github.com/DongjunLee/awesome-feeds/commits/master.atom
+  - https://github.com/alan-turing-institute/ai-rss-feeds/commits/main.atom
+time_zone: Europe/Paris
