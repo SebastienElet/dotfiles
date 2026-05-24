@@ -160,6 +160,7 @@ ai: \
 	chatgpt \
 	claude \
 	claude-code \
+	codegraph \
 	codex \
 	cursor \
 	googleworkspace-cli \
@@ -273,6 +274,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+codegraph: ${VOLTA_BIN}/codegraph
+${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
+	${BREW_BIN}/volta install @colbymchenry/codegraph
 
 googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
