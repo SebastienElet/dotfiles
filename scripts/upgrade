@@ -38,6 +38,10 @@ fi
 echo "ℹ️  NeoVim plugins"
 if command -v nvim &> /dev/null; then
   nvim --headless '+Lazy! sync' +qa
+  if [[ -n "$(git -C ~/.dotfiles status --porcelain -- nvim/lazy-lock.json)" ]]; then
+    git -C ~/.dotfiles commit -m "chore(nvim): update plugins" -- nvim/lazy-lock.json &&
+      git -C ~/.dotfiles push
+  fi
 else
   echo "  Warning: nvim not found, skipping NeoVim plugin updates"
 fi
