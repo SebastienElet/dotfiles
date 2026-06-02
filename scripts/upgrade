@@ -35,6 +35,15 @@ else
   echo "  Warning: skills not found, skipping skills updates"
 fi
 
+echo "ℹ️  Claude plugins update"
+if command -v claude &> /dev/null && command -v jq &> /dev/null; then
+  claude plugin list --json | jq -r '.[].id' | while read -r plugin; do
+    [[ -n "$plugin" ]] && claude plugin update "$plugin"
+  done
+else
+  echo "  Warning: claude or jq not found, skipping Claude plugin updates"
+fi
+
 echo "ℹ️  NeoVim plugins"
 if command -v nvim &> /dev/null; then
   nvim --headless '+Lazy! sync' +qa
