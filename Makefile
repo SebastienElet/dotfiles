@@ -162,6 +162,7 @@ ai: \
 	claude-code \
 	codegraph \
 	codex \
+	codexbar \
 	cursor \
 	googleworkspace-cli \
 	openspec \
@@ -274,6 +275,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+
+codexbar: brew ${APP_BIN}/CodexBar.app
+${APP_BIN}/CodexBar.app:
+	brew install --cask codexbar
 
 codegraph: ${VOLTA_BIN}/codegraph
 ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
