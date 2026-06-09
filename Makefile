@@ -2,6 +2,7 @@ BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/b
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
+LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
@@ -258,9 +259,9 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: brew ${BREW_BIN}/claude ~/.claude/CLAUDE.md
-${BREW_BIN}/claude:
-	brew install --cask claude-code
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md
+${LOCAL_BIN}/claude:
+	curl -fsSL https://claude.ai/install.sh | bash
 ~/.claude:
 	mkdir -p $@
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude

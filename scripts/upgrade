@@ -35,6 +35,13 @@ else
   echo "  Warning: skills not found, skipping skills updates"
 fi
 
+echo "ℹ️  Claude Code CLI update"
+if command -v claude &> /dev/null; then
+  claude update
+else
+  echo "  Warning: claude not found, skipping Claude Code CLI update"
+fi
+
 echo "ℹ️  Claude plugins update"
 if command -v claude &> /dev/null && command -v jq &> /dev/null; then
   claude plugin list --json | jq -r '.[].id' | while read -r plugin; do
