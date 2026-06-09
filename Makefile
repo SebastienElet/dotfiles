@@ -261,7 +261,7 @@ ${APP_BIN}/Cursor.app:
 
 claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md
 ${LOCAL_BIN}/claude:
-	curl -fsSL https://claude.ai/install.sh | bash
+	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
 	mkdir -p $@
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
