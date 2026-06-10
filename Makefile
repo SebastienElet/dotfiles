@@ -119,6 +119,7 @@ ${BREW_BIN}/tokei:
 
 wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
+	brew trust --cask wez/wezterm/wezterm
 	brew install --cask wez/wezterm/wezterm
 ~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
 	ln -s ${DOTFILES_PATH}/.wezterm.lua $@
@@ -184,6 +185,7 @@ docker: brew lazydocker /Applications/Orbstack.app
 
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
+	brew trust --formula dopplerhq/cli/doppler
 	brew install dopplerhq/cli/doppler
 
 gnupg: brew ${BREW_BIN}/gpg
@@ -204,6 +206,7 @@ ${BREW_BIN}/k9s:
 
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
+	brew trust --formula jesseduffield/lazydocker/lazydocker
 	brew install jesseduffield/lazydocker/lazydocker
 
 meteor: ~/.meteor/meteor
@@ -235,6 +238,7 @@ ${APP_BIN}/TablePlus.app:
 terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
+	brew trust --formula hashicorp/tap/terraform
 	brew install hashicorp/tap/terraform
 
 uv: brew ${BREW_BIN}/uv
@@ -296,6 +300,7 @@ qovery-cli:
 rtk: brew ${BREW_BIN}/rtk
 ${BREW_BIN}/rtk:
 	brew tap rtk-ai/tap
+	brew trust --formula rtk-ai/tap/rtk
 	brew install rtk-ai/tap/rtk
 
 skills: ${VOLTA_BIN}/skills
@@ -342,6 +347,7 @@ flow: mas /Applications/Flow.app
 
 frontcli: brew ${BREW_BIN}/frontcli
 ${BREW_BIN}/frontcli:
+	brew trust --formula dedene/tap/frontcli
 	brew install dedene/tap/frontcli
 
 feedmd: ${BREW_BIN}/feedmd ~/.config/feedmd/config.yml ~/.config/feedmd/template.tmd
