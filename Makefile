@@ -8,6 +8,8 @@ APP_BIN:=/Applications
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
+# HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
+HAS_BREW_TRUST:=$(shell brew help 2>/dev/null | grep -q trust && echo yes || echo no)
 
 .PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd
 
@@ -119,7 +121,7 @@ ${BREW_BIN}/tokei:
 
 wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
-	brew trust --cask wez/wezterm/wezterm
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm; fi
 	brew install --cask wez/wezterm/wezterm
 ~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
 	ln -s ${DOTFILES_PATH}/.wezterm.lua $@
@@ -167,6 +169,7 @@ ai: \
 	codexbar \
 	cursor \
 	googleworkspace-cli \
+	mistral-vibe \
 	openspec \
 	skills \
 	skill-caveman
@@ -185,7 +188,7 @@ docker: brew lazydocker /Applications/Orbstack.app
 
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
-	brew trust --formula dopplerhq/cli/doppler
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dopplerhq/cli/doppler; fi
 	brew install dopplerhq/cli/doppler
 
 gnupg: brew ${BREW_BIN}/gpg
@@ -206,7 +209,7 @@ ${BREW_BIN}/k9s:
 
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
-	brew trust --formula jesseduffield/lazydocker/lazydocker
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula jesseduffield/lazydocker/lazydocker; fi
 	brew install jesseduffield/lazydocker/lazydocker
 
 meteor: ~/.meteor/meteor
@@ -238,7 +241,7 @@ ${APP_BIN}/TablePlus.app:
 terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
-	brew trust --formula hashicorp/tap/terraform
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula hashicorp/tap/terraform; fi
 	brew install hashicorp/tap/terraform
 
 uv: brew ${BREW_BIN}/uv
@@ -293,6 +296,10 @@ googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
 
+mistral-vibe: ${LOCAL_BIN}/vibe
+${LOCAL_BIN}/vibe: uv
+	${BREW_BIN}/uv tool install mistral-vibe
+
 qovery-cli:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
@@ -300,7 +307,7 @@ qovery-cli:
 rtk: brew ${BREW_BIN}/rtk
 ${BREW_BIN}/rtk:
 	brew tap rtk-ai/tap
-	brew trust --formula rtk-ai/tap/rtk
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
 	brew install rtk-ai/tap/rtk
 
 skills: ${VOLTA_BIN}/skills
@@ -347,7 +354,7 @@ flow: mas /Applications/Flow.app
 
 frontcli: brew ${BREW_BIN}/frontcli
 ${BREW_BIN}/frontcli:
-	brew trust --formula dedene/tap/frontcli
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dedene/tap/frontcli; fi
 	brew install dedene/tap/frontcli
 
 feedmd: ${BREW_BIN}/feedmd ~/.config/feedmd/config.yml ~/.config/feedmd/template.tmd
