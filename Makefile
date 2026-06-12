@@ -9,7 +9,7 @@ DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
-HAS_BREW_TRUST:=$(shell brew help 2>/dev/null | grep -q trust && echo yes || echo no)
+HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
 .PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd
 
@@ -121,6 +121,8 @@ ${BREW_BIN}/tokei:
 
 wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
+	brew tap wez/wezterm
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm; fi
 	brew install --cask wez/wezterm/wezterm
 ~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
@@ -188,6 +190,8 @@ docker: brew lazydocker /Applications/Orbstack.app
 
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
+	brew tap dopplerhq/cli
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap dopplerhq/cli; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dopplerhq/cli/doppler; fi
 	brew install dopplerhq/cli/doppler
 
@@ -209,6 +213,8 @@ ${BREW_BIN}/k9s:
 
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
+	brew tap jesseduffield/lazydocker
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap jesseduffield/lazydocker; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula jesseduffield/lazydocker/lazydocker; fi
 	brew install jesseduffield/lazydocker/lazydocker
 
@@ -241,6 +247,7 @@ ${APP_BIN}/TablePlus.app:
 terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap hashicorp/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula hashicorp/tap/terraform; fi
 	brew install hashicorp/tap/terraform
 
@@ -307,6 +314,7 @@ qovery-cli:
 rtk: brew ${BREW_BIN}/rtk
 ${BREW_BIN}/rtk:
 	brew tap rtk-ai/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap rtk-ai/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
 	brew install rtk-ai/tap/rtk
 
@@ -354,6 +362,8 @@ flow: mas /Applications/Flow.app
 
 frontcli: brew ${BREW_BIN}/frontcli
 ${BREW_BIN}/frontcli:
+	brew tap dedene/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap dedene/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dedene/tap/frontcli; fi
 	brew install dedene/tap/frontcli
 
@@ -536,6 +546,7 @@ ${BREW_BIN}/brew:
 	chmod +x /tmp/brew-installer.sh
 	/tmp/brew-installer.sh
 	brew tap gapple/services
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap gapple/services; fi
 
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:

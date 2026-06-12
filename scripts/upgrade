@@ -9,8 +9,8 @@ fi
 
 echo "ℹ️  Brew"
 brew update
-brew upgrade
-brew upgrade --cask --greedy
+brew upgrade --yes
+brew upgrade --cask --greedy --yes
 brew cleanup -s
 
 echo "ℹ️  Brew diagnostic"
