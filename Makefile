@@ -13,7 +13,7 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp opencode pi-coding-agent
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent
 
 usage:
 	@echo all - Setup dev env
@@ -174,6 +174,7 @@ ai: \
 	cursor \
 	googleworkspace-cli \
 	llama-cpp \
+	llmfit \
 	mistral-vibe \
 	opencode \
 	openspec \
@@ -311,6 +312,13 @@ ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 llama-cpp: brew ${BREW_BIN}/llama-cli
 ${BREW_BIN}/llama-cli:
 	brew install llama.cpp
+
+llmfit: brew ${BREW_BIN}/llmfit
+${BREW_BIN}/llmfit:
+	brew tap AlexsJones/llmfit
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap AlexsJones/llmfit; fi
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula AlexsJones/llmfit/llmfit; fi
+	brew install AlexsJones/llmfit/llmfit
 
 mistral-vibe: ${LOCAL_BIN}/vibe
 ${LOCAL_BIN}/vibe: uv
