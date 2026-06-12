@@ -8,10 +8,12 @@ APP_BIN:=/Applications
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
+# Avoid Homebrew confirmation prompts during setup.
+export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp opencode pi-coding-agent
 
 usage:
 	@echo all - Setup dev env
@@ -171,8 +173,11 @@ ai: \
 	codexbar \
 	cursor \
 	googleworkspace-cli \
+	llama-cpp \
 	mistral-vibe \
+	opencode \
 	openspec \
+	pi-coding-agent \
 	skills \
 	skill-caveman
 
@@ -303,9 +308,20 @@ googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
 
+llama-cpp: brew ${BREW_BIN}/llama-cli
+${BREW_BIN}/llama-cli:
+	brew install llama.cpp
+
 mistral-vibe: ${LOCAL_BIN}/vibe
 ${LOCAL_BIN}/vibe: uv
 	${BREW_BIN}/uv tool install mistral-vibe
+
+opencode: brew ${BREW_BIN}/opencode
+${BREW_BIN}/opencode:
+	brew tap anomalyco/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap anomalyco/tap; fi
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula anomalyco/tap/opencode; fi
+	brew install anomalyco/tap/opencode
 
 qovery-cli:
 	# Homebrew version is outdated, use the upstream installer
@@ -388,6 +404,10 @@ ${APP_BIN}/LanguageTool.app:
 openspec: ${VOLTA_BIN}/openspec
 ${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @fission-ai/openspec@latest
+
+pi-coding-agent: ${VOLTA_BIN}/pi-coding-agent
+${VOLTA_BIN}/pi-coding-agent: ${VOLTA_BIN}/node
+	${VOLTA_BIN}/npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 specsmd:
 	npx specsmd@latest install
