@@ -19,6 +19,9 @@ wezterm.on("window-config-reloaded", function(window)
 end)
 
 return {
+	front_end = "WebGpu",
+	max_fps = 120,
+	animation_fps = 60,
 	font = wezterm.font("Iosevka Nerd Font"),
 	font_size = 13.0,
 	color_scheme = "Catppuccin Mocha",
