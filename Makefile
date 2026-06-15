@@ -125,8 +125,8 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 /Applications/WezTerm.app:
 	brew tap wez/wezterm
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm; fi
-	brew install --cask wez/wezterm/wezterm
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
+	brew install --cask wez/wezterm/wezterm-nightly
 ~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
 	ln -s ${DOTFILES_PATH}/.wezterm.lua $@
 
