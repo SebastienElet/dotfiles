@@ -20,12 +20,12 @@ if type -q nvim
     alias n='nvim'
 end
 
-if type -q cursor
-    alias c='cursor'
-end
-
 if type -q claude
     alias cc='claude'
+end
+
+if type -q codex
+    alias co='codex'
 end
 
 if type -q tokei
