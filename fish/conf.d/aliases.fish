@@ -21,7 +21,7 @@ if type -q nvim
 end
 
 if type -q claude
-    alias cc='claude'
+    alias c='claude'
 end
 
 if type -q codex
