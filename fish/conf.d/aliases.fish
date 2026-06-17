@@ -24,6 +24,10 @@ if type -q cursor
     alias c='cursor'
 end
 
+if type -q claude
+    alias cc='claude'
+end
+
 if type -q tokei
     alias loc='tokei'
 end
