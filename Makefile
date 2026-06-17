@@ -13,7 +13,7 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli
 
 usage:
 	@echo all - Setup dev env
@@ -154,6 +154,7 @@ work: \
 	javascript \
 	k9s \
 	lazydocker \
+	linear-cli \
 	mosh \
 	pnpm \
 	postgresql \
@@ -408,6 +409,13 @@ ${BREW_BIN}/feedmd:
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
+
+linear-cli: brew ${BREW_BIN}/linear
+${BREW_BIN}/linear:
+	brew tap schpet/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap schpet/tap; fi
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula schpet/tap/linear; fi
+	brew install schpet/tap/linear
 
 openspec: ${VOLTA_BIN}/openspec
 ${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
