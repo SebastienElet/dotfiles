@@ -13,7 +13,7 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt
 
 usage:
 	@echo all - Setup dev env
@@ -141,6 +141,7 @@ work: \
 	arc \
 	aws \
 	ai \
+	bkt \
 	flow \
 	feedmd \
 	language-tool \
@@ -190,6 +191,13 @@ ${APP_BIN}/Arc.app:
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
+
+bkt: brew ${BREW_BIN}/bkt
+${BREW_BIN}/bkt:
+	brew tap avivsinai/tap
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap avivsinai/tap; fi
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula avivsinai/tap/bitbucket-cli; fi
+	brew install avivsinai/tap/bitbucket-cli
 
 docker: brew lazydocker /Applications/Orbstack.app
 /Applications/Orbstack.app:
