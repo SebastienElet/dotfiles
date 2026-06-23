@@ -41,7 +41,7 @@ end
 function git
     command git $argv
     if test (count $argv) -gt 0; and contains -- $argv[1] fetch pull
-        for branch in (command git branch | string trim | string replace -r '^\* ' '' | string replace -r '^\+ ' '' | grep -v '^main$')
+        for branch in (command git branch | string trim | string replace -r '^\* ' '' | string replace -r '^\+ ' '' | grep -vE '^(main|development|staging)$')
             if not command git show-ref --verify --quiet "refs/remotes/origin/$branch"
                 set wt (command git worktree list 2>/dev/null | grep "\[$branch\]" | awk '{print $1}')
                 if test -n "$wt"
