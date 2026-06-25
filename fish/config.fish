@@ -37,18 +37,19 @@ if not string match -q -- $PNPM_HOME $PATH
 end
 # pnpm end
 
-# purge local branches whose remote no longer exists after every fetch/pull
+# purge local branches whose upstream was deleted ([gone]) after every fetch/pull
+# only branches that HAD an upstream now gone are pruned — never-pushed work is left untouched
 function git
     command git $argv
     if test (count $argv) -gt 0; and contains -- $argv[1] fetch pull
-        for branch in (command git branch | string trim | string replace -r '^\* ' '' | string replace -r '^\+ ' '' | grep -vE '^(main|development|staging)$')
-            if not command git show-ref --verify --quiet "refs/remotes/origin/$branch"
-                set wt (command git worktree list 2>/dev/null | grep "\[$branch\]" | awk '{print $1}')
-                if test -n "$wt"
-                    command git worktree remove --force $wt 2>/dev/null
-                end
-                command git branch -D $branch 2>/dev/null
+        # --prune marks deleted upstreams as [gone] in `git branch -vv`
+        command git fetch --prune 2>/dev/null
+        for branch in (command git branch -vv | grep ': gone]' | string replace -r '^[ *+]+(\S+).*' '$1' | grep -vE '^(main|development|staging)$')
+            set wt (command git worktree list 2>/dev/null | grep "\[$branch\]" | awk '{print $1}')
+            if test -n "$wt"
+                command git worktree remove --force $wt 2>/dev/null
             end
+            command git branch -D $branch 2>/dev/null
         end
     end
 end
