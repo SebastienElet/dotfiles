@@ -21,6 +21,13 @@ echo "ℹ️  Mas upgrade"
 mas outdated
 mas upgrade
 
+echo "ℹ️  Volta Node.js upgrade"
+if command -v volta &> /dev/null; then
+  volta install node
+else
+  echo "  Warning: volta not found, skipping Node.js upgrade"
+fi
+
 echo "ℹ️  npm global packages upgrade"
 if command -v npm &> /dev/null; then
   npm update -g
