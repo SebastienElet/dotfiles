@@ -13,7 +13,7 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt
+.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt hermes
 
 usage:
 	@echo all - Setup dev env
@@ -175,6 +175,7 @@ ai: \
 	codexbar \
 	cursor \
 	googleworkspace-cli \
+	hermes \
 	llama-cpp \
 	llmfit \
 	mistral-vibe \
@@ -317,6 +318,10 @@ ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
+
+hermes: ${LOCAL_BIN}/hermes
+${LOCAL_BIN}/hermes:
+	curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
 llama-cpp: brew ${BREW_BIN}/llama-cli
 ${BREW_BIN}/llama-cli:
