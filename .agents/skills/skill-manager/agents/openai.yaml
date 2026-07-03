@@ -1,4 +1,0 @@
-interface:
-  display_name: "Skill Manager"
-  short_description: "Audit, create, and update agent skills"
-  default_prompt: "Use $skill-manager to audit this skill and suggest minimal improvements."
