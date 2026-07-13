@@ -60,6 +60,25 @@ thangs <command> --help
 thangs install-skill [--force] [--json]
 ```
 
+## Checklist Items (URL scheme only)
+
+Neither `thangs` nor the Things AppleScript dictionary can create or edit checklist items (checkable sub-items inside a task). The only token-free way is `things:///add` with the `checklist-items` parameter (newline-separated, max 100 items). `things:///update` also supports it but requires an auth token (Things → Settings → General → Manage Things URLs).
+
+**Encoding:** Things does NOT decode `+` as a space. Never use `urllib.parse.urlencode`/`quote_plus`; percent-encode instead:
+
+```python
+from urllib.parse import quote
+url = "things:///add?" + "&".join(f"{k}={quote(v, safe='')}" for k, v in params.items())
+subprocess.run(["open", "-g", url], check=True)
+```
+
+To add a checklist to an existing task without a token: recreate it via `things:///add` (same title/notes/when/area), then trash the old one.
+
+## AppleScript Pitfalls
+
+- Checklist items are not exposed; notes and other properties are.
+- Never `move ... to list "Trash"` while iterating a `whose` filter — the list mutates and throws "Invalid index" (-1719). Collect `id`s first, then move by `to do id`.
+
 ## Practices
 
 - Read current tasks first before editing, completing, or canceling by name.
