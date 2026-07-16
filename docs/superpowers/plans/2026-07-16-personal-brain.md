@@ -368,7 +368,7 @@ Run:
 
 ```bash
 git status --short &&
-git log -5 --oneline &&
+git log --oneline -- Makefile AGENTS.md docs/superpowers/plans/2026-07-16-personal-brain.md &&
 git diff --check
 ```
 
