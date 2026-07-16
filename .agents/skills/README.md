@@ -9,6 +9,12 @@ This directory is the single source of truth for reusable agent skills.
 - Optional folders: `scripts/`, `references/`, `assets/`.
 - Manage skills with `/skill-manager`.
 
+## Dev
+
+| Skill    | Description |
+| -------- | ----------- |
+| `neovim` | Maintain this repository's Neovim and LazyVim configuration. Use when editing Lua files under… |
+
 ## Ops
 
 | Skill            | Description |
@@ -20,7 +26,6 @@ This directory is the single source of truth for reusable agent skills.
 
 ## Uncategorized
 
-| Skill             | Description |
-| ----------------- | ----------- |
-| `neovim`          | Neovim LazyVim configuration conventions. Action: add a valid `metadata.category`. |
-| `scripts`         | Bash scripts conventions. Action: add a valid `metadata.category`. |
+| Skill     | Description |
+| --------- | ----------- |
+| `scripts` | Bash scripts conventions. Action: add a valid `metadata.category`. |
