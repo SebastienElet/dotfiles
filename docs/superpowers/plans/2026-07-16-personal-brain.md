@@ -368,9 +368,9 @@ Run:
 
 ```bash
 git status --short &&
-git log -3 --oneline &&
+git log -5 --oneline &&
 git diff --check
 ```
 
-Expected: clean working tree, the plan and two implementation commits are
-visible, and there are no whitespace errors.
+Expected: clean working tree, the plan and all three implementation commits
+are visible, and there are no whitespace errors.
