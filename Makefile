@@ -203,7 +203,7 @@ brain:
 		echo "Error: $(HOME)/Brain already exists and is not a symbolic link" >&2; \
 		exit 1; \
 	else \
-		ln -s "$(BRAIN_PATH)" "$(HOME)/Brain"; \
+		ln -s "$(BRAIN_PATH)" "$(HOME)/Brain" && \
 		echo "Created $(HOME)/Brain symlink"; \
 	fi
 
