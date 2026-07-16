@@ -13,16 +13,10 @@ metadata:
 
 ## Overview
 
-Maintain the repository's Lua-based Neovim configuration under `nvim/lua/`. Use this skill for
-LazyVim plugin specifications, custom options, keymaps, and other changes to Neovim behavior.
+Maintain the Neovim configuration rooted at `nvim/`. The `Makefile` symlinks this directory to the
+runtime path `~/.config/nvim`, so edit repository paths rather than the symlink destination.
 
 ## Usage
-
-Invoke this skill before editing Neovim configuration:
-
-```text
-/neovim
-```
 
 Examples:
 
@@ -31,29 +25,50 @@ Examples:
 
 ## Steps
 
-1. Inspect the existing files under `nvim/lua/` and identify the smallest configuration change.
-2. For a plugin, create or update `nvim/lua/plugins/<plugin>.lua`, keeping one plugin per file and
-   using a minimal LazyVim plugin specification with only the required options.
-3. Put custom editor options in `nvim/lua/config/options.lua`.
-4. Put all custom mappings in `nvim/lua/config/keymaps.lua`, including mappings that invoke a
-   plugin; do not embed `keys` in the plugin specification.
-5. Format the changed Lua files and verify that Neovim starts without configuration errors.
+1. Inspect the existing owner and nearby patterns before editing:
+   - startup and LazyVim: `nvim/init.lua`, `nvim/lua/config/lazy.lua`, `nvim/lazyvim.json`
+   - editor behavior: `nvim/lua/config/{options,keymaps,autocmds}.lua`
+   - plugins and generated pins: `nvim/lua/plugins/`, `nvim/lazy-lock.json`
+   - snippets and formatting: `nvim/snippets/`, `nvim/stylua.toml`
+2. Extend the existing concern-based plugin file when it owns the change, or add a focused file
+   under `nvim/lua/plugins/`. Related specs may share a file, as `colorscheme.lua` and `disabled.lua`
+   do; never split or combine mechanically.
+3. Prefer minimal `opts` and preserve lazy loading with the appropriate `event`, `cmd`, `ft`, or
+   `keys` trigger.
+4. Identify who owns each keymap:
+   - Put global editor mappings in `nvim/lua/config/keymaps.lua`.
+   - Put plugin-owned, lazy-loading, or LSP mappings in the owning plugin specification's `keys`
+     field.
+5. Change `nvim/lazy-lock.json` only when dependencies or pins change. Generate it through Lazy,
+   such as `nvim --headless '+Lazy! sync' +qa`; do not hand-edit generated state.
+6. Verify without installing tools:
+   - Run `~/.local/share/nvim/mason/bin/stylua --check <changed-lua-files>` when available, or use
+     `stylua --check <changed-lua-files>` when already on `PATH`.
+   - Run `luacheck nvim/lua --no-unused-args --no-max-line-length --globals vim` when `luacheck` is
+     available; this matches CI.
+   - Run `nvim --headless -i NONE '+qa'` and resolve every startup error.
 
 ## Gotchas
 
-- **Using a conventional dotfiles path such as `nvim/.config/nvim/`** — this repository stores
-  Neovim Lua directly under `nvim/lua/`; use the existing repository layout.
-- **Embedding a plugin keymap in its `keys` field** — this scatters custom mappings across plugin
-  specifications; place the mapping in `nvim/lua/config/keymaps.lua`.
-- **Adding several plugin specifications to one file** — this makes plugin ownership unclear; keep
-  one plugin per `nvim/lua/plugins/<plugin>.lua` file.
-- **Copying a full upstream configuration** — unnecessary defaults make upgrades harder; keep the
-  LazyVim specification and `opts` table minimal.
+- **Editing `~/.config/nvim` as a separate copy** — the `Makefile` symlinks `nvim/` there; edit the
+  repository source.
+- **Centralizing every keymap** — moving plugin-owned mappings out of `keys` can break lazy loading;
+  determine ownership first.
+- **Creating one file per plugin by default** — existing files group related concerns; extend the
+  current owner or create a focused file based on responsibility.
+- **Hand-editing `nvim/lazy-lock.json`** — update this generated state through Lazy only when
+  dependencies or pins change.
+- **Running a formatter across all Lua files during a focused change** — unrelated files may already
+  differ from current StyLua output; check only changed files unless broader formatting is requested.
 
 ## Constraints
 
-- All Neovim configuration must remain Lua under `nvim/lua/`.
-- Each plugin must have its own file under `nvim/lua/plugins/`.
-- Custom options must be placed in `nvim/lua/config/options.lua`.
-- Custom keymaps must be placed in `nvim/lua/config/keymaps.lua`.
-- Plugin specifications must use LazyVim conventions and include only necessary configuration.
+- Neovim artifacts must remain under `nvim/` and follow their existing owner.
+- Plugin changes must preserve LazyVim loading behavior and prefer `opts` over replacement `config`
+  functions when the plugin supports it.
+- Keymaps must be placed according to ownership: global in `config/keymaps.lua`, plugin-owned or
+  load-triggering in the owning plugin spec's `keys`, including LSP mappings in the relevant plugin
+  specification.
+- `nvim/lazy-lock.json` must not change unless dependency resolution or plugin pins change.
+- Do not install tooling directly; use available project tools and request authorization before
+  dependency changes.
