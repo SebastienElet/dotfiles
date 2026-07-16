@@ -1,57 +1,45 @@
 ---
 name: things-tasks
-description: Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when the user asks to list today's tasks or other Things lists, create or edit tasks, complete or cancel tasks, create projects or areas, filter by project/area/tag, or inspect thangs options.
+description: >
+  Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing Things lists,
+  creating or editing tasks, completing or canceling tasks, managing projects or areas, filtering
+  by project, area, or tag, or inspecting thangs options. Make sure to use this skill whenever the
+  user asks about their todos, Today list, deadlines, or Things data, even if they do not explicitly
+  mention Things 3 or thangs.
+metadata:
+  category: ops
 ---
 
 # Things Tasks
 
-## Workflow
+## Overview
 
-Use `thangs` for Things 3 task operations. Prefer JSON output when parsing or selecting tasks:
+Manage Things 3 tasks, projects, and areas with the `thangs` CLI. Use this skill for reading or
+changing Things data, including requests phrased generically as todos, current tasks, or deadlines.
 
-```bash
-thangs list --list "Today" --json
+## Usage
+
+Invoke the skill with a natural-language Things request:
+
+```text
+$things-tasks list my Today tasks
+$things-tasks add "Renew passport" due 2026-08-01
+$things-tasks complete "Submit expenses"
 ```
 
-Default to `thangs list --list "Today"` when the user asks what is due today or asks to manage current tasks. Use exact names and quote task, project, area, and tag values that contain spaces.
-
-Before mutating Things data, confirm intent when the request is ambiguous, destructive, or could affect multiple tasks. `complete` marks a task done; `cancel` moves it to trash.
-
-## Commands
-
-List tasks:
+Use these `thangs` commands:
 
 ```bash
 thangs list [--list Today|Upcoming|Anytime|Someday] [--project <name>] [--area <name>] [--tag <name>] [--json]
-```
-
-Create a task in the Inbox:
-
-```bash
 thangs add <name> [--notes <text>] [--due YYYY-MM-DD] [--tags tag1,tag2] [--project <name>] [--area <name>] [--json]
-```
-
-Edit a task:
-
-```bash
 thangs edit <task> [--name <newName>] [--notes <text>] [--due YYYY-MM-DD] [--tags tag1,tag2] [--project <name>] [--area <name>] [--json]
-```
-
-Complete or cancel a task:
-
-```bash
 thangs complete <task> [--json]
 thangs cancel <task> [--json]
-```
-
-Create projects and areas:
-
-```bash
 thangs add-project <name> [--area <name>] [--notes <text>] [--deadline YYYY-MM-DD] [--json]
 thangs add-area <name> [--json]
 ```
 
-Inspect CLI help or install the bundled Claude skill:
+Inspect the installed CLI when a command or option is uncertain:
 
 ```bash
 thangs --version
@@ -60,29 +48,49 @@ thangs <command> --help
 thangs install-skill [--force] [--json]
 ```
 
-## Checklist Items (URL scheme only)
+## Steps
 
-Neither `thangs` nor the Things AppleScript dictionary can create or edit checklist items (checkable sub-items inside a task). The only token-free way is `things:///add` with the `checklist-items` parameter (newline-separated, max 100 items). `things:///update` also supports it but requires an auth token (Things → Settings → General → Manage Things URLs).
+1. Identify the requested Things operation and the task, project, area, tag, or built-in list in
+   scope.
+2. Default to `thangs list --list "Today"` when the user asks what is due today or asks to manage
+   current tasks.
+3. Read current tasks with `--json` before editing, completing, or canceling by name so the exact
+   target and existing fields are known.
+4. Confirm intent before a mutation when the request is ambiguous, destructive, or could affect
+   multiple tasks.
+5. Run the narrowest matching `thangs` command, quoting names that contain spaces and preserving
+   fields the user did not ask to replace.
+6. Report the exact task, project, or area names changed and the command outcome.
+7. For checklist items, use `things:///add` with a percent-encoded, newline-separated
+   `checklist-items` parameter; `thangs` and the Things AppleScript dictionary do not support them.
+   `things:///update` requires an auth token from Things settings.
 
-**Encoding:** Things does NOT decode `+` as a space. Never use `urllib.parse.urlencode`/`quote_plus`; percent-encode instead:
+   ```python
+   from urllib.parse import quote
 
-```python
-from urllib.parse import quote
-url = "things:///add?" + "&".join(f"{k}={quote(v, safe='')}" for k, v in params.items())
-subprocess.run(["open", "-g", url], check=True)
-```
+   url = "things:///add?" + "&".join(f"{key}={quote(value, safe='')}" for key, value in params.items())
+   subprocess.run(["open", "-g", url], check=True)
+   ```
 
-To add a checklist to an existing task without a token: recreate it via `things:///add` (same title/notes/when/area), then trash the old one.
+## Gotchas
 
-## AppleScript Pitfalls
+- **Editing by an ambiguous task name** — `thangs` may target the wrong item when names collide.
+  List current tasks with `--json`, identify the exact task, and confirm with the user if needed.
+- **Using `--tags` during an edit** — the option replaces the task's tags instead of merging them.
+  Read the existing task first and include every tag that must remain.
+- **Creating checklist items through `thangs` or AppleScript** — neither interface exposes
+  checklist creation or editing. Use `things:///add` with at most 100 newline-separated items; to
+  update without a token, recreate the task and trash the old one.
+- **Encoding Things URLs with `urlencode` or `quote_plus`** — Things does not decode `+` as a space.
+  Percent-encode each parameter with `quote(value, safe="")`.
+- **Moving filtered AppleScript items while iterating** — mutating a `whose` result can raise
+  `Invalid index` (-1719). Collect the item IDs first, then move each `to do id`.
 
-- Checklist items are not exposed; notes and other properties are.
-- Never `move ... to list "Trash"` while iterating a `whose` filter — the list mutates and throws "Invalid index" (-1719). Collect `id`s first, then move by `to do id`.
+## Constraints
 
-## Practices
-
-- Read current tasks first before editing, completing, or canceling by name.
-- Use `--json` for reliable parsing and concise summaries for the user.
-- Preserve existing task fields unless the user asks to replace them; note that `--tags` replaces tags on edit.
+- Use `--json` whenever output must be parsed or a task must be selected reliably.
+- Use exact names and quote task, project, area, and tag values that contain spaces.
 - Use ISO dates (`YYYY-MM-DD`) for `--due` and `--deadline`.
-- Report the exact task names changed and the command outcome.
+- Preserve existing task fields unless the user explicitly asks to replace them.
+- Treat `complete` as marking a task done and `cancel` as moving it to trash.
+- Do not mutate multiple or ambiguous tasks without confirming the intended scope.
