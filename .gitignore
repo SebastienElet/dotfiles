@@ -10,3 +10,6 @@ PRODUCTIVITY_REVIEW.md
 
 # Claude Code
 .claude/
+
+# Git worktrees
+.worktrees/
