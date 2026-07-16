@@ -41,10 +41,12 @@ Examples:
    update the symlink target in the `Makefile`.
 6. Prefer settings that work on macOS and Linux. Add an explicit platform check only when a portable
    alternative is unavailable.
-7. Verify install and link targets with `make -n <target>` or an isolated `HOME`. Never run a real
-   home-mutating target from a temporary worktree because `DOTFILES_PATH` resolves to that checkout;
-   run the actual installation from the canonical checkout only when the user's intent authorizes
-   it.
+7. Inspect the target recipe and its dependencies for global side effects. In a worktree or test
+   context, verify every install target only with `make -n <target>`: an isolated `HOME` does not
+   sandbox Homebrew, `/Applications`, `curl | bash`, or other global mutations. Actual execution
+   with an isolated `HOME` is allowed only for a target proven to mutate home-directory links or
+   configuration exclusively; run real installations from the canonical checkout only when the
+   user's intent authorizes them.
 
 ## Gotchas
 
@@ -55,9 +57,10 @@ Examples:
 - **Replacing an existing destination** — a real file, directory, or link to another source may
   contain user data. Inspect the source and destination first; never delete or overwrite them, and
   ask for direction when the destination is not already the expected link.
-- **Running link targets from a temporary worktree** — `DOTFILES_PATH` resolves to the temporary
-  checkout and can leave home-directory links pointing at disposable paths. Use `make -n <target>`
-  or an isolated `HOME`, then perform the authorized installation from the canonical checkout.
+- **Treating an isolated HOME as an install sandbox** — Homebrew, `/Applications`, `curl | bash`,
+  and similar recipes can still mutate global state. Use `make -n <target>` for every install target
+  in a worktree or test context; execute with an isolated `HOME` only after inspecting the recipe
+  dependencies and proving the target changes home-directory links or configuration exclusively.
 - **Adding a home config without its Makefile symlink** — the file remains unmanaged or requires
   manual setup. Store the config in this repository and update the `Makefile` with the corresponding
   symlink target.
@@ -75,7 +78,8 @@ Examples:
   `npm install -g`, or another global package-manager install command.
 - Never delete or overwrite an existing destination file, directory, or link to an unexpected
   source.
-- Never run a real home-mutating install or link target from a temporary worktree; dry-run it or use
-  an isolated `HOME`, then run it from the canonical checkout only with appropriate user intent.
+- In a worktree or test context, every install target must use `make -n <target>`; isolated `HOME`
+  execution is permitted only for targets whose recipes and dependencies are proven to mutate
+  home-directory links or configuration exclusively, with no global side effects.
 - Every home-directory configuration deployed and managed by the `Makefile` must use the established
   repository-source-to-home-destination symlink pattern.
