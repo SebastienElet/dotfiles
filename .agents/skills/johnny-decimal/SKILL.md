@@ -98,7 +98,7 @@ Examples:
 | `20-29 - Areas/27 - Finances/27.05 - Fiscalité/`         | ID           | `Finances - Fiscalité - 2024-04-15 - Déclaration 2042.pdf` |
 | `20-29 - Areas/21 - Bigfoot/21.03 - Meeting/`            | ID           | `Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx`      |
 | `20-29 - Areas/23 - Sport/23.01 - Tir à l'arc/`          | ID           | `Sport - Tir à l'arc - 2024-09-14 - Licence FFTA.pdf`      |
-| `20-29 - Areas/34 - Administratif/34.03 - Identité/`     | ID           | `Administratif - Identité - Passeport.pdf`                 |
+| `30-39 - Resources/34 - Administratif/34.03 - Identité/` | ID           | `Administratif - Identité - Passeport.pdf`                 |
 
 ## Gotchas
 
@@ -124,7 +124,8 @@ Examples:
   the user or explicitly mark an ID-less proposal as provisional.
 - Keep `~/Documents` flat below the indexed category or ID folder; do not create year folders.
 - Use the exact ASCII ` - ` separator required by `scripts/jdl` in directory and file names.
-- Filename category and subcategory must inherit the indexed folder labels.
+- A filename must inherit the category label and, only when it is inside an ID/subcategory folder,
+  the subcategory label.
 - Include a filename date only when the document's actual date is known.
 - Archive only to an indexed destination, preserving the existing ID unless the index explicitly
   maps or renumbers it.
