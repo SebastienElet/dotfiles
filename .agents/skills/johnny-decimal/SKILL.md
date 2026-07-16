@@ -1,24 +1,33 @@
 ---
 name: johnny-decimal
-description: Johnny Decimal + PARA organization
+description: >
+  Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,
+  filing, moving, or locating numbered personal documents. Make sure to use this skill whenever a
+  request concerns Johnny Decimal categories, PARA mapping, or document filenames under
+  ~/Documents, even if the user only asks where a document belongs.
 metadata:
-  globs: ""
+  category: ops
 ---
 
 # Johnny Decimal + PARA Organization System
 
-A hybrid system combining [Johnny Decimal](https://johnnydecimal.com/) structure with [PARA](https://fortelabs.com/blog/para/) methodology.
+## Overview
 
-## Structure
+Organize personal files under `~/Documents` with a hybrid of
+[Johnny Decimal](https://johnnydecimal.com/) structure and
+[PARA](https://fortelabs.com/blog/para/). Use it when filing, naming, moving, or locating a numbered
+personal document. This skill governs only `~/Documents`; it does not govern `~/Brain`.
 
-```
+### Structure
+
+```text
 AC.ID — Title
 │
 ├── AC   = Area (10-99) + Category (X0-X9)
 └── ID   = Unique identifier within category (01-99)
 ```
 
-## PARA Mapping
+### PARA Mapping
 
 | JD Area | PARA      | Purpose                                 |
 | ------- | --------- | --------------------------------------- |
@@ -28,42 +37,51 @@ AC.ID — Title
 | `90-99` | Archives  | Completed or inactive items             |
 | `Inbox` | —         | Items to process and organize           |
 
-## Project Numbering
+## Usage
 
-Projects use a year-based ID format:
-
-```
-10.{YY}{NNN} — Project Title
-     │  │
-     │  └── NNN = Sequential number (001, 002, ...)
-     └───── YY  = Year (25 for 2025)
+```text
+/johnny-decimal <filing, naming, moving, or locating request under ~/Documents>
 ```
 
-Example: `10.25001 — Website Redesign` (first project of 2025)
+Examples:
 
-## Rules
+- `/johnny-decimal Where should I file this tax document under ~/Documents?`
+- `/johnny-decimal Name a passport scan for its existing identity folder.`
+- `/johnny-decimal Locate the numbered folder for an archived project.`
 
-- **Categories** subdivide areas (11, 12, 13...) — max 10 per area
-- **IDs** are unique items within a category (11.01, 11.02...)
-- **Projects** use `10.{YY}{NNN}` format with year prefix
-- Keep **one location** per ID — no duplicates
-- Use **descriptive titles** after the number
-- Move completed projects to **90-99 Archives**
+## Steps
 
-## File Naming Convention
+1. Confirm that the request concerns `~/Documents`. If it concerns `~/Brain`, do not apply these
+   filesystem rules.
+2. Consult the Johnny Decimal index in Apple Notes using an available Apple Notes integration when
+   one is present.
+   - Use the existing indexed category and ID; never infer one from an example.
+   - If the index is unavailable, ask the user for the category and ID. If a non-blocking answer is
+     still useful, explicitly label the location as a provisional proposal and leave the ID
+     unspecified.
+3. Map the item to the indexed structure:
+   - Categories subdivide areas (`11`, `12`, `13`, and so on), with at most 10 categories per area.
+   - IDs (`11.01`, `11.02`, and so on) are unique items within a category.
+   - Projects use `10.{YY}{NNN} — Project Title`, where `YY` is the start year and `NNN` is the
+     sequential project number from the index. Example: `10.25001 — Website Redesign`.
+   - Completed or inactive items move to the indexed `90-99` Archives area.
+4. Keep the hierarchy flat. File the item directly in its indexed category or ID folder; do not add
+   a year folder or other unindexed nesting.
+5. Build the filename from the folder labels:
 
-Files inherit their prefix from the folder path:
+   ```text
+   {Category} - {Subcategory} - {Date} - {Description}.{ext}
+   ```
 
-```
-{Category} - {Subcategory} - {Date} - {Description}.{ext}
-    │            │             │           │
-    │            │             │           └── Free-form description
-    │            │             └── ISO date YYYY-MM-DD (optional)
-    │            └── From parent folder name (e.g., "27.05 - Fiscalité" → "Fiscalité")
-    └── From grandparent folder name (e.g., "27 - Finances" → "Finances")
-```
+   - Inherit `Category` from the parent category label and `Subcategory` from the ID folder label.
+   - Use ` - ` (space-dash-space) as the separator.
+   - Add the ISO date `YYYY-MM-DD` only when the document's actual date is known.
+   - Omit the date for undated reference documents, rules, and templates.
+   - Write the description in Title Case; accents are allowed.
+6. Return the indexed or clearly provisional path and filename. Keep one location per ID and use a
+   descriptive title.
 
-### Examples
+### Filename Examples
 
 | Folder Path                            | File Name                                                  |
 | -------------------------------------- | ---------------------------------------------------------- |
@@ -71,20 +89,23 @@ Files inherit their prefix from the folder path:
 | `23 - Sport/23.01 - Tir à l'arc/`      | `Sport - Tir à l'arc - 2024-09-14 - Licence FFTA.pdf`      |
 | `34 - Administratif/34.03 - Identité/` | `Administratif - Identité - Passeport.pdf`                 |
 
-### Rules
+## Gotchas
 
-- **Separator**: `-` (space-dash-space)
-- **Date**: Optional, ISO format `YYYY-MM-DD`
-- **Description**: Title Case, accents allowed
-- **No date** for reference documents (rules, templates)
+- **Copying an ID from an example** — examples illustrate syntax, not the current index. Consult
+  Apple Notes, ask the user, or leave the proposed ID unspecified.
+- **Treating a tax or project year as a document date** — a year alone does not establish an ISO
+  document date. Omit the date until the actual document date is known.
+- **Adding a year directory for convenience** — extra nesting breaks the flat indexed structure.
+  Keep the file directly in the indexed category or ID folder.
+- **Applying these paths to `~/Brain`** — the two roots have different governance. Restrict this
+  skill's filesystem decisions to `~/Documents`.
 
-## Best Practices
+## Constraints
 
-- Start simple — add categories only when needed
-- Use consistent naming conventions across all items
-- Prefer flat structures over deep nesting
-- Keep **Inbox at zero** — process and file items regularly
-
-## Index Location
-
-The Johnny Decimal index is maintained in **Apple Notes**. Use the `mcp_apple-notes` tools to search or consult the index when needed.
+- Never invent, guess, or allocate a Johnny Decimal category, ID, or project sequence number.
+- Always consult the Apple Notes index when an integration is available; otherwise ask the user or
+  explicitly mark an ID-less proposal as provisional.
+- Keep `~/Documents` flat below the indexed category or ID folder; do not create year folders.
+- Filename category and subcategory must inherit the indexed folder labels.
+- Include a filename date only when the document's actual date is known.
+- Maintain one location per ID and avoid duplicate filing.
