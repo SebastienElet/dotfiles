@@ -1,34 +1,27 @@
-# Cursor rules and commands
+# Dotfiles Agent Instructions
 
-This file points Codex to the Cursor Skills, Rules and Commands used in this repo.
+This file is the single source of truth for all coding agents working in this repository.
 
-## Agent behavior (scope)
+> **Conflict rule:** if an agent-specific adapter disagrees with this document, `AGENTS.md` wins.
 
-- **Prefer small iterations.** Do only what was asked; avoid expanding to "all" or "everything" unless the user explicitly says so.
-- **Minimal scope.** If the request could apply to one item or many (e.g. "migrate the X rule"), assume **one** and change only that item. If in doubt, ask.
-- **No big refactors by default.** Do not refactor or migrate other similar items in the same change; the user will ask for further steps if they want them.
+## Scope
+
+- **Prefer small iterations.** Do only what was asked; avoid expanding to all similar items.
+- **Keep changes minimal.** Reuse existing structures and ask when the intended scope is ambiguous.
+- **Avoid broad refactors.** Do not migrate or reorganize unrelated configuration by default.
 
 ## Personal Brain
 
 - Before operating on content under `~/Brain`, read and follow `~/Brain/AGENTS.md`.
 
-## Agent Skills
+## Shared Skills
 
-Shared skills live in **`.agents/skills/`**. Each skill is a folder with a `SKILL.md` file. Keep `.cursor/skills/` for existing Cursor-specific skills until they are migrated explicitly.
+- `.agents/skills/` is the single source of truth for reusable agent skills.
+- Read `.agents/skills/README.md` for the current skill index.
+- Use `skill-manager` whenever creating, migrating, editing, validating, or organizing skills.
 
-- `skill-manager` — Audit, create, and update shared agent skills
-- `cli-tools` — Prefer Rust-based CLI tools (eza, fd, rg, bat, etc.)
-- `commits` — Conventional Commits format and scopes
-- `fish` — Fish shell conventions
-- `dotfiles` — Project guidelines (English, minimal config, Makefile for installs)
-- `johnny-decimal` — Johnny Decimal + PARA organization
-- `makefile` — Makefile structure and install workflow
-- `neovim` — LazyVim config and plugin layout
-- `scripts` — Bash scripts conventions
+## Agent Adapters
 
-## Cursor Commands
-
-- [commands/code-review.md](.cursor/commands/code-review.md)
-- [commands/git-commit.md](.cursor/commands/git-commit.md)
-- [commands/git-pr.md](.cursor/commands/git-pr.md)
-- [commands/git-push.md](.cursor/commands/git-push.md)
+- `CLAUDE.md` delegates repository instructions to this file.
+- `.claude/skills`, `.codex/skills`, and `.cursor/skills` expose the canonical shared skills.
+- Agent-specific directories must not duplicate repository-wide rules or skill content.
