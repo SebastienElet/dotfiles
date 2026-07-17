@@ -3,6 +3,7 @@ BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebr
 VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
+BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
 APP_BIN:=/Applications
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
@@ -13,7 +14,7 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt hermes
+.PHONY: usage all extra terminal work personal utils clean brew brain volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt hermes
 
 usage:
 	@echo all - Setup dev env
@@ -167,6 +168,7 @@ work: \
 	vibe-island
 
 ai: \
+	brain \
 	chatgpt \
 	claude \
 	claude-code \
@@ -184,6 +186,25 @@ ai: \
 	pi-coding-agent \
 	skills \
 	skill-caveman
+
+brain:
+	@if [ ! -d "$(BRAIN_PATH)" ]; then \
+		exit 0; \
+	fi; \
+	if [ -L "$(HOME)/Brain" ]; then \
+		if [ "$$(readlink "$(HOME)/Brain")" = "$(BRAIN_PATH)" ]; then \
+			echo "Brain symlink already configured"; \
+		else \
+			echo "Error: $(HOME)/Brain is not the expected symbolic link" >&2; \
+			exit 1; \
+		fi; \
+	elif [ -e "$(HOME)/Brain" ]; then \
+		echo "Error: $(HOME)/Brain already exists and is not a symbolic link" >&2; \
+		exit 1; \
+	else \
+		ln -s "$(BRAIN_PATH)" "$(HOME)/Brain" && \
+		echo "Created $(HOME)/Brain symlink"; \
+	fi
 
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:

@@ -9,9 +9,18 @@ This directory is the single source of truth for reusable agent skills.
 - Optional folders: `scripts/`, `references/`, `assets/`.
 - Manage skills with `/skill-manager`.
 
+## Dev
+
+| Skill     | Description |
+| --------- | ----------- |
+| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. Use when editing Lua files under… |
+| `scripts` | Create and maintain portable Bash scripts in this repository. Use when adding or editing standalone… |
+
 ## Ops
 
-| Skill           | Description |
-| --------------- | ----------- |
-| `skill-manager` | Manage .agents/skills: create new skills, run doctor checks, fix issues, cross-check, and sync the index… |
-| `things-tasks`  | Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing Things lists… |
+| Skill            | Description |
+| ---------------- | ----------- |
+| `dotfiles`       | Apply this dotfiles repository's configuration and installation conventions. Use when changing… |
+| `johnny-decimal` | Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,… |
+| `skill-manager`  | Manage .agents/skills: create new skills with proper scaffolding, run doctor checks on existing skills… |
+| `things-tasks`   | Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing Things lists… |
