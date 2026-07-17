@@ -189,6 +189,10 @@ ai: \
 
 brain:
 	@if [ ! -d "$(BRAIN_PATH)" ]; then \
+		if [ "$${CI:-}" = "true" ]; then \
+			echo "Brain directory unavailable in CI; skipping"; \
+			exit 0; \
+		fi; \
 		echo "Error: Brain directory does not exist: $(BRAIN_PATH)" >&2; \
 		exit 1; \
 	fi; \
