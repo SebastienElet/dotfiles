@@ -13,6 +13,7 @@ This file is the single source of truth for all coding agents working in this re
 ## Personal Brain
 
 - Before operating on content under `~/Brain`, read and follow `~/Brain/AGENTS.md`.
+- Default durable memory target is `~/Brain`, not an agent-specific memory store: facts, decisions, and reference info worth recalling later belong there so every agent can reuse them. Only use an agent-specific memory system for things scoped to that agent's own behavior (e.g. its interaction preferences with this user).
 
 ## Shared Skills
 

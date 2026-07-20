@@ -11,6 +11,7 @@ PRODUCTIVITY_REVIEW.md
 # Claude Code
 .claude/*
 !.claude/skills
+.claude-flow/
 
 # Git worktrees
 .worktrees/
