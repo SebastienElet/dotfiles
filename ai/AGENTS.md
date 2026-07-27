@@ -22,6 +22,12 @@ When you see a potential issue or better approach, don't just implement - first 
   - No long explanations unless explicitly requested.
   - Limit responses to 3–5 sentences maximum.
 
+## Context Management
+
+- For open-ended exploration, research, or multi-file searches, delegate to the Explore or general-purpose agent instead of reading files directly in the main thread.
+- For independent multi-step tasks (especially 2+ unrelated ones), dispatch parallel subagents rather than doing them serially inline.
+- Keep the main thread for orchestration/decisions; push bulk reading, grepping, and exploration into subagents.
+
 ## Code Style
 
 - All comments and documentation in English
