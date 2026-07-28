@@ -101,6 +101,9 @@ end tell
 - **`delete folder` sends notes to Recently Deleted, not oblivion, but it is still destructive** —
   never delete a folder or note without explicit user confirmation; there is no undo from the
   script's side.
+- **`notes.sh folder` only creates root-level folders** — it takes a name, not a path, so asking it
+  for a nested folder silently creates a second folder at the account root instead. Use the nested
+  AppleScript pattern above (`make new folder at folder "Parent"`) for anything below the root.
 - **`delete folder` on a non-empty folder silently fails and iCloud syncs it back** — a folder with
   notes or subfolders looks deleted, then reappears seconds later. Empty it first: delete each
   subfolder by name (`delete folder "Sub" of folder "Parent"`), then the notes bottom-up
