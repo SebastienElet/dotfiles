@@ -20,6 +20,7 @@ This directory is the single source of truth for reusable agent skills.
 
 | Skill            | Description |
 | ---------------- | ----------- |
+| `apple-notes`    | Create folders and notes in Apple Notes with AppleScript, including HTML-formatted bodies and… |
 | `do-nothing-script` | Turn a manual, repeated procedure into a do-nothing script (Dan Slimmon's gradual automation… |
 | `dotfiles`       | Apply this dotfiles repository's configuration and installation conventions. Use when changing… |
 | `johnny-decimal` | Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,… |
