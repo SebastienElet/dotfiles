@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "apple-notes": {
+      "command": "/Applications/Apple Notes Exporter.app/Contents/SharedSupport/notes-export-mcp"
+    }
+  }
+}

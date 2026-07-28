@@ -477,9 +477,18 @@ vibe-island: /Applications/Vibe\ Island.app
 ################################################################################
 
 personal: \
+	apple-notes-exporter \
 	calibre \
 	perplexity \
 	whatsapp
+
+# No Homebrew cask available; the release ships the notes-export-mcp binary
+# inside the app bundle, used by the .mcp.json server entry.
+apple-notes-exporter: ${APP_BIN}/Apple\ Notes\ Exporter.app
+${APP_BIN}/Apple\ Notes\ Exporter.app:
+	curl -L https://github.com/kzaremski/apple-notes-exporter/releases/download/v2.0-2/AppleNotesExporter_v2.0-2.zip -o /tmp/AppleNotesExporter.zip
+	unzip -q -o /tmp/AppleNotesExporter.zip -d ${APP_BIN}
+	rm -f /tmp/AppleNotesExporter.zip
 
 # Local vault on 1password does not work with 1password
 # app from the app store. We need to manually download
