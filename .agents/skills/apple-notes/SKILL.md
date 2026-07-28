@@ -22,6 +22,14 @@ repository only exports and lists — creating anything goes through `osascript`
 tested wrapper script for the two common cases (create a folder, create a note) and the raw
 AppleScript patterns for everything else.
 
+### Current structure (iCloud account)
+
+`1 Projects`, `2 Areas`, `3 Resources`, `4 Archives` are the active PARA folders — file new notes
+there. Every other top-level folder (the numbered Johnny Decimal ranges `10-19 - Projects`,
+`20-29 - Areas`, `30-39 - Resources`, `90-99 - Archives` and their children) is **legacy**: kept
+read-only while the owner migrates notes manually through the inbox. Never create, move, or file
+anything into them.
+
 ## Usage
 
 ```bash
@@ -93,6 +101,12 @@ end tell
 - **`delete folder` sends notes to Recently Deleted, not oblivion, but it is still destructive** —
   never delete a folder or note without explicit user confirmation; there is no undo from the
   script's side.
+- **`delete folder` on a non-empty folder silently fails and iCloud syncs it back** — a folder with
+  notes or subfolders looks deleted, then reappears seconds later. Empty it first: delete each
+  subfolder by name (`delete folder "Sub" of folder "Parent"`), then the notes bottom-up
+  (`repeat with i from (count of notes of f) to 1 by -1`), then the folder itself. Also note that
+  `folders of f` and `notes of f` raise `-1728` on some folders — enumerate by index or address
+  children by name instead of iterating the collection.
 - **First run prompts for Automation permission** — the calling terminal (or Claude Code) must be
   granted control of Notes in System Settings → Privacy & Security → Automation, otherwise
   `osascript` fails with error -1743.
