@@ -101,6 +101,9 @@ end tell
 - **`delete folder` sends notes to Recently Deleted, not oblivion, but it is still destructive** —
   never delete a folder or note without explicit user confirmation; there is no undo from the
   script's side.
+- **Moving a note out of a shared folder revokes the collaborator's access** — and sharing cannot be
+  scripted, only done from the app's UI. Check `get shared of folder "…"` before moving anything, and
+  have the destination shared by hand first.
 - **`notes.sh folder` only creates root-level folders** — it takes a name, not a path, so asking it
   for a nested folder silently creates a second folder at the account root instead. Use the nested
   AppleScript pattern above (`make new folder at folder "Parent"`) for anything below the root.
