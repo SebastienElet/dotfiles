@@ -30,7 +30,8 @@ fi
 
 echo "ℹ️  npm global packages upgrade"
 if command -v npm &> /dev/null; then
-  npm update -g
+  # 3-day quarantine: ignore versions published too recently to be vetted
+  npm update -g --before="$(date -u -v-3d +%Y-%m-%dT%H:%M:%SZ)"
 else
   echo "  Warning: npm not found, skipping npm global package updates"
 fi
