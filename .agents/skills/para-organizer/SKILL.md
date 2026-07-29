@@ -103,6 +103,23 @@ The PARA Method is meant to be lightweight and forgiving. Resist the urge to ove
 - When in doubt about a classification, ask. It's better to surface a question than to silently misfile something.
 - Speed matters. A PARA setup that's 80% right today is better than a perfect one that takes hours. The user can always reclassify later.
 
+### Naming items inside a project
+
+A title has to survive search, where the folder is invisible: Spotlight and in-app search list the
+item's name, never its container. `Question` or `Financement` inside a `Tesla` folder is unfindable
+and unreadable out of context.
+
+So name every item `Project : Subject` — `Tesla : Offres de crédit`, `Tesla : Devis assurance AXA`.
+Prefix with the project (or the domain, e.g. `Auto : Tesla : …`, when a broader grouping helps),
+never with the PARA category: `Projects : …` becomes false the day the project is archived, forcing
+a rename of every item, while the project name stays true for life.
+
+Finalize before filing, too. An item leaving the inbox gets a short header — objective, current
+state, next step, last-updated date — above the raw capture. Ask for the facts you're missing; mark
+what stays unknown `???` rather than inventing it. And look for related items already sitting in the
+old structure: migrate a project as a whole, or the new folder ends up holding the least informed
+version of the story.
+
 ## Gotchas
 
 - **Applying the `1 Projects/` layout to `~/Documents`** — that root uses numbered Johnny Decimal
