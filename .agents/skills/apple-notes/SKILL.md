@@ -1,9 +1,10 @@
 ---
 name: apple-notes
 description: >
-  Create folders and notes in Apple Notes with AppleScript, including HTML-formatted bodies and
-  nested folders. Use when adding, writing, or filing content into Apple Notes from the command
-  line. Make sure to use this skill whenever a request mentions creating a note, a Notes folder,
+  Create, move, and rename folders and notes in Apple Notes with AppleScript, including
+  HTML-formatted bodies and nested folders. Use when adding, writing, filing, or triaging content in
+  Apple Notes from the command line. Make sure to use this skill whenever a request mentions
+  creating a note, a Notes folder, processing the Notes inbox, moving or retitling an existing note,
   saving something "in my Notes", or scripting Notes with osascript, even if AppleScript is never
   named — the apple-notes MCP server is read-only and cannot write.
 license: MIT
@@ -35,13 +36,17 @@ anything into them.
 ```bash
 .agents/skills/apple-notes/scripts/notes.sh folder <name> [account]
 .agents/skills/apple-notes/scripts/notes.sh note <folder> <title> [account]   # HTML body on stdin
+.agents/skills/apple-notes/scripts/notes.sh move <src/path> <title> <dst/path> [new-title] [account]
 ```
 
 - `account` (optional): defaults to `iCloud`. List accounts with
   `osascript -e 'tell application "Notes" to get name of accounts'`.
+- `move` takes slash-separated nested paths, creates the missing destination levels, refuses to move
+  out of a shared folder, and — with `new-title` — renames the note as it files it.
 - Examples:
   - `notes.sh folder Recipes` → creates `Recipes` if missing (idempotent)
   - `printf '<div>Buy milk</div>' | notes.sh note Recipes 'Shopping list'`
+  - `notes.sh move Notes 'Bigfoot : Recrutement : Template' '3 Resources/Recrutement' 'Recrutement : Template email de refus'`
 
 ## Steps
 
@@ -64,8 +69,42 @@ anything into them.
    osascript -e 'tell application "Notes" to tell account "iCloud" to get name of notes of folder "Recipes"'
    ```
 
-5. **For anything the script does not cover** (nested folders, moving, updating an existing note),
-   write the AppleScript inline — see the patterns below.
+5. **Filing a note out of the inbox** (the default `Notes` folder) — use `notes.sh move` and pass a
+   `new-title`: a title has to survive search, where the folder is invisible, so name it
+   `Domain : Subject` matching the destination folder and drop stale prefixes (see the
+   `para-organizer` skill). Add the objective/state/date header by hand before moving.
+
+   `Domain : Subject` is two segments, and the segment count mirrors the destination's depth: a note
+   in `2 Areas/Septeo` is `Septeo : Subject`, and only a three-level destination like
+   `20-29 - Areas/21 - Septeo/21.08 - Recrutement` earns the legacy three-segment
+   `Septeo : Recrutement : Subject`. Copying a legacy title's shape into a two-level PARA folder is
+   what makes a batch of freshly filed notes look inconsistent.
+
+   The `Subject` is the actual topic, not the shape of the note: no generic label like `Meeting`,
+   `Produit`, or `Points`, no attendee name standing in for the content, and no trailing date —
+   Notes already stores the creation date, and a date in the title only pushes the searchable words
+   past the truncation point. Keep the whole title under ~66 characters: beyond that Notes truncates
+   the name shown in the list with an ellipsis, and that truncated string is the note's real name for
+   AppleScript lookups.
+
+6. **For anything the script does not cover** (updating an existing note) write the AppleScript
+   inline — see the patterns below.
+
+### Triaging one inbox note
+
+The inbox is the default `Notes` folder. Process it oldest-first, one note per round:
+
+1. Read the oldest note with the MCP server — `list_notes` with `folder: "Notes"`,
+   `sort: "date-created"`, then re-query the target with `title_contains` and
+   `include_content: true`. Ignore rows whose `folderName` is not exactly `Notes`: the folder filter
+   is a partial match.
+2. Decide the destination among `1 Projects`, `2 Areas`, `3 Resources`, `4 Archives` — never a legacy
+   numbered folder — plus a subfolder named after the domain. Reuse an existing subfolder when one
+   fits; ask when the call is genuinely ambiguous.
+3. Prepend a one-line header (objective, state, next step, date) and mark unknowns `???` rather than
+   inventing them.
+4. File it with `notes.sh move Notes '<title>' '<dst/path>' '<Domain : Subject>'`.
+5. Report the destination and the remaining inbox count, then stop — one note per round.
 
 ### Nested folders
 
@@ -92,6 +131,21 @@ end tell
   body's first line and *also* prepends the `name:` value, so the title appears twice inside the
   note. Put the title as the first line of the body (`<div><h1>Title</h1></div>`), which is what
   `notes.sh note` does.
+- **Renaming a note means rewriting the body's first line, and only that** — `set name of n` renames
+  the list entry, but doing it on top of a body rewrite blanks that first line, and doing it alone
+  leaves the body contradicting the title. Notes also converts the `<h1>` into
+  `<b><span style="font-size: 24px">…</span></b>` on save, so replace the whole first `<div>…</div>`
+  block, not the tag. `notes.sh move` does this.
+- **`get body` omits attachments, so any `set body` round-trip destroys them** — a note reporting
+  `attachmentCount: 1` returns HTML with no trace of the image, and writing that HTML back deletes it
+  for good (the note lands in Recently Deleted attachment-less, so there is nothing to restore).
+  Check `get count of attachments of note …` before rewriting a body; `notes.sh move` now refuses to
+  retitle a note that has any, so rename those from the app instead.
+- **A prefix env assignment in front of a pipeline only reaches the first command** —
+  `VAR=x osascript … | perl -e '…$ENV{VAR}…'` gives perl an empty value, which silently produces an
+  empty insertion rather than an error. `export` it instead; `notes.sh` does this at its retitle step.
+- **A note cannot be addressed by the id the MCP server reports** — `note id "x-coredata://…/p3662"`
+  fails with `-1728`. Address notes by name within their folder.
 - **Literal newlines break AppleScript string literals** — a multi-line HTML body inlined into an
   `osascript` heredoc is a syntax error. `notes.sh` strips newlines (HTML ignores them); do the same
   in hand-written scripts, or concatenate with `& return &`.
