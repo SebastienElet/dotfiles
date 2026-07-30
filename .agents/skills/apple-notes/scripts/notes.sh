@@ -104,8 +104,15 @@ EOF
     | perl -0777 -e '$_ = <>; my $t = "<div><b><span style=\"font-size: 24px\">$ENV{NOTES_NEW_TITLE}</span></b><br></div>";
                      s{\A\s*<div>.*?</div>}{$t}se or s{\A}{$t}; print' \
     | tr -d '\n' > "${TMPDIR:-/tmp}/notes-body.$$"
-  body=$(as_quote "$(cat "${TMPDIR:-/tmp}/notes-body.$$")")
+  raw=$(cat "${TMPDIR:-/tmp}/notes-body.$$")
   rm -f "${TMPDIR:-/tmp}/notes-body.$$"
+  # A broken pipeline leaves this empty, and `set body of n to ""` wipes the note without any
+  # AppleScript error. Bail out while the original body is still intact.
+  if [ -z "$raw" ]; then
+    echo "refusing to retitle \"$2\": rewritten body came back empty — the note is unchanged" >&2
+    exit 1
+  fi
+  body=$(as_quote "$raw")
   osascript <<EOF
 tell application "Notes" to tell account "$account"
   set n to note "$title" of $dst

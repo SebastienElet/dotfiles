@@ -141,6 +141,18 @@ end tell
   for good (the note lands in Recently Deleted attachment-less, so there is nothing to restore).
   Check `get count of attachments of note …` before rewriting a body; `notes.sh move` now refuses to
   retitle a note that has any, so rename those from the app instead.
+- **A body-rewrite pipeline that fails writes an empty body and wipes the note, with no error** —
+  `set body of n to ""` succeeds, the note keeps its place but loses everything and shows up as
+  `New Note` in the list (the title lives in the body's first line). Always check the rewritten HTML
+  is non-empty before writing it back; `notes.sh` now refuses the write instead. Recovery means
+  retyping the content, so read the note before rewriting it.
+- **A header has to go on line 2, never line 1** — retitling replaces the body's whole first
+  `<div>…</div>` block, so a header prepended above the title is silently eaten by the next retitle.
+  Move and retitle first, then insert the header after the title block.
+- **A link attachment exposes its target via `get URL of`** — `get URL of attachment 1 of note …`
+  returns the shared URL, so a note whose only attachment is a Safari link preview can be rewritten
+  as a plain `<a href="…">` and then retitled. The blanket retitle refusal above is deliberate but
+  conservative: recover the URL by hand first, and only then rewrite the body.
 - **A prefix env assignment in front of a pipeline only reaches the first command** —
   `VAR=x osascript … | perl -e '…$ENV{VAR}…'` gives perl an empty value, which silently produces an
   empty insertion rather than an error. `export` it instead; `notes.sh` does this at its retitle step.
