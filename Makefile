@@ -6,6 +6,7 @@ LOCAL_BIN:=$(HOME)/.local/bin
 BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
+CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 # DOTFILES_PATH should be ~/.dotfiles when installed normally
 DOTFILES_PATH:=$(shell pwd)
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
@@ -178,6 +179,7 @@ ai: \
 	chatgpt \
 	claude \
 	claude-code \
+	cloakbrowser \
 	codegraph \
 	codex \
 	codexbar \
@@ -406,6 +408,10 @@ firecrawl: docker
 .PHONY: scrapling
 scrapling: docker
 	@docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
+
+.PHONY: cloakbrowser
+cloakbrowser: docker
+	@docker image inspect ${CLOAKBROWSER_IMAGE} >/dev/null 2>&1 || docker pull ${CLOAKBROWSER_IMAGE}
 
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
