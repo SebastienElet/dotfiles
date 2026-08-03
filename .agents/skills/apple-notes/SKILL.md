@@ -72,7 +72,7 @@ anything into them.
 5. **Filing a note out of the inbox** (the default `Notes` folder) — use `notes.sh move` and pass a
    `new-title`: a title has to survive search, where the folder is invisible, so name it
    `Domain : Subject` matching the destination folder and drop stale prefixes (see the
-   `para-organizer` skill). Add the objective/state/date header by hand before moving.
+   `para-organizer` skill). Add the header (below) by hand before moving.
 
    `Domain : Subject` is two segments, and the segment count mirrors the destination's depth: a note
    in `2 Areas/Septeo` is `Septeo : Subject`, and only a three-level destination like
@@ -90,6 +90,25 @@ anything into them.
 6. **For anything the script does not cover** (updating an existing note) write the AppleScript
    inline — see the patterns below.
 
+### Note header
+
+Two lines, right after the title block, in French like the rest of the notes:
+
+```text
+Objectif : <why this note is kept> — <search terms absent from the title>
+Mis à jour : AAAA-MM-JJ
+```
+
+`Objectif` is a search hook, not a summary: Notes searches the body, so it earns its place only by
+carrying the words the owner would actually type and the title does not already hold. Rephrasing the
+title (`IA : Artificial Analysis benchmarks de modèles` → "garder la référence Artificial Analysis
+(benchmarks de modèles)") adds no retrievable term and is the failure mode to avoid.
+
+Nothing else. No `État` (nearly every note is a fresh capture, so the field carries no information
+and rots on relecture), no `Prochaine étape` (an open action belongs in Things 3 — see the
+`things-tasks` skill — and the field otherwise sits empty). Never write `???` as a value: omit the
+line instead.
+
 ### Triaging one inbox note
 
 The inbox is the default `Notes` folder. Process it oldest-first, one note per round:
@@ -101,8 +120,8 @@ The inbox is the default `Notes` folder. Process it oldest-first, one note per r
 2. Decide the destination among `1 Projects`, `2 Areas`, `3 Resources`, `4 Archives` — never a legacy
    numbered folder — plus a subfolder named after the domain. Reuse an existing subfolder when one
    fits; ask when the call is genuinely ambiguous.
-3. Prepend a one-line header (objective, state, next step, date) and mark unknowns `???` rather than
-   inventing them.
+3. Add the two-line header (`Objectif`, `Mis à jour`) documented above — never invent an objective,
+   ask when the reason for keeping the note is not recoverable from its content.
 4. File it with `notes.sh move Notes '<title>' '<dst/path>' '<Domain : Subject>'`.
 5. Report the destination and the remaining inbox count, then stop — one note per round.
 
