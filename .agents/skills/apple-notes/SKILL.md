@@ -2,10 +2,11 @@
 name: apple-notes
 description: >
   Create, move, and rename folders and notes in Apple Notes with AppleScript, including
-  HTML-formatted bodies and nested folders. Use when adding, writing, filing, or triaging content in
-  Apple Notes from the command line. Make sure to use this skill whenever a request mentions
-  creating a note, a Notes folder, processing the Notes inbox, moving or retitling an existing note,
-  saving something "in my Notes", or scripting Notes with osascript, even if AppleScript is never
+  HTML-formatted bodies, nested folders, and exporting a note's attachments. Use when adding,
+  writing, filing, or triaging content in Apple Notes from the command line. Make sure to use this
+  skill whenever a request mentions creating a note, a Notes folder, processing the Notes inbox,
+  moving or retitling an existing note, saving something "in my Notes", handling photos or
+  attachments inside a note, or scripting Notes with osascript, even if AppleScript is never
   named — the apple-notes MCP server is read-only and cannot write.
 license: MIT
 compatibility: macOS with the Notes app; osascript. Requires Automation permission for the calling terminal.
@@ -37,12 +38,17 @@ anything into them.
 .agents/skills/apple-notes/scripts/notes.sh folder <name> [account]
 .agents/skills/apple-notes/scripts/notes.sh note <folder> <title> [account]   # HTML body on stdin
 .agents/skills/apple-notes/scripts/notes.sh move <src/path> <title> <dst/path> [new-title] [account]
+.agents/skills/apple-notes/scripts/notes.sh attachments <folder/path> <title> <dir> [account]
 ```
 
 - `account` (optional): defaults to `iCloud`. List accounts with
   `osascript -e 'tell application "Notes" to get name of accounts'`.
 - `move` takes slash-separated nested paths, creates the missing destination levels, refuses to move
-  out of a shared folder, and — with `new-title` — renames the note as it files it.
+  out of a shared folder, and — with `new-title` — renames the note as it files it. On a note with
+  attachments it renames via `set name` instead of rewriting the body, so the photos survive (the
+  body's first line then still shows the old title — fix that by hand in the app if it matters).
+- `attachments` exports every attachment of a note to `<dir>` as `<index>-<filename>`, the only way
+  to get a copy of the photos out of Notes. Use it before anything that touches a body.
 - Examples:
   - `notes.sh folder Recipes` → creates `Recipes` if missing (idempotent)
   - `printf '<div>Buy milk</div>' | notes.sh note Recipes 'Shopping list'`
@@ -121,7 +127,10 @@ The inbox is the default `Notes` folder. Process it oldest-first, one note per r
    numbered folder — plus a subfolder named after the domain. Reuse an existing subfolder when one
    fits; ask when the call is genuinely ambiguous.
 3. Add the two-line header (`Objectif`, `Mis à jour`) documented above — never invent an objective,
-   ask when the reason for keeping the note is not recoverable from its content.
+   ask when the reason for keeping the note is not recoverable from its content. When the note reports
+   attachments, list their names first (`get name of attachments of note …`): emoji glyphs
+   (`1f3af.png`) are safe to rewrite over, real files (`photo.jpg`, `IMG_1048.heic`) are not — skip
+   the header on those, since inserting it means rewriting the body.
 4. File it with `notes.sh move Notes '<title>' '<dst/path>' '<Domain : Subject>'`.
 5. Report the destination and the remaining inbox count, then stop — one note per round.
 
@@ -154,12 +163,32 @@ end tell
   the list entry, but doing it on top of a body rewrite blanks that first line, and doing it alone
   leaves the body contradicting the title. Notes also converts the `<h1>` into
   `<b><span style="font-size: 24px">…</span></b>` on save, so replace the whole first `<div>…</div>`
-  block, not the tag. `notes.sh move` does this.
-- **`get body` omits attachments, so any `set body` round-trip destroys them** — a note reporting
-  `attachmentCount: 1` returns HTML with no trace of the image, and writing that HTML back deletes it
-  for good (the note lands in Recently Deleted attachment-less, so there is nothing to restore).
-  Check `get count of attachments of note …` before rewriting a body; `notes.sh move` now refuses to
-  retitle a note that has any, so rename those from the app instead.
+  block, not the tag. `notes.sh move` does this — except on a note with attachments, where a body
+  rewrite is the greater evil and `set name` alone is the right trade (see below). The rename does
+  stick: the MCP server reads the new name back out of the CoreData store.
+- **`get body` is inconsistent about attachments, so any `set body` round-trip can destroy them** —
+  on some notes the HTML carries the image inline as `<img src="data:image/jpeg;base64,…">`, on others
+  a note reporting `attachmentCount: 1` comes back with no trace of it, and writing that version back
+  deletes the photo for good (the note lands in Recently Deleted attachment-less, so there is nothing
+  to restore). Never rewrite the body of a note with attachments: `notes.sh move` retitles those with
+  `set name` instead, which leaves the body untouched. Export first with `notes.sh attachments` if you
+  must touch a body anyway.
+- **Attachments are read-only and cannot be created by script** — every property of the `attachment`
+  class is `access="r"` in `Notes.sdef` and there is no `make new attachment`, so an attachment
+  removed by a body rewrite cannot be put back. `save attachment … in file` is the only handle you
+  get; `notes.sh attachments` wraps it. Two quirks: the `save` must run outside a `tell account`
+  block (inside it, `file (POSIX file …)` resolves against the account and fails with `-1728`), and
+  an unnamed inline image reports `name` as `missing value` and refuses to save at all (`-10000`).
+- **Writing a body that contains a base64 `<img>` creates a real attachment** — Notes ingests the
+  data URI and `count of attachments` goes up. Useful to know, but not a re-attach path: what you can
+  read back out of a body is not reliably what you put in.
+- **`attachmentCount` counts emoji, not just photos** — a note whose text uses 🎯💸📦 reports eight
+  attachments that are 300 B–2 KB PNG glyphs named after their codepoint (`1f3af.png`). Read
+  `get name of attachments of note …` before concluding a note is unsafe to rewrite: an emoji-only
+  note takes the normal body-rewrite retitle and header without risk.
+- **`duplicate` is not supported** — `duplicate note …` fails with `-1717` ("Notes can not be
+  copied"), so you cannot test a destructive operation on a copy. Recreate a note from an exported
+  body in a scratch folder instead.
 - **A body-rewrite pipeline that fails writes an empty body and wipes the note, with no error** —
   `set body of n to ""` succeeds, the note keeps its place but loses everything and shows up as
   `New Note` in the list (the title lives in the body's first line). Always check the rewritten HTML
@@ -170,8 +199,9 @@ end tell
   Move and retitle first, then insert the header after the title block.
 - **A link attachment exposes its target via `get URL of`** — `get URL of attachment 1 of note …`
   returns the shared URL, so a note whose only attachment is a Safari link preview can be rewritten
-  as a plain `<a href="…">` and then retitled. The blanket retitle refusal above is deliberate but
-  conservative: recover the URL by hand first, and only then rewrite the body.
+  as a plain `<a href="…">` and then retitled — recover the URL by hand first, and only then rewrite
+  the body. Notes counts that link preview as an attachment, so `notes.sh move` takes the `set name`
+  route on it and never rewrites the body on its own.
 - **A prefix env assignment in front of a pipeline only reaches the first command** —
   `VAR=x osascript … | perl -e '…$ENV{VAR}…'` gives perl an empty value, which silently produces an
   empty insertion rather than an error. `export` it instead; `notes.sh` does this at its retitle step.

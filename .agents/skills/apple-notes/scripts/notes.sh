@@ -4,6 +4,7 @@
 #   notes.sh folder <name> [account]
 #   notes.sh note <folder> <title> [account]              # HTML body on stdin
 #   notes.sh move <src/path> <title> <dst/path> [new-title] [account]
+#   notes.sh attachments <folder/path> <title> <dir> [account]
 set -euo pipefail
 
 usage() {
@@ -13,7 +14,10 @@ usage:
   notes.sh note <folder> <title> [account]   # HTML body read from stdin
   notes.sh move <src/path> <title> <dst/path> [new-title] [account]
                                              # nested paths as "3 Resources/Recrutement";
-                                             # new-title also rewrites the body's <h1>
+                                             # new-title rewrites the body's <h1>, or sets the
+                                             # note name directly when it has attachments
+  notes.sh attachments <folder/path> <title> <dir> [account]
+                                             # export every attachment to <dir>
 EOF
   exit 64
 }
@@ -88,12 +92,22 @@ $dst_mk
 end tell
 EOF
   [ -n "$new_title" ] || exit 0
-  # `get body` omits attachment markup, so the round-trip below would silently drop every
-  # attachment. Refuse rather than destroy: rename those notes from the app instead.
+  nt=$(as_quote "$new_title")
+  # A body round-trip is what destroys attachments: `get body` returns them inline as base64 on some
+  # notes and drops them entirely on others, and writing the dropped version back deletes the photos
+  # for good. `set name` never touches the body, so it is the only safe rename here. The body's first
+  # line then still shows the old title — cosmetic, and preferable to losing the attachments.
   n_att=$(osascript -e "tell application \"Notes\" to tell account \"$account\" to get count of attachments of note \"$title\" of $dst")
   if [ "$n_att" -gt 0 ]; then
-    echo "refusing to retitle \"$2\": it has $n_att attachment(s) that a body rewrite would destroy — rename it in the Notes app" >&2
-    exit 1
+    osascript <<EOF
+tell application "Notes" to tell account "$account"
+  set n to note "$title" of $dst
+  set name of n to "$nt"
+  return (get name of n)
+end tell
+EOF
+    echo "renamed via 'set name' ($n_att attachment(s) preserved); the body's first line still shows the old title" >&2
+    exit 0
   fi
   # The title IS the body's first line — rewrite it and Notes re-derives the name. Never `set name`
   # as well: it blanks that line. Notes has by then turned the <h1> into a styled span, so the whole
@@ -120,6 +134,44 @@ tell application "Notes" to tell account "$account"
   return (get name of n)
 end tell
 EOF
+  ;;
+attachments)
+  [ $# -ge 3 ] || usage
+  title=$(as_quote "$2")
+  account=$(as_quote "${4:-iCloud}")
+  folder_spec "$1"; src=$spec
+  mkdir -p "$3"
+  dir=$(cd "$3" && pwd)
+  # Attachment properties are all read-only and there is no `make new attachment`, so an export is
+  # the only way to keep a copy of the photos outside Notes. Names collide (every photo from the
+  # iPhone is "photo.jpg"), hence the index prefix.
+  # No `tell account` here: inside it, `file (POSIX file …)` resolves against the account and fails
+  # with -1728. Address the note through `of account` instead and keep the file spec at Notes level.
+  osascript <<EOF
+tell application "Notes"
+  set n to note "$title" of $src of account "$account"
+  repeat with i from 1 to (count of attachments of n)
+    set a to attachment i of n
+    -- an attachment Notes built from an inline base64 image has no filename at all
+    set nm to (get name of a)
+    if nm is missing value then set nm to "attachment"
+    set f to "$(as_quote "$dir")/" & i & "-" & nm
+    -- an unnamed inline image refuses to save (-10000); report it instead of aborting the export
+    try
+      save a in file ((POSIX file f) as string)
+      log f
+    on error e
+      log "skipped attachment " & i & ": " & e
+    end try
+  end repeat
+end tell
+EOF
+  # `save` failures are logged, not raised, so an export that wrote nothing would still exit 0 — and
+  # this command exists precisely to be trusted before a risky operation.
+  if [ -z "$(ls -A "$dir")" ]; then
+    echo "nothing was exported from \"$2\" — do not treat its attachments as backed up" >&2
+    exit 1
+  fi
   ;;
 *) usage ;;
 esac
