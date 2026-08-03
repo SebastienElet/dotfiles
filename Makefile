@@ -182,6 +182,7 @@ ai: \
 	codex \
 	codexbar \
 	cursor \
+	firecrawl \
 	googleworkspace-cli \
 	hermes \
 	llama-cpp \
@@ -321,13 +322,20 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
 	mkdir -p $@
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+~/.claude/hooks ~/.claude/skills: | ~/.claude
+	mkdir -p $@
+# Stop hook: emit a resume prompt near the token limit instead of compacting.
+~/.claude/hooks/claude_handoff_check: ${DOTFILES_PATH}/scripts/claude_handoff_check | ~/.claude/hooks
+	ln -s ${DOTFILES_PATH}/scripts/claude_handoff_check $@
+~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 
 codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
@@ -390,6 +398,10 @@ ${BREW_BIN}/rtk:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap rtk-ai/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
 	brew install rtk-ai/tap/rtk
+
+.PHONY: firecrawl
+firecrawl: docker
+	docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
 
 .PHONY: scrapling
 scrapling: docker

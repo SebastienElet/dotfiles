@@ -23,6 +23,7 @@ This directory is the single source of truth for reusable agent skills.
 | `apple-notes`    | Create, move, and rename folders and notes in Apple Notes with AppleScript, including… |
 | `do-nothing-script` | Turn a manual, repeated procedure into a do-nothing script (Dan Slimmon's gradual automation… |
 | `dotfiles`       | Apply this dotfiles repository's configuration and installation conventions. Use when changing… |
+| `handoff`        | Hand the current work over to a fresh agent session instead of letting the context be… |
 | `johnny-decimal` | Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,… |
 | `para-organizer` | Implement the PARA Method (Projects, Areas, Resources, Archives) on a local file system outside… |
 | `skill-manager`  | Manage .agents/skills: create new skills with proper scaffolding, run doctor checks on existing skills… |
