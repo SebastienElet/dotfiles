@@ -20,9 +20,4 @@ This file is the single source of truth for all coding agents working in this re
 - `.agents/skills/` is the single source of truth for reusable agent skills.
 - Read `.agents/skills/README.md` for the current skill index.
 - Use `skill-manager` whenever creating, migrating, editing, validating, or organizing skills.
-
-## Agent Adapters
-
-- `CLAUDE.md` delegates repository instructions to this file.
-- `.claude/skills`, `.codex/skills`, and `.cursor/skills` expose the canonical shared skills.
 - Agent-specific directories must not duplicate repository-wide rules or skill content.
