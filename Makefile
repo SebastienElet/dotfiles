@@ -15,16 +15,18 @@ export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
 
-.PHONY: usage all extra terminal work personal utils clean brew brain volta javascript mas perplexity meteor mongosh openspec specsmd googleworkspace-cli feedmd freemd llama-cpp llmfit opencode pi-coding-agent linear-cli bkt hermes scrapling
-
+.PHONY: usage
 usage:
 	@echo all - Setup dev env
 
+.PHONY: utils
 utils: \
 	cleanshot \
 	handy \
 	rectangle-pro \
 	things-3
+
+.PHONY: all
 all: \
 	extra \
 	terminal \
@@ -32,6 +34,7 @@ all: \
 	utils \
 	personal
 
+.PHONY: extra
 extra: \
 	daisydisk \
 	font-jetbrains-mono
@@ -39,6 +42,7 @@ extra: \
 ################################################################################
 # Terminal section
 ################################################################################
+.PHONY: terminal
 terminal: \
 	~/.config \
 	bat \
@@ -139,6 +143,7 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 ################################################################################
 # Work section
 ################################################################################
+.PHONY: work
 work: \
 	arc \
 	aws \
@@ -189,6 +194,7 @@ ai: \
 	skills \
 	skill-caveman
 
+.PHONY: brain
 brain:
 	@if [ ! -d "$(BRAIN_PATH)" ]; then \
 		exit 0; \
@@ -216,6 +222,7 @@ aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
 
+.PHONY: bkt
 bkt: brew ${BREW_BIN}/bkt
 ${BREW_BIN}/bkt:
 	brew tap avivsinai/tap
@@ -257,10 +264,12 @@ ${BREW_BIN}/lazydocker:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula jesseduffield/lazydocker/lazydocker; fi
 	brew install jesseduffield/lazydocker/lazydocker
 
+.PHONY: meteor
 meteor: ~/.meteor/meteor
 ~/.meteor/meteor:
 	curl https://install.meteor.com/ | sh
 
+.PHONY: mongosh
 mongosh: brew ${BREW_BIN}/mongosh
 ${BREW_BIN}/mongosh:
 	brew install mongosh
@@ -336,18 +345,22 @@ codegraph: ${VOLTA_BIN}/codegraph
 ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @colbymchenry/codegraph
 
+.PHONY: googleworkspace-cli
 googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
 
+.PHONY: hermes
 hermes: ${LOCAL_BIN}/hermes
 ${LOCAL_BIN}/hermes:
 	curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
+.PHONY: llama-cpp
 llama-cpp: brew ${BREW_BIN}/llama-cli
 ${BREW_BIN}/llama-cli:
 	brew install llama.cpp
 
+.PHONY: llmfit
 llmfit: brew ${BREW_BIN}/llmfit
 ${BREW_BIN}/llmfit:
 	brew tap AlexsJones/llmfit
@@ -359,6 +372,7 @@ mistral-vibe: ${LOCAL_BIN}/vibe
 ${LOCAL_BIN}/vibe: uv
 	${BREW_BIN}/uv tool install mistral-vibe
 
+.PHONY: opencode
 opencode: brew ${BREW_BIN}/opencode
 ${BREW_BIN}/opencode:
 	brew tap anomalyco/tap
@@ -377,6 +391,7 @@ ${BREW_BIN}/rtk:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
 	brew install rtk-ai/tap/rtk
 
+.PHONY: scrapling
 scrapling: docker
 	@docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
 
@@ -429,7 +444,9 @@ ${BREW_BIN}/frontcli:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dedene/tap/frontcli; fi
 	brew install dedene/tap/frontcli
 
+.PHONY: feedmd
 feedmd: ${BREW_BIN}/feedmd ~/.config/feedmd/config.yml ~/.config/feedmd/template.tmd
+.PHONY: freemd
 freemd: feedmd
 ${BREW_BIN}/feedmd:
 	curl -L https://github.com/myquay/feedmd/releases/download/v0.0.4-alpha/feedmd-osx-x64.zip -o /tmp/feedmd.zip
@@ -447,6 +464,7 @@ language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
 
+.PHONY: linear-cli
 linear-cli: brew ${BREW_BIN}/linear
 ${BREW_BIN}/linear:
 	brew tap schpet/tap
@@ -454,14 +472,17 @@ ${BREW_BIN}/linear:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula schpet/tap/linear; fi
 	brew install schpet/tap/linear
 
+.PHONY: openspec
 openspec: ${VOLTA_BIN}/openspec
 ${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @fission-ai/openspec@latest
 
+.PHONY: pi-coding-agent
 pi-coding-agent: ${VOLTA_BIN}/pi-coding-agent
 ${VOLTA_BIN}/pi-coding-agent: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
+.PHONY: specsmd
 specsmd:
 	npx specsmd@latest install
 
@@ -481,6 +502,7 @@ vibe-island: /Applications/Vibe\ Island.app
 # Personal section
 ################################################################################
 
+.PHONY: personal
 personal: \
 	apple-notes-exporter \
 	calibre \
@@ -506,6 +528,7 @@ calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
 
+.PHONY: perplexity
 perplexity: mas ${APP_BIN}/Perplexity.app
 ${APP_BIN}/Perplexity.app:
 	mas install 6714467650 || echo "Warning: Failed to install Perplexity (may not be available in this App Store region)"
@@ -552,6 +575,7 @@ ${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
 # End of utils section
 ################################################################################
 
+.PHONY: javascript
 javascript: prettier cspell
 prettier: ${VOLTA_BIN}/prettier
 ${VOLTA_BIN}/prettier: ${VOLTA_BIN}/node
@@ -622,6 +646,7 @@ ${BREW_BIN}/tmux:
 ~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
 	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
 
+.PHONY: brew
 brew: ${BREW_BIN}/brew
 ${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
@@ -647,6 +672,7 @@ jscpd: ${VOLTA_BIN}/jscpd
 ${VOLTA_BIN}/jscpd: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g jscpd
 
+.PHONY: mas
 mas: brew ${BREW_BIN}/mas
 ${BREW_BIN}/mas:
 	brew install mas
@@ -661,6 +687,7 @@ ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
 	touch $@
 
+.PHONY: volta
 volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
@@ -673,6 +700,7 @@ jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq
 
+.PHONY: clean
 clean:
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
