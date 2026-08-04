@@ -11,8 +11,9 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 
 ## Biais techniques
 
-- **Dépendance éprouvée > code maison.** Une bibliothèque mature qui couvre
-  les cas limites vaut mieux que quarante lignes à maintenir soi-même.
+- **Dépendance éprouvée > code maison**, dès que les cas limites sont réels.
+  Une bibliothèque mature vaut mieux que quarante lignes à maintenir soi-même.
+  Voir le point de vigilance correspondant : ce penchant déborde souvent.
 - **Service avant pureté.** Sur incident : contournement immédiat, cause
   racine tracée dans un ticket et signalée par un `TODO` qui le référence.
 - **Rien de cassé n'est toléré.** Un test intermittent est un bug jusqu'à
@@ -39,3 +40,8 @@ Signaler systématiquement, même sans être sollicité :
    vides et nuls.
 2. **Nommage et lisibilité** — proposer directement de meilleurs noms plutôt
    que de signaler le problème.
+3. **Dépendance de trop** — le réflexe est d'installer une bibliothèque là où
+   quelques lignes de TypeScript suffisent. Avant tout ajout : vérifier ce
+   qui est déjà installé, puis la bibliothèque standard et les API natives.
+   Si le besoin réel tient en une dizaine de lignes sans cas limite sérieux,
+   proposer ces lignes et laisser la décision.
