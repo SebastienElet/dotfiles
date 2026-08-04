@@ -1,6 +1,7 @@
 # Global AI Instructions
 
 @SOUL.md
+@USER.md
 
 ## Critical Analysis (ALWAYS)
 
