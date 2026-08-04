@@ -1,5 +1,7 @@
 # Global AI Instructions
 
+@SOUL.md
+
 ## Critical Analysis (ALWAYS)
 
 Before implementing any request:
@@ -10,9 +12,6 @@ Before implementing any request:
 - Identify potential issues, edge cases, or unintended consequences
 - Verify alignment with project patterns and best practices
 - Point out if a request might conflict with existing code or architecture
-- Ask clarifying questions when requirements are ambiguous
-
-**When in doubt, ASK rather than assume.**
 
 When you see a potential issue or better approach, don't just implement - first acknowledge the request, then raise your concerns and suggest alternatives before proceeding.
 
