@@ -29,8 +29,15 @@ utils: \
 	rectangle-pro \
 	things-3
 
+# Homebrew ignores untrusted taps and warns on every command until they are trusted.
+# Runners ship pre-tapped untrusted taps, hence the sweep before a full install.
+.PHONY: trust-taps
+trust-taps: brew
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew tap | xargs -n1 brew trust --tap 2>&1 | grep -v '^Already trusted' || true; fi
+
 .PHONY: all
 all: \
+	trust-taps \
 	extra \
 	terminal \
 	work \
@@ -526,6 +533,7 @@ vibe-island: /Applications/Vibe\ Island.app
 personal: \
 	apple-notes-exporter \
 	calibre \
+	obsidian \
 	perplexity \
 	whatsapp
 
@@ -547,6 +555,10 @@ ${APP_BIN}/Apple\ Notes\ Exporter.app:
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
+
+obsidian: brew ${APP_BIN}/Obsidian.app
+${APP_BIN}/Obsidian.app:
+	brew install --cask obsidian
 
 .PHONY: perplexity
 perplexity: mas ${APP_BIN}/Perplexity.app
@@ -666,10 +678,8 @@ ${BREW_BIN}/tmux:
 ~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
 	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
 
-# Homebrew ignores untrusted taps and warns on every command until they are trusted.
 .PHONY: brew
 brew: ${BREW_BIN}/brew
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew tap | xargs -n1 brew trust --tap || true; fi
 ${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh

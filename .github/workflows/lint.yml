@@ -6,7 +6,7 @@ jobs:
     name: Fish shell
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Fish
         run: brew install fish
@@ -39,7 +39,7 @@ jobs:
     name: Lua (NeoVim)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install luacheck
         run: brew install luacheck
@@ -54,7 +54,7 @@ jobs:
     name: Shell scripts
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install ShellCheck
         run: brew install shellcheck

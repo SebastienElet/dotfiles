@@ -5,6 +5,6 @@ jobs:
     runs-on: macOS-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Execute full install
       run: make all SKIP_PAID_APPS=1
