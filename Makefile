@@ -333,13 +333,19 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
 	mkdir -p $@
 ~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+# Imported by AGENTS.md; linked as siblings so the @import resolves whether the
+# tool follows the symlink or reads it from the destination directory.
+~/.claude/SOUL.md: ${DOTFILES_PATH}/ai/SOUL.md | ~/.claude
+	ln -s ${DOTFILES_PATH}/ai/SOUL.md $@
+~/.claude/USER.md: ${DOTFILES_PATH}/ai/USER.md | ~/.claude
+	ln -s ${DOTFILES_PATH}/ai/USER.md $@
 ~/.claude/hooks ~/.claude/skills: | ~/.claude
 	mkdir -p $@
 # Stop hook: emit a resume prompt near the token limit instead of compacting.
@@ -348,13 +354,17 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/SOUL.md ~/.codex/USER.md
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
 	mkdir -p $@
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
 	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+~/.codex/SOUL.md: ${DOTFILES_PATH}/ai/SOUL.md | ~/.codex
+	ln -s ${DOTFILES_PATH}/ai/SOUL.md $@
+~/.codex/USER.md: ${DOTFILES_PATH}/ai/USER.md | ~/.codex
+	ln -s ${DOTFILES_PATH}/ai/USER.md $@
 
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:

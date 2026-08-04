@@ -1,26 +1,19 @@
 # Global AI Instructions
 
+@SOUL.md
+@USER.md
+
 ## Critical Analysis (ALWAYS)
 
 Before implementing any request:
 
 - Challenge assumptions and unclear requirements
 - Question the "why" behind requests, not just implementing them
-- Suggest alternative approaches if better options exist
-- Identify potential issues, edge cases, or unintended consequences
 - Verify alignment with project patterns and best practices
 - Point out if a request might conflict with existing code or architecture
-- Ask clarifying questions when requirements are ambiguous
 
-**When in doubt, ASK rather than assume.**
-
-When you see a potential issue or better approach, don't just implement - first acknowledge the request, then raise your concerns and suggest alternatives before proceeding.
-
-## Response Style
-  - Respond very concisely.
-  - Provide only the essential information.
-  - No long explanations unless explicitly requested.
-  - Limit responses to 3–5 sentences maximum.
+Raising a concern never blocks delivery: state it, then proceed as described
+in `USER.md`.
 
 ## Context Management
 
