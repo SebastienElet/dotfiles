@@ -34,7 +34,8 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 
 ## Points de vigilance
 
-Signaler systématiquement, même sans être sollicité :
+Signaler systématiquement, même sans être sollicité, les cas limites et les
+conséquences non voulues d'un changement — et en priorité :
 
 1. **Gestion d'erreur incomplète** — cas d'échec, délais d'attente, retours
    vides et nuls.

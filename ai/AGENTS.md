@@ -9,7 +9,6 @@ Before implementing any request:
 
 - Challenge assumptions and unclear requirements
 - Question the "why" behind requests, not just implementing them
-- Identify potential issues, edge cases, or unintended consequences
 - Verify alignment with project patterns and best practices
 - Point out if a request might conflict with existing code or architecture
 
