@@ -15,6 +15,8 @@ SKIP_PAID_APPS?=0
 export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
+# Recipe guard: no Docker daemon in CI, and none right after a fresh Orbstack install.
+DOCKER_OR_SKIP=docker info >/dev/null 2>&1 || { echo "Docker unavailable, skipping $@"; exit 0; }
 
 .PHONY: usage
 usage:
@@ -403,15 +405,15 @@ ${BREW_BIN}/rtk:
 
 .PHONY: firecrawl
 firecrawl: docker
-	docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
+	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
 
 .PHONY: scrapling
 scrapling: docker
-	@docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
+	@$(DOCKER_OR_SKIP); docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
 
 .PHONY: cloakbrowser
 cloakbrowser: docker
-	@docker image inspect ${CLOAKBROWSER_IMAGE} >/dev/null 2>&1 || docker pull ${CLOAKBROWSER_IMAGE}
+	@$(DOCKER_OR_SKIP); docker image inspect ${CLOAKBROWSER_IMAGE} >/dev/null 2>&1 || docker pull ${CLOAKBROWSER_IMAGE}
 
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
@@ -622,7 +624,7 @@ font-iosevka-nerd-font: ~/Library/Fonts/IosevkaNerdFont-Regular.ttf
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install --no-update-rc
+	~/.fzf/install --no-update-rc --no-fish
 
 ripgrep: brew ${BREW_BIN}/rg
 ${BREW_BIN}/rg:
@@ -664,8 +666,10 @@ ${BREW_BIN}/tmux:
 ~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
 	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
 
+# Homebrew ignores untrusted taps and warns on every command until they are trusted.
 .PHONY: brew
 brew: ${BREW_BIN}/brew
+	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew tap | xargs -n1 brew trust --tap || true; fi
 ${BREW_BIN}/brew:
 	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
 	chmod +x /tmp/brew-installer.sh
