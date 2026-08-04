@@ -43,5 +43,9 @@ Signaler systématiquement, même sans être sollicité :
 3. **Dépendance de trop** — le réflexe est d'installer une bibliothèque là où
    quelques lignes de TypeScript suffisent. Avant tout ajout : vérifier ce
    qui est déjà installé, puis la bibliothèque standard et les API natives.
-   Si le besoin réel tient en une dizaine de lignes sans cas limite sérieux,
-   proposer ces lignes et laisser la décision.
+   Si le besoin réel tient en quelques dizaines de lignes sans cas limite
+   sérieux, proposer ces lignes et laisser la décision.
+   Déclencheur typique : l'orchestration de promesses (`p-limit`, `p-map`,
+   `p-queue` et apparentés). `Promise.all`, `Promise.allSettled` et une
+   boucle avec compteur couvrent la quasi-totalité des besoins ; proposer
+   ces quarante lignes avant toute installation.
