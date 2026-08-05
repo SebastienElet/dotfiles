@@ -354,17 +354,17 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/SOUL.md ~/.codex/USER.md
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
 	mkdir -p $@
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.codex
-	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
-~/.codex/SOUL.md: ${DOTFILES_PATH}/ai/SOUL.md | ~/.codex
-	ln -s ${DOTFILES_PATH}/ai/SOUL.md $@
-~/.codex/USER.md: ${DOTFILES_PATH}/ai/USER.md | ~/.codex
-	ln -s ${DOTFILES_PATH}/ai/USER.md $@
+# Codex ignores AGENTS.md @import directives, so the three files are assembled
+# here instead of symlinked. Written to a temporary path then moved, so an
+# existing symlink is replaced rather than written through.
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md | ~/.codex
+	grep -v '^@' $< | cat - ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md > $@.tmp
+	mv $@.tmp $@
 
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:
