@@ -163,7 +163,6 @@ work: \
 	feedmd \
 	language-tool \
 	qovery-cli \
-	rtk \
 	docker \
 	doppler \
 	frontcli \
@@ -412,13 +411,6 @@ ${BREW_BIN}/opencode:
 qovery-cli:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
-
-rtk: brew ${BREW_BIN}/rtk
-${BREW_BIN}/rtk:
-	brew tap rtk-ai/tap
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap rtk-ai/tap; fi
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
-	brew install rtk-ai/tap/rtk
 
 .PHONY: firecrawl
 firecrawl: docker
