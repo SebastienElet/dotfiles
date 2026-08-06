@@ -91,6 +91,12 @@ even if <where user might not mention the domain>.
 > discrepancies, charge balance issues, or missing invoices, even if the user doesn't explicitly
 > mention "accounting" or "reconciliation".
 
+**Keep it under ~300 characters.** The initial skill list is capped — Codex bounds it to 2% of the
+context window or 8000 characters, shortening descriptions first and then dropping skills outright;
+Claude Code truncates `description` + `when_to_use` at 1536 characters per entry. A long description
+is therefore the first thing sacrificed, so the distinctive case goes in the opening clause. The
+1024-character ceiling below is a hard limit, not a target.
+
 **Bad examples**:
 
 - ❌ Generic: `"Helps manage skills"` (no activation keywords)
@@ -346,7 +352,7 @@ The README uses `metadata.category` to organize skills into sections:
 - [ ] No custom fields at top-level (no `disable-model-invocation`, `category`, `paths`)
 - [ ] `metadata.category` is one of: `dev`, `support`, `product`, `ops`
 - [ ] Description is "pushy" (includes "Use when" and/or "Make sure to use")
-- [ ] Description is < 1024 characters
+- [ ] Description is < 1024 characters, and ideally < 300 (the list is capped and truncated)
 - [ ] SKILL.md is < 500 lines, < 5000 tokens
 - [ ] All 7 required sections present (Overview, Usage, Steps, Gotchas, Constraints, + H1 +
       frontmatter)

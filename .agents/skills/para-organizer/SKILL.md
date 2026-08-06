@@ -1,13 +1,10 @@
 ---
 name: para-organizer
 description: >
-  Implement the PARA Method (Projects, Areas, Resources, Archives) on a local file system outside
-  `~/Documents` and `~/Brain`. Use when setting up PARA from scratch, auditing or cleaning up an
-  existing PARA tree, classifying folders into Projects/Areas/Resources/Archives, or reorganizing a
-  messy folder by actionability. Make sure to use this skill whenever a request mentions PARA,
-  "Second Brain file organization", or asks which folders should be projects vs areas vs resources,
-  even if the user only asks where one folder belongs. For `~/Documents`, use `johnny-decimal`
-  instead.
+  Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents and
+  ~/Brain. Use when setting up, auditing, or reclassifying folders by actionability. Make sure to
+  use it whenever a request mentions PARA or asks where a folder belongs. For ~/Documents use
+  johnny-decimal.
 metadata:
   category: ops
   author: Tiago Forte (Forte Labs)

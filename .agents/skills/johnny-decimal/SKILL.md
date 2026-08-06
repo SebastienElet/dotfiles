@@ -1,10 +1,9 @@
 ---
 name: johnny-decimal
 description: >
-  Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,
-  filing, moving, or locating numbered personal documents. Make sure to use this skill whenever a
-  request concerns Johnny Decimal categories, PARA mapping, or document filenames under
-  ~/Documents, even if the user only asks where a document belongs.
+  Organize ~/Documents with the Johnny Decimal and PARA hybrid. Use when naming, filing, moving,
+  or locating numbered personal documents. Make sure to use it whenever a request concerns
+  categories or filenames under ~/Documents, even if it only asks where a document belongs.
 metadata:
   category: ops
 ---

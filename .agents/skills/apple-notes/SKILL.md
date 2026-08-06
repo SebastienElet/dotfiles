@@ -1,13 +1,10 @@
 ---
 name: apple-notes
 description: >
-  Create, move, and rename folders and notes in Apple Notes with AppleScript, including
-  HTML-formatted bodies, nested folders, and exporting a note's attachments. Use when adding,
-  writing, filing, or triaging content in Apple Notes from the command line. Make sure to use this
-  skill whenever a request mentions creating a note, a Notes folder, processing the Notes inbox,
-  moving or retitling an existing note, saving something "in my Notes", handling photos or
-  attachments inside a note, or scripting Notes with osascript, even if AppleScript is never
-  named — the apple-notes MCP server is read-only and cannot write.
+  Write to Apple Notes with AppleScript: create, move, rename notes and folders, HTML bodies,
+  attachments. Use when adding, filing, or triaging Notes content. Make sure to use it whenever a
+  request writes to Notes, even if AppleScript is unnamed — the apple-notes MCP server is read-
+  only.
 license: MIT
 compatibility: macOS with the Notes app; osascript. Requires Automation permission for the calling terminal.
 metadata:
