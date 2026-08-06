@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Scrapling MCP server backed by a single reusable container. Registering
+# `docker run … scrapling mcp` directly leaks one container per agent session,
+# which never exits when the session dies; here every session execs into the
+# same named container instead.
+
+set -euo pipefail
+
+CONTAINER="${SCRAPLING_CONTAINER:-scrapling-mcp}"
+IMAGE="${SCRAPLING_IMAGE:-pyd4vinci/scrapling}"
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Error: Docker daemon unavailable" >&2
+  exit 69
+fi
+
+# `docker start` also succeeds on an already running container, so this both
+# reuses and restarts. The trailing start covers the race where a concurrent
+# session created the container between our two commands.
+if ! docker start "${CONTAINER}" >/dev/null 2>&1; then
+  docker run --detach --name "${CONTAINER}" \
+    --add-host=host.docker.internal:host-gateway \
+    --volume scrapling-profiles:/profiles \
+    --entrypoint sleep \
+    "${IMAGE}" infinity >/dev/null 2>&1 ||
+    docker start "${CONTAINER}" >/dev/null
+fi
+
+exec docker exec --interactive "${CONTAINER}" uv run scrapling mcp

@@ -425,8 +425,14 @@ firecrawl: docker
 	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
 
 .PHONY: scrapling
-scrapling: docker
+scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 	@$(DOCKER_OR_SKIP); docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
+
+# MCP command for agents: starts the shared container on demand instead of one per session.
+${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/scripts/scrapling_mcp | ${LOCAL_BIN}
+	ln -s ${DOTFILES_PATH}/scripts/scrapling_mcp $@
+${LOCAL_BIN}:
+	mkdir -p $@
 
 .PHONY: cloakbrowser
 cloakbrowser: docker

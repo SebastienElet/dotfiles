@@ -27,13 +27,15 @@ Escalate only when the previous tier fails; never start above the first tier:
 
 1. Built-in fetch, then `scrapling` `fetch` for JS-rendered pages.
 2. `scrapling` `stealthy_fetch` for anti-bot protections (add `solve_cloudflare` for Turnstile).
-3. CloakBrowser, when `stealthy_fetch` is still blocked:
+3. CloakBrowser, when `stealthy_fetch` is still blocked. Reuse the `cloak` container instead of
+   starting a new one, so a forgotten `docker stop` costs at most one container:
    ```sh
-   docker run -d --rm --name cloak -p 127.0.0.1:9222:9222 cloakhq/cloakbrowser:0.5.3 cloakserve --idle-timeout=300
+   docker start cloak 2>/dev/null ||
+     docker run -d --name cloak -p 127.0.0.1:9222:9222 cloakhq/cloakbrowser:0.5.3 cloakserve --idle-timeout=300
    ```
    Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
    runs inside Docker, so `localhost` would resolve to its own container. Stop the container
-   (`docker stop cloak`) once done.
+   (`docker stop cloak`) once done; `--idle-timeout` stops it on its own after five idle minutes.
 
 ## Code Style
 
