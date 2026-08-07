@@ -1,0 +1,72 @@
+# Architecture Decision Records
+
+Décisions structurantes de ce dépôt, reconstituées depuis l'historique git
+(934 commits, 2014-08 → 2026-08). Format inspiré de
+[MADR](https://adr.github.io/madr/).
+
+## Portée
+
+Seules les décisions **en vigueur** sont enregistrées. Les décisions
+remplacées ne font pas l'objet d'une ADR ; elles apparaissent dans la section
+« Alternatives écartées » de celle qui les a remplacées (NvChad, prezto puis
+antigen, gestion des plugins Vim par cibles Makefile, nvm puis fnm,
+docker-machine, iTerm2 puis Alacritty, chunkwm puis yabai, Copilot, pnpm pour
+les paquets globaux).
+
+Exception : un retrait dont la justification est mesurée et réutilisable fait
+l'objet d'une ADR propre, la décision en vigueur étant alors « ne pas
+utiliser » (ADR-033, ADR-034).
+
+## Langue
+
+Les ADR sont rédigées en français, par exception à la règle « documentation en
+anglais » qui régit le reste du dépôt : elles consignent un raisonnement
+personnel, non une interface publique. L'exception vaut pour tout `docs/` et
+est portée par `docs/AGENTS.md`, rappelée dans l'`AGENTS.md` racine pour qu'un
+agent la connaisse avant même d'ouvrir un fichier du répertoire.
+
+## Fiabilité des motivations
+
+Le champ **Contexte** est une reconstitution a posteriori, sauf lorsqu'il cite
+le corps d'un commit — dans ce cas la citation est explicite. L'historique a
+été réécrit : les dates de commit valent toutes 2026-08-06, les dates citées
+ici sont les dates d'auteur.
+
+## Index
+
+| # | Titre | Date |
+|---|---|---|
+| [001](001-makefile-installateur.md) | Makefile idempotent comme installateur de poste | 2014-08 |
+| [002](002-homebrew-source-unique.md) | Homebrew et `mas` comme unique source de paquets | 2015-02 |
+| [003](003-deploiement-par-symlinks.md) | Déploiement de la configuration par symlinks | 2014-10 |
+| [004](004-script-upgrade-unique.md) | Script `upgrade` unique pour toutes les mises à jour | 2017-09 |
+| [005](005-elagage-des-cibles.md) | Élagage périodique des cibles inutilisées | 2025-12 |
+| [006](006-neovim-editeur-par-defaut.md) | Neovim comme éditeur par défaut | 2019-11 |
+| [007](007-lazyvim-comme-distribution.md) | LazyVim comme distribution Neovim | 2023-12 |
+| [008](008-lockfile-plugins-versionne.md) | `lazy-lock.json` versionné et Renovate | 2024-10 |
+| [009](009-lsp-natif-et-conform.md) | Lint et format par LSP natif et conform | 2026-07 |
+| [010](010-fish-shell-par-defaut.md) | Fish comme shell par défaut | 2025-01 |
+| [011](011-starship-comme-prompt.md) | Starship comme prompt unique | 2025-01 |
+| [012](012-abbreviations-fish.md) | Abbreviations Fish plutôt qu'alias git | 2026-01 |
+| [013](013-wezterm-emulateur.md) | WezTerm comme émulateur de terminal | 2026-01 |
+| [014](014-theme-catppuccin-unique.md) | Thème Catppuccin unique et bascule automatique | 2026-01 |
+| [015](015-cli-modernes.md) | CLI modernes en remplacement des historiques | 2026-01 |
+| [016](016-volta-gestionnaire-node.md) | Volta comme gestionnaire Node | 2021-05 |
+| [017](017-npm-pour-paquets-globaux.md) | npm pour les paquets globaux | 2026-01 |
+| [018](018-orbstack-runtime-conteneurs.md) | OrbStack comme runtime de conteneurs | 2024-02 |
+| [019](019-pas-de-tiling-window-manager.md) | Aucun gestionnaire de fenêtres en tuiles | 2025-12 |
+| [020](020-hooks-de-push-maison.md) | Hooks de push maison dans `scripts/` | 2022-11 |
+| [021](021-branche-main-detectee.md) | `main` détectée dynamiquement | 2023-12 |
+| [022](022-conventional-commits.md) | Conventional Commits imposés | 2025-12 |
+| [023](023-ci-lint-et-installation.md) | CI de lint et test d'installation | 2026-01 |
+| [024](024-instructions-ia-versionnees.md) | Instructions IA versionnées dans le dépôt | 2026-01 |
+| [025](025-agents-md-source-unique.md) | `AGENTS.md` comme source unique agent-agnostique | 2026-02 |
+| [026](026-agents-cli-plutot-que-copilot.md) | Agents CLI plutôt que Copilot | 2025-10 |
+| [027](027-soul-et-user-separes.md) | `SOUL.md` et `USER.md` séparés de `AGENTS.md` | 2026-08 |
+| [028](028-skills-ssot.md) | `.agents/skills/` comme source unique des skills | 2026-05 |
+| [029](029-pas-de-skills-tierces.md) | Skills tierces refusées par défaut | 2026-05 |
+| [030](030-brain-memoire-durable.md) | `~/Brain` comme mémoire durable partagée | 2026-07 |
+| [031](031-mcp-en-conteneurs-nommes.md) | MCP en conteneurs Docker nommés | 2026-08 |
+| [032](032-johnny-decimal-documents.md) | Johnny Decimal pour `~/Documents` | 2025-08 |
+| [033](033-pas-de-rtk.md) | Ne pas utiliser RTK | 2026-08 |
+| [034](034-pas-de-caveman.md) | Ne pas utiliser les skills Caveman | 2026-08 |

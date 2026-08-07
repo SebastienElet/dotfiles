@@ -13,18 +13,18 @@ This directory is the single source of truth for reusable agent skills.
 
 | Skill     | Description |
 | --------- | ----------- |
-| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. Use when editing Lua files under… |
-| `scripts` | Create and maintain portable Bash scripts in this repository. Use when adding or editing standalone… |
+| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. |
+| `scripts` | Create and maintain portable Bash scripts in this repository. |
 
 ## Ops
 
-| Skill            | Description |
-| ---------------- | ----------- |
-| `apple-notes`    | Create, move, and rename folders and notes in Apple Notes with AppleScript, including… |
-| `do-nothing-script` | Turn a manual, repeated procedure into a do-nothing script (Dan Slimmon's gradual automation… |
-| `dotfiles`       | Apply this dotfiles repository's configuration and installation conventions. Use when changing… |
-| `handoff`        | Hand the current work over to a fresh agent session instead of letting the context be… |
-| `johnny-decimal` | Organize files in ~/Documents with the Johnny Decimal and PARA hybrid system. Use when naming,… |
-| `para-organizer` | Implement the PARA Method (Projects, Areas, Resources, Archives) on a local file system outside… |
-| `skill-manager`  | Manage .agents/skills: create new skills with proper scaffolding, run doctor checks on existing skills… |
-| `things-tasks`   | Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing Things lists… |
+| Skill               | Description |
+| ------------------- | ----------- |
+| `apple-notes`       | Write to Apple Notes with AppleScript: create, move, rename notes and folders, HTML bodies, attachments. |
+| `do-nothing-script` | Turn a repeated manual procedure into a do-nothing script (Slimmon): one function per step, printed then awaiting the operator, automated one step at a time. |
+| `dotfiles`          | Apply this repository's conventions for configuration, symlinks, platform differences, and tool installation. |
+| `handoff`           | Hand the current work to a fresh session instead of letting the context compact. |
+| `johnny-decimal`    | Organize ~/Documents with the Johnny Decimal and PARA hybrid. |
+| `para-organizer`    | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents and ~/Brain. |
+| `skill-manager`     | Manage .agents/skills: create, doctor, fix, cross-check, and sync the README index. |
+| `things-tasks`      | Manage Things 3 tasks, projects, and areas through the thangs CLI. |

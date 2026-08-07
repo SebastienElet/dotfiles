@@ -2,9 +2,8 @@
 name: scripts
 description: >
   Create and maintain portable Bash scripts in this repository. Use when adding or editing
-  standalone scripts, shebangs, error handling, or executable tooling. Make sure to use this skill
-  whenever a change touches scripts/ or introduces shell automation, even if the request calls it a
-  helper or hook.
+  standalone scripts, shebangs, error handling, or executable tooling. Make sure to use it
+  whenever a change touches scripts/, even if the request calls it a helper or a hook.
 metadata:
   category: dev
 ---

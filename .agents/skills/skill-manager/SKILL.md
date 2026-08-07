@@ -1,13 +1,10 @@
 ---
 name: skill-manager
 description: >
-  Manage .agents/skills: create new skills with proper scaffolding, run doctor checks on existing skills for quality and portability, fix non-conforming skills after a doctor run, detect inter-skill
-  inconsistencies with cross-check, and keep the README index synchronized. Use when creating a new
-  skill, improving an existing skill, modifying a skill's description or frontmatter, fixing doctor findings, detecting trigger overlaps or rule contradictions between skills, organizing the skills
-  directory, or ensuring multi-agent compatibility. Make sure to use this skill whenever authoring a
-  new skill, reviewing skill quality, cross-checking skills for conflicts, restructuring skills,
-  modifying any SKILL.md file (even a single field like description or metadata), applying fixes from doctor, or migrating to the agentskills.io standard, even if you're just tweaking one line in an
-  existing skill — references/conventions.md must be read first.
+  Manage .agents/skills: create, doctor, fix, cross-check, and sync the README index. Use when
+  authoring a skill or changing any SKILL.md, down to a single frontmatter field. Make sure to use
+  it whenever skill quality, triggers, or portability are at stake; references/conventions.md must
+  be read first.
 metadata:
   category: ops
   author: Bellman

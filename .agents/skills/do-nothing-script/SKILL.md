@@ -1,13 +1,10 @@
 ---
 name: do-nothing-script
 description: >
-  Turn a manual, repeated procedure into a do-nothing script (Dan Slimmon's gradual automation
-  technique): one function per step, each printing its instructions and waiting for the operator,
-  automated one step at a time. Use when documenting or automating a runbook, checklist, release
-  process, onboarding, incident procedure, or any multi-step manual chore. Make sure to use this
-  skill whenever a request mentions a runbook, checklist, "steps I always do by hand", gradual or
-  partial automation, or asks to script a procedure whose steps cannot all be automated yet, even if
-  the words "do-nothing script" are never used.
+  Turn a repeated manual procedure into a do-nothing script (Slimmon): one function per step,
+  printed then awaiting the operator, automated one step at a time. Use when scripting a runbook,
+  checklist, release, or onboarding. Make sure to use it whenever the steps cannot all be
+  automated yet, even if the term is never used.
 metadata:
   category: ops
 ---

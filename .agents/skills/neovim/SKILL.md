@@ -1,10 +1,9 @@
 ---
 name: neovim
 description: >
-  Maintain this repository's Neovim and LazyVim configuration. Use when editing Lua files under
-  nvim/, adding plugins, changing options, or updating keymaps. Make sure to use this skill whenever
-  a request affects LazyVim plugin specifications or Neovim behavior, even if Neovim is not named
-  explicitly.
+  Maintain this repository's Neovim and LazyVim configuration. Use when editing Lua under nvim/,
+  adding plugins, changing options, or updating keymaps. Make sure to use it whenever a change
+  affects LazyVim specs or Neovim behaviour, even if Neovim is unnamed.
 metadata:
   category: dev
 ---

@@ -1,12 +1,10 @@
 ---
 name: handoff
 description: >
-  Hand the current work over to a fresh agent session instead of letting the context be compacted.
-  Use when the context window is nearly full, when a Stop hook reports the handoff threshold was
-  reached, or when the user asks for a resume prompt. Make sure to use this skill whenever a session
-  must end and continue elsewhere — approaching the token limit, avoiding auto-compaction, or
-  starting a new session on the same task — even if the request only asks for "the prompt to keep
-  going" or to "start over from scratch" without naming the context limit.
+  Hand the current work to a fresh session instead of letting the context compact. Use when the
+  window is nearly full, a Stop hook reports the handoff threshold, or a resume prompt is asked
+  for. Make sure to use it whenever a session must continue elsewhere, even if the context limit
+  is never named.
 compatibility: Claude Code with scripts/claude_handoff_check installed as a Stop hook
 metadata:
   category: ops

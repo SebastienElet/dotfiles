@@ -1,11 +1,9 @@
 ---
 name: things-tasks
 description: >
-  Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing Things lists,
-  creating or editing tasks, completing or canceling tasks, managing projects or areas, filtering
-  by project, area, or tag, or inspecting thangs options. Make sure to use this skill whenever the
-  user asks about their todos, Today list, deadlines, or Things data, even if they do not explicitly
-  mention Things 3 or thangs.
+  Manage Things 3 tasks, projects, and areas through the thangs CLI. Use when listing, creating,
+  editing, completing, or filtering tasks by project, area, or tag. Make sure to use it whenever
+  the user asks about todos, the Today list, or deadlines, even if Things is never named.
 metadata:
   category: ops
 ---

@@ -1,10 +1,9 @@
 ---
 name: dotfiles
 description: >
-  Apply this dotfiles repository's configuration and installation conventions. Use when changing
-  dotfiles, symlinks, platform-specific configuration, or tool installation. Make sure to use this
-  skill whenever editing the Makefile or a configuration managed from this repository, even if the
-  request only mentions a single application.
+  Apply this repository's conventions for configuration, symlinks, platform differences, and tool
+  installation. Use when editing the Makefile or any file managed from here. Make sure to use it
+  whenever a change lands in this repository, even if the request names a single application.
 metadata:
   category: ops
 ---

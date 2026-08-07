@@ -163,7 +163,6 @@ work: \
 	feedmd \
 	language-tool \
 	qovery-cli \
-	rtk \
 	docker \
 	doppler \
 	frontcli \
@@ -203,8 +202,7 @@ ai: \
 	openspec \
 	pi-coding-agent \
 	scrapling \
-	skills \
-	skill-caveman
+	skills
 
 .PHONY: brain
 brain:
@@ -413,13 +411,6 @@ qovery-cli:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
 
-rtk: brew ${BREW_BIN}/rtk
-${BREW_BIN}/rtk:
-	brew tap rtk-ai/tap
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap rtk-ai/tap; fi
-	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula rtk-ai/tap/rtk; fi
-	brew install rtk-ai/tap/rtk
-
 .PHONY: firecrawl
 firecrawl: docker
 	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
@@ -441,26 +432,6 @@ cloakbrowser: docker
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g skills
-
-skill-caveman: skill-caveman-codex skill-caveman-cursor skill-caveman-claude
-
-skill-caveman-codex: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/codex
-${HOME}/.local/state/dotfiles/caveman/codex: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a codex -g --yes
-	mkdir -p $(dir $@)
-	touch $@
-
-skill-caveman-cursor: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/cursor
-${HOME}/.local/state/dotfiles/caveman/cursor: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a cursor -g --yes
-	mkdir -p $(dir $@)
-	touch $@
-
-skill-caveman-claude: ${VOLTA_BIN}/skills ${HOME}/.local/state/dotfiles/caveman/claude-code
-${HOME}/.local/state/dotfiles/caveman/claude-code: ${VOLTA_BIN}/skills
-	${VOLTA_BIN}/skills add JuliusBrussee/caveman -a claude-code -g --yes
-	mkdir -p $(dir $@)
-	touch $@
 
 chatgpt: brew ${APP_BIN}/ChatGPT.app
 ${APP_BIN}/ChatGPT.app:
