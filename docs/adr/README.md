@@ -22,8 +22,9 @@ utiliser » (ADR-033, ADR-034).
 Les ADR sont rédigées en français, par exception à la règle « documentation en
 anglais » qui régit le reste du dépôt : elles consignent un raisonnement
 personnel, non une interface publique. L'exception vaut pour tout `docs/` et
-est portée par `docs/AGENTS.md`, rappelée dans l'`AGENTS.md` racine pour qu'un
-agent la connaisse avant même d'ouvrir un fichier du répertoire.
+est portée par `docs/AGENTS.md`. Le rappel qui la doublait dans l'`AGENTS.md`
+racine a été retiré : mesuré, il ne changeait rien
+([ADR-035](035-agents-md-elague-par-mesure.md)).
 
 ## Fiabilité des motivations
 
@@ -70,3 +71,4 @@ ici sont les dates d'auteur.
 | [032](032-johnny-decimal-documents.md) | Johnny Decimal pour `~/Documents` | 2025-08 |
 | [033](033-pas-de-rtk.md) | Ne pas utiliser RTK | 2026-08 |
 | [034](034-pas-de-caveman.md) | Ne pas utiliser les skills Caveman | 2026-08 |
+| [035](035-agents-md-elague-par-mesure.md) | `AGENTS.md` élagué par mesure du no-op | 2026-08 |
