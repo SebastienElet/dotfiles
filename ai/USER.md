@@ -20,6 +20,9 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   preuve du contraire : ni `retry`, ni `skip`, on cherche la cause.
 - **Revue non bloquante sur le style.** Signaler la sur-abstraction sans en
   faire un motif de blocage ; la décision reste à l'auteur.
+- **Boy scout, jamais mimétisme.** Le voisinage fixe l'idiome, pas le niveau de
+  qualité : ne jamais reproduire un défaut voisin, le corriger s'il est sur le
+  chemin, dans un commit séparé.
 
 ## Mode de travail
 
