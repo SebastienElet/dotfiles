@@ -1,10 +1,10 @@
 ---
 name: merge-verdict
 description: >
-  Deliver a merge verdict on another author's pull request: changes required, approved with
-  reservations, or approved. Use when asked to review a PR, whether a PR is safe to merge or should
-  be approved, for a verdict or a blocking review, or to re-review after fixes. Make sure to use it
-  whenever a merge decision is at stake, even if the request only says "look at this PR".
+  Deliver a merge verdict on another author's pull request. Use when asked to review a PR, whether
+  it is safe to merge or should be approved, for a blocking review, or to re-review after fixes.
+  Make sure to use it whenever a merge decision is at stake, even if the request only says "look at
+  this PR".
 compatibility: >
   Authenticated `gh` (GitHub) or `bkt` (Bitbucket) CLI, plus an issue tracker CLI (`linear`,
   `gh issue create`) for the traceability step.
@@ -30,6 +30,11 @@ engages a decision the team will act on.
 ## Usage
 
 `/merge-verdict <pr-number|pr-url>` — the forge is detected from `git remote get-url origin`.
+
+Typical cases: "is #1042 safe to merge?" (phase 1 finds the branch stacked and the shown diff twice
+its real size), "review this PR before I approve it" (phase 3 turns a vague unease into a named
+mechanism, or drops it), "they pushed the fixes, re-review" (phase 6 finds the previous marker,
+sees a new SHA, and publishes a second verdict rather than editing the first).
 
 Run the six phases in order; phase 4 precedes phase 5 because a verdict without an executed barrier
 is an opinion. This skill and its references are English; the published verdict follows the language

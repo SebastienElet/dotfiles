@@ -38,35 +38,36 @@ Initial review: <url>     REQUIRED when a previous verdict exists on this PR
 
 ## Filled example
 
-A *changes required* verdict on a French PR. Every identifier and figure below is invented — a
-committed skill must carry nothing from the repositories it was exercised on. Note what the barrier
-paragraph does: it gives numbers, then immediately spends a sentence dismantling its own green.
+A *changes required* verdict. Every identifier and figure below is invented — a committed skill must
+carry nothing from the repositories it was exercised on. The example is English because these files
+are; a real verdict is written in the language of its PR. Note what the barrier paragraph does: it
+gives numbers, then immediately spends a sentence dismantling its own green.
 
 ```text
 <!-- merge-verdict:1042:a1b2c3d4e5f6 -->
-## Verdict indépendant — changements requis
+## Independent verdict — changes required
 
-Review de la PR #1042 sur a1b2c3d4e5f6, base empilée feat/ledger-read-side@9f8e7d6c5b4a.
-Pipeline #318 vert, aucune tâche ni conflit observé.
+Review of PR #1042 on a1b2c3d4e5f6, stacked base feat/ledger-read-side@9f8e7d6c5b4a.
+Pipeline #318 green, no task and no conflict observed.
 
-Blocages : le snapshot et les contrôles précèdent la transaction de clôture, donc une écriture
-concurrente peut disparaître du successeur ; deux clôtures simultanées peuvent créer deux
-successeurs car le retry ne relit pas le résultat gagnant et les unicités nécessaires manquent.
-Levée : des tests concurrents sur PostgreSQL, un contrat explicite pour les contrôles différés et
-pour l'autorisation tenant, puis un reciblage vers develop après la fusion de la PR parente.
+Blockers: the snapshot and the controls both run before the closing transaction, so a concurrent
+write can vanish from the successor; two simultaneous closes can create two successors, because the
+retry never re-reads the winning result and the uniqueness constraints that would refuse the second
+one do not exist. Lift: concurrent tests against PostgreSQL, an explicit contract for the deferred
+controls and for tenant authorization, then a rebase once the parent PR merges.
 
-Validation locale authentifiée sur ce head exact : lint global vert (18/18 builds, 0 erreur, seuil
-de 145 avertissements respecté), typecheck des deux paquets touchés vert, 7/7 tests unitaires de
-clôture verts. Ces tests restent séquentiels : ils ne couvrent aucune des courses concurrentes qui
-motivent les blocages ci-dessus.
+Authenticated local validation on this exact head: global lint green (18/18 builds, 0 errors, the
+145-warning threshold respected), typecheck green on both touched packages, 7/7 close unit tests
+green. Those tests remain sequential: they cover none of the concurrent interleaving that motivates
+the blockers above.
 
-Non bloquant : la documentation des codes 409/412 ne correspond plus au comportement réel.
+Non-blocking: the documented 409/412 codes no longer match the real behavior.
 
-Correction : https://tracker.example/ISSUE-158
-Re-review : https://tracker.example/ISSUE-159
-Review initiale : https://tracker.example/ISSUE-155
+Fix: https://tracker.example/ISSUE-158
+Re-review: https://tracker.example/ISSUE-159
+Initial review: https://tracker.example/ISSUE-155
 
-Ne pas approuver ni fusionner ce head.
+Do not approve or merge this head.
 ```
 
 ## Self-check before publishing
