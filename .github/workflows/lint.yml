@@ -80,3 +80,33 @@ jobs:
           printf '%s\n' "$scripts"
           printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
           echo "✅ Shell scripts OK"
+
+  selfchecks:
+    name: Script self-checks
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install jq
+        run: brew install jq
+
+      - name: Run script self-checks
+        run: |
+          set -euo pipefail
+
+          command -v jq > /dev/null \
+            || { echo "::error::jq is missing: the self-checks cannot run"; exit 1; }
+
+          tests=$(git ls-files 'scripts/*_test')
+
+          for canary in scripts/claude_handoff_check_test; do
+            printf '%s\n' "$tests" | grep -qx "$canary" \
+              || { echo "::error::self-check discovery is broken: $canary missing from the list"; exit 1; }
+          done
+
+          printf '%s\n' "$tests"
+          printf '%s\n' "$tests" | while IFS= read -r test; do
+            echo "--- $test"
+            "./$test"
+          done
+          echo "✅ Script self-checks OK"
