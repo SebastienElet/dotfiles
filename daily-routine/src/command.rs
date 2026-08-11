@@ -588,8 +588,10 @@ fn stop_child(child: &mut Child, process_group: u32, outcome: ChildOutcome) -> C
         return outcome;
     }
 
+    // A child can fork after the first group signal is queued but before it exits.
+    let second_group_kill = posix::kill_process_group(process_group);
     if first_group_kill.is_err()
-        && let Err(error) = posix::kill_process_group(process_group)
+        && let Err(error) = second_group_kill
     {
         return ChildOutcome::ProcessGroupKillFailed(error);
     }
@@ -741,6 +743,27 @@ mod tests {
 
         assert!(message.contains("timed out"), "{message}");
         assert!(elapsed < Duration::from_secs(1), "elapsed {elapsed:?}");
+    }
+
+    #[test]
+    fn timeout_cleans_up_descendants_spawned_during_termination() {
+        let args = vec![
+            "-c".to_owned(),
+            "i=0; while [ \"$i\" -lt 50 ]; do sleep 1 & i=$((i + 1)); done; wait".to_owned(),
+        ];
+
+        for attempt in 1..=100 {
+            let started_at = Instant::now();
+            let error =
+                run_with_limits("/bin/sh", &args, Duration::from_millis(5), 1_024).unwrap_err();
+            let elapsed = started_at.elapsed();
+
+            assert!(error.to_string().contains("timed out"), "{error}");
+            assert!(
+                elapsed < Duration::from_millis(900),
+                "attempt {attempt} took {elapsed:?}"
+            );
+        }
     }
 
     #[test]
