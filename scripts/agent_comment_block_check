@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Agent hook: an added comment block over three lines is refused unless its
+# first line states the reason. Advisory layer, and its output says so, since
+# why-versus-what is not machine-decidable. Usage: $0 claude|codex|cursor
+set -euo pipefail
+
+LIMIT=3
+SEP=$'\001'
+
+die() {
+  printf 'comment-block check: %s\n' "$1" >&2
+  exit 2
+}
+
+command -v jq >/dev/null || die "jq is missing, so nothing was checked."
+command -v awk >/dev/null || die "awk is missing, so nothing was checked."
+
+# Each agent config also holds unrelated local state, so the entry is merged
+# rather than deployed as a symlink. Called by the Makefile, idempotent.
+if [ "${1:-}" = --register ]; then
+  case "${2:-}" in
+  claude)
+    config=$HOME/.claude/settings.json
+    add='.hooks.PostToolUse += [{matcher: "Edit|Write", hooks: [{type: "command", command: $cmd}]}]'
+    ;;
+  codex)
+    config=$HOME/.codex/hooks.json
+    add='.hooks.PostToolUse += [{matcher: "apply_patch", hooks: [{type: "command", command: $cmd}]}]'
+    ;;
+  cursor)
+    config=$HOME/.cursor/hooks.json
+    add='(.version //= 1) | .hooks.afterFileEdit += [{command: $cmd}]'
+    ;;
+  *)
+    printf 'usage: %s --register claude|codex|cursor\n' "$0" >&2
+    exit 1
+    ;;
+  esac
+  mkdir -p "$(dirname "$config")"
+  [ -f "$config" ] || printf '{}\n' >"$config"
+  cmd="$(cd "$(dirname "$0")" && pwd)/$(basename "$0") $2"
+  merged=$(jq --arg cmd "$cmd" "if [.. | .command? // empty] | index(\$cmd) then . else $add end" "$config")
+  printf '%s\n' "$merged" >"$config"
+  exit 0
+fi
+
+# Each agent hands the same three values over in a different shape.
+adapt='
+def prose: test("\\.(md|markdown|mdx|txt|rst|adoc|asciidoc|org|tex)$"; "i");
+(if $agent == "claude" then
+  (.tool_name // error("the input carries no tool_name")) as $t
+  | if $t == "Edit" then
+      [.tool_input.file_path, .tool_input.old_string // "",
+        .tool_input.new_string // error("the Edit input carries no tool_input.new_string")]
+    elif $t == "Write" then
+      [.tool_input.file_path, "",
+        .tool_input.content // error("the Write input carries no tool_input.content")]
+    else error("wired to \($t): set the matcher to Edit|Write") end
+elif $agent == "cursor" then
+  (.edits // error("the afterFileEdit input carries no edits")) as $e
+  | [.file_path, ([$e[].old_string // empty] | join("\n")), ([$e[].new_string // empty] | join("\n"))]
+elif $agent == "codex" then
+  if (.tool_name // "") != "apply_patch" then ["", "", ""]
+  else ((.tool_input.command // error("the apply_patch input carries no tool_input.command"))
+      | if type == "array" then join("\n") else tostring end | split("\n")) as $l
+    | [($l | map(select(test("^\\*\\*\\* (Add|Update) File: "))) | first // ""
+        | sub("^\\*\\*\\* (Add|Update) File: "; "")),
+      ($l | map(select(startswith("-"))) | map(.[1:]) | join("\n")),
+      ($l | map(select(startswith("+"))) | map(.[1:]) | join("\n"))]
+  end
+else error("unknown agent \"\($agent)\": expected claude, codex or cursor") end) as [$p, $old, $new]
+| if $p == null then error("the input carries no file path")
+  elif $p | prose then ""
+  else [$p, "\u0001", $old, "\u0001", $new] | join("\n") end'
+
+# Four sections, same loop for each: the canary, the path, the removed text, the
+# added text. A block present in the removed text was moved, not added.
+detect='
+function flush() {
+  if (n > LIMIT && tolower(first) !~ /^why:/) {
+    if (section == 3) seen[sig] = 1
+    else if (!(sig in seen))
+      hits[++found] = sprintf("  line %d of the added text: %d-line block starting \"%s\"", start, n, first)
+  }
+  n = 0
+}
+BEGIN { section = 1 }
+$0 == SEP {
+  flush()
+  if (++section == 2) { canary_ok = (found == 1 && hits[1] ~ /canary one/); found = 0 }
+  lineno = 0
+  next
+}
+{
+  lineno++
+  line = $0
+  sub(/\r$/, "", line); sub(/^[ \t]+/, "", line)
+  if (line ~ /^#!/ || line !~ /^(#|\/\/|--|\/\*|\*)/) { flush(); next }
+  body = line
+  sub(/^(#+|\/\/+|--+|\/\*+|\*\/|\*)[ \t]*/, "", body); sub(/[ \t]*\*\/[ \t]*$/, "", body)
+  gsub(/[ \t]+/, " ", body); sub(/^ /, "", body); sub(/ $/, "", body)
+  if (++n == 1) { start = lineno; first = body; sig = body } else sig = sig " " body
+}
+END {
+  flush()
+  if (!canary_ok) { print "the detector is broken: the canary yielded " found > "/dev/stderr"; exit 3 }
+  print "canary-ok"
+  for (i = 1; i <= found; i++) print hits[i]
+}'
+
+IFS= read -r -d '' payload || true
+sections=$(printf '%s' "$payload" | jq -j --arg agent "${1:-}" "$adapt" 2>&1) || die "$sections"
+
+h='#'
+canary=$(printf '%s canary one\n%s two\n%s three\n%s four' "$h" "$h" "$h" "$h")
+report=$(printf '%s\n%s\n%s' "$canary" "$SEP" "$sections" |
+  awk -v SEP="$SEP" -v LIMIT="$LIMIT" "$detect" 2>&1) || die "$report"
+
+# An awk that answers without running the program would otherwise read as clean.
+[ "${report%%$'\n'*}" = canary-ok ] || die "the detector did not confirm its canary: $report"
+report=${report#canary-ok}
+report=${report#$'\n'}
+[ -n "$report" ] || exit 0
+
+die "refused ${sections%%$'\n'*}
+$report
+An added comment block over $LIMIT lines must state its reason on its first line,
+as \"Why: <reason>\"; otherwise delete it or make the code say it.
+This layer is advisory: why-versus-what is not machine-decidable, so passing it is
+not evidence that a comment earns its place."
