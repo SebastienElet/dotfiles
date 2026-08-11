@@ -352,10 +352,9 @@ ${LOCAL_BIN}/claude:
 # One deployed path for the three agents, one entry per agent config. Registered
 # here rather than by hand: a check nobody wired is a check nobody runs.
 ${LOCAL_BIN}/agent_comment_block_check: ${DOTFILES_PATH}/scripts/agent_comment_block_check | ${LOCAL_BIN}
-	ln -s ${DOTFILES_PATH}/scripts/agent_comment_block_check $@
-.PHONY: comment-hook-claude comment-hook-codex comment-hook-cursor
-comment-hook-claude comment-hook-codex comment-hook-cursor: ${LOCAL_BIN}/agent_comment_block_check
-	@$< --register $(subst comment-hook-,,$@)
+	ln -s $< $@
+comment-hook-%: ${LOCAL_BIN}/agent_comment_block_check
+	@$< --register $*
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills

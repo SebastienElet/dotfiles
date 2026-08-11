@@ -108,7 +108,7 @@ refuses "codex apply_patch without a command" codex \
 refuses "wired to a tool it does not cover" claude \
   "$(jq -n '{tool_name: "Bash", tool_input: {command: "ls"}}')" 'Edit|Write'
 refuses "input without tool_name" claude "$(jq -n '{tool_input: {file_path: "/r/lint.sh"}}')" 'no tool_name'
-refuses "input without file_path" claude "$(jq -n '{tool_name: "Write", tool_input: {content: "x"}}')" 'file_path'
+refuses "input without file_path" claude "$(jq -n '{tool_name: "Write", tool_input: {content: "x"}}')" 'no file path'
 refuses "write without content" claude \
   "$(jq -n '{tool_name: "Write", tool_input: {file_path: "/r/lint.sh"}}')" 'tool_input.content'
 refuses "edit without new_string" claude \
