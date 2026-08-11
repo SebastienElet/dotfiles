@@ -579,6 +579,7 @@ fn strings(values: &[&str]) -> Vec<String> {
     values.iter().map(|value| (*value).to_owned()).collect()
 }
 
+#[cfg(test)]
 fn short_name(path: &str) -> Result<&str, Box<dyn Error>> {
     repository_parts(path).map(|(_, name)| name)
 }

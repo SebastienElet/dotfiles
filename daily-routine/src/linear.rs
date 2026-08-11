@@ -128,7 +128,8 @@ struct LinearIssue {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LinearState {
-    name: String,
+    #[serde(rename = "name")]
+    _name: String,
     #[serde(rename = "type")]
     kind: LinearStateType,
 }
@@ -205,6 +206,7 @@ where
     }
 }
 
+#[cfg(test)]
 fn parse_response(
     source: &str,
     team_keys: &[String],

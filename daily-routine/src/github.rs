@@ -23,7 +23,6 @@ pub struct GithubCollection {
 struct Repository {
     key: RepoKey,
     owner: String,
-    name: String,
 }
 
 struct DetailResult {
@@ -318,13 +317,12 @@ fn configured_repositories(config: &Config) -> Vec<Repository> {
         .filter_map(|repo| {
             repository_parts(&repo.path)
                 .ok()
-                .map(|(owner, name)| Repository {
+                .map(|(owner, _name)| Repository {
                     key: RepoKey {
                         provider: repo.provider,
                         path: repo.path.clone(),
                     },
                     owner: owner.to_owned(),
-                    name: name.to_owned(),
                 })
         })
         .collect()
