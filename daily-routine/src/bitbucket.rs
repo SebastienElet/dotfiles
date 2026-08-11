@@ -61,7 +61,7 @@ impl<T> RequiredNullable<T> {
 
 #[derive(Deserialize)]
 struct PullRequestListResponse {
-    pull_requests: Vec<BitbucketPullRequest>,
+    pull_requests: Vec<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -404,23 +404,8 @@ fn collect_list<R>(
     let result = run("bkt", &args)
         .map_err(|error| format!("command failed: {error}"))
         .and_then(|source| {
-            parse_list(&source, &repository.key).map_err(|error| format!("invalid JSON: {error}"))
-        })
-        .and_then(|pull_requests| {
-            if pull_requests
-                .iter()
-                .all(|pull_request| pull_request.state == request.expected_state())
-            {
-                Ok(pull_requests)
-            } else {
-                Err(format!(
-                    "response contains a PR outside the requested {} state",
-                    match request.expected_state() {
-                        PullRequestState::Open => "OPEN",
-                        PullRequestState::Merged => "MERGED",
-                    }
-                ))
-            }
+            parse_list(&source, &repository.key, request.expected_state())
+                .map_err(|error| format!("invalid JSON: {error}"))
         });
 
     match result {
@@ -594,42 +579,59 @@ fn repository_parts(path: &str) -> Result<(&str, &str), Box<dyn Error>> {
     Ok((workspace, name))
 }
 
-fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn Error>> {
+fn parse_list(
+    source: &str,
+    repo: &RepoKey,
+    expected_state: PullRequestState,
+) -> Result<Vec<PullRequest>, Box<dyn Error>> {
     let response: PullRequestListResponse = serde_json::from_str(source)?;
-    response
-        .pull_requests
-        .into_iter()
-        .map(|pull_request| {
-            let body = pull_request
-                .description
-                .into_option("pull_requests[].description")?
-                .unwrap_or_default();
-            pull_request
-                .reviewers
-                .into_option("pull_requests[].reviewers")?;
+    let expected_state_name = match expected_state {
+        PullRequestState::Open => "OPEN",
+        PullRequestState::Merged => "MERGED",
+    };
+    let mut pull_requests = Vec::new();
 
-            let _author_account_id = pull_request.author.account_id;
-            let _author_display_name = pull_request.author.display_name;
-            let _source_repository = pull_request.source.repository.full_name;
-            Ok(PullRequest {
-                key: PullRequestKey {
-                    repo: repo.clone(),
-                    number: pull_request.id,
-                },
-                title: pull_request.title,
-                body,
-                branch: pull_request.source.branch.name,
-                destination: pull_request.destination.branch.name,
-                url: pull_request.links.html.href,
-                draft: pull_request.draft,
-                state: pull_request.state.into(),
-                created_at: pull_request.created_on,
-                updated_at: pull_request.updated_on,
-                awaiting_review: false,
-                feedback: Vec::new(),
-            })
-        })
-        .collect()
+    for (index, value) in response.pull_requests.into_iter().enumerate() {
+        let state = value
+            .get("state")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| format!("Bitbucket pull_requests[{index}].state must be a string"))?;
+        if state != expected_state_name {
+            continue;
+        }
+
+        let pull_request: BitbucketPullRequest = serde_json::from_value(value)?;
+        let body = pull_request
+            .description
+            .into_option("pull_requests[].description")?
+            .unwrap_or_default();
+        pull_request
+            .reviewers
+            .into_option("pull_requests[].reviewers")?;
+
+        let _author_account_id = pull_request.author.account_id;
+        let _author_display_name = pull_request.author.display_name;
+        let _source_repository = pull_request.source.repository.full_name;
+        pull_requests.push(PullRequest {
+            key: PullRequestKey {
+                repo: repo.clone(),
+                number: pull_request.id,
+            },
+            title: pull_request.title,
+            body,
+            branch: pull_request.source.branch.name,
+            destination: pull_request.destination.branch.name,
+            url: pull_request.links.html.href,
+            draft: pull_request.draft,
+            state: pull_request.state.into(),
+            created_at: pull_request.created_on,
+            updated_at: pull_request.updated_on,
+            awaiting_review: false,
+            feedback: Vec::new(),
+        });
+    }
+
+    Ok(pull_requests)
 }
 
 fn parse_view(source: &str) -> Result<BitbucketPullRequestView, Box<dyn Error>> {
@@ -721,6 +723,7 @@ mod tests {
     use std::sync::Mutex;
 
     const LIST_RESPONSE: &str = include_str!("fixtures/bitbucket-list.json");
+    const MIXED_LIST_RESPONSE: &str = include_str!("fixtures/bitbucket-mixed-list.json");
     const VIEW_RESPONSE: &str = include_str!("fixtures/bitbucket-view.json");
     const COMMENT_RESPONSE: &str = include_str!("fixtures/bitbucket-comments.json");
     const TASK_RESPONSE: &str = include_str!("fixtures/bitbucket-tasks.json");
@@ -826,7 +829,7 @@ mod tests {
 
     #[test]
     fn parses_lists_and_preserves_stacked_destinations() {
-        let pull_requests = parse_list(LIST_RESPONSE, &repo()).unwrap();
+        let pull_requests = parse_list(LIST_RESPONSE, &repo(), PullRequestState::Open).unwrap();
 
         assert_eq!(pull_requests.len(), 2);
         assert_eq!(pull_requests[0].key.number, 101);
@@ -845,18 +848,70 @@ mod tests {
             .unwrap()
             .remove("description");
 
-        assert!(parse_list(&response.to_string(), &repo()).is_err());
-        assert!(parse_list(LIST_RESPONSE, &repo()).is_ok());
+        assert!(parse_list(&response.to_string(), &repo(), PullRequestState::Open).is_err());
+        assert!(parse_list(LIST_RESPONSE, &repo(), PullRequestState::Open).is_ok());
     }
 
     #[test]
     fn accepts_pull_requests_from_forks() {
         let source = list_response_for("OtherOrg/shared-app", &[(101, "OPEN", false)]);
 
-        let pull_requests = parse_list(&source, &repo()).unwrap();
+        let pull_requests = parse_list(&source, &repo(), PullRequestState::Open).unwrap();
 
         assert_eq!(pull_requests.len(), 1);
         assert_eq!(pull_requests[0].key.repo, repo());
+    }
+
+    #[test]
+    fn filters_mixed_provider_states_before_strict_decoding() {
+        let open = parse_list(MIXED_LIST_RESPONSE, &repo(), PullRequestState::Open).unwrap();
+        let merged = parse_list(MIXED_LIST_RESPONSE, &repo(), PullRequestState::Merged).unwrap();
+
+        assert_eq!(
+            open.iter()
+                .map(|pull_request| pull_request.key.number)
+                .collect::<Vec<_>>(),
+            [201]
+        );
+        assert_eq!(
+            merged
+                .iter()
+                .map(|pull_request| pull_request.key.number)
+                .collect::<Vec<_>>(),
+            [202]
+        );
+    }
+
+    #[test]
+    fn malformed_matching_entries_fail_but_malformed_other_states_are_ignored() {
+        let mut response: serde_json::Value = serde_json::from_str(MIXED_LIST_RESPONSE).unwrap();
+        response["pull_requests"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("title");
+
+        assert!(parse_list(&response.to_string(), &repo(), PullRequestState::Open).is_err());
+        let merged = parse_list(&response.to_string(), &repo(), PullRequestState::Merged).unwrap();
+        assert_eq!(merged[0].key.number, 202);
+    }
+
+    #[test]
+    fn rejects_entries_without_a_string_state_before_filtering() {
+        for state in [None, Some(serde_json::Value::Null)] {
+            let mut response: serde_json::Value =
+                serde_json::from_str(MIXED_LIST_RESPONSE).unwrap();
+            let entry = response["pull_requests"][2].as_object_mut().unwrap();
+            match &state {
+                Some(state) => {
+                    entry.insert("state".to_owned(), state.clone());
+                }
+                None => {
+                    entry.remove("state");
+                }
+            }
+
+            assert!(parse_list(&response.to_string(), &repo(), PullRequestState::Open).is_err());
+        }
     }
 
     #[test]
@@ -1181,6 +1236,25 @@ mod tests {
         );
         assert_eq!(collection.warnings[1].categories, [Category::Linear]);
         assert_eq!(collection.warnings[2].categories, [Category::Review]);
+    }
+
+    #[test]
+    fn mixed_provider_states_do_not_degrade_collection() {
+        let collection = collect_with(&config(), |_, args| match args.join(" ").as_str() {
+            "api /user --json" => {
+                Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
+            }
+            "pr list --mine --repo shared-app --workspace ExampleOrg --state MERGED --limit 50 --json" => {
+                Ok(MIXED_LIST_RESPONSE.to_owned())
+            }
+            command if command.starts_with("pr list ") => Ok(r#"{"pull_requests":[]}"#.to_owned()),
+            other => panic!("unexpected bkt command: {other}"),
+        });
+
+        assert!(collection.warnings.is_empty());
+        assert_eq!(collection.pull_requests.len(), 1);
+        assert_eq!(collection.pull_requests[0].key.number, 202);
+        assert_eq!(collection.pull_requests[0].state, PullRequestState::Merged);
     }
 
     #[test]
