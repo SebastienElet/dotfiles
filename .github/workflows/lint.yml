@@ -61,14 +61,30 @@ jobs:
 
       - name: Lint shell scripts
         run: |
-          echo "Checking shell scripts..."
-          # Find scripts with bash/sh shebang or .sh extension
-          SCRIPTS=$(find scripts -type f -exec grep -l '^#!/.*\(bash\|sh\)' {} \; 2>/dev/null || true)
-          SCRIPTS="$SCRIPTS $(find . -name "*.sh" -type f 2>/dev/null || true)"
-          SCRIPTS="$SCRIPTS install.sh"
-          
-          if [ -n "$SCRIPTS" ]; then
-            echo "Found scripts: $SCRIPTS"
-            echo "$SCRIPTS" | xargs -n1 shellcheck --severity=error || true
-          fi
+          set -euo pipefail
+
+          command -v shellcheck > /dev/null \
+            || { echo "::error::shellcheck is missing: the gate cannot run"; exit 1; }
+
+          # Scripts with a bash/sh shebang, plus every .sh file.
+          scripts=$(
+            {
+              git grep -lI -E '^#!.*(bash|sh)' -- scripts install.sh
+              git ls-files '*.sh'
+            } | sort -u
+          )
+
+          # This probe decides what gets checked, so a broken probe must fail the
+          # job instead of emptying the list. One canary per probe: install.sh for
+          # the extension list, scripts/upgrade for the shebang scan, which has no
+          # .sh extension. A pattern that matches nothing — git grep -E does not
+          # support \b, for instance — would otherwise report green having read
+          # nothing.
+          for canary in install.sh scripts/upgrade; do
+            printf '%s\n' "$scripts" | grep -qx "$canary" \
+              || { echo "::error::script discovery is broken: $canary missing from the list"; exit 1; }
+          done
+
+          printf '%s\n' "$scripts"
+          printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
           echo "✅ Shell scripts OK"

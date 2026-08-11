@@ -4,7 +4,7 @@
 
 ```bash
 curl -fsSL \
-  https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | sh
+  https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash
 ```
 
 ## Manual install

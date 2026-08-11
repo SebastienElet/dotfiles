@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+# Bootstraps the repository: clones it, then hands over to `make all` (ADR-001).
 
 if [[ "$(uname -s)" != "Darwin" ]]
 then
