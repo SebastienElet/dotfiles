@@ -299,6 +299,107 @@ fn linear_items_consolidate_reasons_and_pull_requests_by_issue() {
 }
 
 #[test]
+fn pr_discrepancy_uses_the_repository_track_when_the_issue_team_differs() {
+    let mut config = config(0);
+    config.tracks.push(Track {
+        name: "Other team".to_owned(),
+        teams: vec!["XYZ".to_owned()],
+        repos: Vec::new(),
+    });
+    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    issue.team_key = "XYZ".to_owned();
+    let mut pr = pull_request(1, PullRequestState::Open, false);
+    pr.title = "Ship XYZ-1".to_owned();
+
+    let report = build_report(
+        &config,
+        &dataset(vec![pr], vec![issue]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    let linear = category_items(&report.items, Category::Linear);
+    assert_eq!(linear.len(), 1);
+    assert_eq!(linear[0].reference, "XYZ-1");
+    assert_eq!(linear[0].track_index, 0);
+    assert_eq!(linear[0].reasons, [LinearReason::OpenIssueNotStarted]);
+}
+
+#[test]
+fn pr_discrepancy_overrides_the_track_of_consolidated_issue_reasons() {
+    let mut config = config(0);
+    config.tracks.push(Track {
+        name: "Other team".to_owned(),
+        teams: vec!["XYZ".to_owned()],
+        repos: Vec::new(),
+    });
+    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    issue.team_key = "XYZ".to_owned();
+    issue.priority = 0;
+    let mut pr = pull_request(1, PullRequestState::Open, false);
+    pr.title = "Ship XYZ-1".to_owned();
+
+    let report = build_report(
+        &config,
+        &dataset(vec![pr], vec![issue]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    let linear = category_items(&report.items, Category::Linear);
+    assert_eq!(linear.len(), 1);
+    assert_eq!(linear[0].track_index, 0);
+    assert_eq!(
+        linear[0].reasons,
+        [
+            LinearReason::OpenIssueNotStarted,
+            LinearReason::MissingPriority,
+        ]
+    );
+}
+
+#[test]
+fn oldest_pr_event_deterministically_owns_a_consolidated_discrepancy() {
+    let mut config = config(0);
+    config.tracks.push(Track {
+        name: "Issue team".to_owned(),
+        teams: vec!["XYZ".to_owned()],
+        repos: Vec::new(),
+    });
+    config.tracks.push(Track {
+        name: "Other repository".to_owned(),
+        teams: vec!["OTH".to_owned()],
+        repos: vec![repo(Provider::Github, "owner/other", true)],
+    });
+    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    issue.team_key = "XYZ".to_owned();
+    let mut newer = pull_request(1, PullRequestState::Open, false);
+    newer.title = "Ship XYZ-1 from the primary repository".to_owned();
+    newer.created_at = "2026-08-06T09:00:00Z".to_owned();
+    let mut older = pull_request(2, PullRequestState::Open, false);
+    older.key.repo = RepoKey {
+        provider: Provider::Github,
+        path: "owner/other".to_owned(),
+    };
+    older.title = "Ship XYZ-1 from the other repository".to_owned();
+    older.created_at = "2026-08-05T09:00:00Z".to_owned();
+
+    for pull_requests in [
+        vec![newer.clone(), older.clone()],
+        vec![older.clone(), newer.clone()],
+    ] {
+        let report = build_report(
+            &config,
+            &dataset(pull_requests, vec![issue.clone()]),
+            days_from_civil(2026, 8, 11),
+        );
+        let linear = category_items(&report.items, Category::Linear);
+
+        assert_eq!(linear.len(), 1);
+        assert_eq!(linear[0].track_index, 2);
+        assert_eq!(linear[0].event_at, "2026-08-05T09:00:00Z");
+    }
+}
+
+#[test]
 fn linear_scope_keeps_drafts_but_excludes_no_linear_and_teamless_tracks() {
     let mut config = config(2);
     config.tracks.push(Track {

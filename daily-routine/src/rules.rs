@@ -301,6 +301,7 @@ fn add_linear_items(
                 track_index,
                 &issue.updated_at,
                 timestamp,
+                LinearReasonOrigin::Issue,
                 reasons,
             );
         }
@@ -333,13 +334,13 @@ fn add_linear_items(
             ) else {
                 continue;
             };
-            let track_index = track_for_issue(config, issue).unwrap_or(selection.track_index);
             add_issue_linear_reasons(
                 &mut issue_items,
                 issue,
-                track_index,
+                selection.track_index,
                 event_at,
                 event_timestamp,
+                LinearReasonOrigin::PullRequest,
                 reasons,
             );
         } else if !scoped.has_identifier {
@@ -374,6 +375,13 @@ fn add_linear_items(
 struct LinearIssueItem {
     report_item: ReportItem,
     event_timestamp: Timestamp,
+    pull_request_track: Option<(Timestamp, usize)>,
+}
+
+#[derive(Clone, Copy)]
+enum LinearReasonOrigin {
+    Issue,
+    PullRequest,
 }
 
 fn add_issue_linear_reasons(
@@ -382,6 +390,7 @@ fn add_issue_linear_reasons(
     track_index: usize,
     event_at: &str,
     event_timestamp: Timestamp,
+    origin: LinearReasonOrigin,
     reasons: Vec<LinearReason>,
 ) {
     let item = issue_items
@@ -398,7 +407,16 @@ fn add_issue_linear_reasons(
                 priority: None,
             },
             event_timestamp,
+            pull_request_track: None,
         });
+    if matches!(origin, LinearReasonOrigin::PullRequest)
+        && item
+            .pull_request_track
+            .is_none_or(|current| (event_timestamp, track_index) < current)
+    {
+        item.report_item.track_index = track_index;
+        item.pull_request_track = Some((event_timestamp, track_index));
+    }
     if event_timestamp < item.event_timestamp {
         item.report_item.event_at = event_at.to_owned();
         item.event_timestamp = event_timestamp;
