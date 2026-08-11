@@ -50,3 +50,10 @@ lazygit
 opencommit
 qrcodes
 Sepa
+evals
+pullrequests
+rawfile
+startswith
+unparseable
+oneline
+worktree

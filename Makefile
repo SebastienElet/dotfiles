@@ -331,7 +331,7 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -353,6 +353,10 @@ ${LOCAL_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+# Linked globally because a pull request is reviewed from the repository under
+# review, which is never this one.
+~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
 codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node

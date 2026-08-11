@@ -14,6 +14,7 @@ This directory is the single source of truth for reusable agent skills.
 | Skill               | Description |
 | ------------------- | ----------- |
 | `enforcement-code`  | Write code whose purpose is to refuse something: hook, guard, validator, permission check, lint rule, CI gate. |
+| `merge-verdict`     | Deliver a merge verdict on another author's pull request: changes required, approved with reservations, or approved. |
 | `neovim`            | Maintain this repository's Neovim and LazyVim configuration. |
 | `scripts`           | Create and maintain portable Bash scripts in this repository. |
 
