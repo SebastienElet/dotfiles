@@ -12,7 +12,7 @@ mod things;
 mod util;
 
 use config::Config;
-use model::{Category, Dataset, Warning};
+use model::{Category, Dataset, Report, Warning};
 use std::error::Error;
 use std::io::Write;
 use std::process::ExitCode;
@@ -36,8 +36,13 @@ fn main() -> ExitCode {
     };
 
     if options.self_check {
-        self_check::run();
-        return ExitCode::SUCCESS;
+        return match self_check::run() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("failed to write self-check result: {error}");
+                ExitCode::FAILURE
+            }
+        };
     }
 
     run_normal(options.no_things)
@@ -88,15 +93,16 @@ fn run_normal(no_things: bool) -> ExitCode {
         Ok(today_days) => today_days,
         Err(error) => {
             dataset.warnings.push(Warning {
-                categories: vec![Category::Linear, Category::Suivant],
+                categories: vec![Category::Linear],
                 message: format!("failed to determine the current day: {error}"),
             });
             0
         }
     };
     let report = rules::build_report(&config, &dataset, today_days);
-    print!("{}", report::render(&config, &report));
-    if let Err(error) = std::io::stdout().flush() {
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.lock();
+    if let Err(error) = write_report(&mut stdout, &config, &report) {
         eprintln!("failed to write report: {error}");
         return ExitCode::FAILURE;
     }
@@ -117,6 +123,11 @@ fn run_normal(no_things: bool) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn write_report(writer: &mut impl Write, config: &Config, report: &Report) -> std::io::Result<()> {
+    writer.write_all(report::render(config, report).as_bytes())?;
+    writer.flush()
 }
 
 fn push_if_enabled<F>(no_things: bool, push: F) -> Result<Option<things::PushOutcome>, String>
@@ -147,6 +158,20 @@ fn config_error_message(error: &dyn Error) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use model::Report;
+    use std::io;
+
+    struct FailingWriter;
+
+    impl Write for FailingWriter {
+        fn write(&mut self, _buffer: &[u8]) -> io::Result<usize> {
+            Err(io::Error::new(io::ErrorKind::BrokenPipe, "closed pipe"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
 
     #[test]
     fn config_error_message_includes_diagnostic_and_complete_example() {
@@ -190,5 +215,18 @@ mod tests {
 
         assert_eq!(outcome, None);
         assert!(!called);
+    }
+
+    #[test]
+    fn report_output_returns_broken_pipe_errors() {
+        let config = Config::parse(include_str!("../config.example.toml")).unwrap();
+        let report = Report {
+            items: Vec::new(),
+            warnings: Vec::new(),
+        };
+
+        let error = write_report(&mut FailingWriter, &config, &report).unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
     }
 }

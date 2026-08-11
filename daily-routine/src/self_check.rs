@@ -1,23 +1,34 @@
 use crate::config::{Config, Provider, RepoKey};
 use crate::model::{
-    Category, Feedback, Issue, IssueState, LinearReason, PullRequest, PullRequestKey,
-    PullRequestState,
+    Category, Dataset, Feedback, Issue, IssueState, LinearReason, PullRequest, PullRequestKey,
+    PullRequestState, Report,
 };
+use crate::report;
 use crate::rules::{
-    issue_linear_reasons, pr_linear_reasons, track_for_pr, uncorrelated_pr_reasons,
+    build_report, issue_linear_reasons, pr_linear_reasons, track_for_pr, uncorrelated_pr_reasons,
 };
 use crate::util::{days_from_civil, find_linear_id, percent_encode};
+use std::io::{self, Write};
 
-pub fn run() {
+pub fn run() -> io::Result<()> {
     check_config_parsing();
     check_correlation();
     check_six_linear_rules();
     check_track_attachment();
     check_requires_linear();
+    check_requires_linear_report();
     check_category_order();
+    check_rendered_category_order();
     check_days_from_civil();
     check_percent_encoding();
-    println!("daily-routine self-check: ok");
+
+    let stdout = io::stdout();
+    run_with_writer(&mut stdout.lock())
+}
+
+fn run_with_writer(writer: &mut impl Write) -> io::Result<()> {
+    writer.write_all(b"daily-routine self-check: ok\n")?;
+    writer.flush()
 }
 
 fn check_config_parsing() {
@@ -136,6 +147,48 @@ fn check_requires_linear() {
     assert!(uncorrelated_pr_reasons(&ticketless, selection.requires_linear).is_empty());
 }
 
+fn check_requires_linear_report() {
+    let config = Config::parse(
+        r#"
+            stale_days = 7
+            next_count = 2
+
+            [[tracks]]
+            name = "Ticketless"
+            teams = ["NOL"]
+
+            [[tracks.repos]]
+            provider = "github"
+            path = "ExampleOrg/no-linear"
+            requires_linear = false
+        "#,
+    )
+    .expect("the ticketless self-check configuration must remain valid");
+    let mut ticketless = pull_request(
+        Provider::Github,
+        "ExampleOrg/no-linear",
+        PullRequestState::Open,
+    );
+    ticketless.title = "Update standalone workflow".to_owned();
+    ticketless.branch = "feature/update-workflow".to_owned();
+    let report = build_report(
+        &config,
+        &Dataset {
+            pull_requests: vec![ticketless],
+            issues: Vec::new(),
+            warnings: Vec::new(),
+        },
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert!(
+        !report
+            .items
+            .iter()
+            .any(|item| item.category == Category::Linear)
+    );
+}
+
 fn check_category_order() {
     let mut categories = [
         Category::Linear,
@@ -153,6 +206,21 @@ fn check_category_order() {
             Category::Linear,
             Category::Suivant,
         ]
+    );
+}
+
+fn check_rendered_category_order() {
+    let output = report::render(
+        &config(),
+        &Report {
+            items: Vec::new(),
+            warnings: Vec::new(),
+        },
+    );
+
+    assert_eq!(
+        output,
+        "REVIEW\n(none)\n\nRETOUR\n(none)\n\nLINEAR\n(none)\n\nSUIVANT\n(none)\n"
     );
 }
 
@@ -246,5 +314,29 @@ fn pull_request(provider: Provider, path: &str, state: PullRequestState) -> Pull
         updated_at: "2026-08-10T08:00:00Z".to_owned(),
         awaiting_review: false,
         feedback: Vec::<Feedback>::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct FailingWriter;
+
+    impl Write for FailingWriter {
+        fn write(&mut self, _buffer: &[u8]) -> io::Result<usize> {
+            Err(io::Error::new(io::ErrorKind::BrokenPipe, "closed pipe"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn success_output_returns_broken_pipe_errors() {
+        let error = run_with_writer(&mut FailingWriter).unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
     }
 }
