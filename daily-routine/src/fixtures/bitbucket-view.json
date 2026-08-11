@@ -1,0 +1,21 @@
+{
+  "pull_request": {
+    "participants": [
+      {
+        "user": { "account_id": "account-me", "display_name": "Example User" },
+        "role": "REVIEWER",
+        "approved": false
+      },
+      {
+        "user": { "account_id": "account-approved", "display_name": "Approved Reviewer" },
+        "role": "REVIEWER",
+        "approved": true
+      },
+      {
+        "user": { "account_id": "account-other", "display_name": "External Reviewer" },
+        "role": "PARTICIPANT",
+        "approved": false
+      }
+    ]
+  }
+}

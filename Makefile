@@ -610,6 +610,11 @@ cspell: ${VOLTA_BIN}/cspell
 ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
 
+.PHONY: rust
+rust: brew ${BREW_BIN}/cargo
+${BREW_BIN}/cargo:
+	brew install rust
+
 nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim

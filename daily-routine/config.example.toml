@@ -1,0 +1,29 @@
+stale_days = 7
+next_count = 3
+
+[[tracks]]
+name = "Application"
+teams = ["APP", "API"]
+
+[[tracks.repos]]
+provider = "bitbucket"
+path = "ExampleOrg/shared-app"
+
+[[tracks]]
+name = "Platform"
+teams = ["PLT", "OPS"]
+
+# Application and Platform intentionally share the same repository.
+[[tracks.repos]]
+provider = "bitbucket"
+path = "ExampleOrg/shared-app"
+
+[[tracks]]
+name = "Standalone"
+teams = []
+
+# Standalone does not use Linear tickets.
+[[tracks.repos]]
+provider = "github"
+path = "ExampleOrg/standalone"
+requires_linear = false
