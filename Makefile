@@ -342,7 +342,7 @@ ${BREW_BIN}/uv:
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
-cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json ~/.cursor/skills/merge-verdict
 ${APP_BIN}/Cursor.app:
 	brew install --cask cursor
 ~/.local/bin/cursor-agent:
@@ -355,8 +355,16 @@ ${APP_BIN}/Cursor.app:
 	ln -s ${DOTFILES_PATH}/cursor/extensions.json $@
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
+# Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
+# own built-ins and is resynchronised from its registry, so a link dropped there
+# would be wiped without warning. Inside this repository .cursor/skills already
+# points at .agents/skills, so only the global link is needed.
+~/.cursor/skills:
+	mkdir -p $@
+~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -378,8 +386,12 @@ ${LOCAL_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+# Linked globally because a pull request is reviewed from the repository under
+# review, which is never this one.
+~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
@@ -395,6 +407,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.agents/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:
