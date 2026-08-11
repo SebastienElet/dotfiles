@@ -35,9 +35,19 @@ mod model;
 mod parallel;
 #[allow(
     dead_code,
+    reason = "report rendering is consumed by later orchestration"
+)]
+mod report;
+#[allow(
+    dead_code,
     reason = "track selection is consumed by later orchestration"
 )]
 mod rules;
+#[allow(
+    dead_code,
+    reason = "Things integration is consumed by later orchestration"
+)]
+mod things;
 #[allow(
     dead_code,
     reason = "standard-library utilities are consumed by later orchestration"

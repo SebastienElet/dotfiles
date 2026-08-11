@@ -89,6 +89,15 @@ impl Category {
             Self::Suivant => 3,
         }
     }
+
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Review => "REVIEW",
+            Self::Retour => "RETOUR",
+            Self::Linear => "LINEAR",
+            Self::Suivant => "SUIVANT",
+        }
+    }
 }
 
 impl Ord for Category {
@@ -113,6 +122,21 @@ pub enum LinearReason {
     MissingLabel,
     MissingPriority,
     OpenPrWithoutIssue,
+}
+
+impl LinearReason {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::MergedIssueIncomplete => "merged PR with incomplete issue",
+            Self::OpenIssueNotStarted => "open PR with issue not started",
+            Self::StartedWithoutBranchOrPr => "started issue without branch or PR",
+            Self::StartedStale => "stale started issue",
+            Self::MissingProject => "missing project",
+            Self::MissingLabel => "missing label",
+            Self::MissingPriority => "missing priority",
+            Self::OpenPrWithoutIssue => "open PR without Linear issue",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
