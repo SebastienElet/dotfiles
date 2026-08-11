@@ -11,7 +11,8 @@ repository outside it is queried.
 The delivered command is non-interactive. The earlier do-nothing-script wording describes the
 operator workflow represented by the Things to-dos; the clarified command itself does not prompt,
 wait for Enter, or launch an agent. `--no-things` prints the same report and exits without reading
-or writing Things.
+or writing Things. `--limit <count>` bounds each section to its oldest `count` items, so a
+long-standing backlog is delivered one batch per run instead of as one unworkable list.
 
 ## Considered approaches
 
@@ -26,8 +27,8 @@ or writing Things.
 
 ## Structure
 
-- `main.rs` parses `--self-check` and `--no-things`, loads the configuration, and orchestrates the
-  ordered steps.
+- `main.rs` parses `--self-check`, `--no-things`, and `--limit <count>`, loads the configuration,
+  and orchestrates the ordered steps.
 - `config.rs` owns the Serde TOML model, defaults `requires_linear` to `true`, validates repository
   paths, and derives the ordered unique repository set and configured team keys.
 - `command.rs` runs child processes without a shell and reports exit status, stderr, and malformed
@@ -56,9 +57,12 @@ matching use the standard library.
    calls are sequential; only per-pull-request detail calls are concurrent.
 4. Collect pull requests and assigned Linear issues, normalize them, correlate known team
    identifiers, then evaluate the report rules.
-5. Print categories in `REVIEW`, `RETOUR`, `LINEAR`, `SUIVANT` order. Each line identifies its track,
+5. When `--limit <count>` is set, keep the oldest `count` items of each category and warn how many
+   each truncated category withheld, so a shortened report never reads as an emptied backlog. The
+   limit bounds the report itself rather than only the Things writes, so both tell the same story.
+6. Print categories in `REVIEW`, `RETOUR`, `LINEAR`, `SUIVANT` order. Each line identifies its track,
    stable Things title, reason when applicable, and URL.
-6. Unless `--no-things` is set, read Today before the first write, then add only titles absent from
+7. Unless `--no-things` is set, read Today before the first write, then add only titles absent from
    that snapshot or earlier successful additions in the same run.
 
 Repository attachment first considers all tracks that declare the repository. A correlated Linear
@@ -99,6 +103,16 @@ One raw GraphQL query resolves the viewer and up to 200 assigned issues, includi
 project, labels, priority, update time, and branch name. Only issues whose team key appears in the
 configured tracks enter correlation or reporting.
 
+A second query resolves blocking relations, because merging it into the first exceeds Linear's query
+complexity ceiling of 10000. It reads `inverseRelations` — the relations stored on the blocked side,
+where a `blocks` entry names an issue blocking this one — for the first 100 unresolved assigned
+issues, 20 relations each. The API exposes no filter on that connection, so `blocks` is selected
+client-side, and a `completed` or `canceled` blocker is discarded because a resolved issue blocks
+nothing. Both page sizes are bounded by that same ceiling, so a saturated page is reported as a
+warning rather than silently under-reported. This query is skipped when no issue is in scope, and a
+failure degrades with a warning instead of discarding issues the report still renders correctly:
+losing precision costs less than losing `LINEAR` and `SUIVANT` entirely.
+
 ## Correlation and report rules
 
 Correlation scans the pull-request title, branch, then description for `<configured-team>-<digits>`
@@ -132,9 +146,15 @@ all `LINEAR` rules. Destination branches do not affect any rule. Multiple discre
 ticket or pull request are consolidated into one Things item with multiple reasons in terminal
 output.
 
-`SUIVANT` considers `triage`, `backlog`, and `unstarted` issues. Per track, it selects at most
-`next_count` by Linear priority (`1` through `4`, then `0`) and oldest `updatedAt` as a tie-breaker.
-The selected items are then merged into the category's chronological output order.
+An issue held by an unresolved blocker leaves `LINEAR` entirely, whichever rule it triggers,
+including rule 1 on a merged pull request: it cannot be acted on today, so its metadata is repaired
+when it becomes actionable. The exclusion applies to issues only; an uncorrelated pull request under
+rule 6 has no issue to be blocked by.
+
+`SUIVANT` considers `triage`, `backlog`, and `unstarted` issues that no unresolved blocker holds.
+Per track, it selects at most `next_count` by Linear priority (`1` through `4`, then `0`) and oldest
+`updatedAt` as a tie-breaker, so a blocked candidate frees its slot for the next actionable one. The
+selected items are then merged into the category's chronological output order.
 
 Within every category, report items use their rule-specific event time and sort oldest first, with
 track configuration order and stable reference as deterministic tie-breakers.
@@ -166,8 +186,9 @@ from collection failures.
 
 `--self-check` runs assertions over hard-coded fixtures without reading configuration or invoking a
 CLI. It covers title/branch/absent correlation, the six `LINEAR` rules, mono-track and shared-repo
-attachment, ticketless attachment, `requires_linear = false`, report ordering, configuration
-parsing/defaults, `days_from_civil`, and percent encoding of an accented title.
+attachment, ticketless attachment, `requires_linear = false`, the blocked-issue exclusion, the
+`--limit` truncation and its warning, report ordering, configuration parsing/defaults,
+`days_from_civil`, and percent encoding of an accented title.
 
 Development follows red-green-refactor around the pure rules before provider orchestration. Final
 verification is `cargo fmt --check`, `cargo clippy -- -D warnings`, `daily-routine --self-check`, a
