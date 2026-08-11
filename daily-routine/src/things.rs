@@ -40,7 +40,6 @@ fn push_with_runner<R: Runner>(report: &Report, runner: &mut R) -> Result<PushOu
         .run(&program, &args)
         .map_err(|error| format!("failed to read Things Today: {error}"))?;
     let mut seen = parse_today(&today);
-    let mut attempted = HashSet::new();
     let mut outcome = PushOutcome {
         added: 0,
         skipped: 0,
@@ -49,7 +48,7 @@ fn push_with_runner<R: Runner>(report: &Report, runner: &mut R) -> Result<PushOu
 
     for item in &report.items {
         let title = things_title(item);
-        if seen.contains(&title) || !attempted.insert(title.clone()) {
+        if seen.contains(&title) {
             outcome.skipped += 1;
             continue;
         }
@@ -205,16 +204,34 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_titles_are_attempted_at_most_once_per_run() {
+    fn duplicate_titles_retry_after_a_failed_addition() {
         let duplicate = item("#1", "First", "https://example.test/pr/1");
-        let mut runner = FakeRunner::returning([Ok(String::new()), Err("open failed".to_owned())]);
+        let mut runner = FakeRunner::returning([
+            Ok(String::new()),
+            Err("open failed".to_owned()),
+            Ok(String::new()),
+        ]);
+
+        let outcome =
+            push_with_runner(&report(vec![duplicate.clone(), duplicate]), &mut runner).unwrap();
+
+        assert_eq!(runner.calls.len(), 3);
+        assert_eq!(outcome.added, 1);
+        assert_eq!(outcome.skipped, 0);
+        assert_eq!(outcome.warnings.len(), 1);
+    }
+
+    #[test]
+    fn duplicate_titles_skip_after_a_successful_addition() {
+        let duplicate = item("#1", "First", "https://example.test/pr/1");
+        let mut runner = FakeRunner::returning([Ok(String::new()), Ok(String::new())]);
 
         let outcome =
             push_with_runner(&report(vec![duplicate.clone(), duplicate]), &mut runner).unwrap();
 
         assert_eq!(runner.calls.len(), 2);
-        assert_eq!(outcome.added, 0);
+        assert_eq!(outcome.added, 1);
         assert_eq!(outcome.skipped, 1);
-        assert_eq!(outcome.warnings.len(), 1);
+        assert!(outcome.warnings.is_empty());
     }
 }
