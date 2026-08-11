@@ -1,5 +1,9 @@
 {
   "pull_request": {
+    "source": {
+      "branch": { "name": "example-user/app-600-review" },
+      "repository": { "full_name": "ExampleOrg/shared-app" }
+    },
     "participants": [
       {
         "user": { "account_id": "account-me", "display_name": "Example User" },

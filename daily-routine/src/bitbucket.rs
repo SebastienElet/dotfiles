@@ -20,6 +20,7 @@ pub struct BitbucketCollection {
 #[derive(Clone)]
 struct Repository {
     key: RepoKey,
+    workspace: String,
     short_name: String,
 }
 
@@ -132,6 +133,7 @@ struct PullRequestViewResponse {
 
 #[derive(Deserialize)]
 struct BitbucketPullRequestView {
+    source: BitbucketSource,
     participants: Vec<BitbucketParticipant>,
 }
 
@@ -168,9 +170,9 @@ struct BitbucketContent {
 
 #[derive(Deserialize)]
 struct TaskListResponse {
-    repo: serde_json::Value,
+    repo: String,
     tasks: Vec<BitbucketTask>,
-    workspace: serde_json::Value,
+    workspace: String,
 }
 
 #[derive(Deserialize)]
@@ -297,13 +299,16 @@ fn configured_repositories(config: &Config) -> Vec<Repository> {
         .into_iter()
         .filter(|repo| repo.provider == Provider::Bitbucket)
         .filter_map(|repo| {
-            short_name(&repo.path).ok().map(|short_name| Repository {
-                key: RepoKey {
-                    provider: repo.provider,
-                    path: repo.path.clone(),
-                },
-                short_name: short_name.to_owned(),
-            })
+            repository_parts(&repo.path)
+                .ok()
+                .map(|(workspace, short_name)| Repository {
+                    key: RepoKey {
+                        provider: repo.provider,
+                        path: repo.path.clone(),
+                    },
+                    workspace: workspace.to_owned(),
+                    short_name: short_name.to_owned(),
+                })
         })
         .collect()
 }
@@ -324,6 +329,8 @@ impl ListRequest {
                 "--mine",
                 "--repo",
                 &repository.short_name,
+                "--workspace",
+                &repository.workspace,
                 "--state",
                 "OPEN",
                 "--limit",
@@ -336,6 +343,8 @@ impl ListRequest {
                 "--mine",
                 "--repo",
                 &repository.short_name,
+                "--workspace",
+                &repository.workspace,
                 "--state",
                 "MERGED",
                 "--limit",
@@ -348,6 +357,8 @@ impl ListRequest {
                 "--reviewer",
                 "--repo",
                 &repository.short_name,
+                "--workspace",
+                &repository.workspace,
                 "--state",
                 "OPEN",
                 "--json",
@@ -434,8 +445,8 @@ where
 {
     let mut pull_request = pull_request.clone();
     let mut warnings = Vec::new();
-    let repository = short_name(&pull_request.key.repo.path)
-        .expect("validated configuration always has a repository short name");
+    let (workspace, repository) = repository_parts(&pull_request.key.repo.path)
+        .expect("validated configuration always has a workspace and repository short name");
     let number = pull_request.key.number.to_string();
 
     if let Some(identity) = identity {
@@ -445,6 +456,8 @@ where
             &number,
             "--repo",
             repository,
+            "--workspace",
+            workspace,
             "--state",
             "unresolved",
             "--json",
@@ -461,12 +474,20 @@ where
     }
 
     let args = strings(&[
-        "pr", "task", "list", &number, "--repo", repository, "--json",
+        "pr",
+        "task",
+        "list",
+        &number,
+        "--repo",
+        repository,
+        "--workspace",
+        workspace,
+        "--json",
     ]);
     match run("bkt", &args)
         .map_err(|error| format!("command failed: {error}"))
         .and_then(|source| {
-            parse_tasks(&source, &pull_request.updated_at)
+            parse_tasks(&source, &pull_request.updated_at, repository, workspace)
                 .map_err(|error| format!("invalid JSON: {error}"))
         }) {
         Ok(feedback) => pull_request.feedback.extend(feedback),
@@ -487,13 +508,25 @@ fn collect_review_detail<R>(
 where
     R: Fn(&str, &[String]) -> Result<String, String> + Sync,
 {
-    let repository = short_name(&pull_request.key.repo.path)
-        .expect("validated configuration always has a repository short name");
+    let (workspace, repository) = repository_parts(&pull_request.key.repo.path)
+        .expect("validated configuration always has a workspace and repository short name");
     let number = pull_request.key.number.to_string();
-    let args = strings(&["pr", "view", &number, "--repo", repository, "--json"]);
+    let args = strings(&[
+        "pr",
+        "view",
+        &number,
+        "--repo",
+        repository,
+        "--workspace",
+        workspace,
+        "--json",
+    ]);
     let view = run("bkt", &args)
         .map_err(|error| format!("command failed: {error}"))
-        .and_then(|source| parse_view(&source).map_err(|error| format!("invalid JSON: {error}")))
+        .and_then(|source| {
+            parse_view(&source, &pull_request.key.repo)
+                .map_err(|error| format!("invalid JSON: {error}"))
+        })
         .map_err(|error| {
             warning(
                 &[Category::Review],
@@ -549,10 +582,17 @@ fn strings(values: &[&str]) -> Vec<String> {
 }
 
 fn short_name(path: &str) -> Result<&str, Box<dyn Error>> {
-    path.split_once('/')
-        .map(|(_, name)| name)
-        .filter(|name| !name.is_empty())
-        .ok_or_else(|| format!("invalid Bitbucket repository path {path:?}").into())
+    repository_parts(path).map(|(_, name)| name)
+}
+
+fn repository_parts(path: &str) -> Result<(&str, &str), Box<dyn Error>> {
+    let Some((workspace, name)) = path.split_once('/') else {
+        return Err(format!("invalid Bitbucket repository path {path:?}").into());
+    };
+    if workspace.is_empty() || name.is_empty() || name.contains('/') {
+        return Err(format!("invalid Bitbucket repository path {path:?}").into());
+    }
+    Ok((workspace, name))
 }
 
 fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn Error>> {
@@ -561,6 +601,18 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
         .pull_requests
         .into_iter()
         .map(|pull_request| {
+            if !pull_request
+                .source
+                .repository
+                .full_name
+                .eq_ignore_ascii_case(&repo.path)
+            {
+                return Err(format!(
+                    "Bitbucket PR {} belongs to {}, expected {}",
+                    pull_request.id, pull_request.source.repository.full_name, repo.path
+                )
+                .into());
+            }
             let body = pull_request
                 .description
                 .into_option("pull_requests[].description")?
@@ -571,8 +623,6 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
 
             let _author_account_id = pull_request.author.account_id;
             let _author_display_name = pull_request.author.display_name;
-            let _source_repository = pull_request.source.repository.full_name;
-
             Ok(PullRequest {
                 key: PullRequestKey {
                     repo: repo.clone(),
@@ -594,8 +644,24 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
         .collect()
 }
 
-fn parse_view(source: &str) -> Result<BitbucketPullRequestView, Box<dyn Error>> {
+fn parse_view(
+    source: &str,
+    expected_repo: &RepoKey,
+) -> Result<BitbucketPullRequestView, Box<dyn Error>> {
     let response: PullRequestViewResponse = serde_json::from_str(source)?;
+    if !response
+        .pull_request
+        .source
+        .repository
+        .full_name
+        .eq_ignore_ascii_case(&expected_repo.path)
+    {
+        return Err(format!(
+            "Bitbucket PR details belong to {}, expected {}",
+            response.pull_request.source.repository.full_name, expected_repo.path
+        )
+        .into());
+    }
     Ok(response.pull_request)
 }
 
@@ -633,10 +699,21 @@ fn parse_comments(source: &str, account_id: &str) -> Result<Vec<Feedback>, Box<d
         .collect()
 }
 
-fn parse_tasks(source: &str, fallback_at: &str) -> Result<Vec<Feedback>, Box<dyn Error>> {
+fn parse_tasks(
+    source: &str,
+    fallback_at: &str,
+    expected_repo: &str,
+    expected_workspace: &str,
+) -> Result<Vec<Feedback>, Box<dyn Error>> {
     let response: TaskListResponse = serde_json::from_str(source)?;
-    if response.repo.is_null() || response.workspace.is_null() {
-        return Err("Bitbucket task response has a null repo or workspace".into());
+    if !response.repo.eq_ignore_ascii_case(expected_repo)
+        || !response.workspace.eq_ignore_ascii_case(expected_workspace)
+    {
+        return Err(format!(
+            "Bitbucket task response belongs to {}/{}, expected {expected_workspace}/{expected_repo}",
+            response.workspace, response.repo
+        )
+        .into());
     }
 
     Ok(response
@@ -713,7 +790,33 @@ mod tests {
         .unwrap()
     }
 
+    fn config_with_colliding_short_names() -> Config {
+        Config::parse(
+            r#"
+                stale_days = 7
+                next_count = 3
+
+                [[tracks]]
+                name = "Application"
+                teams = ["APP"]
+
+                  [[tracks.repos]]
+                  provider = "bitbucket"
+                  path = "ExampleOrg/shared-app"
+
+                  [[tracks.repos]]
+                  provider = "bitbucket"
+                  path = "OtherOrg/shared-app"
+            "#,
+        )
+        .unwrap()
+    }
+
     fn list_response(numbers: &[(u64, &str, bool)]) -> String {
+        list_response_for("ExampleOrg/shared-app", numbers)
+    }
+
+    fn list_response_for(repository_path: &str, numbers: &[(u64, &str, bool)]) -> String {
         let pull_requests = numbers
             .iter()
             .map(|(number, state, draft)| {
@@ -731,7 +834,7 @@ mod tests {
                     },
                     "source": {
                         "branch": { "name": format!("example-user/ops-{number}") },
-                        "repository": { "full_name": "ExampleOrg/shared-app" }
+                        "repository": { "full_name": repository_path }
                     },
                     "destination": { "branch": { "name": "develop" } },
                     "links": {
@@ -775,13 +878,29 @@ mod tests {
     }
 
     #[test]
+    fn rejects_pull_requests_from_another_configured_workspace() {
+        let source = list_response_for("OtherOrg/shared-app", &[(101, "OPEN", false)]);
+
+        assert!(parse_list(&source, &repo()).is_err());
+    }
+
+    #[test]
     fn current_reviewer_must_be_present_and_not_approved() {
-        let view = parse_view(VIEW_RESPONSE).unwrap();
+        let view = parse_view(VIEW_RESPONSE, &repo()).unwrap();
 
         assert!(awaits_review(&view, "account-me"));
         assert!(!awaits_review(&view, "account-approved"));
         assert!(!awaits_review(&view, "account-other"));
         assert!(!awaits_review(&view, "account-missing"));
+    }
+
+    #[test]
+    fn rejects_view_details_from_another_workspace() {
+        let mut response: serde_json::Value = serde_json::from_str(VIEW_RESPONSE).unwrap();
+        response["pull_request"]["source"]["repository"]["full_name"] =
+            serde_json::json!("OtherOrg/shared-app");
+
+        assert!(parse_view(&response.to_string(), &repo()).is_err());
     }
 
     #[test]
@@ -795,14 +914,38 @@ mod tests {
 
     #[test]
     fn parses_empty_tasks() {
-        assert!(parse_tasks(TASK_RESPONSE, "fallback").unwrap().is_empty());
+        assert!(
+            parse_tasks(TASK_RESPONSE, "fallback", "shared-app", "ExampleOrg")
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn rejects_missing_or_null_task_scope() {
+        let mut missing_repo: serde_json::Value = serde_json::from_str(TASK_RESPONSE).unwrap();
+        missing_repo.as_object_mut().unwrap().remove("repo");
+        let mut null_workspace: serde_json::Value = serde_json::from_str(TASK_RESPONSE).unwrap();
+        null_workspace["workspace"] = serde_json::Value::Null;
+
+        for response in [missing_repo, null_workspace] {
+            assert!(
+                parse_tasks(
+                    &response.to_string(),
+                    "fallback",
+                    "shared-app",
+                    "ExampleOrg"
+                )
+                .is_err()
+            );
+        }
     }
 
     #[test]
     fn treats_tasks_as_open_unless_explicitly_resolved() {
         let response = r#"{
             "repo": "shared-app",
-            "workspace": "example",
+            "workspace": "ExampleOrg",
             "tasks": [
                 {"state":"OPEN","created_on":"2026-08-07T08:00:00Z"},
                 {"state":"RESOLVED","created_on":"2026-08-08T08:00:00Z"},
@@ -811,7 +954,8 @@ mod tests {
             ]
         }"#;
 
-        let feedback = parse_tasks(response, "2026-08-10T00:00:00Z").unwrap();
+        let feedback =
+            parse_tasks(response, "2026-08-10T00:00:00Z", "shared-app", "ExampleOrg").unwrap();
 
         assert_eq!(feedback.len(), 3);
         assert!(
@@ -857,6 +1001,8 @@ mod tests {
                         "--mine".to_owned(),
                         "--repo".to_owned(),
                         "shared-app".to_owned(),
+                        "--workspace".to_owned(),
+                        "ExampleOrg".to_owned(),
                         "--state".to_owned(),
                         "OPEN".to_owned(),
                         "--limit".to_owned(),
@@ -872,6 +1018,8 @@ mod tests {
                         "--mine".to_owned(),
                         "--repo".to_owned(),
                         "shared-app".to_owned(),
+                        "--workspace".to_owned(),
+                        "ExampleOrg".to_owned(),
                         "--state".to_owned(),
                         "MERGED".to_owned(),
                         "--limit".to_owned(),
@@ -887,6 +1035,8 @@ mod tests {
                         "--reviewer".to_owned(),
                         "--repo".to_owned(),
                         "shared-app".to_owned(),
+                        "--workspace".to_owned(),
+                        "ExampleOrg".to_owned(),
                         "--state".to_owned(),
                         "OPEN".to_owned(),
                         "--json".to_owned(),
@@ -906,22 +1056,26 @@ mod tests {
                 "api /user --json" => {
                     Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
                 }
-                "pr list --mine --repo shared-app --state OPEN --limit 50 --json" => {
+                "pr list --mine --repo shared-app --workspace ExampleOrg --state OPEN --limit 50 --json" => {
                     Ok(list_response(&[(101, "OPEN", false)]))
                 }
-                "pr list --mine --repo shared-app --state MERGED --limit 50 --json" => {
+                "pr list --mine --repo shared-app --workspace ExampleOrg --state MERGED --limit 50 --json" => {
                     Ok(list_response(&[(400, "MERGED", false)]))
                 }
-                "pr list --reviewer --repo shared-app --state OPEN --json" => Ok(list_response(&[
-                    (101, "OPEN", false),
-                    (600, "OPEN", false),
-                    (601, "OPEN", true),
-                ])),
-                "pr view 600 --repo shared-app --json" => Ok(VIEW_RESPONSE.to_owned()),
-                "pr comments 101 --repo shared-app --state unresolved --json" => {
+                "pr list --reviewer --repo shared-app --workspace ExampleOrg --state OPEN --json" => {
+                    Ok(list_response(&[
+                        (101, "OPEN", false),
+                        (600, "OPEN", false),
+                        (601, "OPEN", true),
+                    ]))
+                }
+                "pr view 600 --repo shared-app --workspace ExampleOrg --json" => {
+                    Ok(VIEW_RESPONSE.to_owned())
+                }
+                "pr comments 101 --repo shared-app --workspace ExampleOrg --state unresolved --json" => {
                     Ok(COMMENT_RESPONSE.to_owned())
                 }
-                "pr task list 101 --repo shared-app --json" => {
+                "pr task list 101 --repo shared-app --workspace ExampleOrg --json" => {
                     Err("task endpoint unavailable".to_owned())
                 }
                 other => panic!("unexpected bkt command: {other}"),
@@ -959,9 +1113,8 @@ mod tests {
 
         let calls = calls.into_inner().unwrap();
         assert!(
-            calls
-                .iter()
-                .any(|args| args.join(" ") == "pr view 600 --repo shared-app --json")
+            calls.iter().any(|args| args.join(" ")
+                == "pr view 600 --repo shared-app --workspace ExampleOrg --json")
         );
         assert!(
             !calls
@@ -979,7 +1132,7 @@ mod tests {
     fn identity_failure_keeps_linear_work_and_task_feedback() {
         let task_response = r#"{
             "repo":"shared-app",
-            "workspace":"example",
+            "workspace":"ExampleOrg",
             "tasks":[{"state":"OPEN","created_on":"2026-08-07T08:00:00Z"}]
         }"#;
         let calls = Mutex::new(Vec::new());
@@ -988,16 +1141,18 @@ mod tests {
             let command = args.join(" ");
             match command.as_str() {
                 "api /user --json" => Err("bkt missing".to_owned()),
-                "pr list --mine --repo shared-app --state OPEN --limit 50 --json" => {
+                "pr list --mine --repo shared-app --workspace ExampleOrg --state OPEN --limit 50 --json" => {
                     Ok(list_response(&[(101, "OPEN", false)]))
                 }
-                "pr list --mine --repo shared-app --state MERGED --limit 50 --json" => {
+                "pr list --mine --repo shared-app --workspace ExampleOrg --state MERGED --limit 50 --json" => {
                     Ok(list_response(&[(400, "MERGED", false)]))
                 }
-                "pr list --reviewer --repo shared-app --state OPEN --json" => {
+                "pr list --reviewer --repo shared-app --workspace ExampleOrg --state OPEN --json" => {
                     Ok(list_response(&[(600, "OPEN", false)]))
                 }
-                "pr task list 101 --repo shared-app --json" => Ok(task_response.to_owned()),
+                "pr task list 101 --repo shared-app --workspace ExampleOrg --json" => {
+                    Ok(task_response.to_owned())
+                }
                 other => panic!("unexpected bkt command: {other}"),
             }
         });
@@ -1049,5 +1204,96 @@ mod tests {
         );
         assert_eq!(collection.warnings[1].categories, [Category::Linear]);
         assert_eq!(collection.warnings[2].categories, [Category::Review]);
+    }
+
+    #[test]
+    fn scopes_same_named_repositories_to_distinct_workspaces() {
+        let collection = collect_with(&config_with_colliding_short_names(), |_, args| {
+            let command = args.join(" ");
+            match command.as_str() {
+                "api /user --json" => {
+                    Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
+                }
+                "pr list --mine --repo shared-app --workspace ExampleOrg --state MERGED --limit 50 --json" => {
+                    Ok(list_response_for(
+                        "ExampleOrg/shared-app",
+                        &[(200, "MERGED", false)],
+                    ))
+                }
+                "pr list --mine --repo shared-app --workspace OtherOrg --state MERGED --limit 50 --json" => {
+                    Ok(list_response_for(
+                        "OtherOrg/shared-app",
+                        &[(200, "MERGED", false)],
+                    ))
+                }
+                command if command.starts_with("pr list ") => {
+                    Ok(r#"{"pull_requests":[]}"#.to_owned())
+                }
+                other => panic!("unexpected bkt command: {other}"),
+            }
+        });
+
+        assert!(collection.warnings.is_empty());
+        assert_eq!(collection.pull_requests.len(), 2);
+        assert_eq!(
+            collection.pull_requests[0].key.repo.path,
+            "ExampleOrg/shared-app"
+        );
+        assert_eq!(
+            collection.pull_requests[1].key.repo.path,
+            "OtherOrg/shared-app"
+        );
+    }
+
+    #[test]
+    fn mismatched_list_repository_degrades_only_the_list_categories() {
+        let collection = collect_with(&config(), |_, args| match args.join(" ").as_str() {
+            "api /user --json" => {
+                Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
+            }
+            "pr list --mine --repo shared-app --workspace ExampleOrg --state MERGED --limit 50 --json" => {
+                Ok(list_response_for(
+                    "OtherOrg/shared-app",
+                    &[(200, "MERGED", false)],
+                ))
+            }
+            command if command.starts_with("pr list ") => Ok(r#"{"pull_requests":[]}"#.to_owned()),
+            other => panic!("unexpected bkt command: {other}"),
+        });
+
+        assert!(collection.pull_requests.is_empty());
+        assert_eq!(collection.warnings.len(), 1);
+        assert_eq!(collection.warnings[0].categories, [Category::Linear]);
+        assert!(
+            collection.warnings[0]
+                .message
+                .contains("OtherOrg/shared-app")
+        );
+    }
+
+    #[test]
+    fn mismatched_task_envelope_warns_and_drops_tasks() {
+        let collection = collect_with(&config(), |_, args| match args.join(" ").as_str() {
+            "api /user --json" => {
+                Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
+            }
+            "pr list --mine --repo shared-app --workspace ExampleOrg --state OPEN --limit 50 --json" => {
+                Ok(list_response(&[(101, "OPEN", false)]))
+            }
+            command if command.starts_with("pr list ") => Ok(r#"{"pull_requests":[]}"#.to_owned()),
+            "pr comments 101 --repo shared-app --workspace ExampleOrg --state unresolved --json" => {
+                Ok(r#"{"comments":[]}"#.to_owned())
+            }
+            "pr task list 101 --repo shared-app --workspace ExampleOrg --json" => Ok(
+                r#"{"repo":"shared-app","workspace":"OtherOrg","tasks":[{"state":"OPEN"}]}"#
+                    .to_owned(),
+            ),
+            other => panic!("unexpected bkt command: {other}"),
+        });
+
+        assert!(collection.pull_requests[0].feedback.is_empty());
+        assert_eq!(collection.warnings.len(), 1);
+        assert_eq!(collection.warnings[0].categories, [Category::Retour]);
+        assert!(collection.warnings[0].message.contains("OtherOrg"));
     }
 }
