@@ -72,3 +72,4 @@ ici sont les dates d'auteur.
 | [033](033-pas-de-rtk.md) | Ne pas utiliser RTK | 2026-08 |
 | [034](034-pas-de-caveman.md) | Ne pas utiliser les skills Caveman | 2026-08 |
 | [035](035-agents-md-elague-par-mesure.md) | `AGENTS.md` élagué par mesure du no-op | 2026-08 |
+| [036](036-regles-ia-admises-par-ablation.md) | Règles d'instructions IA admises par ablation marginale | 2026-08 |

@@ -1,0 +1,36 @@
+{
+  "skill": "enforcement-code",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Ajoute un hook PreToolUse qui bloque les commandes rm -rf hors du dépôt",
+      "should_activate": true,
+      "reason": "Hook that refuses an action; decides pass or fail"
+    },
+    {
+      "query": "Write a CI step that fails the build when a migration has no down script",
+      "should_activate": true,
+      "reason": "CI gate; enumerable bypasses"
+    },
+    {
+      "query": "Cette validation d'entrée laisse passer les payloads trop gros, corrige-la",
+      "should_activate": true,
+      "reason": "Validator, sink-level check"
+    },
+    {
+      "query": "Add a check in the push script so it refuses to run without a signed commit",
+      "should_activate": true,
+      "reason": "Guard called a check; still enforcement code"
+    },
+    {
+      "query": "Le linter ne voit pas mes fichiers .sh, configure shellcheck",
+      "should_activate": false,
+      "reason": "Tool configuration, not a control being authored"
+    },
+    {
+      "query": "Refactor this React component to use a reducer",
+      "should_activate": false,
+      "reason": "No control, nothing refuses anything"
+    }
+  ]
+}

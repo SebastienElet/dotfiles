@@ -331,7 +331,7 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -351,8 +351,10 @@ ${LOCAL_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/scripts/claude_handoff_check $@
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
+~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
@@ -363,6 +365,11 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md | ~/.codex
 	grep -v '^@' $< | cat - ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md > $@.tmp
 	mv $@.tmp $@
+# Only the global link: inside this repository Codex reads .agents/skills directly.
+~/.agents/skills:
+	mkdir -p $@
+~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
 
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:

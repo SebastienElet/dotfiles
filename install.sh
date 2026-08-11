@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 if [[ "$(uname -s)" != "Darwin" ]]
 then

@@ -61,14 +61,22 @@ jobs:
 
       - name: Lint shell scripts
         run: |
-          echo "Checking shell scripts..."
-          # Find scripts with bash/sh shebang or .sh extension
-          SCRIPTS=$(find scripts -type f -exec grep -l '^#!/.*\(bash\|sh\)' {} \; 2>/dev/null || true)
-          SCRIPTS="$SCRIPTS $(find . -name "*.sh" -type f 2>/dev/null || true)"
-          SCRIPTS="$SCRIPTS install.sh"
-          
-          if [ -n "$SCRIPTS" ]; then
-            echo "Found scripts: $SCRIPTS"
-            echo "$SCRIPTS" | xargs -n1 shellcheck --severity=error || true
-          fi
+          set -euo pipefail
+
+          command -v shellcheck > /dev/null \
+            || { echo "::error::shellcheck is missing: the gate cannot run"; exit 1; }
+
+          found_by_shebang=$(git grep -lI -E '^#!.*(bash|sh)' -- scripts install.sh)
+          found_by_extension=$(git ls-files '*.sh')
+          scripts=$(printf '%s\n%s\n' "$found_by_shebang" "$found_by_extension" | sort -u)
+
+          canary_of_shebang_scan=scripts/upgrade
+          canary_of_extension_scan=install.sh
+          for canary in "$canary_of_shebang_scan" "$canary_of_extension_scan"; do
+            printf '%s\n' "$scripts" | grep -qx "$canary" \
+              || { echo "::error::script discovery is broken: $canary missing from the list"; exit 1; }
+          done
+
+          printf '%s\n' "$scripts"
+          printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
           echo "✅ Shell scripts OK"
