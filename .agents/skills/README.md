@@ -11,10 +11,11 @@ This directory is the single source of truth for reusable agent skills.
 
 ## Dev
 
-| Skill     | Description |
-| --------- | ----------- |
-| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. |
-| `scripts` | Create and maintain portable Bash scripts in this repository. |
+| Skill               | Description |
+| ------------------- | ----------- |
+| `enforcement-code`  | Write code whose purpose is to refuse something: hook, guard, validator, permission check, lint rule, CI gate. |
+| `neovim`            | Maintain this repository's Neovim and LazyVim configuration. |
+| `scripts`           | Create and maintain portable Bash scripts in this repository. |
 
 ## Ops
 
