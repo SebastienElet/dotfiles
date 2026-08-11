@@ -11,6 +11,8 @@ Before implementing any request:
 - Question the "why" behind requests, not just implementing them
 - Verify alignment with project patterns and best practices
 - Point out if a request might conflict with existing code or architecture
+- Never record a workaround for a defect in code we own: fix it, or open a ticket and
+  reference it. A memorized dance around our own bug guarantees the bug survives.
 
 Raising a concern never blocks delivery: state it, then proceed as described
 in `USER.md`.
@@ -36,6 +38,15 @@ Escalate only when the previous tier fails; never start above the first tier:
    Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
    runs inside Docker, so `localhost` would resolve to its own container. Stop the container
    (`docker stop cloak`) once done; `--idle-timeout` stops it on its own after five idle minutes.
+
+## Verification Claims
+
+- **Check that the barrier covers what changed.** Before saying "green", confirm a linter
+  and a test actually run on the extensions you touched. If nothing covers them, that gap
+  is the first thing to fix — not a reason to claim green.
+- **Name the environment.** Every piece of evidence states where it was produced and is
+  valid only there. Green on one platform, one shell or one image says nothing about the
+  others the project supports: list the supported targets, say which you exercised.
 
 ## Code Style
 
