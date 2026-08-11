@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# Self-check for scripts/agent_comment_block_check. Every case below is one
+# enumerated way past the check, or one way it could fail to run at all.
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+hook="$here/agent_comment_block_check"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+out=''
+code=0
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+run() { # $1 = agent, $2 = payload, $3 = PATH (optional)
+  set +e
+  out=$(printf '%s' "$2" | PATH="${3:-$PATH}" "$hook" "$1" 2>&1)
+  code=$?
+  set -e
+}
+
+refuses() { # $1 = label, $2 = agent, $3 = payload, $4 = fragment, $5 = PATH (optional)
+  run "$2" "$3" "${5:-$PATH}"
+  [ "$code" = 2 ] || fail "$1: expected exit 2, got $code: $out"
+  case "$out" in
+  *"$4"*) ;;
+  *) fail "$1: message does not mention '$4': $out" ;;
+  esac
+}
+
+passes() { # $1 = label, $2 = agent, $3 = payload
+  run "$2" "$3"
+  [ "$code" = 0 ] || fail "$1: expected exit 0, got $code: $out"
+  [ -z "$out" ] || fail "$1: expected no output, got: $out"
+}
+
+written() { # $1 = file_path, $2 = content
+  jq -n --arg p "$1" --arg c "$2" '{tool_name: "Write", tool_input: {file_path: $p, content: $c}}'
+}
+
+edited() { # $1 = file_path, $2 = old_string, $3 = new_string
+  jq -n --arg p "$1" --arg o "$2" --arg n "$3" \
+    '{tool_name: "Edit", tool_input: {file_path: $p, old_string: $o, new_string: $n}}'
+}
+
+cursor_edit() { # $1 = file_path, $2 = old_string, $3 = new_string
+  jq -n --arg p "$1" --arg o "$2" --arg n "$3" \
+    '{file_path: $p, edits: [{old_string: $o, new_string: $n}]}'
+}
+
+codex_patch() { # $1 = file_path, $2 = added lines
+  jq -n --arg p "$1" --arg a "$2" '{
+    tool_name: "apply_patch",
+    tool_input: {command: (["*** Begin Patch", "*** Update File: " + $p]
+      + ($a | split("\n") | map("+" + .)) + ["*** End Patch"] | join("\n"))}
+  }'
+}
+
+# Markers live in variables so this file holds no literal comment block: the
+# check refuses its own fixtures otherwise.
+h='#'
+s='//'
+four=$(printf '%s one\n%s two\n%s three\n%s four\n' "$h" "$h" "$h" "$h")
+three=$(printf '%s one\n%s two\n%s three\n' "$h" "$h" "$h")
+excused=$(printf '%s Why: the reason is stated here\n%s two\n%s three\n%s four\n' "$h" "$h" "$h" "$h")
+slashes=$(printf '%s one\n%s two\n%s three\n%s four\n' "$s" "$s" "$s" "$s")
+trailing=$(printf 'a(); %s one\nb(); %s two\nc(); %s three\nd(); %s four\n' "$s" "$s" "$s" "$s")
+crlf=$(printf '%s one\r\n%s two\r\n%s three\r\n%s four\r\n' "$h" "$h" "$h" "$h")
+
+refuses "four-line block written" claude "$(written /r/lint.sh "$four")" 'line 1 of the added text'
+refuses "block in a yaml workflow" claude "$(written /r/.github/workflows/lint.yml "$four")" 'refused'
+refuses "slash block in typescript" claude "$(written /r/src/index.ts "$slashes")" '4-line block'
+refuses "block added by an edit" claude "$(edited /r/lint.sh 'x();' "x();
+$four")" '4-line block'
+refuses "path with spaces" claude "$(written '/r/my dir/lint.sh' "$four")" 'refused'
+refuses "CRLF line endings" claude "$(written /r/lint.sh "$crlf")" '4-line block'
+
+passes "three-line block" claude "$(written /r/lint.sh "$three")"
+passes "first line states the reason" claude "$(written /r/lint.sh "$excused")"
+passes "prose is out of scope" claude "$(written /r/docs/adr/037-x.md "$four")"
+passes "trailing comments are not a block" claude "$(written /r/src/index.ts "$trailing")"
+passes "block moved, not added" claude "$(edited /r/lint.sh "$four" "$four
+x();")"
+passes "empty edit" claude "$(edited /r/lint.sh 'x();' '')"
+
+# Known bypass, asserted so it stays visible: the check sees one tool call, so a
+# block split across two edits passes. Named in ADR-037.
+passes "block split across two edits (known bypass)" claude "$(edited /r/lint.sh 'x();' "x();
+$three")"
+
+refuses "cursor edit adding a block" cursor "$(cursor_edit /r/lint.sh 'x();' "x();
+$four")" '4-line block'
+passes "cursor block moved, not added" cursor "$(cursor_edit /r/lint.sh "$four" "$four
+x();")"
+passes "cursor prose" cursor "$(cursor_edit /r/notes.md 'x' "$four")"
+refuses "cursor input without edits" cursor "$(jq -n '{file_path: "/r/lint.sh"}')" 'no edits'
+
+refuses "codex patch adding a block" codex "$(codex_patch /r/lint.sh "$four")" '4-line block'
+passes "codex patch adding three lines" codex "$(codex_patch /r/lint.sh "$three")"
+passes "codex prose" codex "$(codex_patch /r/notes.md "$four")"
+passes "codex tool that edits nothing" codex "$(jq -n '{tool_name: "shell", tool_input: {command: "ls"}}')"
+refuses "codex apply_patch without a command" codex \
+  "$(jq -n '{tool_name: "apply_patch", tool_input: {}}')" 'tool_input.command'
+
+refuses "wired to a tool it does not cover" claude \
+  "$(jq -n '{tool_name: "Bash", tool_input: {command: "ls"}}')" 'Edit|Write'
+refuses "input without tool_name" claude "$(jq -n '{tool_input: {file_path: "/r/lint.sh"}}')" 'no tool_name'
+refuses "input without file_path" claude "$(jq -n '{tool_name: "Write", tool_input: {content: "x"}}')" 'file_path'
+refuses "write without content" claude \
+  "$(jq -n '{tool_name: "Write", tool_input: {file_path: "/r/lint.sh"}}')" 'tool_input.content'
+refuses "edit without new_string" claude \
+  "$(jq -n '{tool_name: "Edit", tool_input: {file_path: "/r/lint.sh", old_string: "x"}}')" 'new_string'
+refuses "input that is not JSON" claude 'not json at all' 'jq'
+refuses "no agent named" '' "$(written /r/lint.sh "$four")" 'expected claude, codex or cursor'
+refuses "unknown agent" gemini "$(written /r/lint.sh "$four")" 'unknown agent'
+
+mkdir "$tmp/nojq"
+ln -s "$(command -v bash)" "$tmp/nojq/bash"
+refuses "jq missing" claude "$(written /r/lint.sh "$four")" 'jq is missing' "$tmp/nojq"
+
+mkdir "$tmp/badawk"
+for tool in bash jq; do
+  ln -s "$(command -v "$tool")" "$tmp/badawk/$tool"
+done
+printf '%s\nexit 0\n' '#!/bin/sh' >"$tmp/badawk/awk"
+chmod +x "$tmp/badawk/awk"
+refuses "detector answering without running" claude \
+  "$(written /r/lint.sh "$four")" 'did not confirm its canary' "$tmp/badawk"
+
+home="$tmp/home"
+mkdir -p "$home/.claude"
+printf '{"permissions": {"allow": ["Read"]}}\n' >"$home/.claude/settings.json"
+for agent in claude codex cursor; do
+  HOME="$home" "$hook" --register "$agent"
+  HOME="$home" "$hook" --register "$agent"
+done
+registered=$(jq -r '[.. | .command? // empty] | map(select(test("agent_comment_block_check"))) | length' \
+  "$home/.claude/settings.json" "$home/.codex/hooks.json" "$home/.cursor/hooks.json")
+[ "$registered" = "$(printf '1\n1\n1')" ] || fail "registration is not idempotent: $registered"
+[ "$(jq -r '.permissions.allow[0]' "$home/.claude/settings.json")" = Read ] ||
+  fail "registration dropped unrelated settings"
+[ "$(jq -r '.hooks.afterFileEdit[0].command' "$home/.cursor/hooks.json")" = \
+  "$hook cursor" ] || fail "cursor entry does not carry the agent argument"
+
+echo "ok"

@@ -317,7 +317,7 @@ ${BREW_BIN}/uv:
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
-cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json
+cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json comment-hook-cursor
 ${APP_BIN}/Cursor.app:
 	brew install --cask cursor
 ~/.local/bin/cursor-agent:
@@ -331,7 +331,7 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check claude-code-comment-hook ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check comment-hook-claude ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -349,27 +349,19 @@ ${LOCAL_BIN}/claude:
 # Stop hook: emit a resume prompt near the token limit instead of compacting.
 ~/.claude/hooks/claude_handoff_check: ${DOTFILES_PATH}/scripts/claude_handoff_check | ~/.claude/hooks
 	ln -s ${DOTFILES_PATH}/scripts/claude_handoff_check $@
-~/.claude/hooks/claude_comment_block_check: ${DOTFILES_PATH}/scripts/claude_comment_block_check | ~/.claude/hooks
-	ln -s ${DOTFILES_PATH}/scripts/claude_comment_block_check $@
-# PostToolUse hook. Registered here rather than by hand: a check nobody wired is
-# a check nobody runs. settings.json is rewritten in place instead of symlinked,
-# since it also carries local state that does not belong in this repository.
-.PHONY: claude-code-comment-hook
-claude-code-comment-hook: ~/.claude/hooks/claude_comment_block_check
-	@command -v jq >/dev/null || { echo "jq is required to register the comment-block hook" >&2; exit 1; }; \
-	settings="$(HOME)/.claude/settings.json"; \
-	cmd="$(HOME)/.claude/hooks/claude_comment_block_check"; \
-	[ -f "$$settings" ] || echo '{}' >"$$settings"; \
-	jq --arg cmd "$$cmd" 'if [.hooks.PostToolUse[]?.hooks[]?.command] | index($$cmd) then . else .hooks.PostToolUse += [{matcher: "Edit|Write", hooks: [{type: "command", command: $$cmd}]}] end' "$$settings" >"$$settings.new" \
-		|| { rm -f "$$settings.new"; echo "jq could not rewrite $$settings" >&2; exit 1; }; \
-	cat "$$settings.new" >"$$settings"; \
-	rm -f "$$settings.new"
+# One deployed path for the three agents, one entry per agent config. Registered
+# here rather than by hand: a check nobody wired is a check nobody runs.
+${LOCAL_BIN}/agent_comment_block_check: ${DOTFILES_PATH}/scripts/agent_comment_block_check | ${LOCAL_BIN}
+	ln -s ${DOTFILES_PATH}/scripts/agent_comment_block_check $@
+.PHONY: comment-hook-claude comment-hook-codex comment-hook-cursor
+comment-hook-claude comment-hook-codex comment-hook-cursor: ${LOCAL_BIN}/agent_comment_block_check
+	@$< --register $(subst comment-hook-,,$@)
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code comment-hook-codex
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
