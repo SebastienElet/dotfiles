@@ -117,5 +117,5 @@ first, unless the request explicitly says to post directly.
   questions to put to the diff. Read in phase 3.
 - [assets/verdict-template.md](assets/verdict-template.md) — the verdict skeleton with its required
   slots. Filled in phase 6.
-- [evals/cases.md](evals/cases.md) — two end-to-end cases with their expected verdicts, one per
-  forge path.
+- [references/cases.md](references/cases.md) — two end-to-end cases with their expected verdicts,
+  one per forge path, and the record of what they have never validated.
