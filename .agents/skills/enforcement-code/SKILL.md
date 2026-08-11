@@ -60,6 +60,9 @@ alias, the `--no-verify` and the second remote).
 - **`command -v` guards.** `if command -v tool > /dev/null; then check; fi` silently skips the
   check on any machine missing the tool — the exact machine that needs it most. Invert it: refuse
   when the tool is absent.
+- **A discovery step that finds nothing.** `git grep -E` does not support `\b`, so such a pattern
+  matches zero files without erroring, and the gate passes having read nothing. Guard the step
+  with a canary: a file you know must appear in its output.
 - **Testing only the refusal you implemented.** The interesting test is the input you did not
   think of; that is what step 5 produces.
 - **A guard tested only by hand.** It passes on the author's machine, then rots. If the project has

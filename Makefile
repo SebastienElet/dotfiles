@@ -365,8 +365,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md | ~/.codex
 	grep -v '^@' $< | cat - ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md > $@.tmp
 	mv $@.tmp $@
-# Codex discovers user-scope skills in ~/.agents/skills; inside this repository the
-# repo-scope .agents/skills is read directly, so only the global link is needed.
+# Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
 	mkdir -p $@
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
