@@ -133,7 +133,8 @@ struct PullRequestViewResponse {
 
 #[derive(Deserialize)]
 struct BitbucketPullRequestView {
-    source: BitbucketSource,
+    #[serde(rename = "source")]
+    _source: BitbucketSource,
     participants: Vec<BitbucketParticipant>,
 }
 
@@ -523,10 +524,7 @@ where
     ]);
     let view = run("bkt", &args)
         .map_err(|error| format!("command failed: {error}"))
-        .and_then(|source| {
-            parse_view(&source, &pull_request.key.repo)
-                .map_err(|error| format!("invalid JSON: {error}"))
-        })
+        .and_then(|source| parse_view(&source).map_err(|error| format!("invalid JSON: {error}")))
         .map_err(|error| {
             warning(
                 &[Category::Review],
@@ -601,18 +599,6 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
         .pull_requests
         .into_iter()
         .map(|pull_request| {
-            if !pull_request
-                .source
-                .repository
-                .full_name
-                .eq_ignore_ascii_case(&repo.path)
-            {
-                return Err(format!(
-                    "Bitbucket PR {} belongs to {}, expected {}",
-                    pull_request.id, pull_request.source.repository.full_name, repo.path
-                )
-                .into());
-            }
             let body = pull_request
                 .description
                 .into_option("pull_requests[].description")?
@@ -623,6 +609,7 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
 
             let _author_account_id = pull_request.author.account_id;
             let _author_display_name = pull_request.author.display_name;
+            let _source_repository = pull_request.source.repository.full_name;
             Ok(PullRequest {
                 key: PullRequestKey {
                     repo: repo.clone(),
@@ -644,24 +631,8 @@ fn parse_list(source: &str, repo: &RepoKey) -> Result<Vec<PullRequest>, Box<dyn 
         .collect()
 }
 
-fn parse_view(
-    source: &str,
-    expected_repo: &RepoKey,
-) -> Result<BitbucketPullRequestView, Box<dyn Error>> {
+fn parse_view(source: &str) -> Result<BitbucketPullRequestView, Box<dyn Error>> {
     let response: PullRequestViewResponse = serde_json::from_str(source)?;
-    if !response
-        .pull_request
-        .source
-        .repository
-        .full_name
-        .eq_ignore_ascii_case(&expected_repo.path)
-    {
-        return Err(format!(
-            "Bitbucket PR details belong to {}, expected {}",
-            response.pull_request.source.repository.full_name, expected_repo.path
-        )
-        .into());
-    }
     Ok(response.pull_request)
 }
 
@@ -878,15 +849,18 @@ mod tests {
     }
 
     #[test]
-    fn rejects_pull_requests_from_another_configured_workspace() {
+    fn accepts_pull_requests_from_forks() {
         let source = list_response_for("OtherOrg/shared-app", &[(101, "OPEN", false)]);
 
-        assert!(parse_list(&source, &repo()).is_err());
+        let pull_requests = parse_list(&source, &repo()).unwrap();
+
+        assert_eq!(pull_requests.len(), 1);
+        assert_eq!(pull_requests[0].key.repo, repo());
     }
 
     #[test]
     fn current_reviewer_must_be_present_and_not_approved() {
-        let view = parse_view(VIEW_RESPONSE, &repo()).unwrap();
+        let view = parse_view(VIEW_RESPONSE).unwrap();
 
         assert!(awaits_review(&view, "account-me"));
         assert!(!awaits_review(&view, "account-approved"));
@@ -895,12 +869,14 @@ mod tests {
     }
 
     #[test]
-    fn rejects_view_details_from_another_workspace() {
+    fn accepts_view_details_from_forks() {
         let mut response: serde_json::Value = serde_json::from_str(VIEW_RESPONSE).unwrap();
         response["pull_request"]["source"]["repository"]["full_name"] =
             serde_json::json!("OtherOrg/shared-app");
 
-        assert!(parse_view(&response.to_string(), &repo()).is_err());
+        let view = parse_view(&response.to_string()).unwrap();
+
+        assert!(awaits_review(&view, "account-me"));
     }
 
     #[test]
@@ -1246,7 +1222,7 @@ mod tests {
     }
 
     #[test]
-    fn mismatched_list_repository_degrades_only_the_list_categories() {
+    fn attaches_fork_pull_requests_to_the_command_target() {
         let collection = collect_with(&config(), |_, args| match args.join(" ").as_str() {
             "api /user --json" => {
                 Ok(r#"{"account_id":"account-me","display_name":"Example User"}"#.to_owned())
@@ -1261,13 +1237,11 @@ mod tests {
             other => panic!("unexpected bkt command: {other}"),
         });
 
-        assert!(collection.pull_requests.is_empty());
-        assert_eq!(collection.warnings.len(), 1);
-        assert_eq!(collection.warnings[0].categories, [Category::Linear]);
-        assert!(
-            collection.warnings[0]
-                .message
-                .contains("OtherOrg/shared-app")
+        assert!(collection.warnings.is_empty());
+        assert_eq!(collection.pull_requests.len(), 1);
+        assert_eq!(
+            collection.pull_requests[0].key.repo.path,
+            "ExampleOrg/shared-app"
         );
     }
 
