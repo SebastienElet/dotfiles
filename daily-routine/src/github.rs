@@ -124,6 +124,8 @@ enum GithubPullRequestState {
 
 #[derive(Deserialize)]
 struct DetailResponse {
+    #[serde(default)]
+    errors: Option<Vec<serde_json::Value>>,
     data: DetailData,
 }
 
@@ -623,6 +625,11 @@ fn parse_details(
     fallback_at: &str,
 ) -> Result<Vec<Feedback>, Box<dyn Error>> {
     let response: DetailResponse = serde_json::from_str(source)?;
+    if let Some(errors) = response.errors
+        && !errors.is_empty()
+    {
+        return Err(format!("GitHub GraphQL errors: {errors:?}").into());
+    }
     let pull_request = response.data.repository.pull_request;
     let decision = pull_request
         .review_decision
@@ -840,6 +847,38 @@ mod tests {
     }
 
     #[test]
+    fn rejects_partial_graphql_data_when_errors_are_present() {
+        let mut response: serde_json::Value = serde_json::from_str(DETAIL_RESPONSE).unwrap();
+        response["errors"] = serde_json::json!([{
+            "message": "One review thread could not be loaded"
+        }]);
+
+        assert!(
+            parse_details(
+                &response.to_string(),
+                Some("example-user"),
+                "2026-08-10T09:00:00Z"
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn accepts_explicitly_empty_graphql_errors() {
+        let mut response: serde_json::Value = serde_json::from_str(DETAIL_RESPONSE).unwrap();
+        response["errors"] = serde_json::json!([]);
+
+        let feedback = parse_details(
+            &response.to_string(),
+            Some("example-user"),
+            "2026-08-10T09:00:00Z",
+        )
+        .unwrap();
+
+        assert_eq!(feedback.len(), 4);
+    }
+
+    #[test]
     fn collection_resolves_identity_and_teams_once_and_deduplicates_review_requests() {
         let calls = Mutex::new(Vec::new());
         let collection = collect_with(&config(), |program, args| {
@@ -1047,5 +1086,39 @@ mod tests {
             warning.categories == [Category::Retour]
                 && warning.message.contains("detail unavailable")
         }));
+    }
+
+    #[test]
+    fn partial_graphql_response_preserves_pr_without_false_feedback() {
+        let mut open_response: serde_json::Value = serde_json::from_str(OPEN_RESPONSE).unwrap();
+        open_response.as_array_mut().unwrap().truncate(1);
+        let open_response = open_response.to_string();
+        let mut detail_response: serde_json::Value = serde_json::from_str(DETAIL_RESPONSE).unwrap();
+        detail_response["errors"] = serde_json::json!([{
+            "message": "One review thread could not be loaded"
+        }]);
+        let detail_response = detail_response.to_string();
+
+        let collection = collect_with(&config(), |_program, args| {
+            if args == strings(&["api", "user", "--jq", "{login,id}"]) {
+                return Ok(VIEWER_RESPONSE.to_owned());
+            }
+            if args.get(1).map(String::as_str) == Some("user/teams") {
+                return Ok(String::new());
+            }
+            if args.first().map(String::as_str) == Some("api") {
+                return Ok(detail_response.clone());
+            }
+            if args.iter().any(|arg| arg == "--author") && args.iter().any(|arg| arg == "open") {
+                return Ok(open_response.clone());
+            }
+            Ok("[]".to_owned())
+        });
+
+        assert_eq!(collection.pull_requests.len(), 1);
+        assert!(collection.pull_requests[0].feedback.is_empty());
+        assert_eq!(collection.warnings.len(), 1);
+        assert_eq!(collection.warnings[0].categories, [Category::Retour]);
+        assert!(collection.warnings[0].message.contains("GraphQL errors"));
     }
 }
