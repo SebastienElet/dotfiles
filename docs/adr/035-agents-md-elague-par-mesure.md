@@ -59,10 +59,14 @@ un agent.
   ajoute parce que retirer paraît dangereux — est ce que ce critère arrête.
 - `docs/adr/README.md` ne promet plus le rappel de la règle de langue dans
   l'`AGENTS.md` racine.
-- La mesure vaut pour Opus 5 sous Claude Code, skills disponibles. Un agent
-  sans mécanisme de skills — Codex lit le même fichier — peut avoir un
-  comportement par défaut différent : une divergence constatée là-bas se
-  traite par une mesure sur cet agent, pas par une réinscription d'office.
+- La mesure vaut pour Opus 5 sous Claude Code, skills disponibles. Un autre
+  agent lisant le même fichier peut avoir un comportement par défaut
+  différent : une divergence constatée là-bas se traite par une mesure sur cet
+  agent, pas par une réinscription d'office. Codex n'est pas un cas à part sur
+  ce point, contrairement à ce que cette ADR affirmait : `codex-cli` 0.147.0
+  découvre les skills selon la même divulgation progressive, dans
+  `.agents/skills` au niveau dépôt et `~/.agents/skills` au niveau
+  utilisateur.
 - La seule règle de portée mesurée porte au bloc, pas à la ligne : sans le
   fichier, deux runs sur trois s'arrêtent pour demander le périmètre au lieu de
   livrer. L'ablation menée est au fichier ; attribuer cet effet à une phrase
