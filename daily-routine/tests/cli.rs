@@ -83,6 +83,22 @@ fn unknown_argument_exits_two_before_loading_config() {
 }
 
 #[test]
+fn unusable_limit_exits_two_before_loading_config() {
+    let home = TemporaryHome::new();
+
+    let output = run(&home, &["--limit", "0"]);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("--limit must keep at least one item per section"));
+    assert!(
+        stderr.contains("[--limit <count>]"),
+        "the usage line must document the option: {stderr}"
+    );
+}
+
+#[test]
 fn duplicate_argument_exits_two_before_loading_config() {
     let home = TemporaryHome::new();
 

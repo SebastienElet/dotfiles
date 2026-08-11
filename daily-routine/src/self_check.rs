@@ -6,6 +6,7 @@ use crate::model::{
 use crate::report;
 use crate::rules::{
     build_report, issue_linear_reasons, pr_linear_reasons, track_for_pr, uncorrelated_pr_reasons,
+    withhold_beyond_limit,
 };
 use crate::util::{days_from_civil, find_linear_id, percent_encode};
 use std::io::{self, Write};
@@ -18,6 +19,7 @@ pub fn run() -> io::Result<()> {
     check_requires_linear();
     check_requires_linear_report();
     check_blocked_issues();
+    check_limit();
     check_category_order();
     check_rendered_category_order();
     check_days_from_civil();
@@ -215,6 +217,48 @@ fn check_blocked_issues() {
             .items
             .iter()
             .any(|item| item.reference == "ALP-43" && item.category == Category::Suivant)
+    );
+}
+
+fn check_limit() {
+    let issues = ["ALP-1", "ALP-2", "ALP-3"]
+        .into_iter()
+        .zip([
+            "2026-08-03T08:00:00Z",
+            "2026-08-01T08:00:00Z",
+            "2026-08-02T08:00:00Z",
+        ])
+        .map(|(identifier, updated_at)| {
+            let mut issue = issue(identifier, IssueState::Backlog);
+            issue.labels.clear();
+            issue.updated_at = updated_at.to_owned();
+            issue
+        })
+        .collect();
+    let mut report = build_report(
+        &config(),
+        &Dataset {
+            pull_requests: Vec::new(),
+            issues,
+            warnings: Vec::new(),
+        },
+        days_from_civil(2026, 8, 11),
+    );
+
+    withhold_beyond_limit(&mut report, 1);
+
+    let discrepancies = report
+        .items
+        .iter()
+        .filter(|item| item.category == Category::Linear)
+        .map(|item| item.reference.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(discrepancies, ["ALP-2"], "the limit keeps the oldest item");
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|warning| warning.message.contains("2 further items withheld"))
     );
 }
 

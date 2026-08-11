@@ -90,6 +90,9 @@ pub enum Category {
 }
 
 impl Category {
+    /// Every category, in report order; `rank` indexes into it.
+    pub const ALL: [Self; 4] = [Self::Review, Self::Retour, Self::Linear, Self::Suivant];
+
     pub const fn rank(self) -> usize {
         match self {
             Self::Review => 0,

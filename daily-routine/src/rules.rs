@@ -102,6 +102,35 @@ fn is_blocked(issue: &Issue) -> bool {
     !issue.blockers.is_empty()
 }
 
+/// Keeps the `limit` oldest items of each section and warns about the rest, so a large backlog
+/// arrives one batch per run instead of all at once.
+pub fn withhold_beyond_limit(report: &mut Report, limit: usize) {
+    let mut seen = [0usize; Category::ALL.len()];
+    let mut withheld = [0usize; Category::ALL.len()];
+
+    // The report is already sorted by category then chronologically, so the first items of each
+    // section are its oldest.
+    report.items.retain(|item| {
+        let rank = item.category.rank();
+        seen[rank] += 1;
+        if seen[rank] <= limit {
+            return true;
+        }
+        withheld[rank] += 1;
+        false
+    });
+
+    for category in Category::ALL {
+        let count = withheld[category.rank()];
+        if count > 0 {
+            report.warnings.push(Warning {
+                categories: vec![category],
+                message: format!("{count} further items withheld by --limit {limit}"),
+            });
+        }
+    }
+}
+
 pub fn uncorrelated_pr_reasons(pr: &PullRequest, requires_linear: bool) -> Vec<LinearReason> {
     if requires_linear
         && pr.state == PullRequestState::Open

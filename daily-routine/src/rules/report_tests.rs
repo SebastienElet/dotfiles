@@ -464,6 +464,69 @@ fn linear_correlation_excludes_issues_from_unconfigured_teams() {
 }
 
 #[test]
+fn the_limit_keeps_the_oldest_items_of_each_section_and_warns_about_the_rest() {
+    let config = config(0);
+    let issues = ["ABC-1", "ABC-2", "ABC-3", "ABC-4"]
+        .into_iter()
+        .zip([
+            "2026-08-04T09:00:00Z",
+            "2026-08-01T09:00:00Z",
+            "2026-08-03T09:00:00Z",
+            "2026-08-02T09:00:00Z",
+        ])
+        .map(|(identifier, updated_at)| {
+            let mut issue = issue(identifier, IssueState::Backlog, updated_at);
+            issue.labels = Vec::new();
+            issue
+        })
+        .collect::<Vec<_>>();
+    let awaiting_review = pull_request(1, PullRequestState::Open, true);
+    let mut report = build_report(
+        &config,
+        &dataset(vec![awaiting_review], issues),
+        days_from_civil(2026, 8, 11),
+    );
+
+    withhold_beyond_limit(&mut report, 2);
+
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-2", "ABC-4"],
+        "the two oldest discrepancies come first"
+    );
+    assert_eq!(
+        references(&category_items(&report.items, Category::Review)).len(),
+        1,
+        "a section under the limit keeps every item"
+    );
+    assert_eq!(
+        report.warnings,
+        [Warning {
+            categories: vec![Category::Linear],
+            message: "2 further items withheld by --limit 2".to_owned(),
+        }],
+        "only the truncated section warns, and it says how many remain"
+    );
+}
+
+#[test]
+fn the_limit_leaves_a_report_it_does_not_truncate_untouched() {
+    let config = config(0);
+    let mut issue = issue("ABC-1", IssueState::Backlog, "2026-08-04T09:00:00Z");
+    issue.labels = Vec::new();
+    let mut report = build_report(
+        &config,
+        &dataset(Vec::new(), vec![issue]),
+        days_from_civil(2026, 8, 11),
+    );
+    let untouched = report.clone();
+
+    withhold_beyond_limit(&mut report, 10);
+
+    assert_eq!(report, untouched);
+}
+
+#[test]
 fn blocked_issues_leave_the_discrepancy_list() {
     let config = config(0);
     let mut blocked = issue("ABC-1", IssueState::Started, "2026-08-01T09:00:00Z");

@@ -18,12 +18,13 @@ use std::io::Write;
 use std::process::ExitCode;
 
 const CONFIG_EXAMPLE: &str = include_str!("../config.example.toml");
-const USAGE: &str = "Usage: daily-routine [--self-check] [--no-things]";
+const USAGE: &str = "Usage: daily-routine [--self-check] [--no-things] [--limit <count>]";
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct Options {
     self_check: bool,
     no_things: bool,
+    limit: Option<usize>,
 }
 
 fn main() -> ExitCode {
@@ -45,13 +46,21 @@ fn main() -> ExitCode {
         };
     }
 
-    run_normal(options.no_things)
+    run_normal(options)
 }
 
 fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Options, String> {
     let mut options = Options::default();
+    let mut args = args.into_iter();
 
-    for argument in args {
+    while let Some(argument) = args.next() {
+        if let Some(limit) = limit_value(&argument, &mut args)? {
+            if options.limit.is_some() {
+                return Err("duplicate argument: --limit".to_owned());
+            }
+            options.limit = Some(limit);
+            continue;
+        }
         let selected = match argument.as_str() {
             "--self-check" => &mut options.self_check,
             "--no-things" => &mut options.no_things,
@@ -66,7 +75,26 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Options, String>
     Ok(options)
 }
 
-fn run_normal(no_things: bool) -> ExitCode {
+fn limit_value(
+    argument: &str,
+    args: &mut impl Iterator<Item = String>,
+) -> Result<Option<usize>, String> {
+    let raw = match argument.split_once('=') {
+        Some(("--limit", value)) => value.to_owned(),
+        None if argument == "--limit" => args
+            .next()
+            .ok_or_else(|| "missing value for --limit".to_owned())?,
+        _ => return Ok(None),
+    };
+
+    match raw.parse::<usize>() {
+        Ok(0) => Err("--limit must keep at least one item per section".to_owned()),
+        Ok(limit) => Ok(Some(limit)),
+        Err(error) => Err(format!("invalid --limit value `{raw}`: {error}")),
+    }
+}
+
+fn run_normal(options: Options) -> ExitCode {
     let config = match Config::load() {
         Ok(config) => config,
         Err(error) => {
@@ -99,7 +127,10 @@ fn run_normal(no_things: bool) -> ExitCode {
             0
         }
     };
-    let report = rules::build_report(&config, &dataset, today_days);
+    let mut report = rules::build_report(&config, &dataset, today_days);
+    if let Some(limit) = options.limit {
+        rules::withhold_beyond_limit(&mut report, limit);
+    }
     let stdout = std::io::stdout();
     let mut stdout = stdout.lock();
     if let Err(error) = write_report(&mut stdout, &config, &report) {
@@ -110,7 +141,7 @@ fn run_normal(no_things: bool) -> ExitCode {
         print_warning(warning);
     }
 
-    match push_if_enabled(no_things, || things::push(&report)) {
+    match push_if_enabled(options.no_things, || things::push(&report)) {
         Ok(Some(outcome)) => {
             for warning in outcome.warnings {
                 eprintln!("warning [THINGS]: {warning}");
@@ -195,7 +226,50 @@ mod tests {
             Ok(Options {
                 self_check: true,
                 no_things: true,
+                limit: None,
             })
+        );
+    }
+
+    #[test]
+    fn parses_the_limit_as_a_separate_word_or_after_an_equals_sign() {
+        for arguments in [
+            vec!["--limit".to_owned(), "10".to_owned()],
+            vec!["--limit=10".to_owned()],
+        ] {
+            assert_eq!(
+                parse_args(arguments.clone()).map(|options| options.limit),
+                Ok(Some(10)),
+                "{arguments:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_limits_that_cannot_produce_a_report() {
+        for (arguments, expected) in [
+            (vec!["--limit".to_owned()], "missing value for --limit"),
+            (vec!["--limit".to_owned(), "0".to_owned()], "at least one"),
+            (vec!["--limit=zero".to_owned()], "invalid --limit value"),
+            (vec!["--limit=-1".to_owned()], "invalid --limit value"),
+            (
+                vec!["--limit=1".to_owned(), "--limit=2".to_owned()],
+                "duplicate argument: --limit",
+            ),
+        ] {
+            let error = parse_args(arguments.clone()).unwrap_err();
+
+            assert!(error.contains(expected), "{arguments:?} produced {error}");
+        }
+    }
+
+    #[test]
+    fn a_limit_that_swallows_a_flag_fails_instead_of_dropping_it() {
+        let error = parse_args(["--limit".to_owned(), "--no-things".to_owned()]).unwrap_err();
+
+        assert!(
+            error.contains("invalid --limit value `--no-things`"),
+            "{error}"
         );
     }
 
