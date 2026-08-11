@@ -129,5 +129,6 @@ fn issue(team_key: &str) -> Issue {
         team_key: team_key.to_owned(),
         project: Some("Platform".to_owned()),
         labels: Vec::new(),
+        blockers: Vec::new(),
     }
 }

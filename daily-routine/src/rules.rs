@@ -96,6 +96,12 @@ pub fn issue_linear_reasons(
     reasons
 }
 
+// A blocked issue is not actionable today: it belongs neither in the discrepancy list nor among
+// the next candidates, whatever else is wrong with it.
+fn is_blocked(issue: &Issue) -> bool {
+    !issue.blockers.is_empty()
+}
+
 pub fn uncorrelated_pr_reasons(pr: &PullRequest, requires_linear: bool) -> Vec<LinearReason> {
     if requires_linear
         && pr.state == PullRequestState::Open
@@ -270,6 +276,9 @@ fn add_linear_items(
         let Some(track_index) = track_for_issue(config, issue) else {
             continue;
         };
+        if is_blocked(issue) {
+            continue;
+        }
         let reasons = issue_linear_reasons(
             issue,
             has_correlated_pr.contains(&issue.identifier.to_ascii_uppercase()),
@@ -317,6 +326,9 @@ fn add_linear_items(
         }
 
         if let Some(issue) = scoped.issue {
+            if is_blocked(issue) {
+                continue;
+            }
             let reasons = pr_linear_reasons(pr, issue);
             if reasons.is_empty() {
                 continue;
@@ -470,6 +482,7 @@ fn select_suivant_candidates<'a>(
     let mut candidates = Vec::new();
     for issue in &dataset.issues {
         if track_for_issue(config, issue) != Some(track_index)
+            || is_blocked(issue)
             || !matches!(
                 issue.state_type,
                 IssueState::Triage | IssueState::Backlog | IssueState::Unstarted

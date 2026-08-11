@@ -464,6 +464,76 @@ fn linear_correlation_excludes_issues_from_unconfigured_teams() {
 }
 
 #[test]
+fn blocked_issues_leave_the_discrepancy_list() {
+    let config = config(0);
+    let mut blocked = issue("ABC-1", IssueState::Started, "2026-08-01T09:00:00Z");
+    blocked.labels = Vec::new();
+    blocked.project = None;
+    blocked.priority = 0;
+    blocked.branch_name = String::new();
+    blocked.blockers = vec!["ABC-9".to_owned()];
+    let mut open = issue("ABC-2", IssueState::Started, "2026-08-01T09:00:00Z");
+    open.labels = Vec::new();
+
+    let report = build_report(
+        &config,
+        &dataset(Vec::new(), vec![blocked, open]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-2"],
+        "every discrepancy of a blocked issue waits for it to be unblocked"
+    );
+}
+
+#[test]
+fn blocked_issues_drop_their_pull_request_discrepancies_too() {
+    let config = config(0);
+    let mut blocked = issue("ABC-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    blocked.blockers = vec!["ABC-9".to_owned()];
+    let mut pr = pull_request(1, PullRequestState::Open, false);
+    pr.title = "Ship ABC-1".to_owned();
+
+    let report = build_report(
+        &config,
+        &dataset(vec![pr], vec![blocked]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert!(
+        category_items(&report.items, Category::Linear).is_empty(),
+        "an open PR on a blocked issue reports no discrepancy either"
+    );
+}
+
+#[test]
+fn blocked_issues_never_become_next_candidates() {
+    let config = config(2);
+    let mut blocked = issue("ABC-1", IssueState::Backlog, "2026-08-10T09:00:00Z");
+    blocked.priority = 1;
+    blocked.blockers = vec!["ABC-9".to_owned()];
+    let mut ready = issue("ABC-2", IssueState::Backlog, "2026-08-09T09:00:00Z");
+    ready.priority = 2;
+    let mut lower = issue("ABC-3", IssueState::Unstarted, "2026-08-08T09:00:00Z");
+    lower.priority = 3;
+
+    let report = build_report(
+        &config,
+        &dataset(Vec::new(), vec![blocked, ready, lower]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert_eq!(
+        references(&category_items(&report.items, Category::Suivant)),
+        ["ABC-3", "ABC-2"],
+        "the blocked top priority frees its slot for the next actionable candidate, \
+         and selection still precedes the chronological output order"
+    );
+}
+
+#[test]
 fn suivant_selects_by_linear_priority_then_sorts_chronologically() {
     let mut config = config(2);
     config.tracks.push(Track {
@@ -747,6 +817,7 @@ fn issue(identifier: &str, state_type: IssueState, updated_at: &str) -> Issue {
         team_key: "ABC".to_owned(),
         project: Some("Project".to_owned()),
         labels: vec!["label".to_owned()],
+        blockers: Vec::new(),
     }
 }
 

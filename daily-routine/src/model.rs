@@ -60,6 +60,8 @@ pub struct Issue {
     pub team_key: String,
     pub project: Option<String>,
     pub labels: Vec<String>,
+    /// Identifiers of the issues blocking this one, excluding resolved blockers.
+    pub blockers: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -70,6 +72,13 @@ pub enum IssueState {
     Started,
     Completed,
     Canceled,
+}
+
+impl IssueState {
+    /// A resolved issue no longer blocks the issues depending on it.
+    pub const fn is_resolved(self) -> bool {
+        matches!(self, Self::Completed | Self::Canceled)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

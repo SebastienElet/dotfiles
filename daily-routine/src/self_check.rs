@@ -17,6 +17,7 @@ pub fn run() -> io::Result<()> {
     check_track_attachment();
     check_requires_linear();
     check_requires_linear_report();
+    check_blocked_issues();
     check_category_order();
     check_rendered_category_order();
     check_days_from_civil();
@@ -189,6 +190,34 @@ fn check_requires_linear_report() {
     );
 }
 
+fn check_blocked_issues() {
+    let mut blocked = issue("ALP-42", IssueState::Backlog);
+    blocked.labels.clear();
+    blocked.blockers = vec!["ALP-41".to_owned()];
+    let ready = issue("ALP-43", IssueState::Backlog);
+
+    let report = build_report(
+        &config(),
+        &Dataset {
+            pull_requests: Vec::new(),
+            issues: vec![blocked, ready],
+            warnings: Vec::new(),
+        },
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert!(
+        !report.items.iter().any(|item| item.reference == "ALP-42"),
+        "a blocked issue must leave both the discrepancy list and the next candidates"
+    );
+    assert!(
+        report
+            .items
+            .iter()
+            .any(|item| item.reference == "ALP-43" && item.category == Category::Suivant)
+    );
+}
+
 fn check_category_order() {
     let mut categories = [
         Category::Linear,
@@ -291,6 +320,7 @@ fn issue(identifier: &str, state_type: IssueState) -> Issue {
         team_key: identifier.split_once('-').unwrap().0.to_owned(),
         project: Some("Example project".to_owned()),
         labels: vec!["maintenance".to_owned()],
+        blockers: Vec::new(),
     }
 }
 
