@@ -15,6 +15,11 @@ mod command;
 mod config;
 #[allow(
     dead_code,
+    reason = "GitHub collection is consumed by later provider orchestration"
+)]
+mod github;
+#[allow(
+    dead_code,
     reason = "Linear collection is consumed by later provider orchestration"
 )]
 mod linear;

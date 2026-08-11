@@ -1,0 +1,14 @@
+[
+  {
+    "number": 203,
+    "title": "Complete migration",
+    "url": "https://github.example.test/ExampleOrg/shared-app/pull/203",
+    "headRefName": "example-user/app-203-migration",
+    "body": "APP-203 completes the migration.",
+    "updatedAt": "2026-08-09T08:00:00Z",
+    "createdAt": "2026-08-01T08:00:00Z",
+    "mergedAt": "2026-08-08T08:00:00Z",
+    "isDraft": false,
+    "state": "MERGED"
+  }
+]
