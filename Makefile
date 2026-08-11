@@ -159,6 +159,7 @@ work: \
 	aws \
 	ai \
 	bkt \
+	daily-routine \
 	flow \
 	feedmd \
 	language-tool \
@@ -239,6 +240,16 @@ ${BREW_BIN}/bkt:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap avivsinai/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula avivsinai/tap/bitbucket-cli; fi
 	brew install avivsinai/tap/bitbucket-cli
+
+.PHONY: daily-routine
+daily-routine: ${LOCAL_BIN}/daily-routine
+${LOCAL_BIN}/daily-routine: \
+	${DOTFILES_PATH}/daily-routine/Cargo.toml \
+	${DOTFILES_PATH}/daily-routine/Cargo.lock \
+	$(wildcard ${DOTFILES_PATH}/daily-routine/src/*.rs) \
+	| ${LOCAL_BIN} rust
+	cd ${DOTFILES_PATH}/daily-routine && ${BREW_BIN}/cargo build --release
+	ln -sf ${DOTFILES_PATH}/daily-routine/target/release/daily-routine $@
 
 docker: brew lazydocker /Applications/Orbstack.app
 /Applications/Orbstack.app:
@@ -611,8 +622,8 @@ ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
 
 .PHONY: rust
-rust: brew ${BREW_BIN}/cargo
-${BREW_BIN}/cargo:
+rust: ${BREW_BIN}/cargo
+${BREW_BIN}/cargo: | brew
 	brew install rust
 
 nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
