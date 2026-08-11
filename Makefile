@@ -243,11 +243,25 @@ ${BREW_BIN}/bkt:
 
 .PHONY: daily-routine
 daily-routine: ${LOCAL_BIN}/daily-routine
+
+.PHONY: check-daily-routine-destination
+check-daily-routine-destination:
+	@if [ -L "${LOCAL_BIN}/daily-routine" ]; then \
+		if [ "$$(readlink "${LOCAL_BIN}/daily-routine")" != "${DOTFILES_PATH}/daily-routine/target/release/daily-routine" ]; then \
+			echo "Error: ${LOCAL_BIN}/daily-routine is not the expected daily-routine release symlink" >&2; \
+			exit 1; \
+		fi; \
+	elif [ -e "${LOCAL_BIN}/daily-routine" ]; then \
+		echo "Error: ${LOCAL_BIN}/daily-routine already exists and is not a symbolic link" >&2; \
+		exit 1; \
+	fi
+
 ${LOCAL_BIN}/daily-routine: \
 	${DOTFILES_PATH}/daily-routine/Cargo.toml \
 	${DOTFILES_PATH}/daily-routine/Cargo.lock \
+	${DOTFILES_PATH}/daily-routine/config.example.toml \
 	$(wildcard ${DOTFILES_PATH}/daily-routine/src/*.rs) \
-	| ${LOCAL_BIN} rust
+	| ${LOCAL_BIN} rust check-daily-routine-destination
 	cd ${DOTFILES_PATH}/daily-routine && ${BREW_BIN}/cargo build --release
 	ln -sf ${DOTFILES_PATH}/daily-routine/target/release/daily-routine $@
 
