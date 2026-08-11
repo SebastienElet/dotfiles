@@ -159,6 +159,7 @@ work: \
 	aws \
 	ai \
 	bkt \
+	daily-routine \
 	flow \
 	feedmd \
 	language-tool \
@@ -239,6 +240,30 @@ ${BREW_BIN}/bkt:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap avivsinai/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula avivsinai/tap/bitbucket-cli; fi
 	brew install avivsinai/tap/bitbucket-cli
+
+.PHONY: daily-routine
+daily-routine: ${LOCAL_BIN}/daily-routine
+
+.PHONY: check-daily-routine-destination
+check-daily-routine-destination:
+	@if [ -L "${LOCAL_BIN}/daily-routine" ]; then \
+		if [ "$$(readlink "${LOCAL_BIN}/daily-routine")" != "${DOTFILES_PATH}/daily-routine/target/release/daily-routine" ]; then \
+			echo "Error: ${LOCAL_BIN}/daily-routine is not the expected daily-routine release symlink" >&2; \
+			exit 1; \
+		fi; \
+	elif [ -e "${LOCAL_BIN}/daily-routine" ]; then \
+		echo "Error: ${LOCAL_BIN}/daily-routine already exists and is not a symbolic link" >&2; \
+		exit 1; \
+	fi
+
+${LOCAL_BIN}/daily-routine: \
+	${DOTFILES_PATH}/daily-routine/Cargo.toml \
+	${DOTFILES_PATH}/daily-routine/Cargo.lock \
+	${DOTFILES_PATH}/daily-routine/config.example.toml \
+	$(wildcard ${DOTFILES_PATH}/daily-routine/src/*.rs) \
+	| ${LOCAL_BIN} rust check-daily-routine-destination
+	cd ${DOTFILES_PATH}/daily-routine && ${BREW_BIN}/cargo build --release
+	ln -sf ${DOTFILES_PATH}/daily-routine/target/release/daily-routine $@
 
 docker: brew lazydocker /Applications/Orbstack.app
 /Applications/Orbstack.app:
@@ -609,6 +634,11 @@ ${VOLTA_BIN}/prettier: ${VOLTA_BIN}/node
 cspell: ${VOLTA_BIN}/cspell
 ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
+
+.PHONY: rust
+rust: ${BREW_BIN}/cargo
+${BREW_BIN}/cargo: | brew
+	brew install rust
 
 nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node

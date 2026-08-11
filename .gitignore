@@ -7,6 +7,7 @@ fish/completions
 
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
+daily-routine/target/
 
 # Claude Code
 .claude/*

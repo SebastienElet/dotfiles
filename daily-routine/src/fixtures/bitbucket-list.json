@@ -1,0 +1,44 @@
+{
+  "pull_requests": [
+    {
+      "id": 101,
+      "title": "Improve validation flow",
+      "description": "OPS-101 tracks validation.",
+      "state": "OPEN",
+      "draft": false,
+      "created_on": "2026-08-08T08:00:00+00:00",
+      "updated_on": "2026-08-10T09:00:00+00:00",
+      "author": {
+        "display_name": "Example User",
+        "account_id": "account-me"
+      },
+      "source": {
+        "branch": { "name": "example-user/ops-101-validation" },
+        "repository": { "full_name": "ExampleOrg/shared-app" }
+      },
+      "destination": { "branch": { "name": "feature/stack-base" } },
+      "links": { "html": { "href": "https://bitbucket.example.test/pr/101" } },
+      "reviewers": null
+    },
+    {
+      "id": 102,
+      "title": "Draft follow-up",
+      "description": null,
+      "state": "OPEN",
+      "draft": true,
+      "created_on": "2026-08-09T08:00:00+00:00",
+      "updated_on": "2026-08-10T10:00:00+00:00",
+      "author": {
+        "display_name": "External Reviewer",
+        "account_id": "account-other"
+      },
+      "source": {
+        "branch": { "name": "example-user/draft-follow-up" },
+        "repository": { "full_name": "ExampleOrg/shared-app" }
+      },
+      "destination": { "branch": { "name": "develop" } },
+      "links": { "html": { "href": "https://bitbucket.example.test/pr/102" } },
+      "reviewers": null
+    }
+  ]
+}
