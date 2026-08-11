@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+# Claude Code PostToolUse hook on Edit|Write: an added comment block over three
+# lines is refused unless its first line states the reason. Advisory layer, and
+# its output says so: why-versus-what is not machine-decidable.
+set -euo pipefail
+
+LIMIT=3
+
+die() {
+  printf 'comment-block check: %s\n' "$1" >&2
+  exit 2
+}
+
+# Refusing is cheaper than a guard that cannot run, so a missing tool is fatal.
+for tool in jq awk sed mktemp cat rm; do
+  command -v "$tool" >/dev/null || die "$tool is missing, so the check could not run."
+done
+
+work=$(mktemp -d) || die "mktemp failed, so the check could not run."
+trap 'rm -rf "$work"' EXIT
+
+cat >"$work/blocks.awk" <<'AWK'
+function flush() {
+  if (n > LIMIT && tolower(first) !~ /^why:/) {
+    gsub(/  +/, " ", sig)
+    sub(/^ /, "", sig)
+    sub(/ $/, "", sig)
+    printf "%d\t%d\t%s\t%s\n", start, n, first, sig
+  }
+  n = 0
+}
+{
+  line = $0
+  sub(/\r$/, "", line)
+  sub(/^[ \t]+/, "", line)
+  comment = 0
+  if (line !~ /^#!/ &&
+      (line ~ /^#/ || line ~ /^\/\// || line ~ /^--/ || line ~ /^\/\*/ || line ~ /^\*/)) {
+    comment = 1
+  }
+  if (comment) {
+    body = line
+    sub(/^(#+|\/\/+|--+|\/\*+|\*\/|\*)[ \t]*/, "", body)
+    sub(/[ \t]*\*\/[ \t]*$/, "", body)
+    gsub(/[ \t]+/, " ", body)
+    sub(/^ /, "", body)
+    sub(/ $/, "", body)
+    n++
+    if (n == 1) {
+      start = FNR
+      first = body
+      sig = body
+    } else {
+      sig = sig " " body
+    }
+  } else {
+    flush()
+  }
+}
+END { flush() }
+AWK
+
+detect() { # $1 = file to scan
+  awk -v LIMIT="$LIMIT" -f "$work/blocks.awk" "$1"
+}
+
+# The fixture carries an `@` prefix so this file holds no literal comment block:
+# the check would otherwise refuse its own canary.
+sed 's/^@//' >"$work/canary" <<'CANARY'
+code();
+@# bad hash one
+@# bad hash two
+@# bad hash three
+@# bad hash four
+code();
+@// bad slash one
+@// bad slash two
+@// bad slash three
+@// bad slash four
+code();
+@-- bad dash one
+@-- bad dash two
+@-- bad dash three
+@-- bad dash four
+code();
+@/* bad star one
+@ * bad star two
+@ * bad star three
+@ */
+code();
+@# Why: an exempted block states its reason on the first line
+@# exempt two
+@# exempt three
+@# exempt four
+code();
+@# short one
+@# short two
+@# short three
+code();
+CANARY
+
+expected=$(printf '%d\t%d\t%s\t%s\n' \
+  2 4 'bad hash one' 'bad hash one bad hash two bad hash three bad hash four' \
+  7 4 'bad slash one' 'bad slash one bad slash two bad slash three bad slash four' \
+  12 4 'bad dash one' 'bad dash one bad dash two bad dash three bad dash four' \
+  17 4 'bad star one' 'bad star one bad star two bad star three')
+canary=$(detect "$work/canary")
+[ "$canary" = "$expected" ] || die "the detector is broken, so nothing was checked.
+Canary expected:
+$expected
+Canary produced:
+$canary"
+
+cat >"$work/payload.json"
+tool=$(jq -r '.tool_name // empty' "$work/payload.json") ||
+  die "the hook input is not JSON, so the check could not run."
+case "$tool" in
+Edit | Write) ;;
+'') die "the hook input carries no tool_name." ;;
+*) die "wired to $tool, which this hook does not cover: set the matcher to Edit|Write." ;;
+esac
+
+path=$(jq -r '.tool_input.file_path // empty' "$work/payload.json")
+[ -n "$path" ] || die "the $tool input carries no tool_input.file_path."
+
+# Prose is out of scope: the rule this enforces is about comments in code.
+shopt -s nocasematch
+case "$path" in
+*.md | *.markdown | *.mdx | *.txt | *.rst | *.adoc | *.asciidoc | *.org | *.tex) exit 0 ;;
+esac
+shopt -u nocasematch
+
+: >"$work/old"
+if [ "$tool" = Write ]; then
+  jq -e -r '.tool_input.content' "$work/payload.json" >"$work/new" ||
+    die "the Write input carries no tool_input.content."
+else
+  jq -e -r '.tool_input.new_string' "$work/payload.json" >"$work/new" ||
+    die "the Edit input carries no tool_input.new_string."
+  jq -r '.tool_input.old_string // ""' "$work/payload.json" >"$work/old"
+fi
+
+detect "$work/new" >"$work/new.blocks"
+detect "$work/old" >"$work/old.blocks"
+# Blocks already in old_string were moved, not added.
+added=$(awk -F'\t' -v old="$work/old.blocks" \
+  'FILENAME == old { seen[$4] = 1; next } !seen[$4]' \
+  "$work/old.blocks" "$work/new.blocks")
+[ -n "$added" ] || exit 0
+
+report=$(printf '%s\n' "$added" |
+  awk -F'\t' '{ printf "  line %s of the added text: %s-line block starting \"%s\"\n", $1, $2, $3 }')
+die "refused $path
+$report
+An added comment block over $LIMIT lines must state its reason on its first line,
+as \"Why: <reason>\"; otherwise delete it or make the code say it.
+This layer is advisory: why-versus-what is not machine-decidable, so passing it is
+not evidence that a comment earns its place."

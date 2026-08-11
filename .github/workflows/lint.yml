@@ -99,7 +99,7 @@ jobs:
 
           tests=$(git ls-files 'scripts/*_test')
 
-          for canary in scripts/claude_handoff_check_test; do
+          for canary in scripts/claude_handoff_check_test scripts/claude_comment_block_check_test; do
             printf '%s\n' "$tests" | grep -qx "$canary" \
               || { echo "::error::self-check discovery is broken: $canary missing from the list"; exit 1; }
           done

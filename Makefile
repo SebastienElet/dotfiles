@@ -331,7 +331,7 @@ ${APP_BIN}/Cursor.app:
 ~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
 	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check claude-code-comment-hook ~/.claude/skills/handoff ~/.claude/skills/enforcement-code
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -349,6 +349,21 @@ ${LOCAL_BIN}/claude:
 # Stop hook: emit a resume prompt near the token limit instead of compacting.
 ~/.claude/hooks/claude_handoff_check: ${DOTFILES_PATH}/scripts/claude_handoff_check | ~/.claude/hooks
 	ln -s ${DOTFILES_PATH}/scripts/claude_handoff_check $@
+~/.claude/hooks/claude_comment_block_check: ${DOTFILES_PATH}/scripts/claude_comment_block_check | ~/.claude/hooks
+	ln -s ${DOTFILES_PATH}/scripts/claude_comment_block_check $@
+# PostToolUse hook. Registered here rather than by hand: a check nobody wired is
+# a check nobody runs. settings.json is rewritten in place instead of symlinked,
+# since it also carries local state that does not belong in this repository.
+.PHONY: claude-code-comment-hook
+claude-code-comment-hook: ~/.claude/hooks/claude_comment_block_check
+	@command -v jq >/dev/null || { echo "jq is required to register the comment-block hook" >&2; exit 1; }; \
+	settings="$(HOME)/.claude/settings.json"; \
+	cmd="$(HOME)/.claude/hooks/claude_comment_block_check"; \
+	[ -f "$$settings" ] || echo '{}' >"$$settings"; \
+	jq --arg cmd "$$cmd" 'if [.hooks.PostToolUse[]?.hooks[]?.command] | index($$cmd) then . else .hooks.PostToolUse += [{matcher: "Edit|Write", hooks: [{type: "command", command: $$cmd}]}] end' "$$settings" >"$$settings.new" \
+		|| { rm -f "$$settings.new"; echo "jq could not rewrite $$settings" >&2; exit 1; }; \
+	cat "$$settings.new" >"$$settings"; \
+	rm -f "$$settings.new"
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
