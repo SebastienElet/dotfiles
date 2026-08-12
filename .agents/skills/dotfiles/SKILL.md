@@ -65,13 +65,12 @@ Examples:
   symlink target.
 - **Assuming macOS-only behavior** — a configuration can break on Linux hosts. Prefer a portable
   option, or guard the platform-specific behavior with an explicit check such as `uname`.
-- **Commenting obvious settings** — redundant comments make configuration harder to scan. Remove
-  them and keep only comments that explain a non-obvious reason.
 
 ## Constraints
 
-- All documentation and comments must be in English.
-- Configuration must stay simple and minimal; comments must explain why, not what.
+- Write documentation and comments in English, except under `docs/`, which `docs/AGENTS.md` puts in
+  French.
+- Configuration must stay simple and minimal.
 - macOS is the primary platform, but configurations must remain portable to Linux where practical.
 - The repository `Makefile` is canonical for tool installation; never directly run `brew install`,
   `npm install -g`, or another global package-manager install command.
