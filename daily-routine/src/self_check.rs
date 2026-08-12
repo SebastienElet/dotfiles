@@ -14,7 +14,8 @@ use std::io::{self, Write};
 pub fn run() -> io::Result<()> {
     check_config_parsing();
     check_correlation();
-    check_six_linear_rules();
+    check_linear_rules();
+    check_actionable_scope();
     check_track_attachment();
     check_requires_linear();
     check_requires_linear_report();
@@ -62,7 +63,7 @@ fn check_correlation() {
     );
 }
 
-fn check_six_linear_rules() {
+fn check_linear_rules() {
     let mut issue = issue("ALP-42", IssueState::Started);
     let mut pull_request = pull_request(
         Provider::Github,
@@ -76,13 +77,8 @@ fn check_six_linear_rules() {
     );
 
     pull_request.state = PullRequestState::Open;
-    issue.state_type = IssueState::Backlog;
-    assert_eq!(
-        pr_linear_reasons(&pull_request, &issue),
-        [LinearReason::OpenIssueNotStarted]
-    );
+    assert!(pr_linear_reasons(&pull_request, &issue).is_empty());
 
-    issue.state_type = IssueState::Started;
     issue.branch_name.clear();
     issue.updated_at = "2026-08-01T08:00:00Z".to_owned();
     issue.project = None;
@@ -192,11 +188,40 @@ fn check_requires_linear_report() {
     );
 }
 
+fn check_actionable_scope() {
+    let mut done = issue("ALP-40", IssueState::Completed);
+    done.labels.clear();
+    let mut backlog = issue("ALP-41", IssueState::Backlog);
+    backlog.labels.clear();
+    let mut todo = issue("ALP-42", IssueState::Unstarted);
+    todo.labels.clear();
+
+    let report = build_report(
+        &config(),
+        &Dataset {
+            pull_requests: Vec::new(),
+            issues: vec![done, backlog, todo],
+            warnings: Vec::new(),
+        },
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert_eq!(
+        report
+            .items
+            .iter()
+            .map(|item| (item.reference.as_str(), item.category))
+            .collect::<Vec<_>>(),
+        [("ALP-42", Category::Linear)],
+        "only Todo and In Progress issues are reported, and never twice"
+    );
+}
+
 fn check_blocked_issues() {
-    let mut blocked = issue("ALP-42", IssueState::Backlog);
+    let mut blocked = issue("ALP-42", IssueState::Unstarted);
     blocked.labels.clear();
     blocked.blockers = vec!["ALP-41".to_owned()];
-    let ready = issue("ALP-43", IssueState::Backlog);
+    let ready = issue("ALP-43", IssueState::Unstarted);
 
     let report = build_report(
         &config(),
@@ -229,7 +254,7 @@ fn check_limit() {
             "2026-08-02T08:00:00Z",
         ])
         .map(|(identifier, updated_at)| {
-            let mut issue = issue(identifier, IssueState::Backlog);
+            let mut issue = issue(identifier, IssueState::Unstarted);
             issue.labels.clear();
             issue.updated_at = updated_at.to_owned();
             issue

@@ -79,6 +79,13 @@ impl IssueState {
     pub const fn is_resolved(self) -> bool {
         matches!(self, Self::Completed | Self::Canceled)
     }
+
+    // Linear names the two columns the routine acts on Todo and In Progress; its API calls their
+    // state types `unstarted` and `started`.
+    /// Every other state is either not scheduled yet or already resolved.
+    pub const fn is_actionable(self) -> bool {
+        matches!(self, Self::Unstarted | Self::Started)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -127,7 +134,6 @@ impl PartialOrd for Category {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum LinearReason {
     MergedIssueIncomplete,
-    OpenIssueNotStarted,
     StartedWithoutBranchOrPr,
     StartedStale,
     MissingProject,
@@ -140,7 +146,6 @@ impl LinearReason {
     pub const fn label(self) -> &'static str {
         match self {
             Self::MergedIssueIncomplete => "merged PR with incomplete issue",
-            Self::OpenIssueNotStarted => "open PR with issue not started",
             Self::StartedWithoutBranchOrPr => "started issue without branch or PR",
             Self::StartedStale => "stale started issue",
             Self::MissingProject => "missing project",

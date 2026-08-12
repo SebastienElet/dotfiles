@@ -7,8 +7,8 @@ use crate::model::{
 use crate::util::days_from_civil;
 
 #[test]
-fn pull_request_rules_cover_merged_and_open_discrepancies() {
-    let mut issue = issue("ABC-1", IssueState::Backlog, "2026-08-10T09:00:00Z");
+fn only_a_merged_pull_request_carries_a_discrepancy_of_its_own() {
+    let mut issue = issue("ABC-1", IssueState::Unstarted, "2026-08-10T09:00:00Z");
     let mut pr = pull_request(1, PullRequestState::Merged, false);
 
     assert_eq!(
@@ -17,17 +17,78 @@ fn pull_request_rules_cover_merged_and_open_discrepancies() {
     );
 
     pr.state = PullRequestState::Open;
-    assert_eq!(
-        pr_linear_reasons(&pr, &issue),
-        [LinearReason::OpenIssueNotStarted]
-    );
+    assert!(pr_linear_reasons(&pr, &issue).is_empty());
 
-    issue.state_type = IssueState::Unstarted;
+    issue.state_type = IssueState::Started;
     assert!(pr_linear_reasons(&pr, &issue).is_empty());
 
     issue.state_type = IssueState::Completed;
     pr.state = PullRequestState::Merged;
     assert!(pr_linear_reasons(&pr, &issue).is_empty());
+}
+
+#[test]
+fn issues_outside_todo_and_in_progress_leave_the_report() {
+    let config = config(3);
+    let states = [
+        IssueState::Triage,
+        IssueState::Backlog,
+        IssueState::Completed,
+        IssueState::Canceled,
+    ];
+    let issues = states
+        .into_iter()
+        .enumerate()
+        .map(|(index, state_type)| {
+            let mut issue = issue(&format!("ABC-{index}"), state_type, "2026-08-08T09:00:00Z");
+            issue.project = None;
+            issue.labels.clear();
+            issue.priority = 0;
+            issue.branch_name.clear();
+            issue
+        })
+        .collect::<Vec<_>>();
+    let mut merged = pull_request(1, PullRequestState::Merged, false);
+    merged.title = "Ship ABC-0".to_owned();
+
+    let report = build_report(
+        &config,
+        &dataset(vec![merged], issues),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert!(
+        report.items.is_empty(),
+        "neither a metadata gap nor a merged pull request revives an issue out of scope: {:?}",
+        references(&report.items.iter().collect::<Vec<_>>())
+    );
+    assert!(report.warnings.is_empty());
+}
+
+#[test]
+fn a_reported_issue_does_not_also_become_a_next_candidate() {
+    let config = config(1);
+    let mut reported = issue("ABC-1", IssueState::Unstarted, "2026-08-08T09:00:00Z");
+    reported.priority = 1;
+    reported.labels.clear();
+    let mut clean = issue("ABC-2", IssueState::Unstarted, "2026-08-09T09:00:00Z");
+    clean.priority = 3;
+
+    let report = build_report(
+        &config,
+        &dataset(Vec::new(), vec![reported, clean]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-1"]
+    );
+    assert_eq!(
+        references(&category_items(&report.items, Category::Suivant)),
+        ["ABC-2"],
+        "the discrepancy already names ABC-1, and its slot goes to the next actionable candidate"
+    );
 }
 
 #[test]
@@ -223,14 +284,15 @@ fn correlation_is_case_insensitive_and_any_scoped_pr_satisfies_started_issues() 
 #[test]
 fn correlated_review_prs_emit_issue_rules_but_not_ticketless_pr_rules() {
     let config = config(2);
-    let backlog = issue("ABC-5", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut correlated_issue = issue("ABC-5", IssueState::Unstarted, "2026-08-08T09:00:00Z");
+    correlated_issue.labels.clear();
     let mut correlated = pull_request(5, PullRequestState::Open, true);
     correlated.title = "Review ABC-5".to_owned();
     let ticketless = pull_request(6, PullRequestState::Open, true);
 
     let report = build_report(
         &config,
-        &dataset(vec![ticketless, correlated], vec![backlog]),
+        &dataset(vec![ticketless, correlated], vec![correlated_issue]),
         days_from_civil(2026, 8, 11),
     );
 
@@ -241,7 +303,7 @@ fn correlated_review_prs_emit_issue_rules_but_not_ticketless_pr_rules() {
             .find(|item| item.reference == "ABC-5")
             .unwrap()
             .reasons,
-        [LinearReason::OpenIssueNotStarted]
+        [LinearReason::MissingLabel]
     );
     assert!(linear.iter().all(|item| item.reference != "#6"));
 }
@@ -249,16 +311,16 @@ fn correlated_review_prs_emit_issue_rules_but_not_ticketless_pr_rules() {
 #[test]
 fn linear_items_consolidate_reasons_and_pull_requests_by_issue() {
     let config = config(2);
-    let mut issue = issue("ABC-7", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut issue = issue("ABC-7", IssueState::Started, "2026-08-08T09:00:00Z");
     issue.project = None;
     issue.labels.clear();
     issue.priority = 0;
-    let mut first = pull_request(7, PullRequestState::Open, false);
+    let mut first = pull_request(7, PullRequestState::Merged, false);
     first.title = "ABC-7 first".to_owned();
-    first.created_at = "2026-08-01T09:00:00.355Z".to_owned();
-    let mut second = pull_request(8, PullRequestState::Open, false);
+    first.updated_at = "2026-08-01T09:00:00.355Z".to_owned();
+    let mut second = pull_request(8, PullRequestState::Merged, false);
     second.body = "Related to ABC-7".to_owned();
-    second.created_at = "2026-08-01T09:00:00Z".to_owned();
+    second.updated_at = "2026-08-01T09:00:00Z".to_owned();
     let no_ticket = pull_request(9, PullRequestState::Open, false);
 
     let report = build_report(
@@ -278,7 +340,7 @@ fn linear_items_consolidate_reasons_and_pull_requests_by_issue() {
     assert_eq!(
         issue_item.reasons,
         [
-            LinearReason::OpenIssueNotStarted,
+            LinearReason::MergedIssueIncomplete,
             LinearReason::MissingProject,
             LinearReason::MissingLabel,
             LinearReason::MissingPriority,
@@ -306,9 +368,9 @@ fn pr_discrepancy_uses_the_repository_track_when_the_issue_team_differs() {
         teams: vec!["XYZ".to_owned()],
         repos: Vec::new(),
     });
-    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut issue = issue("XYZ-1", IssueState::Started, "2026-08-08T09:00:00Z");
     issue.team_key = "XYZ".to_owned();
-    let mut pr = pull_request(1, PullRequestState::Open, false);
+    let mut pr = pull_request(1, PullRequestState::Merged, false);
     pr.title = "Ship XYZ-1".to_owned();
 
     let report = build_report(
@@ -321,7 +383,7 @@ fn pr_discrepancy_uses_the_repository_track_when_the_issue_team_differs() {
     assert_eq!(linear.len(), 1);
     assert_eq!(linear[0].reference, "XYZ-1");
     assert_eq!(linear[0].track_index, 0);
-    assert_eq!(linear[0].reasons, [LinearReason::OpenIssueNotStarted]);
+    assert_eq!(linear[0].reasons, [LinearReason::MergedIssueIncomplete]);
 }
 
 #[test]
@@ -332,10 +394,10 @@ fn pr_discrepancy_overrides_the_track_of_consolidated_issue_reasons() {
         teams: vec!["XYZ".to_owned()],
         repos: Vec::new(),
     });
-    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut issue = issue("XYZ-1", IssueState::Started, "2026-08-08T09:00:00Z");
     issue.team_key = "XYZ".to_owned();
     issue.priority = 0;
-    let mut pr = pull_request(1, PullRequestState::Open, false);
+    let mut pr = pull_request(1, PullRequestState::Merged, false);
     pr.title = "Ship XYZ-1".to_owned();
 
     let report = build_report(
@@ -350,7 +412,7 @@ fn pr_discrepancy_overrides_the_track_of_consolidated_issue_reasons() {
     assert_eq!(
         linear[0].reasons,
         [
-            LinearReason::OpenIssueNotStarted,
+            LinearReason::MergedIssueIncomplete,
             LinearReason::MissingPriority,
         ]
     );
@@ -369,18 +431,18 @@ fn oldest_pr_event_deterministically_owns_a_consolidated_discrepancy() {
         teams: vec!["OTH".to_owned()],
         repos: vec![repo(Provider::Github, "owner/other", true)],
     });
-    let mut issue = issue("XYZ-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut issue = issue("XYZ-1", IssueState::Started, "2026-08-08T09:00:00Z");
     issue.team_key = "XYZ".to_owned();
-    let mut newer = pull_request(1, PullRequestState::Open, false);
+    let mut newer = pull_request(1, PullRequestState::Merged, false);
     newer.title = "Ship XYZ-1 from the primary repository".to_owned();
-    newer.created_at = "2026-08-06T09:00:00Z".to_owned();
-    let mut older = pull_request(2, PullRequestState::Open, false);
+    newer.updated_at = "2026-08-06T09:00:00Z".to_owned();
+    let mut older = pull_request(2, PullRequestState::Merged, false);
     older.key.repo = RepoKey {
         provider: Provider::Github,
         path: "owner/other".to_owned(),
     };
     older.title = "Ship XYZ-1 from the other repository".to_owned();
-    older.created_at = "2026-08-05T09:00:00Z".to_owned();
+    older.updated_at = "2026-08-05T09:00:00Z".to_owned();
 
     for pull_requests in [
         vec![newer.clone(), older.clone()],
@@ -416,7 +478,8 @@ fn linear_scope_keeps_drafts_but_excludes_no_linear_and_teamless_tracks() {
     draft.draft = true;
     draft.title = "Draft ABC-1".to_owned();
     draft.destination = "stack/base".to_owned();
-    let backlog = issue("ABC-1", IssueState::Backlog, "2026-08-09T09:00:00Z");
+    let mut correlated_issue = issue("ABC-1", IssueState::Unstarted, "2026-08-09T09:00:00Z");
+    correlated_issue.labels.clear();
     let mut renovate = pull_request(2, PullRequestState::Open, false);
     renovate.branch = "renovate/serde".to_owned();
     let mut no_linear = pull_request(3, PullRequestState::Open, false);
@@ -433,13 +496,16 @@ fn linear_scope_keeps_drafts_but_excludes_no_linear_and_teamless_tracks() {
 
     let report = build_report(
         &config,
-        &dataset(vec![draft, renovate, no_linear, teamless], vec![backlog]),
+        &dataset(
+            vec![draft, renovate, no_linear, teamless],
+            vec![correlated_issue],
+        ),
         days_from_civil(2026, 8, 11),
     );
 
     let linear = category_items(&report.items, Category::Linear);
     assert_eq!(references(&linear), ["ABC-1"]);
-    assert_eq!(linear[0].reasons, [LinearReason::OpenIssueNotStarted]);
+    assert_eq!(linear[0].reasons, [LinearReason::MissingLabel]);
     assert_eq!(
         references(&category_items(&report.items, Category::Retour)),
         ["#4"]
@@ -449,7 +515,7 @@ fn linear_scope_keeps_drafts_but_excludes_no_linear_and_teamless_tracks() {
 #[test]
 fn linear_correlation_excludes_issues_from_unconfigured_teams() {
     let config = config(2);
-    let mut unconfigured = issue("ABC-1", IssueState::Backlog, "2026-08-09T09:00:00Z");
+    let mut unconfigured = issue("ABC-1", IssueState::Unstarted, "2026-08-09T09:00:00Z");
     unconfigured.team_key = "OUTSIDE".to_owned();
     let mut pr = pull_request(1, PullRequestState::Open, false);
     pr.title = "Ship ABC-1".to_owned();
@@ -475,7 +541,7 @@ fn the_limit_keeps_the_oldest_items_of_each_section_and_warns_about_the_rest() {
             "2026-08-02T09:00:00Z",
         ])
         .map(|(identifier, updated_at)| {
-            let mut issue = issue(identifier, IssueState::Backlog, updated_at);
+            let mut issue = issue(identifier, IssueState::Unstarted, updated_at);
             issue.labels = Vec::new();
             issue
         })
@@ -512,7 +578,7 @@ fn the_limit_keeps_the_oldest_items_of_each_section_and_warns_about_the_rest() {
 #[test]
 fn the_limit_leaves_a_report_it_does_not_truncate_untouched() {
     let config = config(0);
-    let mut issue = issue("ABC-1", IssueState::Backlog, "2026-08-04T09:00:00Z");
+    let mut issue = issue("ABC-1", IssueState::Unstarted, "2026-08-04T09:00:00Z");
     issue.labels = Vec::new();
     let mut report = build_report(
         &config,
@@ -554,9 +620,9 @@ fn blocked_issues_leave_the_discrepancy_list() {
 #[test]
 fn blocked_issues_drop_their_pull_request_discrepancies_too() {
     let config = config(0);
-    let mut blocked = issue("ABC-1", IssueState::Backlog, "2026-08-08T09:00:00Z");
+    let mut blocked = issue("ABC-1", IssueState::Started, "2026-08-08T09:00:00Z");
     blocked.blockers = vec!["ABC-9".to_owned()];
-    let mut pr = pull_request(1, PullRequestState::Open, false);
+    let mut pr = pull_request(1, PullRequestState::Merged, false);
     pr.title = "Ship ABC-1".to_owned();
 
     let report = build_report(
@@ -567,17 +633,17 @@ fn blocked_issues_drop_their_pull_request_discrepancies_too() {
 
     assert!(
         category_items(&report.items, Category::Linear).is_empty(),
-        "an open PR on a blocked issue reports no discrepancy either"
+        "a merged PR on a blocked issue reports no discrepancy either"
     );
 }
 
 #[test]
 fn blocked_issues_never_become_next_candidates() {
     let config = config(2);
-    let mut blocked = issue("ABC-1", IssueState::Backlog, "2026-08-10T09:00:00Z");
+    let mut blocked = issue("ABC-1", IssueState::Unstarted, "2026-08-10T09:00:00Z");
     blocked.priority = 1;
     blocked.blockers = vec!["ABC-9".to_owned()];
-    let mut ready = issue("ABC-2", IssueState::Backlog, "2026-08-09T09:00:00Z");
+    let mut ready = issue("ABC-2", IssueState::Unstarted, "2026-08-09T09:00:00Z");
     ready.priority = 2;
     let mut lower = issue("ABC-3", IssueState::Unstarted, "2026-08-08T09:00:00Z");
     lower.priority = 3;
@@ -604,13 +670,13 @@ fn suivant_selects_by_linear_priority_then_sorts_chronologically() {
         teams: vec!["XYZ".to_owned()],
         repos: Vec::new(),
     });
-    let mut newest_priority_one = issue("ABC-1", IssueState::Triage, "2026-08-10T09:00:00Z");
+    let mut newest_priority_one = issue("ABC-1", IssueState::Unstarted, "2026-08-10T09:00:00Z");
     newest_priority_one.priority = 1;
-    let mut oldest_priority_one = issue("ABC-2", IssueState::Backlog, "2026-08-09T09:00:00Z");
+    let mut oldest_priority_one = issue("ABC-2", IssueState::Unstarted, "2026-08-09T09:00:00Z");
     oldest_priority_one.priority = 1;
     let mut priority_two = issue("ABC-3", IssueState::Unstarted, "2026-08-01T09:00:00Z");
     priority_two.priority = 2;
-    let mut zero = issue("ABC-4", IssueState::Backlog, "2026-07-01T09:00:00Z");
+    let mut zero = issue("ABC-4", IssueState::Unstarted, "2026-07-01T09:00:00Z");
     zero.priority = 0;
     let completed = issue("ABC-5", IssueState::Completed, "2026-06-01T09:00:00Z");
     let canceled = issue("ABC-6", IssueState::Canceled, "2026-06-01T09:00:00Z");
@@ -647,15 +713,15 @@ fn suivant_selects_by_linear_priority_then_sorts_chronologically() {
 #[test]
 fn suivant_selection_precedes_chronological_output_order() {
     let config = config(5);
-    let mut priority_one = issue("ABC-1", IssueState::Triage, "2026-08-05T09:00:00Z");
+    let mut priority_one = issue("ABC-1", IssueState::Unstarted, "2026-08-05T09:00:00Z");
     priority_one.priority = 1;
-    let mut priority_two = issue("ABC-2", IssueState::Backlog, "2026-08-04T09:00:00Z");
+    let mut priority_two = issue("ABC-2", IssueState::Unstarted, "2026-08-04T09:00:00Z");
     priority_two.priority = 2;
     let mut priority_three = issue("ABC-3", IssueState::Unstarted, "2026-08-03T09:00:00Z");
     priority_three.priority = 3;
-    let mut priority_four = issue("ABC-4", IssueState::Triage, "2026-08-02T09:00:00Z");
+    let mut priority_four = issue("ABC-4", IssueState::Unstarted, "2026-08-02T09:00:00Z");
     priority_four.priority = 4;
-    let mut no_priority = issue("ABC-0", IssueState::Backlog, "2026-08-01T09:00:00Z");
+    let mut no_priority = issue("ABC-0", IssueState::Unstarted, "2026-08-01T09:00:00Z");
     no_priority.priority = 0;
     let dataset = dataset(
         Vec::new(),
@@ -669,7 +735,7 @@ fn suivant_selection_precedes_chronological_output_order() {
     );
     let mut warnings = Vec::new();
 
-    let selected = select_suivant_candidates(&config, &dataset, 0, &mut warnings);
+    let selected = select_suivant_candidates(&config, &dataset, 0, &HashSet::new(), &mut warnings);
 
     assert_eq!(
         selected
@@ -683,7 +749,13 @@ fn suivant_selection_precedes_chronological_output_order() {
     let report = build_report(&config, &dataset, days_from_civil(2026, 8, 11));
     assert_eq!(
         references(&category_items(&report.items, Category::Suivant)),
-        ["ABC-0", "ABC-4", "ABC-3", "ABC-2", "ABC-1"]
+        ["ABC-4", "ABC-3", "ABC-2", "ABC-1"],
+        "selection ranks the priority-less ABC-0 last, and the report proposes it as a \
+         discrepancy to fix instead of as work to pick up"
+    );
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-0"]
     );
 }
 
@@ -790,7 +862,7 @@ fn invalid_required_timestamps_omit_items_and_add_contextual_warnings() {
     invalid_no_ticket.created_at = "2026-08-11T99:00:00Z".to_owned();
     let mut invalid_linear = issue("ABC-1", IssueState::Started, "2026-08-11T99:00:00Z");
     invalid_linear.branch_name.clear();
-    let invalid_next = issue("ABC-2", IssueState::Backlog, "2026-08-11");
+    let invalid_next = issue("ABC-2", IssueState::Unstarted, "2026-08-11");
     let source_warning = Warning {
         categories: vec![Category::Review],
         message: "provider partial result".to_owned(),

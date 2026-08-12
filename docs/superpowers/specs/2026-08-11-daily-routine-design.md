@@ -130,18 +130,23 @@ thread, an open Bitbucket task, or GitHub `CHANGES_REQUESTED`. Multiple signals 
 event time is the oldest qualifying comment or task time, falling back to the pull-request update
 time when only `CHANGES_REQUESTED` supplies the signal.
 
-`LINEAR` implements all six discrepancies:
+Only the two Linear columns holding today's work are in scope: `unstarted` (Todo) and `started`
+(In Progress). An issue in `triage`, `backlog`, `completed`, or `canceled` produces no report item
+at all, whichever rule it would otherwise trigger — a metadata gap on a shelved or finished ticket
+is not work for today. Correlation itself stays unfiltered, so an out-of-scope issue still attaches
+its pull request to the right track and still spares that pull request rule 5.
+
+`LINEAR` implements all five discrepancies:
 
 1. a merged correlated pull request whose issue is not `completed`;
-2. an open correlated pull request whose issue is `backlog` or `triage`;
-3. a `started` issue with neither a non-empty Linear `branchName` nor any correlated scoped pull
+2. a `started` issue with neither a non-empty Linear `branchName` nor any correlated scoped pull
    request;
-4. a `started` issue whose `updatedAt` age is greater than `stale_days`;
-5. an assigned issue missing a project, any label, or a non-zero priority;
-6. an open pull request with no configured Linear identifier when its selected repository
+3. a `started` issue whose `updatedAt` age is greater than `stale_days`;
+4. an in-scope assigned issue missing a project, any label, or a non-zero priority;
+5. an open pull request with no configured Linear identifier when its selected repository
    declaration has `requires_linear = true`.
 
-`renovate/*` branches are exempt only from rule 6. Draft authored pull requests remain subject to
+`renovate/*` branches are exempt only from rule 5. Draft authored pull requests remain subject to
 all `LINEAR` rules. Destination branches do not affect any rule. Multiple discrepancies for the same
 ticket or pull request are consolidated into one Things item with multiple reasons in terminal
 output.
@@ -149,12 +154,13 @@ output.
 An issue held by an unresolved blocker leaves `LINEAR` entirely, whichever rule it triggers,
 including rule 1 on a merged pull request: it cannot be acted on today, so its metadata is repaired
 when it becomes actionable. The exclusion applies to issues only; an uncorrelated pull request under
-rule 6 has no issue to be blocked by.
+rule 5 has no issue to be blocked by.
 
-`SUIVANT` considers `triage`, `backlog`, and `unstarted` issues that no unresolved blocker holds.
-Per track, it selects at most `next_count` by Linear priority (`1` through `4`, then `0`) and oldest
-`updatedAt` as a tie-breaker, so a blocked candidate frees its slot for the next actionable one. The
-selected items are then merged into the category's chronological output order.
+`SUIVANT` considers `unstarted` issues that no unresolved blocker holds and that `LINEAR` does not
+already report, so one ticket never occupies two lines of the same report. Per track, it selects at
+most `next_count` by Linear priority (`1` through `4`, then `0`) and oldest `updatedAt` as a
+tie-breaker, so a blocked or already reported candidate frees its slot for the next actionable one.
+The selected items are then merged into the category's chronological output order.
 
 Within every category, report items use their rule-specific event time and sort oldest first, with
 track configuration order and stable reference as deterministic tie-breakers.
@@ -185,10 +191,11 @@ from collection failures.
 ## Verification
 
 `--self-check` runs assertions over hard-coded fixtures without reading configuration or invoking a
-CLI. It covers title/branch/absent correlation, the six `LINEAR` rules, mono-track and shared-repo
-attachment, ticketless attachment, `requires_linear = false`, the blocked-issue exclusion, the
-`--limit` truncation and its warning, report ordering, configuration parsing/defaults,
-`days_from_civil`, and percent encoding of an accented title.
+CLI. It covers title/branch/absent correlation, the five `LINEAR` rules, the out-of-scope state
+exclusion and the single-line-per-ticket guarantee, mono-track and shared-repo attachment,
+ticketless attachment, `requires_linear = false`, the blocked-issue exclusion, the `--limit`
+truncation and its warning, report ordering, configuration parsing/defaults, `days_from_civil`, and
+percent encoding of an accented title.
 
 Development follows red-green-refactor around the pure rules before provider orchestration. Final
 verification is `cargo fmt --check`, `cargo clippy -- -D warnings`, `daily-routine --self-check`, a

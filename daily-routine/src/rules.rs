@@ -52,16 +52,10 @@ fn contains_team(teams: &[String], team_key: &str) -> bool {
 }
 
 pub fn pr_linear_reasons(pr: &PullRequest, issue: &Issue) -> Vec<LinearReason> {
-    match pr.state {
-        PullRequestState::Merged if issue.state_type != IssueState::Completed => {
-            vec![LinearReason::MergedIssueIncomplete]
-        }
-        PullRequestState::Open
-            if matches!(issue.state_type, IssueState::Backlog | IssueState::Triage) =>
-        {
-            vec![LinearReason::OpenIssueNotStarted]
-        }
-        _ => Vec::new(),
+    if pr.state == PullRequestState::Merged && issue.state_type != IssueState::Completed {
+        vec![LinearReason::MergedIssueIncomplete]
+    } else {
+        Vec::new()
     }
 }
 
@@ -100,6 +94,11 @@ pub fn issue_linear_reasons(
 // the next candidates, whatever else is wrong with it.
 fn is_blocked(issue: &Issue) -> bool {
     !issue.blockers.is_empty()
+}
+
+/// An issue outside Todo and In Progress, or held by a blocker, yields no report item at all.
+fn is_out_of_scope(issue: &Issue) -> bool {
+    !issue.state_type.is_actionable() || is_blocked(issue)
 }
 
 /// Keeps the `limit` oldest items of each section and warns about the rest, so a large backlog
@@ -183,7 +182,7 @@ pub fn build_report(config: &Config, dataset: &Dataset, today_days: i64) -> Repo
 
     add_review_items(&pull_requests, &mut items, &mut warnings);
     add_retour_items(&pull_requests, &mut items, &mut warnings);
-    add_linear_items(
+    let reported = add_linear_items(
         config,
         dataset,
         &pull_requests,
@@ -191,7 +190,7 @@ pub fn build_report(config: &Config, dataset: &Dataset, today_days: i64) -> Repo
         &mut items,
         &mut warnings,
     );
-    add_suivant_items(config, dataset, &mut items, &mut warnings);
+    add_suivant_items(config, dataset, &reported, &mut items, &mut warnings);
 
     items.sort_by(|left, right| {
         left.category
@@ -285,6 +284,7 @@ fn add_retour_items(
     }
 }
 
+/// Returns the identifiers, upper-cased, of the issues this section reports.
 fn add_linear_items(
     config: &Config,
     dataset: &Dataset,
@@ -292,7 +292,7 @@ fn add_linear_items(
     today_days: i64,
     items: &mut Vec<ReportItem>,
     warnings: &mut Vec<Warning>,
-) {
+) -> HashSet<String> {
     let has_correlated_pr = pull_requests
         .iter()
         .filter(|scoped| scoped.selection.is_some())
@@ -305,7 +305,7 @@ fn add_linear_items(
         let Some(track_index) = track_for_issue(config, issue) else {
             continue;
         };
-        if is_blocked(issue) {
+        if is_out_of_scope(issue) {
             continue;
         }
         let reasons = issue_linear_reasons(
@@ -355,7 +355,7 @@ fn add_linear_items(
         }
 
         if let Some(issue) = scoped.issue {
-            if is_blocked(issue) {
+            if is_out_of_scope(issue) {
                 continue;
             }
             let reasons = pr_linear_reasons(pr, issue);
@@ -410,7 +410,9 @@ fn add_linear_items(
         }
     }
 
+    let reported = issue_items.keys().cloned().collect();
     items.extend(issue_items.into_values().map(|item| item.report_item));
+    reported
 }
 
 struct LinearIssueItem {
@@ -472,6 +474,7 @@ fn add_issue_linear_reasons(
 fn add_suivant_items(
     config: &Config,
     dataset: &Dataset,
+    reported: &HashSet<String>,
     items: &mut Vec<ReportItem>,
     warnings: &mut Vec<Warning>,
 ) {
@@ -479,7 +482,8 @@ fn add_suivant_items(
         if track.teams.is_empty() {
             continue;
         }
-        let candidates = select_suivant_candidates(config, dataset, track_index, warnings);
+        let candidates =
+            select_suivant_candidates(config, dataset, track_index, reported, warnings);
 
         items.extend(candidates.into_iter().map(|(issue, _)| ReportItem {
             category: Category::Suivant,
@@ -498,6 +502,7 @@ fn select_suivant_candidates<'a>(
     config: &Config,
     dataset: &'a Dataset,
     track_index: usize,
+    reported: &HashSet<String>,
     warnings: &mut Vec<Warning>,
 ) -> Vec<(&'a Issue, Timestamp)> {
     if config
@@ -511,11 +516,9 @@ fn select_suivant_candidates<'a>(
     let mut candidates = Vec::new();
     for issue in &dataset.issues {
         if track_for_issue(config, issue) != Some(track_index)
+            || issue.state_type != IssueState::Unstarted
             || is_blocked(issue)
-            || !matches!(
-                issue.state_type,
-                IssueState::Triage | IssueState::Backlog | IssueState::Unstarted
-            )
+            || reported.contains(&issue.identifier.to_ascii_uppercase())
         {
             continue;
         }
@@ -589,13 +592,12 @@ fn compare_event_at(left: &str, right: &str) -> std::cmp::Ordering {
 const fn linear_reason_rank(reason: LinearReason) -> usize {
     match reason {
         LinearReason::MergedIssueIncomplete => 0,
-        LinearReason::OpenIssueNotStarted => 1,
-        LinearReason::StartedWithoutBranchOrPr => 2,
-        LinearReason::StartedStale => 3,
-        LinearReason::MissingProject => 4,
-        LinearReason::MissingLabel => 5,
-        LinearReason::MissingPriority => 6,
-        LinearReason::OpenPrWithoutIssue => 7,
+        LinearReason::StartedWithoutBranchOrPr => 1,
+        LinearReason::StartedStale => 2,
+        LinearReason::MissingProject => 3,
+        LinearReason::MissingLabel => 4,
+        LinearReason::MissingPriority => 5,
+        LinearReason::OpenPrWithoutIssue => 6,
     }
 }
 
