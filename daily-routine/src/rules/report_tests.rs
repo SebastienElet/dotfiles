@@ -66,6 +66,32 @@ fn issues_outside_todo_and_in_progress_leave_the_report() {
 }
 
 #[test]
+fn a_reported_issue_does_not_also_become_a_next_candidate() {
+    let config = config(1);
+    let mut reported = issue("ABC-1", IssueState::Unstarted, "2026-08-08T09:00:00Z");
+    reported.priority = 1;
+    reported.labels.clear();
+    let mut clean = issue("ABC-2", IssueState::Unstarted, "2026-08-09T09:00:00Z");
+    clean.priority = 3;
+
+    let report = build_report(
+        &config,
+        &dataset(Vec::new(), vec![reported, clean]),
+        days_from_civil(2026, 8, 11),
+    );
+
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-1"]
+    );
+    assert_eq!(
+        references(&category_items(&report.items, Category::Suivant)),
+        ["ABC-2"],
+        "the discrepancy already names ABC-1, and its slot goes to the next actionable candidate"
+    );
+}
+
+#[test]
 fn issue_rules_cover_started_staleness_and_missing_metadata() {
     let mut issue = issue("ABC-1", IssueState::Started, "2026-08-03T09:00:00Z");
     issue.branch_name.clear();
@@ -709,7 +735,7 @@ fn suivant_selection_precedes_chronological_output_order() {
     );
     let mut warnings = Vec::new();
 
-    let selected = select_suivant_candidates(&config, &dataset, 0, &mut warnings);
+    let selected = select_suivant_candidates(&config, &dataset, 0, &HashSet::new(), &mut warnings);
 
     assert_eq!(
         selected
@@ -723,7 +749,13 @@ fn suivant_selection_precedes_chronological_output_order() {
     let report = build_report(&config, &dataset, days_from_civil(2026, 8, 11));
     assert_eq!(
         references(&category_items(&report.items, Category::Suivant)),
-        ["ABC-0", "ABC-4", "ABC-3", "ABC-2", "ABC-1"]
+        ["ABC-4", "ABC-3", "ABC-2", "ABC-1"],
+        "selection ranks the priority-less ABC-0 last, and the report proposes it as a \
+         discrepancy to fix instead of as work to pick up"
+    );
+    assert_eq!(
+        references(&category_items(&report.items, Category::Linear)),
+        ["ABC-0"]
     );
 }
 

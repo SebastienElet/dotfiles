@@ -210,11 +210,10 @@ fn check_actionable_scope() {
         report
             .items
             .iter()
-            .filter(|item| item.category == Category::Linear)
-            .map(|item| item.reference.as_str())
+            .map(|item| (item.reference.as_str(), item.category))
             .collect::<Vec<_>>(),
-        ["ALP-42"],
-        "only Todo and In Progress issues are reported"
+        [("ALP-42", Category::Linear)],
+        "only Todo and In Progress issues are reported, and never twice"
     );
 }
 

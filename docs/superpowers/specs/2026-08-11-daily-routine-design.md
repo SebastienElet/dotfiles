@@ -156,10 +156,11 @@ including rule 1 on a merged pull request: it cannot be acted on today, so its m
 when it becomes actionable. The exclusion applies to issues only; an uncorrelated pull request under
 rule 5 has no issue to be blocked by.
 
-`SUIVANT` considers `unstarted` issues that no unresolved blocker holds. Per track, it selects at
+`SUIVANT` considers `unstarted` issues that no unresolved blocker holds and that `LINEAR` does not
+already report, so one ticket never occupies two lines of the same report. Per track, it selects at
 most `next_count` by Linear priority (`1` through `4`, then `0`) and oldest `updatedAt` as a
-tie-breaker, so a blocked candidate frees its slot for the next actionable one. The selected items
-are then merged into the category's chronological output order.
+tie-breaker, so a blocked or already reported candidate frees its slot for the next actionable one.
+The selected items are then merged into the category's chronological output order.
 
 Within every category, report items use their rule-specific event time and sort oldest first, with
 track configuration order and stable reference as deterministic tie-breakers.
@@ -191,9 +192,10 @@ from collection failures.
 
 `--self-check` runs assertions over hard-coded fixtures without reading configuration or invoking a
 CLI. It covers title/branch/absent correlation, the five `LINEAR` rules, the out-of-scope state
-exclusion, mono-track and shared-repo attachment, ticketless attachment, `requires_linear = false`,
-the blocked-issue exclusion, the `--limit` truncation and its warning, report ordering,
-configuration parsing/defaults, `days_from_civil`, and percent encoding of an accented title.
+exclusion and the single-line-per-ticket guarantee, mono-track and shared-repo attachment,
+ticketless attachment, `requires_linear = false`, the blocked-issue exclusion, the `--limit`
+truncation and its warning, report ordering, configuration parsing/defaults, `days_from_civil`, and
+percent encoding of an accented title.
 
 Development follows red-green-refactor around the pure rules before provider orchestration. Final
 verification is `cargo fmt --check`, `cargo clippy -- -D warnings`, `daily-routine --self-check`, a

@@ -182,7 +182,7 @@ pub fn build_report(config: &Config, dataset: &Dataset, today_days: i64) -> Repo
 
     add_review_items(&pull_requests, &mut items, &mut warnings);
     add_retour_items(&pull_requests, &mut items, &mut warnings);
-    add_linear_items(
+    let reported = add_linear_items(
         config,
         dataset,
         &pull_requests,
@@ -190,7 +190,7 @@ pub fn build_report(config: &Config, dataset: &Dataset, today_days: i64) -> Repo
         &mut items,
         &mut warnings,
     );
-    add_suivant_items(config, dataset, &mut items, &mut warnings);
+    add_suivant_items(config, dataset, &reported, &mut items, &mut warnings);
 
     items.sort_by(|left, right| {
         left.category
@@ -284,6 +284,7 @@ fn add_retour_items(
     }
 }
 
+/// Returns the identifiers, upper-cased, of the issues this section reports.
 fn add_linear_items(
     config: &Config,
     dataset: &Dataset,
@@ -291,7 +292,7 @@ fn add_linear_items(
     today_days: i64,
     items: &mut Vec<ReportItem>,
     warnings: &mut Vec<Warning>,
-) {
+) -> HashSet<String> {
     let has_correlated_pr = pull_requests
         .iter()
         .filter(|scoped| scoped.selection.is_some())
@@ -409,7 +410,9 @@ fn add_linear_items(
         }
     }
 
+    let reported = issue_items.keys().cloned().collect();
     items.extend(issue_items.into_values().map(|item| item.report_item));
+    reported
 }
 
 struct LinearIssueItem {
@@ -471,6 +474,7 @@ fn add_issue_linear_reasons(
 fn add_suivant_items(
     config: &Config,
     dataset: &Dataset,
+    reported: &HashSet<String>,
     items: &mut Vec<ReportItem>,
     warnings: &mut Vec<Warning>,
 ) {
@@ -478,7 +482,8 @@ fn add_suivant_items(
         if track.teams.is_empty() {
             continue;
         }
-        let candidates = select_suivant_candidates(config, dataset, track_index, warnings);
+        let candidates =
+            select_suivant_candidates(config, dataset, track_index, reported, warnings);
 
         items.extend(candidates.into_iter().map(|(issue, _)| ReportItem {
             category: Category::Suivant,
@@ -497,6 +502,7 @@ fn select_suivant_candidates<'a>(
     config: &Config,
     dataset: &'a Dataset,
     track_index: usize,
+    reported: &HashSet<String>,
     warnings: &mut Vec<Warning>,
 ) -> Vec<(&'a Issue, Timestamp)> {
     if config
@@ -512,6 +518,7 @@ fn select_suivant_candidates<'a>(
         if track_for_issue(config, issue) != Some(track_index)
             || issue.state_type != IssueState::Unstarted
             || is_blocked(issue)
+            || reported.contains(&issue.identifier.to_ascii_uppercase())
         {
             continue;
         }
