@@ -23,8 +23,9 @@ the verdict is "approved".>
 and give counts, never adjectives. Then, in the same paragraph, REQUIRED: what this evidence does
 not cover. The verdict is invalid without that second half.>
 
-<Non-blocking remarks — one line each, each prefixed "Non-blocking:". Drop the section rather
-than pad it.>
+<Non-blocking remarks — three lines at most, one per remark, each prefixed "Non-blocking:". Keep
+the ones that would change a reviewer's decision, drop the rest: past three, the section is a
+second review competing with the verdict for attention. Drop it entirely rather than pad it.>
 
 Fix: <url>                REQUIRED when the verdict blocks
 Re-review: <url>          REQUIRED when the verdict blocks
@@ -33,7 +34,9 @@ Initial review: <url>     REQUIRED when a previous verdict exists on this PR
 <Closing sentence — REQUIRED, one line, executable:
   changes required          → "Do not approve or merge this head."
   approved with reservations → "Mergeable once <criterion>."
-  approved                   → "Approved on this head.">
+  approved                   → "Approved on this head."
+When the verdict blocks and the forge carries no native blocking state — Bitbucket, or your own
+PR on GitHub — the same line says that this comment is the only thing holding the merge.>
 ```
 
 ## Filled example
@@ -76,4 +79,6 @@ Do not approve or merge this head.
 - Every clause in the blocking paragraph names a sequence of steps, not a quality judgement.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
+- The barrier paragraph names the command it ran, and that command is the one CI runs.
+- At most three non-blocking lines; a fourth means the section is competing with the verdict.
 - Total under about thirty lines. Past that, preferences have leaked into the blocking section.
