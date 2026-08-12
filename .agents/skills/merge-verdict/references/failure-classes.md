@@ -112,6 +112,8 @@ boundary: when broken, they block. Classes 6 and 8 are usually reservations — 
 blocker only when a concrete consumer or a concrete input path makes the consequence unbounded, and
 say which one.
 
-Findings outside these eight classes are legitimate but non-blocking by default: report them in one
-line each, labelled non-blocking, or drop them. If the verdict runs past about thirty lines, that is
+Findings outside these eight classes are legitimate but non-blocking by default: report at most three
+of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
+turning into a second review that competes with the verdict — rank them by whether they would change
+a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is
 the symptom that preferences have crept into the blocking section.

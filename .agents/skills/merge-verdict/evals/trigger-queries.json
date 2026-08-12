@@ -33,6 +33,11 @@
       "reason": "Merge decision at stake even though no review vocabulary is used"
     },
     {
+      "query": "Ma PR est ouverte, dis-moi si elle est fusionnable",
+      "should_activate": true,
+      "reason": "Own pull request, but open: the verdict is unchanged, only its enforcement differs"
+    },
+    {
       "query": "Relis mon diff avant que je commite",
       "should_activate": false,
       "reason": "Own diff before committing; that is code-review, not a merge verdict"

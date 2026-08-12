@@ -27,7 +27,7 @@ about. Look for it before falling back here.
 | Existing comments | `gh pr view <n> --json comments` | `bkt pr comments <n> --json` |
 | Publish | `gh pr comment <n> --body-file verdict.md` | `bkt pr comment <n> --text "$(cat verdict.md)"` |
 | Update | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md` | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -` |
-| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` | no reliable equivalent |
+| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR | no reliable equivalent |
 
 `bkt` covers both Bitbucket Cloud and Data Center; the two differ on JSON shape and on some flags
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
@@ -106,3 +106,17 @@ Bitbucket has no equivalent an agent can set reliably — `bkt pr approve` exist
 not; declining a PR is a different act with a different meaning. There the comment **is** the
 verdict, which is why the closing sentence ("do not approve or merge this head") carries the whole
 enforcement and must never be softened or dropped.
+
+GitHub falls back to that same Bitbucket situation whenever the authenticated account authored the
+PR: it rejects the call with `Can not request changes on your own pull request`, and there is no
+flag around it. `gh pr view --json` exposes no `viewerDidAuthor` field (checked on `gh` 2.97), so
+compare the author against the token yourself, in phase 1 —
+
+```sh
+test "$(gh pr view 1042 --json author --jq .author.login)" = "$(gh api user --jq .login)" &&
+  echo "own PR: no native blocking state"
+```
+
+When it is your own PR, publish the comment alone and state inside the verdict that nothing
+mechanical holds the merge button. A blocking verdict whose reader believes the forge is enforcing
+it, while the forge is not, is worse than no verdict: it buys a false sense of a gate.

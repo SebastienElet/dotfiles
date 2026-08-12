@@ -63,8 +63,8 @@ not covered, and the error code the endpoint now returns is not documented.
 
 ## Execution record
 
-Both cases were run once, on 2026-08-11, phases 1 to 5 only. Publication was deliberately not
-reached, so nothing in phase 6 has ever executed.
+Both cases were run once, on 2026-08-11, phases 1 to 5 only — publication was deliberately not
+reached. A third run, on 2026-08-12, was a real review rather than a case, and went through phase 6.
 
 - **Case A**, on a Bitbucket PR (`bkt`), reached *changes required* as expected, on the three
   mechanisms of classes 1, 2 and 3. Two lessons went back into the skill: the reported base was the
@@ -76,17 +76,34 @@ reached, so nothing in phase 6 has ever executed.
   expected reservations: the target held a measured mechanism that destroys an unversioned file and
   still reports success. The expectation was wrong about the target, not about the skill — the
   *approved with reservations* path therefore remains unexercised.
+- **Third run**, on GitHub, phases 1 to 6, first publication the skill has ever performed: a general
+  comment written through a body file, plus a fix ticket and a re-review ticket. Verdict *changes
+  required*, on classes 4 and 5 only. Five gaps came back into the skill. The requester was the
+  author, so GitHub refused the native blocking state and the comment had to carry the enforcement
+  alone — a configuration the skill described only for Bitbucket. The head moved between the metadata
+  read and the barrier, which phase 1's SHA anchoring caught, so the guard is now exercised rather
+  than merely asserted. The repository-wide lint script and the pipeline's gate turned out to be
+  different commands over different file sets, and only the second measures the head. And the
+  non-blocking section grew until it rivalled the blocking one, which is where the three-line cap
+  comes from. Last, the request anticipated a PR that was not open yet, a case phase 1 assumed away.
 
-Neither case has yet validated: the marker's idempotent update, the duplicate-verdict guard,
-`gh pr review --request-changes`, or Bitbucket comment publication.
+Nothing has yet validated: the marker's idempotent update, the duplicate-verdict guard, or Bitbucket
+comment publication.
 
 Keep this record free of anything belonging to the reviewed repositories — no PR numbers, commit
 SHAs, branch names, build counts or defect details. A skill file is committed and published; the
 work it was exercised on usually is not.
 
-## Declared gap in these cases
+## Declared gaps in these cases
 
-`gh pr review --request-changes` — GitHub's native blocking state — is exercised by neither case, since
-the blocking case is assigned to Bitbucket. Either run case A a second time on GitHub, or record that
-the GitHub enforcement path is unverified. Do not let the two green cases imply that it is covered:
-that is the same substitution of a green for a guarantee that phase 4 exists to prevent.
+`gh pr review --request-changes` — GitHub's native blocking state — is exercised by neither case,
+since the blocking case is assigned to Bitbucket. The third run attempted it and GitHub refused,
+the account being the PR's author; that measures the refusal, not the success path. Run case A a
+second time on GitHub, on a PR the account did not write, or the enforcement path stays unverified.
+
+*Approved with reservations* has never been produced: both cases that reached a verdict landed on
+*changes required*. The state that requires stating a bound rather than forbidding a merge is
+therefore the least exercised part of the skill.
+
+Do not let the runs that went green imply either gap is covered: that is the same substitution of a
+green for a guarantee that phase 4 exists to prevent.

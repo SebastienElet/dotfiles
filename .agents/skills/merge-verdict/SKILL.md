@@ -1,10 +1,10 @@
 ---
 name: merge-verdict
 description: >
-  Deliver a merge verdict on another author's pull request. Use when asked to review a PR, whether
-  it is safe to merge or should be approved, for a blocking review, or to re-review after fixes.
-  Make sure to use it whenever a merge decision is at stake, even if the request only says "look at
-  this PR".
+  Deliver a merge verdict on an open pull request, yours or another author's. Use when asked to
+  review a PR, whether it is safe to merge or approve, for a blocking review, or a re-review after
+  fixes. Make sure to use it whenever a merge decision is at stake, even if the request only says
+  "look at this PR".
 compatibility: >
   Authenticated `gh` (GitHub) or `bkt` (Bitbucket) CLI, plus an issue tracker CLI (`linear`,
   `gh issue create`) for the traceability step.
@@ -24,8 +24,9 @@ stay implicit is the failure this skill exists to prevent — a verdict is only 
 admits it did not test.
 
 Not for re-reading your own diff before committing: that is `code-review` and
-`superpowers:verification-before-completion`. This skill judges someone else's pull request and
-engages a decision the team will act on.
+`superpowers:verification-before-completion`. This skill judges an open pull request and engages a
+decision the team will act on. That the PR is your own changes nothing about the verdict, only about
+how it is enforced — see phase 6, since GitHub refuses a blocking review on your own PR.
 
 ## Usage
 
@@ -48,7 +49,9 @@ first, unless the request explicitly says to post directly.
    wins over those raw commands. If the PR is stacked on another unmerged PR, say so and make
    retargeting after the parent merges part of the verdict: the diff you are reading is not the diff
    that will land on the integration branch. A review not anchored on a named SHA is invalid, and
-   the marker in phase 6 is what makes that anchoring visible to the next reader.
+   the marker in phase 6 is what makes that anchoring visible to the next reader. When the request
+   anticipates a PR that is not open yet, poll until it exists and anchor on it; reviewing the
+   branch instead is a review of something the team has not proposed to merge.
 
 2. **Understand before judging.** Read the PR description, the design documents it cites, and the
    whole diff. Restate the invariant the code claims to hold, in one sentence. Producing a blocking
@@ -61,11 +64,13 @@ first, unless the request explicitly says to post directly.
 
 4. **Run the barrier, then declare its holes.** Run lint, typecheck and tests the way the project
    runs them — including inside a container when the project requires it, since numbers from the
-   wrong runner are not evidence for this head. Report counts: builds, errors, warnings against the
-   project's threshold, tests passed over tests run. Then enumerate what the barrier does not reach:
-   sequential tests say nothing about a race, jsdom nothing about a browser, an in-memory database
-   nothing about PostgreSQL, one platform nothing about the others. If nothing exercises the changed
-   code, that absence is the review's first finding, not a reason to announce green.
+   wrong runner are not evidence for this head. Read the CI configuration to find the gate that
+   actually blocks the merge before running anything: it is often not the package script of the same
+   name. Report counts: builds, errors, warnings against the project's threshold, tests passed over
+   tests run. Then enumerate what the barrier does not reach: sequential tests say nothing about a
+   race, jsdom nothing about a browser, an in-memory database nothing about PostgreSQL, one platform
+   nothing about the others. If nothing exercises the changed code, that absence is the review's
+   first finding, not a reason to announce green.
 
 5. **Return a verdict.** Exactly one of *changes required*, *approved with reservations*,
    *approved*. Each blocking finding carries its named mechanism and its lift criterion — what must
@@ -79,8 +84,10 @@ first, unless the request explicitly says to post directly.
    Search the existing comments for that marker first: a verdict carrying the same `<pr>:<sha>` is
    updated in place, never duplicated. Re-read before publishing — past about thirty lines,
    non-blocking remarks are posing as blockers. On GitHub, *changes required* is published with
-   `gh pr review --request-changes`, the native state; Bitbucket has no reliable equivalent, so
-   there the comment *is* the verdict and its closing sentence carries the whole enforcement.
+   `gh pr review --request-changes`, the native state, unless you authored the PR: GitHub refuses it
+   there, and Bitbucket has no reliable equivalent at all. Whenever that native state is
+   unavailable, the comment *is* the verdict and its closing sentence carries the whole enforcement
+   — say so in the verdict, so the reader knows nothing mechanical is holding the merge button.
 
 ## Gotchas
 
@@ -102,11 +109,16 @@ first, unless the request explicitly says to post directly.
   absence.
 - **Numbers copied from the PR's own pipeline** — a green pipeline is context for phase 1, never the
   barrier of phase 4. The barrier is what you ran, authenticated, on the head you checked out.
+- **The package script mistaken for the CI gate** — the repository's `lint` script may walk the whole
+  tree while the pipeline lints only the changed files. Its count then measures a backlog that
+  predates the head under review, and reporting it as the barrier drowns the diff in noise. Take the
+  command from the CI configuration, and name in the verdict which one you ran.
 
 ## Constraints
 
 - Never approve without having executed the barrier on the exact head under review.
 - Never write "everything is green": report counts, or report that nothing ran.
+- Never report a count from a command the pipeline does not run; name the gate you executed.
 - Never publish a blocking finding without a named failure mechanism and a lift criterion.
 - Never block on style, naming or structure preference; label it non-blocking.
 - Never open a review that is not anchored on a head SHA.
