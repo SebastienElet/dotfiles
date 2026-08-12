@@ -436,7 +436,7 @@ ${BREW_BIN}/llmfit:
 	brew install AlexsJones/llmfit/llmfit
 
 mistral-vibe: ${LOCAL_BIN}/vibe
-${LOCAL_BIN}/vibe: uv
+${LOCAL_BIN}/vibe: | uv
 	${BREW_BIN}/uv tool install mistral-vibe
 
 .PHONY: opencode
@@ -532,8 +532,8 @@ ${VOLTA_BIN}/openspec: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @fission-ai/openspec@latest
 
 .PHONY: pi-coding-agent
-pi-coding-agent: ${VOLTA_BIN}/pi-coding-agent
-${VOLTA_BIN}/pi-coding-agent: ${VOLTA_BIN}/node
+pi-coding-agent: ${VOLTA_BIN}/pi
+${VOLTA_BIN}/pi: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 .PHONY: specsmd
