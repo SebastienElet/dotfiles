@@ -50,6 +50,8 @@ Escalate only when the previous tier fails; never start above the first tier:
 
 ## Code Style
 
-- All comments and documentation in English
-- Prefer self-documenting code over comments
-- Only comment when explaining *why*, not *what*
+- **Write no comment.** One is admissible only when it records a fact living outside the file
+  — upstream defect, protocol quirk, deliberate deviation — and names that fact. Doc comments
+  a project's tooling requires are out of scope.
+- List in the delivery note every comment you added, and the outside fact each one records.
+  An empty list is the expected outcome.
