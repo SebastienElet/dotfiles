@@ -195,7 +195,6 @@ ai: \
 	cursor \
 	firecrawl \
 	googleworkspace-cli \
-	hermes \
 	llama-cpp \
 	llmfit \
 	mistral-vibe \
@@ -422,11 +421,6 @@ ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
-
-.PHONY: hermes
-hermes: ${LOCAL_BIN}/hermes
-${LOCAL_BIN}/hermes:
-	curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
 .PHONY: llama-cpp
 llama-cpp: brew ${BREW_BIN}/llama-cli
