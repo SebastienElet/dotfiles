@@ -4,22 +4,12 @@ on: [push, pull_request]
 jobs:
   fish:
     name: Fish shell
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install Fish on macOS
-        if: runner.os == 'macOS'
+      - name: Install Fish
         run: brew install fish
-
-      - name: Install Fish on Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fish
 
       - name: Check Fish syntax
         run: |
@@ -44,9 +34,6 @@ jobs:
             exit 1
           fi
           echo "✅ Fish formatting OK"
-
-      - name: Test Fish git wrapper
-        run: fish --no-config fish/tests/git_wrapper_test.fish
 
   lua:
     name: Lua (NeoVim)

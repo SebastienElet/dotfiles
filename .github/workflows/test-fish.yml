@@ -1,0 +1,36 @@
+name: Fish tests
+
+on:
+  push:
+    paths:
+      - fish/**
+      - scripts/git_main_branch
+      - .github/workflows/test-fish.yml
+  pull_request:
+    paths:
+      - fish/**
+      - scripts/git_main_branch
+      - .github/workflows/test-fish.yml
+
+jobs:
+  git-wrapper:
+    name: Git wrapper (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Fish on macOS
+        if: runner.os == 'macOS'
+        run: brew install fish
+
+      - name: Install Fish on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fish
+
+      - name: Test Git wrapper
+        run: fish --no-config fish/tests/git_wrapper_test.fish
