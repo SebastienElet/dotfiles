@@ -1,0 +1,46 @@
+{
+  "skill": "skill-manager",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Create a new project skill for release checks",
+      "should_activate": true,
+      "reason": "Creating a skill is a skill-manager operation"
+    },
+    {
+      "query": "Change one frontmatter field in the scripts skill",
+      "should_activate": true,
+      "reason": "Any SKILL.md edit must use skill-manager"
+    },
+    {
+      "query": "Evolve the behavior of a skill that already passes doctor",
+      "should_activate": true,
+      "reason": "Explicit functional evolution is handled by fix"
+    },
+    {
+      "query": "Doctor every project skill",
+      "should_activate": true,
+      "reason": "Global skill quality audit is a doctor operation"
+    },
+    {
+      "query": "Cross-check the skills for trigger conflicts",
+      "should_activate": true,
+      "reason": "Inter-skill conflict analysis is a cross-check operation"
+    },
+    {
+      "query": "Rebuild the shared skills README",
+      "should_activate": true,
+      "reason": "The skills index is maintained by sync-index"
+    },
+    {
+      "query": "Review whether this pull request is safe to merge",
+      "should_activate": false,
+      "reason": "A normal pull request review belongs to merge-verdict"
+    },
+    {
+      "query": "Correct a typo in the repository README",
+      "should_activate": false,
+      "reason": "A generic README edit is not skill management"
+    }
+  ]
+}

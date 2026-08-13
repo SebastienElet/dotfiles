@@ -341,19 +341,9 @@ ${BREW_BIN}/uv:
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
-cursor: brew ${APP_BIN}/Cursor.app ~/.local/bin/cursor-agent ~/.config/Cursor/User/settings.json ~/.config/Cursor/User/extensions.json ~/.config/Cursor/User/keybindings.json ~/.cursor/skills/merge-verdict
-${APP_BIN}/Cursor.app:
-	brew install --cask cursor
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/merge-verdict
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
-~/.config/Cursor/User: | ~/.config
-	mkdir -p $@
-~/.config/Cursor/User/settings.json: ${DOTFILES_PATH}/cursor/settings.json | ~/.config/Cursor/User
-	ln -s ${DOTFILES_PATH}/cursor/settings.json $@
-~/.config/Cursor/User/extensions.json: ${DOTFILES_PATH}/cursor/extensions.json | ~/.config/Cursor/User
-	ln -s ${DOTFILES_PATH}/cursor/extensions.json $@
-~/.config/Cursor/User/keybindings.json: ${DOTFILES_PATH}/cursor/keybindings.json | ~/.config/Cursor/User
-	ln -s ${DOTFILES_PATH}/cursor/keybindings.json $@
 # Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
 # own built-ins and is resynchronised from its registry, so a link dropped there
 # would be wiped without warning. Inside this repository .cursor/skills already
@@ -769,6 +759,3 @@ clean:
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim
-	rm -rf ~/.config/Cursor/User/settings.json
-	rm -rf ~/.config/Cursor/User/extensions.json
-	rm -rf ~/.config/Cursor/User/keybindings.json

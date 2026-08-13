@@ -56,13 +56,13 @@ step_create_branch() {
 step_tag() { git tag -a "v${VERSION}" -m "release ${VERSION}"; }  # automated
 
 main() {
-  VERSION="${1:?usage: release VERSION}"
+  VERSION="${VERSION:?usage: VERSION=1.2.3 release}"
   step_create_branch
   step_tag
   echo "Release ${VERSION} done."
 }
 
-main "$@"
+main
 ```
 
 ## Gotchas

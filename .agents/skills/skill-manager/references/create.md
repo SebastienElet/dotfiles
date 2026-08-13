@@ -1,124 +1,94 @@
-# Create a New Skill
+# Create a Skill
 
-## Steps
+## Inputs
 
-1. **Gather requirements** (ask the user if unclear)
+Gather before writing:
 
-   - What is the skill's purpose? (1 sentence)
-   - What triggers it? (slash command name, domain keywords, situations)
-   - What are the inputs and expected outputs?
-   - What hard rules must it enforce?
-   - What category: `dev` / `support` / `product` / `ops`?
-   - Does it need reference files (SQL, templates, markdown)?
-   - **Do the rules vary by package or application?** (e.g. different behaviour for `api-graphql` vs
-     `lobby` vs `lease-management`) → if yes, plan `<topic>-<scope>.md` files and conditional
-     routing in `## Steps` (see `conventions.md § 3`).
+- one-sentence purpose;
+- concrete explicit and implicit triggers;
+- inputs, outputs, and hard constraints;
+- local category: `dev`, `support`, `product`, or `ops`;
+- required `agents/`, `references/`, `scripts/`, `assets/`, or `evals/` resources;
+- scopes whose behavior genuinely differs.
 
-2. **Choose slug**
+Ask one question at a time when an unknown answer changes behavior. Do not invent domain rules.
 
-   - `kebab-case`, verb-noun or domain-noun
-   - Check for conflicts:
+## Procedure
 
-     ```bash
-     ls .agents/skills/
-     ```
+1. Read `conventions.md` completely.
+2. Normalize the requested slug and verify it is 1–64 lowercase letters, digits, or hyphens, with
+   no leading, trailing, or consecutive hyphen.
+3. Confirm `.agents/skills/<slug>/` does not already exist. Never overwrite it.
+4. Create `.agents/skills/<slug>/` and only the resource directories established by the inputs:
+   `agents/`, `references/`, `scripts/`, `assets/`, or `evals/`.
+5. Write `SKILL.md` from the minimal template below.
+6. Add optional frontmatter fields only when they have a real valid value.
+7. Put executable shell with positional argument placeholders in `scripts/`, never in `SKILL.md`.
+8. Route scoped sibling references from `## Steps` when behavior differs by scope.
+9. Validate standard rules with `skills-ref` when available, then run local doctor.
+10. Validate any eval JSON, run its scenarios when required, and run `sync-index` twice.
 
-3. **Scaffold directory**
-
-   ```bash
-   mkdir -p .agents/skills/<slug>
-   # If rules needed (progressive disclosure):
-   mkdir -p .agents/skills/<slug>/rules
-   # If references needed:
-   mkdir -p .agents/skills/<slug>/references
-   ```
-
-4. **Write SKILL.md** using the template below
-
-   - Fill all required sections (including `## Gotchas`)
-   - Write description in pushy format (not ending with "Trigger terms: ...")
-   - Keep steps actionable and numbered
-   - Keep SKILL.md < 500 lines (move rich content to `references/`)
-
-5. **Sync README**
-   - Follow `references/sync-index.md` to add the skill to `.agents/skills/README.md`
-
-## SKILL.md Template
+## Minimal template
 
 ```markdown
 ---
 name: <slug>
 description: >
-  [What the skill does]. Use when [conditions]. Make sure to use this skill whenever [keywords +
-  implicit cases], even if [edge case where user might not mention the domain].
-license: MIT
-compatibility: <optional; environment dependencies>
+  <specific case first>. Use when <concrete conditions>. Make sure to use this skill whenever
+  <implicit cases>, even if <the user does not name the domain>.
 metadata:
   category: dev | support | product | ops
-  author: Bellman
 ---
 
 # <Title>
 
 ## Overview
 
-<2–4 sentences on purpose and when to use.>
+<Purpose, boundary, and core principle in two to four sentences.>
 
 ## Usage
-```
 
-/<slug> [options]
-
-```text
-
-- `-x` / `--option` (optional): description (default: `value`)
-- Examples:
-  - `/<slug>` → default behavior
-  - `/<slug> --option value` → behavior with option
+<Invocation syntax and at least one realistic example.>
 
 ## Steps
 
-1. **Step one**
-   - Sub-action
-   - Sub-action
-
-2. **Step two**
-   - Sub-action
+1. <First complete action.>
+2. <Second complete action.>
+3. <Verification action.>
 
 ## Gotchas
 
-- **First gotcha** — cause + how to fix
-- **Second gotcha** — cause + how to fix
-- **Third gotcha** — cause + how to fix
+- **<Specific cause>** — <consequence and correction>.
+- **<Specific cause>** — <consequence and correction>.
+- **<Specific cause>** — <consequence and correction>.
 
 ## Constraints
 
-- **Constraint 1**: ...
-- **Constraint 2**: ...
-- **Constraint 3**: ...
-
-## References (if using progressive disclosure)
-
-For detailed guidance on specific topics, see:
-
-- [references/topic-1.md](references/topic-1.md)
-- [references/topic-2.md](references/topic-2.md)
-
-## Example Workflow (optional)
-
+- <Hard must or must-not rule.>
+- <Hard must or must-not rule.>
+- <Hard must or must-not rule.>
 ```
 
-User: /<slug>
+Optional `license`, `compatibility`, and `allowed-tools` fields go before `metadata` and are omitted
+unless established. `allowed-tools` is experimental and must be a space-separated string.
 
-Agent:
+## Validation
 
-1. ...
-2. ...
-3. ...
+If `skills-ref` is available:
 
-```text
-
-## Quality Checklist Before Saving
-
-See [conventions.md § 10](conventions.md#10-checklist-before-committing-a-skill) for the canonical checklist (SSOT — do not duplicate here).
+```bash
+skills-ref validate ./.agents/skills/<slug>
 ```
+
+Otherwise report standard validation unavailable and continue doctor. Creation is complete only
+when doctor passes, eval JSON passes when present, the skill is indexed, and a second `sync-index`
+run changes no byte.
+
+## Constraints
+
+- Never overwrite an existing skill.
+- Never create `rules/` or an unused resource directory.
+- Never emit an empty optional frontmatter field.
+- Never install validation tooling implicitly.
+- Never add an activation router without repeated behavioral evidence.
+- Always run doctor and deterministic `sync-index` before completion.

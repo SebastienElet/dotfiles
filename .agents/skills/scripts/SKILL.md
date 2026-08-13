@@ -29,7 +29,7 @@ $scripts make this hook portable across macOS and Linux
 
 1. Inspect neighboring scripts and every caller before changing names, arguments, or exit codes.
 2. Use Bash for standalone scripts and `#!/usr/bin/env bash` for new files.
-3. Give executable scripts descriptive, extensionless names such as `git_hook_assert_eslint`.
+3. Give executable scripts descriptive, extensionless names such as `claude_handoff_check`.
 4. Add explicit validation and meaningful non-zero exit codes for invalid input or failed work.
 5. Prefer commands available on both macOS and Linux; gate unavoidable platform differences with
    an explicit `uname` check.

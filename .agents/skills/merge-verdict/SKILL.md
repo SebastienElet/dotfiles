@@ -23,10 +23,11 @@ review, and the limits of that evidence are declared inside the verdict. A green
 stay implicit is the failure this skill exists to prevent — a verdict is only as strong as what it
 admits it did not test.
 
-Not for re-reading your own diff before committing: that is `code-review` and
-`superpowers:verification-before-completion`. This skill judges an open pull request and engages a
-decision the team will act on. That the PR is your own changes nothing about the verdict, only about
-how it is enforced — see phase 6, since GitHub refuses a blocking review on your own PR.
+Not for re-reading your own diff before committing: that is
+`superpowers:requesting-code-review` and `superpowers:verification-before-completion`. This skill
+judges an open pull request and engages a decision the team will act on. That the PR is your own
+changes nothing about the verdict, only about how it is enforced — see phase 6, since GitHub refuses
+a blocking review on your own PR.
 
 ## Usage
 
@@ -72,8 +73,8 @@ first, unless the request explicitly says to post directly.
    nothing about the others. If nothing exercises the changed code, that absence is the review's
    first finding, not a reason to announce green.
 
-5. **Return a verdict.** Exactly one of *changes required*, *approved with reservations*,
-   *approved*. Each blocking finding carries its named mechanism and its lift criterion — what must
+5. **Return a verdict.** Exactly one of _changes required_, _approved with reservations_,
+   _approved_. Each blocking finding carries its named mechanism and its lift criterion — what must
    become true for the block to go away. Reservations are for mechanisms whose consequence is
    bounded; a mechanism that can lose or corrupt data blocks even when the author disagrees. A
    style, naming or structure preference never blocks: label it non-blocking, or drop it.
@@ -83,10 +84,10 @@ first, unless the request explicitly says to post directly.
    idempotency marker `<!-- merge-verdict:<pr>:<head-sha> -->` — not a rain of inline comments.
    Search the existing comments for that marker first: a verdict carrying the same `<pr>:<sha>` is
    updated in place, never duplicated. Re-read before publishing — past about thirty lines,
-   non-blocking remarks are posing as blockers. On GitHub, *changes required* is published with
+   non-blocking remarks are posing as blockers. On GitHub, _changes required_ is published with
    `gh pr review --request-changes`, the native state, unless you authored the PR: GitHub refuses it
    there, and Bitbucket has no reliable equivalent at all. Whenever that native state is
-   unavailable, the comment *is* the verdict and its closing sentence carries the whole enforcement
+   unavailable, the comment _is_ the verdict and its closing sentence carries the whole enforcement
    — say so in the verdict, so the reader knows nothing mechanical is holding the merge button.
 
 ## Gotchas
@@ -103,7 +104,7 @@ first, unless the request explicitly says to post directly.
   push is the point. Same `<pr>:<sha>` → update that comment; different SHA → publish a new verdict
   and leave the old one as the record of what was judged.
 - **"Approved with reservations" used to avoid a disagreement** — that state is a claim that the
-  consequence is bounded. If you cannot state the bound, the verdict is *changes required*.
+  consequence is bounded. If you cannot state the bound, the verdict is _changes required_.
 - **A missing feature reported as an omission** — an absent regulatory or business control is either
   a declared contract (what, why, lift condition) or a blocker. Silence is the defect, not the
   absence.

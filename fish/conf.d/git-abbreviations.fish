@@ -46,6 +46,7 @@ abbr -a gcsm 'git commit -s -m'
 
 # Pull and push operations
 abbr -a gl 'git pull'
+abbr -a gp 'git push'
 abbr -a gs 'git status'
 
 # Rebase operations

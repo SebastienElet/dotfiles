@@ -116,7 +116,8 @@ causes divergence over time.
   without a `/`
 - **Exclude from checking**: `/skill-manager <cmd>` patterns (these are subcommand invocations, not
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
-  `services/api-graphql/...`, `AGENTS.md`), any URL starting with `http`
+  `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
+  identifiers containing a namespace separator such as `superpowers:requesting-code-review`
 - Verify each extracted slug has a matching directory under `.agents/skills/`
 
 **Output format**:
@@ -135,8 +136,8 @@ causes divergence over time.
 
 **Method**:
 
-- Extract each line from `## Constraints` (or `## Rules`) of every skill — both in SKILL.md and in
-  every file under `references/`
+- Extract each line from `## Constraints` of every SKILL.md and any explicitly normative constraint
+  section in its reference files
 - Search for antagonistic pairs: "always X" vs "never X", "prefer X" vs "avoid X", on the same
   subject `X`
 - The subject `X` is identified by the main nouns and verbs in the rule
@@ -180,9 +181,9 @@ variation).
 contradictions between scopes that should diverge intentionally, or duplications between scopes that
 should have been shared.
 
-**Context**: The `conventions.md` standard requires splitting `references/` files by scope when
-behaviour differs per package (e.g. `integration-pm.md` vs `integration-lm.md`). This detector
-validates that the split is correct and that no unintended divergence has crept in.
+**Context**: The local convention splits `references/` files by scope when behaviour differs per
+target (e.g. `integration-api.md` vs `integration-worker.md`). This detector validates conditional
+reference routing, not activation routing.
 
 **Method**:
 
@@ -190,14 +191,13 @@ Step 1 — **Inventory scoped files** across all skills:
 
 - For every `references/` file whose name matches `<topic>-<scope>.md`, classify it as a **scoped
   file** only when **at least one sibling file in the same `references/` directory shares the same
-  `<topic>` with a different `<scope>` suffix** (e.g. `integration-pm.md` and `integration-lm.md`
-  both present).
+  `<topic>` with a different `<scope>` suffix** (e.g. `integration-api.md` and
+  `integration-worker.md` both present).
 - A file that has no same-topic sibling is treated as a **plain reference file** and skipped by D6
   entirely — regardless of how its name looks (e.g. `cross-check.md`, `sync-index.md`,
   `react-testing.md` all fail this test and are ignored).
-- Known scope tokens for reference: `pm`, `lm`, `api-graphql`, `lobby`, `common`, `prisma-pm`,
-  `prisma-lm`, `frontend`, `backend`. These are examples — the sibling test is the authoritative
-  gate, not this list.
+- The sibling test is the only classification gate. Scope names such as `api`, `worker`,
+  `frontend`, or `backend` are examples, not an allowlist.
 - Record `(skill, scope, topic, path)` for each classified scoped file.
 - Group by `topic` across all skills.
 
@@ -310,7 +310,7 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 
 | Level       | Meaning                                          | Required action           |
 | ----------- | ------------------------------------------------ | ------------------------- |
-| 🔴 CRITICAL | Risk of incorrect activation or broken reference | Fix before next doctor     |
+| 🔴 CRITICAL | Risk of incorrect activation or broken reference | Fix before next doctor    |
 | 🟡 WARN     | Risk of future divergence or confusion           | Address in current sprint |
 | 🔵 INFO     | Cosmetic, no functional impact                   | Address if time permits   |
 
@@ -325,6 +325,8 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 - **This operation is read-only** — if the user asks you to apply a fix inline during the
   cross-check, refuse: "Cross-check is read-only. Run `/skill-manager fix <name>` to apply this
   change."
+- **Activation router absence is not a finding** — descriptions route by default. Only report a
+  router rule whose claimed behavioral evidence is missing or contradicted.
 
 ---
 
@@ -336,14 +338,14 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 - **D2 does not detect semantics** — two procedures expressed differently but doing the same thing
   may go undetected.
 - **D3 only checks slug-style references** — it does not validate absolute paths (`.cursor/rules/`,
-  `services/api-graphql/...`, `AGENTS.md`, etc.) or URLs. References to files outside
+  `services/api/...`, `AGENTS.md`, etc.) or URLs. References to files outside
   `.agents/skills/` are intentionally out of scope and will not be flagged.
 - **D4 requires human judgment** — some contradictions are intentional (e.g. "always use Jest" in a
   backend skill, "never use Jest" in a frontend skill).
 - **D6 similarity thresholds are approximate** — 80% / 60% are heuristic; a 79% similar pair may
   still need merging. Always read the actual files before deciding.
-- **D6 Step 2 intentional splits** — if a skill deliberately splits `pm` and `lm` references because
-  the rules genuinely differ, D6 will report 🔵 Info (not a warning). The detector does not flag
+- **D6 Step 2 intentional splits** — if a skill deliberately splits `api` and `worker` references
+  because the rules genuinely differ, D6 will report 🔵 Info (not a warning). The detector does not flag
   intentional divergence as an error.
 - **D6 false positives on plain two-word filenames** — files like `cross-check.md` or
   `sync-index.md` look like `<topic>-<scope>.md` but their second word is not a scope token. D6 must
