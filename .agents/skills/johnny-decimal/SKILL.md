@@ -95,7 +95,7 @@ Examples:
 | -------------------------------------------------------- | ------------ | ---------------------------------------------------------- |
 | `20-29 - Areas/27 - Finances/`                           | Category     | `Finances - 2026-04-15 - Avis d'impôt.pdf`                |
 | `20-29 - Areas/27 - Finances/27.05 - Fiscalité/`         | ID           | `Finances - Fiscalité - 2024-04-15 - Déclaration 2042.pdf` |
-| `20-29 - Areas/21 - Bigfoot/21.03 - Meeting/`            | ID           | `Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx`      |
+| `20-29 - Areas/21 - Company/21.03 - Meetings/`           | ID           | `Company - Meetings - 2024-05-14 - Quarterly Review.xlsx`  |
 | `20-29 - Areas/23 - Sport/23.01 - Tir à l'arc/`          | ID           | `Sport - Tir à l'arc - 2024-09-14 - Licence FFTA.pdf`      |
 | `30-39 - Resources/34 - Administratif/34.03 - Identité/` | ID           | `Administratif - Identité - Passeport.pdf`                 |
 

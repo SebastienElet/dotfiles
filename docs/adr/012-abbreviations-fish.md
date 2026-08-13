@@ -15,8 +15,9 @@ et la relecture d'une session.
 Convertir les raccourcis git en abbreviations Fish, regroupées dans
 `git-abbreviations.fish`. Le commit `8349aa4` en donne la raison :
 « Abbreviations expand only when typed, showing full command in history […]
-This improves debugging and follows Fish shell conventions ». Seuls `gp` et
-`gpsup`, qui enchaînent plusieurs commandes, restent des alias.
+This improves debugging and follows Fish shell conventions ». Tous les
+raccourcis statiques, dont `gp`, sont des abbreviations. Seul `gpsup`, dont la
+commande dépend de la branche courante, reste un alias.
 
 ## Conséquences
 

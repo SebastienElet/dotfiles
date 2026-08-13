@@ -39,7 +39,7 @@ FILE NAMING (with --files):
 - Format: {Category} - {Subcategory} - {Date} - {Description}.{ext}
 - Category/Subcategory derived from parent folder names
 - Date is optional, format: YYYY-MM-DD
-- Example: Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx
+- Example: Company - Meetings - 2024-05-14 - Quarterly Review.xlsx
 
 OPTIONS:
     -h, --help          Show this help message
@@ -196,9 +196,9 @@ is_johnny_decimal() {
 }
 
 # Extract the descriptive name from a JD folder name
-# "21 - Bigfoot" -> "Bigfoot"
+# "21 - Company" -> "Company"
 # "21.03 - Meeting" -> "Meeting"
-# "10.25001 - Import Quadral" -> "Import Quadral"
+# "10.25001 - Data Import" -> "Data Import"
 extract_jd_name() {
     local dirname="$1"
     local extracted_name=""
@@ -221,7 +221,7 @@ extract_jd_name() {
 }
 
 # Build the expected file prefix from the folder path
-# /path/to/21 - Bigfoot/21.03 - Meeting/ -> "Bigfoot - Meeting"
+# /path/to/21 - Company/21.03 - Meetings/ -> "Company - Meetings"
 build_file_prefix() {
     local file_path="$1"
     local parent_dir=$(dirname "$file_path")
@@ -653,7 +653,7 @@ show_summary() {
     echo -e "  ${YELLOW}Directories:${NC}"
     echo "  • Format: NN-name, NN - Name, NN-NN - Name, or NN.NN - Name"
     echo "  • NN should be a number between 10-99"
-    echo "  • Examples: 10-19 - Projects, 21 - Bigfoot, 21.03 - Meeting"
+    echo "  • Examples: 10-19 - Projects, 21 - Company, 21.03 - Meetings"
     echo "  • Exception: 'Inbox' folder is allowed at root level"
     if [[ "$CHECK_FILES" == "true" ]]; then
         echo
@@ -661,7 +661,7 @@ show_summary() {
         echo "  • Format: {Category} - {Subcategory} - {Date} - {Description}.{ext}"
         echo "  • Prefix derived from parent folder names"
         echo "  • Date is optional, format: YYYY-MM-DD"
-        echo "  • Example: Bigfoot - Meeting - 2024-05-14 - Retour Septeo.xlsx"
+        echo "  • Example: Company - Meetings - 2024-05-14 - Quarterly Review.xlsx"
     fi
     echo
 }

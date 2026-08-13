@@ -56,7 +56,6 @@ ici sont les dates d'auteur.
 | [017](017-npm-pour-paquets-globaux.md) | npm pour les paquets globaux | 2026-01 |
 | [018](018-orbstack-runtime-conteneurs.md) | OrbStack comme runtime de conteneurs | 2024-02 |
 | [019](019-pas-de-tiling-window-manager.md) | Aucun gestionnaire de fenêtres en tuiles | 2025-12 |
-| [020](020-hooks-de-push-maison.md) | Hooks de push maison dans `scripts/` | 2022-11 |
 | [021](021-branche-main-detectee.md) | `main` détectée dynamiquement | 2023-12 |
 | [022](022-conventional-commits.md) | Conventional Commits imposés | 2025-12 |
 | [023](023-ci-lint-et-installation.md) | CI de lint et test d'installation | 2026-01 |

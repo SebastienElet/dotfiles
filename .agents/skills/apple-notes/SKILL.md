@@ -9,7 +9,6 @@ license: MIT
 compatibility: macOS with the Notes app; osascript. Requires Automation permission for the calling terminal.
 metadata:
   category: ops
-  author: Bellman
 ---
 
 # Apple Notes
@@ -49,7 +48,7 @@ anything into them.
 - Examples:
   - `notes.sh folder Recipes` → creates `Recipes` if missing (idempotent)
   - `printf '<div>Buy milk</div>' | notes.sh note Recipes 'Shopping list'`
-  - `notes.sh move Notes 'Bigfoot : Recrutement : Template' '3 Resources/Recrutement' 'Recrutement : Template email de refus'`
+  - `notes.sh move Notes 'Company : Hiring : Template' '3 Resources/Hiring' 'Hiring : Rejection email template'`
 
 ## Steps
 
@@ -78,9 +77,9 @@ anything into them.
    `para-organizer` skill). Add the header (below) by hand before moving.
 
    `Domain : Subject` is two segments, and the segment count mirrors the destination's depth: a note
-   in `2 Areas/Septeo` is `Septeo : Subject`, and only a three-level destination like
-   `20-29 - Areas/21 - Septeo/21.08 - Recrutement` earns the legacy three-segment
-   `Septeo : Recrutement : Subject`. Copying a legacy title's shape into a two-level PARA folder is
+   in `2 Areas/Company` is `Company : Subject`, and only a three-level destination like
+   `20-29 - Areas/21 - Company/21.08 - Hiring` earns the legacy three-segment
+   `Company : Hiring : Subject`. Copying a legacy title's shape into a two-level PARA folder is
    what makes a batch of freshly filed notes look inconsistent.
 
    The `Subject` is the actual topic, not the shape of the note: no generic label like `Meeting`,
