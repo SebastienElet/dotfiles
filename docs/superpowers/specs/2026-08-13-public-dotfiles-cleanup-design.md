@@ -128,15 +128,18 @@ validé.
 
 ## Découpage des commits
 
-Deux commits indépendants sont prévus :
+Trois commits indépendants sont prévus :
 
 1. assainissement de #64 : suppressions AWS, Cursor et hooks, mise à jour Fish/Makefile/ADR,
    dictionnaire vidé et exemples hors `skill-manager` généricisés ;
 2. reconstruction de `skill-manager`, généricisation de ses exemples et resynchronisation de son
-   index.
+   index ;
+3. correction des findings révélés par l'audit global de tous les skills, sans mélanger ces défauts
+   préexistants à la reconstruction de `skill-manager`.
 
-Ce découpage permet de révoquer la reconstruction du skill sans réintroduire les configurations
-obsolètes. Aucun nettoyage adjacent sans rapport ne rejoint ces commits.
+Ce découpage permet de révoquer la reconstruction du skill ou l'assainissement global sans
+réintroduire les configurations obsolètes. Le troisième commit constitue le seul nettoyage adjacent
+autorisé : il est borné aux findings reproductibles de `doctor` et `cross-check`.
 
 ## Vérification
 
@@ -149,9 +152,24 @@ La vérification doit couvrir les types de fichiers réellement modifiés :
 - faire analyser les fichiers Fish modifiés par `fish --no-execute` ;
 - exécuter `make -n cursor` après inspection de ses dépendances, sans installer de logiciel ;
 - valider chaque fichier Markdown et JSON modifié avec les barrières existantes du dépôt ;
-- exécuter le doctor de `skill-manager`, puis `sync-index`, et vérifier que l'index ne dérive plus ;
+- exécuter le doctor de `skill-manager` après sa reconstruction ;
 - exécuter `skills-ref validate` si le binaire existe et nommer explicitement son absence sinon ;
 - vérifier `git diff --check` et l'état final du worktree.
+
+La dernière phase audite ensuite tous les skills, y compris ceux que #64 ne modifie pas :
+
+1. exécuter `/skill-manager doctor` sans nom pour produire la baseline globale ;
+2. exécuter `/skill-manager fix <name>` pour chaque skill portant un finding, un skill à la fois ;
+3. relancer le doctor global et corriger jusqu'à ce que tous les skills passent ;
+4. exécuter `/skill-manager cross-check`, qui reste strictement en lecture seule ;
+5. faire passer chaque finding inter-skills par `/skill-manager fix <name>` ;
+6. relancer le doctor global puis le cross-check jusqu'à absence de finding ;
+7. exécuter `/skill-manager sync-index` et vérifier qu'une seconde exécution ne produit aucune
+   différence.
+
+Un finding ambigu, contradictoire ou impossible à corriger sans modifier le comportement d'un skill
+arrête cette phase pour arbitrage : la propreté ne justifie pas d'inventer une intention. Un outil
+absent est rapporté comme une limite de l'environnement, pas converti en dépendance implicite.
 
 Les suppressions n'exigent pas de test d'installation réel : les recettes d'installation peuvent
 muter Homebrew et `/Applications`, donc seules leur inspection et leur simulation `make -n` sont
@@ -161,5 +179,5 @@ n'est revendiqué que pour les validations purement syntaxiques effectivement ex
 ## Clôture des issues
 
 Après implémentation vérifiée et intégrée, commenter #54 avec la référence à #64 puis fermer #54.
-Fermer #64 avec le résumé des deux commits et les validations exécutées. Ne fermer aucune issue sur
+Fermer #64 avec le résumé des trois commits et les validations exécutées. Ne fermer aucune issue sur
 la seule base du design ou d'une branche non intégrée.
