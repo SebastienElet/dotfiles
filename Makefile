@@ -161,7 +161,6 @@ work: \
 	bkt \
 	daily-routine \
 	flow \
-	feedmd \
 	language-tool \
 	qovery-cli \
 	docker \
@@ -498,22 +497,6 @@ ${BREW_BIN}/frontcli:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap dedene/tap; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dedene/tap/frontcli; fi
 	brew install dedene/tap/frontcli
-
-.PHONY: feedmd
-feedmd: ${BREW_BIN}/feedmd ~/.config/feedmd/config.yml ~/.config/feedmd/template.tmd
-.PHONY: freemd
-freemd: feedmd
-${BREW_BIN}/feedmd:
-	curl -L https://github.com/myquay/feedmd/releases/download/v0.0.4-alpha/feedmd-osx-x64.zip -o /tmp/feedmd.zip
-	unzip -j /tmp/feedmd.zip feedmd -d /tmp/feedmd
-	install -m 755 /tmp/feedmd/feedmd $@
-	rm -rf /tmp/feedmd /tmp/feedmd.zip
-~/.config/feedmd: | ~/.config
-	mkdir -p $@
-~/.config/feedmd/config.yml: ${DOTFILES_PATH}/feedmd/config.yml | ~/.config/feedmd
-	ln -s ${DOTFILES_PATH}/feedmd/config.yml $@
-~/.config/feedmd/template.tmd: ${DOTFILES_PATH}/feedmd/template.tmd | ~/.config/feedmd
-	ln -s ${DOTFILES_PATH}/feedmd/template.tmd $@
 
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
