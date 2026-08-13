@@ -341,7 +341,7 @@ ${BREW_BIN}/uv:
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/merge-verdict
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 # Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
@@ -350,6 +350,8 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/merge-verdict
 # points at .agents/skills, so only the global link is needed.
 ~/.cursor/skills:
 	mkdir -p $@
+~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.cursor/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
