@@ -465,7 +465,7 @@ Rerun every RED assertion from Step 1; all must pass. Then run:
 
 ```bash
 prettier --check .agents/skills/skill-manager/SKILL.md .agents/skills/skill-manager/references/*.md .agents/skills/README.md
-jq -e empty .agents/skills/skill-manager/evals/trigger-queries.json
+jq empty .agents/skills/skill-manager/evals/trigger-queries.json
 test "$(readlink .claude/skills)" = '../.agents/skills'
 test "$(readlink .cursor/skills)" = '../.agents/skills'
 test "$(readlink .codex/skills)" = '../.agents/skills'
@@ -566,7 +566,7 @@ Expected: byte-identical output.
 
 ```bash
 prettier --check '.agents/skills/**/*.md' .agents/skills/README.md
-find .agents/skills -path '*/evals/*.json' -print0 | xargs -0 -n1 jq -e empty
+find .agents/skills -path '*/evals/*.json' -print0 | xargs -0 -n1 jq empty
 if command -v skills-ref >/dev/null 2>&1; then
   for skill in .agents/skills/*/; do skills-ref validate "$skill"; done
 else
