@@ -355,7 +355,7 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/claude_handoff_check ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -370,9 +370,8 @@ ${LOCAL_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/ai/USER.md $@
 ~/.claude/hooks ~/.claude/skills: | ~/.claude
 	mkdir -p $@
-# Stop hook: emit a resume prompt near the token limit instead of compacting.
-~/.claude/hooks/claude_handoff_check: ${DOTFILES_PATH}/scripts/claude_handoff_check | ~/.claude/hooks
-	ln -s ${DOTFILES_PATH}/scripts/claude_handoff_check $@
+~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/scripts/agent_handoff | ~/.claude/hooks
+	ln -s ${DOTFILES_PATH}/scripts/agent_handoff $@
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
@@ -382,7 +381,7 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
@@ -398,8 +397,18 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	mkdir -p $@
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+~/.agents/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.agents/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.agents/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+
+.PHONY: codex-handoff-hook
+codex-handoff-hook: | ~/.codex
+	@command='${DOTFILES_PATH}/scripts/agent_handoff'; \
+	tmp=~/.codex/hooks.json.tmp; \
+	if [ -f ~/.codex/hooks.json ]; then input=~/.codex/hooks.json; else input=/dev/null; fi; \
+	jq -n --arg command "$$command" --slurpfile current "$$input" '($$current[0] // {}) | .hooks.Stop //= [] | if any(.hooks.Stop[]?.hooks[]?; .command == $$command) then . else .hooks.Stop += [{hooks: [{type: "command", command: $$command}]}] end' > "$$tmp"; \
+	mv "$$tmp" ~/.codex/hooks.json
 
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:
