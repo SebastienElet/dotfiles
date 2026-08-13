@@ -13,9 +13,9 @@ eux.
 
 ## Décision
 
-Ce dépôt utilise `main`. Les deux appelants actifs — l'abbreviation `grbm` et
-`scripts/review` — passent par `scripts/git_main_branch`, qui interroge le
-dépôt courant et retombe sur `master` le cas échéant.
+Ce dépôt utilise `main`. L'abbreviation `grbm` passe par
+`scripts/git_main_branch`, qui interroge le dépôt courant et retombe sur
+`master` le cas échéant.
 
 ## Conséquences
 
