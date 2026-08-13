@@ -13,10 +13,13 @@ au pire moment.
 
 ## Décision
 
-Trois workflows GitHub Actions. `lint.yml` vérifie la syntaxe Fish
+Quatre workflows GitHub Actions. `lint.yml` vérifie la syntaxe Fish
 (`fish --no-execute`), le formatage (`fish_indent`), le Lua Neovim (`luacheck`)
 et les scripts shell (ShellCheck). `test-fish.yml` exécute les tests Fish sur
 macOS et Linux uniquement lorsque les fichiers qu'ils couvrent changent.
+`test-rust.yml` vérifie le formatage, exécute Clippy et les tests de
+`daily-routine` sur macOS uniquement lorsque les fichiers qu'ils couvrent
+changent.
 `test.yml` exécute l'installation complète sur un runner macOS, apps payantes
 exclues (`SKIP_PAID_APPS`) et cibles Docker ignorées en l'absence de daemon
 (`DOCKER_OR_SKIP`).
