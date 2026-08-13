@@ -2,143 +2,134 @@
 
 ## Scope
 
-- `/skill-manager doctor` — check all skills in `.agents/skills/`
-- `/skill-manager doctor <name>` — check one specific skill
+- `/skill-manager doctor` audits every directory under `.agents/skills/`.
+- `/skill-manager doctor <name>` audits one skill.
+- `.agents/skills/README.md` is not a skill directory.
+
+Doctor is read-only. It reports findings for a later `fix` operation.
+
+## Status model
+
+- **FAIL**: a standard rule or mandatory local convention fails.
+- **WARN**: only a qualitative, non-blocking weakness exists.
+- **PASS**: no FAIL or WARN exists.
+- Missing optional tooling is an environment limitation, not a status downgrade.
 
 ## Procedure
 
-1. **Identify skills to check**
+1. Read `conventions.md` completely.
+2. Enumerate the requested skill directories.
+3. Detect `skills-ref` once for the whole run.
+4. Apply every standard and local check below to each skill.
+5. Produce one report per skill and a global summary.
+6. Propose exact fixes, but modify nothing.
 
-   ```bash
-   ls .agents/skills/
-   ```
+## Standard checks
 
-   Exclude `README.md`.
+When `skills-ref` exists, run `skills-ref validate ./.agents/skills/<slug>` and preserve its full
+failure. When absent, report `Standard validation: unavailable (skills-ref not installed)` and apply
+these checks manually:
 
-2. **For each skill**, run the checklist below.
+- `name` exists, is a string, has 1–64 characters, matches `[a-z0-9]+(-[a-z0-9]+)*`, and equals the
+  directory slug;
+- `description` exists, is a non-empty string, and is at most 1024 characters;
+- `license`, if present, is a string;
+- `compatibility`, if present, is a non-empty string of at most 500 characters;
+- `allowed-tools`, if present, is a space-separated string and is reported as experimental;
+- `metadata`, if present, is a map whose keys and values are strings;
+- no top-level field exists outside `name`, `description`, `license`, `compatibility`,
+  `allowed-tools`, and `metadata`.
 
-3. **Produce report** in the output format below.
+## Local checks
 
-4. **Propose fixes** — for each failing skill, state the exact action needed.
+### Frontmatter and index
 
----
+- `metadata.category` exists and is `dev`, `support`, `product`, or `ops`;
+- the skill appears exactly once under the matching README section;
+- description starts with the distinguishing case, contains concrete `Use when` conditions, and
+  stays below the local 400-character target;
+- a weak but valid description is WARN, not FAIL.
 
-## Doctor Checklist (per skill)
+### Body structure
 
-### Structure — pass/fail
+- one H1 follows frontmatter;
+- `Overview`, `Usage`, `Steps` or `Workflow`, `Gotchas`, and `Constraints` exist in that order;
+- `Gotchas` contains at least three cause/consequence/correction entries;
+- `Constraints` contains at least three hard rules;
+- `SKILL.md` stays below 500 lines, or detailed material is progressively disclosed and linked.
 
-- [ ] Directory contains a `SKILL.md`
-- [ ] Frontmatter has `name` field (kebab-case, matches directory)
-- [ ] Frontmatter has `description` field
-- [ ] Frontmatter has `metadata.category` field (`dev` | `support` | `product` | `ops`)
-- [ ] **NO `disable-model-invocation: true`** at top-level (should be removed; this field breaks
-      portability)
-- [ ] **NO `category` at top-level** (must be in `metadata.category`)
-- [ ] **Only standard agentskills.io fields** at top-level: `name`, `description`, `license`,
-      `compatibility`, `metadata`
-- [ ] Skill is listed in `.agents/skills/README.md`
+### Resources and routing
 
-### Content Quality — 0–2 pts each (max 10)
+- only needed `references/`, `scripts/`, `assets/`, and `evals/` directories exist;
+- same-topic scoped sibling references have explicit conditional routing in `SKILL.md`;
+- identical cross-scope content is not duplicated;
+- the repository adapters still resolve to `../.agents/skills`;
+- absence of an activation router is never a finding;
+- a router rule is WARN unless its repeated behavioral evidence is identified.
 
-| Section       | 2 pts                                                     | 1 pt                   | 0 pts   |
-| ------------- | --------------------------------------------------------- | ---------------------- | ------- |
-| `Overview`    | Specific, states when to use                              | Present but generic    | Missing |
-| `Usage`       | Syntax + options + examples                               | Syntax only            | Missing |
-| `Steps`       | Numbered, actionable, complete                            | Present but incomplete | Missing |
-| `Rules`       | 3+ hard constraints                                       | 1-2 rules              | Missing |
-| `description` | Pushy format ("Use when", "Make sure"), specific keywords | Present but weak       | Generic |
+### Templated shell safety
 
-### Size & Disclosure — pass/fail
+Search the `SKILL.md` body for unescaped `$0` through `$9`, `$@`, and `$ARGUMENTS`. Executable
+shell containing a match is FAIL and moves to `scripts/`. Literal prose must escape the dollar sign
+once. Do not scan `references/` or `scripts/` as templated bodies.
 
-- [ ] `SKILL.md` is < 500 lines
-- [ ] `description` field is < 1024 characters
-- [ ] If SKILL.md > 500 lines, content is progressively disclosed:
-  - Lean SKILL.md with references
-  - Rich content moved to `references/`
-  - `## References` section linking to `references/`
+### Optional evals
 
-### Scope Segmentation — pass/fail
+When `evals/trigger-queries.json` exists, require:
 
-- [ ] If the skill's rules **vary by package/application**, `references/` files use
-      `<topic>-<scope>.md` naming (e.g. `integration-pm.md`, `integration-lm.md`) rather than a
-      single monolithic file
-- [ ] The `## Steps` section includes **conditional routing** ("if file is in X, read
-      `references/Y.md`") when multiple scoped references exist
-- [ ] Cross-scope content that is **identical** is not duplicated — it lives in a single shared
-      reference or inline in SKILL.md
+- valid JSON;
+- string `skill` equal to the directory slug;
+- string `version`;
+- non-empty `queries` array;
+- string `query`, boolean `should_activate`, and string `reason` in every entry;
+- at least one `true` and one `false` `should_activate` value.
 
-### Gotchas Section — pass/fail
+An absent eval file is not a finding unless an approved requirement explicitly demands one.
 
-- [ ] **`## Gotchas` section exists** (NEW, mandatory)
-- [ ] Gotchas section includes 3+ project-specific warnings
-- [ ] Each gotcha has cause + fix format
-
-### Frontmatter Portability — pass/fail
-
-- [ ] Frontmatter uses ONLY standard fields: `name`, `description`, `license`, `compatibility`,
-      `metadata`
-- [ ] No custom top-level fields (`disable-model-invocation`, `category`, `paths`, etc.)
-- [ ] `description` is in "pushy" format (not ending with "Trigger terms: ...")
-
-### Activation Quality
-
-- Description uses pushy format ("Use when", "Make sure"): ✅ / ⚠️
-- Description avoids ambiguity about when to use: ✅ / ⚠️
-- No overlap with another skill's trigger terms: ✅ / ⚠️
-- Front-loaded keywords (most important trigger terms first): ✅ / ⚠️
-
----
-
-## Output Format
+## Report format
 
 ```text
 ### <slug> [PASS | WARN | FAIL]
 
-**Structure**: ✅ all fields present | ❌ missing: <list>
-**Content**: <score>/10
-**Size & Disclosure**: ✅ good | ⚠️ <issue>
-**Gotchas**: ✅ compliant | ❌ missing/incomplete
-**Portability**: ✅ standard fields only | ❌ custom fields found: <list>
-**Activation**: ✅ good | ⚠️ <issue>
-**README**: ✅ listed | ❌ missing
-
-**Action needed**: <specific fix or "none">
+Standard validation: PASS | FAIL: <finding> | unavailable (skills-ref not installed)
+Local conventions: PASS | WARN: <finding> | FAIL: <finding>
+Frontmatter: PASS | <exact finding>
+Body: PASS | <exact finding>
+Resources: PASS | <exact finding>
+Templated shell: PASS | <exact finding>
+Evals: PASS | absent (optional) | <exact finding>
+README: PASS | <exact finding>
+Action needed: none | <one exact corrective action per finding>
 ```
 
-At the end, output a summary:
+Global summary:
 
 ```text
-## Summary
-
-| Skill | Status | Content | Action |
-|-------|--------|---------|--------|
-| ... | PASS | 10/10 | none |
-| ... | WARN | 6/10 | add Gotchas + pushy description |
-| ... | FAIL | 2/10 | add Usage + Rules sections |
-
-**Blocking issues** (must fix before Phase 2):
-1. ...
-
-**Non-blocking improvements** (nice to have):
-1. ...
+| Skill | Status | Standard | Local | Action |
+| --- | --- | --- | --- | --- |
+| <slug> | PASS | unavailable | PASS | none |
 ```
 
----
+List environment limitations after the table once, rather than repeating them as failures.
 
-## Common Issues and Fixes
+## Common findings
 
-| Issue                                                  | Fix                                                                                                                              |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `disable-model-invocation` at top-level                | Remove it — it breaks portability. Portability is enforced by agentskills.io standard.                                           |
-| `category` at top-level                                | Move to `metadata.category`. Top-level `category` is not in the standard.                                                        |
-| Missing `## Gotchas`                                   | Add a new section with 3+ project-specific gotchas (cause + fix format).                                                         |
-| Weak description                                       | Rewrite using pushy format: `[What]. Use when [triggers]. Make sure to use whenever [keywords + implicit], even if [edge case].` |
-| Generic `Overview`                                     | Rewrite to answer: what does it do, and when should I use it? Be specific.                                                       |
-| Missing `Usage`                                        | Add invocation syntax with at least one example.                                                                                 |
-| Missing `Rules`                                        | Add 3+ hard constraints (must/must-not).                                                                                         |
-| Not in README                                          | Run `/skill-manager sync-index` to rebuild the index.                                                                            |
-| Custom fields (non-standard)                           | Remove them. Only `name`, `description`, `license`, `compatibility`, `metadata` are portable.                                    |
-| `SKILL.md` too long (> 500 lines)                      | Move content to `references/` and add `## References` section with links.                                                        |
-| Description > 1024 chars                               | Trim to essentials; move detailed guidance to `## Usage` or `## Steps`.                                                          |
-| Monolithic `references/` file covering multiple scopes | Split into `<topic>-<scope>.md` files and add conditional routing in `## Steps`.                                                 |
-| Missing conditional routing in `## Steps`              | Add "if file is in X, read `references/Y.md`" logic so the agent loads only relevant context.                                    |
+| Finding                               | Exact correction                                                                             |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Non-standard field                    | Remove it; preserve approved scalar metadata under `metadata` only when semantically correct |
+| Invalid `allowed-tools` type          | Replace it with a space-separated string or remove it                                        |
+| Description above local target        | Keep the specific first clause and concrete triggers; move process detail to the body        |
+| Missing `Gotchas`                     | Add three repository-specific cause/consequence/correction entries                           |
+| Missing `Constraints`                 | Add three hard must or must-not rules                                                        |
+| Positional shell placeholder          | Move executable shell to `scripts/`; escape literal prose once                               |
+| Missing conditional reference routing | Route each same-topic scoped sibling from `Steps`                                            |
+| Missing README entry                  | Run deterministic `sync-index` after the skill itself passes                                 |
+
+## Constraints
+
+- Never modify a file during doctor.
+- Never install `skills-ref` or another validator.
+- Never report unavailable tooling as PASS.
+- Never fail a skill solely because it lacks an activation router or eval file.
+- Never convert a qualitative judgment into a mandatory finding without a local rule.
+- Always give a reproducible finding and exact correction for every FAIL or WARN.

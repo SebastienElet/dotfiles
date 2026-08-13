@@ -1,192 +1,77 @@
-# Skill Evals — Trigger-Queries (Phase 4)
+# Skill Activation Scenarios
 
-**Status**: This file is a stub prepared for Phase 4 (Descriptions, Evals & Validation).
+## Purpose
 
-## Overview
+`evals/trigger-queries.json` records realistic positive and negative activation prompts. The file is
+a scenario format, not proof that any host executed the prompts.
 
-Skills can include `evals/trigger-queries.json` to define activation scenarios. This helps validate
-that:
+This repository has no automatic multi-agent eval runner. Never claim activation rates or
+cross-agent validation without actual recorded executions.
 
-1. The skill description correctly triggers in real-world queries
-2. The skill doesn't false-positive on unrelated queries
-3. The skill is discoverable across all 5 agents
-
-## When to Create Evals
-
-Evals are **recommended for critical skills** (dev, support, or ops workflows that many developers
-rely on).
-
-**Skills that should have evals**:
-
-- `skill-manager` — foundational tooling
-- `git-commit`, `pr-create` — daily workflows
-- `testing` — testing patterns
-- `support-*` — customer-facing diagnostics
-- `pothos-migration`, `prisma` — critical patterns
-
-**Skills that may skip evals**:
-
-- Niche domain-specific skills (less frequently used)
-- Experimental skills (under development)
-
-## Format — `trigger-queries.json`
+## Schema
 
 ```json
 {
-  "skill": "skill-slug",
+  "skill": "example-skill",
   "version": "1.0",
   "queries": [
     {
-      "query": "I need to create a new skill for X",
+      "query": "Create an example artifact",
       "should_activate": true,
-      "reason": "Keywords: 'create', 'new skill'; matches description 'create new skills with proper scaffolding'"
+      "reason": "Direct request for the skill's workflow"
     },
     {
-      "query": "How do I use skill-manager?",
-      "should_activate": true,
-      "reason": "Implicit: help on skill-manager; matches 'managing .agents/skills'"
-    },
-    {
-      "query": "What's the best TypeScript pattern?",
+      "query": "Review an unrelated pull request",
       "should_activate": false,
-      "reason": "No mention of skills or skill-manager; out of scope"
-    },
-    {
-      "query": "I want to check all skills in my repo",
-      "should_activate": true,
-      "reason": "Keywords: 'doctor', 'skills'; matches description 'run doctor checks on existing skills for quality'"
-    },
-    {
-      "query": "Can you review my code?",
-      "should_activate": false,
-      "reason": "Generic review request; doesn't mention skills. (Use the 'review' skill instead.)"
+      "reason": "A different skill owns pull request review"
     }
   ]
 }
 ```
 
-### Query Fields
+Doctor requires:
 
-- **`query`** (string): user input that should or shouldn't trigger the skill
-- **`should_activate`** (boolean): expected outcome (true = should trigger, false = should not)
-- **`reason`** (string): why this query should/shouldn't activate (for debugging)
+- string `skill` equal to the directory slug;
+- string `version`;
+- non-empty `queries` array;
+- string `query`, boolean `should_activate`, and string `reason` per entry;
+- at least one positive and one negative query.
 
-## File Location
+## Writing scenarios
 
-Place `trigger-queries.json` at:
+- Use phrases a user would actually type.
+- Cover direct triggers and implicit needs that do not name the skill.
+- Add adjacent-domain negatives that could false-positive.
+- Explain the expected boundary in `reason`, not the implementation.
+- Keep scenarios stable while comparing description or router changes.
 
-```text
-.agents/skills/<slug>/evals/trigger-queries.json
-```
+## Running scenarios
 
-Optionally, add an `evals.json` file for more detailed test cases (Phase 4).
+Use fresh agent context so prior conclusions do not leak into the result. Give the agent the
+repository and prompt, not the expected answer. Record whether the skill activated and whether its
+procedure governed the response.
 
-## How Evals Are Used (Phase 4)
+An eval file remains optional. Create one when activation behavior is critical or a description is
+being changed for routing reasons.
 
-In Phase 4, the review agent will:
+## Activation router evidence
 
-1. Load each skill's `trigger-queries.json`
-2. Simulate the queries with each of the 5 agents' activation mechanisms
-3. Report which queries succeed / fail
-4. Suggest description rewrites if activation rates are low
+Descriptions route by default. Before adding an external router rule:
 
-## Writing Good Trigger Queries
+1. Select the relevant positive and adjacent negative queries.
+2. Run each query at least three times without the proposed rule.
+3. Require a repeated missed or wrong activation; one anomalous run is insufficient.
+4. Record the baseline prompts and outcomes.
+5. Add the smallest relational rule that distinguishes the competing skills.
+6. Run the identical prompts again and compare outcomes.
+7. Remove the rule if it does not materially improve routing.
 
-- **Include common use cases** — queries that developers would actually type
-- **Include edge cases** — implicit needs that don't name the domain (e.g., "How do I doctor?"
-  instead of only "How do I doctor skills?")
-- **Include false-positives** — queries that should NOT trigger (helps ensure specificity)
-- **Front-load keywords** — if a query starts with key terms, it's more likely to trigger
-- **Be realistic** — use phrasing that matches how people actually ask questions, not how the
-  documentation phrases things
+The absence of a router is never itself a finding.
 
-## Examples by Skill
+## Constraints
 
-### Example: `skill-manager`
-
-```json
-{
-  "skill": "skill-manager",
-  "version": "1.0",
-  "queries": [
-    {
-      "query": "I need to create a new skill",
-      "should_activate": true,
-      "reason": "'create', 'new skill'"
-    },
-    {
-      "query": "How do I scaffold a skill?",
-      "should_activate": true,
-      "reason": "'scaffold' + 'skill'"
-    },
-    {
-      "query": "Doctor all skills for quality",
-      "should_activate": true,
-      "reason": "'doctor', 'skills', 'quality'"
-    },
-    {
-      "query": "Update the skills README",
-      "should_activate": true,
-      "reason": "'update', 'skills README' → matches sync-index operation"
-    },
-    {
-      "query": "How do I write tests?",
-      "should_activate": false,
-      "reason": "Testing is a different domain; use the 'testing' skill"
-    },
-    {
-      "query": "What categories can I use for my skill?",
-      "should_activate": true,
-      "reason": "Question about skill structure → skill-manager knowledge"
-    }
-  ]
-}
-```
-
-### Example: `pr-create` (hypothetical future skill)
-
-```json
-{
-  "skill": "pr-create",
-  "version": "1.0",
-  "queries": [
-    {
-      "query": "Create a pull request",
-      "should_activate": true,
-      "reason": "Direct: 'create' + 'pull request'"
-    },
-    {
-      "query": "How do I open a PR?",
-      "should_activate": true,
-      "reason": "Implicit: 'PR' = pull request"
-    },
-    {
-      "query": "I need to push my changes",
-      "should_activate": false,
-      "reason": "Push is a git operation; use 'git' skill, not 'pr-create'"
-    },
-    {
-      "query": "What's the PR title format?",
-      "should_activate": true,
-      "reason": "Implicit: PR workflow question"
-    }
-  ]
-}
-```
-
-## Next Steps (Phase 4)
-
-1. For critical skills, author `evals/trigger-queries.json`
-2. Run validation across Cursor, Claude, Codex, Gemini CLI, Copilot
-3. Collect activation metrics (% of queries that correctly trigger)
-4. Refine descriptions based on results
-5. Document findings in Phase 4 exit state
-
----
-
-**Phase 4 will detail**:
-
-- Multi-agent eval framework
-- Collecting metrics on description quality
-- Automated description refinement suggestions
-- Final validation checklist before graduation
+- Never present scenario files as executed evidence.
+- Never invent activation metrics.
+- Never add a router from one run or intuition alone.
+- Never change prompts between baseline and comparison.
+- Always include positive and negative cases in a present eval file.
