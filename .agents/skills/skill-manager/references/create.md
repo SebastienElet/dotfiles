@@ -8,7 +8,7 @@ Gather before writing:
 - concrete explicit and implicit triggers;
 - inputs, outputs, and hard constraints;
 - local category: `dev`, `support`, `product`, or `ops`;
-- required `references/`, `scripts/`, `assets/`, or `evals/` resources;
+- required `agents/`, `references/`, `scripts/`, `assets/`, or `evals/` resources;
 - scopes whose behavior genuinely differs.
 
 Ask one question at a time when an unknown answer changes behavior. Do not invent domain rules.
@@ -20,7 +20,7 @@ Ask one question at a time when an unknown answer changes behavior. Do not inven
    no leading, trailing, or consecutive hyphen.
 3. Confirm `.agents/skills/<slug>/` does not already exist. Never overwrite it.
 4. Create `.agents/skills/<slug>/` and only the resource directories established by the inputs:
-   `references/`, `scripts/`, `assets/`, or `evals/`.
+   `agents/`, `references/`, `scripts/`, `assets/`, or `evals/`.
 5. Write `SKILL.md` from the minimal template below.
 6. Add optional frontmatter fields only when they have a real valid value.
 7. Put executable shell with positional argument placeholders in `scripts/`, never in `SKILL.md`.

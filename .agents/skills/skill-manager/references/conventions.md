@@ -75,13 +75,15 @@ Every project skill physically lives at:
 ```text
 .agents/skills/<slug>/
   SKILL.md
+  agents/       optional product-specific machine metadata
   references/   optional detailed guidance
   scripts/      optional executable reusable logic
   assets/       optional output resources
   evals/        optional activation scenarios
 ```
 
-Do not create a local `rules/` directory. Add only resource directories the skill actually needs.
+Do not create a local `rules/` directory. Add only tracked resource directories the skill actually
+needs; ignore untracked or gitignored runtime artifacts during repository audits.
 
 The repository exposes the canonical directory through three relative symlinks:
 

@@ -60,7 +60,10 @@ these checks manually:
 
 ### Resources and routing
 
-- only needed `references/`, `scripts/`, `assets/`, and `evals/` directories exist;
+- only needed, tracked `agents/`, `references/`, `scripts/`, `assets/`, and `evals/` directories
+  exist; untracked or gitignored runtime artifacts are outside the repository audit;
+- `agents/openai.yaml`, when present, is valid YAML and its interface metadata still matches the
+  skill;
 - same-topic scoped sibling references have explicit conditional routing in `SKILL.md`;
 - identical cross-scope content is not duplicated;
 - the repository adapters still resolve to `../.agents/skills`;
@@ -69,9 +72,10 @@ these checks manually:
 
 ### Templated shell safety
 
-Search the `SKILL.md` body for unescaped `$0` through `$9`, `$@`, and `$ARGUMENTS`. Executable
-shell containing a match is FAIL and moves to `scripts/`. Literal prose must escape the dollar sign
-once. Do not scan `references/` or `scripts/` as templated bodies.
+Search the `SKILL.md` body for unescaped `$0` through `$9`, including braced forms such as `${1}`,
+plus `$@` and `$ARGUMENTS`. Executable shell containing a match is FAIL and moves to `scripts/`.
+Literal prose must escape the dollar sign once. Do not scan `references/` or `scripts/` as
+templated bodies.
 
 ### Optional evals
 

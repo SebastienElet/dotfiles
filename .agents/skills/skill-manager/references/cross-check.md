@@ -116,7 +116,8 @@ causes divergence over time.
   without a `/`
 - **Exclude from checking**: `/skill-manager <cmd>` patterns (these are subcommand invocations, not
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
-  `services/api/...`, `AGENTS.md`), any URL starting with `http`
+  `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
+  identifiers containing a namespace separator such as `superpowers:requesting-code-review`
 - Verify each extracted slug has a matching directory under `.agents/skills/`
 
 **Output format**:

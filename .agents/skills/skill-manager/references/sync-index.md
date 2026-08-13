@@ -7,7 +7,9 @@ index, never an independent source of metadata.
 
 ## Procedure
 
-1. Enumerate every immediate directory under `.agents/skills/` and require a `SKILL.md`.
+1. Enumerate every immediate directory under `.agents/skills/` that contains a `SKILL.md`, including
+   a newly created untracked skill. Ignore untracked or gitignored runtime directories without one;
+   report a tracked skill directory whose `SKILL.md` is missing.
 2. Read `name`, the complete folded `description`, and `metadata.category`.
 3. Normalize folded-description whitespace to one ASCII space.
 4. Use the first sentence, ending at the first period followed by whitespace or end-of-string.
@@ -34,7 +36,7 @@ This directory is the single source of truth for reusable agent skills.
 
 - One skill per subdirectory.
 - Each skill must include a `SKILL.md` file.
-- Optional folders: `scripts/`, `references/`, `assets/`, `evals/`.
+- Optional folders: `agents/`, `scripts/`, `references/`, `assets/`, `evals/`.
 - Manage skills with `/skill-manager`.
 
 ## Dev

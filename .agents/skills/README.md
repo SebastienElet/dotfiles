@@ -6,7 +6,7 @@ This directory is the single source of truth for reusable agent skills.
 
 - One skill per subdirectory.
 - Each skill must include a `SKILL.md` file.
-- Optional folders: `scripts/`, `references/`, `assets/`, `evals/`.
+- Optional folders: `agents/`, `scripts/`, `references/`, `assets/`, `evals/`.
 - Manage skills with `/skill-manager`.
 
 ## Dev
