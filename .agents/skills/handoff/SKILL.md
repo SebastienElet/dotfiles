@@ -5,7 +5,7 @@ description: >
   window is nearly full, a Stop hook reports the handoff threshold, or a resume prompt is asked
   for. Make sure to use it whenever a session must continue elsewhere, even if the context limit
   is never named.
-compatibility: Claude Code with scripts/claude_handoff_check installed as a Stop hook
+compatibility: Claude Code or Codex with scripts/agent_handoff installed as a Stop hook
 metadata:
   category: ops
 ---
@@ -16,16 +16,18 @@ metadata:
 
 Produce a short, copy-pasteable prompt that lets a fresh session resume the current work, and then
 stop. Compaction summarises a transcript and keeps its noise; a handoff restates only the live
-state, so the next session starts small and accurate. `scripts/claude_handoff_check` triggers this
+state, so the next session starts small and accurate. `scripts/agent_handoff` triggers this
 skill automatically once context usage passes the threshold, but it is also useful on demand.
 
 ## Usage
 
 ```text
 /handoff
+$handoff
 ```
 
-No options. The output is a single fenced block for the user to paste into a new session.
+Use `/handoff` in Claude Code and `$handoff` in Codex. There are no options. The output is a single
+fenced block for the user to paste into a new session.
 
 ## Steps
 
@@ -55,9 +57,9 @@ No options. The output is a single fenced block for the user to paste into a new
 - **Being triggered mid-task by the hook** — the threshold fires at the end of a turn regardless of
   where the work stands. Say plainly under **Next step** that a step is half-done, rather than
   implying it is complete.
-- **Expecting the hook to fire with no configured window** — it stays silent unless
-  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` or `HANDOFF_TOKEN_THRESHOLD` is set, because guessing a limit
-  would hand off far too early. Invoke `/handoff` manually in that case.
+- **Expecting the hook to fire with no known window** — Claude Code needs
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` or `HANDOFF_TOKEN_THRESHOLD`; Codex supplies its window in the
+  transcript. Invoke the skill manually when the hook cannot determine a limit.
 
 ## Constraints
 
@@ -66,4 +68,4 @@ No options. The output is a single fenced block for the user to paste into a new
 - Keep the block self-contained — the next session sees no part of this conversation.
 - Do not write the handoff to a file unless the user asks; the deliverable is text to paste.
 - Do not attempt to disable or block compaction from the skill — that is the hook's job, via the
-  threshold in `scripts/claude_handoff_check`.
+  threshold in `scripts/agent_handoff`.

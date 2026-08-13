@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v jq >/dev/null 2>&1 || exit 0
+
+input=$(cat)
+transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
+session=$(printf '%s' "$input" | jq -r '.session_id // empty')
+active=$(printf '%s' "$input" | jq -r '.stop_hook_active // false')
+
+[ "$active" = "true" ] && exit 0
+[ -n "$transcript" ] && [ -r "$transcript" ] || exit 0
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/handoff"
+sentinel="$state_dir/${session:-unknown}"
+[ -f "$sentinel" ] && exit 0
+
+usage=$(tail -n 500 "$transcript" | jq -R -c '
+  fromjson? // empty
+  | if .type == "assistant" and (.isSidechain | not) and .message.usage then
+      {
+        agent: "Claude Code",
+        used: ((.message.usage.input_tokens // 0) + (.message.usage.cache_read_input_tokens // 0) + (.message.usage.cache_creation_input_tokens // 0)),
+        window: null
+      }
+    elif .type == "event_msg" and .payload.type == "token_count" and .payload.info.last_token_usage then
+      {
+        agent: "Codex",
+        used: .payload.info.last_token_usage.input_tokens,
+        window: .payload.info.model_context_window
+      }
+    else empty end
+' 2>/dev/null | tail -n 1) || true
+[ -n "$usage" ] || exit 0
+
+used=$(printf '%s' "$usage" | jq -r '.used // empty')
+window=$(printf '%s' "$usage" | jq -r '.window // empty')
+agent=$(printf '%s' "$usage" | jq -r '.agent')
+case "$used" in
+'' | *[!0-9]*) exit 0 ;;
+esac
+
+threshold=${HANDOFF_TOKEN_THRESHOLD:-}
+if [ -z "$threshold" ]; then
+  [ -n "$window" ] || window=${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}
+  [ -n "$window" ] || exit 0
+  threshold=$((window * 85 / 100))
+fi
+case "$threshold" in
+'' | *[!0-9]*) exit 0 ;;
+esac
+[ "$used" -ge "$threshold" ] || exit 0
+
+mkdir -p "$state_dir"
+touch "$sentinel"
+
+if [ "$agent" = "Codex" ]; then
+  invocation='$handoff'
+else
+  invocation='/handoff'
+fi
+
+jq -n --arg used "$((used / 1000))" --arg limit "$((threshold / 1000))" --arg invocation "$invocation" '{
+  decision: "block",
+  reason: ("Context is at \($used)k tokens, past the \($limit)k handoff threshold. "
+    + "Start no new work. Use \($invocation) to emit the resume prompt for a fresh session, then stop.")
+}'
