@@ -447,7 +447,9 @@ ${BREW_BIN}/opencode:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula anomalyco/tap/opencode; fi
 	brew install anomalyco/tap/opencode
 
-qovery-cli:
+.PHONY: qovery-cli
+qovery-cli: /usr/local/bin/qovery
+/usr/local/bin/qovery:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
 
