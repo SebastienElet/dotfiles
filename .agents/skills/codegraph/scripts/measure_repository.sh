@@ -4,6 +4,7 @@ set -euo pipefail
 repository=${1:-.}
 tokei_bin=${CODEGRAPH_TOKEI_BIN:-tokei}
 jq_bin=${CODEGRAPH_JQ_BIN:-jq}
+git_bin=${CODEGRAPH_GIT_BIN:-git}
 types='Ark TypeScript,Astro,C,C Header,C#,COBOL,ColdFusion,ColdFusion CFScript,C++,C++ Header,C++ Module,CUDA,Dart,Erlang,Go,HCL,Java,JavaScript,JSX,Kotlin,Liquid,Lua,Metal Shading Language,Nix,Objective-C,Objective-C++,Pascal,PHP,Python,R,Razor,Ruby,Rust,Scala,Solidity,Svelte,Swift,TSX,TypeScript,Visual Basic,Vue'
 
 if [[ "$tokei_bin" == */* ]]; then
@@ -16,6 +17,12 @@ if [[ "$jq_bin" == */* ]]; then
   [ -x "$jq_bin" ] || { echo 'jq is required' >&2; exit 2; }
 else
   command -v "$jq_bin" >/dev/null 2>&1 || { echo 'jq is required' >&2; exit 2; }
+fi
+
+if [[ "$git_bin" == */* ]]; then
+  [ -x "$git_bin" ] || { echo 'git is required' >&2; exit 2; }
+else
+  command -v "$git_bin" >/dev/null 2>&1 || { echo 'git is required' >&2; exit 2; }
 fi
 
 repository_path=$(cd "$repository" && pwd -P)
@@ -32,18 +39,59 @@ link_tofu() {
     *.[Tt][Oo][Ff][Uu]) ;;
     *) return ;;
   esac
+  [ ! -L "$repository_path/$file" ] || return 0
   tofu_count=$((tofu_count + 1))
   ln -s "$repository_path/$file" "$tofu_links/$tofu_count.tf"
 }
 
-if git -C "$repository_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+git_probe="$tofu_links/git-probe"
+git_probe_error="$tofu_links/git-probe-error"
+set +e
+LC_ALL=C "$git_bin" -C "$repository_path" rev-parse --is-inside-work-tree >"$git_probe" 2>"$git_probe_error"
+git_probe_exit=$?
+set -e
+git_repository=0
+if [ "$git_probe_exit" -eq 0 ]; then
+  if [ "$(<"$git_probe")" != true ]; then
+    echo 'git rev-parse returned an unexpected result' >&2
+    exit 2
+  fi
+  git_repository=1
+else
+  git_probe_diagnostic=$(<"$git_probe_error")
+  if [ "$git_probe_exit" -ne 128 ] || [[ "$git_probe_diagnostic" != 'fatal: not a git repository'* ]]; then
+    printf '%s\n' "$git_probe_diagnostic" >&2
+    exit "$git_probe_exit"
+  fi
+fi
+
+if [ "$git_repository" -eq 1 ]; then
+  git_files="$tofu_links/git-files"
+  git_files_error="$tofu_links/git-files-error"
+  set +e
+  "$git_bin" -C "$repository_path" ls-files --cached --others --exclude-standard -z >"$git_files" 2>"$git_files_error"
+  git_files_exit=$?
+  set -e
+  if [ "$git_files_exit" -ne 0 ]; then
+    cat "$git_files_error" >&2
+    exit "$git_files_exit"
+  fi
   while IFS= read -r -d '' file; do
     link_tofu "$file"
-  done < <(git -C "$repository_path" ls-files --cached --others --exclude-standard -z)
+  done <"$git_files"
 else
+  find_files="$tofu_links/find-files"
+  set +e
+  find "$repository_path" -type f -iname '*.tofu' -print0 >"$find_files"
+  find_files_exit=$?
+  set -e
+  if [ "$find_files_exit" -ne 0 ]; then
+    echo 'find failed while listing OpenTofu files' >&2
+    exit "$find_files_exit"
+  fi
   while IFS= read -r -d '' file; do
     link_tofu "${file#"$repository_path"/}"
-  done < <(find "$repository_path" -type f -iname '*.tofu' -print0)
+  done <"$find_files"
 fi
 
 {

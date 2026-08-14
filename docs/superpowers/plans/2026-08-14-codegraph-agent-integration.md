@@ -192,7 +192,8 @@ echo ok
 
 Le test crée son faux `tokei` dans un répertoire temporaire et ajoute six limites réelles de 500
 fichiers : Razor, OpenTofu et CommonJS activent ; `.hcl` générique, YAML et XML n'activent pas.
-Aucun fixture volumineux n'est versionné.
+Il refuse aussi de lire un symlink OpenTofu externe et simule les erreurs `git rev-parse` et
+`git ls-files`. Aucun fixture volumineux n'est versionné.
 
 - [ ] **Étape 2 : exécuter le test et observer RED**
 
@@ -212,6 +213,7 @@ Créer `.agents/skills/codegraph/scripts/measure_repository.sh` avec les propri�
 - compter Razor, OpenTofu et CommonJS, sans compter `.hcl` générique ni les formats de données YAML
   et XML ;
 - compléter `.tofu` par des symlinks temporaires `.tf`, Tokei ne connaissant pas cette extension ;
+- ignorer les `.tofu` eux-mêmes symlinkés et propager toute erreur de découverte Git ou `find` ;
 - respecter Git et les exclusions de dépendances, sorties générées, documentation et fixtures ;
 - retourner `{loc, files, initialize}` avec `initialize` vrai à 50 000 lignes ou 500 fichiers.
 

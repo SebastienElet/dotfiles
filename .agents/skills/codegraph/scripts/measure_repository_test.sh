@@ -106,6 +106,43 @@ xml=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/xml")
 [ "$(printf '%s' "$xml" | jq -r .files)" = "0" ]
 [ "$(printf '%s' "$xml" | jq -r .initialize)" = "false" ]
 
+symlink_repository="$tmp/symlink-repository"
+mkdir -p "$symlink_repository"
+printf 'resource "external" "private" {}\n' >"$tmp/external.tofu"
+ln -s "$tmp/external.tofu" "$symlink_repository/external.tofu"
+git -C "$symlink_repository" init -q
+git -C "$symlink_repository" add external.tofu
+symlink=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$symlink_repository")
+[ "$(printf '%s' "$symlink" | jq -r .files)" = "0" ]
+[ "$(printf '%s' "$symlink" | jq -r .loc)" = "0" ]
+
+fake_git="$tmp/git"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'if [ "${CODEGRAPH_GIT_FAILURE:-}" = rev-parse ] && [[ " $* " == *" rev-parse "* ]]; then echo "rev-parse operational failure" >&2; exit 7; fi' \
+  'if [ "${CODEGRAPH_GIT_FAILURE:-}" = ls-files ] && [[ " $* " == *" ls-files "* ]]; then printf "src/partial.tofu\\0"; echo "ls-files operational failure" >&2; exit 7; fi' \
+  'exec "$CODEGRAPH_REAL_GIT" "$@"' >"$fake_git"
+chmod +x "$fake_git"
+mkdir -p "$tmp/git-errors/src" "$tmp/git-errors/ignored"
+printf 'resource "partial" "fixture" {}\n' >"$tmp/git-errors/src/partial.tofu"
+printf 'ignored/\n' >"$tmp/git-errors/.gitignore"
+for number in {1..500}; do
+  printf 'resource "ignored" "fixture_%s" {}\n' "$number" >"$tmp/git-errors/ignored/$number.tofu"
+done
+git -C "$tmp/git-errors" init -q
+
+for failure in rev-parse ls-files; do
+  if CODEGRAPH_GIT_BIN="$fake_git" \
+    CODEGRAPH_GIT_FAILURE="$failure" \
+    CODEGRAPH_REAL_GIT="$(command -v git)" \
+    CODEGRAPH_TOKEI_BIN=tokei \
+    "$measure" "$tmp/git-errors" 2>"$tmp/error"; then
+    exit 1
+  fi
+  rg -qF "$failure operational failure" "$tmp/error"
+done
+
 if CODEGRAPH_TOKEI_BIN="$tmp/missing" "$measure" "$tmp/repository" 2>"$tmp/error"; then
   exit 1
 fi
