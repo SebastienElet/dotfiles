@@ -747,11 +747,15 @@ ${BREW_BIN}/starship:
 	fi
 
 .PHONY: tmux
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
 ~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
 	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
+~/.tmux/plugins:
+	mkdir -p $@
+~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins
+	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 .PHONY: brew
 brew: ${BREW_BIN}/brew
