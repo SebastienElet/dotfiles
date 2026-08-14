@@ -37,6 +37,10 @@ if [ -e "$cursor_config" ] && ! jq -s -e '
 fi
 
 for config in "$claude_config" "$codex_config"; do
+  if [ -L "$config" ]; then
+    echo "agent config must not be a symlink: $config" >&2
+    exit 2
+  fi
   if [ -e "$config" ] && [ ! -f "$config" ]; then
     echo "agent config is not a regular file: $config" >&2
     exit 2
@@ -78,17 +82,36 @@ finish() {
 }
 trap finish EXIT
 
-"$codegraph_bin" telemetry off
-
+claude_registered=0
 if "$claude_bin" mcp get codegraph >"$transaction/claude-get" 2>&1; then
-  "$claude_bin" mcp remove --scope user codegraph
+  claude_registered=1
 else
   claude_get_exit=$?
   claude_get_error=$(<"$transaction/claude-get")
-  if [ "$claude_get_exit" -ne 1 ] || [[ "$claude_get_error" != *'No MCP server named "codegraph".'* ]]; then
+  claude_absent='No MCP server named "codegraph".'
+  claude_absent_pending='No MCP server named "codegraph". .mcp.json servers are awaiting approval — run `claude` in this directory to review them.'
+  if [ "$claude_get_exit" -ne 1 ] || { [ "$claude_get_error" != "$claude_absent" ] && [ "$claude_get_error" != "$claude_absent_pending" ]; }; then
     printf '%s\n' "$claude_get_error" >&2
     exit "$claude_get_exit"
   fi
+fi
+
+codex_registered=0
+if "$codex_bin" mcp get --json codegraph >"$transaction/codex-get" 2>&1; then
+  codex_registered=1
+else
+  codex_get_exit=$?
+  codex_get_error=$(<"$transaction/codex-get")
+  if [ "$codex_get_exit" -ne 1 ] || [ "$codex_get_error" != "Error: No MCP server named 'codegraph' found." ]; then
+    printf '%s\n' "$codex_get_error" >&2
+    exit "$codex_get_exit"
+  fi
+fi
+
+"$codegraph_bin" telemetry off
+
+if [ "$claude_registered" -eq 1 ]; then
+  "$claude_bin" mcp remove --scope user codegraph
 fi
 "$claude_bin" mcp add --scope user codegraph \
   -e CODEGRAPH_TELEMETRY=0 \
@@ -96,15 +119,8 @@ fi
   -e CODEGRAPH_NO_DOWNLOAD=1 \
   -- "$codegraph_bin" serve --mcp
 
-if "$codex_bin" mcp get --json codegraph >"$transaction/codex-get" 2>&1; then
+if [ "$codex_registered" -eq 1 ]; then
   "$codex_bin" mcp remove codegraph
-else
-  codex_get_exit=$?
-  codex_get_error=$(<"$transaction/codex-get")
-  if [ "$codex_get_exit" -ne 1 ] || [[ "$codex_get_error" != *"No MCP server named 'codegraph' found."* ]]; then
-    printf '%s\n' "$codex_get_error" >&2
-    exit "$codex_get_exit"
-  fi
 fi
 "$codex_bin" mcp add codegraph \
   --env CODEGRAPH_TELEMETRY=0 \

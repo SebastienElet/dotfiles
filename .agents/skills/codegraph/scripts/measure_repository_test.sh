@@ -71,22 +71,40 @@ real=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$real_repository")
 [ "$(printf '%s' "$real" | jq -r .files)" = "1" ]
 
 extension_repository="$tmp/extensions"
-mkdir -p "$extension_repository/razor" "$extension_repository/tofu" "$extension_repository/hcl"
+mkdir -p \
+  "$extension_repository/razor" \
+  "$extension_repository/tofu" \
+  "$extension_repository/cjs" \
+  "$extension_repository/hcl" \
+  "$extension_repository/yaml" \
+  "$extension_repository/xml"
 for number in {1..500}; do
   printf '@page "/%s"\n' "$number" >"$extension_repository/razor/$number.razor"
   printf 'resource "fixture" "item_%s" {}\n' "$number" >"$extension_repository/tofu/$number.tofu"
+  printf 'exports.fixture%s = true;\n' "$number" >"$extension_repository/cjs/$number.cjs"
   printf 'fixture_%s = true\n' "$number" >"$extension_repository/hcl/$number.hcl"
+  printf 'fixture_%s: true\n' "$number" >"$extension_repository/yaml/$number.yaml"
+  printf '<fixture id="%s" />\n' "$number" >"$extension_repository/xml/$number.xml"
 done
 git -C "$extension_repository" init -q
 razor=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/razor")
 tofu=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/tofu")
+cjs=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/cjs")
 hcl=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/hcl")
+yaml=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/yaml")
+xml=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/xml")
 [ "$(printf '%s' "$razor" | jq -r .files)" = "500" ]
 [ "$(printf '%s' "$razor" | jq -r .initialize)" = "true" ]
 [ "$(printf '%s' "$tofu" | jq -r .files)" = "500" ]
 [ "$(printf '%s' "$tofu" | jq -r .initialize)" = "true" ]
+[ "$(printf '%s' "$cjs" | jq -r .files)" = "500" ]
+[ "$(printf '%s' "$cjs" | jq -r .initialize)" = "true" ]
 [ "$(printf '%s' "$hcl" | jq -r .files)" = "0" ]
 [ "$(printf '%s' "$hcl" | jq -r .initialize)" = "false" ]
+[ "$(printf '%s' "$yaml" | jq -r .files)" = "0" ]
+[ "$(printf '%s' "$yaml" | jq -r .initialize)" = "false" ]
+[ "$(printf '%s' "$xml" | jq -r .files)" = "0" ]
+[ "$(printf '%s' "$xml" | jq -r .initialize)" = "false" ]
 
 if CODEGRAPH_TOKEI_BIN="$tmp/missing" "$measure" "$tmp/repository" 2>"$tmp/error"; then
   exit 1

@@ -4,7 +4,7 @@ set -euo pipefail
 repository=${1:-.}
 tokei_bin=${CODEGRAPH_TOKEI_BIN:-tokei}
 jq_bin=${CODEGRAPH_JQ_BIN:-jq}
-types='Ark TypeScript,Astro,C,C Header,C#,COBOL,ColdFusion,ColdFusion CFScript,C++,C++ Header,C++ Module,CUDA,Dart,Erlang,Go,HCL,Java,JavaScript,JSX,Kotlin,Liquid,Lua,Metal Shading Language,Nix,Objective-C,Objective-C++,Pascal,PHP,Python,R,Razor,Ruby,Rust,Scala,Solidity,Svelte,Swift,TSX,Twig,TypeScript,Visual Basic,Vue,XML,YAML'
+types='Ark TypeScript,Astro,C,C Header,C#,COBOL,ColdFusion,ColdFusion CFScript,C++,C++ Header,C++ Module,CUDA,Dart,Erlang,Go,HCL,Java,JavaScript,JSX,Kotlin,Liquid,Lua,Metal Shading Language,Nix,Objective-C,Objective-C++,Pascal,PHP,Python,R,Razor,Ruby,Rust,Scala,Solidity,Svelte,Swift,TSX,TypeScript,Visual Basic,Vue'
 
 if [[ "$tokei_bin" == */* ]]; then
   [ -x "$tokei_bin" ] || { echo 'tokei is required' >&2; exit 2; }
@@ -72,7 +72,7 @@ fi
 } | "$jq_bin" -sc '
     [
       .[]
-      | select(.stats.name | test("\\.(astro|c|cc|cbl|cob|cobol|cfc|cfm|cfs|cpp|cpy|cs|cshtml|cts|cu|cuh|cxx|dart|dfm|dpk|dpr|erl|escript|ets|fmx|go|h|hpp|hrl|hxx|inc|install|java|js|jsx|kt|kts|liquid|lpr|lua|luau|m|metal|mjs|mm|module|mts|nix|pas|php|properties|py|pyw|r|rake|razor|rb|rs|sc|scala|sol|svelte|swift|tf|tfvars|theme|ts|tsx|twig|vb|vue|xml|xsjs|xsjslib|yaml|yml)$"; "i"))
+      | select(.stats.name | test("\\.(astro|c|cc|cbl|cob|cobol|cfc|cfm|cfs|cjs|cpp|cpy|cs|cshtml|cts|cu|cuh|cxx|dart|dfm|dpk|dpr|erl|escript|ets|fmx|go|h|hpp|hrl|hxx|inc|install|java|js|jsx|kt|kts|liquid|lpr|lua|luau|m|metal|mjs|mm|module|mts|nix|pas|php|py|pyw|r|rake|razor|rb|rs|sc|scala|sol|svelte|swift|tf|tfvars|theme|ts|tsx|vb|vue|xsjs|xsjslib)$"; "i"))
     ] as $source
     | ([$source[] | .stats.stats.code // 0] | add // 0) as $loc
     | ($source | length) as $files

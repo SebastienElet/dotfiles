@@ -190,9 +190,9 @@ rg -F 'jq is required' "$tmp/error"
 echo ok
 ```
 
-Le test crée son faux `tokei` dans un répertoire temporaire et ajoute trois limites réelles de 500
-fichiers : Razor et OpenTofu activent, `.hcl` générique n'active pas. Aucun fixture volumineux n'est
-versionné.
+Le test crée son faux `tokei` dans un répertoire temporaire et ajoute six limites réelles de 500
+fichiers : Razor, OpenTofu et CommonJS activent ; `.hcl` générique, YAML et XML n'activent pas.
+Aucun fixture volumineux n'est versionné.
 
 - [ ] **Étape 2 : exécuter le test et observer RED**
 
@@ -209,7 +209,8 @@ Créer `.agents/skills/codegraph/scripts/measure_repository.sh` avec les propri�
 - produire les enregistrements fichier par fichier avec `tokei --streaming json` ;
 - filtrer les extensions sur la carte canonique de CodeGraph 1.5.0 plutôt que sur les catégories
   plus larges de Tokei ;
-- compter Razor et OpenTofu, sans compter un `.hcl` générique ;
+- compter Razor, OpenTofu et CommonJS, sans compter `.hcl` générique ni les formats de données YAML
+  et XML ;
 - compléter `.tofu` par des symlinks temporaires `.tf`, Tokei ne connaissant pas cette extension ;
 - respecter Git et les exclusions de dépendances, sorties générées, documentation et fixtures ;
 - retourner `{loc, files, initialize}` avec `initialize` vrai à 50 000 lignes ou 500 fichiers.
@@ -475,6 +476,9 @@ Créer `scripts/codegraph_configure` avec les propriétés suivantes :
 - utiliser la grammaire réelle `claude mcp add --scope user codegraph -e … -- BINAIRE serve --mcp` ;
 - utiliser `codex mcp add codegraph --env … -- BINAIRE serve --mcp` ;
 - préserver les autres serveurs Cursor par une écriture JSON atomique ;
+- refuser les symlinks normaux et cassés pour les configurations natives des trois agents ;
+- distinguer une absence de serveur d'une défaillance native par égalité avec les diagnostics
+  connus, avant toute mutation MCP ;
 - sauvegarder les configurations Claude et Codex, puis les restaurer octet pour octet si une étape
   ultérieure échoue.
 
