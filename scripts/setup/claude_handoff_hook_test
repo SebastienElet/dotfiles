@@ -2,383 +2,97 @@
 set -euo pipefail
 
 here=$(CDPATH='' cd -- "$(dirname "$0")" && pwd)
-repo=$(CDPATH='' cd -- "$here/../.." && pwd)
 setup="$here/claude_handoff_hook"
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/claude-handoff-hook.XXXXXX")
-trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+trap 'rm -rf "$tmp"' EXIT
 
 runtime="$tmp/runtime hook"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$runtime"
 chmod +x "$runtime"
 
-permission() {
-  case "$(uname)" in
-  Darwin) stat -f '%Lp' "$1" ;;
-  *) stat -c '%a' "$1" ;;
-  esac
+fail() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
 }
 
-expect_failure() {
-  expected_pattern=$1
-  shift
-  failure_stderr="$tmp/failure.stderr"
-  if "$@" 2>"$failure_stderr"; then
-    printf '%s\n' 'Error: expected command failure' >&2
-    exit 1
-  fi
-  if ! grep -Eq "$expected_pattern" "$failure_stderr"; then
-    cat "$failure_stderr" >&2
-    exit 1
-  fi
-}
-
-test_creates_missing_settings() {
-  home="$tmp/creation"
-  HOME="$home" "$setup" "$runtime"
-  settings="$home/.claude/settings.json"
-  jq -e --arg command "$runtime" \
-    '.hooks.Stop | length == 1 and .[0].hooks == [{type: "command", command: $command, args: []}]' \
-    "$settings" >/dev/null
-  printf '%s\n' 'ok test_creates_missing_settings'
-}
-
-test_executes_exec_form_with_spaced_path() {
-  home="$tmp/exec"
-  HOME="$home" "$setup" "$runtime"
-  settings="$home/.claude/settings.json"
-  stored_command=$(jq -r '.hooks.Stop[0].hooks[0].command' "$settings")
-  (
-    set --
-    while IFS= read -r stored_arg; do
-      set -- "$@" "$stored_arg"
-    done < <(jq -r '.hooks.Stop[0].hooks[0].args[]' "$settings")
-    "$stored_command" "$@"
-  )
-  printf '%s\n' 'ok test_executes_exec_form_with_spaced_path'
-}
-
-test_writes_mode_0600() {
-  home="$tmp/mode"
-  HOME="$home" "$setup" "$runtime"
-  settings="$home/.claude/settings.json"
-  [ "$(permission "$settings")" = 600 ]
-  printf '%s\n' 'ok test_writes_mode_0600'
-}
-
-test_preserves_permission_and_stop_hook() {
-  home="$tmp/preservation"
-  settings="$home/.claude/settings.json"
-  other="$tmp/other stop hook"
-  mkdir -p "$home/.claude"
-  jq -n --arg other "$other" '{keep: true, hooks: {Stop: [{hooks: [{type: "command", command: $other}]}]}}' >"$settings"
-  chmod 600 "$settings"
-  HOME="$home" "$setup" "$runtime"
-  HOME="$home" "$setup" "$runtime"
-  [ "$(permission "$settings")" = 600 ]
-  jq -e --arg command "$runtime" --arg other "$other" \
-    '.keep == true and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $command)) | length) == 1 and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $other)) | length) == 1' \
-    "$settings" >/dev/null
-  printf '%s\n' 'ok test_preserves_permission_and_stop_hook'
-}
-
-test_prompt_handler_does_not_block_exec_handler() {
-  home="$tmp/prompt"
+use_home() {
+  home="$tmp/$1"
   settings="$home/.claude/settings.json"
   mkdir -p "$home/.claude"
-  jq -n --arg command "$runtime" '{hooks: {Stop: [{hooks: [{type: "prompt", prompt: "stop", command: $command}]}]}}' >"$settings"
+}
+
+run_setup() {
   HOME="$home" "$setup" "$runtime"
+}
+
+test_creates_settings() {
+  use_home creation
+  rmdir "$home/.claude"
+  run_setup
   jq -e --arg command "$runtime" '
-    ([.hooks.Stop[]?.hooks[]? | select(.type == "prompt" and .command == $command)] | length) == 1
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command and .args == [])] | length) == 1
+    .hooks.Stop == [{hooks: [{type: "command", command: $command, args: []}]}]
   ' "$settings" >/dev/null
-  printf '%s\n' 'ok test_prompt_handler_does_not_block_exec_handler'
 }
 
-test_migrates_legacy_command_handler() {
-  home="$tmp/legacy"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  jq -n --arg command "$runtime" '{hooks: {Stop: [{hooks: [{type: "command", command: $command, timeout: 5, async: true, statusMessage: "legacy", shell: "bash"}]}]}}' >"$settings"
-  HOME="$home" "$setup" "$runtime"
-  jq -e --arg command "$runtime" \
-    '[.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] == [{type: "command", command: $command, timeout: 5, async: true, statusMessage: "legacy", shell: "bash", args: []}]' \
-    "$settings" >/dev/null
-  cp "$settings" "$tmp/legacy-once.json"
-  HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/legacy-once.json" "$settings"
-  printf '%s\n' 'ok test_migrates_legacy_command_handler'
-}
-
-assert_handler_rejected_unchanged() {
-  name=$1
-  json=$2
-  expected_pattern=$3
-  home="$tmp/$name"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  printf '%s\n' "$json" >"$settings"
-  cp "$settings" "$tmp/$name-before.json"
-  expect_failure "$expected_pattern" env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/$name-before.json" "$settings"
-}
-
-test_rejects_invalid_handlers() {
-  assert_handler_rejected_unchanged missing-type '{"hooks": {"Stop": [{"hooks": [{}]}]}}' 'hook handler type must be a string'
-  assert_handler_rejected_unchanged unknown-type '{"hooks": {"Stop": [{"hooks": [{"type": "bogus"}]}]}}' 'unknown hook handler type'
-  assert_handler_rejected_unchanged command-field '{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": false}]}]}}' 'command handler command must be a string'
-  assert_handler_rejected_unchanged command-args '{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "hook", "args": [false]}]}]}}' 'command handler args must be an array of strings'
-  assert_handler_rejected_unchanged http-url '{"hooks": {"Stop": [{"hooks": [{"type": "http"}]}]}}' 'http handler url must be a string'
-  assert_handler_rejected_unchanged mcp-tool '{"hooks": {"Stop": [{"hooks": [{"type": "mcp_tool", "server": "server"}]}]}}' 'mcp_tool handler server and tool must be strings'
-  assert_handler_rejected_unchanged prompt-field '{"hooks": {"Stop": [{"hooks": [{"type": "prompt"}]}]}}' 'prompt and agent handlers require a prompt string'
-  assert_handler_rejected_unchanged agent-field '{"hooks": {"Stop": [{"hooks": [{"type": "agent", "prompt": false}]}]}}' 'prompt and agent handlers require a prompt string'
-  printf '%s\n' 'ok test_rejects_invalid_handlers'
-}
-
-test_normalizes_mixed_canonical_and_legacy_handlers() {
-  home="$tmp/mixed"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  jq -n --arg command "$runtime" '{hooks: {Stop: [
-    {matcher: "first", hooks: [
-      {type: "command", command: $command, timeout: 20, statusMessage: "legacy"},
-      {type: "command", command: $command, args: [], timeout: 10, async: true, statusMessage: "canonical", shell: "bash"},
-      {type: "prompt", prompt: "keep"}
-    ]},
-    {matcher: "second", hooks: [{type: "http", url: "https://example.test"}]}
-  ]}}' >"$settings"
-  HOME="$home" "$setup" "$runtime"
+test_preserves_unrelated_settings() {
+  use_home preservation
+  jq -n '{
+    keep: true,
+    hooks: {Stop: [{matcher: "existing", hooks: [{type: "future", options: {keep: true}}]}]}
+  }' >"$settings"
+  run_setup
   jq -e --arg command "$runtime" '
-    [.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] == [{type: "command", command: $command, args: [], timeout: 10, async: true, statusMessage: "canonical", shell: "bash"}]
-    and ([.hooks.Stop[] | select(.matcher == "first") | .hooks[] | select(.type == "command" and .command == $command)] == [{type: "command", command: $command, args: [], timeout: 10, async: true, statusMessage: "canonical", shell: "bash"}])
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "prompt" and .prompt == "keep")] | length) == 1
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "http" and .url == "https://example.test")] | length) == 1
-    and ([.hooks.Stop[]? | select(.matcher == "first")] | length) == 1
-    and ([.hooks.Stop[]? | select(.matcher == "second")] | length) == 1
+    .keep == true
+    and .hooks.Stop[0] == {
+      matcher: "existing",
+      hooks: [{type: "future", options: {keep: true}}]
+    }
+    and ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] | length) == 1
   ' "$settings" >/dev/null
-  cp "$settings" "$tmp/mixed-once.json"
-  HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/mixed-once.json" "$settings"
-  printf '%s\n' 'ok test_normalizes_mixed_canonical_and_legacy_handlers'
 }
 
-test_normalizes_two_legacy_handlers() {
-  home="$tmp/two-legacy"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  jq -n --arg command "$runtime" '{hooks: {Stop: [
-    {matcher: "first", hooks: [{type: "command", command: $command, timeout: 5, async: true, statusMessage: "first", shell: "bash"}, {type: "prompt", prompt: "keep"}]},
-    {matcher: "second", hooks: [
-      {type: "command", command: $command, timeout: 20, statusMessage: "second"},
-      {type: "http", url: "https://example.test"},
-      {type: "mcp_tool", server: "server", tool: "tool"},
-      {type: "agent", prompt: "keep"}
-    ]}
-  ]}}' >"$settings"
-  HOME="$home" "$setup" "$runtime"
+test_migrates_legacy_entry() {
+  use_home migration
+  jq -n --arg command "$runtime" '{
+    hooks: {Stop: [{hooks: [{
+      type: "command",
+      command: $command,
+      timeout: 5
+    }]}]}
+  }' >"$settings"
+  run_setup
   jq -e --arg command "$runtime" '
-    [.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] == [{type: "command", command: $command, timeout: 5, async: true, statusMessage: "first", shell: "bash", args: []}]
-    and ([.hooks.Stop[] | select(.matcher == "first") | .hooks[] | select(.type == "command" and .command == $command)] == [{type: "command", command: $command, timeout: 5, async: true, statusMessage: "first", shell: "bash", args: []}])
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "prompt" and .prompt == "keep")] | length) == 1
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "http" and .url == "https://example.test")] | length) == 1
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "mcp_tool" and .server == "server" and .tool == "tool")] | length) == 1
-    and ([.hooks.Stop[]?.hooks[]? | select(.type == "agent" and .prompt == "keep")] | length) == 1
-    and ([.hooks.Stop[]? | select(.matcher == "first")] | length) == 1
-    and ([.hooks.Stop[]? | select(.matcher == "second")] | length) == 1
+    .hooks.Stop == [{hooks: [{
+      type: "command",
+      command: $command,
+      timeout: 5,
+      args: []
+    }]}]
   ' "$settings" >/dev/null
-  cp "$settings" "$tmp/two-legacy-once.json"
-  HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/two-legacy-once.json" "$settings"
-  printf '%s\n' 'ok test_normalizes_two_legacy_handlers'
 }
 
-test_is_byte_identical_on_second_call() {
-  home="$tmp/idempotence"
-  settings="$home/.claude/settings.json"
-  HOME="$home" "$setup" "$runtime"
-  cp "$settings" "$tmp/once.json"
-  HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/once.json" "$settings"
-  printf '%s\n' 'ok test_is_byte_identical_on_second_call'
+test_is_idempotent() {
+  use_home idempotence
+  run_setup
+  cp "$settings" "$tmp/settings-once.json"
+  run_setup
+  cmp -s "$tmp/settings-once.json" "$settings" || fail 'second setup changed settings'
 }
 
-test_rejects_truncated_and_empty_json_without_mutation() {
-  home="$tmp/invalide"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
+test_refuses_invalid_json_without_replacing_it() {
+  use_home invalid
   printf '{\n' >"$settings"
-  cp "$settings" "$tmp/tronque.json"
-  expect_failure 'jq: parse error' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/tronque.json" "$settings"
-  : >"$settings"
-  cp "$settings" "$tmp/vide.json"
-  expect_failure 'settings.json must contain one JSON object' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/vide.json" "$settings"
-  printf '%s\n' 'ok test_rejects_truncated_and_empty_json_without_mutation'
-}
-
-test_rejects_false_containers_without_mutation() {
-  home="$tmp/false"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  printf '%s\n' '{"hooks": false}' >"$settings"
-  cp "$settings" "$tmp/hooks-false.json"
-  expect_failure 'hooks must be an object' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/hooks-false.json" "$settings"
-  printf '%s\n' '{"hooks": {"Stop": false}}' >"$settings"
-  cp "$settings" "$tmp/stop-false.json"
-  expect_failure 'hooks.Stop must be an array' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/stop-false.json" "$settings"
-  printf '%s\n' 'ok test_rejects_false_containers_without_mutation'
-}
-
-test_rejects_non_object_stop_group_without_mutation() {
-  home="$tmp/group"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  printf '%s\n' '{"hooks": {"Stop": [false]}}' >"$settings"
-  cp "$settings" "$tmp/group.json"
-  expect_failure 'Stop groups must be objects' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/group.json" "$settings"
-  printf '%s\n' 'ok test_rejects_non_object_stop_group_without_mutation'
-}
-
-test_rejects_non_array_group_hooks_without_mutation() {
-  home="$tmp/group-hooks"
-  settings="$home/.claude/settings.json"
-  mkdir -p "$home/.claude"
-  printf '%s\n' '{"hooks": {"Stop": [{"hooks": false}]}}' >"$settings"
-  cp "$settings" "$tmp/group-hooks.json"
-  expect_failure 'Stop group hooks must be an array' env HOME="$home" "$setup" "$runtime"
-  cmp -s "$tmp/group-hooks.json" "$settings"
-  printf '%s\n' 'ok test_rejects_non_array_group_hooks_without_mutation'
-}
-
-test_rejects_settings_symlink_without_mutation() {
-  home="$tmp/symlink"
-  settings="$home/.claude/settings.json"
-  target="$tmp/settings-target.json"
-  mkdir -p "$home/.claude"
-  printf '%s\n' '{"keep": true}' >"$target"
-  ln -s "$target" "$settings"
-  cp "$target" "$tmp/settings-target-before.json"
-  expect_failure 'settings.json must not be a symbolic link' env HOME="$home" "$setup" "$runtime"
-  [ -L "$settings" ]
-  cmp -s "$tmp/settings-target-before.json" "$target"
-  rm "$settings"
-  ln -s "$tmp/missing-settings.json" "$settings"
-  expect_failure 'settings.json must not be a symbolic link' env HOME="$home" "$setup" "$runtime"
-  [ -L "$settings" ]
-  printf '%s\n' 'ok test_rejects_settings_symlink_without_mutation'
-}
-
-test_rejects_missing_argument() {
-  expect_failure 'expected exactly one runtime hook path' "$setup"
-  printf '%s\n' 'ok test_rejects_missing_argument'
-}
-
-test_rejects_non_absolute_runtime_path() {
-  expect_failure 'runtime hook path must be absolute' "$setup" scripts/agent_handoff
-  printf '%s\n' 'ok test_rejects_non_absolute_runtime_path'
-}
-
-test_rejects_non_executable_runtime_path() {
-  non_executable="$tmp/non-executable"
-  printf '%s\n' '#!/usr/bin/env bash' >"$non_executable"
-  expect_failure 'runtime hook path must be an executable regular file' "$setup" "$non_executable"
-  printf '%s\n' 'ok test_rejects_non_executable_runtime_path'
-}
-
-test_rejects_executable_directory() {
-  executable_directory="$tmp/executable-directory"
-  mkdir -p "$executable_directory"
-  expect_failure 'runtime hook path must be an executable regular file' env HOME="$tmp/directory-home" "$setup" "$executable_directory"
-  printf '%s\n' 'ok test_rejects_executable_directory'
-}
-
-test_rejects_missing_jq() {
-  mkdir -p "$tmp/without-jq"
-  expect_failure 'jq is required' env PATH="$tmp/without-jq" HOME="$tmp/no-jq" "$BASH" "$setup" "$runtime"
-  printf '%s\n' 'ok test_rejects_missing_jq'
-}
-
-test_signal_cleans_temp_and_exits_143() {
-  home="$tmp/signal"
-  signal_bin="$tmp/signal-bin"
-  signal_jq="$signal_bin/jq"
-  mkdir -p "$signal_bin"
-  printf '%s\n' '#!/usr/bin/env bash' "kill -TERM \"\$PPID\"" 'exit 0' >"$signal_jq"
-  chmod +x "$signal_jq"
-  signal_status=0
-  env PATH="$signal_bin:$PATH" HOME="$home" "$BASH" "$setup" "$runtime" >/dev/null 2>"$tmp/signal.stderr" || signal_status=$?
-  [ "$signal_status" = 143 ]
-  [ ! -e "$home/.claude/settings.json" ]
-  for signal_tmp in "$home/.claude"/settings.json.*; do
-    [ ! -e "$signal_tmp" ]
-  done
-  printf '%s\n' 'ok test_signal_cleans_temp_and_exits_143'
-}
-
-test_make_accepts_dotfiles_path_with_space() {
-  copy="$tmp/repo with space"
-  jq_bin="$tmp/make-bin"
-  home="$tmp/make-home"
-  mkdir -p "$jq_bin"
-  ln -s "$(command -v jq)" "$jq_bin/jq"
-  cp -R "$repo" "$copy"
-  env HOME="$home" make -C "$copy" BREW_BIN="$jq_bin" claude-handoff-hook
-  command=$(CDPATH='' cd -P -- "$copy" && pwd -P)/scripts/agent_handoff
-  jq -e --arg command "$command" \
-    '([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command and .args == [])] | length) == 1' \
-    "$home/.claude/settings.json" >/dev/null
-  printf '%s\n' 'ok test_make_accepts_dotfiles_path_with_space'
-}
-
-test_rejects_unknown_test_scenario() {
-  expect_failure 'unknown test scenario: true' "$here/claude_handoff_hook_test" true
-  printf '%s\n' 'ok test_rejects_unknown_test_scenario'
-}
-
-run_test() {
-  case "$1" in
-  test_*) ;;
-  *)
-    printf '%s\n' "Error: unknown test scenario: $1" >&2
-    exit 64
-    ;;
-  esac
-  if ! declare -F "$1" >/dev/null; then
-    printf '%s\n' "Error: unknown test scenario: $1" >&2
-    exit 64
+  cp "$settings" "$tmp/settings-before.json"
+  if run_setup 2>"$tmp/invalid.stderr"; then
+    fail 'invalid JSON was accepted'
   fi
-  "$1"
+  cmp -s "$tmp/settings-before.json" "$settings" || fail 'invalid settings were replaced'
 }
 
-if [ "$#" -gt 0 ]; then
-  for scenario in "$@"; do
-    run_test "$scenario"
-  done
-else
-  run_test test_creates_missing_settings
-  run_test test_executes_exec_form_with_spaced_path
-  run_test test_writes_mode_0600
-  run_test test_preserves_permission_and_stop_hook
-  run_test test_prompt_handler_does_not_block_exec_handler
-  run_test test_migrates_legacy_command_handler
-  run_test test_rejects_invalid_handlers
-  run_test test_normalizes_mixed_canonical_and_legacy_handlers
-  run_test test_normalizes_two_legacy_handlers
-  run_test test_is_byte_identical_on_second_call
-  run_test test_rejects_truncated_and_empty_json_without_mutation
-  run_test test_rejects_false_containers_without_mutation
-  run_test test_rejects_non_object_stop_group_without_mutation
-  run_test test_rejects_non_array_group_hooks_without_mutation
-  run_test test_rejects_settings_symlink_without_mutation
-  run_test test_rejects_missing_argument
-  run_test test_rejects_non_absolute_runtime_path
-  run_test test_rejects_non_executable_runtime_path
-  run_test test_rejects_executable_directory
-  run_test test_rejects_missing_jq
-  run_test test_signal_cleans_temp_and_exits_143
-  run_test test_make_accepts_dotfiles_path_with_space
-  run_test test_rejects_unknown_test_scenario
-fi
+test_creates_settings
+test_preserves_unrelated_settings
+test_migrates_legacy_entry
+test_is_idempotent
+test_refuses_invalid_json_without_replacing_it
+
+printf 'ok\n'

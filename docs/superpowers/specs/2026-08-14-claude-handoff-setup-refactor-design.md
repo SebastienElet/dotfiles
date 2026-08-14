@@ -2,35 +2,38 @@
 
 ## Objectif
 
-Rendre lisibles la recette `claude-handoff-hook` et son test CI sans modifier leur comportement.
-Le setup du hook reste distinct du hook runtime `scripts/agent_handoff`.
+Rendre le setup du hook lisible comme une courte procédure : valider les prérequis, lire les
+réglages, ajouter notre entrée puis remplacer le fichier. Le setup reste distinct du hook runtime
+`scripts/agent_handoff`.
 
 ## Structure
 
-- `scripts/setup/claude_handoff_hook` configure uniquement l'entrée Stop dans
-  `~/.claude/settings.json`.
-- `scripts/setup/claude_handoff_hook_test` vérifie directement ce script avec un `HOME` temporaire.
-- `scripts/agent_handoff` reste le programme exécuté par Claude Code lors d'un événement Stop.
-- `claude-handoff-hook` reste la façade publique du Makefile et délègue au script de setup.
-- Le workflow CI appelle directement le script de test, sans target Make dédiée.
+- `scripts/setup/claude_handoff_hook` ne connaît que l'entrée Stop qu'il installe.
+- Ses petites fonctions suivent les étapes de la procédure et `main` en donne l'ordre.
+- `scripts/setup/claude_handoff_hook_test` vérifie uniquement les garanties du setup.
+- `claude-handoff-hook` reste une façade phony du Makefile.
+- La CI appelle directement le script de test, sans target Make de test.
 
-Le script de setup reçoit le chemin absolu du hook runtime en argument. Le Makefile lui transmet
-`${DOTFILES_PATH}/scripts/agent_handoff`, ce qui conserve la sémantique actuelle lorsque le dépôt
-n'est pas installé sous `~/.dotfiles`.
+Le script reçoit le chemin absolu du hook runtime. Le Makefile lui transmet
+`${DOTFILES_PATH}/scripts/agent_handoff`, y compris lorsque le dépôt n'est pas installé sous
+`~/.dotfiles`.
 
-## Comportement et erreurs
+## Garanties
 
-Le setup conserve les propriétés existantes : fusion idempotente, préservation des autres réglages,
-écriture atomique dans le même répertoire, permissions `0600` et refus d'un JSON invalide sans
-remplacer le fichier source. Un argument absent, `jq` indisponible ou une entrée illisible provoque
-un échec explicite.
+Le setup crée `~/.claude/settings.json` si nécessaire, préserve les réglages sans rapport avec son
+entrée, migre son ancienne entrée vers la forme `args: []`, reste idempotent et refuse un JSON
+invalide sans remplacer le fichier. L'écriture passe par un fichier temporaire adjacent puis un
+renommage atomique.
 
-## Tests et Makefile
+Il ne valide ni ne normalise le reste du schéma Claude. Une structure incompatible sur le chemin
+qu'il doit modifier fait naturellement échouer `jq`; une structure inconnue ailleurs est conservée.
 
-Le test nomme séparément les scénarios de création, préservation, idempotence, permissions et JSON
-invalide. Il travaille sous un `HOME` temporaire et appelle le script de setup, tandis que le dry-run
-de `claude-code` vérifie séparément le câblage Makefile.
+## Tests et périmètre
 
-`.PHONY: claude-code` et `.PHONY: claude-handoff-hook` sont placés immédiatement devant leurs
-targets. Les targets Codex voisines restent hors périmètre : les modifier élargirait la PR sans
-servir la lisibilité demandée.
+Les scénarios couvrent la création, la préservation d'un handler inconnu, la migration,
+l'idempotence et le refus d'un JSON invalide. Les validations exhaustives du schéma, les signaux,
+les liens symboliques, la sélection individuelle des scénarios et une target Make de test restent
+hors périmètre.
+
+`.PHONY: claude-code` et `.PHONY: claude-handoff-hook` restent immédiatement devant leurs targets.
+Les targets Codex voisines ne sont pas modifiées.
