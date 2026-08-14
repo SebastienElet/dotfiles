@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  printf '%s\n' 'Error: expected exactly one runtime hook path' >&2
+  exit 64
+fi
+
+runtime_hook=$1
+case "$runtime_hook" in
+/*) ;;
+*)
+  printf '%s\n' 'Error: runtime hook path must be absolute' >&2
+  exit 64
+  ;;
+esac
+
+if [ ! -f "$runtime_hook" ] || [ ! -x "$runtime_hook" ]; then
+  printf '%s\n' 'Error: runtime hook path must be an executable regular file' >&2
+  exit 66
+fi
+
+if ! command -v jq >/dev/null; then
+  printf '%s\n' 'Error: jq is required' >&2
+  exit 127
+fi
+
+home=${HOME:-}
+if [ -z "$home" ]; then
+  printf '%s\n' 'Error: HOME is required' >&2
+  exit 64
+fi
+
+claude_dir="$home/.claude"
+settings="$claude_dir/settings.json"
+umask 077
+mkdir -p "$claude_dir"
+
+if [ -L "$settings" ]; then
+  printf '%s\n' 'Error: settings.json must not be a symbolic link' >&2
+  exit 65
+fi
+
+if [ -e "$settings" ]; then
+  if [ ! -f "$settings" ] || [ ! -r "$settings" ]; then
+    printf '%s\n' 'Error: settings.json must be a readable regular file' >&2
+    exit 65
+  fi
+  has_settings=true
+  input="$settings"
+else
+  has_settings=false
+  input=/dev/null
+fi
+
+tmp=$(mktemp "$claude_dir/settings.json.XXXXXX")
+cleanup() {
+  rm -f "$tmp"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+jq -e -s --argjson has_settings "$has_settings" --arg command "$runtime_hook" '
+  def validate_handler:
+    if type != "object" then error("Stop handlers must be objects")
+    elif (.type | type) != "string" then error("hook handler type must be a string")
+    elif (.type as $handler_type | ["command", "http", "mcp_tool", "prompt", "agent"] | index($handler_type) | not) then error("unknown hook handler type")
+    elif .type == "command" then
+      if (.command | type) != "string" then error("command handler command must be a string")
+      elif has("args") and (.args | type) != "array" then error("command handler args must be an array of strings")
+      elif has("args") and any(.args[]; type != "string") then error("command handler args must be an array of strings")
+      else . end
+    elif .type == "http" and (.url | type) != "string" then error("http handler url must be a string")
+    elif .type == "mcp_tool" and ((.server | type) != "string" or (.tool | type) != "string") then error("mcp_tool handler server and tool must be strings")
+    elif (.type == "prompt" or .type == "agent") and (.prompt | type) != "string" then error("prompt and agent handlers require a prompt string")
+    else . end;
+  def validate_stop:
+    if type != "array" then error("hooks.Stop must be an array")
+    else map(
+      if type != "object" then error("Stop groups must be objects")
+      elif (has("hooks") | not) then error("Stop group hooks must be an array")
+      elif (.hooks | type) != "array" then error("Stop group hooks must be an array")
+      else .hooks |= map(validate_handler) end
+    ) end;
+  def validate_settings:
+    if type != "object" then error("settings.json must contain one JSON object")
+    elif (has("hooks") | not) then .hooks = {Stop: []}
+    elif (.hooks | type) != "object" then error("hooks must be an object")
+    elif (.hooks | has("Stop") | not) then .hooks.Stop = []
+    else .hooks.Stop |= validate_stop end;
+  def is_canonical($runtime_hook):
+    .type == "command" and .command == $runtime_hook and .args == [];
+  def is_legacy($runtime_hook):
+    .type == "command" and .command == $runtime_hook and (has("args") | not);
+  def handler_paths:
+    [.hooks.Stop | to_entries[] as $group | $group.value.hooks | to_entries[] | ["hooks", "Stop", $group.key, "hooks", .key]];
+  def canonical_paths($runtime_hook):
+    [handler_paths[] as $path | select(getpath($path) | is_canonical($runtime_hook)) | $path];
+  def legacy_paths($runtime_hook):
+    [handler_paths[] as $path | select(getpath($path) | is_legacy($runtime_hook)) | $path];
+  def normalize_runtime($runtime_hook):
+    canonical_paths($runtime_hook) as $canonical_paths
+    | legacy_paths($runtime_hook) as $legacy_paths
+    | if ($canonical_paths | length) == 1 and ($legacy_paths | length) == 0 then . else
+        (if ($canonical_paths | length) > 0 then $canonical_paths[0]
+         elif ($legacy_paths | length) > 0 then $legacy_paths[0]
+         else null end) as $kept_path
+        | if $kept_path == null then
+            .hooks.Stop += [{hooks: [{type: "command", command: $runtime_hook, args: []}]}]
+          else
+            setpath($kept_path + ["args"]; [])
+            | delpaths(($canonical_paths + $legacy_paths) - [$kept_path])
+          end
+      end;
+  if $has_settings then
+    if length == 1 then .[0] else error("settings.json must contain one JSON object") end
+  elif length == 0 then {}
+  else error("settings.json must contain one JSON object") end
+  | validate_settings
+  | normalize_runtime($command)
+' "$input" >"$tmp"
+
+mv "$tmp" "$settings"
+trap - EXIT HUP INT TERM

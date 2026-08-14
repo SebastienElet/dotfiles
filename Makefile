@@ -411,16 +411,8 @@ ${LOCAL_BIN}/claude:
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
 .PHONY: claude-handoff-hook
-claude-handoff-hook: ${BREW_BIN}/jq | ~/.claude
-	@set -e; \
-	umask 077; \
-	command='${DOTFILES_PATH}/scripts/agent_handoff'; \
-	tmp=$$(mktemp ~/.claude/settings.json.XXXXXX); \
-	trap 'rm -f "$$tmp"' EXIT HUP INT TERM; \
-	if [ -f ~/.claude/settings.json ]; then input=~/.claude/settings.json; else input=/dev/null; fi; \
-	jq -n --arg command "$$command" --slurpfile current "$$input" '($$current[0] // {}) | .hooks.Stop //= [] | if any(.hooks.Stop[]?.hooks[]?; .command == $$command) then . else .hooks.Stop += [{hooks: [{type: "command", command: $$command}]}] end' > "$$tmp"; \
-	mv "$$tmp" ~/.claude/settings.json; \
-	trap - EXIT HUP INT TERM
+claude-handoff-hook: ${BREW_BIN}/jq scripts/setup/claude_handoff_hook
+	@"${DOTFILES_PATH}/scripts/setup/claude_handoff_hook" "${DOTFILES_PATH}/scripts/agent_handoff"
 
 .PHONY: codex
 codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook

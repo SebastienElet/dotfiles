@@ -55,7 +55,7 @@ mkdir -p "$state_dir"
 touch "$sentinel"
 
 if [ "$agent" = "Codex" ]; then
-  invocation='$handoff'
+  invocation="\$handoff"
 else
   invocation='/handoff'
 fi

@@ -11,21 +11,4 @@ jobs:
         make all SKIP_PAID_APPS=1
         make -q qovery-cli
     - name: Check Claude hook registration
-      run: |
-        command="$PWD/scripts/agent_handoff"
-        tmp=$(mktemp ~/.claude/settings.json.XXXXXX)
-        jq '.issue_65_fixture = true' ~/.claude/settings.json > "$tmp"
-        mv "$tmp" ~/.claude/settings.json
-        make claude-handoff-hook
-        make claude-handoff-hook
-        jq -e --arg command "$command" \
-          '.issue_65_fixture == true and ([.hooks.Stop[]?.hooks[]?.command] | map(select(. == $command)) | length == 1)' \
-          ~/.claude/settings.json
-        valid=$(mktemp ~/.claude/settings.json.XXXXXX)
-        cp ~/.claude/settings.json "$valid"
-        printf '{\n' > ~/.claude/settings.json
-        if make claude-handoff-hook; then
-          exit 1
-        fi
-        grep -qx '{' ~/.claude/settings.json
-        mv "$valid" ~/.claude/settings.json
+      run: scripts/setup/claude_handoff_hook_test
