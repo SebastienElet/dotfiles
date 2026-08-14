@@ -311,7 +311,6 @@ Prefix every CodeGraph CLI call with:
 ```bash
 CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1
 ```
-````
 
 The MCP entry already supplies the same environment.
 
@@ -330,7 +329,6 @@ before destructive recovery.
 CodeGraph is retrieval-only. Use language servers for semantic rename and code actions, and a
 debugger for runtime inspection. The default MCP surface is `codegraph_explore`; do not enable
 hidden tools or add a query wrapper.
-
 ````
 
 - [ ] **Étape 6 : ajouter les évaluations de déclenchement**
@@ -374,7 +372,7 @@ Créer `.agents/skills/codegraph/evals/trigger-queries.json` :
     }
   ]
 }
-````
+```
 
 - [ ] **Étape 7 : valider et synchroniser la skill**
 
