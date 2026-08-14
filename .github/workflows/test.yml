@@ -7,4 +7,6 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Execute full install
-      run: make all SKIP_PAID_APPS=1
+      run: |
+        make all SKIP_PAID_APPS=1
+        make -q qovery-cli
