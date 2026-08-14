@@ -481,6 +481,7 @@ codegraph-test:
 	bash .agents/skills/codegraph/scripts/measure_repository_test.sh
 	bash tooling/codegraph_configure_test
 	bash tooling/codegraph_mcp_test
+	bash tooling/codegraph_network_test
 
 .PHONY: codegraph-cli
 codegraph-cli: ${VOLTA_BIN}/node

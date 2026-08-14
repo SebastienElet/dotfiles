@@ -44,7 +44,9 @@ CodeGraph 1.5.0, skills Markdown/YAML/JSON, GitHub Actions macOS.
 - Créer : `codegraph/fixtures/freshness/src/live.ts`
 - Créer : `codegraph/fixtures/freshness/src/removable.ts`
 - Créer : `codegraph/mcp_probe.mjs`
+- Créer : `codegraph/network_canary.mjs`
 - Créer : `scripts/codegraph_mcp_test`
+- Créer : `scripts/codegraph_network_test`
 - Créer : `.github/workflows/test-codegraph.yml`
 - Modifier : `Makefile`
 
@@ -127,7 +129,8 @@ printf '%s\n' "$*" >"$CODEGRAPH_TOKEI_ARGS"
 jq -n \
   --argjson loc "$CODEGRAPH_TEST_LOC" \
   --argjson files "$CODEGRAPH_TEST_FILES" \
-  '{TypeScript: {code: $loc, reports: [range(0; $files) | {name: tostring}]}, Total: {code: $loc}}'
+  'range(0; $files) as $index
+  | {language: "TypeScript", stats: {name: ("fixture-" + ($index | tostring) + ".ts"), stats: {code: (if $index == 0 then $loc else 0 end)}}}'
 SCRIPT
 chmod +x "$fake_tokei"
 
@@ -153,12 +156,13 @@ file_threshold=$(measure_case 1 500)
 [ "$(printf '%s' "$file_threshold" | jq -r .initialize)" = "true" ]
 
 rg -F -- '--hidden' "$args_log"
-rg -F -- '--output json' "$args_log"
+rg -F -- '--streaming json' "$args_log"
 rg -F -- '--exclude node_modules' "$args_log"
 rg -F -- '--exclude docs' "$args_log"
 rg -F -- '--exclude fixtures' "$args_log"
 rg -F 'TypeScript' "$args_log"
 rg -F 'Rust' "$args_log"
+rg -F 'Razor' "$args_log"
 rg -F 'Vue' "$args_log"
 
 real_repository="$tmp/real-repository"
@@ -186,7 +190,8 @@ rg -F 'jq is required' "$tmp/error"
 echo ok
 ```
 
-Le test crée son faux `tokei` dans un répertoire temporaire ; aucun fixture volumineux n'est
+Le test crée son faux `tokei` dans un répertoire temporaire et ajoute trois limites réelles de 500
+fichiers : Razor et OpenTofu activent, `.hcl` générique n'active pas. Aucun fixture volumineux n'est
 versionné.
 
 - [ ] **Étape 2 : exécuter le test et observer RED**
@@ -199,54 +204,15 @@ Attendu : échec `No such file or directory` sur `measure_repository.sh`.
 
 - [ ] **Étape 3 : implémenter le helper minimal**
 
-Créer `.agents/skills/codegraph/scripts/measure_repository.sh` :
+Créer `.agents/skills/codegraph/scripts/measure_repository.sh` avec les propriétés suivantes :
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-repository=${1:-.}
-tokei_bin=${CODEGRAPH_TOKEI_BIN:-tokei}
-jq_bin=${CODEGRAPH_JQ_BIN:-jq}
-types='Ark TypeScript,Astro,C,C Header,C#,COBOL,ColdFusion,ColdFusion CFScript,C++,C++ Header,C++ Module,CUDA,Dart,Erlang,Go,HCL,Java,JavaScript,JSX,Kotlin,Liquid,Lua,Metal Shading Language,Nix,Objective-C,Objective-C++,Pascal,PHP,Python,R,Ruby,Rust,Scala,Solidity,Svelte,Swift,TSX,TypeScript,Visual Basic,Vue'
-
-if [[ "$tokei_bin" == */* ]]; then
-  [ -x "$tokei_bin" ] || { echo 'tokei is required' >&2; exit 2; }
-else
-  command -v "$tokei_bin" >/dev/null 2>&1 || { echo 'tokei is required' >&2; exit 2; }
-fi
-
-if [[ "$jq_bin" == */* ]]; then
-  [ -x "$jq_bin" ] || { echo 'jq is required' >&2; exit 2; }
-else
-  command -v "$jq_bin" >/dev/null 2>&1 || { echo 'jq is required' >&2; exit 2; }
-fi
-
-"$tokei_bin" "$repository" \
-  --hidden \
-  --output json \
-  --types "$types" \
-  --exclude .git \
-  --exclude .codegraph \
-  --exclude .worktrees \
-  --exclude node_modules \
-  --exclude vendor \
-  --exclude dist \
-  --exclude build \
-  --exclude out \
-  --exclude target \
-  --exclude coverage \
-  --exclude generated \
-  --exclude docs \
-  --exclude fixtures \
-  --exclude '*.lock' \
-  --exclude '*.min.js' |
-  "$jq_bin" -c '
-    ([to_entries[] | select(.key != "Total") | .value.code // 0] | add // 0) as $loc
-    | ([to_entries[] | select(.key != "Total") | .value.reports[]?] | length) as $files
-    | {loc: $loc, files: $files, initialize: ($loc >= 50000 or $files >= 500)}
-  '
-```
+- produire les enregistrements fichier par fichier avec `tokei --streaming json` ;
+- filtrer les extensions sur la carte canonique de CodeGraph 1.5.0 plutôt que sur les catégories
+  plus larges de Tokei ;
+- compter Razor et OpenTofu, sans compter un `.hcl` générique ;
+- compléter `.tofu` par des symlinks temporaires `.tf`, Tokei ne connaissant pas cette extension ;
+- respecter Git et les exclusions de dépendances, sorties générées, documentation et fixtures ;
+- retourner `{loc, files, initialize}` avec `initialize` vrai à 50 000 lignes ou 500 fichiers.
 
 Le helper ne lance jamais `codegraph init` et ne décide pas du type de tâche ; il rend uniquement
 la mesure reproductible.
@@ -502,87 +468,18 @@ Attendu : échec `No such file or directory` sur `scripts/codegraph_configure`.
 
 - [ ] **Étape 3 : implémenter le configurateur**
 
-Créer `scripts/codegraph_configure` :
+Créer `scripts/codegraph_configure` avec les propriétés suivantes :
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+- valider les trois exécutables et exactement un objet JSON Cursor avant toute mutation ;
+- enregistrer le chemin du binaire CodeGraph épinglé dans les trois agents ;
+- utiliser la grammaire réelle `claude mcp add --scope user codegraph -e … -- BINAIRE serve --mcp` ;
+- utiliser `codex mcp add codegraph --env … -- BINAIRE serve --mcp` ;
+- préserver les autres serveurs Cursor par une écriture JSON atomique ;
+- sauvegarder les configurations Claude et Codex, puis les restaurer octet pour octet si une étape
+  ultérieure échoue.
 
-claude_bin=${CODEGRAPH_CLAUDE_BIN:-claude}
-codex_bin=${CODEGRAPH_CODEX_BIN:-codex}
-codegraph_bin=${CODEGRAPH_BIN:-codegraph}
-cursor_config=${CODEGRAPH_CURSOR_CONFIG:-$HOME/.cursor/mcp.json}
-
-require_command() {
-  if [[ "$1" == */* ]]; then
-    [ -x "$1" ] || { echo "missing executable: $1" >&2; exit 2; }
-  else
-    command -v "$1" >/dev/null 2>&1 || { echo "missing executable: $1" >&2; exit 2; }
-  fi
-}
-
-require_command "$claude_bin"
-require_command "$codex_bin"
-require_command "$codegraph_bin"
-require_command jq
-
-if [ -L "$cursor_config" ]; then
-  echo 'Cursor MCP config must not be a symlink' >&2
-  exit 2
-fi
-
-if [ -e "$cursor_config" ] && ! jq empty "$cursor_config" >/dev/null 2>&1; then
-  echo 'invalid Cursor MCP JSON' >&2
-  exit 2
-fi
-
-"$codegraph_bin" telemetry off
-
-if "$claude_bin" mcp get codegraph >/dev/null 2>&1; then
-  "$claude_bin" mcp remove --scope user codegraph
-fi
-"$claude_bin" mcp add --scope user \
-  -e CODEGRAPH_TELEMETRY=0 \
-  -e CODEGRAPH_NO_UPDATE_CHECK=1 \
-  -e CODEGRAPH_NO_DOWNLOAD=1 \
-  codegraph -- codegraph serve --mcp
-
-if "$codex_bin" mcp get --json codegraph >/dev/null 2>&1; then
-  "$codex_bin" mcp remove codegraph
-fi
-"$codex_bin" mcp add \
-  --env CODEGRAPH_TELEMETRY=0 \
-  --env CODEGRAPH_NO_UPDATE_CHECK=1 \
-  --env CODEGRAPH_NO_DOWNLOAD=1 \
-  codegraph -- codegraph serve --mcp
-
-mkdir -p "$(dirname "$cursor_config")"
-tmp=$(mktemp "${cursor_config}.tmp.XXXXXX")
-trap 'rm -f "$tmp"' EXIT
-input=/dev/null
-[ -e "$cursor_config" ] && input=$cursor_config
-jq -n --slurpfile current "$input" '
-  ($current[0] // {})
-  | .mcpServers //= {}
-  | .mcpServers.codegraph = {
-      type: "stdio",
-      command: "codegraph",
-      args: ["serve", "--mcp", "--path", "${workspaceFolder}"],
-      env: {
-        CODEGRAPH_TELEMETRY: "0",
-        CODEGRAPH_NO_UPDATE_CHECK: "1",
-        CODEGRAPH_NO_DOWNLOAD: "1"
-      }
-    }
-' >"$tmp"
-jq empty "$tmp"
-mv "$tmp" "$cursor_config"
-trap - EXIT
-```
-
-Le script configure, il ne lance ni ne relaie le serveur MCP. L'absence d'un agent ou un JSON
-Cursor invalide échoue avant toute mutation. Un échec après remplacement d'une entrée CodeGraph
-est explicite et ne touche aucun autre serveur ; une nouvelle exécution répare l'entrée.
+Le script configure, il ne lance ni ne relaie le serveur MCP. L'absence d'un agent, un état natif
+illisible ou un JSON Cursor invalide échoue sans laisser de configuration partielle.
 
 - [ ] **Étape 4 : vérifier GREEN**
 
@@ -797,7 +694,19 @@ CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1 \
 probe_result=$(node "$probe" "$repository")
 printf '%s' "$probe_result" | jq -e '
   .tools == ["codegraph_explore"]
-  and (.scenarios | to_entries | all(.value == true or .value == "fresh" or .value == "alerted-stale"))
+  and (.scenarios | keys) == [
+    "branchSwitch", "daemonStopped", "delete", "edit", "initial",
+    "reconciliation", "rename", "restart", "watcherInterruption"
+  ]
+  and .scenarios.branchSwitch == true
+  and .scenarios.daemonStopped == true
+  and .scenarios.delete == true
+  and .scenarios.edit == true
+  and .scenarios.initial == true
+  and .scenarios.reconciliation == true
+  and .scenarios.rename == true
+  and .scenarios.restart == true
+  and (.scenarios.watcherInterruption == "fresh" or .scenarios.watcherInterruption == "alerted-stale")
 ' >/dev/null
 
 disk_kib=$(du -sk "$repository/.codegraph" | awk '{print $1}')
@@ -1164,6 +1073,7 @@ on:
   push:
     paths:
       - .agents/skills/codegraph/**
+      - .config/git/ignore
       - codegraph/**
       - scripts/codegraph_*
       - Makefile
@@ -1171,6 +1081,7 @@ on:
   pull_request:
     paths:
       - .agents/skills/codegraph/**
+      - .config/git/ignore
       - codegraph/**
       - scripts/codegraph_*
       - Makefile
@@ -1182,10 +1093,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - run: make jq tokei codegraph-cli
+      - run: make jq tokei codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
       - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash scripts/codegraph_configure_test
       - run: bash scripts/codegraph_mcp_test
+      - run: bash scripts/codegraph_network_test
 ```
 
 Ajouter au `Makefile` :
@@ -1196,6 +1108,7 @@ codegraph-test:
 	bash .agents/skills/codegraph/scripts/measure_repository_test.sh
 	bash scripts/codegraph_configure_test
 	bash scripts/codegraph_mcp_test
+	bash scripts/codegraph_network_test
 ```
 
 - [ ] **Étape 8 : vérifier puis committer la barrière**
@@ -1206,7 +1119,7 @@ node --check codegraph/mcp_probe.mjs
 jq empty codegraph/fixtures/freshness/package.json codegraph/fixtures/freshness/tsconfig.json
 prettier --check codegraph/mcp_probe.mjs codegraph/fixtures/freshness/*.json .github/workflows/test-codegraph.yml
 git diff --check
-git add codegraph scripts/codegraph_mcp_test .github/workflows/test-codegraph.yml Makefile
+git add codegraph scripts/codegraph_mcp_test scripts/codegraph_network_test .github/workflows/test-codegraph.yml Makefile
 git commit -m "test(codegraph): cover MCP freshness"
 ```
 
@@ -1481,47 +1394,17 @@ seule qualité de la réponse.
 
 - [ ] **Étape 5 : auditer le réseau des processus CodeGraph**
 
-Échantillonner le serveur MCP et son daemon pendant le démarrage puis la première requête :
+Vérifier le canari récursif, puis échantillonner l'initialisation, la synchronisation, le serveur
+MCP, tous leurs descendants et le daemon :
 
 ```bash
-CODEGRAPH_PROBE_PAUSE_MS=500 \
-  CODEGRAPH_PROBE_SERVER_PID_FILE="$smoke_root/server.pid" \
-  node codegraph/mcp_probe.mjs "$smoke_root/repository" \
-  >"$smoke_root/network-probe.json" &
-probe_pid=$!
-
-for _ in 1 2 3 4 5 6 7 8 9 10; do
-  [ -s "$smoke_root/server.pid" ] && break
-  sleep 0.05
-done
-test -s "$smoke_root/server.pid"
-network_violation=0
-: >"$smoke_root/network"
-while kill -0 "$probe_pid" 2>/dev/null; do
-  pgrep -P "$probe_pid" >"$smoke_root/codegraph-pids" || true
-  if [ -s "$smoke_root/repository/.codegraph/daemon.pid" ]; then
-    jq -r .pid "$smoke_root/repository/.codegraph/daemon.pid" >>"$smoke_root/codegraph-pids"
-  fi
-  sort -u "$smoke_root/codegraph-pids" -o "$smoke_root/codegraph-pids"
-  while IFS= read -r process_id; do
-    if lsof -nP -a -p "$process_id" -i >"$smoke_root/network-sample"; then
-      cat "$smoke_root/network-sample" >>"$smoke_root/network"
-      network_violation=1
-    fi
-  done <"$smoke_root/codegraph-pids"
-  sleep 0.05
-done
-wait "$probe_pid"
-if [ "$network_violation" -ne 0 ]; then
-  cat "$smoke_root/network"
-  exit 1
-fi
-jq -e '.scenarios.daemonStopped == true' "$smoke_root/network-probe.json"
+bash scripts/codegraph_network_test
 ```
 
-Attendu sur macOS : aucune socket réseau observée pour les processus suivis pendant l'échantillonnage.
-La socket Unix locale n'est pas une sortie réseau. Cette preuve ne couvre pas une connexion plus
-brève que 50 ms ; la pause est inactive hors audit et aucun PID n'est tué par l'audit.
+Attendu sur macOS : le canari ouvert par un petit-enfant est détecté, puis aucune socket réseau
+n'est observée pendant `init`, `sync` et les requêtes MCP CodeGraph. La socket Unix locale n'est pas
+une sortie réseau. Cette preuve ne couvre pas une connexion plus brève que 50 ms et aucun PID n'est
+tué par l'audit.
 
 - [ ] **Étape 6 : publier uniquement les preuves observées**
 
@@ -1578,11 +1461,12 @@ résolu depuis une variable vide ou un répertoire large.
 ```bash
 make -Bn codegraph
 make codegraph-test
-bash -n scripts/codegraph_configure scripts/codegraph_configure_test scripts/codegraph_mcp_test .agents/skills/codegraph/scripts/measure_repository.sh .agents/skills/codegraph/scripts/measure_repository_test.sh
-shellcheck --severity=error scripts/codegraph_configure scripts/codegraph_configure_test scripts/codegraph_mcp_test .agents/skills/codegraph/scripts/measure_repository.sh .agents/skills/codegraph/scripts/measure_repository_test.sh
+bash -n scripts/codegraph_configure scripts/codegraph_configure_test scripts/codegraph_mcp_test scripts/codegraph_network_test .agents/skills/codegraph/scripts/measure_repository.sh .agents/skills/codegraph/scripts/measure_repository_test.sh
+shellcheck --severity=error scripts/codegraph_configure scripts/codegraph_configure_test scripts/codegraph_mcp_test scripts/codegraph_network_test .agents/skills/codegraph/scripts/measure_repository.sh .agents/skills/codegraph/scripts/measure_repository_test.sh
 node --check codegraph/mcp_probe.mjs
+node --check codegraph/network_canary.mjs
 jq empty .agents/skills/codegraph/evals/trigger-queries.json codegraph/fixtures/freshness/package.json codegraph/fixtures/freshness/tsconfig.json
-prettier --check .agents/skills/codegraph/SKILL.md .agents/skills/codegraph/evals/trigger-queries.json codegraph/mcp_probe.mjs codegraph/fixtures/freshness/*.json .github/workflows/test-codegraph.yml docs/adr/038-codegraph-recuperation-structurelle.md docs/adr/README.md docs/codegraph.md docs/codegraph-validation.md
+prettier --check .agents/skills/codegraph/SKILL.md .agents/skills/codegraph/evals/trigger-queries.json codegraph/mcp_probe.mjs codegraph/network_canary.mjs codegraph/fixtures/freshness/*.json .github/workflows/test-codegraph.yml docs/adr/038-codegraph-recuperation-structurelle.md docs/adr/README.md docs/codegraph.md docs/codegraph-validation.md
 git -c core.excludesFile=.config/git/ignore check-ignore -q .codegraph/index.db
 git diff --check
 git status --short --branch

@@ -17,7 +17,14 @@ printf '%s\n' "$*" >"$CODEGRAPH_TOKEI_ARGS"
 jq -n \
   --argjson loc "$CODEGRAPH_TEST_LOC" \
   --argjson files "$CODEGRAPH_TEST_FILES" \
-  '{TypeScript: {code: $loc, reports: [range(0; $files) | {name: tostring}]}, Total: {code: $loc}}'
+  'range(0; $files) as $index
+  | {
+      language: "TypeScript",
+      stats: {
+        name: ("fixture-" + ($index | tostring) + ".ts"),
+        stats: {code: (if $index == 0 then $loc else 0 end)}
+      }
+    }'
 SCRIPT
 chmod +x "$fake_tokei"
 
@@ -43,12 +50,13 @@ file_threshold=$(measure_case 1 500)
 [ "$(printf '%s' "$file_threshold" | jq -r .initialize)" = "true" ]
 
 rg -qF -- '--hidden' "$args_log"
-rg -qF -- '--output json' "$args_log"
+rg -qF -- '--streaming json' "$args_log"
 rg -qF -- '--exclude node_modules' "$args_log"
 rg -qF -- '--exclude docs' "$args_log"
 rg -qF -- '--exclude fixtures' "$args_log"
 rg -qF 'TypeScript' "$args_log"
 rg -qF 'Rust' "$args_log"
+rg -qF 'Razor' "$args_log"
 rg -qF 'Vue' "$args_log"
 
 real_repository="$tmp/real-repository"
@@ -61,6 +69,24 @@ git -C "$real_repository" init -q
 real=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$real_repository")
 [ "$(printf '%s' "$real" | jq -r .loc)" = "1" ]
 [ "$(printf '%s' "$real" | jq -r .files)" = "1" ]
+
+extension_repository="$tmp/extensions"
+mkdir -p "$extension_repository/razor" "$extension_repository/tofu" "$extension_repository/hcl"
+for number in {1..500}; do
+  printf '@page "/%s"\n' "$number" >"$extension_repository/razor/$number.razor"
+  printf 'resource "fixture" "item_%s" {}\n' "$number" >"$extension_repository/tofu/$number.tofu"
+  printf 'fixture_%s = true\n' "$number" >"$extension_repository/hcl/$number.hcl"
+done
+git -C "$extension_repository" init -q
+razor=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/razor")
+tofu=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/tofu")
+hcl=$(CODEGRAPH_TOKEI_BIN=tokei "$measure" "$extension_repository/hcl")
+[ "$(printf '%s' "$razor" | jq -r .files)" = "500" ]
+[ "$(printf '%s' "$razor" | jq -r .initialize)" = "true" ]
+[ "$(printf '%s' "$tofu" | jq -r .files)" = "500" ]
+[ "$(printf '%s' "$tofu" | jq -r .initialize)" = "true" ]
+[ "$(printf '%s' "$hcl" | jq -r .files)" = "0" ]
+[ "$(printf '%s' "$hcl" | jq -r .initialize)" = "false" ]
 
 if CODEGRAPH_TOKEI_BIN="$tmp/missing" "$measure" "$tmp/repository" 2>"$tmp/error"; then
   exit 1

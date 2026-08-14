@@ -107,10 +107,23 @@ const startServer = async (extraArguments = []) => {
 
 const stopServer = async () => {
   if (!server) return;
+  if (server.exitCode !== null) {
+    server = undefined;
+    return;
+  }
+  const processId = server.pid;
   const closing = new Promise((resolve) => server.once("close", resolve));
   server.stdin.end();
   server.kill("SIGTERM");
-  await Promise.race([closing, delay(3000)]);
+  const closed = await Promise.race([
+    closing.then(() => true),
+    delay(3000).then(() => false),
+  ]);
+  if (!closed) {
+    server.kill("SIGKILL");
+    server = undefined;
+    throw new Error(`MCP server did not stop: ${processId}`);
+  }
   server = undefined;
 };
 

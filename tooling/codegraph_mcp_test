@@ -42,7 +42,26 @@ CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1 \
 probe_result=$(node "$probe" "$repository")
 printf '%s' "$probe_result" | jq -e '
   .tools == ["codegraph_explore"]
-  and (.scenarios | to_entries | all(.value == true or .value == "fresh" or .value == "alerted-stale"))
+  and (.scenarios | keys) == [
+    "branchSwitch",
+    "daemonStopped",
+    "delete",
+    "edit",
+    "initial",
+    "reconciliation",
+    "rename",
+    "restart",
+    "watcherInterruption"
+  ]
+  and .scenarios.branchSwitch == true
+  and .scenarios.daemonStopped == true
+  and .scenarios.delete == true
+  and .scenarios.edit == true
+  and .scenarios.initial == true
+  and .scenarios.reconciliation == true
+  and .scenarios.rename == true
+  and .scenarios.restart == true
+  and (.scenarios.watcherInterruption == "fresh" or .scenarios.watcherInterruption == "alerted-stale")
 ' >/dev/null
 
 disk_kib=$(du -sk "$repository/.codegraph" | awk '{print $1}')

@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - .agents/skills/codegraph/**
+      - .config/git/ignore
       - codegraph/**
       - scripts/codegraph_*
       - Makefile
@@ -11,6 +12,7 @@ on:
   pull_request:
     paths:
       - .agents/skills/codegraph/**
+      - .config/git/ignore
       - codegraph/**
       - scripts/codegraph_*
       - Makefile
@@ -22,7 +24,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - run: make jq tokei codegraph-cli
+      - run: make jq tokei codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
       - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash scripts/codegraph_configure_test
       - run: bash scripts/codegraph_mcp_test
+      - run: bash scripts/codegraph_network_test

@@ -12,29 +12,30 @@
 
 - `make -Bn codegraph` réussit et montre l'installation épinglée de
   `@colbymchenry/codegraph@1.5.0`, les trois configurations MCP et les liens de skill.
-- `make codegraph-test` réussit sur macOS et exécute la mesure de dépôt, la configuration des trois
-  agents et la matrice MCP de fraîcheur.
-- L'audit lance `codegraph/mcp_probe.mjs`, suit le serveur et son daemon avec `pgrep`, puis
-  échantillonne leurs sockets avec `lsof -nP -a -p PID -i` toutes les 50 ms. Aucun socket réseau
-  n'est observé et le daemon est arrêté en fin de probe. Une connexion plus brève que 50 ms reste
-  hors couverture.
+- `make codegraph-test` réussit sur macOS et exécute la mesure de dépôt, la configuration réelle des
+  trois agents, la matrice MCP de fraîcheur et l'audit réseau récursif.
+- `bash scripts/codegraph_network_test` prouve d'abord que le moniteur détecte un socket ouvert par
+  un petit-enfant, puis suit récursivement les processus d'initialisation, de synchronisation et du
+  serveur MCP ainsi que le daemon. `lsof -nP -a -p PID -i` n'observe ensuite aucun socket réseau et
+  le daemon est arrêté en fin de probe. L'échantillonnage toutes les 50 ms ne couvre pas une
+  connexion plus brève.
 
 ## Mesures sur la fixture publique
 
-L'indexation initiale prend 0 s à la granularité entière de `SECONDS`, 0,67 s de CPU utilisateur et
-0,23 s de CPU système. Le maximum RSS vaut 313 409 536 octets et l'index occupe 164 Kio. La
-resynchronisation explicite prend 191 ms.
+L'indexation initiale prend 1 s à la granularité entière de `SECONDS`, 0,64 s de CPU utilisateur et
+0,22 s de CPU système. Le maximum RSS vaut 309 542 912 octets et l'index occupe 164 Kio. La
+resynchronisation explicite prend 165 ms.
 
 | Requête                          | Latence |
 | -------------------------------- | ------: |
-| Dépendances initiales            |  217 ms |
+| Dépendances initiales            |  199 ms |
 | Passage à la branche alternative |    9 ms |
 | Retour à la branche principale   |    4 ms |
 | Édition                          |    3 ms |
-| Renommage                        |    4 ms |
-| Suppression                      |    3 ms |
+| Renommage                        |   13 ms |
+| Suppression                      |   10 ms |
 | Redémarrage du serveur           |    3 ms |
-| Interruption du watcher          |  280 ms |
+| Interruption du watcher          |  275 ms |
 | Réconciliation                   |    4 ms |
 
 | Scénario              | Résultat |

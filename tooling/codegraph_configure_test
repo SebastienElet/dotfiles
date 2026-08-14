@@ -9,7 +9,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 state="$tmp/state"
 log="$tmp/calls"
-mkdir -p "$state" "$tmp/bin" "$tmp/cursor"
+mkdir -p "$state" "$tmp/bin" "$tmp/cursor" "$tmp/fake-home" "$tmp/fake-codex"
 
 make_fake() {
   name=$1
@@ -20,7 +20,7 @@ make_fake() {
   printf '%s\n' 'printf "%s %s\n" "$name" "$*" >>"$CODEGRAPH_TEST_LOG"' >>"$path"
   printf '%s\n' 'marker="$CODEGRAPH_TEST_STATE/$name"' >>"$path"
   printf '%s\n' 'if [ "$name" = codegraph ]; then [ "$*" = "telemetry off" ]; exit; fi' >>"$path"
-  printf '%s\n' 'if [ "${1:-} ${2:-}" = "mcp get" ]; then [ -f "$marker" ]; exit; fi' >>"$path"
+  printf '%s\n' 'if [ "${1:-} ${2:-}" = "mcp get" ]; then if [ -f "$marker" ]; then exit; elif [ "$name" = claude ]; then echo '\''No MCP server named "codegraph".'\'' >&2; else echo "Error: No MCP server named '\''codegraph'\'' found." >&2; fi; exit 1; fi' >>"$path"
   printf '%s\n' 'if [ "${1:-} ${2:-}" = "mcp remove" ]; then rm -f "$marker"; exit; fi' >>"$path"
   printf '%s\n' 'if [ "${1:-} ${2:-}" = "mcp add" ]; then touch "$marker"; exit; fi' >>"$path"
   printf '%s\n' 'exit 1' >>"$path"
@@ -42,7 +42,9 @@ cat >"$tmp/cursor/mcp.json" <<'JSON'
 JSON
 
 run_configure() {
-  CODEGRAPH_CLAUDE_BIN="$tmp/bin/claude" \
+  HOME="$tmp/fake-home" \
+    CODEX_HOME="$tmp/fake-codex" \
+    CODEGRAPH_CLAUDE_BIN="$tmp/bin/claude" \
     CODEGRAPH_CODEX_BIN="$tmp/bin/codex" \
     CODEGRAPH_BIN="$tmp/bin/codegraph" \
     CODEGRAPH_CURSOR_CONFIG="$tmp/cursor/mcp.json" \
@@ -55,7 +57,7 @@ run_configure
 run_configure
 
 jq -e '.mcpServers.existing.command == "existing-server"' "$tmp/cursor/mcp.json" >/dev/null
-jq -e '.mcpServers.codegraph.command == "codegraph"' "$tmp/cursor/mcp.json" >/dev/null
+jq -e --arg command "$tmp/bin/codegraph" '.mcpServers.codegraph.command == $command' "$tmp/cursor/mcp.json" >/dev/null
 jq -e '.mcpServers.codegraph.args == ["serve", "--mcp", "--path", "${workspaceFolder}"]' "$tmp/cursor/mcp.json" >/dev/null
 jq -e '.mcpServers.codegraph.env == {
   "CODEGRAPH_TELEMETRY": "0",
@@ -70,6 +72,8 @@ jq -e '.mcpServers.codegraph.env == {
 rg -qF -- '--scope user' "$log"
 rg -qF -- '--env CODEGRAPH_TELEMETRY=0' "$log"
 rg -qF -- '-e CODEGRAPH_TELEMETRY=0' "$log"
+rg -qF "claude mcp add --scope user codegraph -e CODEGRAPH_TELEMETRY=0 -e CODEGRAPH_NO_UPDATE_CHECK=1 -e CODEGRAPH_NO_DOWNLOAD=1 -- $tmp/bin/codegraph serve --mcp" "$log"
+rg -qF "codex mcp add codegraph --env CODEGRAPH_TELEMETRY=0 --env CODEGRAPH_NO_UPDATE_CHECK=1 --env CODEGRAPH_NO_DOWNLOAD=1 -- $tmp/bin/codegraph serve --mcp" "$log"
 
 before=$(wc -l <"$log")
 if CODEGRAPH_CLAUDE_BIN="$tmp/bin/missing" \
@@ -91,6 +95,21 @@ if run_configure 2>"$tmp/error"; then exit 1; fi
 [ "$(wc -l <"$log")" = "$before" ]
 rg -qF 'invalid Cursor MCP JSON' "$tmp/error"
 
+reject_cursor_json() {
+  printf '%s' "$1" >"$tmp/cursor/mcp.json"
+  cp "$tmp/cursor/mcp.json" "$tmp/cursor/before.json"
+  before=$(wc -l <"$log")
+  if run_configure 2>"$tmp/error"; then exit 1; fi
+  cmp "$tmp/cursor/before.json" "$tmp/cursor/mcp.json"
+  [ "$(wc -l <"$log")" = "$before" ]
+  rg -qF 'invalid Cursor MCP JSON' "$tmp/error"
+}
+
+reject_cursor_json ''
+reject_cursor_json '"scalar"'
+reject_cursor_json $'{}\n{}\n'
+reject_cursor_json '{"mcpServers":[]}'
+
 mv "$tmp/cursor/valid.json" "$tmp/cursor/target.json"
 rm "$tmp/cursor/mcp.json"
 ln -s "$tmp/cursor/target.json" "$tmp/cursor/mcp.json"
@@ -101,11 +120,80 @@ global_ignore="$tmp/global/git/ignore"
 make -s -C "$root" codegraph-ignore CODEGRAPH_GLOBAL_IGNORE="$global_ignore"
 [ "$(readlink "$global_ignore")" = "$root/.config/git/ignore" ]
 make -s -C "$root" codegraph-ignore CODEGRAPH_GLOBAL_IGNORE="$global_ignore"
+mkdir -p "$tmp/ignore-repository/.codegraph"
+git -C "$tmp/ignore-repository" init -q
+git -C "$tmp/ignore-repository" -c core.excludesFile="$global_ignore" \
+  check-ignore -q .codegraph/index.db
 rm "$global_ignore"
 printf 'foreign\n' >"$global_ignore"
 if make -s -C "$root" codegraph-ignore CODEGRAPH_GLOBAL_IGNORE="$global_ignore" 2>"$tmp/error"; then
   exit 1
 fi
 rg -qF 'exists and is not the expected symbolic link' "$tmp/error"
+
+real_claude=${CODEGRAPH_REAL_CLAUDE_BIN:-}
+if [ -z "$real_claude" ]; then
+  real_claude=$(command -v claude || true)
+fi
+[ -n "$real_claude" ] || { echo 'real Claude CLI is required' >&2; exit 2; }
+mkdir -p "$tmp/real-home" "$tmp/real-cursor"
+HOME="$tmp/real-home" \
+  CODEGRAPH_CLAUDE_BIN="$real_claude" \
+  CODEGRAPH_CODEX_BIN="$tmp/bin/codex" \
+  CODEGRAPH_BIN="$tmp/bin/codegraph" \
+  CODEGRAPH_CURSOR_CONFIG="$tmp/real-cursor/mcp.json" \
+  CODEGRAPH_TEST_LOG="$log" \
+  CODEGRAPH_TEST_STATE="$state" \
+  "$configure"
+HOME="$tmp/real-home" "$real_claude" mcp get codegraph >/dev/null
+
+real_codex=${CODEGRAPH_REAL_CODEX_BIN:-}
+if [ -z "$real_codex" ]; then
+  real_codex=$(command -v codex || true)
+fi
+[ -n "$real_codex" ] || { echo 'real Codex CLI is required' >&2; exit 2; }
+mkdir -p "$tmp/real-codex-home" "$tmp/real-codex-user" "$tmp/real-codex-cursor"
+HOME="$tmp/real-codex-user" \
+  CODEX_HOME="$tmp/real-codex-home" \
+  CODEGRAPH_CLAUDE_BIN="$tmp/bin/claude" \
+  CODEGRAPH_CODEX_BIN="$real_codex" \
+  CODEGRAPH_BIN="$tmp/bin/codegraph" \
+  CODEGRAPH_CURSOR_CONFIG="$tmp/real-codex-cursor/mcp.json" \
+  CODEGRAPH_TEST_LOG="$log" \
+  CODEGRAPH_TEST_STATE="$state" \
+  "$configure"
+HOME="$tmp/real-codex-user" CODEX_HOME="$tmp/real-codex-home" \
+  "$real_codex" mcp get --json codegraph | jq -e --arg command "$tmp/bin/codegraph" '
+    .transport.command == $command
+    and .transport.args == ["serve", "--mcp"]
+    and .transport.env == {
+      CODEGRAPH_TELEMETRY: "0",
+      CODEGRAPH_NO_UPDATE_CHECK: "1",
+      CODEGRAPH_NO_DOWNLOAD: "1"
+    }
+  ' >/dev/null
+
+mkdir -p "$tmp/rollback-home" "$tmp/rollback-codex" "$tmp/rollback-cursor"
+HOME="$tmp/rollback-home" "$real_claude" mcp add --scope user codegraph -- /bin/echo previous >/dev/null
+cp "$tmp/rollback-home/.claude.json" "$tmp/rollback-before.json"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'if [ "${1:-} ${2:-} ${3:-}" = "mcp get --json" ]; then echo "Error: No MCP server named '\''codegraph'\'' found." >&2; exit 1; fi' \
+  'if [ "${1:-} ${2:-}" = "mcp add" ]; then exit 9; fi' \
+  'exit 1' >"$tmp/bin/failing-codex"
+chmod +x "$tmp/bin/failing-codex"
+if HOME="$tmp/rollback-home" \
+  CODEX_HOME="$tmp/rollback-codex" \
+  CODEGRAPH_CLAUDE_BIN="$real_claude" \
+  CODEGRAPH_CODEX_BIN="$tmp/bin/failing-codex" \
+  CODEGRAPH_BIN="$tmp/bin/codegraph" \
+  CODEGRAPH_CURSOR_CONFIG="$tmp/rollback-cursor/mcp.json" \
+  CODEGRAPH_TEST_LOG="$log" \
+  CODEGRAPH_TEST_STATE="$state" \
+  "$configure" 2>"$tmp/rollback-error"; then
+  exit 1
+fi
+cmp "$tmp/rollback-before.json" "$tmp/rollback-home/.claude.json"
 
 echo ok
