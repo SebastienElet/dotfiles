@@ -194,7 +194,6 @@ ai: \
 	cursor \
 	firecrawl \
 	googleworkspace-cli \
-	llama-cpp \
 	llmfit \
 	mistral-vibe \
 	opencode \
@@ -421,11 +420,6 @@ ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
-
-.PHONY: llama-cpp
-llama-cpp: brew ${BREW_BIN}/llama-cli
-${BREW_BIN}/llama-cli:
-	brew install llama.cpp
 
 .PHONY: llmfit
 llmfit: brew ${BREW_BIN}/llmfit
