@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+claude_bin=${CODEGRAPH_CLAUDE_BIN:-claude}
+codex_bin=${CODEGRAPH_CODEX_BIN:-codex}
+codegraph_bin=${CODEGRAPH_BIN:-codegraph}
+cursor_config=${CODEGRAPH_CURSOR_CONFIG:-$HOME/.cursor/mcp.json}
+
+require_command() {
+  if [[ "$1" == */* ]]; then
+    [ -x "$1" ] || { echo "missing executable: $1" >&2; exit 2; }
+  else
+    command -v "$1" >/dev/null 2>&1 || { echo "missing executable: $1" >&2; exit 2; }
+  fi
+}
+
+require_command "$claude_bin"
+require_command "$codex_bin"
+require_command "$codegraph_bin"
+require_command jq
+
+if [ -L "$cursor_config" ]; then
+  echo 'Cursor MCP config must not be a symlink' >&2
+  exit 2
+fi
+
+if [ -e "$cursor_config" ] && ! jq empty "$cursor_config" >/dev/null 2>&1; then
+  echo 'invalid Cursor MCP JSON' >&2
+  exit 2
+fi
+
+"$codegraph_bin" telemetry off
+
+if "$claude_bin" mcp get codegraph >/dev/null 2>&1; then
+  "$claude_bin" mcp remove --scope user codegraph
+fi
+"$claude_bin" mcp add --scope user \
+  -e CODEGRAPH_TELEMETRY=0 \
+  -e CODEGRAPH_NO_UPDATE_CHECK=1 \
+  -e CODEGRAPH_NO_DOWNLOAD=1 \
+  codegraph -- codegraph serve --mcp
+
+if "$codex_bin" mcp get --json codegraph >/dev/null 2>&1; then
+  "$codex_bin" mcp remove codegraph
+fi
+"$codex_bin" mcp add \
+  --env CODEGRAPH_TELEMETRY=0 \
+  --env CODEGRAPH_NO_UPDATE_CHECK=1 \
+  --env CODEGRAPH_NO_DOWNLOAD=1 \
+  codegraph -- codegraph serve --mcp
+
+mkdir -p "$(dirname "$cursor_config")"
+tmp=$(mktemp "${cursor_config}.tmp.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+input=/dev/null
+[ -e "$cursor_config" ] && input=$cursor_config
+jq -n --slurpfile current "$input" '
+  ($current[0] // {})
+  | .mcpServers //= {}
+  | .mcpServers.codegraph = {
+      type: "stdio",
+      command: "codegraph",
+      args: ["serve", "--mcp", "--path", "${workspaceFolder}"],
+      env: {
+        CODEGRAPH_TELEMETRY: "0",
+        CODEGRAPH_NO_UPDATE_CHECK: "1",
+        CODEGRAPH_NO_DOWNLOAD: "1"
+      }
+    }
+' >"$tmp"
+jq empty "$tmp"
+mv "$tmp" "$cursor_config"
+trap - EXIT
