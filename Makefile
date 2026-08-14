@@ -384,7 +384,7 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-handoff-hook
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -409,6 +409,18 @@ ${LOCAL_BIN}/claude:
 # review, which is never this one.
 ~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+
+.PHONY: claude-handoff-hook
+claude-handoff-hook: ${BREW_BIN}/jq | ~/.claude
+	@set -e; \
+	umask 077; \
+	command='${DOTFILES_PATH}/scripts/agent_handoff'; \
+	tmp=$$(mktemp ~/.claude/settings.json.XXXXXX); \
+	trap 'rm -f "$$tmp"' EXIT HUP INT TERM; \
+	if [ -f ~/.claude/settings.json ]; then input=~/.claude/settings.json; else input=/dev/null; fi; \
+	jq -n --arg command "$$command" --slurpfile current "$$input" '($$current[0] // {}) | .hooks.Stop //= [] | if any(.hooks.Stop[]?.hooks[]?; .command == $$command) then . else .hooks.Stop += [{hooks: [{type: "command", command: $$command}]}] end' > "$$tmp"; \
+	mv "$$tmp" ~/.claude/settings.json; \
+	trap - EXIT HUP INT TERM
 
 .PHONY: codex
 codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
