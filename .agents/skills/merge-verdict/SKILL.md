@@ -7,7 +7,7 @@ description: >
   "look at this PR".
 compatibility: >
   Authenticated `gh` (GitHub) or `bkt` (Bitbucket) CLI, plus an issue tracker CLI (`linear`,
-  `gh issue create`) for the traceability step.
+  `gh issue create`) when a blocking defect needs a fix ticket.
 metadata:
   category: dev
 ---
@@ -79,12 +79,14 @@ first, unless the request explicitly says to post directly.
    bounded; a mechanism that can lose or corrupt data blocks even when the author disagrees. A
    style, naming or structure preference never blocks: label it non-blocking, or drop it.
 
-6. **Trace and publish.** Open a fix ticket and a re-review ticket, and link the initial review if
-   one exists. Write one general comment from `assets/verdict-template.md`, prefixed with the
-   idempotency marker `<!-- merge-verdict:<pr>:<head-sha> -->` — not a rain of inline comments.
-   Search the existing comments for that marker first: a verdict carrying the same `<pr>:<sha>` is
-   updated in place, never duplicated. Re-read before publishing — past about thirty lines,
-   non-blocking remarks are posing as blockers. On GitHub, _changes required_ is published with
+6. **Trace and publish.** Open or reuse a fix ticket for blocking defects, and link the initial
+   verdict if one exists. Never open a ticket solely to request or record a re-review: the new
+   head-specific verdict comment is that record. Write one general comment from
+   `assets/verdict-template.md`, prefixed with the idempotency marker
+   `<!-- merge-verdict:<pr>:<head-sha> -->` — not a rain of inline comments. Search the existing
+   comments for that marker first: a verdict carrying the same `<pr>:<sha>` is updated in place,
+   never duplicated. Re-read before publishing — past about thirty lines, non-blocking remarks are
+   posing as blockers. On GitHub, _changes required_ is published with
    `gh pr review --request-changes`, the native state, unless you authored the PR: GitHub refuses it
    there, and Bitbucket has no reliable equivalent at all. Whenever that native state is
    unavailable, the comment _is_ the verdict and its closing sentence carries the whole enforcement
@@ -103,6 +105,9 @@ first, unless the request explicitly says to post directly.
 - **A stale marker updated instead of superseded** — the SHA in the marker going stale on the next
   push is the point. Same `<pr>:<sha>` → update that comment; different SHA → publish a new verdict
   and leave the old one as the record of what was judged.
+- **A re-review ticket opened for traceability** — it duplicates the head-specific verdict and adds
+  tracker noise without tracking a defect. Link the previous verdict, publish the new SHA marker,
+  and reserve tickets for blocking defects.
 - **"Approved with reservations" used to avoid a disagreement** — that state is a claim that the
   consequence is bounded. If you cannot state the bound, the verdict is _changes required_.
 - **A missing feature reported as an omission** — an absent regulatory or business control is either
@@ -125,6 +130,7 @@ first, unless the request explicitly says to post directly.
 - Never open a review that is not anchored on a head SHA.
 - Never leave a limit of the evidence implicit; the barrier's gaps belong in the verdict text.
 - Never publish two verdicts for the same `<pr>:<sha>`; update the existing comment instead.
+- Never create a ticket solely to request, schedule or record a re-review.
 - Never publish without confirmation, unless the request explicitly says to post directly.
 
 ## References

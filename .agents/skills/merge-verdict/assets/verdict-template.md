@@ -28,7 +28,6 @@ the ones that would change a reviewer's decision, drop the rest: past three, the
 second review competing with the verdict for attention. Drop it entirely rather than pad it.>
 
 Fix: <url>                REQUIRED when the verdict blocks
-Re-review: <url>          REQUIRED when the verdict blocks
 Initial review: <url>     REQUIRED when a previous verdict exists on this PR
 
 <Closing sentence — REQUIRED, one line, executable:
@@ -41,7 +40,7 @@ PR on GitHub — the same line says that this comment is the only thing holding 
 
 ## Filled example
 
-A *changes required* verdict. Every identifier and figure below is invented — a committed skill must
+A _changes required_ verdict. Every identifier and figure below is invented — a committed skill must
 carry nothing from the repositories it was exercised on. The example is English because these files
 are; a real verdict is written in the language of its PR. Note what the barrier paragraph does: it
 gives numbers, then immediately spends a sentence dismantling its own green.
@@ -67,8 +66,7 @@ the blockers above.
 Non-blocking: the documented 409/412 codes no longer match the real behavior.
 
 Fix: https://tracker.example/ISSUE-158
-Re-review: https://tracker.example/ISSUE-159
-Initial review: https://tracker.example/ISSUE-155
+Initial review: https://forge.example/pull-requests/1042/comments/155
 
 Do not approve or merge this head.
 ```
@@ -81,4 +79,5 @@ Do not approve or merge this head.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
 - The barrier paragraph names the command it ran, and that command is the one CI runs.
 - At most three non-blocking lines; a fourth means the section is competing with the verdict.
+- No re-review ticket or `Re-review:` slot; the head-specific verdict is the re-review record.
 - Total under about thirty lines. Past that, preferences have leaked into the blocking section.
