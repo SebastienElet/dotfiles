@@ -12,6 +12,7 @@ daily-routine/target/
 # Claude Code
 .claude/*
 !.claude/skills
+!.claude/settings.json
 .claude-flow/
 
 # Git worktrees

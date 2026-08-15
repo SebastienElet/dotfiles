@@ -50,9 +50,10 @@ falls through to auto-compaction. Failing open is right here, but the failure is
 Files, under ~200 words, in the conversation's language, then ends the turn. No file on disk: the
 deliverable is text to paste.
 
-**Wiring** — the `claude-code` Makefile target symlinks `~/.claude/hooks/claude_handoff_check` and
-`~/.claude/skills/handoff` into the repo. The hook entry itself lives in `~/.claude/settings.json`,
-which is a real file and not version-controlled.
+**Wiring** — the `claude-code` Makefile target symlinks `~/.claude/hooks/agent_handoff` and
+`~/.claude/skills/handoff` into the repo, then idempotently merges the Stop entry into
+`~/.claude/settings.json`. That file stays machine-local because it also carries permissions,
+plugins and runtime preferences unrelated to this repository.
 
 ## Known ceilings
 
