@@ -25,6 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: make jq tokei ripgrep codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
+      - run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.volta/bin" >> "$GITHUB_PATH"
       - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash scripts/codegraph_configure_test
       - run: bash scripts/codegraph_mcp_test
