@@ -73,7 +73,7 @@ Examples:
      Preserve the existing ID unless the index explicitly maps or renumbers it.
 4. Keep the hierarchy flat. File the item directly in its indexed category or ID folder; do not add
    a year folder or other unindexed nesting.
-5. Build the filename from folder labels exactly as `scripts/jdl` does:
+5. Build the filename from folder labels exactly as `tooling/jdl` does:
 
    ```text
    Category-only:  {Category} - [Date - ]{Description}.{ext}
@@ -122,7 +122,7 @@ Examples:
 - Consult the Apple Notes index only when lookup or validation is needed; if it is unavailable, ask
   the user or explicitly mark an ID-less proposal as provisional.
 - Keep `~/Documents` flat below the indexed category or ID folder; do not create year folders.
-- Use the exact ASCII ` - ` separator required by `scripts/jdl` in directory and file names.
+- Use the exact ASCII ` - ` separator required by `tooling/jdl` in directory and file names.
 - A filename must inherit the category label and, only when it is inside an ID/subcategory folder,
   the subcategory label.
 - Include a filename date only when the document's actual date is known.

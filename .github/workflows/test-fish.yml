@@ -3,13 +3,13 @@ name: Fish tests
 on:
   push:
     paths:
-      - fish/**
-      - scripts/git_main_branch
+      - home/.config/fish/**
+      - tooling/git-main-branch
       - .github/workflows/test-fish.yml
   pull_request:
     paths:
-      - fish/**
-      - scripts/git_main_branch
+      - home/.config/fish/**
+      - tooling/git-main-branch
       - .github/workflows/test-fish.yml
 
 jobs:
@@ -33,4 +33,4 @@ jobs:
           sudo apt-get install -y fish
 
       - name: Test Git cleanup
-        run: fish --no-config fish/tests/git_cleanup_test.fish
+        run: fish --no-config home/.config/fish/tests/git_cleanup_test.fish

@@ -13,16 +13,15 @@ au pire moment.
 
 ## Décision
 
-Quatre workflows GitHub Actions. `lint.yml` vérifie la syntaxe Fish
-(`fish --no-execute`), le formatage (`fish_indent`), le Lua Neovim (`luacheck`)
-et les scripts shell (ShellCheck). `test-fish.yml` exécute les tests Fish sur
-macOS et Linux uniquement lorsque les fichiers qu'ils couvrent changent.
+Cinq workflows GitHub Actions. `lint.yml` vérifie la syntaxe et le formatage
+Fish sur macOS et Linux, le Lua Neovim, les scripts shell et le chargement de
+la configuration CSpell avec son dictionnaire. `test-fish.yml` exécute les
+tests Fish sur les deux systèmes lorsque les fichiers couverts changent.
 `test-rust.yml` vérifie le formatage, exécute Clippy et les tests de
-`daily-routine` sur macOS uniquement lorsque les fichiers qu'ils couvrent
-changent.
-`test.yml` exécute l'installation complète sur un runner macOS, apps payantes
-exclues (`SKIP_PAID_APPS`) et cibles Docker ignorées en l'absence de daemon
-(`DOCKER_OR_SKIP`).
+`tooling/daily-routine` sur macOS. `test-deployment.yml` attaque la migration
+des liens sur macOS et Linux. `test.yml` exécute deux fois l'installation
+complète sur un runner macOS, apps payantes exclues (`SKIP_PAID_APPS`) et
+cibles Docker ignorées en l'absence de daemon (`DOCKER_OR_SKIP`).
 
 ## Conséquences
 

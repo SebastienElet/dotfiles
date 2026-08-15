@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+repository=$(cd "$tooling_dir/.." && pwd)
+helper=$tooling_dir/deploy-link
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/deploy-link-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_link() {
+  [[ -L $1 ]] || fail "$1 is not a symbolic link"
+  [[ $(readlink "$1") == "$2" ]] || fail "$1 has an unexpected source"
+}
+
+assert_failure() {
+  if "$@" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail "command unexpectedly succeeded: $*"
+  fi
+}
+
+assert_hooks_failure_preserves() {
+  before=$(cksum "$hooks_file")
+  assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+  after=$(cksum "$hooks_file")
+  [[ $before == "$after" ]] || fail "invalid Codex hooks file changed"
+}
+
+new_case() {
+  case_root=$test_root/$1
+  old_source=$case_root/old
+  new_source=$case_root/new
+  destination=$case_root/destination
+  mkdir -p "$old_source" "$new_source"
+}
+
+new_case missing_destination
+"$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$new_source"
+
+new_case old_link
+ln -s "$old_source" "$destination"
+"$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$new_source"
+
+new_case dangling_old_link
+rmdir "$old_source"
+ln -s "$old_source" "$destination"
+"$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$new_source"
+
+new_case current_link
+ln -s "$new_source" "$destination"
+before=$(ls -di "$destination" | awk '{print $1}')
+"$helper" "$old_source" "$new_source" "$destination"
+after=$(ls -di "$destination" | awk '{print $1}')
+[[ $before == "$after" ]] || fail "current link was replaced"
+
+new_case regular_file
+printf 'keep\n' >"$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+[[ $(cat "$destination") == keep ]] || fail "regular file changed"
+
+new_case directory
+mkdir "$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+[[ -d $destination && ! -L $destination ]] || fail "directory changed"
+
+new_case unexpected_link
+unexpected_source=$case_root/unexpected
+mkdir "$unexpected_source"
+ln -s "$unexpected_source" "$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$unexpected_source"
+
+new_case dangling_unexpected_link
+unexpected_source=$case_root/unexpected
+ln -s "$unexpected_source" "$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$unexpected_source"
+
+new_case relative_equivalent_link
+ln -s old "$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" old
+
+new_case missing_new_source
+rmdir "$new_source"
+ln -s "$old_source" "$destination"
+assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$old_source"
+
+new_case concurrent_destination_change
+ln -s "$old_source" "$destination"
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+printf '%s\n' '#!/usr/bin/env bash' 'target=$(/usr/bin/readlink "$1")' 'PATH=/usr/bin:/bin unlink "$1"' 'printf "valuable\n" >"$1"' 'printf "%s\n" "$target"' >"$wrapper_dir/readlink"
+chmod +x "$wrapper_dir/readlink"
+assert_failure env PATH="$wrapper_dir:$PATH" "$helper" "$old_source" "$new_source" "$destination"
+recovered_entries=("$case_root"/.deploy-link.*/previous)
+[[ -f ${recovered_entries[0]} ]] || fail "raced destination was not preserved"
+[[ $(cat "${recovered_entries[0]}") == valuable ]] || fail "raced destination content changed"
+
+new_case disappearing_source
+ln -s "$old_source" "$destination"
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+real_ln=$(command -v ln)
+printf '%s\n' '#!/usr/bin/env bash' 'rmdir "$2"' '"$REAL_LN" "$@"' >"$wrapper_dir/ln"
+chmod +x "$wrapper_dir/ln"
+assert_failure env REAL_LN="$real_ln" PATH="$wrapper_dir:$PATH" "$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$new_source"
+recovered_entries=("$case_root"/.deploy-link.*/previous)
+assert_link "${recovered_entries[0]}" "$old_source"
+
+case_root="$test_root/paths with spaces"
+old_source="$case_root/old source"
+new_source="$case_root/new source"
+destination="$case_root/destination link"
+mkdir -p "$old_source" "$new_source"
+"$helper" "$old_source" "$new_source" "$destination"
+assert_link "$destination" "$new_source"
+
+new_case missing_readlink
+assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$old_source" "$new_source" "$destination"
+grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was not reported"
+
+case_root=$test_root/make_integration
+test_home=$case_root/home
+mkdir -p "$test_home"
+unexpected_source=$case_root/unexpected
+mkdir "$unexpected_source"
+ln -s "$unexpected_source" "$test_home/.zshrc"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
+assert_link "$test_home/.zshrc" "$unexpected_source"
+rm "$test_home/.zshrc"
+ln -s "$repository/.zshrc" "$test_home/.zshrc"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
+assert_link "$test_home/.zshrc" "$repository/home/.zshrc"
+before=$(ls -di "$test_home/.zshrc" | awk '{print $1}')
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
+after=$(ls -di "$test_home/.zshrc" | awk '{print $1}')
+[[ $before == "$after" ]] || fail "Make relinked the current destination"
+
+case_root=$test_root/codex_hook
+test_home=$case_root/home
+hooks_file=$test_home/.codex/hooks.json
+old_command=$repository/scripts/agent_handoff
+new_command=$repository/tooling/agent-handoff
+mkdir -p "$test_home/.codex"
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"}]}]}}\n' "$old_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "old Codex hook was not migrated"
+[[ $(jq -r --arg command "$old_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 0 ]] || fail "old Codex hook remains"
+
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$new_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate Codex hook was not removed"
+before=$(cksum "$hooks_file")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+after=$(cksum "$hooks_file")
+[[ $before == "$after" ]] || fail "Codex hook migration is not idempotent"
+
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$old_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate old Codex hooks were not collapsed"
+
+printf 'invalid json\n' >"$hooks_file"
+assert_hooks_failure_preserves
+printf '{"hooks":{"Stop":{}}}\n' >"$hooks_file"
+assert_hooks_failure_preserves
+for malformed in null false '{"hooks":{"Stop":false}}'; do
+  printf '%s\n' "$malformed" >"$hooks_file"
+  assert_hooks_failure_preserves
+done
+printf '%s\n%s\n' '{"hooks":{"Stop":[]}}' '{"second":"document"}' >"$hooks_file"
+assert_hooks_failure_preserves
+: >"$hooks_file"
+assert_hooks_failure_preserves
+
+printf '{"hooks":{"Stop":[]}}\n' >"$hooks_file"
+before=$(cksum "$hooks_file")
+assert_failure env HOME="$test_home" PATH="$case_root/empty-path" /usr/bin/make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+after=$(cksum "$hooks_file")
+[[ $before == "$after" ]] || fail "Codex hooks file changed without jq"
+
+rm "$hooks_file"
+mkdir "$hooks_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ -d $hooks_file ]] || fail "Codex hooks directory changed"
+rmdir "$hooks_file"
+mkfifo "$hooks_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ -p $hooks_file ]] || fail "Codex hooks FIFO changed"
+rm "$hooks_file"
+
+victim=$case_root/victim
+printf 'keep\n' >"$victim"
+ln -s "$victim" "$hooks_file.tmp"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
+assert_link "$hooks_file.tmp" "$victim"
+
+echo "deploy-link tests passed"

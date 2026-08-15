@@ -32,7 +32,7 @@ restée en place, qui redisait mot pour mot ce qui avait déjà été mesuré co
 
 ## Décision
 
-`ai/AGENTS.md` § `Code Style` est réécrit en deux puces :
+`harness/AGENTS.md` § `Code Style` est réécrit en deux puces :
 
 ```markdown
 - **Write no comment.** One is admissible only when it records a fact living outside the file

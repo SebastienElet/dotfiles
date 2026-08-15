@@ -10,7 +10,7 @@ function git
         return $status
     end
 
-    set -l main_branch_script (path resolve (path dirname (status filename))/../../scripts/git_main_branch)
+    set -l main_branch_script (path resolve (path dirname (status filename))/../../../../tooling/git-main-branch)
     if not test -x "$main_branch_script"
         echo "git: branch cleanup disabled: $main_branch_script is unavailable" >&2
         command git $argv

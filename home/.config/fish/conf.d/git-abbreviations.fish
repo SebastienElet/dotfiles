@@ -54,5 +54,5 @@ abbr -a grbc 'git rebase --continue'
 
 # grbm needs to be a function to evaluate the main branch dynamically
 function grbm --description "git rebase on main branch"
-    git rebase (~/.dotfiles/scripts/git_main_branch)
+    git rebase (~/.dotfiles/tooling/git-main-branch)
 end

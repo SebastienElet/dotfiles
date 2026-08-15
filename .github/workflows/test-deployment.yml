@@ -1,0 +1,30 @@
+name: Deployment tests
+
+on:
+  push:
+    paths:
+      - home/**
+      - harness/**
+      - tooling/deploy-link
+      - tooling/deploy-link-test
+      - Makefile
+      - .github/workflows/test-deployment.yml
+  pull_request:
+    paths:
+      - home/**
+      - harness/**
+      - tooling/deploy-link
+      - tooling/deploy-link-test
+      - Makefile
+      - .github/workflows/test-deployment.yml
+
+jobs:
+  deploy-link:
+    name: Deploy link (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: tooling/deploy-link-test

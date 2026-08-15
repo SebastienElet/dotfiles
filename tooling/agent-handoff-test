@@ -2,7 +2,7 @@
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
-hook="$here/agent_handoff"
+hook="$here/agent-handoff"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 

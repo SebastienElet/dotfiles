@@ -1,4 +1,4 @@
-set -g project_root (path resolve (path dirname (status filename))/../..)
+set -g project_root (path resolve (path dirname (status filename))/../../../..)
 set -g test_root (mktemp -d)
 
 function fail --argument-names message
@@ -47,11 +47,11 @@ function create_tracked_branch --argument-names branch
     must git -C "$repository_path" switch --quiet main
 end
 
-for function_file in "$project_root"/fish/conf.d/git.fish "$project_root"/fish/conf.d/git_*.fish
+for function_file in "$project_root"/home/.config/fish/conf.d/git.fish "$project_root"/home/.config/fish/conf.d/git_*.fish
     source "$function_file"
 end
 
-source "$project_root/fish/tests/git_cleanup/branch_test.fish"
-source "$project_root/fish/tests/git_cleanup/worktree_test.fish"
-source "$project_root/fish/tests/git_cleanup/recovery_test.fish"
-source "$project_root/fish/tests/git_cleanup/invocation_test.fish"
+source "$project_root/home/.config/fish/tests/git_cleanup/branch_test.fish"
+source "$project_root/home/.config/fish/tests/git_cleanup/worktree_test.fish"
+source "$project_root/home/.config/fish/tests/git_cleanup/recovery_test.fish"
+source "$project_root/home/.config/fish/tests/git_cleanup/invocation_test.fish"

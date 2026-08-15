@@ -1,13 +1,13 @@
 alias ..='cd ..'
 alias :q='exit'
-# Git aliases have been moved to fish/conf.d/git-abbreviations.fish
+# Git aliases have been moved to home/.config/fish/conf.d/git-abbreviations.fish
 # Git abbreviations are preferred over aliases in Fish shell
 alias gpsup='git push --set-upstream origin (git branch --show-current)'
 alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistral opencommit'
 alias t='tmux'
 alias tm='tmux'
-alias upgrade='~/.dotfiles/scripts/upgrade'
-alias mcp_edit='~/.dotfiles/scripts/mcp_edit'
+alias upgrade='~/.dotfiles/tooling/upgrade'
+alias mcp_edit='~/.dotfiles/tooling/mcp-edit'
 
 if type -q nvim
     alias vim='nvim'
