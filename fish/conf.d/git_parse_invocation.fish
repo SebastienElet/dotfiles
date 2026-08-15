@@ -1,4 +1,4 @@
-function __git_parse_invocation --no-scope-shadowing
+function git_parse_invocation --no-scope-shadowing
     set -l argument_index 1
     while test $argument_index -le (count $argv)
         set -l argument $argv[$argument_index]

@@ -1,4 +1,4 @@
-function __git_cleanup_candidates --argument-names command_name main_branch
+function git_cleanup_candidates --argument-names command_name main_branch
     set -l git_context $argv[3..]
     set -l branch_refs (command git $git_context for-each-ref --format='%(refname)' refs/heads)
     or return 1

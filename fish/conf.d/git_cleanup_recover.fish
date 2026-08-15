@@ -1,4 +1,4 @@
-function __git_cleanup_recover --argument-names command_name main_branch branch
+function git_cleanup_recover --argument-names command_name main_branch branch
     set -l git_context $argv[4..]
     set -l local_oid (command git $git_context rev-parse --verify --quiet "refs/heads/$branch^{commit}")
     if test $status -ne 0

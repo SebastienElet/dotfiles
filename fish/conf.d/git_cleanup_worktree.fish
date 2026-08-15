@@ -1,4 +1,4 @@
-function __git_cleanup_worktree --argument-names command_name branch
+function git_cleanup_worktree --argument-names command_name branch
     set -l git_context $argv[3..]
     set -l worktree_list (command git $git_context worktree list --porcelain)
     if test $status -ne 0

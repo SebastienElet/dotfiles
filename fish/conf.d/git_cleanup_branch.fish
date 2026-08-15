@@ -1,4 +1,4 @@
-function __git_cleanup_branch --argument-names command_name branch upstream_oid
+function git_cleanup_branch --argument-names command_name branch upstream_oid
     set -l git_context $argv[4..]
     set -l upstream_state (command git $git_context for-each-ref --format='%(upstream:track)' "refs/heads/$branch")
     if test "$upstream_state" != '[gone]'
@@ -15,7 +15,7 @@ function __git_cleanup_branch --argument-names command_name branch upstream_oid
         return 1
     end
 
-    __git_cleanup_worktree "$command_name" "$branch" $git_context
+    git_cleanup_worktree "$command_name" "$branch" $git_context
     or return 1
 
     if command git $git_context update-ref -d "refs/heads/$branch" "$upstream_oid"

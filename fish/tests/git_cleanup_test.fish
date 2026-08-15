@@ -47,7 +47,9 @@ function create_tracked_branch --argument-names branch
     must git -C "$repository_path" switch --quiet main
 end
 
-set -p fish_function_path "$project_root/fish/functions"
+for function_file in "$project_root"/fish/conf.d/git.fish "$project_root"/fish/conf.d/git_*.fish
+    source "$function_file"
+end
 
 source "$project_root/fish/tests/git_cleanup/branch_test.fish"
 source "$project_root/fish/tests/git_cleanup/worktree_test.fish"

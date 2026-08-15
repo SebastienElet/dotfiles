@@ -3,7 +3,7 @@ function git
     set -l command_arguments
     set -l git_context
     set -l git_prefix
-    __git_parse_invocation $argv
+    git_parse_invocation $argv
 
     if not contains -- "$command_name" fetch pull; or contains -- --dry-run $command_arguments
         command git $argv
@@ -24,7 +24,7 @@ function git
         return $status
     end
 
-    set -l candidates (__git_cleanup_candidates "$command_name" "$main_branch" $git_context)
+    set -l candidates (git_cleanup_candidates "$command_name" "$main_branch" $git_context)
     if test $status -ne 0
         echo "git: branch cleanup disabled: candidate lookup failed" >&2
         command git $argv
@@ -41,14 +41,14 @@ function git
         set -l fields (string split \t -- "$candidate")
         if test "$fields[1]" = unavailable
             set -l branch "$fields[2]"
-            set -l recovered (__git_cleanup_recover "$command_name" "$main_branch" "$branch" $git_context)
+            set -l recovered (git_cleanup_recover "$command_name" "$main_branch" "$branch" $git_context)
             if test $status -ne 0
                 echo "git: keeping $branch: $recovered" >&2
                 continue
             end
             set fields (string split \t -- "$recovered")
         end
-        __git_cleanup_branch "$command_name" "$fields[2]" "$fields[3]" $git_context
+        git_cleanup_branch "$command_name" "$fields[2]" "$fields[3]" $git_context
     end
 
     return $command_status
