@@ -4,6 +4,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/.." && pwd)
 configure="$here/codegraph_configure"
+real_volta_home=${VOLTA_HOME:-$HOME/.volta}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
@@ -219,6 +220,7 @@ fi
 [ -n "$real_codex" ] || { echo 'real Codex CLI is required' >&2; exit 2; }
 mkdir -p "$tmp/real-codex-home" "$tmp/real-codex-user" "$tmp/real-codex-cursor"
 HOME="$tmp/real-codex-user" \
+  VOLTA_HOME="$real_volta_home" \
   CODEX_HOME="$tmp/real-codex-home" \
   CODEGRAPH_CLAUDE_BIN="$tmp/bin/claude" \
   CODEGRAPH_CODEX_BIN="$real_codex" \
@@ -227,7 +229,7 @@ HOME="$tmp/real-codex-user" \
   CODEGRAPH_TEST_LOG="$log" \
   CODEGRAPH_TEST_STATE="$state" \
   "$configure"
-HOME="$tmp/real-codex-user" CODEX_HOME="$tmp/real-codex-home" \
+HOME="$tmp/real-codex-user" VOLTA_HOME="$real_volta_home" CODEX_HOME="$tmp/real-codex-home" \
   "$real_codex" mcp get --json codegraph | jq -e --arg command "$tmp/bin/codegraph" '
     .transport.command == $command
     and .transport.args == ["serve", "--mcp"]
