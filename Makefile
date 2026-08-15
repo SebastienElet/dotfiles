@@ -174,10 +174,8 @@ work: \
 	daily-routine \
 	flow \
 	language-tool \
-	qovery-cli \
 	docker \
 	doppler \
-	frontcli \
 	gh \
 	google-chrome \
 	javascript \
@@ -206,12 +204,8 @@ ai: \
 	codexbar \
 	cursor \
 	firecrawl \
-	googleworkspace-cli \
 	llmfit \
-	mistral-vibe \
-	opencode \
 	openspec \
-	pi-coding-agent \
 	scrapling \
 	skills
 

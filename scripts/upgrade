@@ -2,7 +2,7 @@
 
 echo "ℹ️  Dotfiles"
 if [[ -d ~/.dotfiles && -d ~/.dotfiles/.git ]]; then
-  (cd ~/.dotfiles && git pull)
+  (cd ~/.dotfiles && git pull) && make -C ~/.dotfiles all
 else
   echo "  Warning: ~/.dotfiles not a git repo, skipping"
 fi
