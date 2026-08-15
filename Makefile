@@ -81,6 +81,7 @@ terminal: \
 ~/.config:
 	mkdir -p $@
 
+.PHONY: bat
 bat: brew ${BREW_BIN}/bat ~/.config/bat/themes/Catppuccin\ Latte.tmTheme
 ${BREW_BIN}/bat:
 	brew install bat
@@ -91,26 +92,32 @@ ${BREW_BIN}/bat:
 	curl -L -o ~/.config/bat/themes/Catppuccin\ Mocha.tmTheme https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
 	bat cache --build
 
+.PHONY: bottom
 bottom: brew ${BREW_BIN}/btm
 ${BREW_BIN}/btm:
 	brew install bottom
 
+.PHONY: broot
 broot: brew ${BREW_BIN}/broot
 ${BREW_BIN}/broot:
 	brew install broot
 
+.PHONY: procs
 procs: brew ${BREW_BIN}/procs
 ${BREW_BIN}/procs:
 	brew install procs
 
+.PHONY: eza
 eza: brew ${BREW_BIN}/eza
 ${BREW_BIN}/eza:
 	brew install eza
 
+.PHONY: fd
 fd: brew ${BREW_BIN}/fd
 ${BREW_BIN}/fd:
 	brew install fd
 
+.PHONY: fish
 fish: brew starship ~/.config/fish ${BREW_BIN}/fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
@@ -121,22 +128,27 @@ ${BREW_BIN}/fish:
 ~/.config/fish: ${DOTFILES_PATH}/fish | ~/.config
 	ln -s ${DOTFILES_PATH}/fish $@
 
+.PHONY: gnu-sed
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
 ${BREW_GNU_BIN}/gnu-sed:
 	brew install gnu-sed
 
+.PHONY: htop
 htop: brew ${BREW_BIN}/htop
 ${BREW_BIN}/htop:
 	brew install htop
 
+.PHONY: lazygit
 lazygit: brew ${BREW_BIN}/lazygit
 ${BREW_BIN}/lazygit:
 	brew install lazygit
 
+.PHONY: tokei
 tokei: brew ${BREW_BIN}/tokei
 ${BREW_BIN}/tokei:
 	brew install tokei
 
+.PHONY: wezterm
 wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
 /Applications/WezTerm.app:
 	brew tap wez/wezterm
@@ -180,6 +192,7 @@ work: \
 	1password \
 	vibe-island
 
+.PHONY: ai
 ai: \
 	brain \
 	chatgpt \
@@ -191,7 +204,6 @@ ai: \
 	codexbar \
 	cursor \
 	firecrawl \
-	llama-cpp \
 	llmfit \
 	openspec \
 	scrapling \
@@ -217,10 +229,12 @@ brain:
 		echo "Created $(HOME)/Brain symlink"; \
 	fi
 
+.PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
 	brew install --cask arc
 
+.PHONY: aws
 aws: brew ${BREW_BIN}/aws
 ${BREW_BIN}/aws:
 	brew install awscli
@@ -257,10 +271,12 @@ ${LOCAL_BIN}/daily-routine: \
 	cd ${DOTFILES_PATH}/daily-routine && ${BREW_BIN}/cargo build --release
 	ln -sf ${DOTFILES_PATH}/daily-routine/target/release/daily-routine $@
 
+.PHONY: docker
 docker: brew lazydocker /Applications/Orbstack.app
 /Applications/Orbstack.app:
 	brew install orbstack
 
+.PHONY: doppler
 doppler: gnupg ${BREW_BIN}/doppler
 ${BREW_BIN}/doppler:
 	brew tap dopplerhq/cli
@@ -268,22 +284,27 @@ ${BREW_BIN}/doppler:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dopplerhq/cli/doppler; fi
 	brew install dopplerhq/cli/doppler
 
+.PHONY: gnupg
 gnupg: brew ${BREW_BIN}/gpg
 ${BREW_BIN}/gpg:
 	brew install gnupg
 
+.PHONY: gh
 gh: brew ${BREW_BIN}/gh
 ${BREW_BIN}/gh:
 	brew install gh
 
+.PHONY: google-chrome
 google-chrome: brew ${APP_BIN}/Google\ Chrome.app
 ${APP_BIN}/Google\ Chrome.app:
 	brew install --cask google-chrome
 
+.PHONY: k9s
 k9s: brew ${BREW_BIN}/k9s
 ${BREW_BIN}/k9s:
 	brew install k9s
 
+.PHONY: lazydocker
 lazydocker: brew ${BREW_BIN}/lazydocker
 ${BREW_BIN}/lazydocker:
 	brew tap jesseduffield/lazydocker
@@ -301,24 +322,29 @@ mongosh: brew ${BREW_BIN}/mongosh
 ${BREW_BIN}/mongosh:
 	brew install mongosh
 
+.PHONY: mosh
 mosh: brew ${BREW_BIN}/mosh
 ${BREW_BIN}/mosh:
 	brew install mosh
 
+.PHONY: postgresql
 postgresql: brew ${BREW_GNU_BIN}/postgresql@16/bin/psql ~/.psqlrc
 ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 	brew install postgresql@16
 ~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
 	ln -s ${DOTFILES_PATH}/.psqlrc $@
 
+.PHONY: renovate
 renovate: brew ${VOLTA_BIN}/renovate
 ${VOLTA_BIN}/renovate: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g renovate
 
+.PHONY: tableplus
 tableplus: brew ${APP_BIN}/TablePlus.app
 ${APP_BIN}/TablePlus.app:
 	brew install tableplus
 
+.PHONY: terraform
 terraform: brew ${BREW_BIN}/terraform
 ${BREW_BIN}/terraform:
 	brew tap hashicorp/tap
@@ -326,14 +352,17 @@ ${BREW_BIN}/terraform:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula hashicorp/tap/terraform; fi
 	brew install hashicorp/tap/terraform
 
+.PHONY: uv
 uv: brew ${BREW_BIN}/uv
 ${BREW_BIN}/uv:
 	brew install uv
 
+.PHONY: 1password
 1password: brew ${APP_BIN}/1Password.app
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
+.PHONY: cursor
 cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
@@ -348,6 +377,7 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
+.PHONY: claude-code
 claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
@@ -374,6 +404,7 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
+.PHONY: codex
 codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
@@ -403,10 +434,12 @@ codex-handoff-hook: | ~/.codex
 	jq -n --arg command "$$command" --slurpfile current "$$input" '($$current[0] // {}) | .hooks.Stop //= [] | if any(.hooks.Stop[]?.hooks[]?; .command == $$command) then . else .hooks.Stop += [{hooks: [{type: "command", command: $$command}]}] end' > "$$tmp"; \
 	mv "$$tmp" ~/.codex/hooks.json
 
+.PHONY: codexbar
 codexbar: brew ${APP_BIN}/CodexBar.app
 ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
+.PHONY: codegraph
 codegraph: ${VOLTA_BIN}/codegraph
 ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @colbymchenry/codegraph
@@ -416,11 +449,6 @@ googleworkspace-cli: ${VOLTA_BIN}/gws
 ${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @googleworkspace/cli
 
-.PHONY: llama-cpp
-llama-cpp: brew ${BREW_BIN}/llama-cli
-${BREW_BIN}/llama-cli:
-	brew install llama.cpp
-
 .PHONY: llmfit
 llmfit: brew ${BREW_BIN}/llmfit
 ${BREW_BIN}/llmfit:
@@ -429,6 +457,7 @@ ${BREW_BIN}/llmfit:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula AlexsJones/llmfit/llmfit; fi
 	brew install AlexsJones/llmfit/llmfit
 
+.PHONY: mistral-vibe
 mistral-vibe: ${LOCAL_BIN}/vibe
 ${LOCAL_BIN}/vibe: | uv
 	${BREW_BIN}/uv tool install mistral-vibe
@@ -465,18 +494,22 @@ ${LOCAL_BIN}:
 cloakbrowser: docker
 	@$(DOCKER_OR_SKIP); docker image inspect ${CLOAKBROWSER_IMAGE} >/dev/null 2>&1 || docker pull ${CLOAKBROWSER_IMAGE}
 
+.PHONY: skills
 skills: ${VOLTA_BIN}/skills
 ${VOLTA_BIN}/skills: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g skills
 
+.PHONY: chatgpt
 chatgpt: brew ${APP_BIN}/ChatGPT.app
 ${APP_BIN}/ChatGPT.app:
 	brew install --cask chatgpt
 
+.PHONY: claude
 claude: brew ${APP_BIN}/Claude.app
 ${APP_BIN}/Claude.app:
 	brew install --cask claude
 
+.PHONY: flow
 flow: mas /Applications/Flow.app
 /Applications/Flow.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
@@ -487,6 +520,7 @@ flow: mas /Applications/Flow.app
 		mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
 
+.PHONY: frontcli
 frontcli: brew ${BREW_BIN}/frontcli
 ${BREW_BIN}/frontcli:
 	brew tap dedene/tap
@@ -494,6 +528,7 @@ ${BREW_BIN}/frontcli:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --formula dedene/tap/frontcli; fi
 	brew install dedene/tap/frontcli
 
+.PHONY: language-tool
 language-tool: brew ${APP_BIN}/LanguageTool.app
 ${APP_BIN}/LanguageTool.app:
 	brew install --cask languagetool
@@ -520,6 +555,7 @@ ${VOLTA_BIN}/pi: ${VOLTA_BIN}/node
 specsmd:
 	npx specsmd@latest install
 
+.PHONY: vibe-island
 vibe-island: /Applications/Vibe\ Island.app
 /Applications/Vibe\ Island.app:
 	curl -L https://dl.vibeisland.app/VibeIsland.dmg -o /tmp/VibeIsland.dmg
@@ -546,6 +582,7 @@ personal: \
 
 # No Homebrew cask available; the release ships the notes-export-mcp binary
 # inside the app bundle, used by the .mcp.json server entry.
+.PHONY: apple-notes-exporter
 apple-notes-exporter: ${APP_BIN}/Apple\ Notes\ Exporter.app
 ${APP_BIN}/Apple\ Notes\ Exporter.app:
 	curl -L https://github.com/kzaremski/apple-notes-exporter/releases/download/v2.0-2/AppleNotesExporter_v2.0-2.zip -o /tmp/AppleNotesExporter.zip
@@ -559,10 +596,12 @@ ${APP_BIN}/Apple\ Notes\ Exporter.app:
 # /Applications/1password\ 7.app:
 #	brew install 1password
 
+.PHONY: calibre
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
 
+.PHONY: obsidian
 obsidian: brew ${APP_BIN}/Obsidian.app
 ${APP_BIN}/Obsidian.app:
 	brew install --cask obsidian
@@ -572,6 +611,7 @@ perplexity: mas ${APP_BIN}/Perplexity.app
 ${APP_BIN}/Perplexity.app:
 	mas install 6714467650 || echo "Warning: Failed to install Perplexity (may not be available in this App Store region)"
 
+.PHONY: whatsapp
 whatsapp: brew ${APP_BIN}/WhatsApp.app
 ${APP_BIN}/WhatsApp.app:
 	brew install --cask whatsapp
@@ -584,18 +624,22 @@ ${APP_BIN}/WhatsApp.app:
 # Utils section
 ################################################################################
 
+.PHONY: cleanshot
 cleanshot: brew ${APP_BIN}/CleanShot\ X.app
 ${APP_BIN}/CleanShot\ X.app:
 	brew install cleanshot
 
+.PHONY: rectangle-pro
 rectangle-pro: brew /Applications/Rectangle\ Pro.app
 /Applications/Rectangle\ Pro.app:
 	brew install --cask rectangle-pro
 
+.PHONY: handy
 handy: brew ${APP_BIN}/Handy.app
 ${APP_BIN}/Handy.app:
 	brew install --cask handy
 
+.PHONY: things-3
 things-3: mas /Applications/Things3.app things3-cli-wrapper
 /Applications/Things3.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
@@ -606,6 +650,7 @@ things-3: mas /Applications/Things3.app things3-cli-wrapper
 		mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
 	fi
 
+.PHONY: things3-cli-wrapper
 things3-cli-wrapper: ${VOLTA_BIN}/thangs
 ${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @dougskinner/thangs
@@ -616,9 +661,11 @@ ${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
 
 .PHONY: javascript
 javascript: prettier cspell
+.PHONY: prettier
 prettier: ${VOLTA_BIN}/prettier
 ${VOLTA_BIN}/prettier: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g prettier @fsouza/prettierd
+.PHONY: cspell
 cspell: ${VOLTA_BIN}/cspell
 ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
@@ -628,6 +675,7 @@ rust: ${BREW_BIN}/cargo
 ${BREW_BIN}/cargo: | brew
 	brew install rust
 
+.PHONY: nvim
 nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
 ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim
@@ -637,31 +685,38 @@ ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 ~/cspell.json: ${DOTFILES_PATH}/cspell.json
 	ln -s ${DOTFILES_PATH}/cspell.json $@
 
+.PHONY: font-jetbrains-mono
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
 ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf:
 	brew install font-jetbrains-mono-nerd-font
 
+.PHONY: font-iosevka-nerd-font
 font-iosevka-nerd-font: ~/Library/Fonts/IosevkaNerdFont-Regular.ttf
 ~/Library/Fonts/IosevkaNerdFont-Regular.ttf:
 	brew install font-iosevka-nerd-font
 
+.PHONY: fzf
 fzf: ~/.fzf
 ~/.fzf:
 	git clone https://github.com/junegunn/fzf.git ~/.fzf
 	~/.fzf/install --no-update-rc --no-fish
 
+.PHONY: ripgrep
 ripgrep: brew ${BREW_BIN}/rg
 ${BREW_BIN}/rg:
 	brew install ripgrep
 
+.PHONY: zoxide
 zoxide: brew ${BREW_BIN}/zoxide
 ${BREW_BIN}/zoxide:
 	brew install zoxide
 
+.PHONY: zsh
 zsh: ~/.zshrc
 ~/.zshrc: ${DOTFILES_PATH}/.zshrc
 	ln -s ${DOTFILES_PATH}/.zshrc $@
 
+.PHONY: git-delta
 git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
 ${BREW_BIN}/delta:
 	brew install git-delta
@@ -672,6 +727,7 @@ ${BREW_BIN}/delta:
 		echo "Added include.path to ~/.gitconfig"; \
 	fi
 
+.PHONY: starship
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
@@ -684,11 +740,16 @@ ${BREW_BIN}/starship:
 		touch $@; \
 	fi
 
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+.PHONY: tmux
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
 ~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
 	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
+~/.tmux/plugins:
+	mkdir -p $@
+~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins
+	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 .PHONY: brew
 brew: ${BREW_BIN}/brew
@@ -699,6 +760,7 @@ ${BREW_BIN}/brew:
 	brew tap gapple/services
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap gapple/services; fi
 
+.PHONY: daisydisk
 daisydisk: mas /Applications/DaisyDisk.app
 /Applications/DaisyDisk.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
@@ -712,6 +774,7 @@ daisydisk: mas /Applications/DaisyDisk.app
 ${BREW_BIN}/pinentry-mac:
 	brew install pinentry-mac
 
+.PHONY: jscpd
 jscpd: ${VOLTA_BIN}/jscpd
 ${VOLTA_BIN}/jscpd: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g jscpd
@@ -721,11 +784,13 @@ mas: brew ${BREW_BIN}/mas
 ${BREW_BIN}/mas:
 	brew install mas
 
+.PHONY: node
 node: ${VOLTA_BIN}/node
 ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
 	touch $@
 
+.PHONY: pnpm
 pnpm: ${VOLTA_BIN}/pnpm
 ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
@@ -736,10 +801,12 @@ volta: brew ${BREW_BIN}/volta
 ${BREW_BIN}/volta:
 	brew install volta
 
+.PHONY: mtr
 mtr: brew ${BREW_BIN}/../sbin/mtr
 ${BREW_BIN}/../sbin/mtr:
 	brew install mtr
 
+.PHONY: jq
 jq: brew ${BREW_BIN}/jq
 ${BREW_BIN}/jq:
 	brew install jq

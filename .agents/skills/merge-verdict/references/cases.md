@@ -14,7 +14,7 @@ matter, the shape of the diff does.
 outside the transaction that performs the write, the retry loop wraps only the write, and no unique
 index backs the uniqueness the service checks in code. Unit tests exist and pass, sequentially.
 
-**Expected verdict:** *changes required*.
+**Expected verdict:** _changes required_.
 
 **Pass criteria**
 
@@ -22,9 +22,9 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
   first line.
 - At least one blocker is stated as an ordered sequence ending in a broken invariant — the
   out-of-transaction read, the stale retry, or the missing constraint. Failure classes 1, 2 and 3.
-- The barrier paragraph gives counts *and* states that the passing tests are sequential and therefore
+- The barrier paragraph gives counts _and_ states that the passing tests are sequential and therefore
   say nothing about the concurrent interleaving that motivates the blockers.
-- A fix ticket and a re-review ticket are linked.
+- A fix ticket is linked, and no ticket exists solely to request or record the re-review.
 - The closing sentence is "do not approve or merge this head" (in the PR's language). On Bitbucket
   this sentence is the entire enforcement; its absence fails the case even if everything else is
   right.
@@ -43,7 +43,7 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
 one regression test covering the reported input. A second input path reaches the same function and is
 not covered, and the error code the endpoint now returns is not documented.
 
-**Expected verdict:** *approved with reservations*.
+**Expected verdict:** _approved with reservations_.
 
 **Pass criteria**
 
@@ -66,19 +66,20 @@ not covered, and the error code the endpoint now returns is not documented.
 Both cases were run once, on 2026-08-11, phases 1 to 5 only — publication was deliberately not
 reached. A third run, on 2026-08-12, was a real review rather than a case, and went through phase 6.
 
-- **Case A**, on a Bitbucket PR (`bkt`), reached *changes required* as expected, on the three
+- **Case A**, on a Bitbucket PR (`bkt`), reached _changes required_ as expected, on the three
   mechanisms of classes 1, 2 and 3. Two lessons went back into the skill: the reported base was the
   integration branch while the branch was stacked — the opposite of what the Gotcha then claimed —
   and the run that mattered most was the first, which produced no verdict at all because the
   barrier could not install its dependencies. Refusing to rule from that is the skill working, and
   it is why phase 4 precedes phase 5.
-- **Case B**, on a GitHub PR (`gh`), ran end to end but produced *changes required* rather than the
+- **Case B**, on a GitHub PR (`gh`), ran end to end but produced _changes required_ rather than the
   expected reservations: the target held a measured mechanism that destroys an unversioned file and
   still reports success. The expectation was wrong about the target, not about the skill — the
-  *approved with reservations* path therefore remains unexercised.
+  _approved with reservations_ path therefore remains unexercised.
 - **Third run**, on GitHub, phases 1 to 6, first publication the skill has ever performed: a general
-  comment written through a body file, plus a fix ticket and a re-review ticket. Verdict *changes
-  required*, on classes 4 and 5 only. Five gaps came back into the skill. The requester was the
+  comment written through a body file, plus a fix ticket and the re-review ticket the procedure then
+  required. Verdict _changes required_, on classes 4 and 5 only. Five gaps came back into the skill.
+  The requester was the
   author, so GitHub refused the native blocking state and the comment had to carry the enforcement
   alone — a configuration the skill described only for Bitbucket. The head moved between the metadata
   read and the barrier, which phase 1's SHA anchoring caught, so the guard is now exercised rather
@@ -101,8 +102,8 @@ since the blocking case is assigned to Bitbucket. The third run attempted it and
 the account being the PR's author; that measures the refusal, not the success path. Run case A a
 second time on GitHub, on a PR the account did not write, or the enforcement path stays unverified.
 
-*Approved with reservations* has never been produced: both cases that reached a verdict landed on
-*changes required*. The state that requires stating a bound rather than forbidding a merge is
+_Approved with reservations_ has never been produced: both cases that reached a verdict landed on
+_changes required_. The state that requires stating a bound rather than forbidding a merge is
 therefore the least exercised part of the skill.
 
 Do not let the runs that went green imply either gap is covered: that is the same substitution of a
