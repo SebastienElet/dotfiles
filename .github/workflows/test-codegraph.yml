@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - run: make jq tokei codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
+      - run: make jq tokei ripgrep codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
       - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash scripts/codegraph_configure_test
       - run: bash scripts/codegraph_mcp_test
