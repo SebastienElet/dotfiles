@@ -428,7 +428,7 @@ claude-code-measurement-hooks: arnes
 .PHONY: codex
 codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g @openai/codex
+	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
 	mkdir -p $@
 # Codex ignores AGENTS.md @import directives, so the sources are assembled

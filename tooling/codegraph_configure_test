@@ -190,6 +190,12 @@ if make -s -C "$root" codegraph-ignore CODEGRAPH_GLOBAL_IGNORE="$global_ignore" 
 fi
 rg -qF 'exists and is not the expected symbolic link' "$tmp/error"
 
+codex_install=$(make -Bn -C "$root" HOME="$tmp/make-home" "$tmp/make-home/.volta/bin/codex")
+printf '%s\n' "$codex_install" | rg -q '/volta install @openai/codex$'
+if printf '%s\n' "$codex_install" | rg -q 'npm install -g @openai/codex'; then
+  exit 1
+fi
+
 real_claude=${CODEGRAPH_REAL_CLAUDE_BIN:-}
 if [ -z "$real_claude" ]; then
   real_claude=$(command -v claude || true)
