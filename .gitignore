@@ -2,7 +2,9 @@ nvim/.netrwhist
 nvim/bundle/
 nvim/pack/
 fish/fish_plugins
-fish/functions
+fish/functions/*
+!fish/functions/__git_*.fish
+!fish/functions/git.fish
 fish/completions
 
 # Temporary working files
