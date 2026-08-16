@@ -1,0 +1,22 @@
+name: Arnes tests
+
+on:
+  push:
+    paths:
+      - home/.arnes.yaml
+      - tooling/arnes/**
+      - .github/workflows/test-arnes.yml
+  pull_request:
+    paths:
+      - home/.arnes.yaml
+      - tooling/arnes/**
+      - .github/workflows/test-arnes.yml
+
+jobs:
+  arnes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cargo fmt --manifest-path tooling/arnes/Cargo.toml --check
+      - run: cargo clippy --manifest-path tooling/arnes/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --manifest-path tooling/arnes/Cargo.toml

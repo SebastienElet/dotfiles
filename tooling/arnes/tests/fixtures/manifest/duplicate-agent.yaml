@@ -1,0 +1,7 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+  - id: claude
+    scopes: [project]
+resources: []

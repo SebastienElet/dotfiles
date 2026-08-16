@@ -1,0 +1,11 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+resources:
+  - id: instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: /tmp/instructions.md }
+    destination: { root: home, path: .claude/CLAUDE.md }

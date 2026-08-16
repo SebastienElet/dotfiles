@@ -1,14 +1,14 @@
-name: Rust tests
+name: Daily Routine tests
 
 on:
   push:
     paths:
       - tooling/daily-routine/**
-      - .github/workflows/test-rust.yml
+      - .github/workflows/test-daily-routine.yml
   pull_request:
     paths:
       - tooling/daily-routine/**
-      - .github/workflows/test-rust.yml
+      - .github/workflows/test-daily-routine.yml
 
 jobs:
   daily-routine:

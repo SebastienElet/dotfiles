@@ -1,4 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use std::path::PathBuf;
+
+use arnes::manifest;
 
 #[derive(Parser)]
 #[command(version, about = "Diagnose agent harness resources")]
@@ -23,6 +26,7 @@ enum Command {
 
 #[derive(Clone, ValueEnum)]
 enum Resource {
+    Manifest,
     Config,
     Instructions,
     Skills,
@@ -57,11 +61,22 @@ enum Format {
 fn main() {
     let Cli { command } = Cli::parse();
 
-    match command {
-        Command::Doctor {
-            format: Format::Json,
-            ..
-        } => println!("[]"),
-        Command::Doctor { .. } => {}
+    let Command::Doctor {
+        resource, format, ..
+    } = command;
+
+    if matches!(resource, None | Some(Resource::Manifest)) {
+        let Some(home) = std::env::var_os("HOME") else {
+            eprintln!("HOME: environment variable is required");
+            std::process::exit(1);
+        };
+        if let Err(error) = manifest::load(&PathBuf::from(home)) {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+    }
+
+    if matches!(format, Format::Json) {
+        println!("[]");
     }
 }

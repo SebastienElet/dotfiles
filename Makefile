@@ -196,6 +196,7 @@ work: \
 
 .PHONY: ai
 ai: \
+	arnes \
 	brain \
 	chatgpt \
 	claude \
@@ -210,6 +211,14 @@ ai: \
 	openspec \
 	scrapling \
 	skills
+
+~/.arnes.yaml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml
+	${DEPLOY_LINK} ${DOTFILES_PATH}/.arnes.yaml ${DOTFILES_PATH}/home/.arnes.yaml $@
+
+.PHONY: arnes
+arnes: rust ${DEPLOY_LINK} ~/.arnes.yaml | ${LOCAL_BIN}
+	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
+	${DEPLOY_LINK} ${DOTFILES_PATH}/arnes/target/release/arnes ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
 .PHONY: brain
 brain:
