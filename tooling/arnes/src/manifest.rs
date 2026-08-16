@@ -32,18 +32,11 @@ impl Display for ManifestError {
 
 impl std::error::Error for ManifestError {}
 
-pub struct Manifest {
-    document: ManifestDocument,
-    home: PathBuf,
-    repository: PathBuf,
-}
-
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct ManifestDocument {
+pub struct Manifest {
     #[serde(rename = "version")]
     _version: u64,
-    repository: RootedPath,
     agents: Vec<AgentDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
@@ -119,10 +112,10 @@ pub fn load(home: &Path) -> Result<Manifest, ManifestError> {
         ManifestError::new("manifest", reason)
     })?;
 
-    parse(&manifest, home)
+    parse(&manifest)
 }
 
-pub fn parse(input: &str, home: &Path) -> Result<Manifest, ManifestError> {
+pub fn parse(input: &str) -> Result<Manifest, ManifestError> {
     let value: Value = serde_yaml_ng::from_str(input)
         .map_err(|error| ManifestError::new("manifest", error.to_string()))?;
     validation::validate_value(&value)?;
@@ -132,45 +125,17 @@ pub fn parse(input: &str, home: &Path) -> Result<Manifest, ManifestError> {
     }
 
     let deserializer = serde_yaml_ng::Deserializer::from_str(input);
-    let document: ManifestDocument =
-        serde_path_to_error::deserialize(deserializer).map_err(|error| {
-            let field = error.path().to_string();
-            ManifestError::new(
-                if field.is_empty() || field == "." {
-                    "manifest"
-                } else {
-                    &field
-                },
-                error.into_inner().to_string(),
-            )
-        })?;
-    validation::validate(&document)?;
-    let repository = home.join(&document.repository.path);
-    Ok(Manifest {
-        document,
-        home: home.to_owned(),
-        repository,
-    })
-}
-
-impl Manifest {
-    pub fn repository_root(&self) -> &Path {
-        &self.repository
-    }
-
-    pub fn resource_paths(&self) -> impl Iterator<Item = (PathBuf, PathBuf)> + '_ {
-        self.document.resources.iter().map(|resource| {
-            (
-                self.resolve(&resource.source),
-                self.resolve(&resource.destination),
-            )
-        })
-    }
-
-    fn resolve(&self, path: &RootedPath) -> PathBuf {
-        match path.root {
-            PathRoot::Home => self.home.join(&path.path),
-            PathRoot::Repository => self.repository.join(&path.path),
-        }
-    }
+    let manifest: Manifest = serde_path_to_error::deserialize(deserializer).map_err(|error| {
+        let field = error.path().to_string();
+        ManifestError::new(
+            if field.is_empty() || field == "." {
+                "manifest"
+            } else {
+                &field
+            },
+            error.into_inner().to_string(),
+        )
+    })?;
+    validation::validate(&manifest)?;
+    Ok(manifest)
 }

@@ -1,7 +1,4 @@
-use super::{
-    Agent, ManifestDocument, ManifestError, PathRoot, ResourceDeclaration, RootedPath,
-    SCHEMA_VERSION, Scope,
-};
+use super::{Agent, Manifest, ManifestError, PathRoot, ResourceDeclaration, SCHEMA_VERSION, Scope};
 use serde_yaml_ng::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
@@ -54,15 +51,7 @@ fn is_secret_name(name: &str) -> bool {
         .any(|part| matches!(part, "secret" | "token" | "password" | "credential"))
 }
 
-pub(super) fn validate(manifest: &ManifestDocument) -> Result<(), ManifestError> {
-    validate_path("repository.path", &manifest.repository.path)?;
-    if manifest.repository.root != PathRoot::Home {
-        return Err(ManifestError::new(
-            "repository.root",
-            "repository must be relative to home",
-        ));
-    }
-
+pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     let mut agents = HashMap::new();
     for (agent_index, agent) in manifest.agents.iter().enumerate() {
         if agents.contains_key(&agent.id) {
@@ -83,13 +72,12 @@ pub(super) fn validate(manifest: &ManifestDocument) -> Result<(), ManifestError>
         agents.insert(agent.id, scopes);
     }
 
-    validate_resources(&manifest.resources, &agents, &manifest.repository.path)
+    validate_resources(&manifest.resources, &agents)
 }
 
 fn validate_resources(
     resources: &[ResourceDeclaration],
     agents: &HashMap<Agent, HashSet<Scope>>,
-    repository: &Path,
 ) -> Result<(), ManifestError> {
     let mut identifiers = HashMap::new();
     let mut destinations = HashMap::new();
@@ -117,9 +105,8 @@ fn validate_resources(
                 "scope is not declared for this agent",
             ));
         }
-        validate_resource_paths(resource, index, repository)?;
-        let destination = home_relative(&resource.destination, repository);
-        if let Some(previous) = destinations.insert(destination, index) {
+        validate_resource_paths(resource, index)?;
+        if let Some(previous) = destinations.insert(&resource.destination, index) {
             return Err(ManifestError::new(
                 field("destination"),
                 format!("duplicates resources[{previous}].destination"),
@@ -132,7 +119,6 @@ fn validate_resources(
 fn validate_resource_paths(
     resource: &ResourceDeclaration,
     index: usize,
-    repository: &Path,
 ) -> Result<(), ManifestError> {
     let source = format!("resources[{index}].source");
     let destination = format!("resources[{index}].destination");
@@ -155,22 +141,13 @@ fn validate_resource_paths(
             "destination root is incompatible with resource scope",
         ));
     }
-    if home_relative(&resource.source, repository)
-        == home_relative(&resource.destination, repository)
-    {
+    if resource.source == resource.destination {
         return Err(ManifestError::new(
             destination,
             "source and destination must differ",
         ));
     }
     Ok(())
-}
-
-fn home_relative(path: &RootedPath, repository: &Path) -> std::path::PathBuf {
-    match path.root {
-        PathRoot::Home => path.path.clone(),
-        PathRoot::Repository => repository.join(&path.path),
-    }
 }
 
 fn validate_path(field: &str, path: &Path) -> Result<(), ManifestError> {

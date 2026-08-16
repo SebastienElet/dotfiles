@@ -1,5 +1,2 @@
 version: 1
-repository:
-  root: home
-  path: .dotfiles
 agents: []

@@ -12,7 +12,7 @@ fn fixture(name: &str) -> String {
 }
 
 fn error(name: &str) -> String {
-    match manifest::parse(&fixture(name), Path::new("/fixture/home")) {
+    match manifest::parse(&fixture(name)) {
         Ok(_) => panic!("{name} unexpectedly passed validation"),
         Err(error) => error.to_string(),
     }
@@ -20,25 +20,7 @@ fn error(name: &str) -> String {
 
 #[test]
 fn valid_manifest_models_rooted_user_and_project_resources() {
-    let manifest = manifest::parse(&fixture("valid.yaml"), Path::new("/fixture/home")).unwrap();
-
-    assert_eq!(
-        manifest.repository_root(),
-        Path::new("/fixture/home/.dotfiles")
-    );
-    assert_eq!(
-        manifest.resource_paths().collect::<Vec<_>>(),
-        [
-            (
-                Path::new("/fixture/home/.dotfiles/harness/AGENTS.md").to_owned(),
-                Path::new("/fixture/home/.claude/CLAUDE.md").to_owned(),
-            ),
-            (
-                Path::new("/fixture/home/.dotfiles/harness/AGENTS.md").to_owned(),
-                Path::new("/fixture/home/.dotfiles/CLAUDE.md").to_owned(),
-            ),
-        ]
-    );
+    manifest::parse(&fixture("valid.yaml")).unwrap();
 }
 
 #[test]
@@ -79,15 +61,10 @@ fn duplicate_identifiers_are_rejected() {
 
 #[test]
 fn duplicate_destinations_are_rejected() {
-    for fixture in [
-        "duplicate-destination.yaml",
-        "resolved-duplicate-destination.yaml",
-    ] {
-        assert_eq!(
-            error(fixture),
-            "resources[1].destination: duplicates resources[0].destination"
-        );
-    }
+    assert_eq!(
+        error("duplicate-destination.yaml"),
+        "resources[1].destination: duplicates resources[0].destination"
+    );
 }
 
 #[test]
@@ -122,10 +99,6 @@ fn incompatible_declarations_are_rejected() {
             "wrong-destination-root.yaml",
             "resources[0].destination.root: destination root is incompatible with resource scope",
         ),
-        (
-            "resolved-source-destination.yaml",
-            "resources[0].destination: source and destination must differ",
-        ),
     ] {
         assert_eq!(error(fixture), expected);
     }
@@ -148,7 +121,7 @@ fn inline_resource_contents_are_rejected_without_exposing_values() {
 
     assert_eq!(
         error,
-        "resources[0].content: resources[0]: unknown field `content`, expected one of `id`, `kind`, `agent`, `scope`, `source`, `destination` at line 11 column 5"
+        "resources[0].content: resources[0]: unknown field `content`, expected one of `id`, `kind`, `agent`, `scope`, `source`, `destination` at line 10 column 5"
     );
     assert!(!error.contains("inline instruction text"));
 }
