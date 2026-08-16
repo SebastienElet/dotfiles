@@ -129,7 +129,7 @@ new_case missing_readlink
 assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$old_source" "$new_source" "$destination"
 grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was not reported"
 
-case_root=$test_root/make_integration
+case_root=$test_root/make_starship_integration
 test_home=$case_root/home
 mkdir -p "$test_home"
 (
@@ -138,19 +138,35 @@ mkdir -p "$test_home"
 )
 assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
 rm "$test_home/.tmux.conf"
+starship_destination=$test_home/.config/starship.toml
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+assert_link "$starship_destination" "$repository/home/.config/starship.toml"
+mkdir "$case_root/bin"
+printf '%s\n' '#!/usr/bin/env bash' ': >"$LN_MARKER"' '"$REAL_LN" "$@"' >"$case_root/bin/ln"
+chmod +x "$case_root/bin/ln"
+env HOME="$test_home" REAL_LN="$(command -v ln)" LN_MARKER="$case_root/ln-called" PATH="$case_root/bin:$PATH" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+[[ ! -e $case_root/ln-called ]] || fail "Make relinked the current Starship destination"
+assert_link "$starship_destination" "$repository/home/.config/starship.toml"
+rm "$starship_destination"
+ln -s "$repository/.config/starship.toml" "$starship_destination"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+assert_link "$starship_destination" "$repository/home/.config/starship.toml"
+rm "$starship_destination"
 unexpected_source=$case_root/unexpected
 mkdir "$unexpected_source"
-ln -s "$unexpected_source" "$test_home/.zshrc"
-assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
-assert_link "$test_home/.zshrc" "$unexpected_source"
-rm "$test_home/.zshrc"
-ln -s "$repository/.zshrc" "$test_home/.zshrc"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
-assert_link "$test_home/.zshrc" "$repository/home/.zshrc"
-before=$(ls -di "$test_home/.zshrc" | awk '{print $1}')
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$test_home/.zshrc"
-after=$(ls -di "$test_home/.zshrc" | awk '{print $1}')
-[[ $before == "$after" ]] || fail "Make relinked the current destination"
+ln -s "$unexpected_source" "$starship_destination"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+assert_link "$starship_destination" "$unexpected_source"
+
+case_root=$test_root/make_starship_missing_source
+test_home=$case_root/home
+starship_destination=$test_home/.config/starship.toml
+mkdir -p "$test_home" "$case_root/repository"
+printf '%s\n' '#!/usr/bin/env bash' ': >"$HELPER_MARKER"' >"$case_root/deploy-link"
+chmod +x "$case_root/deploy-link"
+assert_failure env HOME="$test_home" HELPER_MARKER="$case_root/helper-called" make -f "$repository/Makefile" DOTFILES_PATH="$case_root/repository" DEPLOY_LINK="$case_root/deploy-link" "$starship_destination"
+[[ ! -e $case_root/helper-called ]] || fail "Make invoked deploy-link without the Starship source"
+[[ ! -e $starship_destination && ! -L $starship_destination ]] || fail "missing Starship source created a destination"
 
 case_root=$test_root/daily_routine_config
 test_home=$case_root/home
