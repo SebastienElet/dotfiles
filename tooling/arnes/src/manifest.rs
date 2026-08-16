@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use serde::Deserialize;
 use serde_yaml_ng::Value;
 use std::fmt::{self, Display};
@@ -41,6 +42,14 @@ pub struct Manifest {
     resources: Vec<ResourceDeclaration>,
 }
 
+impl Manifest {
+    pub fn combinations(&self) -> impl Iterator<Item = (Agent, Scope)> + '_ {
+        self.agents
+            .iter()
+            .flat_map(|agent| agent.scopes.iter().map(move |scope| (agent.id, *scope)))
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AgentDeclaration {
@@ -74,17 +83,17 @@ enum PathRoot {
     Repository,
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, ValueEnum)]
 #[serde(rename_all = "lowercase")]
-enum Agent {
+pub enum Agent {
     Claude,
     Cursor,
     Codex,
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, ValueEnum)]
 #[serde(rename_all = "lowercase")]
-enum Scope {
+pub enum Scope {
     User,
     Project,
 }
