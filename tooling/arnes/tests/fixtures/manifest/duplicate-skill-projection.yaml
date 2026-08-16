@@ -1,0 +1,20 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+skills: []
+resources:
+  - id: claude-user-skills
+    kind: skills
+    agent: claude
+    scope: user
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .claude/skills }
+  - id: claude-user-other-skills
+    kind: skills
+    agent: claude
+    scope: user
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .claude/other-skills }

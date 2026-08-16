@@ -11,41 +11,53 @@ agents:
     scopes: [user, project]
   - id: codex
     scopes: [user, project]
+skills:
+  - slug: alpha
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
 resources:
-  - id: claude-user-alpha
+  - id: claude-user-skills
     kind: skills
     agent: claude
     scope: user
-    source: { root: repository, path: .agents/skills/alpha }
-    destination: { root: home, path: .claude/skills/alpha }
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .claude/skills }
   - id: claude-project-skills
     kind: skills
     agent: claude
     scope: project
+    layout: root
     source: { root: repository, path: .agents/skills }
     destination: { root: repository, path: .claude/skills }
-  - id: cursor-user-alpha
+  - id: cursor-user-skills
     kind: skills
     agent: cursor
     scope: user
-    source: { root: repository, path: .agents/skills/alpha }
-    destination: { root: home, path: .cursor/skills/alpha }
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .cursor/skills }
   - id: cursor-project-skills
     kind: skills
     agent: cursor
     scope: project
+    layout: root
     source: { root: repository, path: .agents/skills }
     destination: { root: repository, path: .cursor/skills }
-  - id: codex-user-alpha
+  - id: codex-user-skills
     kind: skills
     agent: codex
     scope: user
-    source: { root: repository, path: .agents/skills/alpha }
-    destination: { root: home, path: .agents/skills/alpha }
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .agents/skills }
   - id: codex-project-skills
     kind: skills
     agent: codex
     scope: project
+    layout: root
     source: { root: repository, path: .agents/skills }
     destination: { root: repository, path: .codex/skills }
 ";

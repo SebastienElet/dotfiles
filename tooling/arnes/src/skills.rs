@@ -1,6 +1,6 @@
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
-use crate::manifest::{Agent, Manifest, Scope, SkillResource};
+use crate::manifest::{Agent, Manifest, Scope, SkillLayout, SkillProjection};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -8,17 +8,6 @@ mod discovery;
 mod paths;
 mod projection;
 mod references;
-
-struct Specification {
-    root: &'static str,
-    layout: Layout,
-}
-
-#[derive(Clone, Copy)]
-enum Layout {
-    Leaves,
-    Root,
-}
 
 pub fn diagnose(
     roots: &Roots,
@@ -41,90 +30,56 @@ pub fn diagnose(
 }
 
 fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) -> Vec<Diagnostic> {
-    let specification = specification(agent, scope);
     let resources = manifest
-        .skill_resources()
+        .skill_projections()
         .filter(|resource| resource.agent == agent && resource.scope == scope)
         .collect::<Vec<_>>();
     if resources.is_empty() {
         return vec![unsupported(Some(agent), Some(scope))];
     }
-    let (supported, unsupported_resources): (Vec<_>, Vec<_>) = resources
-        .into_iter()
-        .partition(|resource| declaration_supported(resource, &specification));
+    let (supported, unsupported_resources): (Vec<_>, Vec<_>) =
+        resources.into_iter().partition(declaration_supported);
     let mut diagnostics = unsupported_resources
         .into_iter()
         .map(|resource| unsupported_resource(&resource))
         .collect::<Vec<_>>();
-    match specification.layout {
-        Layout::Leaves => diagnostics.extend(diagnose_leaves(
-            roots,
-            agent,
-            scope,
-            &specification,
-            supported,
-        )),
-        Layout::Root => diagnostics.extend(
-            supported
-                .iter()
-                .flat_map(|resource| projection::root(roots, resource)),
-        ),
+    for resource in supported {
+        match resource.layout {
+            SkillLayout::Leaves => diagnostics.extend(diagnose_leaves(roots, manifest, &resource)),
+            SkillLayout::Root => diagnostics.extend(projection::root(roots, &resource)),
+        }
     }
     diagnostics
 }
 
 fn diagnose_leaves(
     roots: &Roots,
-    agent: Agent,
-    scope: Scope,
-    specification: &Specification,
-    resources: Vec<SkillResource<'_>>,
+    manifest: &Manifest,
+    resource: &SkillProjection<'_>,
 ) -> Vec<Diagnostic> {
-    let declared = resources
+    let skills = manifest
+        .installed_skills(resource.agent, resource.scope)
+        .collect::<Vec<_>>();
+    let declared = skills
         .iter()
-        .map(|resource| resource.destination.to_owned())
+        .map(|skill| resource.destination.join(*skill))
         .collect::<HashSet<PathBuf>>();
-    let mut diagnostics = resources
+    let mut diagnostics = skills
         .iter()
-        .map(|resource| projection::leaf(roots, resource))
+        .map(|skill| projection::leaf(roots, resource, skill))
         .collect::<Vec<_>>();
     diagnostics.extend(discovery::unmanaged(
         roots,
-        agent,
-        scope,
-        Path::new(specification.root),
+        resource.agent,
+        resource.scope,
+        resource.destination,
         &declared,
     ));
     diagnostics
 }
 
-fn declaration_supported(resource: &SkillResource<'_>, specification: &Specification) -> bool {
-    let source_root = Path::new(".agents/skills");
-    let destination_root = Path::new(specification.root);
-    match specification.layout {
-        Layout::Root => resource.source == source_root && resource.destination == destination_root,
-        Layout::Leaves => {
-            resource.source.parent() == Some(source_root)
-                && resource.destination.parent() == Some(destination_root)
-                && resource.source.file_name() == resource.destination.file_name()
-        }
-    }
-}
-
-fn specification(agent: Agent, scope: Scope) -> Specification {
-    let root = match (agent, scope) {
-        (Agent::Claude, Scope::User) => ".claude/skills",
-        (Agent::Cursor, Scope::User) => ".cursor/skills",
-        (Agent::Codex, Scope::User) => ".agents/skills",
-        (Agent::Claude, Scope::Project) => ".claude/skills",
-        (Agent::Cursor, Scope::Project) => ".cursor/skills",
-        (Agent::Codex, Scope::Project) => ".codex/skills",
-    };
-    let layout = match scope {
-        Scope::User => Layout::Leaves,
-        Scope::Project => Layout::Root,
-    };
-    Specification { root, layout }
+fn declaration_supported(resource: &SkillProjection<'_>) -> bool {
+    resource.source == Path::new(".agents/skills")
 }
 
 fn unsupported(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {
@@ -141,7 +96,7 @@ fn unsupported(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {
     )
 }
 
-fn unsupported_resource(resource: &SkillResource<'_>) -> Diagnostic {
+fn unsupported_resource(resource: &SkillProjection<'_>) -> Diagnostic {
     Diagnostic::new(
         "skills",
         State::Unsupported,

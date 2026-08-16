@@ -60,14 +60,18 @@ fn undeclared_and_unsupported_projections_are_reported() {
     let fixture = Fixture::new();
     fixture.write_home(
         ".arnes.yaml",
-        &MANIFEST.replace(".claude/skills/alpha", ".claude/other/alpha"),
+        &MANIFEST.replacen(
+            "source: { root: repository, path: .agents/skills }",
+            "source: { root: repository, path: .agents/other }",
+            1,
+        ),
     );
     let (code, stdout, _) = run(
         &fixture,
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
     assert_eq!(code, 0);
-    assert!(stdout.contains("projection claude-user-alpha"));
+    assert!(stdout.contains("projection claude-user-skills"));
     assert!(stdout.contains("is unsupported"));
 }
 

@@ -3,6 +3,8 @@ use serde_yaml_ng::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
 
+mod skills;
+
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
     let mapping = value
         .as_mapping()
@@ -72,7 +74,8 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
         agents.insert(agent.id, scopes);
     }
 
-    validate_resources(&manifest.resources, &agents)
+    validate_resources(&manifest.resources, &agents)?;
+    skills::validate(&manifest.skills, &manifest.resources, &agents)
 }
 
 fn validate_resources(
@@ -81,6 +84,7 @@ fn validate_resources(
 ) -> Result<(), ManifestError> {
     let mut identifiers = HashMap::new();
     let mut destinations = HashMap::new();
+    let mut skill_projections = HashMap::new();
 
     for (index, resource) in resources.iter().enumerate() {
         let field = |name: &str| format!("resources[{index}].{name}");
@@ -106,6 +110,16 @@ fn validate_resources(
             ));
         }
         validate_resource_paths(resource, index)?;
+        validate_resource_layout(resource, index)?;
+        if resource.kind == super::ResourceKind::Skills
+            && let Some(previous) =
+                skill_projections.insert((resource.agent, resource.scope), index)
+        {
+            return Err(ManifestError::new(
+                field("agent"),
+                format!("duplicates resources[{previous}] skill projection"),
+            ));
+        }
         if let Some(previous) = destinations.insert(&resource.destination, index) {
             return Err(ManifestError::new(
                 field("destination"),
@@ -114,6 +128,23 @@ fn validate_resources(
         }
     }
     Ok(())
+}
+
+fn validate_resource_layout(
+    resource: &ResourceDeclaration,
+    index: usize,
+) -> Result<(), ManifestError> {
+    match (resource.kind, resource.layout) {
+        (super::ResourceKind::Skills, None) => Err(ManifestError::new(
+            format!("resources[{index}].layout"),
+            "skill projection layout is required",
+        )),
+        (super::ResourceKind::Skills, Some(_)) | (_, None) => Ok(()),
+        (_, Some(_)) => Err(ManifestError::new(
+            format!("resources[{index}].layout"),
+            "layout is only valid for skill projections",
+        )),
+    }
 }
 
 fn validate_resource_paths(

@@ -2,21 +2,21 @@ use super::paths::{ancestor_within, canonical_within, destination, label};
 use super::references;
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
-use crate::manifest::{Scope, SkillResource};
+use crate::manifest::{Scope, SkillProjection};
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-pub fn leaf(roots: &Roots, resource: &SkillResource<'_>) -> Diagnostic {
-    let name = resource.destination.file_name().unwrap().to_string_lossy();
+pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagnostic {
+    let installed = resource.destination.join(name);
     let subject = format!(
         "managed {} {} skill {name} at {}",
         resource.agent,
         resource.scope,
-        label(resource.scope, resource.destination)
+        label(resource.scope, &installed)
     );
-    let source = roots.repository().join(resource.source);
-    let destination = destination(roots, resource.scope, resource.destination);
+    let source = roots.repository().join(resource.source).join(name);
+    let destination = destination(roots, resource.scope, &installed);
     match expected_link(roots, resource.scope, &source, &destination, &subject)
         .and_then(|_| references::validate(&destination, &subject))
     {
@@ -25,7 +25,7 @@ pub fn leaf(roots: &Roots, resource: &SkillResource<'_>) -> Diagnostic {
     }
 }
 
-pub fn root(roots: &Roots, resource: &SkillResource<'_>) -> Vec<Diagnostic> {
+pub fn root(roots: &Roots, resource: &SkillProjection<'_>) -> Vec<Diagnostic> {
     let source = roots.repository().join(resource.source);
     let destination = destination(roots, resource.scope, resource.destination);
     let subject = format!(
@@ -49,7 +49,7 @@ pub fn root(roots: &Roots, resource: &SkillResource<'_>) -> Vec<Diagnostic> {
 
 fn root_skill(
     roots: &Roots,
-    resource: &SkillResource<'_>,
+    resource: &SkillProjection<'_>,
     source: &Path,
     destination: &Path,
     name: &Path,

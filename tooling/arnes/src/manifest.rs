@@ -39,6 +39,8 @@ pub struct Manifest {
     #[serde(rename = "version")]
     _version: u64,
     agents: Vec<AgentDeclaration>,
+    #[serde(default)]
+    skills: Vec<SkillDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 
@@ -62,17 +64,29 @@ impl Manifest {
             })
     }
 
-    pub fn skill_resources(&self) -> impl Iterator<Item = SkillResource<'_>> {
+    pub fn skill_projections(&self) -> impl Iterator<Item = SkillProjection<'_>> {
         self.resources
             .iter()
             .filter(|resource| resource.kind == ResourceKind::Skills)
-            .map(|resource| SkillResource {
+            .map(|resource| SkillProjection {
                 id: &resource.id,
                 agent: resource.agent,
                 scope: resource.scope,
+                layout: resource.layout.expect("skill projections have a layout"),
                 source: &resource.source.path,
                 destination: &resource.destination.path,
             })
+    }
+
+    pub fn installed_skills(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
+        self.skills
+            .iter()
+            .filter(move |skill| {
+                skill
+                    .installations
+                    .contains(&SkillInstallation { agent, scope })
+            })
+            .map(|skill| skill.slug.as_str())
     }
 }
 
@@ -86,12 +100,27 @@ pub struct InstructionResource<'a> {
 }
 
 #[derive(Clone, Copy)]
-pub struct SkillResource<'a> {
+pub struct SkillProjection<'a> {
     pub id: &'a str,
     pub agent: Agent,
     pub scope: Scope,
+    pub layout: SkillLayout,
     pub source: &'a Path,
     pub destination: &'a Path,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SkillDeclaration {
+    slug: String,
+    installations: Vec<SkillInstallation>,
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SkillInstallation {
+    agent: Agent,
+    scope: Scope,
 }
 
 #[derive(Deserialize)]
@@ -108,8 +137,16 @@ struct ResourceDeclaration {
     kind: ResourceKind,
     agent: Agent,
     scope: Scope,
+    layout: Option<SkillLayout>,
     source: RootedPath,
     destination: RootedPath,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SkillLayout {
+    Leaves,
+    Root,
 }
 
 #[derive(Clone, Eq, Hash, PartialEq, Deserialize)]
