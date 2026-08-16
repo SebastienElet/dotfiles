@@ -198,6 +198,7 @@ work: \
 
 .PHONY: ai
 ai: \
+	~/.arnes.yaml \
 	brain \
 	chatgpt \
 	claude \
@@ -212,6 +213,9 @@ ai: \
 	openspec \
 	scrapling \
 	skills
+
+~/.arnes.yaml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml
+	${DEPLOY_LINK} ${DOTFILES_PATH}/.arnes.yaml ${DOTFILES_PATH}/home/.arnes.yaml $@
 
 .PHONY: brain
 brain:

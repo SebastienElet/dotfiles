@@ -1,0 +1,12 @@
+version: 1
+repository: { root: home, path: .dotfiles }
+agents:
+  - id: claude
+    scopes: [user]
+resources:
+  - id: instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: home, path: source.md }
+    destination: { root: home, path: .claude/CLAUDE.md }

@@ -1,0 +1,6 @@
+version: 2
+repository:
+  root: repository
+  path: ../outside
+agents: []
+resources: []
