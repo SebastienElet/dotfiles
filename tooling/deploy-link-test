@@ -132,6 +132,12 @@ grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was
 case_root=$test_root/make_integration
 test_home=$case_root/home
 mkdir -p "$test_home"
+(
+  cd "$case_root"
+  env HOME="$test_home" make -f "$repository/Makefile" "$test_home/.tmux.conf"
+)
+assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
+rm "$test_home/.tmux.conf"
 unexpected_source=$case_root/unexpected
 mkdir "$unexpected_source"
 ln -s "$unexpected_source" "$test_home/.zshrc"
