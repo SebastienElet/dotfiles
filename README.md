@@ -1,5 +1,7 @@
 # Dotfiles
 
+These dotfiles support macOS only. Linux, containers, and GitHub Codespaces are unsupported.
+
 ## Install
 
 ```bash

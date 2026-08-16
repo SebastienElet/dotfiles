@@ -2,7 +2,7 @@
 
 if [[ "$(uname -s)" != "Darwin" ]]
 then
-  echo "This installer runs only on OSX"
+  echo "This installer supports macOS only; Linux and GitHub Codespaces are unsupported."
   exit 1
 fi
 
