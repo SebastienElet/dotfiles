@@ -3,8 +3,9 @@ use std::io;
 use std::process::ExitCode;
 
 use arnes::Roots;
+use arnes::config;
 use arnes::diagnostic::{Diagnostic, Report, State};
-use arnes::manifest;
+use arnes::manifest::{self, Agent, Scope};
 
 #[derive(Parser)]
 #[command(version, about = "Diagnose agent harness resources")]
@@ -41,19 +42,6 @@ enum Resource {
     Statusline,
 }
 
-#[derive(Clone, ValueEnum)]
-enum Agent {
-    Claude,
-    Cursor,
-    Codex,
-}
-
-#[derive(Clone, ValueEnum)]
-enum Scope {
-    User,
-    Project,
-}
-
 #[derive(Clone, Default, ValueEnum)]
 enum Format {
     #[default]
@@ -65,17 +53,22 @@ fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
     let Command::Doctor {
-        resource, format, ..
+        resource,
+        agent,
+        scope,
+        format,
     } = command;
 
-    let diagnostics = if matches!(resource, None | Some(Resource::Manifest)) {
-        let diagnostic = match Roots::from_environment() {
-            Ok(roots) => diagnose_manifest(&roots),
-            Err(error) => Diagnostic::new("manifest", State::Error, error.to_string()),
-        };
-        vec![diagnostic]
-    } else {
-        Vec::new()
+    let diagnostics = match resource {
+        None | Some(Resource::Manifest) => match Roots::from_environment() {
+            Ok(roots) => vec![diagnose_manifest(&roots)],
+            Err(error) => vec![Diagnostic::new("manifest", State::Error, error.to_string())],
+        },
+        Some(Resource::Config) => match Roots::from_environment() {
+            Ok(roots) => diagnose_config(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("config", State::Error, error.to_string())],
+        },
+        _ => Vec::new(),
     };
     let report = Report::new(diagnostics);
     let output = match format {
@@ -112,5 +105,12 @@ fn diagnose_manifest(roots: &Roots) -> Diagnostic {
     match manifest::load(roots.home()) {
         Ok(_) => Diagnostic::new("manifest", State::Healthy, "manifest is valid"),
         Err(error) => Diagnostic::new("manifest", State::Error, error.to_string()),
+    }
+}
+
+fn diagnose_config(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => config::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("config", State::Error, error.to_string())],
     }
 }
