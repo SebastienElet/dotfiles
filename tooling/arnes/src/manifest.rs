@@ -48,6 +48,28 @@ impl Manifest {
             .iter()
             .flat_map(|agent| agent.scopes.iter().map(move |scope| (agent.id, *scope)))
     }
+
+    pub fn instruction_resources(&self) -> impl Iterator<Item = InstructionResource<'_>> {
+        self.resources
+            .iter()
+            .filter(|resource| resource.kind == ResourceKind::Instructions)
+            .map(|resource| InstructionResource {
+                id: &resource.id,
+                agent: resource.agent,
+                scope: resource.scope,
+                source: &resource.source.path,
+                destination: &resource.destination.path,
+            })
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct InstructionResource<'a> {
+    pub id: &'a str,
+    pub agent: Agent,
+    pub scope: Scope,
+    pub source: &'a Path,
+    pub destination: &'a Path,
 }
 
 #[derive(Deserialize)]
@@ -61,8 +83,7 @@ struct AgentDeclaration {
 #[serde(deny_unknown_fields)]
 struct ResourceDeclaration {
     id: String,
-    #[serde(rename = "kind")]
-    _kind: ResourceKind,
+    kind: ResourceKind,
     agent: Agent,
     scope: Scope,
     source: RootedPath,
@@ -98,7 +119,7 @@ pub enum Scope {
     Project,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 enum ResourceKind {
     Config,

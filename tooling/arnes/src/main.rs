@@ -5,6 +5,7 @@ use std::process::ExitCode;
 use arnes::Roots;
 use arnes::config;
 use arnes::diagnostic::{Diagnostic, Report, State};
+use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 
 #[derive(Parser)]
@@ -68,6 +69,14 @@ fn main() -> ExitCode {
             Ok(roots) => diagnose_config(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("config", State::Error, error.to_string())],
         },
+        Some(Resource::Instructions) => match Roots::from_environment() {
+            Ok(roots) => diagnose_instructions(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new(
+                "instructions",
+                State::Error,
+                error.to_string(),
+            )],
+        },
         _ => Vec::new(),
     };
     let report = Report::new(diagnostics);
@@ -112,5 +121,20 @@ fn diagnose_config(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) ->
     match manifest::load(roots.home()) {
         Ok(manifest) => config::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("config", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_instructions(
+    roots: &Roots,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => instructions::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new(
+            "instructions",
+            State::Error,
+            error.to_string(),
+        )],
     }
 }
