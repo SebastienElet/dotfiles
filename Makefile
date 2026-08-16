@@ -44,8 +44,7 @@ all: \
 	extra \
 	terminal \
 	work \
-	utils \
-	personal
+	utils
 
 .PHONY: extra
 extra: \
