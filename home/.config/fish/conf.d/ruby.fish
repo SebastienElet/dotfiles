@@ -1,3 +1,3 @@
 if test -n (brew --prefix ruby)
-    set -x PATH (brew --prefix ruby)/bin $PATH
+    fish_add_path --global --move --path (brew --prefix ruby)/bin
 end

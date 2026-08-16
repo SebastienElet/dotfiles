@@ -13,8 +13,8 @@ on:
       - .github/workflows/test-fish.yml
 
 jobs:
-  git-cleanup:
-    name: Git cleanup (${{ matrix.os }})
+  fish:
+    name: Fish tests (${{ matrix.os }})
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
@@ -34,3 +34,6 @@ jobs:
 
       - name: Test Git cleanup
         run: fish --no-config home/.config/fish/tests/git_cleanup_test.fish
+
+      - name: Test PATH idempotency
+        run: fish --no-config home/.config/fish/tests/path_test.fish
