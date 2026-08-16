@@ -77,6 +77,12 @@ impl Fixture {
     }
 }
 
+impl Default for Fixture {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn write(path: &Path, contents: &str) {
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(path, contents).unwrap();

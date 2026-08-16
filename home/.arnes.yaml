@@ -6,4 +6,34 @@ agents:
     scopes: [user, project]
   - id: codex
     scopes: [user, project]
-resources: []
+resources:
+  - id: claude-user-instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .claude/CLAUDE.md }
+  - id: claude-user-soul
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/SOUL.md }
+    destination: { root: home, path: .claude/SOUL.md }
+  - id: claude-user-preferences
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/USER.md }
+    destination: { root: home, path: .claude/USER.md }
+  - id: claude-project-instructions
+    kind: instructions
+    agent: claude
+    scope: project
+    source: { root: repository, path: AGENTS.md }
+    destination: { root: repository, path: CLAUDE.md }
+  - id: codex-user-instructions
+    kind: instructions
+    agent: codex
+    scope: user
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .codex/AGENTS.md }
