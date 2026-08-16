@@ -152,14 +152,16 @@ ${BREW_BIN}/tokei:
 	brew install tokei
 
 .PHONY: wezterm
-wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
+wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.config/wezterm/wezterm.lua
 /Applications/WezTerm.app:
 	brew tap wez/wezterm
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
 	brew install --cask wez/wezterm/wezterm-nightly
-~/.wezterm.lua: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.wezterm.lua ${DOTFILES_PATH}/home/.wezterm.lua $@
+~/.config/wezterm:
+	mkdir -p $@
+~/.config/wezterm/wezterm.lua: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/wezterm/wezterm.lua | ~/.config/wezterm
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua ${DOTFILES_PATH}/home/.config/wezterm/wezterm.lua $@
 
 ################################################################################
 # End of the terminal section
@@ -716,14 +718,19 @@ zsh: ~/.zshrc
 	${DEPLOY_LINK} ${DOTFILES_PATH}/.zshrc ${DOTFILES_PATH}/home/.zshrc $@
 
 .PHONY: git-delta
-git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
+git-delta: brew ${BREW_BIN}/delta ~/.config/git/config.delta
 ${BREW_BIN}/delta:
 	brew install git-delta
-~/.gitconfig.delta: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.gitconfig.delta ${DOTFILES_PATH}/home/.gitconfig.delta $@
-	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
-		git config --global include.path "~/.gitconfig.delta"; \
-		echo "Added include.path to ~/.gitconfig"; \
+~/.config/git:
+	mkdir -p $@
+~/.config/git/config.delta: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/git/config.delta | ~/.config/git
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta ${DOTFILES_PATH}/home/.config/git/config.delta $@
+	@if git config --global --get-all include.path | grep -Fxq '~/.gitconfig.delta'; then \
+		git config --global --unset-all include.path '^~/[.]gitconfig[.]delta$$'; \
+	fi
+	@if ! git config --global --get-all include.path | grep -Fxq '~/.config/git/config.delta'; then \
+		git config --global --add include.path '~/.config/git/config.delta'; \
+		echo "Added include.path to Git's global configuration"; \
 	fi
 
 .PHONY: starship
@@ -734,11 +741,13 @@ ${BREW_BIN}/starship:
 	${DEPLOY_LINK} ${DOTFILES_PATH}/.config/starship.toml ${DOTFILES_PATH}/home/.config/starship.toml $@
 
 .PHONY: tmux
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
+tmux: brew ${BREW_BIN}/tmux ~/.config/tmux/tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tmux/.tmux.conf ${DOTFILES_PATH}/home/.tmux.conf $@
+~/.config/tmux:
+	mkdir -p $@
+~/.config/tmux/tmux.conf: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/tmux/tmux.conf | ~/.config/tmux
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf ${DOTFILES_PATH}/home/.config/tmux/tmux.conf $@
 ~/.tmux/plugins:
 	mkdir -p $@
 ~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins
