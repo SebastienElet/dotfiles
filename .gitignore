@@ -8,6 +8,7 @@ home/.config/fish/completions
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
 tooling/daily-routine/target/
+tooling/arnes/target/
 
 # Claude Code
 .claude/*
