@@ -97,6 +97,17 @@ jobs:
 
           printf '%s\n' "$scripts"
           printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
+
+          if output=$(/bin/bash -c 'uname() { printf "%s\n" Linux; }; source install.sh' 2>&1); then
+            non_darwin_status=0
+          else
+            non_darwin_status=$?
+          fi
+          printf '%s\n' "$output"
+          test "$non_darwin_status" -eq 1
+          printf '%s\n' "$output" \
+            | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
+
           tooling/agent-handoff-test
           echo "✅ Shell scripts OK"
 
