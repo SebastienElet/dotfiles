@@ -7,6 +7,7 @@ on:
       - harness/**
       - tooling/deploy-link
       - tooling/deploy-link-test
+      - tooling/xdg-config-test
       - Makefile
       - .github/workflows/test-deployment.yml
   pull_request:
@@ -15,6 +16,7 @@ on:
       - harness/**
       - tooling/deploy-link
       - tooling/deploy-link-test
+      - tooling/xdg-config-test
       - Makefile
       - .github/workflows/test-deployment.yml
 
@@ -28,3 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: tooling/deploy-link-test
+      - run: tooling/xdg-config-test

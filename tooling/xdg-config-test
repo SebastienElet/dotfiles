@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+repository=$(cd "$tooling_dir/.." && pwd)
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/xdg-config-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+test_home=$test_root/home
+mkdir -p "$test_home"
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_link() {
+  [[ -L $1 ]] || fail "$1 is not a symbolic link"
+  [[ $(readlink "$1") == "$2" ]] || fail "$1 has an unexpected source"
+}
+
+ln -s "$repository/home/.wezterm.lua" "$test_home/.wezterm.lua"
+ln -s "$repository/home/.tmux.conf" "$test_home/.tmux.conf"
+ln -s "$repository/home/.gitconfig.delta" "$test_home/.gitconfig.delta"
+[[ ! -e $repository/home/.wezterm.lua && ! -L $repository/home/.wezterm.lua ]] || fail "legacy WezTerm source remains"
+[[ ! -e $repository/home/.tmux.conf && ! -L $repository/home/.tmux.conf ]] || fail "legacy tmux source remains"
+[[ ! -e $repository/home/.gitconfig.delta && ! -L $repository/home/.gitconfig.delta ]] || fail "legacy Git delta source remains"
+git config --file "$test_home/.gitconfig" --add include.path '~/.gitconfig.delta'
+git config --file "$test_home/.gitconfig" --add include.path '~/.config/git/config.delta'
+git config --file "$test_home/.gitconfig" --add include.path '~/.config/git/other.conf'
+git config --file "$test_home/.gitconfig" --add include.path '~/xgitconfig.delta'
+git config --file "$test_home/.gitconfig" --add include.path '~/.gitconfig.delta'
+
+xdg_targets=(
+  "$test_home/.config/wezterm/wezterm.lua"
+  "$test_home/.config/tmux/tmux.conf"
+  "$test_home/.config/git/config.delta"
+)
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "${xdg_targets[@]}"
+assert_link "${xdg_targets[0]}" "$repository/home/.config/wezterm/wezterm.lua"
+assert_link "${xdg_targets[1]}" "$repository/home/.config/tmux/tmux.conf"
+assert_link "${xdg_targets[2]}" "$repository/home/.config/git/config.delta"
+assert_link "$test_home/.wezterm.lua" "$repository/home/.wezterm.lua"
+assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
+assert_link "$test_home/.gitconfig.delta" "$repository/home/.gitconfig.delta"
+
+public_targets=(wezterm tmux git-delta)
+for index in 0 1 2; do
+  dry_run=$(env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "${public_targets[$index]}")
+  grep -Fq "${xdg_targets[$index]}" <<<"$dry_run" || fail "${public_targets[$index]} does not deploy its XDG target"
+done
+
+include_paths=$(git config --file "$test_home/.gitconfig" --get-all include.path)
+[[ $(grep -Fxc '~/.config/git/config.delta' <<<"$include_paths") == 1 ]] || fail "Git delta include was not migrated"
+[[ $(grep -Fxc '~/.config/git/other.conf' <<<"$include_paths") == 1 ]] || fail "unrelated Git include changed"
+[[ $(grep -Fxc '~/xgitconfig.delta' <<<"$include_paths") == 1 ]] || fail "similar Git include changed"
+[[ $(grep -Fxc '~/.gitconfig.delta' <<<"$include_paths") == 0 ]] || fail "old Git delta include remains"
+
+config_before=$(cksum "$test_home/.gitconfig")
+links_before=$(LC_ALL=C ls -di "${xdg_targets[@]}")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "${xdg_targets[@]}"
+config_after=$(cksum "$test_home/.gitconfig")
+links_after=$(LC_ALL=C ls -di "${xdg_targets[@]}")
+[[ $config_before == "$config_after" ]] || fail "Git include migration is not idempotent"
+[[ $links_before == "$links_after" ]] || fail "XDG links were redeployed"
+
+echo "XDG configuration tests passed"
