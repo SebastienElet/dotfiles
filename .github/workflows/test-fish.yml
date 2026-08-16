@@ -13,8 +13,8 @@ on:
       - .github/workflows/test-fish.yml
 
 jobs:
-  git-cleanup:
-    name: Git cleanup (${{ matrix.os }})
+  fish:
+    name: Fish tests (${{ matrix.os }})
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
