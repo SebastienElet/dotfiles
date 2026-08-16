@@ -37,3 +37,69 @@ resources:
     scope: user
     source: { root: repository, path: harness/AGENTS.md }
     destination: { root: home, path: .codex/AGENTS.md }
+  - id: claude-user-skill-handoff
+    kind: skills
+    agent: claude
+    scope: user
+    source: { root: repository, path: .agents/skills/handoff }
+    destination: { root: home, path: .claude/skills/handoff }
+  - id: claude-user-skill-enforcement-code
+    kind: skills
+    agent: claude
+    scope: user
+    source: { root: repository, path: .agents/skills/enforcement-code }
+    destination: { root: home, path: .claude/skills/enforcement-code }
+  - id: claude-user-skill-merge-verdict
+    kind: skills
+    agent: claude
+    scope: user
+    source: { root: repository, path: .agents/skills/merge-verdict }
+    destination: { root: home, path: .claude/skills/merge-verdict }
+  - id: cursor-user-skill-enforcement-code
+    kind: skills
+    agent: cursor
+    scope: user
+    source: { root: repository, path: .agents/skills/enforcement-code }
+    destination: { root: home, path: .cursor/skills/enforcement-code }
+  - id: cursor-user-skill-merge-verdict
+    kind: skills
+    agent: cursor
+    scope: user
+    source: { root: repository, path: .agents/skills/merge-verdict }
+    destination: { root: home, path: .cursor/skills/merge-verdict }
+  - id: codex-user-skill-handoff
+    kind: skills
+    agent: codex
+    scope: user
+    source: { root: repository, path: .agents/skills/handoff }
+    destination: { root: home, path: .agents/skills/handoff }
+  - id: codex-user-skill-enforcement-code
+    kind: skills
+    agent: codex
+    scope: user
+    source: { root: repository, path: .agents/skills/enforcement-code }
+    destination: { root: home, path: .agents/skills/enforcement-code }
+  - id: codex-user-skill-merge-verdict
+    kind: skills
+    agent: codex
+    scope: user
+    source: { root: repository, path: .agents/skills/merge-verdict }
+    destination: { root: home, path: .agents/skills/merge-verdict }
+  - id: claude-project-skills
+    kind: skills
+    agent: claude
+    scope: project
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .claude/skills }
+  - id: cursor-project-skills
+    kind: skills
+    agent: cursor
+    scope: project
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .cursor/skills }
+  - id: codex-project-skills
+    kind: skills
+    agent: codex
+    scope: project
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .codex/skills }

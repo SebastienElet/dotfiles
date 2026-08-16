@@ -7,6 +7,7 @@ use arnes::config;
 use arnes::diagnostic::{Diagnostic, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
+use arnes::skills;
 
 #[derive(Parser)]
 #[command(version, about = "Diagnose agent harness resources")]
@@ -77,6 +78,10 @@ fn main() -> ExitCode {
                 error.to_string(),
             )],
         },
+        Some(Resource::Skills) => match Roots::from_environment() {
+            Ok(roots) => diagnose_skills(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("skills", State::Error, error.to_string())],
+        },
         _ => Vec::new(),
     };
     let report = Report::new(diagnostics);
@@ -136,5 +141,12 @@ fn diagnose_instructions(
             State::Error,
             error.to_string(),
         )],
+    }
+}
+
+fn diagnose_skills(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => skills::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("skills", State::Error, error.to_string())],
     }
 }

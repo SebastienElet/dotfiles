@@ -61,10 +61,32 @@ impl Manifest {
                 destination: &resource.destination.path,
             })
     }
+
+    pub fn skill_resources(&self) -> impl Iterator<Item = SkillResource<'_>> {
+        self.resources
+            .iter()
+            .filter(|resource| resource.kind == ResourceKind::Skills)
+            .map(|resource| SkillResource {
+                id: &resource.id,
+                agent: resource.agent,
+                scope: resource.scope,
+                source: &resource.source.path,
+                destination: &resource.destination.path,
+            })
+    }
 }
 
 #[derive(Clone, Copy)]
 pub struct InstructionResource<'a> {
+    pub id: &'a str,
+    pub agent: Agent,
+    pub scope: Scope,
+    pub source: &'a Path,
+    pub destination: &'a Path,
+}
+
+#[derive(Clone, Copy)]
+pub struct SkillResource<'a> {
     pub id: &'a str,
     pub agent: Agent,
     pub scope: Scope,
