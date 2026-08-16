@@ -1,3 +1,3 @@
 if test -d ~/.cargo/bin
-    set -x PATH ~/.cargo/bin $PATH
+    fish_add_path --global --move --path ~/.cargo/bin
 end

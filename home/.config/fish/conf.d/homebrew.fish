@@ -1,11 +1,11 @@
 if test -d /opt/homebrew/bin
-    set -gx PATH /opt/homebrew/bin $PATH
+    fish_add_path --global --move --path /opt/homebrew/bin
 end
 
 if test -d /opt/homebrew/sbin
-    set -gx PATH /opt/homebrew/sbin $PATH
+    fish_add_path --global --move --path /opt/homebrew/sbin
 end
 
 if test -d /opt/homebrew/opt/gnu-sed/libexec/gnubin
-    set -gx PATH /opt/homebrew/opt/gnu-sed/libexec/gnubin $PATH
+    fish_add_path --global --move --path /opt/homebrew/opt/gnu-sed/libexec/gnubin
 end
