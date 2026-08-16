@@ -9,4 +9,4 @@ jobs:
     - name: Execute full install
       run: |
         make all SKIP_PAID_APPS=1
-        make -q qovery-cli
+        make all SKIP_PAID_APPS=1

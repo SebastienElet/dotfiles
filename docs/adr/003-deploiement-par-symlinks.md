@@ -12,9 +12,17 @@ fichiers imposerait une resynchronisation après chaque modification.
 
 ## Décision
 
-Le `Makefile` crée des symlinks de `$(DOTFILES_PATH)/…` vers `~/…` (`~/.config`,
-`~/.gitconfig.delta`, `~/.wezterm.lua`, `~/.psqlrc`, instructions d'agents…).
+Le `Makefile` crée des symlinks depuis `$(DOTFILES_PATH)/home/…`, qui reproduit
+le chemin relatif à `$HOME`, vers l'emplacement attendu sous `~/…`. Les
+instructions partagées et les exécutables suivent le même mécanisme depuis
+`harness/` et `tooling/` ([ADR-038](038-frontieres-home-harness-tooling.md)).
 L'édition se fait dans le dépôt, l'effet est immédiat.
+
+Une migration de source remplace une destination seulement si elle est absente
+ou si elle pointe textuellement vers l'ancienne source exacte. Un fichier, un
+répertoire ou tout autre lien fait échouer la cible sans modifier cette
+destination. La vérification est forcée par le `Makefile`, même lorsqu'un lien
+inattendu pointe vers une cible existante.
 
 Une exception documentée : `~/.codex/AGENTS.md` est **assemblé** par
 concaténation à l'installation. Le commit `1772db9` en donne la raison —
@@ -23,12 +31,12 @@ control prompt » —, la concaténation étant alors le seul mécanisme disponi
 
 ## Conséquences
 
-- Aucune étape de synchronisation ; un `git pull` suffit à propager un
-  changement.
+- `tooling/upgrade` relance `make all` après son `git pull`, afin de poser les
+  nouveaux liens et de régénérer les fichiers assemblés.
 - Un fichier assemblé se périme silencieusement : il faut relancer la cible
   après modification des sources.
-- La cible doit rester idempotente et ne pas se reconstruire à vide, condition
-  vérifiée à plusieurs reprises dans l'historique.
+- Les liens déjà corrects restent inchangés ; la seconde installation ne doit
+  ni les recréer ni réinstaller un outil déjà présent.
 
 ## Alternatives écartées
 

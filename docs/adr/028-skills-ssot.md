@@ -15,6 +15,9 @@ jamais déclenchée.
 
 `.agents/skills/` est la source unique des skills, chaque skill étant un
 répertoire portant son `SKILL.md`, distribué aux agents par symlink.
+Ce chemin reste à la racine parce que la découverte des skills l'impose ; il
+ne rejoint pas `harness/`, réservé aux sources partagées dont le chemin est
+contrôlé par ce dépôt.
 `skill-manager` encadre la création, la validation et la synchronisation de
 l'index `README.md`. Le budget de description a été réduit de moitié
 (`3133e06`), la description conditionnant le déclenchement.

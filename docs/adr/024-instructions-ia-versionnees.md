@@ -13,9 +13,9 @@ n'étaient pas versionnés.
 
 ## Décision
 
-Les instructions vivent dans le dépôt, sous `ai/`, et sont distribuées à chaque
-agent depuis là — par symlink, ou par assemblage quand l'agent ne suit pas les
-imports ([ADR-003](003-deploiement-par-symlinks.md)).
+Les instructions vivent dans le dépôt, sous `harness/`, et sont distribuées à
+chaque agent depuis là — par symlink, ou par assemblage quand l'agent ne suit
+pas les imports ([ADR-003](003-deploiement-par-symlinks.md)).
 
 ## Conséquences
 

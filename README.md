@@ -26,3 +26,13 @@ section of whichever decision replaced them.
 
 Read the relevant ADR before changing one of these choices, and add a new ADR
 when making one.
+
+## Repository layout
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the complete project map,
+deployment flow, and placement rules.
+
+- `home/` mirrors the destination-relative paths of files deployed under `$HOME`.
+- `harness/` contains instructions and capabilities shared across agent harnesses.
+- `tooling/` contains maintained local applications and extensionless kebab-case executables.
+- Tool-mandated integration paths and repository entry points remain at the root.

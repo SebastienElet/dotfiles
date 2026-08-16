@@ -73,3 +73,4 @@ ici sont les dates d'auteur.
 | [035](035-agents-md-elague-par-mesure.md) | `AGENTS.md` élagué par mesure du no-op | 2026-08 |
 | [036](036-regles-ia-admises-par-ablation.md) | Règles d'instructions IA admises par ablation marginale | 2026-08 |
 | [037](037-commentaire-absent-par-defaut.md) | Commentaire absent par défaut, comptabilisé dans le compte rendu | 2026-08 |
+| [038](038-frontieres-home-harness-tooling.md) | Frontières `home/`, `harness/` et `tooling/` | 2026-08 |

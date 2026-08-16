@@ -53,7 +53,7 @@ règle, pas de la présence d'un fichier d'instructions supplémentaire.
 
 ## Décision
 
-Les deux règles à déclenchement permanent sont écrites dans `ai/AGENTS.md` : leur retrait
+Les deux règles à déclenchement permanent sont écrites dans `harness/AGENTS.md` : leur retrait
 change le comportement. La règle sur le code qui refuse ne l'est pas : son déclenchement est
 conditionnel, elle devient la skill `enforcement-code`, qui ne coûte que sa description en
 contexte et que les deux agents découvrent par divulgation progressive.
@@ -87,7 +87,7 @@ règle, jusqu'à un job de CI inventé pour une demande d'une ligne. C'est en te
   contournement énuméré devient un cas de test » produit une suite de dix-huit cas — poussée de
   tag, `--no-verify`, `git` ou `awk` absent, chemins à espaces ou retours à la ligne. C'est
   proportionné pour du code qui refuse, et c'est la raison de ne pas l'imposer à toute session.
-- La skill `scripts` déclare déjà le mot « hook » dans ses déclencheurs. Un hook sous `scripts/`
+- La skill `scripts` déclare déjà le mot « hook » dans ses déclencheurs. Un hook sous `tooling/`
   active donc les deux skills : recouvrement assumé, les deux sujets étant distincts
   (portabilité contre refus).
 

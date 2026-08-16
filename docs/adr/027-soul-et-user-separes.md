@@ -14,10 +14,10 @@ declare » — et empêchait de charger la voix hors du dépôt.
 
 ## Décision
 
-Trois fichiers de portées distinctes : `ai/SOUL.md` pour l'identité (langue,
-registre, priorités), `ai/USER.md` pour les biais et attentes de travail,
-`AGENTS.md` pour les règles du dépôt. `SOUL.md` et `USER.md` sont importés dans
-les instructions globales et valent donc pour tous les projets.
+Trois fichiers de portées distinctes : `harness/SOUL.md` pour l'identité
+(langue, registre, priorités), `harness/USER.md` pour les biais et attentes de
+travail, `AGENTS.md` pour les règles du dépôt. `SOUL.md` et `USER.md` sont
+importés dans les instructions globales et valent donc pour tous les projets.
 
 ## Conséquences
 

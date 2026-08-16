@@ -12,10 +12,10 @@ des dépendances du dépôt souffre du même problème à une échelle plus lent
 
 ## Décision
 
-Committer `nvim/lazy-lock.json` : chaque plugin est épinglé à un commit précis,
-et les mises à jour produisent un commit dédié (`chore(nvim): update plugins`)
-généré par le script d'upgrade. Renovate prend en charge les dépendances
-restantes du dépôt.
+Committer `home/.config/nvim/lazy-lock.json` : chaque plugin est épinglé à un
+commit précis, et les mises à jour produisent un commit dédié
+(`chore(nvim): update plugins`) généré par le script d'upgrade. Renovate prend
+en charge les dépendances restantes du dépôt.
 
 ## Conséquences
 

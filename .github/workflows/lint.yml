@@ -3,26 +3,42 @@ on: [push, pull_request]
 
 jobs:
   fish:
-    name: Fish shell
-    runs-on: macos-latest
+    name: Fish shell (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install Fish
+      - name: Install Fish on macOS
+        if: runner.os == 'macOS'
         run: brew install fish
+
+      - name: Install Fish on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fish
 
       - name: Check Fish syntax
         run: |
+          set -euo pipefail
           echo "Checking Fish syntax..."
-          git ls-files 'fish/*.fish' 'fish/**/*.fish' | xargs -I{} fish --no-execute {}
+          fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
+          printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
+          printf '%s\n' "$fish_files" | xargs -I{} fish --no-execute {}
           echo "✅ Fish syntax OK"
 
       - name: Check Fish formatting
         run: |
+          set -euo pipefail
           echo "Checking Fish formatting..."
           ERRORS=0
-          for file in $(git ls-files 'fish/*.fish' 'fish/**/*.fish'); do
-            if ! fish_indent --check "$file" 2>/dev/null; then
+          fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
+          printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
+          for file in $fish_files; do
+            if ! fish_indent --check "$file"; then
               echo "❌ $file needs formatting"
               fish_indent "$file" | diff -u "$file" - || true
               ERRORS=1
@@ -46,8 +62,10 @@ jobs:
 
       - name: Lint Lua files
         run: |
+          set -euo pipefail
           echo "Checking Lua syntax..."
-          luacheck nvim/lua --no-unused-args --no-max-line-length --globals vim
+          test -f home/.config/nvim/init.lua
+          luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
           echo "✅ Lua syntax OK"
 
   shellcheck:
@@ -57,7 +75,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install ShellCheck
-        run: brew install shellcheck
+        run: brew install jq shellcheck
 
       - name: Lint shell scripts
         run: |
@@ -66,11 +84,11 @@ jobs:
           command -v shellcheck > /dev/null \
             || { echo "::error::shellcheck is missing: the gate cannot run"; exit 1; }
 
-          found_by_shebang=$(git grep -lI -E '^#!.*(bash|sh)' -- scripts install.sh)
+          found_by_shebang=$(git grep -lI -E '^#!.*(bash|sh)' -- tooling install.sh)
           found_by_extension=$(git ls-files '*.sh')
           scripts=$(printf '%s\n%s\n' "$found_by_shebang" "$found_by_extension" | sort -u)
 
-          canary_of_shebang_scan=scripts/upgrade
+          canary_of_shebang_scan=tooling/upgrade
           canary_of_extension_scan=install.sh
           for canary in "$canary_of_shebang_scan" "$canary_of_extension_scan"; do
             printf '%s\n' "$scripts" | grep -qx "$canary" \
@@ -79,4 +97,23 @@ jobs:
 
           printf '%s\n' "$scripts"
           printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
+          tooling/agent-handoff-test
           echo "✅ Shell scripts OK"
+
+  cspell:
+    name: CSpell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: npm install --global cspell
+
+      - name: Check configuration and user dictionary
+        run: |
+          set -euo pipefail
+          test_home=$(mktemp -d)
+          HOME="$test_home" make DOTFILES_PATH="$GITHUB_WORKSPACE" "$test_home/cspell.json" "$test_home/.config/cspell/user.txt"
+          trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
+          printf '%s\n' "$trace"
+          printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
+          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt

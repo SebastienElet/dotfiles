@@ -5,7 +5,7 @@ description: >
   window is nearly full, a Stop hook reports the handoff threshold, or a resume prompt is asked
   for. Make sure to use it whenever a session must continue elsewhere, even if the context limit
   is never named.
-compatibility: Claude Code or Codex with scripts/agent_handoff installed as a Stop hook
+compatibility: Claude Code or Codex with tooling/agent-handoff installed as a Stop hook
 metadata:
   category: ops
 ---
@@ -16,7 +16,7 @@ metadata:
 
 Produce a short, copy-pasteable prompt that lets a fresh session resume the current work, and then
 stop. Compaction summarises a transcript and keeps its noise; a handoff restates only the live
-state, so the next session starts small and accurate. `scripts/agent_handoff` triggers this
+state, so the next session starts small and accurate. `tooling/agent-handoff` triggers this
 skill automatically once context usage passes the threshold, but it is also useful on demand.
 
 ## Usage
@@ -68,4 +68,4 @@ fenced block for the user to paste into a new session.
 - Keep the block self-contained — the next session sees no part of this conversation.
 - Do not write the handoff to a file unless the user asks; the deliverable is text to paste.
 - Do not attempt to disable or block compaction from the skill — that is the hook's job, via the
-  threshold in `scripts/agent_handoff`.
+  threshold in `tooling/agent-handoff`.

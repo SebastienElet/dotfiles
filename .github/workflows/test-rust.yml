@@ -3,11 +3,11 @@ name: Rust tests
 on:
   push:
     paths:
-      - daily-routine/**
+      - tooling/daily-routine/**
       - .github/workflows/test-rust.yml
   pull_request:
     paths:
-      - daily-routine/**
+      - tooling/daily-routine/**
       - .github/workflows/test-rust.yml
 
 jobs:
@@ -15,6 +15,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-      - run: cargo fmt --manifest-path daily-routine/Cargo.toml --check
-      - run: cargo clippy --manifest-path daily-routine/Cargo.toml -- -D warnings
-      - run: cargo test --manifest-path daily-routine/Cargo.toml
+      - run: cargo fmt --manifest-path tooling/daily-routine/Cargo.toml --check
+      - run: cargo clippy --manifest-path tooling/daily-routine/Cargo.toml -- -D warnings
+      - run: cargo test --manifest-path tooling/daily-routine/Cargo.toml

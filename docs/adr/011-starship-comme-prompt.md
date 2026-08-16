@@ -12,8 +12,8 @@ externes, coûteux à chaque affichage.
 
 ## Décision
 
-Adopter Starship, configuré par un unique `.config/starship.toml` versionné et
-indépendant du shell.
+Adopter Starship, configuré par un unique `home/.config/starship.toml`
+versionné et indépendant du shell.
 
 ## Conséquences
 
