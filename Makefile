@@ -7,8 +7,7 @@ BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
-# DOTFILES_PATH should be ~/.dotfiles when installed normally
-DOTFILES_PATH:=$(shell pwd)
+DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 DEPLOY_LINK:=${DOTFILES_PATH}/tooling/deploy-link
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
