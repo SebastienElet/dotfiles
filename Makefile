@@ -252,9 +252,14 @@ ${BREW_BIN}/bkt:
 	brew install avivsinai/tap/bitbucket-cli
 
 .PHONY: daily-routine
-daily-routine: rust ${DEPLOY_LINK} | ${LOCAL_BIN}
+daily-routine: rust ${DEPLOY_LINK} | ${LOCAL_BIN} ~/.config/daily-routine/config.toml
 	cd ${DOTFILES_PATH}/tooling/daily-routine && ${BREW_BIN}/cargo build --release
 	${DEPLOY_LINK} ${DOTFILES_PATH}/daily-routine/target/release/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
+~/.config/daily-routine: | ~/.config
+	mkdir -p "$@"
+~/.config/daily-routine/config.toml: | ~/.config/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/config.example.toml
+	test ! -e "$@" && test ! -L "$@"
+	install -m 600 "${DOTFILES_PATH}/tooling/daily-routine/config.example.toml" "$@"
 
 .PHONY: docker
 docker: brew lazydocker /Applications/Orbstack.app

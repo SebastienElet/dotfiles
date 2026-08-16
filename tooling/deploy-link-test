@@ -146,6 +146,26 @@ env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository"
 after=$(ls -di "$test_home/.zshrc" | awk '{print $1}')
 [[ $before == "$after" ]] || fail "Make relinked the current destination"
 
+case_root=$test_root/daily_routine_config
+test_home=$case_root/home
+config_file=$test_home/.config/daily-routine/config.toml
+mkdir -p "$test_home"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+cmp -s "$repository/tooling/daily-routine/config.example.toml" "$config_file" || fail "daily-routine example was not copied"
+[[ $(LC_ALL=C ls -l "$config_file" | cut -c 1-10) == -rw------- ]] || fail "daily-routine configuration mode is not 0600"
+
+printf 'local configuration\n' >"$config_file"
+before=$(ls -di "$config_file" | awk '{print $1}')
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+after=$(ls -di "$config_file" | awk '{print $1}')
+[[ $before == "$after" ]] || fail "daily-routine configuration was replaced"
+[[ $(cat "$config_file") == "local configuration" ]] || fail "daily-routine configuration changed"
+
+rm "$config_file"
+ln -s "$case_root/missing" "$config_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+assert_link "$config_file" "$case_root/missing"
+
 case_root=$test_root/codex_hook
 test_home=$case_root/home
 hooks_file=$test_home/.codex/hooks.json
