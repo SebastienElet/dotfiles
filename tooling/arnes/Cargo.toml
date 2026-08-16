@@ -5,6 +5,11 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
+rustix = { version = "1.1", features = ["stdio"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_path_to_error = "0.1"
+serde_json = "1.0"
 serde_yaml_ng = "0.10"
+
+[dev-dependencies]
+tempfile = "3.21"
