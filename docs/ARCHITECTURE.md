@@ -41,10 +41,10 @@ Les points d'entrée restent à la racine :
 | `home/.tmux.conf`            | `~/.tmux.conf`            |
 | `home/cspell.json`           | `~/cspell.json`           |
 
-Le `Makefile` déploie ces sources par liens symboliques. `tooling/deploy-link`
-crée une destination absente et conserve un lien déjà correct. Il refuse tout
-fichier, répertoire ou lien inattendu afin de ne pas écraser de données
-locales.
+Le `Makefile` déploie les artefacts statiques comme cibles fichier ordinaires
+et lie les exécutables générés après leur build. Chaque recette vérifie que la
+destination est absente avant `ln -s`. La réparation explicite d'un lien erroné
+est suivie par l'issue #152.
 
 ## Intégrations d'agents
 

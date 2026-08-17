@@ -18,11 +18,13 @@ instructions partagées et les exécutables suivent le même mécanisme depuis
 `harness/` et `tooling/` ([ADR-038](038-frontieres-home-harness-tooling.md)).
 L'édition se fait dans le dépôt, l'effet est immédiat.
 
-Le déploiement crée une destination absente ou conserve un lien qui pointe
-textuellement vers la source exacte. Un fichier, un répertoire ou tout autre
-lien fait échouer la cible sans modifier cette destination. La vérification est
-forcée par le `Makefile`, même lorsqu'un lien inattendu pointe vers une cible
-existante.
+Chaque artefact statique lié est une cible fichier ordinaire du `Makefile`,
+avec sa source comme dépendance et son répertoire parent comme dépendance
+d'ordre. Make décide si la recette doit s'exécuter ; elle vérifie seulement que
+la destination est absente avant `ln -s`. Les exécutables générés sont liés par
+leur cible de build après compilation. Le contenu d'un lien existant n'est pas
+revalidé à chaque installation ; sa réparation explicite est suivie par
+l'issue #152.
 
 Une exception documentée : `~/.codex/AGENTS.md` est **assemblé** par
 concaténation à l'installation. Le commit `1772db9` en donne la raison —
@@ -37,6 +39,8 @@ control prompt » —, la concaténation étant alors le seul mécanisme disponi
   après modification des sources.
 - Les liens déjà corrects restent inchangés ; la seconde installation ne doit
   ni les recréer ni réinstaller un outil déjà présent.
+- Un fichier ou lien inattendu peut satisfaire la cible selon sa date ; une
+  cible obsolète fait échouer `ln -s` sans écraser la destination.
 
 ## Alternatives écartées
 
@@ -44,3 +48,5 @@ control prompt » —, la concaténation étant alors le seul mécanisme disponi
   `make` couvrent déjà.
 - Copie des fichiers à l'installation : divergence garantie entre dépôt et
   poste.
+- Revalidation forcée par un helper : logique et tests disproportionnés pour
+  une course externe au graphe de Make.

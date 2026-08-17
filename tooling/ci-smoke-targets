@@ -151,7 +151,7 @@ main() {
       Makefile)
         collect_makefile_targets "$base" "$head" "$temporary_directory"
         ;;
-      install.sh | .github/workflows/test.yml | tooling/ci-smoke-targets | tooling/deploy-link)
+      install.sh | .github/workflows/test.yml | tooling/ci-smoke-targets)
         printf 'all\n' > "$candidates"
         break
         ;;
