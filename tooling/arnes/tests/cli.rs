@@ -64,12 +64,20 @@ fn version_succeeds() {
 
 #[test]
 fn doctor_accepts_shared_options_without_reading_the_environment() {
-    let output = run(&[
+    let fixture = Fixture::new();
+    fixture.write_home(
+        ".arnes.yaml",
+        "version: 1\nagents:\n  - id: codex\n    scopes: [project]\nresources: []\n",
+    );
+    let output = fixture.command([
         "doctor", "skills", "--agent", "codex", "--scope", "project", "--format", "human",
     ]);
 
     assert_eq!(output.status.code(), Some(0));
-    assert!(output.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "unsupported skills: codex project skill projection is not declared or supported\n"
+    );
     assert!(output.stderr.is_empty());
 }
 
@@ -159,6 +167,18 @@ fn manifest_doctor_requires_home_without_reading_the_environment() {
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
         "error manifest: HOME: environment variable is required\n"
+    );
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn skills_doctor_requires_injected_home_without_fallback() {
+    let output = run(&["doctor", "skills"]);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "error skills: HOME: environment variable is required\n"
     );
     assert!(output.stderr.is_empty());
 }

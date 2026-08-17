@@ -6,6 +6,21 @@ agents:
     scopes: [user, project]
   - id: codex
     scopes: [user, project]
+skills:
+  - slug: handoff
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
+  - slug: enforcement-code
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: merge-verdict
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
 resources:
   - id: claude-user-instructions
     kind: instructions
@@ -37,3 +52,45 @@ resources:
     scope: user
     source: { root: repository, path: harness/AGENTS.md }
     destination: { root: home, path: .codex/AGENTS.md }
+  - id: claude-user-skills
+    kind: skills
+    agent: claude
+    scope: user
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .claude/skills }
+  - id: cursor-user-skills
+    kind: skills
+    agent: cursor
+    scope: user
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .cursor/skills }
+  - id: codex-user-skills
+    kind: skills
+    agent: codex
+    scope: user
+    layout: leaves
+    source: { root: repository, path: .agents/skills }
+    destination: { root: home, path: .agents/skills }
+  - id: claude-project-skills
+    kind: skills
+    agent: claude
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .claude/skills }
+  - id: cursor-project-skills
+    kind: skills
+    agent: cursor
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .cursor/skills }
+  - id: codex-project-skills
+    kind: skills
+    agent: codex
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .codex/skills }

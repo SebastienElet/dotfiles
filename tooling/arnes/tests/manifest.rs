@@ -121,7 +121,51 @@ fn inline_resource_contents_are_rejected_without_exposing_values() {
 
     assert_eq!(
         error,
-        "resources[0].content: resources[0]: unknown field `content`, expected one of `id`, `kind`, `agent`, `scope`, `source`, `destination` at line 10 column 5"
+        "resources[0].content: resources[0]: unknown field `content`, expected one of `id`, `kind`, `agent`, `scope`, `layout`, `source`, `destination` at line 10 column 5"
     );
     assert!(!error.contains("inline instruction text"));
+}
+
+#[test]
+fn skill_declarations_are_normalized_and_unambiguous() {
+    for (fixture, expected) in [
+        (
+            "duplicate-skill.yaml",
+            "skills[1].slug: duplicate skill identifier",
+        ),
+        (
+            "duplicate-skill-installation.yaml",
+            "skills[0].installations[1]: duplicate skill installation",
+        ),
+        (
+            "empty-skill-installations.yaml",
+            "skills[0].installations: at least one leaf installation is required",
+        ),
+        (
+            "duplicate-skill-projection.yaml",
+            "resources[1].agent: duplicates resources[0] skill projection",
+        ),
+        (
+            "invalid-skill-slug.yaml",
+            "skills[0].slug: must be one relative path component",
+        ),
+        (
+            "aliased-skill-slug.yaml",
+            "skills[1].slug: must be one relative path component",
+        ),
+        (
+            "layout-on-instructions.yaml",
+            "resources[0].layout: layout is only valid for skill projections",
+        ),
+        (
+            "missing-skill-layout.yaml",
+            "resources[0].layout: skill projection layout is required",
+        ),
+        (
+            "skill-installation-on-root.yaml",
+            "skills[0].installations[0]: has no leaves skill projection",
+        ),
+    ] {
+        assert_eq!(error(fixture), expected);
+    }
 }
