@@ -27,7 +27,10 @@ external:
       scope: user
       origin: system
       location: { root: home, path: .codex/skills/.system }
-  plugins: []
+  plugins:
+    - agent: claude
+      scope: user
+      id: superpowers@claude-plugins-official
   skills:
     - agent: claude
       scope: user
@@ -65,6 +68,76 @@ external:
       scope: user
       origin: system
       slug: openai-docs
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: brainstorming
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: dispatching-parallel-agents
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: executing-plans
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: finishing-a-development-branch
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: receiving-code-review
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: requesting-code-review
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: subagent-driven-development
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: systematic-debugging
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: test-driven-development
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: using-git-worktrees
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: using-superpowers
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: verification-before-completion
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: writing-plans
+    - agent: claude
+      scope: user
+      origin: plugin
+      plugin: superpowers@claude-plugins-official
+      slug: writing-skills
 resources:
   - id: claude-user-instructions
     kind: instructions
