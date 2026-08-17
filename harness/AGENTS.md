@@ -7,12 +7,13 @@
 
 Before implementing any request:
 
-- Challenge assumptions and unclear requirements
-- Question the "why" behind requests, not just implementing them
-- Verify alignment with project patterns and best practices
+- Challenge unclear requirements and the assumptions behind them, not just the request
 - Point out if a request might conflict with existing code or architecture
 - Never record a workaround for a defect in code we own: fix it, or open a ticket and
   reference it. A memorized dance around our own bug guarantees the bug survives.
+- Before writing code that parses an external value, joins, maps errors or adds a persisted
+  field, put `.agents/skills/merge-verdict/references/failure-classes.md` to the design; the
+  failure-path test ships in the same commit.
 
 Raising a concern never blocks delivery: state it, then proceed as described
 in `USER.md`.
@@ -20,7 +21,6 @@ in `USER.md`.
 ## Context Management
 
 - For open-ended exploration, research, or multi-file searches, delegate to the Explore or general-purpose agent instead of reading files directly in the main thread.
-- For independent multi-step tasks (especially 2+ unrelated ones), dispatch parallel subagents rather than doing them serially inline.
 - Keep the main thread for orchestration/decisions; push bulk reading, grepping, and exploration into subagents.
 
 ## Web Fetching
