@@ -9,7 +9,6 @@ trap 'rm -rf "$test_root"' EXIT
 test_home=$test_root/home
 test_repository=$test_root/repository
 fake_bin=$test_root/bin
-old_config=$test_repository/fish
 new_config=$test_repository/home/.config/fish
 bindings=$test_home/.config/fish/functions/fzf_configure_bindings.fish
 marker=$test_root/fish-called
@@ -21,10 +20,8 @@ assert_failure() {
   fi
 }
 
-mkdir -p "$test_home/.config" "$old_config/functions" "$new_config" "$test_repository/tooling" "$fake_bin"
+mkdir -p "$test_home/.config" "$new_config" "$test_repository/tooling" "$fake_bin"
 cp "$repository/tooling/deploy-link" "$test_repository/tooling/deploy-link"
-touch "$old_config/functions/fzf_configure_bindings.fish"
-ln -s "$old_config" "$test_home/.config/fish"
 printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' "printf \"%s\\n\" \"\$*\" >\"\$FISH_MARKER\"" "mkdir -p \"\$HOME/.config/fish/functions\"" ": >\"\$HOME/.config/fish/functions/fzf_configure_bindings.fish\"" >"$fake_bin/fish"
 chmod +x "$fake_bin/fish"
 
@@ -32,7 +29,6 @@ env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFI
 
 [[ $(readlink "$test_home/.config/fish") == "$new_config" ]]
 [[ -f $bindings ]]
-[[ -f $old_config/functions/fzf_configure_bindings.fish ]]
 [[ $(cat "$marker") == "-c fisher install PatrickF1/fzf.fish" ]]
 
 rm "$marker"

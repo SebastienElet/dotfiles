@@ -6,6 +6,7 @@ on:
       - home/**
       - harness/**
       - tooling/deploy-link
+      - tooling/deploy-link-adversarial-test
       - tooling/deploy-link-test
       - tooling/fish-deployment-test
       - Makefile
@@ -15,6 +16,7 @@ on:
       - home/**
       - harness/**
       - tooling/deploy-link
+      - tooling/deploy-link-adversarial-test
       - tooling/deploy-link-test
       - tooling/fish-deployment-test
       - Makefile
@@ -30,4 +32,5 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: tooling/deploy-link-test
+      - run: tooling/deploy-link-adversarial-test
       - run: tooling/fish-deployment-test

@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+helper=$tooling_dir/deploy-link
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/deploy-link-adversarial-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_link() {
+  actual_source=$(readlink -n "$1" && printf .) || fail "$1 cannot be read"
+  actual_source=${actual_source%.}
+  [[ -L $1 ]] || fail "$1 is not a symbolic link"
+  [[ $actual_source == "$2" ]] || fail "$1 has an unexpected source"
+}
+
+assert_failure() {
+  if "$@" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail "command unexpectedly succeeded: $*"
+  fi
+}
+
+new_case() {
+  case_root=$test_root/$1
+  source=$case_root/source
+  destination=$case_root/destination
+  mkdir -p "$source"
+}
+
+new_case relative_source
+(
+  cd "$case_root"
+  assert_failure "$helper" source "$destination"
+)
+[[ ! -e $destination && ! -L $destination ]] || fail "relative source created a destination"
+
+new_case relative_destination
+(
+  cd "$case_root"
+  assert_failure "$helper" "$source" destination
+)
+[[ ! -e $destination && ! -L $destination ]] || fail "relative destination was created"
+
+new_case newline_suffixed_link
+unexpected_source=${source}$'\n'
+ln -s "$unexpected_source" "$destination"
+assert_failure "$helper" "$source" "$destination"
+assert_link "$destination" "$unexpected_source"
+
+new_case unsupported_source
+rmdir "$source"
+mkfifo "$source"
+assert_failure "$helper" "$source" "$destination"
+[[ ! -e $destination && ! -L $destination ]] || fail "unsupported source created a destination"
+
+new_case concurrent_directory
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+printf '%s\n' '#!/usr/bin/env bash' '"$REAL_MKDIR" "$7"' '"$REAL_PERL" "$@"' >"$wrapper_dir/perl"
+chmod +x "$wrapper_dir/perl"
+assert_failure env REAL_MKDIR="$(command -v mkdir)" REAL_PERL="$(command -v perl)" PATH="$wrapper_dir:$PATH" "$helper" "$source" "$destination"
+[[ -d $destination && ! -L $destination ]] || fail "raced destination was not preserved"
+[[ -z $(find "$destination" -mindepth 1 -print -quit) ]] || fail "raced destination retained a nested link"
+
+new_case concurrent_directory_link
+actual_directory=$case_root/actual-directory
+mkdir "$actual_directory"
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+printf '%s\n' '#!/usr/bin/env bash' '"$REAL_LN" -s "$ACTUAL_DIRECTORY" "$7"' '"$REAL_PERL" "$@"' >"$wrapper_dir/perl"
+chmod +x "$wrapper_dir/perl"
+assert_failure env ACTUAL_DIRECTORY="$actual_directory" REAL_LN="$(command -v ln)" REAL_PERL="$(command -v perl)" PATH="$wrapper_dir:$PATH" "$helper" "$source" "$destination"
+assert_link "$destination" "$actual_directory"
+[[ -z $(find "$actual_directory" -mindepth 1 -print -quit) ]] || fail "raced directory link retained a nested link"
+
+new_case concurrent_file
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "valuable\n" >"$7"' '"$REAL_PERL" "$@"' >"$wrapper_dir/perl"
+chmod +x "$wrapper_dir/perl"
+assert_failure env REAL_PERL="$(command -v perl)" PATH="$wrapper_dir:$PATH" "$helper" "$source" "$destination"
+[[ -f $destination && ! -L $destination ]] || fail "raced file was not preserved"
+[[ $(cat "$destination") == valuable ]] || fail "raced file changed"
+
+new_case disappearing_source
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+printf '%s\n' '#!/usr/bin/env bash' '"$REAL_RMDIR" "$6"' '"$REAL_PERL" "$@"' >"$wrapper_dir/perl"
+chmod +x "$wrapper_dir/perl"
+assert_failure env REAL_PERL="$(command -v perl)" REAL_RMDIR="$(command -v rmdir)" PATH="$wrapper_dir:$PATH" "$helper" "$source" "$destination"
+[[ ! -e $source ]] || fail "source did not disappear"
+[[ ! -e $destination && ! -L $destination ]] || fail "disappearing source created a destination"
+
+echo "deploy-link adversarial tests passed"

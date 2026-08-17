@@ -42,9 +42,9 @@ Les points d'entrée restent à la racine :
 | `home/cspell.json`           | `~/cspell.json`           |
 
 Le `Makefile` déploie ces sources par liens symboliques. `tooling/deploy-link`
-crée une destination absente, conserve un lien déjà correct et migre seulement
-un lien vers l'ancienne source exacte. Il refuse tout fichier, répertoire ou
-lien inattendu afin de ne pas écraser de données locales.
+crée une destination absente et conserve un lien déjà correct. Il refuse tout
+fichier, répertoire ou lien inattendu afin de ne pas écraser de données
+locales.
 
 ## Intégrations d'agents
 
@@ -68,7 +68,7 @@ adaptateurs nécessaires à leur découverte.
 
 Les exécutables destinés au `PATH` sont liés depuis le `Makefile`, généralement
 sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
-`make all`, ce qui applique aussi les migrations de chemins.
+`make all`, ce qui déploie les nouveaux chemins.
 
 ## Flux de changement
 

@@ -127,7 +127,7 @@ ${BREW_BIN}/fish:
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
 ~/.config/fish: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/fish | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/fish ${DOTFILES_PATH}/home/.config/fish $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/fish $@
 ~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
 	@if [ ! -e "$@" ]; then \
 		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
@@ -164,7 +164,7 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
 	brew install --cask wez/wezterm/wezterm-nightly
 ~/.wezterm.lua: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.wezterm.lua ${DOTFILES_PATH}/home/.wezterm.lua $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua $@
 
 ################################################################################
 # End of the terminal section
@@ -219,12 +219,12 @@ ai: \
 	skills
 
 ~/.arnes.yaml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.arnes.yaml ${DOTFILES_PATH}/home/.arnes.yaml $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml $@
 
 .PHONY: arnes
 arnes: rust ${DEPLOY_LINK} ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
-	${DEPLOY_LINK} ${DOTFILES_PATH}/arnes/target/release/arnes ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
+	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
 .PHONY: brain
 brain:
@@ -267,7 +267,7 @@ ${BREW_BIN}/bkt:
 .PHONY: daily-routine
 daily-routine: rust ${DEPLOY_LINK} | ${LOCAL_BIN} ~/.config/daily-routine/config.toml
 	cd ${DOTFILES_PATH}/tooling/daily-routine && ${BREW_BIN}/cargo build --release
-	${DEPLOY_LINK} ${DOTFILES_PATH}/daily-routine/target/release/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
+	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
 ~/.config/daily-routine: | ~/.config
 	mkdir -p "$@"
 ~/.config/daily-routine/config.toml: | ~/.config/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/config.example.toml
@@ -335,7 +335,7 @@ postgresql: brew ${BREW_GNU_BIN}/postgresql@16/bin/psql ~/.psqlrc
 ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 	brew install postgresql@16
 ~/.psqlrc: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.psqlrc
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.psqlrc ${DOTFILES_PATH}/home/.psqlrc $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.psqlrc $@
 
 .PHONY: renovate
 renovate: brew ${VOLTA_BIN}/renovate
@@ -387,17 +387,17 @@ ${LOCAL_BIN}/claude:
 ~/.claude:
 	mkdir -p $@
 ~/.claude/CLAUDE.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/AGENTS.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/ai/AGENTS.md ${DOTFILES_PATH}/harness/AGENTS.md $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/AGENTS.md $@
 # Imported by AGENTS.md; linked as siblings so the @import resolves whether the
 # tool follows the symlink or reads it from the destination directory.
 ~/.claude/SOUL.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/SOUL.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/harness/SOUL.md $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/SOUL.md $@
 ~/.claude/USER.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/ai/USER.md ${DOTFILES_PATH}/harness/USER.md $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md $@
 ~/.claude/hooks ~/.claude/skills: | ~/.claude
 	mkdir -p $@
 ~/.claude/hooks/agent_handoff: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
-	${DEPLOY_LINK} ${DOTFILES_PATH}/scripts/agent_handoff ${DOTFILES_PATH}/tooling/agent-handoff $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff $@
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
@@ -495,7 +495,7 @@ scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 
 # MCP command for agents: starts the shared container on demand instead of one per session.
 ${LOCAL_BIN}/scrapling_mcp: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/scrapling-mcp | ${LOCAL_BIN}
-	${DEPLOY_LINK} ${DOTFILES_PATH}/scripts/scrapling_mcp ${DOTFILES_PATH}/tooling/scrapling-mcp $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/scrapling-mcp $@
 ${LOCAL_BIN}:
 	mkdir -p $@
 
@@ -690,13 +690,13 @@ ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim
 	${VOLTA_BIN}/npm install -g neovim
 ~/.config/nvim: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/nvim | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/nvim ${DOTFILES_PATH}/home/.config/nvim $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/nvim $@
 ~/cspell.json: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/cspell.json
-	${DEPLOY_LINK} ${DOTFILES_PATH}/cspell.json ${DOTFILES_PATH}/home/cspell.json $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/cspell.json $@
 ~/.config/cspell:
 	mkdir -p $@
 ~/.config/cspell/user.txt: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/cspell/user.txt | ~/.config/cspell
-	${DEPLOY_LINK} ${DOTFILES_PATH}/dict/user.txt ${DOTFILES_PATH}/home/.config/cspell/user.txt $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/cspell/user.txt $@
 
 .PHONY: font-jetbrains-mono
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
@@ -727,14 +727,14 @@ ${BREW_BIN}/zoxide:
 .PHONY: zsh
 zsh: ~/.zshrc
 ~/.zshrc: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.zshrc
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.zshrc ${DOTFILES_PATH}/home/.zshrc $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.zshrc $@
 
 .PHONY: git-delta
 git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
 ${BREW_BIN}/delta:
 	brew install git-delta
 ~/.gitconfig.delta: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.gitconfig.delta ${DOTFILES_PATH}/home/.gitconfig.delta $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta $@
 	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
 		git config --global include.path "~/.gitconfig.delta"; \
 		echo "Added include.path to ~/.gitconfig"; \
@@ -745,14 +745,14 @@ starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
 ~/.config/starship.toml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/starship.toml | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/.config/starship.toml ${DOTFILES_PATH}/home/.config/starship.toml $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/starship.toml $@
 
 .PHONY: tmux
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
 ~/.tmux.conf: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tmux/.tmux.conf ${DOTFILES_PATH}/home/.tmux.conf $@
+	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf $@
 ~/.tmux/plugins:
 	mkdir -p $@
 ~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins

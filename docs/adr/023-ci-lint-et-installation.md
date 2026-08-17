@@ -18,7 +18,7 @@ Fish sur macOS et Linux, le Lua Neovim, les scripts shell et le chargement de
 la configuration CSpell avec son dictionnaire. `test-fish.yml` exécute les
 tests Fish sur les deux systèmes lorsque les fichiers couverts changent.
 `test-rust.yml` vérifie le formatage, exécute Clippy et les tests de
-`tooling/daily-routine` sur macOS. `test-deployment.yml` attaque la migration
+`tooling/daily-routine` sur macOS. `test-deployment.yml` attaque le déploiement
 des liens sur macOS et Linux. Sur `main`, `test.yml` exécute deux fois
 l'installation par défaut sur un runner macOS. Sur une pull request,
 `ci-smoke-targets` repère les blocs `.PHONY` modifiés et les exécute sur des

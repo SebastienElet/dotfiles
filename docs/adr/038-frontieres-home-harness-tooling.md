@@ -30,11 +30,10 @@ Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
 `CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
 
-Les anciens liens sont migrés par le déploiement normal. Chaque destination
-absente est créée ; un lien textuellement égal à son ancienne source exacte
-est remplacé ; un fichier, un répertoire ou tout autre lien fait échouer la
-cible sans modifier cette destination. Aucun lien de compatibilité n'est
-conservé dans le dépôt.
+Le déploiement normal crée chaque destination absente et conserve un lien
+textuellement égal à sa source exacte. Un fichier, un répertoire ou tout autre
+lien fait échouer la cible sans modifier cette destination. Aucun lien de
+compatibilité n'est conservé dans le dépôt.
 
 ## Conséquences
 
