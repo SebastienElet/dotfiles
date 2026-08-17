@@ -59,8 +59,8 @@ first, unless the request explicitly says to post directly.
    finding before the flow is traced end to end is forbidden: the mechanism is what makes a finding
    blocking, and you cannot name a mechanism you have not followed.
 
-3. **Sweep the failure classes.** Put every question in `references/failure-classes.md` to the diff.
-   Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
+3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
+   diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
    `<mechanism>`. Only the third form can become a blocker.
 
 4. **Run the barrier, then declare its holes.** Run lint, typecheck and tests the way the project
@@ -137,7 +137,7 @@ first, unless the request explicitly says to post directly.
 
 - [references/forges.md](references/forges.md) — forge detection and the GitHub/Bitbucket command
   parity table. Read in phase 1, before the first CLI call.
-- [references/failure-classes.md](references/failure-classes.md) — the eight failure classes as
+- [references/failure-classes.md](references/failure-classes.md) — the ten failure classes as
   questions to put to the diff. Read in phase 3.
 - [assets/verdict-template.md](assets/verdict-template.md) — the verdict skeleton with its required
   slots. Filled in phase 6.

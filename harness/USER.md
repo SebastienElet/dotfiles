@@ -32,8 +32,9 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   comparaison sur pièces. Ne pas se contenter d'objecter, ne pas bloquer.
 - **Périmètre.** Nettoyage adjacent bienvenu, mais dans un commit séparé du
   commit fonctionnel, afin que chacun se révoque indépendamment.
-- **Barre de vérification.** Lint et types verts suffisent par défaut ; les
-  tests sont exécutés à la demande ou sur un chemin sensible.
+- **Barre de vérification.** Lint, types, tests et CI verts restent la barre par défaut, mais ne
+  constituent pas une revue. Avant de demander une revue sur une PR que vous ouvrez, passez
+  `merge-verdict` sur votre propre PR et corrigez ses constats bloquants avant de solliciter quiconque.
 
 ## Points de vigilance
 
