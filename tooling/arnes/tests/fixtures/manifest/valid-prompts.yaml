@@ -1,0 +1,34 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user, project]
+  - id: cursor
+    scopes: [project]
+  - id: codex
+    scopes: [user]
+prompts:
+  - id: deploy
+    source: { root: repository, path: harness/prompts/deploy.md }
+    includes:
+      - fragments/context.md
+      - ../shared.md
+    variables: [environment, _ticket]
+    projections:
+      - agent: claude
+        scope: user
+        representation: symlink
+        destination: { root: home, path: .claude/commands/deploy.md }
+      - agent: cursor
+        scope: project
+        representation: file
+        destination: { root: repository, path: .cursor/commands/deploy.md }
+      - agent: codex
+        scope: user
+        representation: rendered
+        destination: { root: home, path: .codex/prompts/deploy.md }
+  - id: review
+    source: { root: repository, path: harness/prompts/review.md }
+    includes: []
+    variables: []
+    projections: []
+resources: []

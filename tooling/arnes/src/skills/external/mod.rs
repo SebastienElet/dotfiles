@@ -42,6 +42,6 @@ pub(super) fn is_claude_skills_plugin(agent: Agent, path: &std::path::Path) -> b
     agent == Agent::Claude
         && path
             .parent()
-            .is_some_and(|root| super::paths::canonical_within(path, root).is_some())
+            .is_some_and(|root| crate::files::paths::canonical_within(path, root).is_some())
         && path.join(".claude-plugin/plugin.json").is_file()
 }

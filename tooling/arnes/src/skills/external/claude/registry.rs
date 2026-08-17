@@ -1,10 +1,10 @@
 use super::{installation_scope, registry_diagnostic, settings};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::paths::{ancestor_within, canonical_within};
 use crate::manifest::Scope;
 use crate::skills::external::manifest;
 use crate::skills::external::model::{Exposure, Plugin, Topology};
-use crate::skills::paths::{ancestor_within, canonical_within};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs;
@@ -97,9 +97,7 @@ fn plugin_root_supported(root: &Path, home: &Path) -> bool {
             canonical_within(root, home).is_some()
                 && fs::metadata(root).is_ok_and(|metadata| metadata.is_dir())
         }
-        Err(error) if error.kind() == ErrorKind::NotFound => {
-            crate::skills::paths::ancestor_within(root, home)
-        }
+        Err(error) if error.kind() == ErrorKind::NotFound => ancestor_within(root, home),
         Err(_) => false,
     }
 }

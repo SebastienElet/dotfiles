@@ -1,8 +1,8 @@
 use super::super::model::Exposure;
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::paths::{ancestor_within, canonical_within};
 use crate::manifest::Scope;
-use crate::skills::paths::{ancestor_within, canonical_within};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;

@@ -7,6 +7,7 @@ use arnes::config;
 use arnes::diagnostic::{Diagnostic, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
+use arnes::prompts;
 use arnes::skills;
 
 #[derive(Parser)]
@@ -82,6 +83,10 @@ fn main() -> ExitCode {
             Ok(roots) => diagnose_skills(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("skills", State::Error, error.to_string())],
         },
+        Some(Resource::Prompts) => match Roots::from_environment() {
+            Ok(roots) => diagnose_prompts(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("prompts", State::Error, error.to_string())],
+        },
         _ => Vec::new(),
     };
     let report = Report::new(diagnostics);
@@ -148,5 +153,12 @@ fn diagnose_skills(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) ->
     match manifest::load(roots.home()) {
         Ok(manifest) => skills::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("skills", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_prompts(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => prompts::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("prompts", State::Error, error.to_string())],
     }
 }

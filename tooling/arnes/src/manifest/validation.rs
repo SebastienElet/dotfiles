@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
 
 mod external;
+mod prompts;
 mod skills;
 
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
@@ -76,6 +77,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     }
 
     validate_resources(&manifest.resources, &agents)?;
+    prompts::validate(&manifest.prompts, &manifest.resources, &agents)?;
     skills::validate(&manifest.skills, &manifest.resources, &agents)?;
     external::validate(&manifest.external, &agents)
 }
@@ -109,6 +111,12 @@ fn validate_resources(
             return Err(ManifestError::new(
                 field("scope"),
                 "scope is not declared for this agent",
+            ));
+        }
+        if resource.kind == super::ResourceKind::Prompts {
+            return Err(ManifestError::new(
+                field("kind"),
+                "prompts must use normalized top-level declarations",
             ));
         }
         validate_resource_paths(resource, index)?;
@@ -196,6 +204,25 @@ pub(super) fn validate_path(field: &str, path: &Path) -> Result<(), ManifestErro
         Err(ManifestError::new(
             field,
             "path must stay within its declared root",
+        ))
+    }
+}
+
+pub(super) fn validate_target(
+    field: &impl Fn(&str) -> String,
+    agent: Agent,
+    scope: Scope,
+    agents: &HashMap<Agent, HashSet<Scope>>,
+) -> Result<(), ManifestError> {
+    let Some(scopes) = agents.get(&agent) else {
+        return Err(ManifestError::new(field("agent"), "agent is not declared"));
+    };
+    if scopes.contains(&scope) {
+        Ok(())
+    } else {
+        Err(ManifestError::new(
+            field("scope"),
+            "scope is not declared for this agent",
         ))
     }
 }

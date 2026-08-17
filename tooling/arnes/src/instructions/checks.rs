@@ -1,6 +1,7 @@
-use super::includes::{IncludeError, parent_within, resolves_within, same_file};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::includes::IncludeError;
+use crate::files::paths::{parent_within, resolves_within, same_file};
 use crate::manifest::{InstructionResource, Scope};
 use std::fs;
 use std::io::ErrorKind;
@@ -54,6 +55,10 @@ pub fn include_diagnostic(subject: &str, error: IncludeError, default: State) ->
             State::Drift,
             format!("include {} is missing", path.display()),
         ),
+        IncludeError::Dangling(path) => (
+            State::Error,
+            format!("include {} is missing (dangling symlink)", path.display()),
+        ),
         IncludeError::WrongLink(path) => (
             State::Drift,
             format!("include {} has the wrong symlink target", path.display()),
@@ -83,6 +88,9 @@ pub fn source_diagnostic(subject: &str, error: IncludeError) -> Diagnostic {
     let message = match error {
         IncludeError::Missing(path) | IncludeError::MissingLink(path) => {
             format!("source {} is missing", path.display())
+        }
+        IncludeError::Dangling(path) => {
+            format!("source {} is missing (dangling symlink)", path.display())
         }
         IncludeError::NotFile(path) => format!("source {} is not a file", path.display()),
         IncludeError::Unreadable(path) => format!("source {} could not be read", path.display()),

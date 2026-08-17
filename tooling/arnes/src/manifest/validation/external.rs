@@ -21,7 +21,7 @@ fn validate_roots(
     let mut declarations = HashSet::new();
     for (index, root) in roots.iter().enumerate() {
         let field = |name: &str| format!("external.roots[{index}].{name}");
-        validate_target(&field, root.agent, root.scope, agents)?;
+        super::validate_target(&field, root.agent, root.scope, agents)?;
         if root.origin != ExternalOrigin::System {
             return Err(ManifestError::new(
                 field("origin"),
@@ -56,7 +56,7 @@ fn validate_plugins(
     let mut declarations = HashSet::new();
     for (index, plugin) in plugins.iter().enumerate() {
         let field = |name: &str| format!("external.plugins[{index}].{name}");
-        validate_target(&field, plugin.agent, plugin.scope, agents)?;
+        super::validate_target(&field, plugin.agent, plugin.scope, agents)?;
         super::skills::validate_slug(&field("id"), &plugin.id)?;
         if !declarations.insert((plugin.agent, plugin.scope, plugin.id.clone())) {
             return Err(ManifestError::new(field("id"), "duplicate external plugin"));
@@ -73,7 +73,7 @@ fn validate_skills(
     let mut declarations = HashSet::new();
     for (index, skill) in skills.iter().enumerate() {
         let field = |name: &str| format!("external.skills[{index}].{name}");
-        validate_target(&field, skill.agent, skill.scope, agents)?;
+        super::validate_target(&field, skill.agent, skill.scope, agents)?;
         super::skills::validate_slug(&field("slug"), &skill.slug)?;
         match (skill.origin, skill.plugin.as_deref()) {
             (ExternalOrigin::Managed, None) => {}
@@ -120,23 +120,4 @@ fn validate_skills(
         }
     }
     Ok(())
-}
-
-fn validate_target(
-    field: &impl Fn(&str) -> String,
-    agent: Agent,
-    scope: Scope,
-    agents: &HashMap<Agent, HashSet<Scope>>,
-) -> Result<(), ManifestError> {
-    let Some(scopes) = agents.get(&agent) else {
-        return Err(ManifestError::new(field("agent"), "agent is not declared"));
-    };
-    if scopes.contains(&scope) {
-        Ok(())
-    } else {
-        Err(ManifestError::new(
-            field("scope"),
-            "scope is not declared for this agent",
-        ))
-    }
 }
