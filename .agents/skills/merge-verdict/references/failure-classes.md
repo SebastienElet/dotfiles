@@ -1,6 +1,6 @@
 # Failure Classes
 
-Eight questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
+Ten questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
 answer is a sentence about *this* diff. Record one of three outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
@@ -10,6 +10,10 @@ answer is a sentence about *this* diff. Record one of three outcomes per class.
 Only the third outcome can become a blocking finding, and only when the mechanism is written out.
 "This looks racy" is not a mechanism; "request A snapshots at T1, request B writes at T2, A commits
 at T3 and B's row is absent from the successor" is.
+
+The same questions apply to a design document: the mechanism under review is what the document
+authorizes someone to build. A document that leaves a class open produces the defect during
+implementation instead of preventing it during review.
 
 ## 1. Atomicity and ordering
 
@@ -105,14 +109,37 @@ which is strictly worse than rejecting the input.
 **Lift:** the value is parsed into the type it claims to be, and the unparseable case is an error
 with a message naming what was received.
 
+## 9. Upstream control as a trust boundary
+
+**Ask:** does this diff keep validation or confinement at the trust boundary distinct from every
+upstream allowlist, index, internal view or owned schema?
+
+**Broken when:** an upstream control is treated as proof that its output is trustworthy, so the
+boundary guard does not run. The upstream mechanism controls selection or representation, not the
+validity or confinement of every value it emits, and its drift crosses the boundary unchecked.
+
+**Lift:** the boundary guard still validates the value or confines it against the canonical boundary
+when it is consumed, independently of the upstream control, and each mechanism remains explicit.
+
+## 10. Claim stronger than mechanism
+
+**Ask:** does every guarantee claimed by this diff match what its mechanism actually establishes?
+
+**Broken when:** the wording promotes a weaker property into a stronger outcome — intent into
+effect, integrity into legal proof, or proposal into authority. A reader then builds or relies on
+an assurance that no mechanism delivers.
+
+**Lift:** the claim uses the weaker term the mechanism supports when no external obligation requires
+more; otherwise the missing mechanism, evidence or authority makes the stronger guarantee true.
+
 ## Reporting
 
-Classes 1, 2, 3, 4, 5 and 7 name mechanisms that lose data, corrupt state or cross a security
-boundary: when broken, they block. Classes 6 and 8 are usually reservations — promote one to a
-blocker only when a concrete consumer or a concrete input path makes the consequence unbounded, and
-say which one.
+Classes 1, 2, 3, 4, 5, 7 and 9 name mechanisms that lose data, corrupt state or cross a security
+boundary: when broken, they block. Classes 6, 8 and 10 are usually reservations — promote class 6
+when a concrete consumer's retry path depends on the changed code, class 8 when the degraded value
+reaches a person or a legal act, and class 10 when the claim is legal, evidentiary or contractual.
 
-Findings outside these eight classes are legitimate but non-blocking by default: report at most three
+Findings outside these ten classes are legitimate but non-blocking by default: report at most three
 of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
 turning into a second review that competes with the verdict — rank them by whether they would change
 a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is
