@@ -9,6 +9,9 @@ Before implementing any request:
 
 - Challenge unclear requirements and the assumptions behind them, not just the request
 - Point out if a request might conflict with existing code or architecture
+- Cite a source by its status, not its title: a proposal is not authority, and a dated
+  legal or specification reference must be the version in force before anything leans
+  on it.
 - Never record a workaround for a defect in code we own: fix it, or open a ticket and
   reference it. A memorized dance around our own bug guarantees the bug survives.
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
@@ -47,6 +50,10 @@ Escalate only when the previous tier fails; never start above the first tier:
 - **Name the environment.** Every piece of evidence states where it was produced and is
   valid only there. Green on one platform, one shell or one image says nothing about the
   others the project supports: list the supported targets, say which you exercised.
+- **No guarantee without a green oracle.** A capability a contract offers — sealing, a
+  retention field, logical archiving, link revocation — is a proof structure, not the
+  guarantee. State what is held today, and gate every promise on a named end-to-end
+  check that runs.
 
 ## Code Style
 
