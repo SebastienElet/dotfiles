@@ -120,15 +120,21 @@ ${BREW_BIN}/fd:
 	brew install fd
 
 .PHONY: fish
-fish: brew starship ~/.config/fish ${BREW_BIN}/fish
+fish: brew starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
-	fish -c 'fisher install PatrickF1/fzf.fish'
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
 ~/.config/fish: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/fish | ~/.config
 	${DEPLOY_LINK} ${DOTFILES_PATH}/fish ${DOTFILES_PATH}/home/.config/fish $@
+~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
+	@if [ ! -e "$@" ]; then \
+		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
+			echo "Error: Fisher did not install $@" >&2; \
+			exit 1; \
+		fi; \
+	fi
 
 .PHONY: gnu-sed
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
