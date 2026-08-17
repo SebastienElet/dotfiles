@@ -111,8 +111,8 @@ fn undeclared_aliases_of_managed_sources_remain_unmanaged() {
         &["doctor", "skills", "--agent", "cursor", "--scope", "user"],
     );
 
-    assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("unmanaged cursor user skill plugin-owned"));
+    assert_eq!(code, 1, "{stdout}");
+    assert!(stdout.contains("plugin-owned · managed · enabled · healthy · unexpected"));
     assert_eq!(stdout.matches("managed cursor user skill alpha").count(), 1);
 }
 

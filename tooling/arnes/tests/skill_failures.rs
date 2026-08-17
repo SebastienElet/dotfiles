@@ -122,7 +122,7 @@ fn project_discovery_survives_managed_skill_drift() {
 
     assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("broken managed claude project skill alpha"));
-    assert!(stdout.contains("unmanaged claude project skill beta"));
+    assert!(stdout.contains("beta · managed · enabled · healthy · unexpected"));
     assert!(!stdout.contains("local resource references/missing.md"));
 }
 
@@ -139,8 +139,8 @@ fn unmanaged_installations_are_preserved_and_not_validated_as_owned() {
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
 
-    assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("unmanaged claude user skill third-party"));
+    assert_eq!(code, 1, "{stdout}");
+    assert!(stdout.contains("third-party · managed · enabled · healthy · unexpected"));
     assert!(!stdout.contains("local resource"));
     assert_eq!(fixture.snapshot(), before);
 
@@ -151,9 +151,8 @@ fn unmanaged_installations_are_preserved_and_not_validated_as_owned() {
         &fixture,
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
-    assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("broken claude user skill dangling-third-party"));
-    assert!(stdout.contains("is unmanaged and not Arnes-owned"));
+    assert_eq!(code, 2, "{stdout}");
+    assert!(stdout.contains("dangling-third-party · managed · unknown · broken · unexpected"));
 }
 
 #[test]

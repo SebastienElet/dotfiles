@@ -24,6 +24,12 @@ fn valid_manifest_models_rooted_user_and_project_resources() {
 }
 
 #[test]
+fn repository_manifest_is_valid() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../home/.arnes.yaml");
+    manifest::parse(&fs::read_to_string(path).unwrap()).unwrap();
+}
+
+#[test]
 fn unsupported_version_precedes_resource_validation() {
     assert_eq!(
         error("unsupported-version.yaml"),
@@ -167,5 +173,71 @@ fn skill_declarations_are_normalized_and_unambiguous() {
         ),
     ] {
         assert_eq!(error(fixture), expected);
+    }
+}
+
+fn external_error(external: &str) -> String {
+    let input = format!(
+        "version: 1\nagents:\n  - id: codex\n    scopes: [user]\nskills: []\nexternal:\n{external}resources: []\n"
+    );
+    match manifest::parse(&input) {
+        Ok(_) => panic!("external policy unexpectedly passed validation"),
+        Err(error) => error.to_string(),
+    }
+}
+
+#[test]
+fn valid_external_policy_separates_roots_plugins_and_skills() {
+    manifest::parse(
+        "version: 1\nagents:\n  - id: codex\n    scopes: [user]\nskills: []\nexternal:\n  roots:\n    - { agent: codex, scope: user, origin: system, location: { root: home, path: .codex/skills/.system } }\n  plugins:\n    - { agent: codex, scope: user, id: demo@marketplace }\n  skills:\n    - { agent: codex, scope: user, origin: managed, slug: ponytail }\n    - { agent: codex, scope: user, origin: system, slug: openai-docs }\n    - { agent: codex, scope: user, origin: plugin, plugin: demo@marketplace, slug: hello }\nresources: []\n",
+    )
+    .unwrap();
+}
+
+#[test]
+fn duplicate_external_policy_entries_are_rejected() {
+    for (external, expected) in [
+        (
+            "  roots:\n    - &root { agent: codex, scope: user, origin: system, location: { root: home, path: .codex/skills/.system } }\n    - *root\n  plugins: []\n  skills: []\n",
+            "external.roots[1].location: duplicate external root",
+        ),
+        (
+            "  roots: []\n  plugins:\n    - &plugin { agent: codex, scope: user, id: demo@marketplace }\n    - *plugin\n  skills: []\n",
+            "external.plugins[1].id: duplicate external plugin",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - &skill { agent: codex, scope: user, origin: system, slug: openai-docs }\n    - *skill\n",
+            "external.skills[1].slug: duplicate external skill",
+        ),
+    ] {
+        assert_eq!(external_error(external), expected);
+    }
+}
+
+#[test]
+fn ambiguous_external_policy_is_rejected() {
+    for (external, expected) in [
+        (
+            "  roots:\n    - { agent: codex, scope: user, origin: plugin, location: { root: home, path: .codex/plugins } }\n  plugins: []\n  skills: []\n",
+            "external.roots[0].origin: external roots only support system skills",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: plugin, slug: hello }\n",
+            "external.skills[0].plugin: plugin skills require a plugin identifier",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: system, plugin: demo, slug: hello }\n",
+            "external.skills[0].plugin: system skills cannot name a plugin",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: managed, plugin: demo, slug: hello }\n",
+            "external.skills[0].plugin: managed external skills cannot name a plugin",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: plugin, plugin: demo, slug: hello }\n",
+            "external.skills[0].plugin: plugin skill requires a matching allowed plugin",
+        ),
+    ] {
+        assert_eq!(external_error(external), expected);
     }
 }

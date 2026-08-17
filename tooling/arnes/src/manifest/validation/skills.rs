@@ -69,7 +69,7 @@ fn validate_installation(
     }
 }
 
-fn validate_slug(field: &str, slug: &str) -> Result<(), ManifestError> {
+pub(super) fn validate_slug(field: &str, slug: &str) -> Result<(), ManifestError> {
     let path = Path::new(slug);
     let mut components = path.components();
     let valid = match (components.next(), components.next()) {
