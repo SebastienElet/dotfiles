@@ -3,6 +3,7 @@ use serde_yaml_ng::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
 
+mod external;
 mod skills;
 
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
@@ -75,7 +76,8 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     }
 
     validate_resources(&manifest.resources, &agents)?;
-    skills::validate(&manifest.skills, &manifest.resources, &agents)
+    skills::validate(&manifest.skills, &manifest.resources, &agents)?;
+    external::validate(&manifest.external, &agents)
 }
 
 fn validate_resources(
@@ -181,7 +183,7 @@ fn validate_resource_paths(
     Ok(())
 }
 
-fn validate_path(field: &str, path: &Path) -> Result<(), ManifestError> {
+pub(super) fn validate_path(field: &str, path: &Path) -> Result<(), ManifestError> {
     if path.as_os_str().is_empty() {
         return Err(ManifestError::new(field, "path cannot be empty"));
     }

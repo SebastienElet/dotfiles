@@ -30,6 +30,7 @@ pub fn unmanaged(
     names
         .into_iter()
         .filter(|name| !declared.contains(&root.join(name)))
+        .filter(|name| !super::external::is_claude_skills_plugin(agent, &directory.join(name)))
         .map(|name| classify(&directory, agent, scope, root, &name))
         .collect()
 }

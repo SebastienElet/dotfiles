@@ -11,7 +11,6 @@ fn declared_skills_are_managed_and_undeclared_project_skills_are_unmanaged() {
     let (code, stdout, stderr) = run(&fixture, &["doctor", "skills"]);
 
     assert_eq!(code, 0, "{stdout}");
-    assert_eq!(stdout.lines().count(), 9);
     assert_eq!(stdout.matches("healthy skills: managed").count(), 6);
     assert_eq!(stdout.matches("unsupported skills: unmanaged").count(), 3);
     for expected in [
@@ -41,12 +40,24 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert_eq!(stdout.lines().count(), 2);
+    assert_eq!(
+        stdout
+            .lines()
+            .filter(|line| line.starts_with("healthy skills: managed cursor project"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        stdout
+            .lines()
+            .filter(|line| line.starts_with("unsupported skills: unmanaged cursor project"))
+            .count(),
+        1
+    );
     assert!(stdout.lines().all(|line| line.contains("cursor project")));
 
     let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--scope", "user"]);
     assert_eq!(code, 0, "{stdout}");
-    assert_eq!(stdout.lines().count(), 3);
     assert!(stdout.lines().all(|line| line.contains(" user ")));
 }
 

@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 mod discovery;
+mod external;
 mod paths;
 mod projection;
 mod references;
@@ -35,7 +36,9 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
         .filter(|resource| resource.agent == agent && resource.scope == scope)
         .collect::<Vec<_>>();
     if resources.is_empty() {
-        return vec![unsupported(Some(agent), Some(scope))];
+        return std::iter::once(unsupported(Some(agent), Some(scope)))
+            .chain(external::diagnose(roots, manifest, agent, scope))
+            .collect();
     }
     let (supported, unsupported_resources): (Vec<_>, Vec<_>) =
         resources.into_iter().partition(declaration_supported);
@@ -49,6 +52,7 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
             SkillLayout::Root => diagnostics.extend(diagnose_root(roots, manifest, &resource)),
         }
     }
+    diagnostics.extend(external::diagnose(roots, manifest, agent, scope));
     diagnostics
 }
 

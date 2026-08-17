@@ -1,0 +1,85 @@
+# Audit Arnes des skills et plugins externes
+
+`arnes doctor skills` inventorie des capacités durablement disponibles ou exposées. Il ne déduit
+ni leur activation pendant une session, ni les tokens réellement consommés. La divulgation
+progressive de Codex charge d'abord le nom, la description et le chemin, puis le `SKILL.md` complet
+seulement lorsque le skill est sélectionné. Cette liste initiale est bornée à 2 % de la fenêtre de
+contexte ou 8 000 caractères lorsque la fenêtre est inconnue.
+
+Le manifest `.arnes.yaml` sépare trois déclarations :
+
+- `external.roots` borne chaque racine de skills système effectivement auditée ;
+- `external.plugins` autorise l'identifiant stable d'un plugin sans autoriser ses futurs skills ;
+- `external.skills` autorise un slug système ou un slug fourni par un plugin déjà autorisé.
+
+Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son absence ne crée donc
+aucun drift. La propriété reste `external`, même pour une capacité autorisée. Les diagnostics
+conservent le schéma partagé `resource/state/message` et exposent dans le message l'origine, le
+conteneur, la version, l'exposition, la topologie, la politique et la limite d'observation runtime.
+
+## Codex
+
+La documentation officielle définit les racines repository `.agents/skills` du répertoire courant
+jusqu'à la racine Git, `$HOME/.agents/skills`, `/etc/codex/skills` et des skills `SYSTEM` embarqués,
+sans chemin physique public pour ces derniers. Elle définit aussi `[[skills.config]]` dans
+`~/.codex/config.toml` pour désactiver un skill par chemin.
+
+Le chemin `~/.codex/skills/.system` utilisé dans le manifest de ce dépôt est un contrat
+d'implémentation local explicite, pas une convention Codex universelle. Arnes peut donc auditer
+`openai-docs` sous cette racine sans transformer une observation de HOME en table Rust. Une autre
+installation doit déclarer sa propre racine stable ou accepter un diagnostic `unsupported`.
+
+Les plugins ont une identité `.codex-plugin/plugin.json`, un état on/off dans
+`~/.codex/config.toml` et un cache versionné sous
+`~/.codex/plugins/cache/$MARKETPLACE/$PLUGIN/$VERSION`. La configuration publique ne désigne pas la
+version active du cache. Arnes rapporte donc l'état observable du plugin, mais garde sa topologie et
+ses skills `unsupported` au lieu de choisir arbitrairement une version ou d'énumérer les caches.
+
+Sources : [Build skills](https://learn.chatgpt.com/docs/build-skills),
+[Plugins](https://learn.chatgpt.com/docs/plugins),
+[Package your plugin](https://developers.openai.com/plugins/build/plugins).
+
+## Claude Code
+
+L'état durable combine les installations et `enabledPlugins`. Les réglages user, project et local
+sont lus depuis leurs fichiers documentés ; le réglage le plus proche du projet prévaut dans le
+périmètre observable par un doctor lancé dans ce projet. Les réglages managed, serveur ou MDM ne
+sont pas déduits depuis HOME.
+
+L'interface officiellement supportée pour l'inventaire est `claude plugin list --json`. Le schéma
+statique de `~/.claude/plugins/installed_plugins.json` n'est pas publié. Arnes reconnaît seulement la
+version 2 observée par l'installation couverte par cette slice ; toute autre version devient
+`unsupported`. Le registre sélectionne l'unique `installPath` effectif. Les anciennes versions du
+cache et les market places connues ne sont jamais prises pour des plugins actifs.
+
+Un plugin de skills-directory est reconnu par `.claude-plugin/plugin.json` directement sous une
+racine `.claude/skills`; il porte l'identité `<name>@skills-dir`. Il n'est pas aussi rapporté comme
+skill standalone unmanaged. Les skills externes ne passent jamais par les contrôles qualitatifs ou
+de ressources locales réservés aux skills possédés par Arnes.
+
+Sources : [Settings](https://code.claude.com/docs/en/settings),
+[Plugins reference](https://code.claude.com/docs/en/plugins-reference),
+[Discover plugins](https://code.claude.com/docs/en/discover-plugins).
+
+## Cursor
+
+Cursor documente les skills builtin et plusieurs racines de skills locales, mais aucun chemin
+filesystem stable pour les builtins. Il documente le chargement de plugins de développement sous
+`~/.cursor/plugins/local/<plugin>` ; Arnes audite uniquement cette racine explicite.
+
+Customize reste l'interface officielle des plugins marketplace installés. Aucun registre
+filesystem stable ne publie leur activation, et `workspaceOpen` peut produire des chemins
+dynamiquement. Les plugins marketplace, extensions, builtins et capacités dynamiques sont donc
+`unsupported` plutôt que déduits depuis un cache ou exécutés par le doctor.
+
+Sources : [Skills](https://cursor.com/docs/skills),
+[Plugins](https://cursor.com/docs/plugins),
+[Plugin reference](https://cursor.com/docs/reference/plugins).
+
+## Frontières de lecture
+
+Chaque scan part d'une racine déclarée, d'un registre installé ou d'une configuration effectivement
+lue par l'agent. Les symlinks absolus et relatifs sont acceptés seulement si leur cible canonique
+reste dans cette racine. Un lien pendant ou une sortie par un composant intermédiaire est rapporté
+sans être traversé. `doctor` n'appelle aucun gestionnaire de plugin, n'analyse aucun cache orphelin,
+ne charge aucune capacité et ne modifie ni le repository ni HOME.

@@ -1,11 +1,14 @@
 use clap::ValueEnum;
 use serde::Deserialize;
-use serde_yaml_ng::Value;
 use std::fmt::{self, Display};
-use std::fs;
 use std::path::{Path, PathBuf};
 
+mod external;
+mod parsing;
 mod validation;
+
+pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
+pub use parsing::{load, parse};
 
 const MANIFEST_FILE: &str = ".arnes.yaml";
 const SCHEMA_VERSION: u64 = 1;
@@ -41,6 +44,8 @@ pub struct Manifest {
     agents: Vec<AgentDeclaration>,
     #[serde(default)]
     skills: Vec<SkillDeclaration>,
+    #[serde(default)]
+    external: external::ExternalPolicy,
     resources: Vec<ResourceDeclaration>,
 }
 
@@ -91,6 +96,22 @@ impl Manifest {
 
     pub fn declared_skills(&self) -> impl Iterator<Item = &str> {
         self.skills.iter().map(|skill| skill.slug.as_str())
+    }
+
+    pub fn external_roots(&self) -> impl Iterator<Item = ExternalRoot<'_>> {
+        self.external.roots()
+    }
+
+    pub fn external_plugins(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
+        self.external.plugins(agent, scope)
+    }
+
+    pub fn external_skills(
+        &self,
+        agent: Agent,
+        scope: Scope,
+    ) -> impl Iterator<Item = ExternalSkill<'_>> {
+        self.external.skills(agent, scope)
     }
 }
 
@@ -194,41 +215,4 @@ enum ResourceKind {
     Hooks,
     Mcp,
     Statusline,
-}
-
-pub fn load(home: &Path) -> Result<Manifest, ManifestError> {
-    let manifest = fs::read_to_string(home.join(MANIFEST_FILE)).map_err(|error| {
-        let reason = match error.kind() {
-            std::io::ErrorKind::NotFound => format!("{MANIFEST_FILE} was not found"),
-            _ => format!("could not read {MANIFEST_FILE}"),
-        };
-        ManifestError::new("manifest", reason)
-    })?;
-
-    parse(&manifest)
-}
-
-pub fn parse(input: &str) -> Result<Manifest, ManifestError> {
-    let value: Value = serde_yaml_ng::from_str(input)
-        .map_err(|error| ManifestError::new("manifest", error.to_string()))?;
-    validation::validate_value(&value)?;
-
-    if let Some(field) = validation::secret_field(&value, "") {
-        return Err(ManifestError::new(field, "secret values are not allowed"));
-    }
-
-    let deserializer = serde_yaml_ng::Deserializer::from_str(input);
-    let manifest: Manifest = serde_path_to_error::deserialize(deserializer).map_err(|error| {
-        let field = error.path().to_string();
-        ManifestError::new(
-            if field.is_empty() || field == "." {
-                "manifest"
-            } else {
-                &field
-            },
-            error.into_inner().to_string(),
-        )
-    })?;
-    validation::validate(&manifest)?;
-    Ok(manifest)
 }
