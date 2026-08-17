@@ -38,8 +38,9 @@ fn codex_plugin_policy_uses_config_but_never_guesses_active_cache_version() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("drift skills: external codex user plugin demo@marketplace"));
-    assert!(stdout.contains("exposure=enabled topology=unknown policy=unexpected"));
+    assert!(stdout.contains("codex user plugin demo@marketplace@?"));
+    assert!(stdout.contains("drift       plugin · enabled · unknown · unexpected"));
+    assert!(stdout.contains("· enabled · unknown · unexpected"));
     assert!(stdout.contains("active cache version cannot be selected reliably"));
     assert!(!stdout.contains("orphan"));
     assert!(!stdout.contains("0.9.0"));
@@ -58,8 +59,9 @@ fn allowed_or_disabled_codex_plugin_does_not_create_false_policy_drift() {
         &["doctor", "skills", "--agent", "codex", "--scope", "user"],
     );
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("unsupported skills: external codex user plugin demo@marketplace"));
-    assert!(stdout.contains("policy=allowed"));
+    assert!(stdout.contains("codex user plugin demo@marketplace@?"));
+    assert!(stdout.contains("unsupported plugin · enabled · unknown · allowed"));
+    assert!(stdout.contains("· enabled · unknown · allowed"));
 
     fixture.write_home(".arnes.yaml", &manifest(false));
     fixture.write_home(
@@ -71,6 +73,6 @@ fn allowed_or_disabled_codex_plugin_does_not_create_false_policy_drift() {
         &["doctor", "skills", "--agent", "codex", "--scope", "user"],
     );
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("exposure=disabled topology=unknown policy=unexpected"));
-    assert!(!stdout.contains("drift skills: external codex user plugin"));
+    assert!(stdout.contains("· disabled · unknown · unexpected"));
+    assert!(!stdout.contains("drift       plugin"));
 }

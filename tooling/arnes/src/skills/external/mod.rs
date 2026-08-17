@@ -32,6 +32,10 @@ pub(super) fn unsupported(agent: Agent, scope: Scope, subject: &str) -> Diagnost
             "external {agent} {scope} {subject} origin=system ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown"
         ),
     )
+    .with_human(
+        format!("{agent} {scope} unsupported capabilities"),
+        subject,
+    )
 }
 
 pub(super) fn is_claude_skills_plugin(agent: Agent, path: &std::path::Path) -> bool {

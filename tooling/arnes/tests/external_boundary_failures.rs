@@ -69,7 +69,7 @@ fn claude_unknown_registry_scope_is_explicitly_unsupported() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("exposure=unknown topology=unknown"));
+    assert!(stdout.contains("plugin · unknown · unknown · unexpected"));
     assert!(stdout.contains("unsupported installation scopes future"));
     assert!(!stdout.contains("must/not/be/read"));
 }
@@ -152,7 +152,12 @@ fn duplicate_system_skill_slugs_across_roots_are_topological_errors() {
     );
 
     assert_eq!(code, 2, "{stdout}");
-    assert_eq!(stdout.matches("skill duplicate origin=system").count(), 2);
+    assert_eq!(
+        stdout
+            .matches("duplicate · enabled · broken · allowed")
+            .count(),
+        2
+    );
     assert_eq!(
         stdout
             .matches("duplicate system skill slug across roots")

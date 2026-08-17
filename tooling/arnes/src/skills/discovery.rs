@@ -92,6 +92,21 @@ fn classify(
             name.display()
         ),
     )
+    .with_human(
+        format!("{agent} {scope} external skills"),
+        format!(
+            "{} · managed · {} · {} · {}{}",
+            name.display(),
+            if broken { "unknown" } else { "enabled" },
+            if broken { "broken" } else { "healthy" },
+            if allowed { "allowed" } else { "unexpected" },
+            if broken {
+                format!(" · {}/{}", label(scope, root), name.display())
+            } else {
+                String::new()
+            },
+        ),
+    )
 }
 
 fn missing(path: &Path) -> bool {

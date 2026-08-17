@@ -112,7 +112,7 @@ fn undeclared_aliases_of_managed_sources_remain_unmanaged() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("unmanaged cursor user skill plugin-owned"));
+    assert!(stdout.contains("plugin-owned · managed · enabled · healthy · unexpected"));
     assert_eq!(stdout.matches("managed cursor user skill alpha").count(), 1);
 }
 

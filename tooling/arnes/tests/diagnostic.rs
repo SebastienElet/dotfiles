@@ -71,3 +71,21 @@ fn exit_codes_prioritize_errors_over_drift() {
         assert_eq!(report.exit_code(), expected);
     }
 }
+
+#[test]
+fn human_groups_compact_diagnostics_without_changing_json() {
+    let report = Report::new(vec![
+        Diagnostic::new("skills", State::Healthy, "verbose first")
+            .with_human("claude user external skills", "ponytail · allowed"),
+        Diagnostic::new("skills", State::Drift, "verbose second")
+            .with_human("claude user external skills", "ponytail-audit · unexpected"),
+    ]);
+
+    assert_eq!(
+        report.human(),
+        "claude user external skills\n  healthy     ponytail · allowed\n  drift       ponytail-audit · unexpected"
+    );
+    let json = report.json().unwrap();
+    assert!(json.contains("verbose first"));
+    assert!(!json.contains("ponytail · allowed"));
+}

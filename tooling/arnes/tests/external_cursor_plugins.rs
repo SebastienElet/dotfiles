@@ -56,10 +56,9 @@ fn active_allowlisted_cursor_plugin_and_skill_are_healthy() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("plugin cursor-demo origin=plugin ownership=external"));
-    assert!(stdout.contains("version=1.2.3 exposure=enabled topology=healthy policy=allowed"));
-    assert!(stdout.contains("skill hello origin=plugin ownership=external"));
-    assert!(stdout.contains("container=cursor-demo version=1.2.3"));
+    assert!(stdout.contains("cursor user plugin cursor-demo@1.2.3"));
+    assert!(stdout.contains("plugin · enabled · healthy · allowed"));
+    assert!(stdout.contains("skill hello · enabled · healthy · allowed"));
 }
 
 #[test]
@@ -74,10 +73,7 @@ fn active_unexpected_cursor_plugin_reports_plugin_and_skill() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert_eq!(
-        stdout.matches("drift skills: external cursor user").count(),
-        2
-    );
+    assert_eq!(stdout.matches("  drift       ").count(), 2);
     assert!(stdout.contains("plugin cursor-demo"));
     assert!(stdout.contains("skill hello"));
 }
@@ -100,8 +96,9 @@ fn managed_system_and_plugin_slug_collisions_remain_distinct() {
 
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("managed cursor user skill alpha"));
-    assert!(stdout.contains("skill alpha origin=system ownership=external"));
-    assert!(stdout.contains("skill alpha origin=plugin ownership=external container=cursor-demo"));
+    assert!(stdout.contains("cursor user system skills"));
+    assert!(stdout.contains("alpha · enabled · healthy · allowed"));
+    assert!(stdout.contains("skill alpha · enabled · healthy · allowed"));
 }
 
 #[test]
@@ -173,7 +170,7 @@ fn invalid_cursor_plugin_manifest_is_topological_error() {
 
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains("plugin broken"));
-    assert!(stdout.contains("topology=broken policy=unexpected"));
+    assert!(stdout.contains("· broken · unexpected"));
     assert!(stdout.contains("plugin manifest is invalid JSON"));
 }
 
@@ -193,6 +190,6 @@ fn unreadable_cursor_plugin_is_distinct_from_policy_and_read_only() {
     assert_eq!(fixture.snapshot(), before);
     assert_eq!(output.status.code(), Some(2));
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("topology=unreadable policy=unexpected"));
+    assert!(stdout.contains("· unreadable · unexpected"));
     assert!(stdout.contains("plugin manifest could not be read"));
 }

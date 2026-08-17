@@ -26,6 +26,14 @@ pub struct Diagnostic {
     pub resource: String,
     pub state: State,
     pub message: String,
+    #[serde(skip)]
+    human: Option<HumanDiagnostic>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct HumanDiagnostic {
+    group: String,
+    summary: String,
 }
 
 impl Diagnostic {
@@ -34,7 +42,16 @@ impl Diagnostic {
             resource: resource.into(),
             state,
             message: message.into(),
+            human: None,
         }
+    }
+
+    pub fn with_human(mut self, group: impl Into<String>, summary: impl Into<String>) -> Self {
+        self.human = Some(HumanDiagnostic {
+            group: group.into(),
+            summary: summary.into(),
+        });
+        self
     }
 }
 
@@ -81,11 +98,28 @@ impl Report {
     }
 
     pub fn human(&self) -> String {
-        self.diagnostics
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join("\n")
+        let mut lines = Vec::new();
+        let mut group = None;
+        for diagnostic in &self.diagnostics {
+            if let Some(human) = &diagnostic.human {
+                if group != Some(human.group.as_str()) {
+                    if !lines.is_empty() {
+                        lines.push(String::new());
+                    }
+                    lines.push(human.group.clone());
+                    group = Some(&human.group);
+                }
+                lines.push(format!(
+                    "  {:11} {}",
+                    diagnostic.state.to_string(),
+                    human.summary
+                ));
+            } else {
+                group = None;
+                lines.push(diagnostic.to_string());
+            }
+        }
+        lines.join("\n")
     }
 
     pub fn json(&self) -> Result<String, serde_json::Error> {

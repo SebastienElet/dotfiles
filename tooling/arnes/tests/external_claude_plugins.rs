@@ -74,10 +74,9 @@ fn active_allowlisted_plugin_and_skill_are_external_and_healthy() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("plugin demo@marketplace origin=plugin ownership=external"));
-    assert!(stdout.contains("version=1.0.0 exposure=enabled topology=healthy policy=allowed"));
-    assert!(stdout.contains("skill hello origin=plugin ownership=external"));
-    assert!(stdout.contains("container=demo@marketplace version=1.0.0"));
+    assert!(stdout.contains("claude user plugin demo@marketplace@1.0.0"));
+    assert!(stdout.contains("plugin · enabled · healthy · allowed"));
+    assert!(stdout.contains("skill hello · enabled · healthy · allowed"));
     assert!(!stdout.contains("local resource"));
 }
 
@@ -98,13 +97,10 @@ fn active_unexpected_plugin_reports_plugin_and_skill_policy_drift() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert_eq!(
-        stdout.matches("drift skills: external claude user").count(),
-        2
-    );
+    assert_eq!(stdout.matches("  drift       ").count(), 2);
     assert!(stdout.contains("plugin demo@marketplace"));
     assert!(stdout.contains("skill hello"));
-    assert!(stdout.contains("policy=unexpected"));
+    assert!(stdout.contains("· unexpected"));
 }
 
 #[test]
@@ -126,14 +122,14 @@ fn plugin_allowlist_does_not_allow_new_skills_implicitly() {
     assert_eq!(code, 1, "{stdout}");
     let plugin = stdout
         .lines()
-        .find(|line| line.contains("plugin demo@marketplace"))
+        .find(|line| line.contains("plugin ·"))
         .unwrap();
     let skill = stdout
         .lines()
         .find(|line| line.contains("skill future-capability"))
         .unwrap();
-    assert!(plugin.starts_with("healthy skills:"));
-    assert!(skill.starts_with("drift skills:"));
+    assert!(plugin.trim_start().starts_with("healthy"));
+    assert!(skill.trim_start().starts_with("drift"));
 }
 
 #[test]
@@ -153,8 +149,7 @@ fn disabled_plugin_is_visible_without_being_reported_as_active() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("exposure=disabled"));
-    assert!(stdout.contains("activation=disabled"));
+    assert!(stdout.contains("· disabled · healthy · unexpected"));
     assert!(!stdout.contains("available-not-runtime-observed"));
 }
 
@@ -185,7 +180,7 @@ fn orphan_cache_is_ignored_and_duplicate_active_versions_are_errors() {
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
     assert_eq!(code, 2, "{stdout}");
-    assert!(stdout.contains("topology=broken"));
+    assert!(stdout.contains("· broken · allowed"));
     assert!(stdout.contains("ambiguous installed versions 1.0.0,2.0.0"));
 }
 
@@ -210,7 +205,7 @@ fn registry_and_manifest_version_mismatch_is_topological_error() {
     );
 
     assert_eq!(code, 2, "{stdout}");
-    assert!(stdout.contains("topology=broken policy=allowed"));
+    assert!(stdout.contains("· broken · allowed"));
     assert!(stdout.contains("registry and plugin manifest versions differ"));
 }
 

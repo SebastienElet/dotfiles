@@ -1,8 +1,10 @@
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, ExternalOrigin, Manifest, Scope};
-use std::collections::BTreeMap;
 use std::fmt::{self, Display};
 use std::path::PathBuf;
+
+mod collisions;
+mod human;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) enum Exposure {
@@ -71,7 +73,7 @@ pub(super) fn plugin_diagnostics(
     scope: Scope,
     mut plugins: Vec<Plugin>,
 ) -> Vec<Diagnostic> {
-    mark_collisions(&mut plugins);
+    collisions::mark(&mut plugins);
     plugins.sort_by(|left, right| {
         left.id
             .cmp(&right.id)
@@ -100,52 +102,6 @@ pub(super) fn plugin_diagnostics(
         .collect()
 }
 
-fn mark_collisions(plugins: &mut [Plugin]) {
-    let mut plugin_counts = BTreeMap::new();
-    let mut skill_counts = BTreeMap::new();
-    for plugin in plugins.iter() {
-        *plugin_counts.entry(plugin.id.clone()).or_insert(0) += 1;
-        for skill in &plugin.skills {
-            *skill_counts
-                .entry((plugin.id.clone(), skill.slug.clone()))
-                .or_insert(0) += 1;
-        }
-    }
-    for plugin in plugins {
-        if plugin_counts.get(&plugin.id).copied().unwrap_or(0) > 1 {
-            mark_collision(
-                &mut plugin.topology,
-                &mut plugin.detail,
-                "duplicate plugin identifier",
-            );
-        }
-        for skill in &mut plugin.skills {
-            if skill_counts
-                .get(&(plugin.id.clone(), skill.slug.clone()))
-                .copied()
-                .unwrap_or(0)
-                > 1
-            {
-                mark_collision(
-                    &mut skill.topology,
-                    &mut skill.detail,
-                    "duplicate plugin skill slug",
-                );
-            }
-        }
-    }
-}
-
-fn mark_collision(topology: &mut Topology, detail: &mut Option<String>, reason: &str) {
-    if *topology != Topology::Unreadable {
-        *topology = Topology::Broken;
-    }
-    *detail = Some(match detail.take() {
-        Some(detail) => format!("{detail}; {reason}"),
-        None => reason.to_owned(),
-    });
-}
-
 fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool) -> Diagnostic {
     Diagnostic::new(
         "skills",
@@ -164,6 +120,10 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
                 .map_or_else(|| "unknown".to_owned(), |path| path.display().to_string()),
             detail(plugin.detail.as_deref()),
         ),
+    )
+    .with_human(
+        human::plugin_group(agent, scope, plugin),
+        human::plugin_summary(plugin, policy(allowed)),
     )
 }
 
@@ -190,6 +150,10 @@ fn skill_diagnostic(
             detail(skill.detail.as_deref()),
         ),
     )
+    .with_human(
+        human::plugin_group(agent, scope, plugin),
+        human::plugin_skill_summary(plugin, skill, policy(allowed)),
+    )
 }
 
 pub(super) fn external_skill_diagnostic(
@@ -211,6 +175,10 @@ pub(super) fn external_skill_diagnostic(
             skill.path.display(),
             detail(skill.detail.as_deref()),
         ),
+    )
+    .with_human(
+        format!("{agent} {scope} system skills"),
+        human::system_skill_summary(&skill, policy(allowed)),
     )
 }
 

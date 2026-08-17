@@ -12,17 +12,17 @@ fn declared_skills_are_managed_and_undeclared_project_skills_are_unmanaged() {
 
     assert_eq!(code, 1, "{stdout}");
     assert_eq!(stdout.matches("healthy skills: managed").count(), 6);
-    assert_eq!(stdout.matches("drift skills: unmanaged").count(), 3);
+    assert_eq!(stdout.matches("  drift       beta · managed").count(), 3);
     for expected in [
         "managed claude user skill alpha",
         "managed claude project skill alpha",
-        "unmanaged claude project skill beta",
+        "claude project external skills",
         "managed cursor user skill alpha",
         "managed cursor project skill alpha",
-        "unmanaged cursor project skill beta",
+        "cursor project external skills",
         "managed codex user skill alpha",
         "managed codex project skill alpha",
-        "unmanaged codex project skill beta",
+        "codex project external skills",
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
@@ -50,15 +50,24 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     assert_eq!(
         stdout
             .lines()
-            .filter(|line| line.starts_with("drift skills: unmanaged cursor project"))
+            .filter(|line| line.contains("drift       beta · managed"))
             .count(),
         1
     );
-    assert!(stdout.lines().all(|line| line.contains("cursor project")));
+    assert!(stdout.lines().filter(|line| !line.is_empty()).all(|line| {
+        line.contains("cursor project")
+            || line.contains("beta · managed")
+            || line.starts_with("  unsupported")
+    }));
 
     let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--scope", "user"]);
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.lines().all(|line| line.contains(" user ")));
+    assert!(
+        stdout
+            .lines()
+            .filter(|line| !line.is_empty() && !line.starts_with("  "))
+            .all(|line| line.contains(" user "))
+    );
 }
 
 #[test]

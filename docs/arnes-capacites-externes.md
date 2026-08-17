@@ -19,6 +19,8 @@ Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son abse
 aucun drift. La propriété reste `external`, même pour une capacité autorisée. Les diagnostics
 conservent le schéma partagé `resource/state/message` et exposent dans le message l'origine, le
 conteneur, la version, l'exposition, la topologie, la politique et la limite d'observation runtime.
+La sortie humaine regroupe et abrège ces dimensions ; `--format json` conserve le diagnostic
+exhaustif, notamment les chemins sains omis de la vue humaine.
 
 ## Codex
 

@@ -36,10 +36,9 @@ fn codex_system_skills_report_policy_without_claiming_runtime_activation() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("skill openai-docs origin=system ownership=external"));
-    assert!(stdout.contains("policy=allowed activation=available-not-runtime-observed"));
-    assert!(stdout.contains("skill surprise origin=system ownership=external"));
-    assert!(stdout.contains("policy=unexpected activation=available-not-runtime-observed"));
+    assert!(stdout.contains("codex user system skills"));
+    assert!(stdout.contains("openai-docs · enabled · healthy · allowed"));
+    assert!(stdout.contains("surprise · enabled · healthy · unexpected"));
     assert!(!stdout.contains("local resource"));
 }
 
@@ -62,9 +61,7 @@ fn disabled_system_skill_is_visible_but_not_active_or_drift() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("skill disabled"));
-    assert!(stdout.contains("exposure=disabled"));
-    assert!(stdout.contains("policy=unexpected activation=disabled"));
+    assert!(stdout.contains("disabled · disabled · healthy · unexpected"));
 }
 
 #[test]
@@ -93,8 +90,8 @@ fn undeclared_system_mechanism_is_explicitly_unsupported() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("unsupported skills: external codex user system skills inventory"));
-    assert!(stdout.contains("exposure=unknown topology=unknown"));
+    assert!(stdout.contains("codex user unsupported capabilities"));
+    assert!(stdout.contains("system skills inventory is unsupported"));
 }
 
 #[test]
@@ -113,8 +110,8 @@ fn external_inventory_runs_without_a_managed_projection() {
 
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("skill projection is not declared or supported"));
-    assert!(stdout.contains("skill openai-docs origin=system"));
-    assert!(stdout.contains("policy=allowed"));
+    assert!(stdout.contains("openai-docs · enabled · healthy"));
+    assert!(stdout.contains("· allowed"));
 }
 
 #[test]
@@ -137,9 +134,9 @@ fn valid_absolute_and_relative_links_remain_inside_the_declared_root() {
     for slug in ["absolute", "relative"] {
         let line = stdout
             .lines()
-            .find(|line| line.contains(&format!("skill {slug} ")))
+            .find(|line| line.contains(&format!("{slug} · enabled")))
             .unwrap();
-        assert!(line.contains("topology=healthy"), "{line}");
+        assert!(line.contains("· healthy ·"), "{line}");
     }
 }
 
@@ -158,8 +155,8 @@ fn dangling_and_intermediate_escape_links_are_broken_without_traversal() {
         &["doctor", "skills", "--agent", "codex", "--scope", "user"],
     );
     assert_eq!(code, 2, "{stdout}");
-    assert!(stdout.contains("skill dangling"));
-    assert!(stdout.contains("topology=broken"));
+    assert!(stdout.contains("dangling · enabled · broken"));
+    assert!(stdout.contains("· broken ·"));
 
     let fixture = configured_fixture();
     fixture.write_home(".arnes.yaml", &manifest(""));

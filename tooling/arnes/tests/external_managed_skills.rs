@@ -33,9 +33,8 @@ fn allowed_external_managed_skill_is_healthy_and_not_adopted() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("unmanaged codex user skill ponytail origin=managed"));
-    assert!(stdout.contains("ownership=external"));
-    assert!(stdout.contains("topology=healthy policy=allowed"));
+    assert!(stdout.contains("codex user external skills"));
+    assert!(stdout.contains("ponytail · managed · enabled · healthy · allowed"));
     assert!(!stdout.contains("local resource"));
 }
 
@@ -51,7 +50,7 @@ fn unexpected_external_managed_skill_is_policy_drift() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("policy=unexpected"));
+    assert!(stdout.contains("· unexpected"));
 }
 
 #[test]
@@ -80,5 +79,5 @@ fn broken_allowed_external_managed_skill_is_topological_error() {
     );
 
     assert_eq!(code, 2, "{stdout}");
-    assert!(stdout.contains("topology=broken policy=allowed"));
+    assert!(stdout.contains("· broken · allowed"));
 }
