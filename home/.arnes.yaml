@@ -29,6 +29,10 @@ external:
       location: { root: home, path: .codex/skills/.system }
   plugins: []
   skills:
+    - agent: claude
+      scope: user
+      origin: managed
+      slug: ponytail
     - agent: codex
       scope: user
       origin: managed
