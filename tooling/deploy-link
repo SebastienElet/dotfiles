@@ -9,29 +9,55 @@ fi
 source=$1
 destination=$2
 
-for required_command in readlink ln; do
+link_points_to() {
+  local current_source
+  current_source=$(readlink -n "$1" && printf .) || return
+  current_source=${current_source%.}
+  [[ $current_source == "$2" ]]
+}
+
+for required_command in readlink perl; do
   if ! command -v "$required_command" >/dev/null; then
     echo "Error: $required_command is required to deploy $destination" >&2
     exit 1
   fi
 done
 
+if [[ $source != /* ]] || [[ $source == */ ]]; then
+  echo "Error: source must be an absolute path without a trailing slash: $source" >&2
+  exit 1
+fi
+
+if [[ $destination != /* ]] || [[ $destination == */ ]]; then
+  echo "Error: destination must be an absolute path without a trailing slash: $destination" >&2
+  exit 1
+fi
+
 if [[ ! -e $source ]]; then
   echo "Error: source does not exist: $source" >&2
   exit 1
 fi
 
+if [[ ! -f $source ]] && [[ ! -d $source ]]; then
+  echo "Error: source is not a regular file or directory: $source" >&2
+  exit 1
+fi
+
 if [[ -L $destination ]]; then
-  current_source=$(readlink "$destination")
-  if [[ $current_source == "$source" ]]; then
+  if link_points_to "$destination" "$source"; then
     exit 0
   fi
-  echo "Error: $destination links to unexpected source: $current_source" >&2
+  echo "Error: $destination links to an unexpected source" >&2
   exit 1
 elif [[ -e $destination ]]; then
   echo "Error: $destination exists and is not a symbolic link" >&2
   exit 1
-else
-  ln -s "$source" "$destination"
-  [[ -e $source ]] || { echo "Error: source disappeared while deploying $destination" >&2; exit 1; }
+fi
+
+if ! perl \
+  -e '(-f $ARGV[0] || -d $ARGV[0]) or die "source unavailable: $ARGV[0]\n";' \
+  -e 'symlink $ARGV[0], $ARGV[1] or die "could not create $ARGV[1]: $!\n"' \
+  -- "$source" "$destination"; then
+  echo "Error: could not create $destination" >&2
+  exit 1
 fi

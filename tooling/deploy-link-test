@@ -13,8 +13,10 @@ fail() {
 }
 
 assert_link() {
+  actual_source=$(readlink -n "$1" && printf .) || fail "$1 cannot be read"
+  actual_source=${actual_source%.}
   [[ -L $1 ]] || fail "$1 is not a symbolic link"
-  [[ $(readlink "$1") == "$2" ]] || fail "$1 has an unexpected source"
+  [[ $actual_source == "$2" ]] || fail "$1 has an unexpected source"
 }
 
 assert_failure() {
@@ -96,12 +98,12 @@ new_case missing_readlink
 assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$source" "$destination"
 grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was not reported"
 
-new_case missing_ln
+new_case missing_perl
 wrapper_dir=$case_root/bin
 mkdir "$wrapper_dir"
 command ln -s "$(command -v readlink)" "$wrapper_dir/readlink"
 assert_failure env PATH="$wrapper_dir" /bin/bash "$helper" "$source" "$destination"
-grep -q 'ln is required' "$test_root/stderr" || fail "missing ln was not reported"
+grep -q 'perl is required' "$test_root/stderr" || fail "missing Perl was not reported"
 
 case_root=$test_root/make_starship_integration
 test_home=$case_root/home
