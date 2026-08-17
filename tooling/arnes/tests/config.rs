@@ -46,20 +46,17 @@ fn run(fixture: &Fixture, args: &[&str]) -> (i32, String, String) {
 }
 
 #[test]
-fn all_declared_agent_configurations_accept_unknown_keys() {
+fn user_scope_is_default_and_accepts_unknown_keys() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(&fixture, &["doctor", "config"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 6);
+    assert_eq!(stdout.lines().count(), 3);
     assert!(stderr.is_empty());
     for expected in [
         "healthy config: claude user",
-        "healthy config: claude project",
         "healthy config: cursor user",
-        "healthy config: cursor project",
         "healthy config: codex user",
-        "healthy config: codex project",
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
@@ -78,8 +75,8 @@ fn agent_and_scope_filters_isolate_selected_configurations() {
         ),
         (
             vec!["doctor", "config", "--agent", "claude"],
-            2,
-            "healthy config: claude project",
+            1,
+            "healthy config: claude user",
         ),
     ] {
         let (code, stdout, stderr) = run(&fixture, &args);
@@ -103,8 +100,8 @@ fn missing_roots_and_files_are_drift() {
     fixture.write_home(".arnes.yaml", ALL_AGENTS);
     let (code, stdout, _) = run(&fixture, &["doctor", "config"]);
     assert_eq!(code, 1);
-    assert_eq!(stdout.matches("root ").count(), 6);
-    assert_eq!(stdout.matches("is missing").count(), 6);
+    assert_eq!(stdout.matches("root ").count(), 3);
+    assert_eq!(stdout.matches("is missing").count(), 3);
 
     for path in [".claude", ".cursor", ".codex"] {
         fs::create_dir_all(fixture.home().join(path)).unwrap();
@@ -112,8 +109,8 @@ fn missing_roots_and_files_are_drift() {
     }
     let (code, stdout, _) = run(&fixture, &["doctor", "config"]);
     assert_eq!(code, 1);
-    assert_eq!(stdout.matches("file ").count(), 6);
-    assert_eq!(stdout.matches("is missing").count(), 6);
+    assert_eq!(stdout.matches("file ").count(), 3);
+    assert_eq!(stdout.matches("is missing").count(), 3);
 }
 
 #[test]
@@ -233,7 +230,7 @@ fn empty_manifests_are_explicitly_unsupported() {
         assert_eq!(code, 0);
         assert_eq!(
             stdout,
-            "unsupported config: no configuration combinations are declared in the manifest\n"
+            "unsupported config: user configuration scope is not declared in the manifest\n"
         );
         assert!(stderr.is_empty());
     }

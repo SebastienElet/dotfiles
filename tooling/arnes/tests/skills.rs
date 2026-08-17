@@ -6,23 +6,17 @@ use skill_support::{MANIFEST, configured_fixture, run};
 use support::Fixture;
 
 #[test]
-fn declared_skills_are_managed_and_undeclared_project_skills_are_unmanaged() {
+fn user_scope_is_default_for_declared_skills() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(&fixture, &["doctor", "skills"]);
 
-    assert_eq!(code, 1, "{stdout}");
-    assert_eq!(stdout.matches("healthy skills: managed").count(), 6);
-    assert_eq!(stdout.matches("  drift       beta · managed").count(), 3);
+    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(stdout.matches("healthy skills: managed").count(), 3);
+    assert!(!stdout.contains(" project "));
     for expected in [
         "managed claude user skill alpha",
-        "managed claude project skill alpha",
-        "claude project external skills",
         "managed cursor user skill alpha",
-        "managed cursor project skill alpha",
-        "cursor project external skills",
         "managed codex user skill alpha",
-        "managed codex project skill alpha",
-        "codex project external skills",
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
@@ -108,7 +102,7 @@ fn skills_doctor_is_isolated_and_read_only() {
 
     let (code, _, _) = run(&fixture, &["doctor", "skills"]);
 
-    assert_eq!(code, 1);
+    assert_eq!(code, 0);
     assert_eq!(fixture.snapshot(), before);
 }
 
