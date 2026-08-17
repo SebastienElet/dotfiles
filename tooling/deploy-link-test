@@ -32,102 +32,76 @@ assert_hooks_failure_preserves() {
 
 new_case() {
   case_root=$test_root/$1
-  old_source=$case_root/old
-  new_source=$case_root/new
+  source=$case_root/source
   destination=$case_root/destination
-  mkdir -p "$old_source" "$new_source"
+  mkdir -p "$source"
 }
 
 new_case missing_destination
-"$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$new_source"
+"$helper" "$source" "$destination"
+assert_link "$destination" "$source"
 
-new_case old_link
-ln -s "$old_source" "$destination"
-"$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$new_source"
-
-new_case dangling_old_link
-rmdir "$old_source"
-ln -s "$old_source" "$destination"
-"$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$new_source"
+new_case legacy_interface
+assert_failure "$helper" "$source" "$source" "$destination"
+grep -q 'Usage: deploy-link SOURCE DESTINATION' "$test_root/stderr" || fail "legacy interface was accepted"
 
 new_case current_link
-ln -s "$new_source" "$destination"
+ln -s "$source" "$destination"
 before=$(ls -di "$destination" | awk '{print $1}')
-"$helper" "$old_source" "$new_source" "$destination"
+"$helper" "$source" "$destination"
 after=$(ls -di "$destination" | awk '{print $1}')
 [[ $before == "$after" ]] || fail "current link was replaced"
 
 new_case regular_file
 printf 'keep\n' >"$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_failure "$helper" "$source" "$destination"
 [[ $(cat "$destination") == keep ]] || fail "regular file changed"
 
 new_case directory
 mkdir "$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_failure "$helper" "$source" "$destination"
 [[ -d $destination && ! -L $destination ]] || fail "directory changed"
 
 new_case unexpected_link
 unexpected_source=$case_root/unexpected
 mkdir "$unexpected_source"
 ln -s "$unexpected_source" "$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_failure "$helper" "$source" "$destination"
 assert_link "$destination" "$unexpected_source"
 
 new_case dangling_unexpected_link
 unexpected_source=$case_root/unexpected
 ln -s "$unexpected_source" "$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
+assert_failure "$helper" "$source" "$destination"
 assert_link "$destination" "$unexpected_source"
 
 new_case relative_equivalent_link
-ln -s old "$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" old
+ln -s source "$destination"
+assert_failure "$helper" "$source" "$destination"
+assert_link "$destination" source
 
-new_case missing_new_source
-rmdir "$new_source"
-ln -s "$old_source" "$destination"
-assert_failure "$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$old_source"
-
-new_case concurrent_destination_change
-ln -s "$old_source" "$destination"
-wrapper_dir=$case_root/bin
-mkdir "$wrapper_dir"
-printf '%s\n' '#!/usr/bin/env bash' 'target=$(/usr/bin/readlink "$1")' 'PATH=/usr/bin:/bin unlink "$1"' 'printf "valuable\n" >"$1"' 'printf "%s\n" "$target"' >"$wrapper_dir/readlink"
-chmod +x "$wrapper_dir/readlink"
-assert_failure env PATH="$wrapper_dir:$PATH" "$helper" "$old_source" "$new_source" "$destination"
-recovered_entries=("$case_root"/.deploy-link.*/previous)
-[[ -f ${recovered_entries[0]} ]] || fail "raced destination was not preserved"
-[[ $(cat "${recovered_entries[0]}") == valuable ]] || fail "raced destination content changed"
-
-new_case disappearing_source
-ln -s "$old_source" "$destination"
-wrapper_dir=$case_root/bin
-mkdir "$wrapper_dir"
-real_ln=$(command -v ln)
-printf '%s\n' '#!/usr/bin/env bash' 'rmdir "$2"' '"$REAL_LN" "$@"' >"$wrapper_dir/ln"
-chmod +x "$wrapper_dir/ln"
-assert_failure env REAL_LN="$real_ln" PATH="$wrapper_dir:$PATH" "$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$new_source"
-recovered_entries=("$case_root"/.deploy-link.*/previous)
-assert_link "${recovered_entries[0]}" "$old_source"
+new_case missing_source
+rmdir "$source"
+assert_failure "$helper" "$source" "$destination"
+[[ ! -e $destination && ! -L $destination ]] || fail "missing source created a destination"
 
 case_root="$test_root/paths with spaces"
-old_source="$case_root/old source"
-new_source="$case_root/new source"
+source="$case_root/source directory"
 destination="$case_root/destination link"
-mkdir -p "$old_source" "$new_source"
-"$helper" "$old_source" "$new_source" "$destination"
-assert_link "$destination" "$new_source"
+mkdir -p "$source"
+"$helper" "$source" "$destination"
+assert_link "$destination" "$source"
 
 new_case missing_readlink
-assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$old_source" "$new_source" "$destination"
+assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$source" "$destination"
 grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was not reported"
+
+new_case missing_ln
+wrapper_dir=$case_root/bin
+mkdir "$wrapper_dir"
+command ln -s "$(command -v readlink)" "$wrapper_dir/readlink"
+assert_failure env PATH="$wrapper_dir" /bin/bash "$helper" "$source" "$destination"
+grep -q 'ln is required' "$test_root/stderr" || fail "missing ln was not reported"
 
 case_root=$test_root/make_starship_integration
 test_home=$case_root/home
@@ -146,10 +120,6 @@ printf '%s\n' '#!/usr/bin/env bash' ': >"$LN_MARKER"' '"$REAL_LN" "$@"' >"$case_
 chmod +x "$case_root/bin/ln"
 env HOME="$test_home" REAL_LN="$(command -v ln)" LN_MARKER="$case_root/ln-called" PATH="$case_root/bin:$PATH" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
 [[ ! -e $case_root/ln-called ]] || fail "Make relinked the current Starship destination"
-assert_link "$starship_destination" "$repository/home/.config/starship.toml"
-rm "$starship_destination"
-ln -s "$repository/.config/starship.toml" "$starship_destination"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
 assert_link "$starship_destination" "$repository/home/.config/starship.toml"
 rm "$starship_destination"
 unexpected_source=$case_root/unexpected

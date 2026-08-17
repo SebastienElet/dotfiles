@@ -18,11 +18,11 @@ instructions partagées et les exécutables suivent le même mécanisme depuis
 `harness/` et `tooling/` ([ADR-038](038-frontieres-home-harness-tooling.md)).
 L'édition se fait dans le dépôt, l'effet est immédiat.
 
-Une migration de source remplace une destination seulement si elle est absente
-ou si elle pointe textuellement vers l'ancienne source exacte. Un fichier, un
-répertoire ou tout autre lien fait échouer la cible sans modifier cette
-destination. La vérification est forcée par le `Makefile`, même lorsqu'un lien
-inattendu pointe vers une cible existante.
+Le déploiement crée une destination absente ou conserve un lien qui pointe
+textuellement vers la source exacte. Un fichier, un répertoire ou tout autre
+lien fait échouer la cible sans modifier cette destination. La vérification est
+forcée par le `Makefile`, même lorsqu'un lien inattendu pointe vers une cible
+existante.
 
 Une exception documentée : `~/.codex/AGENTS.md` est **assemblé** par
 concaténation à l'installation. Le commit `1772db9` en donne la raison —
