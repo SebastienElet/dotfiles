@@ -31,6 +31,12 @@ external:
     - agent: claude
       scope: user
       id: superpowers@claude-plugins-official
+    - agent: cursor
+      scope: user
+      id: superpowers
+    - agent: codex
+      scope: user
+      id: superpowers@openai-curated
   skills:
     - agent: claude
       scope: user
@@ -137,6 +143,146 @@ external:
       scope: user
       origin: plugin
       plugin: superpowers@claude-plugins-official
+      slug: writing-skills
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: brainstorming
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: dispatching-parallel-agents
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: executing-plans
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: finishing-a-development-branch
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: receiving-code-review
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: requesting-code-review
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: subagent-driven-development
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: systematic-debugging
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: test-driven-development
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: using-git-worktrees
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: using-superpowers
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: verification-before-completion
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: writing-plans
+    - agent: cursor
+      scope: user
+      origin: plugin
+      plugin: superpowers
+      slug: writing-skills
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: brainstorming
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: dispatching-parallel-agents
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: executing-plans
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: finishing-a-development-branch
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: receiving-code-review
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: requesting-code-review
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: subagent-driven-development
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: systematic-debugging
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: test-driven-development
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: using-git-worktrees
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: using-superpowers
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: verification-before-completion
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
+      slug: writing-plans
+    - agent: codex
+      scope: user
+      origin: plugin
+      plugin: superpowers@openai-curated
       slug: writing-skills
 resources:
   - id: claude-user-instructions
