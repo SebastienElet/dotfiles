@@ -20,25 +20,24 @@ assert_failure() {
   fi
 }
 
-mkdir -p "$test_home/.config" "$new_config" "$test_repository/tooling" "$fake_bin"
-cp "$repository/tooling/deploy-link" "$test_repository/tooling/deploy-link"
+mkdir -p "$test_home/.config" "$new_config" "$fake_bin"
 printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' "printf \"%s\\n\" \"\$*\" >\"\$FISH_MARKER\"" "mkdir -p \"\$HOME/.config/fish/functions\"" ": >\"\$HOME/.config/fish/functions/fzf_configure_bindings.fish\"" >"$fake_bin/fish"
 chmod +x "$fake_bin/fish"
 
-env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" DEPLOY_LINK="$test_repository/tooling/deploy-link" BREW_BIN="$fake_bin" "$bindings"
+env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
 
 [[ $(readlink "$test_home/.config/fish") == "$new_config" ]]
 [[ -f $bindings ]]
 [[ $(cat "$marker") == "-c fisher install PatrickF1/fzf.fish" ]]
 
 rm "$marker"
-env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" DEPLOY_LINK="$test_repository/tooling/deploy-link" BREW_BIN="$fake_bin" "$bindings"
+env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
 [[ ! -e $marker ]]
 
 rm "$bindings"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$fake_bin/fish"
 chmod +x "$fake_bin/fish"
-assert_failure env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" DEPLOY_LINK="$test_repository/tooling/deploy-link" BREW_BIN="$fake_bin" "$bindings"
+assert_failure env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
 grep -q "Error: Fisher did not install $bindings" "$test_root/stderr"
 
 echo "fish deployment tests passed"

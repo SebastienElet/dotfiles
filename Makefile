@@ -8,7 +8,7 @@ APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-DEPLOY_LINK:=${DOTFILES_PATH}/tooling/deploy-link
+CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 # Avoid Homebrew confirmation prompts during setup.
@@ -126,8 +126,8 @@ ${BREW_BIN}/fish:
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
-~/.config/fish: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/fish | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/fish $@
+~/.config/fish: ${DOTFILES_PATH}/home/.config/fish | ~/.config
+	${CREATE_SYMLINK}
 ~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
 	@if [ ! -e "$@" ]; then \
 		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
@@ -163,8 +163,8 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
 	brew install --cask wez/wezterm/wezterm-nightly
-~/.wezterm.lua: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.wezterm.lua $@
+~/.wezterm.lua: ${DOTFILES_PATH}/home/.wezterm.lua
+	${CREATE_SYMLINK}
 
 ################################################################################
 # End of the terminal section
@@ -218,13 +218,13 @@ ai: \
 	scrapling \
 	skills
 
-~/.arnes.yaml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.arnes.yaml $@
+~/.arnes.yaml: ${DOTFILES_PATH}/home/.arnes.yaml
+	${CREATE_SYMLINK}
 
 .PHONY: arnes
-arnes: rust ${DEPLOY_LINK} ~/.arnes.yaml | ${LOCAL_BIN}
+arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
+	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
 .PHONY: brain
 brain:
@@ -265,9 +265,9 @@ ${BREW_BIN}/bkt:
 	brew install avivsinai/tap/bitbucket-cli
 
 .PHONY: daily-routine
-daily-routine: rust ${DEPLOY_LINK} | ${LOCAL_BIN} ~/.config/daily-routine/config.toml
+daily-routine: rust ~/.config/daily-routine/config.toml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/daily-routine && ${BREW_BIN}/cargo build --release
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
+	test -e ${LOCAL_BIN}/daily-routine || ln -s ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
 ~/.config/daily-routine: | ~/.config
 	mkdir -p "$@"
 ~/.config/daily-routine/config.toml: | ~/.config/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/config.example.toml
@@ -334,8 +334,8 @@ ${BREW_BIN}/mosh:
 postgresql: brew ${BREW_GNU_BIN}/postgresql@16/bin/psql ~/.psqlrc
 ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 	brew install postgresql@16
-~/.psqlrc: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.psqlrc
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.psqlrc $@
+~/.psqlrc: ${DOTFILES_PATH}/home/.psqlrc
+	${CREATE_SYMLINK}
 
 .PHONY: renovate
 renovate: brew ${VOLTA_BIN}/renovate
@@ -376,36 +376,38 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 ~/.cursor/skills:
 	mkdir -p $@
 ~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.cursor/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+	${CREATE_SYMLINK}
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+	${CREATE_SYMLINK}
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
 	mkdir -p $@
-~/.claude/CLAUDE.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/AGENTS.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/AGENTS.md $@
+~/.claude/CLAUDE.md: ${DOTFILES_PATH}/harness/AGENTS.md | ~/.claude
+	${CREATE_SYMLINK}
 # Imported by AGENTS.md; linked as siblings so the @import resolves whether the
 # tool follows the symlink or reads it from the destination directory.
-~/.claude/SOUL.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/SOUL.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/SOUL.md $@
-~/.claude/USER.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md | ~/.claude
-	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md $@
-~/.claude/hooks ~/.claude/skills: | ~/.claude
+~/.claude/SOUL.md: ${DOTFILES_PATH}/harness/SOUL.md | ~/.claude
+	${CREATE_SYMLINK}
+~/.claude/USER.md: ${DOTFILES_PATH}/harness/USER.md | ~/.claude
+	${CREATE_SYMLINK}
+~/.claude/hooks ~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
-~/.claude/hooks/agent_handoff: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff $@
+~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
+	${CREATE_SYMLINK}
+~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
+	${CREATE_SYMLINK}
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
+	${CREATE_SYMLINK}
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
 # review, which is never this one.
 ~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+	${CREATE_SYMLINK}
 
 .PHONY: codex
 codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
@@ -413,21 +415,21 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
 	mkdir -p $@
-# Codex ignores AGENTS.md @import directives, so the three files are assembled
+# Codex ignores AGENTS.md @import directives, so the sources are assembled
 # here instead of symlinked. Written to a temporary path then moved, so an
 # existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md | ~/.codex
-	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md > $@.tmp
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.codex
+	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md > $@.tmp
 	mv $@.tmp $@
 # Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
 	mkdir -p $@
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+	${CREATE_SYMLINK}
 ~/.agents/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
+	${CREATE_SYMLINK}
 ~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook
 codex-handoff-hook: | ~/.codex
@@ -494,8 +496,8 @@ scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 	@$(DOCKER_OR_SKIP); docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
 
 # MCP command for agents: starts the shared container on demand instead of one per session.
-${LOCAL_BIN}/scrapling_mcp: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/scrapling-mcp | ${LOCAL_BIN}
-	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/scrapling-mcp $@
+${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/tooling/scrapling-mcp | ${LOCAL_BIN}
+	${CREATE_SYMLINK}
 ${LOCAL_BIN}:
 	mkdir -p $@
 
@@ -689,14 +691,14 @@ nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json ~/.config/cspel
 ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim
 	${VOLTA_BIN}/npm install -g neovim
-~/.config/nvim: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/nvim | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/nvim $@
-~/cspell.json: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/cspell.json
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/cspell.json $@
+~/.config/nvim: ${DOTFILES_PATH}/home/.config/nvim | ~/.config
+	${CREATE_SYMLINK}
+~/cspell.json: ${DOTFILES_PATH}/home/cspell.json
+	${CREATE_SYMLINK}
 ~/.config/cspell:
 	mkdir -p $@
-~/.config/cspell/user.txt: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/cspell/user.txt | ~/.config/cspell
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/cspell/user.txt $@
+~/.config/cspell/user.txt: ${DOTFILES_PATH}/home/.config/cspell/user.txt | ~/.config/cspell
+	${CREATE_SYMLINK}
 
 .PHONY: font-jetbrains-mono
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
@@ -726,33 +728,33 @@ ${BREW_BIN}/zoxide:
 
 .PHONY: zsh
 zsh: ~/.zshrc
-~/.zshrc: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.zshrc
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.zshrc $@
+~/.zshrc: ${DOTFILES_PATH}/home/.zshrc
+	${CREATE_SYMLINK}
 
 .PHONY: git-delta
 git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
-${BREW_BIN}/delta:
-	brew install git-delta
-~/.gitconfig.delta: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.gitconfig.delta $@
 	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
 		git config --global include.path "~/.gitconfig.delta"; \
 		echo "Added include.path to ~/.gitconfig"; \
 	fi
+${BREW_BIN}/delta:
+	brew install git-delta
+~/.gitconfig.delta: ${DOTFILES_PATH}/home/.gitconfig.delta
+	${CREATE_SYMLINK}
 
 .PHONY: starship
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/starship.toml | ~/.config
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.config/starship.toml $@
+~/.config/starship.toml: ${DOTFILES_PATH}/home/.config/starship.toml | ~/.config
+	${CREATE_SYMLINK}
 
 .PHONY: tmux
 tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf
-	${DEPLOY_LINK} ${DOTFILES_PATH}/home/.tmux.conf $@
+~/.tmux.conf: ${DOTFILES_PATH}/home/.tmux.conf
+	${CREATE_SYMLINK}
 ~/.tmux/plugins:
 	mkdir -p $@
 ~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins

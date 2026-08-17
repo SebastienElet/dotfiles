@@ -5,9 +5,7 @@ on:
     paths:
       - home/**
       - harness/**
-      - tooling/deploy-link
-      - tooling/deploy-link-adversarial-test
-      - tooling/deploy-link-test
+      - tooling/makefile-test
       - tooling/fish-deployment-test
       - Makefile
       - .github/workflows/test-deployment.yml
@@ -15,22 +13,19 @@ on:
     paths:
       - home/**
       - harness/**
-      - tooling/deploy-link
-      - tooling/deploy-link-adversarial-test
-      - tooling/deploy-link-test
+      - tooling/makefile-test
       - tooling/fish-deployment-test
       - Makefile
       - .github/workflows/test-deployment.yml
 
 jobs:
-  deploy-link:
-    name: Deploy link (${{ matrix.os }})
+  deployment:
+    name: Deployment (${{ matrix.os }})
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - run: tooling/deploy-link-test
-      - run: tooling/deploy-link-adversarial-test
+      - run: tooling/makefile-test
       - run: tooling/fish-deployment-test

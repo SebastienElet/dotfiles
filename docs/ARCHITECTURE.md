@@ -41,17 +41,23 @@ Les points d'entrée restent à la racine :
 | `home/.tmux.conf`            | `~/.tmux.conf`            |
 | `home/cspell.json`           | `~/cspell.json`           |
 
-Le `Makefile` déploie ces sources par liens symboliques. `tooling/deploy-link`
-crée une destination absente et conserve un lien déjà correct. Il refuse tout
-fichier, répertoire ou lien inattendu afin de ne pas écraser de données
-locales.
+Le `Makefile` déploie les artefacts statiques comme cibles fichier ordinaires
+et lie les exécutables générés après leur build. Chaque recette vérifie que la
+destination est absente avant `ln -s`. La réparation explicite d'un lien erroné
+est suivie par l'issue #152.
 
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-ainsi que les services associés comme `harness/firecrawl/`. Le `Makefile` les
-adapte aux contraintes de chaque agent : Claude reçoit des liens symboliques,
-tandis que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
+les règles sous `harness/rules/`, ainsi que les services associés comme
+`harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
+Claude reçoit des liens symboliques, tandis que Codex reçoit un
+`~/.codex/AGENTS.md` assemblé.
+
+La règle globale `agent-instructions` n'est déployée que vers Claude et Codex.
+Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
+Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
+`Makefile` ne peut donc pas y distribuer cette source.
 
 Les skills vivent dans `.agents/skills/`. Les répertoires `.claude/`, `.codex/`
 et `.cursor/` ne dupliquent pas leur contenu : ils fournissent uniquement les

@@ -3,8 +3,7 @@ set -euo pipefail
 
 tooling_dir=$(cd "$(dirname "$0")" && pwd)
 repository=$(cd "$tooling_dir/.." && pwd)
-helper=$tooling_dir/deploy-link
-test_root=$(mktemp -d "${TMPDIR:-/tmp}/deploy-link-test.XXXXXX")
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/makefile-test.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT
 
 fail() {
@@ -32,78 +31,30 @@ assert_hooks_failure_preserves() {
   [[ $before == "$after" ]] || fail "invalid Codex hooks file changed"
 }
 
-new_case() {
-  case_root=$test_root/$1
-  source=$case_root/source
-  destination=$case_root/destination
-  mkdir -p "$source"
-}
+case_root=$test_root/existing_directory
+test_home=$case_root/home
+test_repository=$case_root/repository
+source=$test_repository/home/.config/fish
+destination=$test_home/.config/fish
+mkdir -p "$source" "$destination"
+touch -t 202001010000 "$destination"
+touch -t 202101010000 "$source"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" "$destination"
+[[ -z $(find "$destination" -mindepth 1 -print -quit) ]] || fail "Make linked inside an existing directory"
 
-new_case missing_destination
-"$helper" "$source" "$destination"
-assert_link "$destination" "$source"
-
-new_case legacy_interface
-assert_failure "$helper" "$source" "$source" "$destination"
-grep -q 'Usage: deploy-link SOURCE DESTINATION' "$test_root/stderr" || fail "legacy interface was accepted"
-
-new_case current_link
-ln -s "$source" "$destination"
-before=$(ls -di "$destination" | awk '{print $1}')
-"$helper" "$source" "$destination"
-after=$(ls -di "$destination" | awk '{print $1}')
-[[ $before == "$after" ]] || fail "current link was replaced"
-
-new_case regular_file
-printf 'keep\n' >"$destination"
-assert_failure "$helper" "$source" "$destination"
-[[ $(cat "$destination") == keep ]] || fail "regular file changed"
-
-new_case directory
-mkdir "$destination"
-assert_failure "$helper" "$source" "$destination"
-[[ -d $destination && ! -L $destination ]] || fail "directory changed"
-
-new_case unexpected_link
-unexpected_source=$case_root/unexpected
-mkdir "$unexpected_source"
-ln -s "$unexpected_source" "$destination"
-assert_failure "$helper" "$source" "$destination"
-assert_link "$destination" "$unexpected_source"
-
-new_case dangling_unexpected_link
-unexpected_source=$case_root/unexpected
-ln -s "$unexpected_source" "$destination"
-assert_failure "$helper" "$source" "$destination"
-assert_link "$destination" "$unexpected_source"
-
-new_case relative_equivalent_link
-ln -s source "$destination"
-assert_failure "$helper" "$source" "$destination"
-assert_link "$destination" source
-
-new_case missing_source
-rmdir "$source"
-assert_failure "$helper" "$source" "$destination"
-[[ ! -e $destination && ! -L $destination ]] || fail "missing source created a destination"
-
-case_root="$test_root/paths with spaces"
-source="$case_root/source directory"
-destination="$case_root/destination link"
-mkdir -p "$source"
-"$helper" "$source" "$destination"
-assert_link "$destination" "$source"
-
-new_case missing_readlink
-assert_failure env PATH="$case_root/empty-path" /bin/bash "$helper" "$source" "$destination"
-grep -q 'readlink is required' "$test_root/stderr" || fail "missing readlink was not reported"
-
-new_case missing_perl
-wrapper_dir=$case_root/bin
-mkdir "$wrapper_dir"
-command ln -s "$(command -v readlink)" "$wrapper_dir/readlink"
-assert_failure env PATH="$wrapper_dir" /bin/bash "$helper" "$source" "$destination"
-grep -q 'perl is required' "$test_root/stderr" || fail "missing Perl was not reported"
+case_root=$test_root/existing_directory_link
+test_home=$case_root/home
+test_repository=$case_root/repository
+source=$test_repository/home/.config/fish
+destination=$test_home/.config/fish
+actual_directory=$case_root/actual
+mkdir -p "$source" "$test_home/.config" "$actual_directory"
+ln -s "$actual_directory" "$destination"
+touch -t 202001010000 "$actual_directory"
+touch -t 202101010000 "$source"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" "$destination"
+assert_link "$destination" "$actual_directory"
+[[ -z $(find "$actual_directory" -mindepth 1 -print -quit) ]] || fail "Make linked through a directory symlink"
 
 case_root=$test_root/make_starship_integration
 test_home=$case_root/home
@@ -127,18 +78,27 @@ rm "$starship_destination"
 unexpected_source=$case_root/unexpected
 mkdir "$unexpected_source"
 ln -s "$unexpected_source" "$starship_destination"
-assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
 assert_link "$starship_destination" "$unexpected_source"
 
-case_root=$test_root/make_starship_missing_source
+case_root=$test_root/agent_instructions
 test_home=$case_root/home
-starship_destination=$test_home/.config/starship.toml
-mkdir -p "$test_home" "$case_root/repository"
-printf '%s\n' '#!/usr/bin/env bash' ': >"$HELPER_MARKER"' >"$case_root/deploy-link"
-chmod +x "$case_root/deploy-link"
-assert_failure env HOME="$test_home" HELPER_MARKER="$case_root/helper-called" make -f "$repository/Makefile" DOTFILES_PATH="$case_root/repository" DEPLOY_LINK="$case_root/deploy-link" "$starship_destination"
-[[ ! -e $case_root/helper-called ]] || fail "Make invoked deploy-link without the Starship source"
-[[ ! -e $starship_destination && ! -L $starship_destination ]] || fail "missing Starship source created a destination"
+claude_rule=$test_home/.claude/rules/agent-instructions.md
+codex_instructions=$test_home/.codex/AGENTS.md
+mkdir -p "$test_home"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions"
+assert_link "$claude_rule" "$repository/harness/rules/agent-instructions.md"
+expected_instructions=$case_root/expected-agents.md
+grep -v '^@' "$repository/harness/AGENTS.md" | cat - "$repository/harness/SOUL.md" "$repository/harness/USER.md" "$repository/harness/rules/agent-instructions.md" >"$expected_instructions"
+cmp -s "$expected_instructions" "$codex_instructions" || fail "Codex instructions differ from shared sources"
+before=$(cksum "$codex_instructions")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions"
+after=$(cksum "$codex_instructions")
+[[ $before == "$after" ]] || fail "Codex agent instruction deployment is not idempotent"
+rm "$claude_rule"
+printf 'keep\n' >"$claude_rule"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule"
+[[ $(cat "$claude_rule") == keep ]] || fail "Claude rule destination changed"
 
 case_root=$test_root/daily_routine_config
 test_home=$case_root/home
@@ -219,4 +179,4 @@ env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository"
 [[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
 assert_link "$hooks_file.tmp" "$victim"
 
-echo "deploy-link tests passed"
+echo "Makefile tests passed"
