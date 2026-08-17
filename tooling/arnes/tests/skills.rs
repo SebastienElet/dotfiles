@@ -6,20 +6,24 @@ use skill_support::{MANIFEST, configured_fixture, run};
 use support::Fixture;
 
 #[test]
-fn supported_user_and_project_projections_are_managed() {
+fn declared_skills_are_managed_and_undeclared_project_skills_are_unmanaged() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(&fixture, &["doctor", "skills"]);
 
     assert_eq!(code, 0, "{stdout}");
     assert_eq!(stdout.lines().count(), 9);
-    assert_eq!(stdout.matches("healthy skills: managed").count(), 9);
+    assert_eq!(stdout.matches("healthy skills: managed").count(), 6);
+    assert_eq!(stdout.matches("unsupported skills: unmanaged").count(), 3);
     for expected in [
         "managed claude user skill alpha",
-        "managed claude project skill beta",
+        "managed claude project skill alpha",
+        "unmanaged claude project skill beta",
         "managed cursor user skill alpha",
-        "managed cursor project skill beta",
+        "managed cursor project skill alpha",
+        "unmanaged cursor project skill beta",
         "managed codex user skill alpha",
-        "managed codex project skill beta",
+        "managed codex project skill alpha",
+        "unmanaged codex project skill beta",
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }

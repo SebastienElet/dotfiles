@@ -46,7 +46,7 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
     for resource in supported {
         match resource.layout {
             SkillLayout::Leaves => diagnostics.extend(diagnose_leaves(roots, manifest, &resource)),
-            SkillLayout::Root => diagnostics.extend(projection::root(roots, &resource)),
+            SkillLayout::Root => diagnostics.extend(diagnose_root(roots, manifest, &resource)),
         }
     }
     diagnostics
@@ -68,6 +68,30 @@ fn diagnose_leaves(
         .iter()
         .map(|skill| projection::leaf(roots, resource, skill))
         .collect::<Vec<_>>();
+    diagnostics.extend(discovery::unmanaged(
+        roots,
+        resource.agent,
+        resource.scope,
+        resource.destination,
+        &declared,
+    ));
+    diagnostics
+}
+
+fn diagnose_root(
+    roots: &Roots,
+    manifest: &Manifest,
+    resource: &SkillProjection<'_>,
+) -> Vec<Diagnostic> {
+    let skills = manifest.declared_skills().collect::<Vec<_>>();
+    let declared = skills
+        .iter()
+        .map(|skill| resource.destination.join(*skill))
+        .collect::<HashSet<PathBuf>>();
+    let mut diagnostics = match projection::root(roots, resource, &skills) {
+        Ok(diagnostics) => diagnostics,
+        Err(diagnostic) => return vec![diagnostic],
+    };
     diagnostics.extend(discovery::unmanaged(
         roots,
         resource.agent,

@@ -110,6 +110,23 @@ fn missing_relative_resources_are_broken() {
 }
 
 #[test]
+fn project_discovery_survives_managed_skill_drift() {
+    let fixture = configured_fixture();
+    fs::remove_file(fixture.repository().join(".agents/skills/alpha/SKILL.md")).unwrap();
+    let (code, stdout, _) = run(
+        &fixture,
+        &[
+            "doctor", "skills", "--agent", "claude", "--scope", "project",
+        ],
+    );
+
+    assert_eq!(code, 1, "{stdout}");
+    assert!(stdout.contains("broken managed claude project skill alpha"));
+    assert!(stdout.contains("unmanaged claude project skill beta"));
+    assert!(!stdout.contains("local resource references/missing.md"));
+}
+
+#[test]
 fn unmanaged_installations_are_preserved_and_not_validated_as_owned() {
     let fixture = configured_fixture();
     fixture.write_home(

@@ -88,6 +88,10 @@ impl Manifest {
             })
             .map(|skill| skill.slug.as_str())
     }
+
+    pub fn declared_skills(&self) -> impl Iterator<Item = &str> {
+        self.skills.iter().map(|skill| skill.slug.as_str())
+    }
 }
 
 #[derive(Clone, Copy)]
