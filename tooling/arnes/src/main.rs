@@ -23,7 +23,7 @@ enum Command {
         resource: Option<Resource>,
         #[arg(long, value_enum)]
         agent: Option<Agent>,
-        #[arg(long, value_enum)]
+        #[arg(long, value_enum, default_value = "user")]
         scope: Option<Scope>,
         #[arg(long, value_enum, default_value_t)]
         format: Format,

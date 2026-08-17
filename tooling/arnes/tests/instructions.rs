@@ -7,23 +7,20 @@ use std::fs;
 use support::Fixture;
 
 #[test]
-fn supported_projections_are_healthy_and_native_projections_are_unsupported() {
+fn user_scope_is_default_for_supported_and_unsupported_projections() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(&fixture, &["doctor", "instructions"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 8);
-    assert_eq!(stdout.matches("healthy instructions:").count(), 5);
-    assert_eq!(stdout.matches("unsupported instructions:").count(), 3);
+    assert_eq!(stdout.lines().count(), 5);
+    assert_eq!(stdout.matches("healthy instructions:").count(), 4);
+    assert_eq!(stdout.matches("unsupported instructions:").count(), 1);
     for expected in [
         "healthy instructions: claude user instructions claude-user-instructions",
         "healthy instructions: claude user instructions claude-user-soul",
         "healthy instructions: claude user instructions claude-user-preferences",
-        "healthy instructions: claude project instructions claude-project-instructions",
         "unsupported instructions: cursor user instruction projection",
-        "unsupported instructions: cursor project instruction projection",
         "healthy instructions: codex user instructions codex-user-instructions",
-        "unsupported instructions: codex project instruction projection",
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
@@ -52,7 +49,7 @@ fn agent_and_scope_filters_isolate_projections() {
 
     let (code, stdout, _) = run(&fixture, &["doctor", "instructions", "--agent", "cursor"]);
     assert_eq!(code, 0);
-    assert_eq!(stdout.matches("unsupported instructions:").count(), 2);
+    assert_eq!(stdout.matches("unsupported instructions:").count(), 1);
 
     let (code, stdout, _) = run(
         &fixture,
@@ -82,7 +79,7 @@ fn undeclared_filtered_combinations_are_unsupported() {
     assert_eq!(code, 0);
     assert_eq!(
         stdout,
-        "unsupported instructions: codex instruction projection is not declared or supported\n"
+        "unsupported instructions: codex user instruction projection is not declared or supported\n"
     );
     assert!(stderr.is_empty());
 }
