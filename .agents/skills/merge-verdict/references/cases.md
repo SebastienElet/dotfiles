@@ -18,8 +18,8 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
 
 **Pass criteria**
 
-- The verdict is anchored on the head SHA, and the marker `<!-- merge-verdict:<pr>:<sha> -->` is the
-  first line.
+- The verdict is anchored on the head SHA, and the marker
+  `<!-- merge-verdict:<pr>:<head-sha-12> -->` is the first line.
 - At least one blocker is stated as an ordered sequence ending in a broken invariant — the
   out-of-transaction read, the stale retry, or the missing constraint. Failure classes 1, 2 and 3.
 - The barrier paragraph gives counts _and_ states that the passing tests are sequential and therefore

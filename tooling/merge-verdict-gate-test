@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bypass list this file exists to cover, from the enforcement-code sweep and the two
+# adversarial passes: SIGPIPE on a long command, tab and quote-split flags, attached
+# shorthand, line continuation, the pr create aliases, bkt publish and default
+# reviewers, the REST and GraphQL review-request routes, curl to the same routes, a
+# foreign repository or directory, an ambiguous pull request number, a marker that is
+# undelimited, too short, in a URL field or on a superseded head, an unreadable or
+# non-string payload, and a missing jq or grep.
+
+here=$(cd "$(dirname "$0")" && pwd)
+gate="$here/merge-verdict-gate"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+bin="$tmp/bin"
+nogrep="$tmp/nogrep"
+nojq="$tmp/nojq"
+mkdir -p "$bin" "$nogrep" "$nojq" "$tmp/plain"
+for tool in bash cat env git head jq sort tr; do
+  ln -s "$(command -v "$tool")" "$nogrep/$tool"
+done
+for tool in bash cat env git grep head sort tr; do
+  ln -s "$(command -v "$tool")" "$nojq/$tool"
+done
+
+cat >"$bin/gh" <<'FAKE'
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -n "${FAKE_FORGE_FAIL:-}" ]; then
+  exit 3
+fi
+case "$*" in
+"pr view "*"--json number,headRefOid,comments") cat "${FAKE_GH_VIEW:?}" ;;
+*)
+  printf 'unexpected gh call: %s\n' "$*" >&2
+  exit 9
+  ;;
+esac
+FAKE
+cat >"$bin/bkt" <<'FAKE'
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -n "${FAKE_FORGE_FAIL:-}" ]; then
+  exit 3
+fi
+case "$*" in
+"pr view "*"--json") cat "${FAKE_BKT_VIEW:?}" ;;
+"pr comments "*"--json") cat "${FAKE_BKT_COMMENTS:?}" ;;
+*)
+  printf 'unexpected bkt call: %s\n' "$*" >&2
+  exit 9
+  ;;
+esac
+FAKE
+chmod +x "$bin/gh" "$bin/bkt"
+export PATH="$bin:$PATH"
+export GIT_AUTHOR_DATE=2026-01-01T00:00:00Z
+export GIT_COMMITTER_DATE=2026-01-01T00:00:00Z
+
+make_repo() { # directory, origin url
+  git init -q -b main "$1"
+  git -C "$1" config user.email test@example.com
+  git -C "$1" config user.name Test
+  git -C "$1" commit -q --allow-empty -m init
+  git -C "$1" remote add origin "$2"
+}
+
+track_origin() { # directory, pushed branch — deliberately not the local branch name
+  git -C "$1" update-ref "refs/remotes/origin/$2" HEAD
+  git -C "$1" branch --set-upstream-to="origin/$2" >/dev/null
+}
+
+github="$tmp/github"
+bitbucket="$tmp/bitbucket"
+gitlab="$tmp/gitlab"
+untracked="$tmp/untracked"
+make_repo "$github" https://github.com/owner/repo.git
+make_repo "$bitbucket" git@bitbucket.org:workspace/repo.git
+make_repo "$gitlab" git@gitlab.com:owner/repo.git
+make_repo "$untracked" https://github.com/owner/repo.git
+track_origin "$github" feat/pushed-name
+track_origin "$bitbucket" feat/pushed-name
+track_origin "$gitlab" feat/pushed-name
+
+head40=$(git -C "$github" rev-parse HEAD)
+head12=${head40:0:12}
+prose='Independent verdict. The barrier ran on this exact head and the failure classes were swept one
+by one; what it does not cover is stated below, at length, so that this body is unmistakably a
+verdict and not a bare token dropped into the thread to satisfy a check.'
+
+verdict_body() { # marker text
+  printf '%s\n\n%s\n' "$1" "$prose"
+}
+
+# GitHub view payloads: number, 40-character head, comment bodies.
+gh_view() { # file, body
+  jq -n --arg b "$2" --arg h "$head40" \
+    '{number: 154, headRefOid: $h, comments: [{body: $b}]}' >"$1"
+}
+gh_view "$tmp/gh-absent.json" "$(verdict_body 'no marker here')"
+gh_view "$tmp/gh-current.json" "$(verdict_body "<!-- merge-verdict:154:${head12} -->")"
+gh_view "$tmp/gh-superseded.json" "$(verdict_body '<!-- merge-verdict:154:000000000000 -->')"
+gh_view "$tmp/gh-truncated.json" "$(verdict_body "<!-- merge-verdict:154:${head12:0:7} -->")"
+gh_view "$tmp/gh-undelimited.json" "$(verdict_body "I have not run merge-verdict:154:${head12} yet")"
+gh_view "$tmp/gh-other-pr.json" "$(verdict_body "<!-- merge-verdict:1:${head12} -->")"
+printf '{"body":"<!-- merge-verdict:154:%s -->"}' "$head12" >"$tmp/marker-only-body.json"
+jq -n --arg h "$head40" --slurpfile c "$tmp/marker-only-body.json" \
+  '{number: 154, headRefOid: $h, comments: $c}' >"$tmp/gh-marker-only.json"
+jq -n --arg h "$head40" --arg u "https://x/c#<!-- merge-verdict:154:${head12} -->" \
+  '{number: 154, headRefOid: $h, comments: [{body: "short", url: $u}]}' >"$tmp/gh-url-field.json"
+
+# Bitbucket view payloads: Cloud returns a 12-character source hash.
+jq -n --arg h "$head12" \
+  '{pull_request: {id: 561, source: {commit: {hash: $h}, branch: {name: "feat/pushed-name"}}}}' \
+  >"$tmp/bkt-view.json"
+jq -n --arg h "$head12" \
+  '{pull_request: {id: 561, source: {commit: {hash: $h}, branch: {name: "other"}}}}' \
+  >"$tmp/bkt-view-other-branch.json"
+jq -n --arg b "$(verdict_body "<!-- merge-verdict:561:${head40} -->")" \
+  '{comments: [{content: {raw: $b}}]}' >"$tmp/bkt-current.json"
+jq -n --arg b "$(verdict_body 'no marker here')" \
+  '{comments: [{content: {raw: $b}}]}' >"$tmp/bkt-absent.json"
+
+export FAKE_GH_VIEW="$tmp/gh-absent.json"
+export FAKE_BKT_VIEW="$tmp/bkt-view.json"
+export FAKE_BKT_COMMENTS="$tmp/bkt-absent.json"
+
+expect() { # label, repository, payload file, expected status, stderr fragment, gate PATH
+  local status=0 gate_path=${6:-$PATH}
+  (cd "$2" && PATH="$gate_path" "$gate" <"$3") >"$tmp/out" 2>"$tmp/err" || status=$?
+  if [ "$status" != "$4" ]; then
+    printf 'FAIL %s: status %s, expected %s\n' "$1" "$status" "$4" >&2
+    cat "$tmp/err" >&2
+    exit 1
+  fi
+  if [ -n "${5:-}" ] && ! grep -qF -e "$5" "$tmp/err"; then
+    printf 'FAIL %s: stderr lacks %s\n' "$1" "$5" >&2
+    cat "$tmp/err" >&2
+    exit 1
+  fi
+  if [ "$4" = 0 ] && [ -s "$tmp/err" ]; then
+    printf 'FAIL %s: allowed, but the gate wrote to stderr\n' "$1" >&2
+    cat "$tmp/err" >&2
+    exit 1
+  fi
+}
+
+payload() { # name, command
+  jq -n --arg c "$2" '{tool_name: "Bash", tool_input: {command: $c}}' >"$tmp/$1.json"
+}
+
+payload benign 'git status --short'
+payload read-only 'gh pr view 154 --json comments'
+payload listing 'gh pr list --state open'
+payload api-read 'gh api /repos/owner/repo/pulls/154'
+payload solicit 'gh pr edit 154 --add-reviewer alice'
+payload merge 'gh pr merge --squash --delete-branch'
+payload create 'gh pr create --title t --reviewer alice'
+payload create-alias 'gh pr new --title t -ralice'
+payload several-numbers 'sleep 5 && gh pr edit 154 --add-reviewer alice'
+payload foreign-repo 'gh pr edit -R owner/other 154 --add-reviewer alice'
+payload foreign-url 'gh pr edit https://github.com/o/r/pull/999 --add-reviewer alice'
+payload foreign-cd 'cd ../other && gh pr edit 154 --add-reviewer alice'
+payload wrong-number 'gh pr edit 999 --add-reviewer alice'
+payload rest-route 'gh api --method POST /repos/o/r/pulls/154/requested_reviewers -f reviewers[]=bob'
+payload graphql-route 'gh api graphql -f query=mutation{requestReviews(input:{})}'
+payload bkt-solicit 'bkt pr edit 561 --reviewer alice'
+payload bkt-defaults 'bkt pr edit 561 --with-default-reviewers'
+payload bkt-publish 'bkt pr publish 561'
+payload bkt-update 'bkt pr update 561 --reviewer alice'
+payload bkt-api 'bkt api -X PUT /2.0/repositories/w/r/pullrequests/561 --field reviewers=alice'
+payload bkt-no-number 'bkt pr edit --reviewer alice'
+printf 'gh pr edit 154 --add-reviewer\talice' >"$tmp/tab.txt"
+jq -n --rawfile c "$tmp/tab.txt" '{tool_name: "Bash", tool_input: {command: $c}}' >"$tmp/tab.json"
+printf 'gh pr \\\n  create --title t --reviewer alice' >"$tmp/continued.txt"
+jq -n --rawfile c "$tmp/continued.txt" '{tool_name: "Bash", tool_input: {command: $c}}' \
+  >"$tmp/continued.json"
+{
+  printf 'gh pr edit 154 --add-reviewer alice && cat > notes.md <<EOF\n'
+  i=0
+  while [ "$i" -lt 3000 ]; do
+    printf 'padding line without digits aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'
+    i=$((i + 1))
+  done
+  printf 'EOF\n'
+} >"$tmp/long.txt"
+jq -n --rawfile c "$tmp/long.txt" '{tool_name: "Bash", tool_input: {command: $c}}' >"$tmp/long.json"
+printf '{"tool_input": {"command": "gh pr edit 154 --add-reviewer alice"' >"$tmp/malformed.json"
+jq -n '{tool_name: "Bash", tool_input: {command: ["gh", "pr", "edit", "154"]}}' >"$tmp/array.json"
+: >"$tmp/empty.json"
+
+expect benign "$github" "$tmp/benign.json" 0
+expect read-only-verb "$github" "$tmp/read-only.json" 0
+expect listing "$github" "$tmp/listing.json" 0
+expect api-read "$github" "$tmp/api-read.json" 0
+
+expect no-verdict "$github" "$tmp/solicit.json" 2 'no merge-verdict comment on pull request 154'
+expect tab-separated-flag "$github" "$tmp/tab.json" 2 'no merge-verdict comment'
+expect long-command "$github" "$tmp/long.json" 2 'no merge-verdict comment'
+expect merge-without-verdict "$github" "$tmp/merge.json" 2 'no merge-verdict comment'
+expect create-with-reviewer "$github" "$tmp/create.json" 2 'no head to judge yet'
+expect create-alias "$github" "$tmp/create-alias.json" 2 'no head to judge yet'
+expect line-continuation "$github" "$tmp/continued.json" 2 'no head to judge yet'
+expect several-numbers "$github" "$tmp/several-numbers.json" 2 'several numbers'
+expect foreign-repo "$github" "$tmp/foreign-repo.json" 2 'names a repository'
+expect foreign-url "$github" "$tmp/foreign-url.json" 2 'names a repository'
+expect foreign-cd "$github" "$tmp/foreign-cd.json" 2 'names a repository'
+expect rest-route "$github" "$tmp/rest-route.json" 2 'raw forge write'
+expect graphql-route "$github" "$tmp/graphql-route.json" 2 'raw forge write'
+expect bkt-api-route "$bitbucket" "$tmp/bkt-api.json" 2 'raw forge write'
+expect bkt-defaults "$bitbucket" "$tmp/bkt-defaults.json" 2 'no merge-verdict comment'
+expect bkt-publish "$bitbucket" "$tmp/bkt-publish.json" 2 'no merge-verdict comment'
+expect bkt-update-alias "$bitbucket" "$tmp/bkt-update.json" 2 'no merge-verdict comment'
+expect bkt-no-number "$bitbucket" "$tmp/bkt-no-number.json" 2 'name the pull request id'
+expect unknown-forge "$gitlab" "$tmp/solicit.json" 2 'unknown forge'
+expect no-upstream "$untracked" "$tmp/solicit.json" 2 'no upstream branch'
+expect no-repository "$tmp/plain" "$tmp/solicit.json" 2 'no origin remote'
+expect malformed-payload "$github" "$tmp/malformed.json" 2 'unreadable hook payload'
+expect array-command "$github" "$tmp/array.json" 2 '.tool_input.command is array'
+expect empty-payload "$github" "$tmp/empty.json" 2 'empty hook payload'
+expect wrong-number "$github" "$tmp/wrong-number.json" 2 'while the branch belongs to 154'
+
+FAKE_GH_VIEW="$tmp/gh-superseded.json"
+expect superseded-marker "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+FAKE_GH_VIEW="$tmp/gh-truncated.json"
+expect truncated-marker "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+FAKE_GH_VIEW="$tmp/gh-undelimited.json"
+expect undelimited-marker "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+FAKE_GH_VIEW="$tmp/gh-other-pr.json"
+expect marker-for-another-pr "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+FAKE_GH_VIEW="$tmp/gh-marker-only.json"
+expect marker-only-comment "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+FAKE_GH_VIEW="$tmp/gh-url-field.json"
+expect marker-in-url-field "$github" "$tmp/solicit.json" 2 'no merge-verdict comment'
+
+FAKE_GH_VIEW="$tmp/gh-current.json"
+expect current-marker "$github" "$tmp/solicit.json" 0
+expect merge-with-verdict "$github" "$tmp/merge.json" 0
+
+FAKE_BKT_COMMENTS="$tmp/bkt-current.json"
+expect bkt-current-marker "$bitbucket" "$tmp/bkt-solicit.json" 0
+FAKE_BKT_VIEW="$tmp/bkt-view-other-branch.json"
+expect bkt-branch-mismatch "$bitbucket" "$tmp/bkt-solicit.json" 2 'does not carry the pushed branch'
+FAKE_BKT_VIEW="$tmp/bkt-view.json"
+
+export FAKE_FORGE_FAIL=1
+expect failing-probe "$github" "$tmp/solicit.json" 2 'no pull request for the pushed branch'
+unset FAKE_FORGE_FAIL
+
+expect grep-absent "$github" "$tmp/solicit.json" 2 'grep absent' "$nogrep"
+expect jq-absent "$github" "$tmp/solicit.json" 2 'jq absent' "$nojq"
+
+echo ok

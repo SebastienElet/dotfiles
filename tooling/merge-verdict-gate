@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly MUTATES='(gh|bkt)[[:space:]]+pr[[:space:]]+(create|new|edit|update|ready|publish|merge)([[:space:]]|$)'
+readonly CREATES='(gh|bkt)[[:space:]]+pr[[:space:]]+(create|new)([[:space:]]|$)'
+readonly RAW_CALL='(^|[[:space:]])((gh|bkt)[[:space:]]+api|curl)([[:space:]]|$)'
+readonly PR_ROUTE='(pulls|pullrequests|pull-requests)/|requested_reviewers|requestReviews'
+readonly WRITE='--method[[:space:]]+(POST|PUT|PATCH|DELETE)|-X[[:space:]]+(POST|PUT|PATCH|DELETE)|mutation'
+readonly FOREIGN='(^|[[:space:]])(-R|--repo|--project|--workspace|-C)([[:space:]]|=)|://|(^|[[:space:]])cd[[:space:]]'
+readonly MIN_BODY=200
+
+refuse() {
+  printf 'merge-verdict gate: %s\n' "$*" >&2
+  exit 2
+}
+
+# A grep that cannot mean "no match" when it failed to run, and never through a pipe:
+# a match on a pipeline's right-hand side kills the writer with SIGPIPE, and pipefail
+# then reports 141 — which an `|| exit 0` reads as "nothing to gate".
+matches() { # pattern, subject
+  local status=0
+  grep -qE -e "$1" <<<"$2" || status=$?
+  [ "$status" -le 1 ] || refuse "cannot scan the command: grep exited ${status}."
+  [ "$status" = 0 ]
+}
+
+normalise() { # command
+  local flat
+  flat=$(tr '\n\t' '  ' <<<"$1")
+  flat=${flat//\\ / }
+  tr -s ' ' <<<"$flat"
+}
+
+forge_of_origin() {
+  local origin
+  origin=$(git remote get-url origin) ||
+    refuse 'no origin remote here: cannot establish which pull request this touches.'
+  case "$origin" in
+  *github.com*) printf 'gh' ;;
+  *bitbucket.org*) printf 'bkt' ;;
+  *) refuse "unknown forge for origin ${origin}." ;;
+  esac
+}
+
+pushed_branch() {
+  local upstream
+  upstream=$(git rev-parse --abbrev-ref '@{upstream}') ||
+    refuse 'no upstream branch: nothing is pushed, so no pull request can carry this work.'
+  printf '%s' "${upstream#*/}"
+}
+
+named_number() { # normalised command
+  local numbers count
+  numbers=$(grep -oE -e '[0-9]+' <<<"$1" | sort -u) || true
+  count=$(printf '%s\n' "$numbers" | grep -c '[0-9]') || true
+  [ "$count" -le 1 ] ||
+    refuse 'this command carries several numbers: the gate cannot tell which pull request it targets.'
+  printf '%s' "$numbers" | tr -d '\n'
+}
+
+github_target() { # named number, may be empty
+  local view number
+  view=$(gh pr view "$(pushed_branch)" --json number,headRefOid,comments) ||
+    refuse 'no pull request for the pushed branch on GitHub.'
+  number=$(jq -r '.number' <<<"$view") || refuse 'unreadable GitHub payload.'
+  [ -z "$1" ] || [ "$1" = "$number" ] ||
+    refuse "this command names pull request ${1} while the branch belongs to ${number}."
+  jq -c '{number: .number, head: .headRefOid, comments: [.comments[].body]}' <<<"$view" ||
+    refuse 'unreadable GitHub payload.'
+}
+
+bitbucket_target() { # named number
+  local branch view head comments
+  [ -n "$1" ] ||
+    refuse 'name the pull request id in the command: Bitbucket cannot resolve it from the branch here.'
+  branch=$(pushed_branch)
+  view=$(bkt pr view "$1" --json) || refuse "cannot read pull request ${1} on Bitbucket."
+  head=$(jq -r '.pull_request.source.commit.hash // empty' <<<"$view") ||
+    refuse 'unreadable Bitbucket payload.'
+  [ -n "$head" ] || refuse "no source commit in the Bitbucket payload for pull request ${1}."
+  [ "$(jq -r '.pull_request.source.branch.name // empty' <<<"$view")" = "$branch" ] ||
+    refuse "pull request ${1} does not carry the pushed branch ${branch}."
+  comments=$(bkt pr comments "$1" --json) ||
+    refuse "cannot read the comments of pull request ${1} on Bitbucket."
+  jq -c --arg n "$1" --arg h "$head" \
+    '{number: ($n | tonumber), head: $h, comments: [.comments[].content.raw]}' <<<"$comments" ||
+    refuse 'unreadable Bitbucket payload.'
+}
+
+verdict_covers_head() { # target json
+  local number head body marker sha
+  number=$(jq -r '.number' <<<"$1")
+  head=$(jq -r '.head' <<<"$1")
+  while IFS= read -r body; do
+    [ "${#body}" -ge "$MIN_BODY" ] || continue
+    marker=$(grep -oE -e "<!-- merge-verdict:${number}:[0-9a-f]{12,40} -->" <<<"$body" |
+      head -n 1) || true
+    [ -n "$marker" ] || continue
+    sha=${marker##*:}
+    sha=${sha%% -->}
+    case "$head" in "$sha"*) return 0 ;; esac
+    case "$sha" in "$head"*) return 0 ;; esac
+  done <<<"$(jq -r '.comments[]? | @json' <<<"$1")"
+  return 1
+}
+
+for tool in git grep jq; do
+  command -v "$tool" >/dev/null || refuse "${tool} absent: the gate cannot read the command."
+done
+
+payload=$(cat) || refuse 'cannot read the hook payload.'
+[ -n "$payload" ] || refuse 'empty hook payload.'
+shape=$(jq -r '.tool_input.command | type' <<<"$payload") || refuse 'unreadable hook payload.'
+[ "$shape" = string ] || refuse "unexpected hook payload: .tool_input.command is ${shape}."
+normalised=$(normalise "$(jq -r '.tool_input.command' <<<"$payload")")
+
+if matches "$MUTATES" "$normalised"; then
+  :
+elif matches "$RAW_CALL" "$normalised" && matches "$PR_ROUTE" "$normalised" &&
+  matches "$WRITE" "$normalised"; then
+  refuse 'a raw forge write on a pull request route cannot be attributed to a head: go through the
+pr subcommands, or publish the verdict first.'
+else
+  exit 0
+fi
+
+if matches "$CREATES" "$normalised"; then
+  refuse 'a pull request being created has no head to judge yet: open it without reviewers, run
+/merge-verdict on it, fix its blocking findings, then edit in the reviewer.'
+fi
+if matches "$FOREIGN" "$normalised"; then
+  refuse 'this command names a repository, a directory or a URL the gate cannot resolve: run it from
+the checkout of the pull request it targets, naming the id alone.'
+fi
+
+number=$(named_number "$normalised")
+forge=$(forge_of_origin)
+case "$forge" in
+gh) target=$(github_target "$number") ;;
+bkt) target=$(bitbucket_target "$number") ;;
+esac
+verdict_covers_head "$target" ||
+  refuse "no merge-verdict comment on pull request $(jq -r '.number' <<<"$target") for head
+$(jq -r '.head' <<<"$target"). USER.md requires your own verdict, with its blocking findings fixed,
+before a pull request leaves your hands. Run /merge-verdict from a fresh context, then retry."
+exit 0

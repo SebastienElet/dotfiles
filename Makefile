@@ -381,7 +381,7 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 	${CREATE_SYMLINK}
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/hooks/merge-verdict-gate ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -397,6 +397,10 @@ ${LOCAL_BIN}/claude:
 ~/.claude/hooks ~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
 ~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
+	${CREATE_SYMLINK}
+# Deploying the link does not register the hook: the PreToolUse entry lives in
+# ~/.claude/settings.json, deferred to arnes for all three harnesses (issues #120, #111).
+~/.claude/hooks/merge-verdict-gate: ${DOTFILES_PATH}/tooling/merge-verdict-gate | ~/.claude/hooks
 	${CREATE_SYMLINK}
 ~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
 	${CREATE_SYMLINK}
