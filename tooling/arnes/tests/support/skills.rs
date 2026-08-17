@@ -70,7 +70,10 @@ pub fn configured_fixture() -> Fixture {
         "# Alpha\n[guide](references/guide.md)\n",
     );
     fixture.write_repository(".agents/skills/alpha/references/guide.md", "guide\n");
-    fixture.write_repository(".agents/skills/beta/SKILL.md", "# Beta\n");
+    fixture.write_repository(
+        ".agents/skills/beta/SKILL.md",
+        "# Beta\n[missing](references/missing.md)\n",
+    );
     for destination in [
         ".claude/skills/alpha",
         ".cursor/skills/alpha",
