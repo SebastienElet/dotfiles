@@ -1,7 +1,7 @@
 use super::paths::{canonical_within, label};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
-use crate::manifest::{Agent, Scope};
+use crate::manifest::{Agent, ExternalOrigin, Manifest, Scope};
 use std::collections::HashSet;
 use std::fs;
 use std::io::ErrorKind;
@@ -13,6 +13,7 @@ pub fn unmanaged(
     scope: Scope,
     root: &Path,
     declared: &HashSet<PathBuf>,
+    manifest: &Manifest,
 ) -> Vec<Diagnostic> {
     let base = match scope {
         Scope::User => roots.home(),
@@ -31,7 +32,7 @@ pub fn unmanaged(
         .into_iter()
         .filter(|name| !declared.contains(&root.join(name)))
         .filter(|name| !super::external::is_claude_skills_plugin(agent, &directory.join(name)))
-        .map(|name| classify(&directory, agent, scope, root, &name))
+        .map(|name| classify(&directory, agent, scope, root, &name, manifest))
         .collect()
 }
 
@@ -49,18 +50,44 @@ pub fn installations(directory: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(names)
 }
 
-fn classify(directory: &Path, agent: Agent, scope: Scope, root: &Path, name: &Path) -> Diagnostic {
+fn classify(
+    directory: &Path,
+    agent: Agent,
+    scope: Scope,
+    root: &Path,
+    name: &Path,
+    manifest: &Manifest,
+) -> Diagnostic {
     let path = directory.join(name);
     let broken = fs::symlink_metadata(&path)
         .is_ok_and(|metadata| metadata.file_type().is_symlink())
         && !fs::metadata(&path).is_ok_and(|metadata| metadata.is_dir());
     let classification = if broken { "broken" } else { "unmanaged" };
+    let allowed = name.to_str().is_some_and(|slug| {
+        manifest.external_skills(agent, scope).any(|skill| {
+            skill.origin == ExternalOrigin::Managed && skill.plugin.is_none() && skill.slug == slug
+        })
+    });
     Diagnostic::new(
         "skills",
-        State::Unsupported,
+        if broken {
+            State::Error
+        } else if allowed {
+            State::Healthy
+        } else {
+            State::Drift
+        },
         format!(
-            "{classification} {agent} {scope} skill {} at {}/{} is unmanaged and not Arnes-owned",
+            "{classification} {agent} {scope} skill {} origin=managed ownership=external container=none version=unknown exposure={} topology={} policy={} activation={} path={}/{} detail=unmanaged and not Arnes-owned",
             name.display(),
+            if broken { "unknown" } else { "enabled" },
+            if broken { "broken" } else { "healthy" },
+            if allowed { "allowed" } else { "unexpected" },
+            if broken {
+                "unknown"
+            } else {
+                "available-not-runtime-observed"
+            },
             label(scope, root),
             name.display()
         ),

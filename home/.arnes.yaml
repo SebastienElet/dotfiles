@@ -31,6 +31,10 @@ external:
   skills:
     - agent: codex
       scope: user
+      origin: managed
+      slug: ponytail
+    - agent: codex
+      scope: user
       origin: system
       slug: openai-docs
 resources:

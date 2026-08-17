@@ -78,6 +78,7 @@ fn diagnose_leaves(
         resource.scope,
         resource.destination,
         &declared,
+        manifest,
     ));
     diagnostics
 }
@@ -102,6 +103,7 @@ fn diagnose_root(
         resource.scope,
         resource.destination,
         &declared,
+        manifest,
     ));
     diagnostics
 }

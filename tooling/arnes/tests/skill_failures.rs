@@ -139,7 +139,7 @@ fn unmanaged_installations_are_preserved_and_not_validated_as_owned() {
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
 
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("unmanaged claude user skill third-party"));
     assert!(!stdout.contains("local resource"));
     assert_eq!(fixture.snapshot(), before);
@@ -151,9 +151,9 @@ fn unmanaged_installations_are_preserved_and_not_validated_as_owned() {
         &fixture,
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains("broken claude user skill dangling-third-party"));
-    assert!(stdout.contains("is unmanaged and not Arnes-owned"));
+    assert!(stdout.contains("detail=unmanaged and not Arnes-owned"));
 }
 
 #[test]

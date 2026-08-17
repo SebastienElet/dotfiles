@@ -189,7 +189,7 @@ fn external_error(external: &str) -> String {
 #[test]
 fn valid_external_policy_separates_roots_plugins_and_skills() {
     manifest::parse(
-        "version: 1\nagents:\n  - id: codex\n    scopes: [user]\nskills: []\nexternal:\n  roots:\n    - { agent: codex, scope: user, origin: system, location: { root: home, path: .codex/skills/.system } }\n  plugins:\n    - { agent: codex, scope: user, id: demo@marketplace }\n  skills:\n    - { agent: codex, scope: user, origin: system, slug: openai-docs }\n    - { agent: codex, scope: user, origin: plugin, plugin: demo@marketplace, slug: hello }\nresources: []\n",
+        "version: 1\nagents:\n  - id: codex\n    scopes: [user]\nskills: []\nexternal:\n  roots:\n    - { agent: codex, scope: user, origin: system, location: { root: home, path: .codex/skills/.system } }\n  plugins:\n    - { agent: codex, scope: user, id: demo@marketplace }\n  skills:\n    - { agent: codex, scope: user, origin: managed, slug: ponytail }\n    - { agent: codex, scope: user, origin: system, slug: openai-docs }\n    - { agent: codex, scope: user, origin: plugin, plugin: demo@marketplace, slug: hello }\nresources: []\n",
     )
     .unwrap();
 }
@@ -228,6 +228,10 @@ fn ambiguous_external_policy_is_rejected() {
         (
             "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: system, plugin: demo, slug: hello }\n",
             "external.skills[0].plugin: system skills cannot name a plugin",
+        ),
+        (
+            "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: managed, plugin: demo, slug: hello }\n",
+            "external.skills[0].plugin: managed external skills cannot name a plugin",
         ),
         (
             "  roots: []\n  plugins: []\n  skills:\n    - { agent: codex, scope: user, origin: plugin, plugin: demo, slug: hello }\n",

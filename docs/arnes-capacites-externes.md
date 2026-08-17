@@ -10,7 +10,10 @@ Le manifest `.arnes.yaml` sépare trois déclarations :
 
 - `external.roots` borne chaque racine de skills système effectivement auditée ;
 - `external.plugins` autorise l'identifiant stable d'un plugin sans autoriser ses futurs skills ;
-- `external.skills` autorise un slug système ou un slug fourni par un plugin déjà autorisé.
+- `external.skills` autorise un slug standalone, système ou fourni par un plugin déjà autorisé.
+
+L'origine `managed` désigne un skill standalone géré hors d'Arnes mais déjà exposé dans une racine
+de projection. Cette autorisation ne l'adopte pas et ne déclenche aucun contrôle qualitatif.
 
 Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son absence ne crée donc
 aucun drift. La propriété reste `external`, même pour une capacité autorisée. Les diagnostics

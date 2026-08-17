@@ -77,6 +77,7 @@ pub(super) struct ExternalSkillDeclaration {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExternalOrigin {
+    Managed,
     System,
     Plugin,
 }
@@ -84,6 +85,7 @@ pub enum ExternalOrigin {
 impl Display for ExternalOrigin {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self {
+            Self::Managed => "managed",
             Self::System => "system",
             Self::Plugin => "plugin",
         })

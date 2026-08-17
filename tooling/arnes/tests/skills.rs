@@ -10,9 +10,9 @@ fn declared_skills_are_managed_and_undeclared_project_skills_are_unmanaged() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(&fixture, &["doctor", "skills"]);
 
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 1, "{stdout}");
     assert_eq!(stdout.matches("healthy skills: managed").count(), 6);
-    assert_eq!(stdout.matches("unsupported skills: unmanaged").count(), 3);
+    assert_eq!(stdout.matches("drift skills: unmanaged").count(), 3);
     for expected in [
         "managed claude user skill alpha",
         "managed claude project skill alpha",
@@ -39,7 +39,7 @@ fn agent_and_scope_filters_isolate_skill_projections() {
         ],
     );
 
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 1, "{stdout}");
     assert_eq!(
         stdout
             .lines()
@@ -50,7 +50,7 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     assert_eq!(
         stdout
             .lines()
-            .filter(|line| line.starts_with("unsupported skills: unmanaged cursor project"))
+            .filter(|line| line.starts_with("drift skills: unmanaged cursor project"))
             .count(),
         1
     );
@@ -99,7 +99,7 @@ fn skills_doctor_is_isolated_and_read_only() {
 
     let (code, _, _) = run(&fixture, &["doctor", "skills"]);
 
-    assert_eq!(code, 0);
+    assert_eq!(code, 1);
     assert_eq!(fixture.snapshot(), before);
 }
 
