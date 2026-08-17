@@ -61,7 +61,10 @@ first, unless the request explicitly says to post directly.
 
 3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
-   `<mechanism>`. Only the third form can become a blocker.
+   `<mechanism>`. Only the third form can become a blocker. When the head under review was written
+   in this session, delegate this sweep to a fresh context, read-only and scoped to the diff: the
+   context that produced the diff shares the blind spot that produced the defect, and records
+   `holds` for the class it has just broken.
 
 4. **Run the barrier, then declare its holes.** Run lint, typecheck and tests the way the project
    runs them — including inside a container when the project requires it, since numbers from the
@@ -83,7 +86,7 @@ first, unless the request explicitly says to post directly.
    verdict if one exists. Never open a ticket solely to request or record a re-review: the new
    head-specific verdict comment is that record. Write one general comment from
    `assets/verdict-template.md`, prefixed with the idempotency marker
-   `<!-- merge-verdict:<pr>:<head-sha> -->` — not a rain of inline comments. Search the existing
+   `<!-- merge-verdict:<pr>:<head-sha-12> -->` — not a rain of inline comments. Search the existing
    comments for that marker first: a verdict carrying the same `<pr>:<sha>` is updated in place,
    never duplicated. Re-read before publishing — past about thirty lines, non-blocking remarks are
    posing as blockers. On GitHub, _changes required_ is published with
@@ -130,6 +133,7 @@ first, unless the request explicitly says to post directly.
 - Never open a review that is not anchored on a head SHA.
 - Never leave a limit of the evidence implicit; the barrier's gaps belong in the verdict text.
 - Never publish two verdicts for the same `<pr>:<sha>`; update the existing comment instead.
+- Never sweep the failure classes on a head you wrote in this session from the context that wrote it.
 - Never create a ticket solely to request, schedule or record a re-review.
 - Never publish without confirmation, unless the request explicitly says to post directly.
 
