@@ -49,9 +49,15 @@ locales.
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-ainsi que les services associés comme `harness/firecrawl/`. Le `Makefile` les
-adapte aux contraintes de chaque agent : Claude reçoit des liens symboliques,
-tandis que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
+les règles sous `harness/rules/`, ainsi que les services associés comme
+`harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
+Claude reçoit des liens symboliques, tandis que Codex reçoit un
+`~/.codex/AGENTS.md` assemblé.
+
+La règle globale `agent-instructions` n'est déployée que vers Claude et Codex.
+Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
+Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
+`Makefile` ne peut donc pas y distribuer cette source.
 
 Les skills vivent dans `.agents/skills/`. Les répertoires `.claude/`, `.codex/`
 et `.cursor/` ne dupliquent pas leur contenu : ils fournissent uniquement les

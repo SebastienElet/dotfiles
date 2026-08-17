@@ -130,6 +130,25 @@ ln -s "$unexpected_source" "$starship_destination"
 assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
 assert_link "$starship_destination" "$unexpected_source"
 
+case_root=$test_root/agent_instructions
+test_home=$case_root/home
+claude_rule=$test_home/.claude/rules/agent-instructions.md
+codex_instructions=$test_home/.codex/AGENTS.md
+mkdir -p "$test_home"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions"
+assert_link "$claude_rule" "$repository/harness/rules/agent-instructions.md"
+expected_instructions=$case_root/expected-agents.md
+grep -v '^@' "$repository/harness/AGENTS.md" | cat - "$repository/harness/SOUL.md" "$repository/harness/USER.md" "$repository/harness/rules/agent-instructions.md" >"$expected_instructions"
+cmp -s "$expected_instructions" "$codex_instructions" || fail "Codex instructions differ from shared sources"
+before=$(cksum "$codex_instructions")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions"
+after=$(cksum "$codex_instructions")
+[[ $before == "$after" ]] || fail "Codex agent instruction deployment is not idempotent"
+rm "$claude_rule"
+printf 'keep\n' >"$claude_rule"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule"
+[[ $(cat "$claude_rule") == keep ]] || fail "Claude rule destination changed"
+
 case_root=$test_root/make_starship_missing_source
 test_home=$case_root/home
 starship_destination=$test_home/.config/starship.toml

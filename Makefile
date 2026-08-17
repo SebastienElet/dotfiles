@@ -381,7 +381,7 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -394,10 +394,12 @@ ${LOCAL_BIN}/claude:
 	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/SOUL.md $@
 ~/.claude/USER.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md | ~/.claude
 	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/USER.md $@
-~/.claude/hooks ~/.claude/skills: | ~/.claude
+~/.claude/hooks ~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
 ~/.claude/hooks/agent_handoff: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
 	${DEPLOY_LINK} ${DOTFILES_PATH}/tooling/agent-handoff $@
+~/.claude/rules/agent-instructions.md: FORCE ${DEPLOY_LINK} ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
+	${DEPLOY_LINK} ${DOTFILES_PATH}/harness/rules/agent-instructions.md $@
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
@@ -413,11 +415,11 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
 	mkdir -p $@
-# Codex ignores AGENTS.md @import directives, so the three files are assembled
+# Codex ignores AGENTS.md @import directives, so the sources are assembled
 # here instead of symlinked. Written to a temporary path then moved, so an
 # existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md | ~/.codex
-	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md > $@.tmp
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.codex
+	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md > $@.tmp
 	mv $@.tmp $@
 # Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
