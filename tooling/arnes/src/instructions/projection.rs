@@ -2,9 +2,9 @@ use super::checks::{
     destination, destination_label, expected_file, expected_link, healthy, include_diagnostic,
     relative, source_diagnostic,
 };
-use super::includes::{self, Resolver};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::includes::{self, Resolver};
 use crate::manifest::{Agent, InstructionResource, Scope};
 use std::fs;
 use std::path::Path;

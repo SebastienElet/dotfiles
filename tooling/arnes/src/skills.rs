@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 
 mod discovery;
 mod external;
-mod paths;
 mod projection;
 mod references;
 

@@ -1,7 +1,7 @@
-use super::paths::{ancestor_within, canonical_within, destination, label};
 use super::references;
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::paths::{ancestor_within, canonical_within, destination, label};
 use crate::manifest::{Scope, SkillProjection};
 use std::fs;
 use std::io::ErrorKind;

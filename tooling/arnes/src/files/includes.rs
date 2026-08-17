@@ -1,3 +1,4 @@
+use super::paths::{ancestor_within, canonical_within, parent_within, same_file};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::ErrorKind;
@@ -22,6 +23,7 @@ pub struct Graph {
 pub enum IncludeError {
     Missing(PathBuf),
     MissingLink(PathBuf),
+    Dangling(PathBuf),
     WrongLink(PathBuf),
     NotFile(PathBuf),
     Unreadable(PathBuf),
@@ -124,6 +126,10 @@ impl Graph {
     pub fn contains(&self, path: &Path) -> bool {
         self.visited.contains(path)
     }
+
+    pub fn paths(&self) -> impl Iterator<Item = &Path> {
+        self.visited.iter().map(PathBuf::as_path)
+    }
 }
 
 pub fn read_regular(path: &Path, root: &Path) -> Result<String, IncludeError> {
@@ -131,44 +137,26 @@ pub fn read_regular(path: &Path, root: &Path) -> Result<String, IncludeError> {
 }
 
 fn load_regular(path: &Path, root: &Path) -> Result<(PathBuf, String), IncludeError> {
-    let metadata = fs::symlink_metadata(path).map_err(|error| match error.kind() {
+    if !ancestor_within(path.parent().unwrap_or(root), root) {
+        return Err(IncludeError::OutsideRoot(path.to_owned()));
+    }
+    let link_metadata = fs::symlink_metadata(path).map_err(|error| match error.kind() {
         ErrorKind::NotFound => IncludeError::Missing(path.to_owned()),
         _ => IncludeError::Unreadable(path.to_owned()),
     })?;
-    if !metadata.file_type().is_file() {
+    let metadata = fs::metadata(path).map_err(|error| match error.kind() {
+        ErrorKind::NotFound if link_metadata.file_type().is_symlink() => {
+            IncludeError::Dangling(path.to_owned())
+        }
+        ErrorKind::NotFound => IncludeError::Missing(path.to_owned()),
+        _ => IncludeError::Unreadable(path.to_owned()),
+    })?;
+    if !metadata.is_file() {
         return Err(IncludeError::NotFile(path.to_owned()));
     }
-    let identity = canonical_within(path, root)?;
+    let identity =
+        canonical_within(path, root).ok_or_else(|| IncludeError::OutsideRoot(path.to_owned()))?;
     let contents =
         fs::read_to_string(path).map_err(|_| IncludeError::Unreadable(path.to_owned()))?;
     Ok((identity, contents))
-}
-
-fn canonical_within(path: &Path, root: &Path) -> Result<PathBuf, IncludeError> {
-    let root = fs::canonicalize(root).map_err(|_| IncludeError::Unreadable(root.to_owned()))?;
-    let path = fs::canonicalize(path).map_err(|_| IncludeError::Unreadable(path.to_owned()))?;
-    if path.starts_with(root) {
-        Ok(path)
-    } else {
-        Err(IncludeError::OutsideRoot(path))
-    }
-}
-
-pub fn same_file(link: &Path, source: &Path) -> bool {
-    match (fs::canonicalize(link), fs::canonicalize(source)) {
-        (Ok(link), Ok(source)) => link == source,
-        _ => false,
-    }
-}
-
-pub fn parent_within(path: &Path, root: &Path) -> bool {
-    path.parent()
-        .is_some_and(|parent| resolves_within(parent, root))
-}
-
-pub fn resolves_within(path: &Path, root: &Path) -> bool {
-    match (fs::canonicalize(path), fs::canonicalize(root)) {
-        (Ok(path), Ok(root)) => path.starts_with(root),
-        _ => false,
-    }
 }

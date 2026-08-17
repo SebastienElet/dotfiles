@@ -1,5 +1,5 @@
 use super::model::{Skill, Topology};
-use crate::skills::paths::canonical_within;
+use crate::files::paths::canonical_within;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;

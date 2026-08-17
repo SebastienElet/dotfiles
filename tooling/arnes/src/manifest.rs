@@ -5,10 +5,12 @@ use std::path::{Path, PathBuf};
 
 mod external;
 mod parsing;
+mod prompts;
 mod validation;
 
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use parsing::{load, parse};
+pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
 
 const MANIFEST_FILE: &str = ".arnes.yaml";
 const SCHEMA_VERSION: u64 = 1;
@@ -46,6 +48,8 @@ pub struct Manifest {
     skills: Vec<SkillDeclaration>,
     #[serde(default)]
     external: external::ExternalPolicy,
+    #[serde(default)]
+    prompts: Vec<prompts::PromptDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 
@@ -112,6 +116,16 @@ impl Manifest {
         scope: Scope,
     ) -> impl Iterator<Item = ExternalSkill<'_>> {
         self.external.skills(agent, scope)
+    }
+
+    pub fn prompts(&self) -> impl Iterator<Item = Prompt<'_>> {
+        self.prompts.iter().map(Prompt::from)
+    }
+
+    pub(crate) fn resource_destinations(&self) -> impl Iterator<Item = (Scope, &Path)> {
+        self.resources
+            .iter()
+            .map(|resource| (resource.scope, resource.destination.path.as_path()))
     }
 }
 

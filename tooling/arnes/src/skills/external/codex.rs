@@ -1,8 +1,8 @@
 use super::model::{Exposure, Plugin, Topology, plugin_diagnostics};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::paths::{ancestor_within, canonical_within};
 use crate::manifest::{Agent, Manifest, Scope};
-use crate::skills::paths::{ancestor_within, canonical_within};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs;

@@ -21,18 +21,32 @@ pub fn imports(contents: &str) -> Vec<String> {
 }
 
 pub fn leading_imports(contents: &str) -> Vec<String> {
+    let mut fence = None;
     contents
         .lines()
-        .filter(|line| line.starts_with('@'))
+        .filter(|line| leading_import(line, &mut fence))
         .flat_map(imports_in_line)
         .collect()
 }
 
 pub fn without_leading_imports(contents: &str) -> String {
+    let mut fence = None;
     contents
         .split_inclusive('\n')
-        .filter(|line| !line.starts_with('@'))
+        .filter(|line| !leading_import(line.trim_end_matches('\n'), &mut fence))
         .collect()
+}
+
+fn leading_import(line: &str, fence: &mut Option<(u8, usize)>) -> bool {
+    if let Some((marker, length)) = fence_marker(line) {
+        match *fence {
+            Some((open, minimum)) if marker == open && length >= minimum => *fence = None,
+            None => *fence = Some((marker, length)),
+            _ => {}
+        }
+        return false;
+    }
+    fence.is_none() && line.starts_with('@') && !imports_in_line(line).is_empty()
 }
 
 fn imports_in_line(line: &str) -> Vec<String> {

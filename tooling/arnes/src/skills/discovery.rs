@@ -1,6 +1,6 @@
-use super::paths::{canonical_within, label};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
+use crate::files::paths::{canonical_within, label};
 use crate::manifest::{Agent, ExternalOrigin, Manifest, Scope};
 use std::collections::HashSet;
 use std::fs;
