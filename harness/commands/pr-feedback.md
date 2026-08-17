@@ -15,12 +15,17 @@ dernières PR fusionnées dont je suis l'auteur.
 
 Déduis la forge de `git remote get-url origin` et n'emploie que son client. `<slug>` désigne
 partout le chemin du dépôt lu sur ce remote (`<espace>/<dépôt>`) ; ne code jamais sa valeur en
-dur dans ce fichier.
+dur dans ce fichier. Avec `gh api`, écris littéralement `{owner}/{repo}` : le client les
+substitue depuis le remote, et la dérivation manuelle devient inutile.
 
 ```bash
 bkt pr list --mine --state MERGED --limit 10 --json --jq '.pull_requests[] | "\(.id) | \(.title)"'
 gh pr list --author @me --state merged --limit 10 --json number,title
 ```
+
+Les deux n'ont pas la même portée : sans dépôt, `bkt pr list --mine` remonte **tous** les
+dépôts de l'espace, là où `gh pr list` se limite au dépôt courant. Sur Bitbucket, écarte les PR
+d'un autre dépôt avant de compter les occurrences.
 
 Pour toute autre forge, mappe les concepts ci-dessous sur son client (`glab`, `tea`, l'API
 brute) en vérifiant les options dans son aide. Les concepts ne changent pas ; les endpoints,
@@ -35,7 +40,7 @@ ils réapparaissent sous mon nom. Le signal vit donc côté forge, dans trois en
 
 ```bash
 bkt api "/repositories/<slug>/pullrequests/<id>/activity?pagelen=50" --json --jq '.values[] | select(.update) | "\(.update.date) | \(.update.author.display_name) | \(.update.source.commit.hash) | \(.update.state)"'
-gh pr view <id> --json commits --jq '.commits[] | "\(.committedDate) | \(.authors[0].login) | \(.oid[0:12]) | \(.messageHeadline)"'
+gh pr view <id> --json commits --jq '.commits[] | "\(.committedDate) | \(.authors[0] | if (.login // "") == "" then .name else .login end) | \(.oid[0:12]) | \(.messageHeadline)"'
 ```
 
 Toute poussée par quelqu'un d'autre que moi, après ma dernière poussée, est un **correctif de
