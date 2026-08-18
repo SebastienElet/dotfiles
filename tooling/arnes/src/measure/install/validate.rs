@@ -1,75 +1,31 @@
 use super::super::{HookAgent, MeasureError};
-use serde_json::{Map, Value};
+use serde_json::Value;
 
-pub fn nested_handler(handler: &Value, agent: HookAgent) -> Result<(), MeasureError> {
-    let handler = handler
+mod claude;
+mod codex;
+mod cursor;
+mod fields;
+
+pub fn configuration(config: &Value, agent: HookAgent) -> Result<(), MeasureError> {
+    let config = config
         .as_object()
-        .ok_or_else(|| MeasureError::new("nested hook handler must be an object"))?;
-    let kind = handler
-        .get("type")
-        .and_then(Value::as_str)
-        .ok_or_else(|| MeasureError::new("nested hook handler type must be a string"))?;
-    if handler
-        .get("command")
-        .is_some_and(|value| !value.is_string())
-    {
-        return Err(MeasureError::new(
-            "nested hook handler command must be a string",
-        ));
+        .ok_or_else(|| MeasureError::new("hook configuration must be a JSON object"))?;
+    if agent == HookAgent::Cursor {
+        cursor::version(config.get("version"))?;
     }
-    match (agent, kind) {
-        (HookAgent::Codex, "command") | (HookAgent::ClaudeCode, "command") => {
-            required_string(handler, "command")
-        }
-        (HookAgent::Codex, "prompt" | "agent") | (HookAgent::ClaudeCode, "prompt" | "agent") => {
-            required_string(handler, "prompt")
-        }
-        (HookAgent::ClaudeCode, "http") => required_string(handler, "url"),
-        (HookAgent::ClaudeCode, "mcp_tool") => {
-            required_string(handler, "server")?;
-            required_string(handler, "tool")
-        }
-        _ => Err(MeasureError::new(format!(
-            "unsupported nested hook handler type: {kind}"
-        ))),
-    }
-}
-
-pub fn direct_handler(handler: &Map<String, Value>) -> Result<(), MeasureError> {
-    optional_string(handler, "matcher")?;
-    optional_string(handler, "command")?;
-    let kind = match handler.get("type") {
-        None => "command",
-        Some(Value::String(kind)) => kind,
-        Some(_) => {
-            return Err(MeasureError::new(
-                "direct hook handler type must be a string",
-            ));
-        }
+    let Some(hooks) = config.get("hooks") else {
+        return Ok(());
     };
-    match kind {
-        "command" => required_string(handler, "command"),
-        "prompt" => required_string(handler, "prompt"),
-        _ => Err(MeasureError::new(format!(
-            "unsupported direct hook handler type: {kind}"
-        ))),
-    }
-}
-
-fn optional_string(handler: &Map<String, Value>, field: &str) -> Result<(), MeasureError> {
-    if handler.get(field).is_some_and(|value| !value.is_string()) {
-        return Err(MeasureError::new(format!(
-            "hook handler {field} must be a string"
-        )));
-    }
-    Ok(())
-}
-
-fn required_string(handler: &Map<String, Value>, field: &str) -> Result<(), MeasureError> {
-    if !handler.get(field).is_some_and(Value::is_string) {
-        return Err(MeasureError::new(format!(
-            "hook handler must contain a string {field}"
-        )));
+    let hooks = hooks
+        .as_object()
+        .ok_or_else(|| MeasureError::new("hooks must be a JSON object"))?;
+    for (event, entries) in hooks {
+        match agent {
+            HookAgent::Codex if codex::known_event(event) => codex::event(event, entries)?,
+            HookAgent::ClaudeCode if claude::known_event(event) => claude::event(event, entries)?,
+            HookAgent::Cursor if cursor::known_event(event) => cursor::event(event, entries)?,
+            _ => {}
+        }
     }
     Ok(())
 }

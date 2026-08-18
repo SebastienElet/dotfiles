@@ -187,7 +187,7 @@ fn preserves_third_party_hooks_matchers_top_level_settings_and_cursor_version() 
                     ],
                     "FutureHooks":[{"hooks":[
                         {"type":"command","command":command.clone()},
-                        {"type":"prompt","prompt":"keep","command":command}
+                        {"type":"prompt","prompt":"keep","futureField":command}
                     ]}],
                     "FutureEvent":{"opaque":true}
                 }
@@ -377,16 +377,8 @@ fn malformed_touched_hook_structures_are_rejected_without_mutation() {
 }
 
 #[test]
-fn incomplete_or_unknown_hook_handlers_are_rejected_without_mutation() {
+fn incomplete_recognized_hook_handlers_are_rejected_without_mutation() {
     for (agent, raw) in [
-        (
-            "codex",
-            r#"{"hooks":{"Stop":[{"hooks":[{"type":"agent"}]}]}}"#,
-        ),
-        (
-            "codex",
-            r#"{"hooks":{"Stop":[{"hooks":[{"type":"http","url":"https://example.com"}]}]}}"#,
-        ),
         (
             "claude-code",
             r#"{"hooks":{"Stop":[{"hooks":[{"type":"command"}]}]}}"#,
@@ -406,14 +398,6 @@ fn incomplete_or_unknown_hook_handlers_are_rejected_without_mutation() {
         (
             "claude-code",
             r#"{"hooks":{"Stop":[{"hooks":[{"type":"agent"}]}]}}"#,
-        ),
-        (
-            "claude-code",
-            r#"{"hooks":{"Stop":[{"hooks":[{"type":"garbage"}]}]}}"#,
-        ),
-        (
-            "cursor",
-            r#"{"version":1,"hooks":{"stop":[{"type":"garbage"}]}}"#,
         ),
     ] {
         let harness = Harness::new();
@@ -622,7 +606,7 @@ fn preserves_thought_hooks_and_similar_measurement_commands() {
             "hooks":{
                 "afterAgentThought":[
                     {"command":"third-party-thought"},
-                    {"type":"prompt","prompt":"keep","command":excluded},
+                    {"type":"prompt","prompt":excluded},
                     {"command":excluded}
                 ],
                 "futureEvent":[

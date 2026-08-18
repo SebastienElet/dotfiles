@@ -33,15 +33,10 @@ pub fn install_hooks(args: InstallHooksArgs) -> Result<(), MeasureError> {
         .map(json_value::parse)
         .transpose()?
         .unwrap_or_else(|| json!({}));
+    validate::configuration(&config, args.agent)?;
     let command = hook_command(&args.command, args.agent)?;
     ownership::remove_everywhere(&mut config, args.agent, &command)?;
-    merge(
-        &mut config,
-        policy.events,
-        args.agent,
-        policy.nested,
-        &command,
-    )?;
+    merge(&mut config, policy.events, policy.nested, &command)?;
     remove_excluded(&mut config, policy.excluded, &command)?;
     file.replace(&serde_json::to_vec_pretty(&config)?)
 }
@@ -69,7 +64,6 @@ fn hook_command(command: &Path, agent: HookAgent) -> Result<String, MeasureError
 fn merge(
     config: &mut Value,
     events: &[&str],
-    agent: HookAgent,
     nested: bool,
     command: &str,
 ) -> Result<(), MeasureError> {
@@ -82,8 +76,8 @@ fn merge(
     if !nested && !config.contains_key("version") {
         config.insert("version".to_owned(), json!(1));
     }
-    if !nested && !config["version"].as_u64().is_some() {
-        return Err(MeasureError::new("Cursor hook version must be an integer"));
+    if !nested && !config["version"].is_number() {
+        return Err(MeasureError::new("Cursor hook version must be a number"));
     }
     let hooks = config["hooks"]
         .as_object_mut()
@@ -93,7 +87,7 @@ fn merge(
             .entry((*event).to_owned())
             .or_insert_with(|| Value::Array(Vec::new()));
         if nested {
-            merge_nested(entries, agent, command)?;
+            merge_nested(entries, command)?;
         } else {
             merge_direct(entries, command)?;
         }
@@ -101,13 +95,13 @@ fn merge(
     Ok(())
 }
 
-fn merge_nested(entries: &mut Value, agent: HookAgent, command: &str) -> Result<(), MeasureError> {
+fn merge_nested(entries: &mut Value, command: &str) -> Result<(), MeasureError> {
     let entries = entries
         .as_array_mut()
         .ok_or_else(|| MeasureError::new("nested hook event must be an array"))?;
     let mut retained = Vec::with_capacity(entries.len() + 1);
     for mut group in std::mem::take(entries) {
-        if !remove_measurement_from_group(&mut group, agent, command)? {
+        if !remove_measurement_from_group(&mut group, command)? {
             retained.push(group);
         }
     }
@@ -116,11 +110,7 @@ fn merge_nested(entries: &mut Value, agent: HookAgent, command: &str) -> Result<
     Ok(())
 }
 
-fn remove_measurement_from_group(
-    group: &mut Value,
-    agent: HookAgent,
-    command: &str,
-) -> Result<bool, MeasureError> {
+fn remove_measurement_from_group(group: &mut Value, command: &str) -> Result<bool, MeasureError> {
     let group = group
         .as_object_mut()
         .ok_or_else(|| MeasureError::new("nested hook group must be an object"))?;
@@ -133,9 +123,6 @@ fn remove_measurement_from_group(
         .get_mut("hooks")
         .and_then(Value::as_array_mut)
         .ok_or_else(|| MeasureError::new("nested hook group must contain a hooks array"))?;
-    for handler in handlers.iter() {
-        validate::nested_handler(handler, agent)?;
-    }
     let previous = handlers.len();
     handlers.retain(|handler| !ownership::nested(handler, command));
     Ok(previous != handlers.len() && handlers.is_empty())
@@ -145,12 +132,6 @@ fn merge_direct(entries: &mut Value, command: &str) -> Result<(), MeasureError> 
     let entries = entries
         .as_array_mut()
         .ok_or_else(|| MeasureError::new("direct hook event must be an array"))?;
-    for handler in entries.iter() {
-        let handler = handler
-            .as_object()
-            .ok_or_else(|| MeasureError::new("direct hook handler must be an object"))?;
-        validate::direct_handler(handler)?;
-    }
     entries.retain(|handler| !ownership::direct(handler, command));
     entries.push(json!({"command":command}));
     Ok(())
@@ -167,12 +148,6 @@ fn remove_excluded(config: &mut Value, events: &[&str], command: &str) -> Result
         let entries = entries
             .as_array_mut()
             .ok_or_else(|| MeasureError::new("excluded hook event must be an array"))?;
-        for handler in entries.iter() {
-            let handler = handler
-                .as_object()
-                .ok_or_else(|| MeasureError::new("direct hook handler must be an object"))?;
-            validate::direct_handler(handler)?;
-        }
         entries.retain(|handler| !ownership::direct(handler, command));
     }
     Ok(())
