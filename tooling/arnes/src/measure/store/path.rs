@@ -107,14 +107,20 @@ impl ManagedPath {
 
     pub fn open_append(&self) -> Result<File, MeasureError> {
         let (directory, name) = self.parent_and_name()?;
-        let flags =
-            OFlags::RDWR | OFlags::CREATE | OFlags::APPEND | OFlags::NOFOLLOW | OFlags::CLOEXEC;
-        let file = File::from(rustix::fs::openat(
-            directory,
-            name,
-            flags,
-            private_file_mode(),
-        )?);
+        let create = OFlags::RDWR
+            | OFlags::CREATE
+            | OFlags::EXCL
+            | OFlags::APPEND
+            | OFlags::NOFOLLOW
+            | OFlags::CLOEXEC;
+        let file = match rustix::fs::openat(&directory, &name, create, private_file_mode()) {
+            Ok(file) => File::from(file),
+            Err(rustix::io::Errno::EXIST) => {
+                let open = OFlags::RDWR | OFlags::APPEND | OFlags::NOFOLLOW | OFlags::CLOEXEC;
+                File::from(rustix::fs::openat(directory, name, open, Mode::empty())?)
+            }
+            Err(error) => return Err(error.into()),
+        };
         ensure_single_link(&file, &self.display)?;
         rustix::fs::fchmod(&file, private_file_mode())?;
         Ok(file)

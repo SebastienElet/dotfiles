@@ -95,7 +95,11 @@ pub(super) fn assert_success(output: &Output) {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(output.stdout.is_empty());
-    assert!(output.stderr.is_empty());
+    assert!(
+        output.stderr.is_empty(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 pub(super) fn assert_advisory_failure(output: &Output) {

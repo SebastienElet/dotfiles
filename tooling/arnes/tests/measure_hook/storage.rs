@@ -26,7 +26,25 @@ fn assert_private_tree(root: &Path) {
 #[test]
 fn parallel_hooks_append_complete_json_lines() {
     let harness = Harness::new();
-    let children: Vec<Child> = (0..24)
+    run_valid_batch(&harness, 0);
+    run_valid_batch(&harness, 24);
+
+    let run = harness.only_run();
+    let events = read_jsonl(run.join("events.jsonl"));
+    let prompts = read_jsonl(run.join("prompts.jsonl"));
+    assert_eq!(events.len(), 48);
+    assert_eq!(prompts.len(), 48);
+    let mut ids: Vec<&str> = events
+        .iter()
+        .map(|event| event["event_id"].as_str().unwrap())
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), 48);
+}
+
+fn run_valid_batch(harness: &Harness, offset: usize) {
+    let children: Vec<Child> = (offset..offset + 24)
         .map(|index| {
             let mut child = harness.command("cursor").spawn().unwrap();
             let payload = json!({
@@ -47,17 +65,25 @@ fn parallel_hooks_append_complete_json_lines() {
     for child in children {
         assert_success(&child.wait_with_output().unwrap());
     }
+}
 
-    let run = harness.only_run();
-    let events = read_jsonl(run.join("events.jsonl"));
-    let prompts = read_jsonl(run.join("prompts.jsonl"));
-    assert_eq!(events.len(), 24);
-    assert_eq!(prompts.len(), 24);
-    let mut ids: Vec<&str> = events
-        .iter()
-        .map(|event| event["event_id"].as_str().unwrap())
-        .collect();
-    ids.sort_unstable();
-    ids.dedup();
-    assert_eq!(ids.len(), 24);
+#[test]
+fn parallel_invalid_hooks_append_complete_safe_records() {
+    let harness = Harness::new();
+    for _ in 0..2 {
+        let children: Vec<Child> = (0..24)
+            .map(|_| {
+                let mut child = harness.command("codex").spawn().unwrap();
+                child.stdin.take().unwrap().write_all(b"{}").unwrap();
+                child
+            })
+            .collect();
+        for child in children {
+            assert_advisory_failure(&child.wait_with_output().unwrap());
+        }
+    }
+
+    assert!(harness.runs().is_empty());
+    let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"));
+    assert_eq!(invalid.len(), 48);
 }

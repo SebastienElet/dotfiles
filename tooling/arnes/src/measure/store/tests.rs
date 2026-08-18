@@ -2,7 +2,9 @@ use super::{
     Store, append_jsonl, append_jsonl_bytes, write_json_atomic_bytes, write_json_atomic_test,
 };
 use std::fs;
+use std::io::Write;
 use std::os::unix::fs::symlink;
+use std::sync::{Arc, Barrier};
 
 const MAX_RECORD_BYTES: usize = 1_100_000;
 
@@ -101,5 +103,28 @@ fn restore_xdg(previous: Option<std::ffi::OsString>) {
     match previous {
         Some(value) => unsafe { std::env::set_var("XDG_STATE_HOME", value) },
         None => unsafe { std::env::remove_var("XDG_STATE_HOME") },
+    }
+}
+
+#[test]
+fn concurrent_append_creation_never_loses_its_open_parent() {
+    let directory = tempfile::tempdir().unwrap();
+    for round in 0..64 {
+        let path = super::ManagedPath::test_path(&directory.path().join(format!("{round}.jsonl")));
+        let barrier = Arc::new(Barrier::new(24));
+        let threads: Vec<_> = (0..24)
+            .map(|_| {
+                let path = path.clone();
+                let barrier = Arc::clone(&barrier);
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    let mut file = super::open_private_append(&path).unwrap();
+                    file.write_all(b"{}\n").unwrap();
+                })
+            })
+            .collect();
+        for thread in threads {
+            thread.join().unwrap();
+        }
     }
 }
