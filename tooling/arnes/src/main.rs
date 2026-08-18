@@ -33,7 +33,7 @@ fn main() -> ExitCode {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {
                 eprintln!("measure hook: {error}");
-                ExitCode::from(2)
+                ExitCode::SUCCESS
             }
         },
     }

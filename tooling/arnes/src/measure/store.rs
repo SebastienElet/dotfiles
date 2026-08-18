@@ -35,13 +35,17 @@ impl Store {
     }
 
     pub fn run_dir(&self, run_id: &str) -> Result<PathBuf, MeasureError> {
-        let runs = self.root.join("runs");
-        let run = runs.join(run_id);
-        create_private_dir(&runs)?;
+        let run = self.run_path(run_id);
+        let runs = run.parent().unwrap();
+        create_private_dir(runs)?;
         create_private_dir(&run)?;
         create_private_dir(&run.join("artifacts"))?;
         create_private_dir(&run.join("artifacts/hooks"))?;
         Ok(run)
+    }
+
+    pub fn run_path(&self, run_id: &str) -> PathBuf {
+        self.root.join("runs").join(run_id)
     }
 
     pub fn append_invalid<T: Serialize>(&self, record: &T) -> Result<(), MeasureError> {
@@ -54,13 +58,19 @@ pub fn append_jsonl<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureE
     bytes.push(b'\n');
     let mut file = open_private_append(path)?;
     file.lock()?;
-    validate_jsonl(&file)?;
+    validate_jsonl(&mut file)?;
     file.write_all(&bytes)?;
     file.sync_data()?;
     Ok(())
 }
 
-pub fn write_json_once(path: &Path, value: &RunRecord) -> Result<(), MeasureError> {
+pub fn write_json_once(
+    path: &Path,
+    value: Option<&RunRecord>,
+    agent: &str,
+    session: &str,
+    run_id: &str,
+) -> Result<(), MeasureError> {
     let lock_path = path.with_extension("json.lock");
     let lock = open_private_append(&lock_path)?;
     lock.lock()?;
@@ -68,10 +78,11 @@ pub fn write_json_once(path: &Path, value: &RunRecord) -> Result<(), MeasureErro
         Ok(_) => {
             ensure_regular_file(path)?;
             let current = read_run(path)?;
-            validation::validate_run(&current, value)?;
+            validation::validate_run(&current, agent, session, run_id)?;
             Ok(())
         }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            let value = value.ok_or_else(|| MeasureError::new("managed run.json disappeared"))?;
             write_json_atomic(path, value)
         }
         Err(error) => Err(error.into()),

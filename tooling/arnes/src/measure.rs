@@ -5,6 +5,7 @@ mod input;
 mod model;
 mod redaction;
 mod repository;
+mod run;
 mod store;
 
 use std::fmt::{self, Display};

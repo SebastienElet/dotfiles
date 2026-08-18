@@ -66,6 +66,7 @@ fn sensitive_key(key: &str) -> bool {
             | "privatekey"
             | "secret"
             | "token"
+            | "thought"
             | "reasoning"
             | "chainofthought"
             | "thoughts"

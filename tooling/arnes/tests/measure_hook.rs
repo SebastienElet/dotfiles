@@ -87,6 +87,12 @@ fn assert_success(output: &Output) {
     assert!(output.stderr.is_empty());
 }
 
+fn assert_advisory_failure(output: &Output) {
+    assert_eq!(output.status.code(), Some(0));
+    assert!(output.stdout.is_empty());
+    assert!(!output.stderr.is_empty());
+}
+
 fn run_at(harness: &Harness, current: &Path, state: &Path, payload: &[u8]) -> Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
         .args(["measure", "hook", "--agent", "codex"])
@@ -280,7 +286,7 @@ fn rejects_missing_session_without_persisting_the_payload() {
             .as_bytes(),
     );
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -297,8 +303,7 @@ fn invalid_and_oversized_json_store_only_safe_metadata() {
         let harness = Harness::new();
         let output = harness.run("codex", &payload);
 
-        assert_eq!(output.status.code(), Some(2));
-        assert!(!output.stderr.is_empty());
+        assert_advisory_failure(&output);
         let records = read_jsonl(harness.measure_root().join("invalid.jsonl"));
         assert_eq!(records.len(), 1);
         assert_eq!(records[0]["agent"], "codex");
@@ -341,7 +346,7 @@ fn refuses_relative_state_and_state_inside_the_observed_repository() {
     let mut child = relative.spawn().unwrap();
     child.stdin.take().unwrap().write_all(payload).unwrap();
     let output = child.wait_with_output().unwrap();
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -353,7 +358,7 @@ fn refuses_relative_state_and_state_inside_the_observed_repository() {
     let mut child = inside.spawn().unwrap();
     child.stdin.take().unwrap().write_all(payload).unwrap();
     let output = child.wait_with_output().unwrap();
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -387,7 +392,7 @@ fn refuses_state_inside_git_root_when_git_is_unavailable_from_a_subdirectory() {
         .unwrap();
     let output = child.wait_with_output().unwrap();
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(!harness.repository.join("state").exists());
 }
 
@@ -418,7 +423,7 @@ fn refuses_state_inside_repository_observed_only_through_git_environment() {
 
     let output = child.wait_with_output().unwrap();
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(!state.exists());
 }
 
@@ -451,7 +456,7 @@ fn nested_fake_git_marker_cannot_shrink_the_protected_repository() {
         .unwrap();
     let output = child.wait_with_output().unwrap();
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(!harness.repository.join("state").exists());
 }
 
@@ -509,7 +514,7 @@ fn nested_git_repository_is_observed_while_both_repository_boundaries_are_protec
 
     for state in [inner.join("state"), harness.repository.join("state")] {
         let output = run_at(&harness, &inner, &state, br#"{"session_id":"blocked"}"#);
-        assert_eq!(output.status.code(), Some(2));
+        assert_advisory_failure(&output);
         assert!(!state.exists());
     }
 }
@@ -584,7 +589,7 @@ fn refuses_directory_and_file_symlink_attacks() {
         "codex",
         br#"{"session_id":"session","event":"SessionStart"}"#,
     );
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(fs::read_dir(outside.path()).unwrap().next().is_none());
 
     fs::remove_file(harness.state.join("dotfiles")).unwrap();
@@ -598,7 +603,7 @@ fn refuses_directory_and_file_symlink_attacks() {
     fs::write(&captured, "sentinel").unwrap();
     symlink(&captured, &events).unwrap();
     let output = harness.run("codex", br#"{"session_id":"session","event":"Followup"}"#);
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(captured).unwrap(), "sentinel");
 }
 
@@ -612,7 +617,7 @@ fn refuses_hardlinked_and_corrupt_managed_files() {
     let original_run = fs::read(&run_json).unwrap();
     fs::write(&run_json, "null").unwrap();
     let output = harness.run("codex", payload);
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(&run_json).unwrap(), "null");
     fs::write(&run_json, original_run).unwrap();
 
@@ -622,13 +627,13 @@ fn refuses_hardlinked_and_corrupt_managed_files() {
     fs::write(&outside, "sentinel").unwrap();
     fs::hard_link(&outside, &events).unwrap();
     let output = harness.run("codex", payload);
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(&outside).unwrap(), "sentinel");
 
     fs::remove_file(&events).unwrap();
     fs::write(&events, r#"{"partial"#).unwrap();
     let output = harness.run("codex", payload);
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(events).unwrap(), r#"{"partial"#);
 }
 
@@ -665,7 +670,7 @@ fn refuses_incompletely_typed_run_records_without_appending() {
 
         assert_eq!(harness.runs(), vec![run.clone()]);
         assert_eq!(fs::read(&run_json).unwrap(), corrupted, "field {field}");
-        assert_eq!(output.status.code(), Some(2), "field {field}");
+        assert_advisory_failure(&output);
         assert_eq!(fs::read(&events).unwrap(), before_events, "field {field}");
         assert_eq!(
             fs::read_dir(artifacts).unwrap().count(),
@@ -692,7 +697,7 @@ fn refuses_duplicate_run_record_keys_without_appending() {
 
     let output = harness.run("codex", payload);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(run_json).unwrap(), corrupted);
     assert_eq!(fs::read(events).unwrap(), before_events);
     assert_eq!(fs::read_dir(artifacts).unwrap().count(), before_artifacts);
@@ -709,7 +714,7 @@ fn refuses_a_broken_run_json_symlink_instead_of_replacing_it() {
 
     let output = harness.run("codex", payload);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert_eq!(
         fs::read_link(run_json).unwrap(),
         Path::new("missing-target")
@@ -764,6 +769,91 @@ fn recursively_redacts_secret_keys_tokens_and_internal_reasoning() {
     }
     assert!(artifact.contains("visible"));
     assert!(artifact.contains("[REDACTED]"));
+}
+
+#[test]
+fn after_agent_thought_never_persists_reasoning_values() {
+    let harness = Harness::new();
+    let secret = "manually-injected-private-thought";
+    let payload = json!({
+        "session_id":"session",
+        "hook_event_name":"afterAgentThought",
+        "thought":secret,
+        "nested":{
+            "thoughts":secret,
+            "reasoning":secret,
+            "chain_of_thought":secret
+        }
+    });
+
+    assert_success(&harness.run("claude-code", payload.to_string().as_bytes()));
+
+    let run = harness.only_run();
+    let artifact = fs::read_to_string(
+        fs::read_dir(run.join("artifacts/hooks"))
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path(),
+    )
+    .unwrap();
+    assert!(!artifact.contains(secret));
+    assert_eq!(artifact.matches("[REDACTED]").count(), 4);
+}
+
+#[test]
+fn collection_failure_after_an_existing_run_is_advisory_and_journaled() {
+    let harness = Harness::new();
+    assert_success(&harness.run("claude-code", br#"{"session_id":"existing"}"#));
+    let skills = harness.home.join(".claude/skills");
+    fs::create_dir_all(&skills).unwrap();
+    for index in 0..513 {
+        fs::write(skills.join(format!("skill-{index:03}")), "value").unwrap();
+    }
+    let payload = br#"{"session_id":"new","event":"SessionStart"}"#;
+
+    let output = harness.run("claude-code", payload);
+
+    assert_advisory_failure(&output);
+    assert!(String::from_utf8(output.stderr).unwrap().contains("512"));
+    let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"));
+    assert_eq!(invalid.len(), 1);
+    assert_eq!(invalid[0]["agent"], "claude-code");
+    assert_eq!(invalid[0]["size"], payload.len());
+    assert_eq!(invalid[0]["sha256"].as_str().unwrap().len(), 64);
+    assert!(invalid[0].get("payload").is_none());
+}
+
+#[test]
+fn subsequent_events_skip_immutable_collection_and_append_from_the_tail() {
+    let harness = Harness::new();
+    git(&harness.repository, &["init"]);
+    let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
+    assert_success(&harness.run("codex", payload));
+    let run = harness.only_run();
+    let events = run.join("events.jsonl");
+    let mut existing = fs::read(&events).unwrap();
+    let mut prefixed = b"not-json\n".to_vec();
+    prefixed.append(&mut existing);
+    fs::write(&events, prefixed).unwrap();
+    let skills = harness.home.join(".agents/skills");
+    fs::create_dir_all(&skills).unwrap();
+    for index in 0..513 {
+        fs::write(skills.join(format!("skill-{index:03}")), "value").unwrap();
+    }
+    let mut command = harness.command("codex");
+    command.env("PATH", "/nonexistent");
+    let mut child = command.spawn().unwrap();
+    child.stdin.take().unwrap().write_all(payload).unwrap();
+
+    let output = child.wait_with_output().unwrap();
+
+    assert_success(&output);
+    let lines = fs::read_to_string(events).unwrap();
+    assert_eq!(lines.lines().count(), 3);
+    serde_json::from_str::<Value>(lines.lines().last().unwrap()).unwrap();
+    assert!(!harness.measure_root().join("invalid.jsonl").exists());
 }
 
 #[test]
@@ -998,7 +1088,7 @@ fn claude_fingerprint_refuses_oversized_active_plugin_files() {
 
     let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -1231,7 +1321,7 @@ fn fingerprint_refuses_deployments_exceeding_512_entries() {
 
     let output = harness.run("codex", br#"{"session_id":"session"}"#);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -1270,7 +1360,7 @@ fn fingerprint_refuses_more_than_512_registered_plugin_file_roots() {
 
     let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -1309,7 +1399,7 @@ fn fingerprint_counts_registered_plugin_aliases_against_the_global_limit() {
 
     let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -1330,7 +1420,7 @@ fn fingerprint_refuses_oversized_plugin_manifests() {
 
     let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_advisory_failure(&output);
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()

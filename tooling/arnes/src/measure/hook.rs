@@ -1,10 +1,10 @@
 use super::MeasureError;
 use super::events;
-use super::fingerprint;
 use super::input::Payload;
-use super::model::{HookAgent, PromptRecord, RepositoryRecord, RunRecord};
+use super::model::{HookAgent, PromptRecord};
 use super::redaction::{redact, redact_string};
 use super::repository;
+use super::run;
 use super::store::{Store, append_jsonl, write_json_atomic, write_json_once};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
@@ -16,16 +16,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 static EVENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
     let observed = env::current_dir()?;
-    let repository = repository::observe(&observed);
-    let protected_roots = repository::protected_roots(
-        &observed,
-        repository
-            .as_ref()
-            .map(|repository| Path::new(&repository.root)),
-    );
-    let deployment_root = repository
+    let repository_root = repository::root(&observed);
+    let protected_roots =
+        repository::protected_roots(&observed, repository_root.as_ref().map(Path::new));
+    let deployment_root = repository_root
         .as_ref()
-        .map(|repository| PathBuf::from(&repository.root))
+        .map(PathBuf::from)
         .unwrap_or_else(|| observed.clone());
     let store = Store::open(&protected_roots)?;
     let payload = Payload::read(&store, agent)?;
@@ -34,14 +30,19 @@ pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
         .inspect_err(|error| {
             let _ = payload.record_invalid(&store, agent, &error.to_string());
         })?;
-    persist_hook(
+    let result = persist_hook(
         &store,
         agent,
         &session,
-        payload.into_value(),
-        repository,
+        payload.value().clone(),
+        repository_root,
+        &observed,
         &deployment_root,
-    )
+    );
+    if let Err(error) = &result {
+        let _ = payload.record_invalid(&store, agent, &error.to_string());
+    }
+    result
 }
 
 fn persist_hook(
@@ -49,22 +50,32 @@ fn persist_hook(
     agent: HookAgent,
     session: &str,
     raw: Value,
-    repository: Option<RepositoryRecord>,
+    repository_root: Option<String>,
+    observed: &Path,
     deployment_root: &Path,
 ) -> Result<(), MeasureError> {
     let timestamp_ms = now_ms();
     let run_id = digest(&[agent.as_str().as_bytes(), session.as_bytes()]);
+    let run_dir = store.run_path(&run_id);
+    let run_json = run_dir.join("run.json");
+    let run = match std::fs::symlink_metadata(&run_json) {
+        Ok(_) => None,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            Some(run::build(run::NewRun {
+                agent,
+                session,
+                run_id: run_id.clone(),
+                timestamp_ms,
+                raw: &raw,
+                repository_root,
+                observed,
+                deployment_root,
+            })?)
+        }
+        Err(error) => return Err(error.into()),
+    };
     let run_dir = store.run_dir(&run_id)?;
-    let run = build_run(
-        agent,
-        session,
-        run_id,
-        timestamp_ms,
-        &raw,
-        repository,
-        deployment_root,
-    )?;
-    write_json_once(&run_dir.join("run.json"), &run)?;
+    write_json_once(&run_json, run.as_ref(), agent.as_str(), session, &run_id)?;
     let event_id = event_id(agent, session, &raw);
     let mut artifact = raw.clone();
     redact(&mut artifact);
@@ -73,45 +84,6 @@ fn persist_hook(
     append_event(&run_dir, timestamp_ms, &event_id, artifact_path, &raw)?;
     append_prompt(&run_dir, timestamp_ms, &event_id, session, &raw)?;
     Ok(())
-}
-
-fn build_run(
-    agent: HookAgent,
-    session: &str,
-    run_id: String,
-    timestamp_ms: u64,
-    raw: &Value,
-    repository: Option<RepositoryRecord>,
-    deployment_root: &Path,
-) -> Result<RunRecord, MeasureError> {
-    let home = env::var_os("HOME")
-        .map(PathBuf::from)
-        .ok_or_else(|| MeasureError::new("HOME is required for harness fingerprinting"))?;
-    let fingerprint = fingerprint::deployed(agent, &home, deployment_root)?;
-    let (repository, repository_commit, repository_branch, repository_dirty) = repository
-        .map(|repository| {
-            (
-                Some(repository.root),
-                repository.head,
-                repository.branch,
-                Some(repository.dirty),
-            )
-        })
-        .unwrap_or_default();
-    Ok(RunRecord {
-        schema_version: 1,
-        run_id,
-        agent: agent.as_str().to_owned(),
-        session_id: session.to_owned(),
-        started_at_ms: timestamp_ms,
-        model: model(raw).map(|model| redact_string(&model)),
-        repository,
-        repository_commit,
-        repository_branch,
-        repository_dirty,
-        harness_fingerprint: fingerprint.digest,
-        harness_fingerprint_limitations: fingerprint.limitations,
-    })
 }
 
 fn append_event(
@@ -152,21 +124,6 @@ fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, MeasureEr
         .filter(|value| !value.is_empty())
         .ok_or_else(|| {
             MeasureError::new(format!("{key} is required and must be a non-empty string"))
-        })
-}
-
-fn model(value: &Value) -> Option<String> {
-    value
-        .get("model")
-        .or_else(|| value.get("model_name"))
-        .and_then(Value::as_str)
-        .map(str::to_owned)
-        .or_else(|| {
-            value
-                .get("model")
-                .and_then(|model| model.get("name"))
-                .and_then(Value::as_str)
-                .map(str::to_owned)
         })
 }
 

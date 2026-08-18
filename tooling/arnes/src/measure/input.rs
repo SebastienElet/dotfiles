@@ -36,10 +36,6 @@ impl Payload {
         &self.value
     }
 
-    pub fn into_value(self) -> Value {
-        self.value
-    }
-
     pub fn record_invalid(
         &self,
         store: &Store,

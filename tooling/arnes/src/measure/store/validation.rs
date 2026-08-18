@@ -1,7 +1,7 @@
 use super::super::MeasureError;
 use super::super::model::RunRecord;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufRead, BufReader, Read};
+use std::io::{Read, Seek, SeekFrom};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::Path;
 
@@ -34,18 +34,29 @@ pub fn ensure_single_link(metadata: &fs::Metadata, path: &Path) -> Result<(), Me
     Ok(())
 }
 
-pub fn validate_jsonl(file: &File) -> Result<(), MeasureError> {
-    let mut reader = BufReader::new(file);
-    let mut line = Vec::new();
-    while reader.read_until(b'\n', &mut line)? != 0 {
-        if line.last() != Some(&b'\n') || line.len() > 1_100_000 {
-            return Err(MeasureError::new(
-                "managed JSONL file is truncated or oversized",
-            ));
-        }
-        serde_json::from_slice::<serde_json::Value>(&line[..line.len() - 1])?;
-        line.clear();
+pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
+    const MAX_LINE: usize = 1_100_000;
+    let length = file.metadata()?.len();
+    if length == 0 {
+        return Ok(());
     }
+    let window = length.min((MAX_LINE + 1) as u64) as usize;
+    file.seek(SeekFrom::End(-(window as i64)))?;
+    let mut tail = vec![0; window];
+    file.read_exact(&mut tail)?;
+    let content = tail
+        .strip_suffix(b"\n")
+        .ok_or_else(|| MeasureError::new("managed JSONL file is truncated or oversized"))?;
+    let start = content
+        .iter()
+        .rposition(|byte| *byte == b'\n')
+        .map_or(0, |index| index + 1);
+    if start == 0 && length > window as u64 || content.len() - start >= MAX_LINE {
+        return Err(MeasureError::new(
+            "managed JSONL file is truncated or oversized",
+        ));
+    }
+    serde_json::from_slice::<serde_json::Value>(&content[start..])?;
     Ok(())
 }
 
@@ -72,15 +83,17 @@ pub fn read_run(path: &Path) -> Result<RunRecord, MeasureError> {
     Ok(record)
 }
 
-pub fn validate_run(current: &RunRecord, expected: &RunRecord) -> Result<(), MeasureError> {
+pub fn validate_run(
+    current: &RunRecord,
+    agent: &str,
+    session: &str,
+    run_id: &str,
+) -> Result<(), MeasureError> {
     for (key, matches) in [
-        (
-            "schema_version",
-            current.schema_version == expected.schema_version,
-        ),
-        ("run_id", current.run_id == expected.run_id),
-        ("agent", current.agent == expected.agent),
-        ("session_id", current.session_id == expected.session_id),
+        ("schema_version", current.schema_version == 1),
+        ("run_id", current.run_id == run_id),
+        ("agent", current.agent == agent),
+        ("session_id", current.session_id == session),
     ] {
         if !matches {
             return Err(MeasureError::new(format!(

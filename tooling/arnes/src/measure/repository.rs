@@ -3,19 +3,22 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn observe(directory: &Path) -> Option<RepositoryRecord> {
-    let root = git(directory, &["rev-parse", "--show-toplevel"])?;
+pub fn root(directory: &Path) -> Option<String> {
+    git(directory, &["rev-parse", "--show-toplevel"])
+}
+
+pub fn observe(directory: &Path, root: String) -> RepositoryRecord {
     let head = git(directory, &["rev-parse", "HEAD"]);
     let branch = git(directory, &["branch", "--show-current"]).filter(|value| !value.is_empty());
     let dirty = git(directory, &["status", "--porcelain"])
         .map(|value| !value.is_empty())
         .unwrap_or(true);
-    Some(RepositoryRecord {
+    RepositoryRecord {
         root,
         head,
         branch,
         dirty,
-    })
+    }
 }
 
 pub fn protected_roots(directory: &Path, observed: Option<&Path>) -> Vec<PathBuf> {
