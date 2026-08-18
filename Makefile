@@ -442,7 +442,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook
-codex-handoff-hook: ${BREW_BIN}/jq | ~/.codex
+codex-handoff-hook: | ~/.codex
 	@set -eu; \
 	command='${DOTFILES_PATH}/tooling/agent-handoff'; \
 	old_command='${DOTFILES_PATH}/scripts/agent_handoff'; \
