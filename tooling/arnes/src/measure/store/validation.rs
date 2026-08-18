@@ -1,5 +1,6 @@
 use super::super::MeasureError;
 use super::super::model::RunRecord;
+use super::MAX_RECORD_BYTES;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
@@ -35,12 +36,11 @@ pub fn ensure_single_link(metadata: &fs::Metadata, path: &Path) -> Result<(), Me
 }
 
 pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
-    const MAX_LINE: usize = 1_100_000;
     let length = file.metadata()?.len();
     if length == 0 {
         return Ok(());
     }
-    let window = length.min((MAX_LINE + 1) as u64) as usize;
+    let window = length.min((MAX_RECORD_BYTES + 1) as u64) as usize;
     file.seek(SeekFrom::End(-(window as i64)))?;
     let mut tail = vec![0; window];
     file.read_exact(&mut tail)?;
@@ -51,7 +51,7 @@ pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
         .iter()
         .rposition(|byte| *byte == b'\n')
         .map_or(0, |index| index + 1);
-    if start == 0 && length > window as u64 || content.len() - start >= MAX_LINE {
+    if start == 0 && length > window as u64 || content.len() - start >= MAX_RECORD_BYTES {
         return Err(MeasureError::new(
             "managed JSONL file is truncated or oversized",
         ));

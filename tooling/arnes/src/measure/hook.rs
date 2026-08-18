@@ -5,7 +5,7 @@ use super::model::{HookAgent, PromptRecord};
 use super::redaction::{capture as redact_capture, redact_string};
 use super::repository;
 use super::run;
-use super::store::{Store, append_jsonl, write_json_atomic, write_json_once};
+use super::store::{Store, append_jsonl_bytes, jsonl_bytes, write_json_atomic, write_json_once};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::env;
@@ -74,46 +74,42 @@ fn persist_hook(
         }
         Err(error) => return Err(error.into()),
     };
+    let event_id = event_id(agent, session, &raw);
+    let artifact_path = format!("artifacts/hooks/{event_id}.json");
+    let event = events::record(
+        timestamp_ms,
+        &event_id,
+        artifact_path.clone(),
+        native_ids(&raw),
+        &raw,
+    );
+    let event_bytes = jsonl_bytes(&event)?;
+    let prompt = prompt_record(timestamp_ms, &event_id, session, &raw);
+    let prompt_bytes = prompt.as_ref().map(jsonl_bytes).transpose()?;
     let run_dir = store.run_dir(&run_id)?;
     write_json_once(&run_json, run.as_ref(), agent.as_str(), session, &run_id)?;
-    let event_id = event_id(agent, session, &raw);
-    let artifact = raw.clone();
-    let artifact_path = format!("artifacts/hooks/{event_id}.json");
-    write_json_atomic(&run_dir.join(&artifact_path), &artifact)?;
-    append_event(&run_dir, timestamp_ms, &event_id, artifact_path, &raw)?;
-    append_prompt(&run_dir, timestamp_ms, &event_id, session, &raw)?;
+    write_json_atomic(&run_dir.join(&artifact_path), &raw)?;
+    append_jsonl_bytes(&run_dir.join("events.jsonl"), &event_bytes)?;
+    if let Some(bytes) = prompt_bytes {
+        append_jsonl_bytes(&run_dir.join("prompts.jsonl"), &bytes)?;
+    }
     Ok(())
 }
 
-fn append_event(
-    run_dir: &Path,
-    timestamp_ms: u64,
-    event_id: &str,
-    artifact: String,
-    raw: &Value,
-) -> Result<(), MeasureError> {
-    let event = events::record(timestamp_ms, event_id, artifact, native_ids(raw), raw);
-    append_jsonl(&run_dir.join("events.jsonl"), &event)
-}
-
-fn append_prompt(
-    run_dir: &Path,
+fn prompt_record(
     timestamp_ms: u64,
     event_id: &str,
     session: &str,
     raw: &Value,
-) -> Result<(), MeasureError> {
-    let Some(prompt) = raw.get("prompt").and_then(Value::as_str) else {
-        return Ok(());
-    };
-    let prompt = PromptRecord {
+) -> Option<PromptRecord> {
+    let prompt = raw.get("prompt").and_then(Value::as_str)?;
+    Some(PromptRecord {
         timestamp_ms,
         event_id: event_id.to_owned(),
         session_id: session.to_owned(),
         prompt_id: prompt_id(raw),
         prompt: redact_string(prompt),
-    };
-    append_jsonl(&run_dir.join("prompts.jsonl"), &prompt)
+    })
 }
 
 fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, MeasureError> {

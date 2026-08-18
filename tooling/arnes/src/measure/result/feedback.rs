@@ -1,7 +1,7 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
-use super::super::store::{append_jsonl, open_private_append};
-use super::io::read_jsonl_typed;
+use super::super::store::{append_jsonl_bytes, jsonl_bytes, open_private_append};
+use super::io::visit_jsonl_typed;
 use super::{Adjudication, FeedbackArgs, Severity, open_run, open_store};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -52,11 +52,12 @@ pub fn record(args: FeedbackArgs) -> Result<(), MeasureError> {
         failure_category: args.failure_category,
         analysis_blocking,
     };
+    let bytes = jsonl_bytes(&feedback)?;
     let path = run_dir.join("feedback.jsonl");
     let lock = open_private_append(&run_dir.join("feedback.lock"))?;
     lock.lock()?;
     validate_existing(&path, &feedback.run_id)?;
-    append_jsonl(&path, &feedback)
+    append_jsonl_bytes(&path, &bytes)
 }
 
 fn validate(args: &FeedbackArgs) -> Result<(), MeasureError> {
@@ -84,26 +85,31 @@ fn validate(args: &FeedbackArgs) -> Result<(), MeasureError> {
 }
 
 fn validate_existing(path: &std::path::Path, run_id: &str) -> Result<(), MeasureError> {
-    for feedback in read_jsonl_typed::<FeedbackRecord>(path, "feedback.jsonl")? {
-        if feedback.schema_version != 1
-            || feedback.run_id != run_id
-            || feedback.feedback_id.len() != 64
-            || feedback.recorded_at_ms == 0
-            || feedback.source_id.trim().is_empty()
-            || feedback.scope.trim().is_empty()
-            || feedback.observed.trim().is_empty()
-            || feedback.expected.trim().is_empty()
-            || feedback.analysis_blocking
-                != (feedback.severity == Severity::Blocking
-                    && feedback.adjudication == Adjudication::Confirmed)
-            || has_empty_reference(&feedback)
-        {
-            return Err(MeasureError::new(
-                "managed feedback.jsonl has an invalid record",
-            ));
-        }
+    visit_jsonl_typed::<FeedbackRecord>(path, "feedback.jsonl", |feedback| {
+        validate_feedback(&feedback, run_id)
+    })
+}
+
+fn validate_feedback(feedback: &FeedbackRecord, run_id: &str) -> Result<(), MeasureError> {
+    if feedback.schema_version != 1
+        || feedback.run_id != run_id
+        || feedback.feedback_id.len() != 64
+        || feedback.recorded_at_ms == 0
+        || feedback.source_id.trim().is_empty()
+        || feedback.scope.trim().is_empty()
+        || feedback.observed.trim().is_empty()
+        || feedback.expected.trim().is_empty()
+        || feedback.analysis_blocking
+            != (feedback.severity == Severity::Blocking
+                && feedback.adjudication == Adjudication::Confirmed)
+        || has_empty_reference(feedback)
+    {
+        Err(MeasureError::new(
+            "managed feedback.jsonl has an invalid record",
+        ))
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 fn has_empty_reference(feedback: &FeedbackRecord) -> bool {

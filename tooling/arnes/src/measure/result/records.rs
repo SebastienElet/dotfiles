@@ -1,11 +1,15 @@
 use super::super::MeasureError;
 use super::super::model::{PromptRecord, RunRecord};
 use super::MergeReady;
-use super::io::{read_jsonl_typed, read_jsonl_typed_file};
+use super::io::visit_jsonl_typed;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use std::fs::File;
 use std::path::Path;
+
+mod history;
+pub use history::{
+    EventHistory, ResultState, latest_result, read_events_file, read_events_with, result_state,
+};
 
 #[derive(Clone, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -36,28 +40,19 @@ pub struct StoredEvent {
     pub result: Option<ResultRecord>,
 }
 
-pub fn read_prompts(path: &Path, run: &RunRecord) -> Result<Vec<PromptRecord>, MeasureError> {
-    let prompts = read_jsonl_typed::<PromptRecord>(path, "prompts.jsonl")?;
-    if prompts.iter().any(|prompt| {
-        prompt.timestamp_ms == 0
-            || prompt.session_id != run.session_id
-            || !is_digest(&prompt.event_id)
-    }) {
-        return Err(MeasureError::new(
-            "managed prompts.jsonl has an invalid record",
-        ));
-    }
-    Ok(prompts)
-}
-
-pub fn read_events(path: &Path, run_id: &str) -> Result<Vec<StoredEvent>, MeasureError> {
-    let events = read_jsonl_typed::<StoredEvent>(path, "events.jsonl")?;
-    validate_events(events, run_id)
-}
-
-pub fn read_events_file(file: &mut File, run_id: &str) -> Result<Vec<StoredEvent>, MeasureError> {
-    let events = read_jsonl_typed_file::<StoredEvent>(file, "events.jsonl")?;
-    validate_events(events, run_id)
+pub fn read_first_prompt(
+    path: &Path,
+    run: &RunRecord,
+) -> Result<Option<PromptRecord>, MeasureError> {
+    let mut first = None;
+    visit_jsonl_typed::<PromptRecord>(path, "prompts.jsonl", |prompt| {
+        validate_prompt(&prompt, run)?;
+        if first.is_none() {
+            first = Some(prompt);
+        }
+        Ok(())
+    })?;
+    Ok(first)
 }
 
 pub fn validate_result_record(result: &ResultRecord, run_id: &str) -> Result<(), MeasureError> {
@@ -84,55 +79,14 @@ pub fn validate_result_record(result: &ResultRecord, run_id: &str) -> Result<(),
     validate_verdict(result)
 }
 
-pub fn latest_result(events: &[StoredEvent]) -> Option<&ResultRecord> {
-    events.iter().rev().find_map(|event| event.result.as_ref())
-}
-
-pub fn previous_result(events: &[StoredEvent]) -> Option<&ResultRecord> {
-    events
-        .iter()
-        .rev()
-        .filter_map(|event| event.result.as_ref())
-        .nth(1)
-}
-
-pub fn validate_result_coherence(
-    events: &[StoredEvent],
-    result: Option<&ResultRecord>,
-) -> Result<(), MeasureError> {
-    match (latest_result(events), result) {
-        (None, None) => Ok(()),
-        (Some(history), Some(result)) if history == result => Ok(()),
-        _ => Err(MeasureError::new(
-            "managed result.json diverges from result_recorded history",
-        )),
-    }
-}
-
-fn validate_events(
-    events: Vec<StoredEvent>,
-    run_id: &str,
-) -> Result<Vec<StoredEvent>, MeasureError> {
-    if events.is_empty() || events.iter().any(|event| invalid_event(event, run_id)) {
+fn validate_prompt(prompt: &PromptRecord, run: &RunRecord) -> Result<(), MeasureError> {
+    if prompt.timestamp_ms == 0
+        || prompt.session_id != run.session_id
+        || !is_digest(&prompt.event_id)
+    {
         return Err(MeasureError::new(
-            "managed events.jsonl has an invalid record",
+            "managed prompts.jsonl has an invalid record",
         ));
-    }
-    validate_revisions(&events)?;
-    Ok(events)
-}
-
-fn validate_revisions(events: &[StoredEvent]) -> Result<(), MeasureError> {
-    let mut expected = 1_u64;
-    for result in events.iter().filter_map(|event| event.result.as_ref()) {
-        if result.revision != expected {
-            return Err(MeasureError::new(
-                "result revisions must be unique and continuous",
-            ));
-        }
-        expected = expected
-            .checked_add(1)
-            .ok_or_else(|| MeasureError::new("result revisions must be unique and continuous"))?;
     }
     Ok(())
 }

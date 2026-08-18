@@ -1,7 +1,7 @@
 use super::super::MeasureError;
 use super::super::model::{PromptRecord, RunRecord};
 use super::io::read_optional_json;
-use super::records::{StoredEvent, read_events, read_prompts, validate_result_coherence};
+use super::records::{ResultState, read_events_with, read_first_prompt, result_state};
 use super::{ListArgs, ListFormat, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use std::fs;
@@ -14,6 +14,7 @@ struct ListedRun {
     first_prompt_excerpt: Option<String>,
     last_event: Option<String>,
     has_result: bool,
+    result_state: ResultState,
     started_at_ms: u64,
 }
 
@@ -54,33 +55,31 @@ fn collect(store: &super::super::store::Store) -> Result<Vec<ListedRun>, Measure
             .map_err(|_| MeasureError::new("managed run id is not UTF-8"))?;
         let run_dir = open_run(store, &run_id)?;
         let run: RunRecord = super::super::store::validation::read_run(&run_dir.join("run.json"))?;
-        let prompts = read_prompts(&run_dir.join("prompts.jsonl"), &run)?;
-        let events = read_events(&run_dir.join("events.jsonl"), &run_id)?;
-        let result: Option<ResultRecord> =
-            read_optional_json(&run_dir.join("result.json"), "result.json")?;
+        let first_prompt = read_first_prompt(&run_dir.join("prompts.jsonl"), &run)?;
+        let (events, result): (_, Option<ResultRecord>) =
+            read_events_with(&run_dir.join("events.jsonl"), &run_id, || {
+                read_optional_json(&run_dir.join("result.json"), "result.json")
+            })?;
         if let Some(result) = &result {
             validate_result_record(result, &run_id)?;
         }
-        validate_result_coherence(&events, result.as_ref())?;
+        let result_state = result_state(&events, result.as_ref())?;
         runs.push(ListedRun {
             run_id,
             agent: run.agent,
             repository: run.repository,
-            first_prompt_excerpt: first_prompt(&prompts),
-            last_event: last_event(&events),
+            first_prompt_excerpt: first_prompt.as_ref().map(first_prompt_excerpt),
+            last_event: events.last_event().map(str::to_owned),
             has_result: result.is_some(),
+            result_state,
             started_at_ms: run.started_at_ms,
         });
     }
     Ok(runs)
 }
 
-fn first_prompt(records: &[PromptRecord]) -> Option<String> {
-    records.first().map(|record| excerpt(&record.prompt))
-}
-
-fn last_event(records: &[StoredEvent]) -> Option<String> {
-    records.last().map(|record| record.event.clone())
+fn first_prompt_excerpt(record: &PromptRecord) -> String {
+    excerpt(&record.prompt)
 }
 
 fn excerpt(value: &str) -> String {
@@ -97,20 +96,29 @@ fn excerpt(value: &str) -> String {
 fn render_human(runs: &[ListedRun]) -> String {
     runs.iter()
         .map(|run| {
-            format!(
+            escape_terminal_controls(&format!(
                 "{} {} repository={} result={} last={} prompt={}",
                 run.run_id,
                 run.agent,
                 run.repository.as_deref().unwrap_or("-"),
-                if run.has_result {
-                    "recorded"
-                } else {
-                    "pending"
-                },
+                run.result_state.as_str(),
                 run.last_event.as_deref().unwrap_or("-"),
                 run.first_prompt_excerpt.as_deref().unwrap_or("-")
-            )
+            ))
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn escape_terminal_controls(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_control() {
+                format!("\\u{{{:04x}}}", character as u32)
+            } else {
+                character.to_string()
+            }
+        })
+        .collect()
 }

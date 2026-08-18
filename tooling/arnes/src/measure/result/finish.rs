@@ -1,12 +1,10 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
 use super::super::store::{
-    open_private_append, open_private_new, temporary_path, write_json_atomic,
+    json_bytes, jsonl_bytes, open_private_append, open_private_new, temporary_path,
 };
 use super::io::read_optional_json;
-use super::records::{
-    StoredEvent, latest_result, previous_result, read_events_file, validate_result_coherence,
-};
+use super::records::{EventHistory, ResultState, latest_result, read_events_file, result_state};
 use super::{FinishArgs, MergeReady, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use serde_json::json;
@@ -31,6 +29,7 @@ struct ResultEvent<'a> {
 
 pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     validate(&args)?;
+    preflight(&args)?;
     let store = open_store()?;
     let run_dir = open_run(&store, &args.run_id)?;
     let lock = open_private_append(&run_dir.join("result.lock"))?;
@@ -45,14 +44,15 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     events.lock()?;
     let history = read_events_file(&mut events, &args.run_id)?;
     let result_path = run_dir.join("result.json");
-    let previous_revision = reconcile_result(&result_path, &history, current.as_ref())?;
+    let previous_revision = reconcile_result(&history, current.as_ref())?;
     let revision = previous_revision
         .checked_add(1)
         .ok_or(())
         .map_err(|()| MeasureError::new("result revision overflow"))?;
     let result = build(args, revision);
-    let temporary = prepare_result(&result_path, &result)?;
+    let result_bytes = json_bytes(&result)?;
     let event = result_event_bytes(&result)?;
+    let temporary = prepare_result(&result_path, &result_bytes)?;
     let committed = append_then_commit(&mut events, &event, || {
         fs::rename(&temporary, &result_path).map_err(Into::into)
     });
@@ -63,24 +63,15 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
 }
 
 fn reconcile_result(
-    path: &Path,
-    history: &[StoredEvent],
+    history: &EventHistory,
     current: Option<&ResultRecord>,
 ) -> Result<u64, MeasureError> {
-    match (latest_result(history), current) {
-        (None, None) => Ok(0),
-        (Some(latest), None) => recover_result(path, latest),
-        (Some(latest), Some(current)) if latest == current => Ok(latest.revision),
-        (Some(latest), Some(current)) if previous_result(history) == Some(current) => {
-            recover_result(path, latest)
+    match result_state(history, current)? {
+        ResultState::Pending => Ok(0),
+        ResultState::Recorded | ResultState::Missing | ResultState::Lagging => {
+            Ok(latest_result(history).unwrap().revision)
         }
-        _ => validate_result_coherence(history, current).map(|()| 0),
     }
-}
-
-fn recover_result(path: &Path, result: &ResultRecord) -> Result<u64, MeasureError> {
-    write_json_atomic(path, result)?;
-    Ok(result.revision)
 }
 
 fn validate(args: &FinishArgs) -> Result<(), MeasureError> {
@@ -103,6 +94,25 @@ fn validate(args: &FinishArgs) -> Result<(), MeasureError> {
         )),
         _ => Ok(()),
     }
+}
+
+fn preflight(args: &FinishArgs) -> Result<(), MeasureError> {
+    let result = ResultRecord {
+        schema_version: 1,
+        run_id: args.run_id.clone(),
+        revision: u64::MAX,
+        recorded_at_ms: u64::MAX,
+        merge_ready: args.merge_ready,
+        human_minutes: args.human_minutes,
+        human_edited_diff: args.human_edited_diff,
+        failure_reason: args.failure_reason.clone(),
+        evidence: args.evidence.clone(),
+        regression: args.regression,
+        invariants: args.invariant.clone(),
+    };
+    json_bytes(&result)?;
+    result_event_bytes(&result)?;
+    Ok(())
 }
 
 fn validate_texts(values: &[String], label: &str) -> Result<(), MeasureError> {
@@ -143,15 +153,13 @@ fn result_event_bytes(result: &ResultRecord) -> Result<Vec<u8>, MeasureError> {
         native_ids: json!({"revision": result.revision}),
         result,
     };
-    let mut bytes = serde_json::to_vec(&event)?;
-    bytes.push(b'\n');
-    Ok(bytes)
+    jsonl_bytes(&event)
 }
 
-fn prepare_result(path: &Path, result: &ResultRecord) -> Result<std::path::PathBuf, MeasureError> {
+fn prepare_result(path: &Path, bytes: &[u8]) -> Result<std::path::PathBuf, MeasureError> {
     let temporary = temporary_path(path);
     let mut file = open_private_new(&temporary)?;
-    file.write_all(&serde_json::to_vec_pretty(result)?)?;
+    file.write_all(bytes)?;
     file.sync_all()?;
     Ok(temporary)
 }

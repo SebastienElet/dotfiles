@@ -1,16 +1,22 @@
 use super::MeasureError;
+mod serialization;
+#[cfg(test)]
+mod tests;
 pub(super) mod validation;
 use self::validation::{
-    ensure_regular_file, ensure_regular_or_missing, ensure_single_link, read_run, validate_jsonl,
+    ensure_regular_file, ensure_regular_or_missing, ensure_single_link, read_run,
 };
 use super::model::RunRecord;
 use serde::Serialize;
+pub use serialization::{append_jsonl, write_json_atomic};
+pub(super) use serialization::{append_jsonl_bytes, json_bytes, jsonl_bytes};
 use std::env;
 use std::fs::{self, File, OpenOptions};
-use std::io::Write;
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub(super) const MAX_RECORD_BYTES: usize = 1_100_000;
 
 pub struct Store {
     root: PathBuf,
@@ -57,17 +63,6 @@ impl Store {
     }
 }
 
-pub fn append_jsonl<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {
-    let mut bytes = serde_json::to_vec(value)?;
-    bytes.push(b'\n');
-    let mut file = open_private_append(path)?;
-    file.lock()?;
-    validate_jsonl(&mut file)?;
-    file.write_all(&bytes)?;
-    file.sync_data()?;
-    Ok(())
-}
-
 pub fn write_json_once(
     path: &Path,
     value: Option<&RunRecord>,
@@ -91,16 +86,6 @@ pub fn write_json_once(
         }
         Err(error) => Err(error.into()),
     }
-}
-
-pub fn write_json_atomic<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {
-    let bytes = serde_json::to_vec_pretty(value)?;
-    let temporary = temporary_path(path);
-    let mut file = open_private_new(&temporary)?;
-    file.write_all(&bytes)?;
-    file.sync_all()?;
-    fs::rename(&temporary, path)?;
-    Ok(())
 }
 
 fn state_root() -> Result<PathBuf, MeasureError> {
