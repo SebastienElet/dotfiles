@@ -4,9 +4,13 @@ use crate::diagnostic::{Diagnostic, State};
 use crate::files::paths::{ancestor_within, canonical_within};
 use crate::manifest::{Agent, Manifest, Scope};
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+
+mod command;
+mod resolution;
+mod state;
 
 #[derive(Default, Deserialize)]
 struct Config {
@@ -55,32 +59,70 @@ pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Di
             )];
         }
     };
-    let plugins = config
-        .plugins
+    let resolved = state::load(roots.home());
+    if config.plugins.is_empty()
+        && let Err(detail) = &resolved
+    {
+        return vec![resolver_failure_diagnostic(detail)];
+    }
+    let ids = configured_and_resolved_ids(&config.plugins, resolved.as_ref().ok());
+    let plugins = ids
         .into_iter()
-        .map(|(id, plugin)| Plugin {
-            id,
-            version: None,
-            path: None,
-            exposure: match plugin.enabled {
-                Some(true) => Exposure::Enabled,
-                Some(false) => Exposure::Disabled,
-                None => Exposure::Unknown,
-            },
-            topology: Topology::Unknown,
-            detail: Some("active plugin version and cache path are not recorded in config".into()),
-            skills: Vec::new(),
+        .map(|id| {
+            let enabled = config.plugins.get(&id).and_then(|plugin| plugin.enabled);
+            match &resolved {
+                Ok(state) => resolution::resolve(roots.home(), id, enabled, state),
+                Err(detail) => resolution::unresolved(id, enabled, detail.clone()),
+            }
         })
         .collect::<Vec<_>>();
+    let unresolved = resolution_diagnostic(&plugins);
     let mut diagnostics = plugin_diagnostics(policy, Agent::Codex, scope, plugins);
-    if !diagnostics.is_empty() {
-        diagnostics.push(Diagnostic::new(
-            "skills",
-            State::Unsupported,
-            "external codex user plugin skills inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=the active cache version cannot be selected reliably from config.toml",
-        ));
-    }
+    diagnostics.extend(unresolved);
     diagnostics
+}
+
+fn configured_and_resolved_ids(
+    configured: &BTreeMap<String, PluginConfig>,
+    resolved: Option<&state::ResolverState>,
+) -> BTreeSet<String> {
+    configured
+        .keys()
+        .cloned()
+        .chain(
+            resolved
+                .into_iter()
+                .flat_map(|state| state.plugins.iter().map(|plugin| plugin.plugin_id.clone())),
+        )
+        .collect()
+}
+
+fn resolution_diagnostic(plugins: &[Plugin]) -> Option<Diagnostic> {
+    let failures = plugins
+        .iter()
+        .filter(|plugin| plugin.topology == Topology::Unknown)
+        .map(|plugin| {
+            format!(
+                "{}: {}",
+                plugin.id,
+                plugin
+                    .detail
+                    .as_deref()
+                    .unwrap_or("unknown resolver failure")
+            )
+        })
+        .collect::<Vec<_>>();
+    (!failures.is_empty()).then(|| resolver_failure_diagnostic(&failures.join("; ")))
+}
+
+fn resolver_failure_diagnostic(detail: &str) -> Diagnostic {
+    Diagnostic::new(
+        "skills",
+        State::Unsupported,
+        format!(
+            "external codex user plugin resolution origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail={detail}"
+        ),
+    )
 }
 
 pub(super) fn skill_exposure(roots: &Roots, skill_file: &Path) -> Exposure {

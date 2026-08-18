@@ -137,6 +137,7 @@ fn plugins_for_id(
             .join(",");
         plugins.push(Plugin {
             id: id.clone(),
+            artifact: None,
             version: None,
             path: None,
             exposure: Exposure::Unknown,
@@ -179,6 +180,7 @@ fn matching_plugin(
         .join(",");
     Some(Plugin {
         id,
+        artifact: None,
         version: None,
         path: None,
         exposure,
@@ -207,6 +209,7 @@ fn inspect_installation(
     if let Some(detail) = invalid {
         return Plugin {
             id,
+            artifact: None,
             version: Some(installation.version),
             path: Some(path),
             exposure,
@@ -223,6 +226,7 @@ fn inspect_installation(
         .is_some_and(|manifest_version| manifest_version != version.as_str());
     Plugin {
         id,
+        artifact: None,
         version: Some(version),
         path: Some(path),
         exposure,
