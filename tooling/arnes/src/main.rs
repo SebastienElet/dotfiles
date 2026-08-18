@@ -1,59 +1,18 @@
-use clap::{Parser, Subcommand, ValueEnum};
-use std::io;
+mod cli;
+
+use clap::Parser;
+use std::io::{self, IsTerminal};
 use std::process::ExitCode;
 
 use arnes::Roots;
 use arnes::commands;
 use arnes::config;
-use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report, State};
+use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
 use arnes::skills;
-
-#[derive(Parser)]
-#[command(version, about = "Diagnose agent harness resources")]
-struct Cli {
-    #[command(subcommand)]
-    command: Command,
-}
-
-#[derive(Subcommand)]
-enum Command {
-    Doctor {
-        #[arg(value_enum)]
-        resource: Option<Resource>,
-        #[arg(long, value_enum)]
-        agent: Option<Agent>,
-        #[arg(long, value_enum, default_value = "user")]
-        scope: Option<Scope>,
-        #[arg(long, value_enum, default_value_t)]
-        format: Format,
-        #[arg(short, long)]
-        verbose: bool,
-    },
-}
-
-#[derive(Clone, Copy, Eq, PartialEq, ValueEnum)]
-enum Resource {
-    Manifest,
-    Config,
-    Instructions,
-    Skills,
-    Prompts,
-    Commands,
-    Rules,
-    Hooks,
-    Mcp,
-    Statusline,
-}
-
-#[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
-enum Format {
-    #[default]
-    Human,
-    Json,
-}
+use cli::{Cli, Command, Format, Resource, validate_render_options};
 
 fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
@@ -63,10 +22,11 @@ fn main() -> ExitCode {
         agent,
         scope,
         format,
+        color,
         verbose,
     } = command;
 
-    if let Err(error) = validate_render_options(format, verbose) {
+    if let Err(error) = validate_render_options(format, verbose, color) {
         eprintln!("{error}");
         return ExitCode::from(2);
     }
@@ -76,11 +36,16 @@ fn main() -> ExitCode {
     let output = match format {
         Format::Human => report.human(
             &human_context(resource, agent, scope),
-            if verbose {
+            (if verbose {
                 HumanOptions::verbose()
             } else {
                 HumanOptions::normal()
-            },
+            })
+            .with_color(
+                ColorMode::from(color),
+                io::stdout().is_terminal(),
+                std::env::var_os("NO_COLOR").as_deref(),
+            ),
         ),
         Format::Json => report.json().expect("diagnostics are JSON serializable"),
     };
@@ -90,13 +55,6 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
     ExitCode::from(report.exit_code())
-}
-
-fn validate_render_options(format: Format, verbose: bool) -> Result<(), &'static str> {
-    if verbose && format == Format::Json {
-        return Err("--verbose cannot be used with --format json");
-    }
-    Ok(())
 }
 
 impl Resource {

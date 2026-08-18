@@ -1,6 +1,11 @@
 use super::{Diagnostic, State, human_field};
+use std::ffi::OsStr;
 
+mod color;
 mod sections;
+
+pub use color::ColorMode;
+use color::Colorizer;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct SectionCount {
@@ -58,19 +63,40 @@ impl HumanContext {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct HumanOptions {
     verbose: bool,
+    color: bool,
 }
 
 impl HumanOptions {
     pub fn normal() -> Self {
-        Self { verbose: false }
+        Self {
+            verbose: false,
+            color: false,
+        }
     }
 
     pub fn verbose() -> Self {
-        Self { verbose: true }
+        Self {
+            verbose: true,
+            color: false,
+        }
     }
 
     pub fn includes_healthy(self) -> bool {
         self.verbose
+    }
+
+    pub fn with_color(
+        mut self,
+        mode: ColorMode,
+        stdout_is_terminal: bool,
+        no_color: Option<&OsStr>,
+    ) -> Self {
+        self.color = mode.enabled(stdout_is_terminal, no_color);
+        self
+    }
+
+    fn colorizer(self) -> Colorizer {
+        Colorizer::new(self.color)
     }
 }
 
@@ -85,19 +111,26 @@ pub(super) fn render(
     let structured = diagnostics
         .iter()
         .all(|diagnostic| diagnostic.section().is_some());
+    let color = options.colorizer();
     let (section_count, body) = if structured {
-        let (count, lines) = sections::render(diagnostics, options);
+        let (count, lines) = sections::render(diagnostics, options, color);
         (Some(count), lines)
     } else {
-        (None, render_flat(diagnostics, options))
+        (None, render_flat(diagnostics, options, color))
     };
     let mut lines = vec![
         context.heading(section_count),
-        format!("✓ {} healthy", state_count(diagnostics, State::Healthy)),
+        color.paint(
+            State::Healthy,
+            format!("✓ {} healthy", state_count(diagnostics, State::Healthy)),
+        ),
     ];
     let unsupported = state_count(diagnostics, State::Unsupported);
     if unsupported > 0 {
-        lines.push(format!("! {unsupported} unsupported (non-blocking)"));
+        lines.push(color.paint(
+            State::Unsupported,
+            format!("! {unsupported} unsupported (non-blocking)"),
+        ));
     }
     lines.push(String::new());
     lines.extend(body);
@@ -112,7 +145,7 @@ fn state_count(diagnostics: &[Diagnostic], state: State) -> usize {
         .count()
 }
 
-fn render_flat(diagnostics: &[Diagnostic], options: HumanOptions) -> Vec<String> {
+fn render_flat(diagnostics: &[Diagnostic], options: HumanOptions, color: Colorizer) -> Vec<String> {
     let mut lines = Vec::new();
     let mut group = None;
     for diagnostic in diagnostics
@@ -127,14 +160,20 @@ fn render_flat(diagnostics: &[Diagnostic], options: HumanOptions) -> Vec<String>
                 lines.push(human_field(human.group()));
                 group = Some(human.group());
             }
+            let state = format!("{:11}", diagnostic.state.to_string());
             lines.push(format!(
-                "  {:11} {}",
-                diagnostic.state.to_string(),
+                "  {} {}",
+                color.paint(diagnostic.state, state),
                 human_field(human.summary())
             ));
         } else {
             group = None;
-            lines.push(diagnostic.to_string());
+            lines.push(format!(
+                "{} {}: {}",
+                color.paint(diagnostic.state, diagnostic.state.to_string()),
+                human_field(&diagnostic.resource),
+                human_field(&diagnostic.message)
+            ));
         }
     }
     lines
