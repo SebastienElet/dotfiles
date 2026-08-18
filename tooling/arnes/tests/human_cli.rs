@@ -1,4 +1,7 @@
+mod support;
+
 use std::process::{Command, Output};
+use support::Fixture;
 
 fn run(args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_arnes"))
@@ -45,4 +48,31 @@ fn duplicate_format_is_rejected_by_clap() {
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());
     assert!(stderr.contains("cannot be used multiple times"), "{stderr}");
+}
+
+#[test]
+fn verbose_restores_healthy_details_before_or_after_the_resource() {
+    let fixture = Fixture::new();
+    fixture.write_home(".arnes.yaml", "version: 1\nagents: []\nresources: []\n");
+    assert!(fixture.home().is_dir());
+    assert!(fixture.repository().is_dir());
+    let before = fixture.snapshot();
+
+    let normal = fixture.command(["doctor", "manifest"]);
+    let verbose_before = fixture.command(["doctor", "-v", "manifest"]);
+    let verbose_after = fixture.command(["doctor", "manifest", "--verbose"]);
+
+    assert_eq!(
+        String::from_utf8(normal.stdout).unwrap(),
+        "Manifest\n✓ 1 healthy\n"
+    );
+    for output in [verbose_before, verbose_after] {
+        assert_eq!(output.status.code(), Some(0));
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap(),
+            "Manifest\n✓ 1 healthy\n\nhealthy manifest: manifest is valid\n"
+        );
+        assert!(output.stderr.is_empty());
+    }
+    assert_eq!(fixture.snapshot(), before);
 }

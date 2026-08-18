@@ -76,7 +76,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment() {
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "unsupported skills: codex project skill projection is not declared or supported\n\ncodex project unsupported capabilities\n  unsupported system skills inventory is unsupported\nunsupported skills: external codex project plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=project plugin activation has no documented filesystem registry\n"
+        "Skills · project scope · codex agent\n✓ 0 healthy\n! 3 unsupported (non-blocking)\n\nCODEX\n  3 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n  codex project unsupported capabilities\n    UNSUPPORTED system skills inventory is unsupported\n  UNSUPPORTED external codex project plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=project plugin activation has no documented filesystem registry\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -99,12 +99,12 @@ fn json_doctor_emits_the_manifest_diagnostic() {
 fn manifest_doctor_loads_from_the_injected_home() {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", &manifest("valid.yaml"));
-    let output = fixture.command(["doctor", "manifest"]);
+    let output = fixture.command(["doctor", "manifest", "-v"]);
 
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "healthy manifest: manifest is valid\n"
+        "Manifest\n✓ 1 healthy\n\nhealthy manifest: manifest is valid\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -118,7 +118,7 @@ fn manifest_doctor_reports_invalid_manifests() {
     assert_eq!(output.status.code(), Some(2));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "error manifest: version: unsupported version 2; expected 1\n"
+        "Manifest\n✓ 0 healthy\n\nerror manifest: version: unsupported version 2; expected 1\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -166,7 +166,7 @@ fn manifest_doctor_requires_home_without_reading_the_environment() {
     assert_eq!(output.status.code(), Some(2));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "error manifest: HOME: environment variable is required\n"
+        "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -178,7 +178,7 @@ fn skills_doctor_requires_injected_home_without_fallback() {
     assert_eq!(output.status.code(), Some(2));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "error skills: HOME: environment variable is required\n"
+        "Skills · user scope · all agents\n✓ 0 healthy\n\nerror skills: HOME: environment variable is required\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -197,7 +197,7 @@ fn manifest_doctor_rejects_home_paths_relative_to_the_repository() {
         assert_eq!(output.status.code(), Some(2));
         assert_eq!(
             String::from_utf8(output.stdout).unwrap(),
-            format!("error manifest: {message}\n")
+            format!("Manifest\n✓ 0 healthy\n\nerror manifest: {message}\n")
         );
         assert!(output.stderr.is_empty());
     }

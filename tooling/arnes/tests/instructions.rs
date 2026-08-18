@@ -9,10 +9,9 @@ use support::Fixture;
 #[test]
 fn user_scope_is_default_for_supported_and_unsupported_projections() {
     let fixture = configured_fixture();
-    let (code, stdout, stderr) = run(&fixture, &["doctor", "instructions"]);
+    let (code, stdout, stderr) = run(&fixture, &["doctor", "instructions", "-v"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 5);
     assert_eq!(stdout.matches("healthy instructions:").count(), 4);
     assert_eq!(stdout.matches("unsupported instructions:").count(), 1);
     for expected in [
@@ -41,10 +40,11 @@ fn agent_and_scope_filters_isolate_projections() {
             "claude",
             "--scope",
             "user",
+            "-v",
         ],
     );
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 3);
+    assert_eq!(stdout.matches("healthy instructions:").count(), 3);
     assert!(!stdout.contains("codex"));
 
     let (code, stdout, _) = run(&fixture, &["doctor", "instructions", "--agent", "cursor"]);
@@ -63,7 +63,7 @@ fn agent_and_scope_filters_isolate_projections() {
         ],
     );
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 1);
+    assert_eq!(stdout.matches("unsupported instructions:").count(), 1);
     assert!(stdout.contains("unsupported instructions: codex project"));
 }
 
@@ -79,7 +79,7 @@ fn undeclared_filtered_combinations_are_unsupported() {
     assert_eq!(code, 0);
     assert_eq!(
         stdout,
-        "unsupported instructions: codex user instruction projection is not declared or supported\n"
+        "Instructions · user scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported instructions: codex user instruction projection is not declared or supported\n"
     );
     assert!(stderr.is_empty());
 }
@@ -142,5 +142,5 @@ fn doctor_without_resource_does_not_aggregate_instructions_yet() {
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "healthy manifest: manifest is valid\n");
+    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
 }

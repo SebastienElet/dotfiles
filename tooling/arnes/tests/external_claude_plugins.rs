@@ -70,7 +70,9 @@ fn active_allowlisted_plugin_and_skill_are_external_and_healthy() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "claude", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "claude", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -97,7 +99,7 @@ fn active_unexpected_plugin_reports_plugin_and_skill_policy_drift() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert_eq!(stdout.matches("  drift       ").count(), 2);
+    assert_eq!(stdout.matches("    DRIFT ").count(), 2);
     assert!(stdout.contains("plugin demo@marketplace"));
     assert!(stdout.contains("skill hello"));
     assert!(stdout.contains("· unexpected"));
@@ -116,7 +118,9 @@ fn plugin_allowlist_does_not_allow_new_skills_implicitly() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "claude", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "claude", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 1, "{stdout}");
@@ -128,8 +132,8 @@ fn plugin_allowlist_does_not_allow_new_skills_implicitly() {
         .lines()
         .find(|line| line.contains("skill future-capability"))
         .unwrap();
-    assert!(plugin.trim_start().starts_with("healthy"));
-    assert!(skill.trim_start().starts_with("drift"));
+    assert!(plugin.trim_start().starts_with("HEALTHY"));
+    assert!(skill.trim_start().starts_with("DRIFT"));
 }
 
 #[test]
@@ -145,7 +149,9 @@ fn disabled_plugin_is_visible_without_being_reported_as_active() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "claude", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "claude", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");

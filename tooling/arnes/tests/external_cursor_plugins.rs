@@ -52,7 +52,9 @@ fn active_allowlisted_cursor_plugin_and_skill_are_healthy() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "cursor", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "cursor", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -73,7 +75,7 @@ fn active_unexpected_cursor_plugin_reports_plugin_and_skill() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert_eq!(stdout.matches("  drift       ").count(), 2);
+    assert_eq!(stdout.matches("    DRIFT ").count(), 2);
     assert!(stdout.contains("plugin cursor-demo"));
     assert!(stdout.contains("skill hello"));
 }
@@ -91,11 +93,13 @@ fn managed_system_and_plugin_slug_collisions_remain_distinct() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "cursor", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "cursor", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("managed cursor user skill alpha"));
+    assert!(stdout.contains("HEALTHY alpha"));
     assert!(stdout.contains("cursor user system skills"));
     assert!(stdout.contains("alpha · enabled · healthy · allowed"));
     assert!(stdout.contains("skill alpha · enabled · healthy · allowed"));

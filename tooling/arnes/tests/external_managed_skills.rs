@@ -29,7 +29,9 @@ fn allowed_external_managed_skill_is_healthy_and_not_adopted() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");

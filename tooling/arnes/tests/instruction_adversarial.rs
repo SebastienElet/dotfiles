@@ -32,6 +32,7 @@ fn relative_symlinks_to_expected_sources_are_healthy() {
             "claude",
             "--scope",
             "user",
+            "-v",
         ],
     );
 
@@ -66,6 +67,7 @@ fn source_and_include_symlinks_within_the_repository_are_healthy() {
                 "claude",
                 "--scope",
                 "user",
+                "-v",
             ],
         );
 
@@ -90,6 +92,7 @@ fn dangling_source_includes_fail_closed() {
             "codex",
             "--scope",
             "user",
+            "-v",
         ],
     );
 
@@ -194,6 +197,7 @@ fn markdown_code_does_not_create_includes() {
             "claude",
             "--scope",
             "user",
+            "-v",
         ],
     );
 

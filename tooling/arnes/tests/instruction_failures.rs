@@ -18,6 +18,7 @@ fn missing_sources_fail_closed_and_missing_destinations_drift() {
             "claude",
             "--scope",
             "user",
+            "-v",
         ],
     );
     assert_eq!(code, 2);
@@ -139,6 +140,7 @@ fn includes_resolve_from_the_effective_destination() {
             "claude",
             "--scope",
             "user",
+            "-v",
         ],
     );
 
@@ -195,7 +197,7 @@ fn manifest_failures_fail_closed_as_instruction_errors() {
     assert_eq!(code, 2);
     assert_eq!(
         stdout,
-        "error instructions: manifest: .arnes.yaml was not found\n"
+        "Instructions · user scope\n✓ 0 healthy\n\nerror instructions: manifest: .arnes.yaml was not found\n"
     );
     assert!(stderr.is_empty());
 }

@@ -30,7 +30,7 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
     {
         Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
             .with_human_summary(name),
-        Err(diagnostic) => diagnostic.with_human_summary(name),
+        Err(diagnostic) => diagnostic,
     }
 }
 
@@ -88,7 +88,7 @@ fn root_skill(
     match result {
         Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
             .with_human_summary(name.display().to_string()),
-        Err(diagnostic) => diagnostic.with_human_summary(name.display().to_string()),
+        Err(diagnostic) => diagnostic,
     }
 }
 

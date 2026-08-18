@@ -15,11 +15,13 @@ fn relative_symlinks_to_declared_sources_are_managed() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "claude", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "claude", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("healthy skills: managed claude user skill alpha"));
+    assert!(stdout.contains("HEALTHY alpha"));
 }
 
 #[test]
@@ -32,7 +34,9 @@ fn source_components_cannot_escape_the_repository() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "cursor", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "cursor", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 2);
@@ -108,12 +112,14 @@ fn undeclared_aliases_of_managed_sources_remain_unmanaged() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "cursor", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "cursor", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("plugin-owned · managed · enabled · healthy · unexpected"));
-    assert_eq!(stdout.matches("managed cursor user skill alpha").count(), 1);
+    assert_eq!(stdout.matches("HEALTHY alpha").count(), 1);
 }
 
 #[test]

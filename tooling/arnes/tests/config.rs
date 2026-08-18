@@ -48,10 +48,10 @@ fn run(fixture: &Fixture, args: &[&str]) -> (i32, String, String) {
 #[test]
 fn user_scope_is_default_and_accepts_unknown_keys() {
     let fixture = configured_fixture();
-    let (code, stdout, stderr) = run(&fixture, &["doctor", "config"]);
+    let (code, stdout, stderr) = run(&fixture, &["doctor", "config", "-v"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout.lines().count(), 3);
+    assert_eq!(stdout.matches("healthy config:").count(), 3);
     assert!(stderr.is_empty());
     for expected in [
         "healthy config: claude user",
@@ -69,27 +69,29 @@ fn agent_and_scope_filters_isolate_selected_configurations() {
 
     for (args, expected_lines, expected) in [
         (
-            vec!["doctor", "config", "--agent", "codex", "--scope", "user"],
+            vec![
+                "doctor", "config", "--agent", "codex", "--scope", "user", "-v",
+            ],
             1,
             "healthy config: codex user",
         ),
         (
-            vec!["doctor", "config", "--agent", "claude"],
+            vec!["doctor", "config", "--agent", "claude", "-v"],
             1,
             "healthy config: claude user",
         ),
     ] {
         let (code, stdout, stderr) = run(&fixture, &args);
         assert_eq!(code, 0);
-        assert_eq!(stdout.lines().count(), expected_lines);
+        assert_eq!(stdout.matches("healthy config:").count(), expected_lines);
         assert!(stdout.contains(expected), "{stdout}");
         assert!(!stdout.contains("cursor"), "{stdout}");
         assert!(stderr.is_empty());
     }
 
-    let (code, stdout, _) = run(&fixture, &["doctor", "config", "--scope", "project"]);
+    let (code, stdout, _) = run(&fixture, &["doctor", "config", "--scope", "project", "-v"]);
     assert_eq!(code, 2);
-    assert_eq!(stdout.lines().count(), 3);
+    assert_eq!(stdout.matches(" config:").count(), 3);
     assert!(stdout.contains("error config: cursor project"));
     assert!(!stdout.contains("cursor user"));
 }
@@ -212,7 +214,7 @@ fn undeclared_filtered_combinations_are_unsupported() {
     assert_eq!(code, 0);
     assert_eq!(
         stdout,
-        "unsupported config: codex project configuration is not declared in the manifest\n"
+        "Config · project scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported config: codex project configuration is not declared in the manifest\n"
     );
     assert!(stderr.is_empty());
 }
@@ -230,7 +232,7 @@ fn empty_manifests_are_explicitly_unsupported() {
         assert_eq!(code, 0);
         assert_eq!(
             stdout,
-            "unsupported config: user configuration scope is not declared in the manifest\n"
+            "Config · user scope\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported config: user configuration scope is not declared in the manifest\n"
         );
         assert!(stderr.is_empty());
     }
@@ -244,7 +246,7 @@ fn manifest_failures_fail_closed_as_config_errors() {
     assert_eq!(code, 2);
     assert_eq!(
         stdout,
-        "error config: manifest: .arnes.yaml was not found\n"
+        "Config · user scope\n✓ 0 healthy\n\nerror config: manifest: .arnes.yaml was not found\n"
     );
     assert!(stderr.is_empty());
 }
