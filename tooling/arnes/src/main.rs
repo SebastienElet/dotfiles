@@ -29,6 +29,8 @@ enum Command {
         scope: Option<Scope>,
         #[arg(long, value_enum, default_value_t)]
         format: Format,
+        #[arg(short, long)]
+        verbose: bool,
     },
 }
 
@@ -46,7 +48,7 @@ enum Resource {
     Statusline,
 }
 
-#[derive(Clone, Default, ValueEnum)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
 enum Format {
     #[default]
     Human,
@@ -61,7 +63,13 @@ fn main() -> ExitCode {
         agent,
         scope,
         format,
+        verbose,
     } = command;
+
+    if let Err(error) = validate_render_options(format, verbose) {
+        eprintln!("{error}");
+        return ExitCode::from(2);
+    }
 
     let diagnostics = diagnose(resource, agent, scope);
     let report = Report::new(diagnostics);
@@ -75,6 +83,13 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
     ExitCode::from(report.exit_code())
+}
+
+fn validate_render_options(format: Format, verbose: bool) -> Result<(), &'static str> {
+    if verbose && format == Format::Json {
+        return Err("--verbose cannot be used with --format json");
+    }
+    Ok(())
 }
 
 fn diagnose(
