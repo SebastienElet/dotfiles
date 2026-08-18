@@ -42,7 +42,11 @@ Signaler systématiquement, même sans être sollicité, les cas limites et les
 conséquences non voulues d'un changement — et en priorité :
 
 1. **Gestion d'erreur incomplète** — cas d'échec, délais d'attente, retours
-   vides et nuls.
+   vides et nuls. Sur une écriture ou un rappel venu de l'extérieur : clé
+   d'idempotence nommée, ordre attendu, et écriture atomique de toute valeur
+   dérivée du premier événement qualifiant. Une entrée inconnue est mise en
+   quarantaine avec sa charge brute et rejouable, jamais avalée ni dégradée en
+   avertissement.
 2. **Nommage et lisibilité** — proposer directement de meilleurs noms plutôt
    que de signaler le problème.
 3. **Dépendance de trop** — le réflexe est d'installer une bibliothèque là où
