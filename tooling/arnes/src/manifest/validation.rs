@@ -3,6 +3,7 @@ use serde_yaml_ng::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
 
+mod commands;
 mod external;
 mod prompts;
 mod skills;
@@ -78,6 +79,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
 
     validate_resources(&manifest.resources, &agents)?;
     prompts::validate(&manifest.prompts, &manifest.resources, &agents)?;
+    commands::validate(&manifest.commands, &manifest.prompts, &agents)?;
     skills::validate(&manifest.skills, &manifest.resources, &agents)?;
     external::validate(&manifest.external, &agents)
 }
@@ -117,6 +119,12 @@ fn validate_resources(
             return Err(ManifestError::new(
                 field("kind"),
                 "prompts must use normalized top-level declarations",
+            ));
+        }
+        if resource.kind == super::ResourceKind::Commands {
+            return Err(ManifestError::new(
+                field("kind"),
+                "commands must use normalized top-level declarations",
             ));
         }
         validate_resource_paths(resource, index)?;

@@ -3,11 +3,13 @@ use serde::Deserialize;
 use std::fmt::{self, Display};
 use std::path::{Path, PathBuf};
 
+mod commands;
 mod external;
 mod parsing;
 mod prompts;
 mod validation;
 
+pub use commands::{Command, CommandBinding};
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
@@ -50,6 +52,8 @@ pub struct Manifest {
     external: external::ExternalPolicy,
     #[serde(default)]
     prompts: Vec<prompts::PromptDeclaration>,
+    #[serde(default)]
+    commands: Vec<commands::CommandDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 
@@ -120,6 +124,10 @@ impl Manifest {
 
     pub fn prompts(&self) -> impl Iterator<Item = Prompt<'_>> {
         self.prompts.iter().map(Prompt::from)
+    }
+
+    pub fn commands(&self) -> impl Iterator<Item = Command<'_>> {
+        self.commands.iter().map(Command::from)
     }
 
     pub(crate) fn resource_destinations(&self) -> impl Iterator<Item = (Scope, &Path)> {
