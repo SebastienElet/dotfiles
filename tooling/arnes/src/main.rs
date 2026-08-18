@@ -3,6 +3,7 @@ use std::io;
 use std::process::ExitCode;
 
 use arnes::Roots;
+use arnes::commands;
 use arnes::config;
 use arnes::diagnostic::{Diagnostic, Report, State};
 use arnes::instructions;
@@ -87,6 +88,10 @@ fn main() -> ExitCode {
             Ok(roots) => diagnose_prompts(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("prompts", State::Error, error.to_string())],
         },
+        Some(Resource::Commands) => match Roots::from_environment() {
+            Ok(roots) => diagnose_commands(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
+        },
         _ => Vec::new(),
     };
     let report = Report::new(diagnostics);
@@ -160,5 +165,12 @@ fn diagnose_prompts(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -
     match manifest::load(roots.home()) {
         Ok(manifest) => prompts::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("prompts", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_commands(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => commands::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
     }
 }
