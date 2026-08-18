@@ -57,23 +57,8 @@ fn diagnose_projection(
     prompt: Prompt<'_>,
     projection: PromptProjection<'_>,
 ) -> Diagnostic {
-    if projection.representation == PromptRepresentation::Symlink {
-        return broken(
-            prompt,
-            projection,
-            Failure::new(
-                State::Unsupported,
-                "symlink projections have no stable agent contract",
-                "symlink projection unsupported",
-            ),
-        );
-    }
-    let expected = match source::validate(roots, prompt) {
-        Ok(expected) => expected,
-        Err(failure) => return broken(prompt, projection, failure),
-    };
-    match projection::validate(roots, projection, &expected) {
-        Ok(()) => diagnostic(
+    match validate_projection(roots, prompt, projection) {
+        Ok(_) => diagnostic(
             prompt,
             projection,
             State::Healthy,
@@ -82,6 +67,22 @@ fn diagnose_projection(
         ),
         Err(failure) => broken(prompt, projection, failure),
     }
+}
+
+pub(crate) fn validate_projection(
+    roots: &Roots,
+    prompt: Prompt<'_>,
+    projection: PromptProjection<'_>,
+) -> Result<String, Failure> {
+    if projection.representation == PromptRepresentation::Symlink {
+        return Err(Failure::new(
+            State::Unsupported,
+            "symlink projections have no stable agent contract",
+            "symlink projection unsupported",
+        ));
+    }
+    let expected = source::validate(roots, prompt)?;
+    projection::validate(roots, projection, &expected)
 }
 
 fn unsupported_combination(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {
@@ -136,14 +137,18 @@ fn subject(prompt: Prompt<'_>, projection: PromptProjection<'_>) -> String {
     )
 }
 
-struct Failure {
-    state: State,
-    message: String,
-    summary: String,
+pub(crate) struct Failure {
+    pub(crate) state: State,
+    pub(crate) message: String,
+    pub(crate) summary: String,
 }
 
 impl Failure {
-    fn new(state: State, message: impl Into<String>, summary: impl Into<String>) -> Self {
+    pub(crate) fn new(
+        state: State,
+        message: impl Into<String>,
+        summary: impl Into<String>,
+    ) -> Self {
         Self {
             state,
             message: message.into(),

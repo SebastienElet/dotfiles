@@ -11,7 +11,7 @@ pub fn validate(
     roots: &Roots,
     projection: PromptProjection<'_>,
     expected: &Expected,
-) -> Result<(), Failure> {
+) -> Result<String, Failure> {
     let destination = destination(roots, projection.scope, projection.destination);
     let boundary = match projection.scope {
         Scope::User => roots.home(),
@@ -24,7 +24,7 @@ pub fn validate(
         PromptRepresentation::Symlink => unreachable!(),
     };
     if actual == *expected {
-        Ok(())
+        Ok(actual)
     } else {
         Err(stale(projection))
     }
