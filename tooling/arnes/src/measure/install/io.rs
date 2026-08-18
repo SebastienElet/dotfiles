@@ -172,7 +172,7 @@ fn write_temporary(
     let file =
         rustix::fs::openat(directory, name, flags, Mode::from_raw_mode(0o600)).map_err(errno)?;
     let mut file = File::from(file);
-    rustix::fs::fchmod(&file, Mode::from_raw_mode(mode)).map_err(errno)?;
+    rustix::fs::fchmod(&file, Mode::from_raw_mode(mode as _)).map_err(errno)?;
     file.write_all(bytes)?;
     file.sync_all()?;
     let metadata = validate_regular(&file)?;
