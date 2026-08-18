@@ -8,6 +8,8 @@ mod source;
 mod topology;
 mod variables;
 
+pub(crate) use topology::Tracker as ProjectionTracker;
+
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,

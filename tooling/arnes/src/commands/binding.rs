@@ -1,8 +1,9 @@
 use serde::Deserialize;
+use serde_yaml_ng::Value;
 
 #[derive(Deserialize)]
 struct Metadata {
-    description: Option<String>,
+    description: Option<Value>,
 }
 
 pub(super) fn validate(contents: &str, expected: &str) -> Result<(), &'static str> {
@@ -17,9 +18,10 @@ pub(super) fn validate(contents: &str, expected: &str) -> Result<(), &'static st
         .ok_or("frontmatter missing or malformed")?;
     let metadata: Metadata =
         serde_yaml_ng::from_str(frontmatter).map_err(|_| "frontmatter missing or malformed")?;
-    match metadata.description.as_deref() {
-        Some(description) if description == expected => Ok(()),
-        Some(_) => Err("description differs from manifest"),
+    match metadata.description {
+        Some(Value::String(description)) if description == expected => Ok(()),
+        Some(Value::String(_)) => Err("description differs from manifest"),
+        Some(_) => Err("description must be a string"),
         None => Err("description is missing"),
     }
 }

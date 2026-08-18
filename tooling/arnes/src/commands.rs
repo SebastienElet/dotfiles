@@ -1,7 +1,7 @@
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, CommandBinding, Manifest, Prompt, PromptProjection, Scope};
-use crate::prompts::{self, Failure};
+use crate::prompts::{self, Failure, ProjectionTracker};
 use std::path::Path;
 
 mod binding;
@@ -23,9 +23,10 @@ pub fn diagnose(
         return vec![unsupported(agent, scope, None)];
     }
     let prompts = manifest.prompts().collect::<Vec<_>>();
+    let mut topology = ProjectionTracker::new(roots, manifest);
     selected
         .into_iter()
-        .map(|binding| diagnose_binding(roots, binding, &prompts))
+        .map(|binding| diagnose_binding(roots, binding, &prompts, &mut topology))
         .collect()
 }
 
@@ -33,6 +34,7 @@ fn diagnose_binding(
     roots: &Roots,
     command: CommandBinding<'_>,
     prompts: &[Prompt<'_>],
+    topology: &mut ProjectionTracker,
 ) -> Diagnostic {
     let Some(expected_destination) =
         capability::destination(command.agent, command.scope, command.name())
@@ -47,6 +49,9 @@ fn diagnose_binding(
         Ok(binding) => binding,
         Err(diagnostic) => return diagnostic,
     };
+    if let Err(failure) = topology.validate(roots, prompt, projection) {
+        return broken(command, failure);
+    }
     match prompts::validate_projection(roots, prompt, projection) {
         Err(failure) => broken(command, failure),
         Ok(contents) => match binding::validate(&contents, command.description()) {
