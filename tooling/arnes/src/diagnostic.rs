@@ -1,6 +1,10 @@
 use serde::Serialize;
 use std::fmt::{self, Display};
 
+mod human;
+
+pub use human::{HumanContext, HumanOptions};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum State {
@@ -31,9 +35,19 @@ pub struct Diagnostic {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-struct HumanDiagnostic {
+pub(super) struct HumanDiagnostic {
     group: String,
     summary: String,
+}
+
+impl HumanDiagnostic {
+    pub(super) fn group(&self) -> &str {
+        &self.group
+    }
+
+    pub(super) fn summary(&self) -> &str {
+        &self.summary
+    }
 }
 
 impl Diagnostic {
@@ -53,6 +67,10 @@ impl Diagnostic {
         });
         self
     }
+
+    pub(super) fn human(&self) -> Option<&HumanDiagnostic> {
+        self.human.as_ref()
+    }
 }
 
 impl Display for Diagnostic {
@@ -67,7 +85,7 @@ impl Display for Diagnostic {
     }
 }
 
-fn human_field(value: &str) -> String {
+pub(super) fn human_field(value: &str) -> String {
     value.replace('\r', "\\r").replace('\n', "\\n")
 }
 
@@ -97,29 +115,8 @@ impl Report {
             .unwrap_or(0)
     }
 
-    pub fn human(&self) -> String {
-        let mut lines = Vec::new();
-        let mut group = None;
-        for diagnostic in &self.diagnostics {
-            if let Some(human) = &diagnostic.human {
-                if group != Some(human.group.as_str()) {
-                    if !lines.is_empty() {
-                        lines.push(String::new());
-                    }
-                    lines.push(human.group.clone());
-                    group = Some(&human.group);
-                }
-                lines.push(format!(
-                    "  {:11} {}",
-                    diagnostic.state.to_string(),
-                    human.summary
-                ));
-            } else {
-                group = None;
-                lines.push(diagnostic.to_string());
-            }
-        }
-        lines.join("\n")
+    pub fn human(&self, context: &HumanContext, options: HumanOptions) -> String {
+        human::render(&self.diagnostics, context, options)
     }
 
     pub fn json(&self) -> Result<String, serde_json::Error> {

@@ -1,4 +1,4 @@
-use arnes::diagnostic::{Diagnostic, Report, State};
+use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report, State};
 
 fn report() -> Report {
     Report::new(vec![
@@ -13,11 +13,51 @@ fn report() -> Report {
     ])
 }
 
+fn context() -> HumanContext {
+    HumanContext::new("Diagnostics")
+}
+
 #[test]
-fn human_output_matches_the_exact_fixture() {
+fn normal_human_output_hides_healthy_details() {
     assert_eq!(
-        format!("{}\n", report().human()),
+        format!("{}\n", report().human(&context(), HumanOptions::normal())),
         include_str!("fixtures/diagnostic/report.txt")
+    );
+}
+
+#[test]
+fn verbose_human_output_includes_healthy_details() {
+    assert_eq!(
+        format!(
+            "{}\n",
+            report().human(&context(), HumanOptions::verbose())
+        ),
+        include_str!("fixtures/diagnostic/report-verbose.txt")
+    );
+}
+
+#[test]
+fn empty_human_report_does_not_claim_health() {
+    let report = Report::new(Vec::new());
+
+    assert_eq!(
+        report.human(&context(), HumanOptions::normal()),
+        "No diagnostics"
+    );
+}
+
+#[test]
+fn report_without_healthy_diagnostics_displays_zero() {
+    let report = Report::new(vec![Diagnostic::new(
+        "skills",
+        State::Unsupported,
+        "inventory unavailable",
+    )]);
+
+    assert!(
+        report
+            .human(&context(), HumanOptions::normal())
+            .starts_with("Diagnostics\n✓ 0 healthy\n")
     );
 }
 
@@ -82,8 +122,8 @@ fn human_groups_compact_diagnostics_without_changing_json() {
     ]);
 
     assert_eq!(
-        report.human(),
-        "claude user external skills\n  healthy     ponytail · allowed\n  drift       ponytail-audit · unexpected"
+        report.human(&context(), HumanOptions::verbose()),
+        "Diagnostics\n✓ 1 healthy\n\nclaude user external skills\n  healthy     ponytail · allowed\n  drift       ponytail-audit · unexpected"
     );
     let json = report.json().unwrap();
     assert!(json.contains("verbose first"));

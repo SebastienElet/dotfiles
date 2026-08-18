@@ -5,7 +5,7 @@ use std::process::ExitCode;
 use arnes::Roots;
 use arnes::commands;
 use arnes::config;
-use arnes::diagnostic::{Diagnostic, Report, State};
+use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
@@ -34,7 +34,7 @@ enum Command {
     },
 }
 
-#[derive(Clone, ValueEnum)]
+#[derive(Clone, Copy, Eq, PartialEq, ValueEnum)]
 enum Resource {
     Manifest,
     Config,
@@ -74,7 +74,14 @@ fn main() -> ExitCode {
     let diagnostics = diagnose(resource, agent, scope);
     let report = Report::new(diagnostics);
     let output = match format {
-        Format::Human => report.human(),
+        Format::Human => report.human(
+            &human_context(resource, agent, scope),
+            if verbose {
+                HumanOptions::verbose()
+            } else {
+                HumanOptions::normal()
+            },
+        ),
         Format::Json => report.json().expect("diagnostics are JSON serializable"),
     };
 
@@ -90,6 +97,43 @@ fn validate_render_options(format: Format, verbose: bool) -> Result<(), &'static
         return Err("--verbose cannot be used with --format json");
     }
     Ok(())
+}
+
+impl Resource {
+    fn heading(self) -> &'static str {
+        match self {
+            Self::Manifest => "Manifest",
+            Self::Config => "Config",
+            Self::Instructions => "Instructions",
+            Self::Skills => "Skills",
+            Self::Prompts => "Prompts",
+            Self::Commands => "Commands",
+            Self::Rules => "Rules",
+            Self::Hooks => "Hooks",
+            Self::Mcp => "MCP",
+            Self::Statusline => "Statusline",
+        }
+    }
+}
+
+fn human_context(
+    resource: Option<Resource>,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+) -> HumanContext {
+    let resource = resource.unwrap_or(Resource::Manifest);
+    let mut context = HumanContext::new(resource.heading());
+    if resource != Resource::Manifest {
+        if let Some(scope) = scope {
+            context = context.with_qualifier(format!("{scope} scope"));
+        }
+        if let Some(agent) = agent {
+            context = context.with_qualifier(format!("{agent} agent"));
+        } else if resource == Resource::Skills {
+            context = context.with_section_count("agent", "agents", "all agents");
+        }
+    }
+    context
 }
 
 fn diagnose(
