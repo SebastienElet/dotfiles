@@ -27,16 +27,41 @@ fn main() -> ExitCode {
             color,
             verbose,
         } => run_doctor(resource, agent, scope, format, color, verbose),
-        Command::Measure {
-            command: MeasureCommand::Hook { agent },
-        } => match measure::capture(agent) {
+        Command::Measure { command } => run_measure(command),
+    }
+}
+
+fn run_measure(command: MeasureCommand) -> ExitCode {
+    match command {
+        MeasureCommand::Hook { agent } => match measure::capture(agent) {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {
                 eprintln!("measure hook: {error}");
                 ExitCode::SUCCESS
             }
         },
+        MeasureCommand::List(args) => match measure::list(args) {
+            Ok(output) => match write_output(&output) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => fail_measure(error),
+            },
+            Err(error) => fail_measure(error),
+        },
+        MeasureCommand::Finish(args) => finish_measure(measure::finish(args)),
+        MeasureCommand::Feedback(args) => finish_measure(measure::feedback(args)),
     }
+}
+
+fn finish_measure(result: Result<(), measure::MeasureError>) -> ExitCode {
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => fail_measure(error),
+    }
+}
+
+fn fail_measure(error: impl std::fmt::Display) -> ExitCode {
+    eprintln!("measure: {error}");
+    ExitCode::from(2)
 }
 
 fn run_doctor(

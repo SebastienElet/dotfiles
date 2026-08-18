@@ -1,5 +1,5 @@
 use super::MeasureError;
-mod validation;
+pub(super) mod validation;
 use self::validation::{
     ensure_regular_file, ensure_regular_or_missing, ensure_single_link, read_run, validate_jsonl,
 };
@@ -46,6 +46,10 @@ impl Store {
 
     pub fn run_path(&self, run_id: &str) -> PathBuf {
         self.root.join("runs").join(run_id)
+    }
+
+    pub fn runs_path(&self) -> PathBuf {
+        self.root.join("runs")
     }
 
     pub fn append_invalid<T: Serialize>(&self, record: &T) -> Result<(), MeasureError> {
@@ -182,7 +186,7 @@ fn ensure_directory(path: &Path) -> Result<(), MeasureError> {
     Ok(())
 }
 
-fn open_private_append(path: &Path) -> Result<File, MeasureError> {
+pub(super) fn open_private_append(path: &Path) -> Result<File, MeasureError> {
     ensure_regular_or_missing(path)?;
     let file = OpenOptions::new()
         .create(true)

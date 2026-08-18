@@ -5,6 +5,7 @@ mod input;
 mod model;
 mod redaction;
 mod repository;
+mod result;
 mod run;
 mod store;
 
@@ -12,6 +13,10 @@ use std::fmt::{self, Display};
 
 pub use hook::capture;
 pub use model::HookAgent;
+pub use result::{
+    Adjudication, FailureCategory, FeedbackArgs, FeedbackSource, FinishArgs, ListArgs, ListFormat,
+    MergeReady, Resolution, Severity, feedback, finish, list,
+};
 
 #[derive(Debug)]
 pub struct MeasureError(String);
