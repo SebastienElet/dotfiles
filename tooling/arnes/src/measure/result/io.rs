@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 
@@ -45,22 +45,25 @@ where
     Ok(record)
 }
 
-pub fn read_jsonl(path: &Path, label: &str) -> Result<Vec<Value>, MeasureError> {
-    read_lines(path, label)?
-        .into_iter()
-        .map(|line| {
-            serde_json::from_slice(&line).map_err(|error| {
-                MeasureError::new(format!("managed {label} is malformed: {error}"))
-            })
-        })
-        .collect()
-}
-
 pub fn read_jsonl_typed<T>(path: &Path, label: &str) -> Result<Vec<T>, MeasureError>
 where
     T: DeserializeOwned + Serialize,
 {
-    read_lines(path, label)?
+    parse_typed(read_lines(path, label)?, label)
+}
+
+pub fn read_jsonl_typed_file<T>(file: &mut File, label: &str) -> Result<Vec<T>, MeasureError>
+where
+    T: DeserializeOwned + Serialize,
+{
+    parse_typed(read_lines_file(file, label)?, label)
+}
+
+fn parse_typed<T>(lines: Vec<Vec<u8>>, label: &str) -> Result<Vec<T>, MeasureError>
+where
+    T: DeserializeOwned + Serialize,
+{
+    lines
         .into_iter()
         .map(|line| {
             let record: T = serde_json::from_slice(&line)
@@ -83,8 +86,13 @@ fn read_lines(path: &Path, label: &str) -> Result<Vec<Vec<u8>>, MeasureError> {
         Err(error) => return Err(error.into()),
     }
     ensure_regular_file(path)?;
-    let file = open_read(path)?;
+    let mut file = open_read(path)?;
     file.lock()?;
+    read_lines_file(&mut file, label)
+}
+
+fn read_lines_file(file: &mut File, label: &str) -> Result<Vec<Vec<u8>>, MeasureError> {
+    file.seek(SeekFrom::Start(0))?;
     let mut reader = BufReader::new(file);
     let mut records = Vec::new();
     loop {

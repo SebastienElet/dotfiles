@@ -1,6 +1,7 @@
 use serde_json::{Value, json};
 use std::fs;
 use std::io::Write;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use tempfile::TempDir;
@@ -160,6 +161,86 @@ fn lists_pending_runs_with_repository_prompt_event_and_agent_filter() {
 }
 
 #[test]
+fn list_rejects_prompt_records_missing_contract_fields() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    fs::write(
+        harness.run_path(&run_id).join("prompts.jsonl"),
+        b"{\"prompt\":\"fake prompt\"}\n",
+    )
+    .unwrap();
+
+    assert_failure(
+        &harness.run(&["measure", "list", "--format", "json"]),
+        "prompts.jsonl has an invalid record",
+    );
+}
+
+#[test]
+fn list_rejects_duplicate_prompt_fields() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    fs::write(
+        harness.run_path(&run_id).join("prompts.jsonl"),
+        b"{\"timestamp_ms\":1,\"event_id\":\"event\",\"session_id\":\"session\",\"prompt_id\":null,\"prompt\":\"first\",\"prompt\":\"second\"}\n",
+    )
+    .unwrap();
+
+    assert_failure(
+        &harness.run(&["measure", "list", "--format", "json"]),
+        "prompts.jsonl has an invalid record",
+    );
+}
+
+#[test]
+fn list_rejects_event_records_with_wrong_field_types() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    fs::write(
+        harness.run_path(&run_id).join("events.jsonl"),
+        b"{\"event\":\"prompt.submit\",\"timestamp_ms\":\"invalid\"}\n",
+    )
+    .unwrap();
+
+    assert_failure(
+        &harness.run(&["measure", "list", "--format", "json"]),
+        "events.jsonl has an invalid record",
+    );
+}
+
+#[test]
+fn list_rejects_duplicate_event_fields() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let path = harness.run_path(&run_id).join("events.jsonl");
+    let content = fs::read_to_string(&path).unwrap().replace(
+        "\"event\":\"prompt.submit\"",
+        "\"event\":\"prompt.submit\",\"event\":\"agent.stop\"",
+    );
+    fs::write(path, content).unwrap();
+
+    assert_failure(
+        &harness.run(&["measure", "list", "--format", "json"]),
+        "events.jsonl has an invalid record",
+    );
+}
+
+#[test]
+fn list_rejects_an_event_log_without_a_terminal_newline() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let path = harness.run_path(&run_id).join("events.jsonl");
+    let mut content = fs::read(&path).unwrap();
+    assert_eq!(content.pop(), Some(b'\n'));
+    fs::write(path, content).unwrap();
+
+    assert_failure(
+        &harness.run(&["measure", "list", "--format", "json"]),
+        "events.jsonl is truncated or oversized",
+    );
+}
+
+#[test]
 fn human_list_marks_a_finalized_run_without_inference_from_agent_stop() {
     let harness = Harness::new();
     let run_id = harness.capture("claude-code", "session_id", "session", "implement it");
@@ -277,6 +358,44 @@ fn repeated_finish_increments_revision_and_keeps_each_adjudication_in_events() {
 }
 
 #[test]
+fn parallel_finish_calls_keep_unique_contiguous_revisions() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let mut children = Vec::new();
+    for minutes in 1..=8 {
+        children.push(
+            harness
+                .command()
+                .args([
+                    "measure",
+                    "finish",
+                    &run_id,
+                    "--merge-ready",
+                    "pass",
+                    "--human-minutes",
+                    &minutes.to_string(),
+                ])
+                .spawn()
+                .unwrap(),
+        );
+    }
+    for child in children {
+        assert_success(&child.wait_with_output().unwrap());
+    }
+
+    let result = read_json(harness.run_path(&run_id).join("result.json"));
+    assert_eq!(result["revision"], 8);
+    let events = read_jsonl(harness.run_path(&run_id).join("events.jsonl"));
+    let mut revisions: Vec<u64> = events
+        .iter()
+        .filter(|event| event["event"] == "result_recorded")
+        .map(|event| event["result"]["revision"].as_u64().unwrap())
+        .collect();
+    revisions.sort_unstable();
+    assert_eq!(revisions, (1..=8).collect::<Vec<_>>());
+}
+
+#[test]
 fn finish_fails_closed_for_unknown_runs_and_malformed_managed_files() {
     let harness = Harness::new();
     let unknown = "0".repeat(64);
@@ -308,6 +427,47 @@ fn finish_fails_closed_for_unknown_runs_and_malformed_managed_files() {
         ]),
         "result.json",
     );
+}
+
+#[test]
+fn finish_does_not_publish_result_when_the_event_log_cannot_be_opened() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let run = harness.run_path(&run_id);
+    fs::set_permissions(run.join("events.jsonl"), fs::Permissions::from_mode(0o400)).unwrap();
+
+    let output = harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "1",
+    ]);
+    assert_failure(&output, "Permission denied");
+    assert!(!run.join("result.json").exists());
+}
+
+#[test]
+fn finish_rejects_an_invalid_event_record_without_mutating_the_run() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let run = harness.run_path(&run_id);
+    fs::write(run.join("events.jsonl"), b"{}\n").unwrap();
+
+    let output = harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "1",
+    ]);
+    assert_failure(&output, "events.jsonl has an invalid record");
+    assert!(!run.join("result.json").exists());
+    assert_eq!(fs::read(run.join("events.jsonl")).unwrap(), b"{}\n");
 }
 
 #[test]

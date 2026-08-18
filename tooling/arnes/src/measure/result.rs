@@ -2,6 +2,7 @@ mod feedback;
 mod finish;
 mod io;
 mod list;
+mod records;
 
 use super::MeasureError;
 use super::model::HookAgent;
@@ -15,6 +16,7 @@ use std::path::{Path, PathBuf};
 pub use feedback::record as feedback;
 pub use finish::record as finish;
 pub use list::render as list;
+pub(super) use records::{ResultRecord, validate_result_record};
 
 #[derive(Args)]
 pub struct ListArgs {
@@ -119,67 +121,6 @@ string_enum!(FailureCategory {
     Communication,
     Other
 });
-
-#[derive(Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct ResultRecord {
-    pub schema_version: u8,
-    pub run_id: String,
-    pub revision: u64,
-    pub recorded_at_ms: u64,
-    pub merge_ready: MergeReady,
-    pub human_minutes: f64,
-    pub human_edited_diff: bool,
-    pub failure_reason: Option<String>,
-    pub evidence: Vec<String>,
-    pub regression: bool,
-    pub invariants: Vec<String>,
-}
-
-pub(super) fn validate_result_record(
-    result: &ResultRecord,
-    run_id: &str,
-) -> Result<(), MeasureError> {
-    if result.schema_version != 1 || result.run_id != run_id {
-        return Err(MeasureError::new(
-            "managed result.json has an unexpected identity",
-        ));
-    }
-    if result.revision == 0 {
-        return Err(MeasureError::new(
-            "managed result.json has an invalid revision",
-        ));
-    }
-    if result.recorded_at_ms == 0
-        || !result.human_minutes.is_finite()
-        || result.human_minutes < 0.0
-        || result.evidence.iter().any(|value| value.trim().is_empty())
-        || result
-            .invariants
-            .iter()
-            .any(|value| value.trim().is_empty())
-    {
-        return Err(MeasureError::new(
-            "managed result.json has invalid measurement values",
-        ));
-    }
-    let reason = result
-        .failure_reason
-        .as_deref()
-        .is_some_and(|value| !value.trim().is_empty());
-    match result.merge_ready {
-        MergeReady::Fail if !reason => Err(MeasureError::new(
-            "managed result.json requires a failure reason",
-        )),
-        MergeReady::Pass if result.failure_reason.is_some() => Err(MeasureError::new(
-            "managed result.json forbids a failure reason for pass",
-        )),
-        MergeReady::Unjudgeable if result.evidence.is_empty() => Err(MeasureError::new(
-            "managed result.json requires evidence for unjudgeable",
-        )),
-        _ => Ok(()),
-    }
-}
 
 pub(super) fn open_store() -> Result<Store, MeasureError> {
     let observed = env::current_dir()?;

@@ -200,7 +200,7 @@ pub(super) fn open_private_append(path: &Path) -> Result<File, MeasureError> {
     Ok(file)
 }
 
-fn open_private_new(path: &Path) -> Result<File, MeasureError> {
+pub(super) fn open_private_new(path: &Path) -> Result<File, MeasureError> {
     let file = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -231,7 +231,7 @@ fn resolve_candidate(path: &Path) -> Result<PathBuf, MeasureError> {
     Ok(resolved)
 }
 
-fn temporary_path(path: &Path) -> PathBuf {
+pub(super) fn temporary_path(path: &Path) -> PathBuf {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()

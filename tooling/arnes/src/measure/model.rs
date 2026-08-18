@@ -50,7 +50,8 @@ pub struct RepositoryRecord {
     pub dirty: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct EventRecord {
     pub timestamp_ms: u64,
     pub event_id: String,
@@ -60,7 +61,8 @@ pub struct EventRecord {
     pub native_ids: Map<String, Value>,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct PromptRecord {
     pub timestamp_ms: u64,
     pub event_id: String,

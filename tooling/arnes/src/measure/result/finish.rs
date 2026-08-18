@@ -1,10 +1,18 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
-use super::super::store::{append_jsonl, open_private_append, write_json_atomic};
-use super::io::{read_jsonl, read_optional_json};
+use super::super::store::{open_private_append, open_private_new, temporary_path};
+use super::io::read_optional_json;
+use super::records::read_events_file;
 use super::{FinishArgs, MergeReady, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use serde_json::json;
+use std::fs;
+use std::fs::File;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
+
+#[cfg(test)]
+mod tests;
 
 #[derive(Serialize)]
 struct ResultEvent<'a> {
@@ -28,13 +36,24 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     if let Some(result) = &current {
         validate_result_record(result, &args.run_id)?;
     }
-    read_jsonl(&run_dir.join("events.jsonl"), "events.jsonl")?;
+    let events_path = run_dir.join("events.jsonl");
+    let mut events = open_private_append(&events_path)?;
+    events.lock()?;
+    read_events_file(&mut events, &args.run_id)?;
     let revision = current
         .map_or(Ok(1), |result| result.revision.checked_add(1).ok_or(()))
         .map_err(|()| MeasureError::new("result revision overflow"))?;
     let result = build(args, revision);
-    write_json_atomic(&run_dir.join("result.json"), &result)?;
-    append_result_event(&run_dir, &result)
+    let result_path = run_dir.join("result.json");
+    let temporary = prepare_result(&result_path, &result)?;
+    let event = result_event_bytes(&result)?;
+    let committed = append_then_commit(&mut events, &event, || {
+        fs::rename(&temporary, &result_path).map_err(Into::into)
+    });
+    if committed.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    committed
 }
 
 fn validate(args: &FinishArgs) -> Result<(), MeasureError> {
@@ -87,10 +106,7 @@ fn build(args: FinishArgs, revision: u64) -> ResultRecord {
     }
 }
 
-fn append_result_event(
-    run_dir: &std::path::Path,
-    result: &ResultRecord,
-) -> Result<(), MeasureError> {
+fn result_event_bytes(result: &ResultRecord) -> Result<Vec<u8>, MeasureError> {
     let event = ResultEvent {
         timestamp_ms: result.recorded_at_ms,
         event_id: format!("result-{}", result.revision),
@@ -100,5 +116,41 @@ fn append_result_event(
         native_ids: json!({"revision": result.revision}),
         result,
     };
-    append_jsonl(&run_dir.join("events.jsonl"), &event)
+    let mut bytes = serde_json::to_vec(&event)?;
+    bytes.push(b'\n');
+    Ok(bytes)
+}
+
+fn prepare_result(path: &Path, result: &ResultRecord) -> Result<std::path::PathBuf, MeasureError> {
+    let temporary = temporary_path(path);
+    let mut file = open_private_new(&temporary)?;
+    file.write_all(&serde_json::to_vec_pretty(result)?)?;
+    file.sync_all()?;
+    Ok(temporary)
+}
+
+fn append_then_commit(
+    events: &mut File,
+    event: &[u8],
+    commit: impl FnOnce() -> Result<(), MeasureError>,
+) -> Result<(), MeasureError> {
+    let previous = events.metadata()?.len();
+    events.seek(SeekFrom::End(0))?;
+    let outcome = events
+        .write_all(event)
+        .and_then(|()| events.sync_data())
+        .map_err(MeasureError::from)
+        .and_then(|()| commit());
+    if let Err(error) = outcome {
+        rollback_event(events, previous)?;
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn rollback_event(events: &mut File, previous: u64) -> Result<(), MeasureError> {
+    events.set_len(previous)?;
+    events.seek(SeekFrom::End(0))?;
+    events.sync_data()?;
+    Ok(())
 }

@@ -1,9 +1,9 @@
 use super::super::MeasureError;
-use super::super::model::RunRecord;
-use super::io::{read_jsonl, read_optional_json};
+use super::super::model::{PromptRecord, RunRecord};
+use super::io::read_optional_json;
+use super::records::{StoredEvent, read_events, read_prompts};
 use super::{ListArgs, ListFormat, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
-use serde_json::Value;
 use std::fs;
 
 #[derive(Serialize)]
@@ -54,10 +54,8 @@ fn collect(store: &super::super::store::Store) -> Result<Vec<ListedRun>, Measure
             .map_err(|_| MeasureError::new("managed run id is not UTF-8"))?;
         let run_dir = open_run(store, &run_id)?;
         let run: RunRecord = super::super::store::validation::read_run(&run_dir.join("run.json"))?;
-        let prompts = read_jsonl(&run_dir.join("prompts.jsonl"), "prompts.jsonl")?;
-        let events = read_jsonl(&run_dir.join("events.jsonl"), "events.jsonl")?;
-        validate_records(&prompts, "prompt", "prompts.jsonl")?;
-        validate_records(&events, "event", "events.jsonl")?;
+        let prompts = read_prompts(&run_dir.join("prompts.jsonl"), &run)?;
+        let events = read_events(&run_dir.join("events.jsonl"), &run_id)?;
         let result: Option<ResultRecord> =
             read_optional_json(&run_dir.join("result.json"), "result.json")?;
         if let Some(result) = &result {
@@ -76,31 +74,12 @@ fn collect(store: &super::super::store::Store) -> Result<Vec<ListedRun>, Measure
     Ok(runs)
 }
 
-fn validate_records(records: &[Value], key: &str, label: &str) -> Result<(), MeasureError> {
-    if records.iter().all(|record| {
-        record.as_object().is_some() && record.get(key).and_then(Value::as_str).is_some()
-    }) {
-        return Ok(());
-    }
-    Err(MeasureError::new(format!(
-        "managed {label} has an invalid record"
-    )))
+fn first_prompt(records: &[PromptRecord]) -> Option<String> {
+    records.first().map(|record| excerpt(&record.prompt))
 }
 
-fn first_prompt(records: &[Value]) -> Option<String> {
-    records
-        .first()
-        .and_then(|record| record.get("prompt"))
-        .and_then(Value::as_str)
-        .map(excerpt)
-}
-
-fn last_event(records: &[Value]) -> Option<String> {
-    records
-        .last()
-        .and_then(|record| record.get("event"))
-        .and_then(Value::as_str)
-        .map(str::to_owned)
+fn last_event(records: &[StoredEvent]) -> Option<String> {
+    records.last().map(|record| record.event.clone())
 }
 
 fn excerpt(value: &str) -> String {
