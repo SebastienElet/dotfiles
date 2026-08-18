@@ -18,6 +18,7 @@ const EVENTS: &[&str] = &[
     "afterFileEdit",
     "beforeSubmitPrompt",
     "preCompact",
+    "postCompact",
     "stop",
     "afterAgentResponse",
     "afterAgentThought",

@@ -8,7 +8,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{io, path::Path};
 
 #[cfg(test)]
+mod test_hook;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+use test_hook::{run_after_publish_hook, set_after_publish_hook};
 
 const MAX_CONFIG_BYTES: usize = 1_048_576;
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -68,21 +72,31 @@ impl ConfigFile {
         }
         let temporary = temporary_name(&self.name);
         let mode = self.original.as_ref().map_or(0o600, |value| value.mode);
-        if let Err(error) = write_temporary(&self.directory, &temporary, bytes, mode) {
-            let _ = rustix::fs::unlinkat(&self.directory, &temporary, AtFlags::empty());
-            return Err(error);
-        }
-        let result = self.commit(&temporary);
+        let expected = match write_temporary(&self.directory, &temporary, bytes, mode) {
+            Ok(expected) => expected,
+            Err(error) => {
+                let _ = rustix::fs::unlinkat(&self.directory, &temporary, AtFlags::empty());
+                return Err(error);
+            }
+        };
+        let result = self.commit(&temporary, &expected);
         if result.is_err() {
             let _ = rustix::fs::unlinkat(&self.directory, &temporary, AtFlags::empty());
         }
         result
     }
 
-    fn commit(&self, temporary: &str) -> Result<(), MeasureError> {
+    fn commit(&self, temporary: &str, expected: &Snapshot) -> Result<(), MeasureError> {
         match &self.original {
             None => rename_new(&self.directory, temporary, &self.name)?,
             Some(original) => replace_existing(&self.directory, temporary, &self.name, original)?,
+        }
+        run_after_publish_hook();
+        if read_at(&self.directory, &self.name)?.as_ref() != Some(expected) {
+            return Err(changed());
+        }
+        if self.original.is_some() {
+            rustix::fs::unlinkat(&self.directory, temporary, AtFlags::empty()).map_err(errno)?;
         }
         rustix::fs::fsync(&self.directory).map_err(errno)?;
         Ok(())
@@ -135,12 +149,7 @@ fn read_at(directory: &File, name: &str) -> Result<Option<Snapshot>, MeasureErro
     if bytes.len() > MAX_CONFIG_BYTES {
         return Err(MeasureError::new("hook configuration is oversized"));
     }
-    Ok(Some(Snapshot {
-        bytes,
-        device: metadata.dev(),
-        inode: metadata.ino(),
-        mode: (metadata.mode() & 0o777) as u16,
-    }))
+    Ok(Some(snapshot(bytes, &metadata)))
 }
 
 fn validate_regular(file: &File) -> Result<std::fs::Metadata, MeasureError> {
@@ -158,7 +167,7 @@ fn write_temporary(
     name: &str,
     bytes: &[u8],
     mode: u16,
-) -> Result<(), MeasureError> {
+) -> Result<Snapshot, MeasureError> {
     let flags = OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file =
         rustix::fs::openat(directory, name, flags, Mode::from_raw_mode(0o600)).map_err(errno)?;
@@ -166,7 +175,17 @@ fn write_temporary(
     rustix::fs::fchmod(&file, Mode::from_raw_mode(mode)).map_err(errno)?;
     file.write_all(bytes)?;
     file.sync_all()?;
-    Ok(())
+    let metadata = validate_regular(&file)?;
+    Ok(snapshot(bytes.to_vec(), &metadata))
+}
+
+fn snapshot(bytes: Vec<u8>, metadata: &std::fs::Metadata) -> Snapshot {
+    Snapshot {
+        bytes,
+        device: metadata.dev(),
+        inode: metadata.ino(),
+        mode: (metadata.mode() & 0o777) as u16,
+    }
 }
 
 fn rename_new(directory: &File, temporary: &str, name: &str) -> Result<(), MeasureError> {
@@ -190,15 +209,19 @@ fn replace_existing(
         .map_err(errno)?;
     let current = read_at(directory, temporary);
     if current.as_ref().ok().and_then(Option::as_ref) == Some(original) {
-        rustix::fs::unlinkat(directory, temporary, AtFlags::empty()).map_err(errno)?;
         return Ok(());
     }
     rustix::fs::renameat_with(directory, temporary, directory, name, RenameFlags::EXCHANGE)
         .map_err(errno)?;
     current?;
-    Err(MeasureError::new(
-        "hook configuration changed during installation",
-    ))
+    Err(changed())
+}
+
+#[cfg(not(test))]
+fn run_after_publish_hook() {}
+
+fn changed() -> MeasureError {
+    MeasureError::new("hook configuration changed during installation")
 }
 
 fn temporary_name(name: &str) -> String {

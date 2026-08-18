@@ -40,6 +40,7 @@ const CURSOR: &[&str] = &[
     "afterAgentResponse",
     "stop",
     "preCompact",
+    "postCompact",
     "sessionEnd",
 ];
 
