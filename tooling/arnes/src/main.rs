@@ -10,22 +10,43 @@ use arnes::config;
 use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
+use arnes::measure;
 use arnes::prompts;
 use arnes::skills;
-use cli::{Cli, Command, Format, Resource, validate_render_options};
+use cli::{Cli, Color, Command, Format, MeasureCommand, Resource, validate_render_options};
 
 fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
-    let Command::Doctor {
-        resource,
-        agent,
-        scope,
-        format,
-        color,
-        verbose,
-    } = command;
+    match command {
+        Command::Doctor {
+            resource,
+            agent,
+            scope,
+            format,
+            color,
+            verbose,
+        } => run_doctor(resource, agent, scope, format, color, verbose),
+        Command::Measure {
+            command: MeasureCommand::Hook { agent },
+        } => match measure::capture(agent) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("measure hook: {error}");
+                ExitCode::from(2)
+            }
+        },
+    }
+}
 
+fn run_doctor(
+    resource: Option<Resource>,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+    format: Format,
+    color: Color,
+    verbose: bool,
+) -> ExitCode {
     if let Err(error) = validate_render_options(format, verbose, color) {
         eprintln!("{error}");
         return ExitCode::from(2);
