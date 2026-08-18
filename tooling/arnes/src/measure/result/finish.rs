@@ -4,7 +4,9 @@ use super::super::store::{
     open_private_append, open_private_new, temporary_path, write_json_atomic,
 };
 use super::io::read_optional_json;
-use super::records::{StoredEvent, latest_result, read_events_file, validate_result_coherence};
+use super::records::{
+    StoredEvent, latest_result, previous_result, read_events_file, validate_result_coherence,
+};
 use super::{FinishArgs, MergeReady, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use serde_json::json;
@@ -67,13 +69,18 @@ fn reconcile_result(
 ) -> Result<u64, MeasureError> {
     match (latest_result(history), current) {
         (None, None) => Ok(0),
-        (Some(latest), None) => {
-            write_json_atomic(path, latest)?;
-            Ok(latest.revision)
-        }
+        (Some(latest), None) => recover_result(path, latest),
         (Some(latest), Some(current)) if latest == current => Ok(latest.revision),
+        (Some(latest), Some(current)) if previous_result(history) == Some(current) => {
+            recover_result(path, latest)
+        }
         _ => validate_result_coherence(history, current).map(|()| 0),
     }
+}
+
+fn recover_result(path: &Path, result: &ResultRecord) -> Result<u64, MeasureError> {
+    write_json_atomic(path, result)?;
+    Ok(result.revision)
 }
 
 fn validate(args: &FinishArgs) -> Result<(), MeasureError> {

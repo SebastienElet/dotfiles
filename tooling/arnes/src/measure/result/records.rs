@@ -88,6 +88,14 @@ pub fn latest_result(events: &[StoredEvent]) -> Option<&ResultRecord> {
     events.iter().rev().find_map(|event| event.result.as_ref())
 }
 
+pub fn previous_result(events: &[StoredEvent]) -> Option<&ResultRecord> {
+    events
+        .iter()
+        .rev()
+        .filter_map(|event| event.result.as_ref())
+        .nth(1)
+}
+
 pub fn validate_result_coherence(
     events: &[StoredEvent],
     result: Option<&ResultRecord>,
