@@ -115,18 +115,7 @@ fn validate_resources(
                 "scope is not declared for this agent",
             ));
         }
-        if resource.kind == super::ResourceKind::Prompts {
-            return Err(ManifestError::new(
-                field("kind"),
-                "prompts must use normalized top-level declarations",
-            ));
-        }
-        if resource.kind == super::ResourceKind::Commands {
-            return Err(ManifestError::new(
-                field("kind"),
-                "commands must use normalized top-level declarations",
-            ));
-        }
+        validate_normalized_resource_kind(resource, index)?;
         validate_resource_paths(resource, index)?;
         validate_resource_layout(resource, index)?;
         if resource.kind == super::ResourceKind::Skills
@@ -146,6 +135,21 @@ fn validate_resources(
         }
     }
     Ok(())
+}
+
+fn validate_normalized_resource_kind(
+    resource: &ResourceDeclaration,
+    index: usize,
+) -> Result<(), ManifestError> {
+    let name = match resource.kind {
+        super::ResourceKind::Prompts => "prompts",
+        super::ResourceKind::Commands => "commands",
+        _ => return Ok(()),
+    };
+    Err(ManifestError::new(
+        format!("resources[{index}].kind"),
+        format!("{name} must use normalized top-level declarations"),
+    ))
 }
 
 fn validate_resource_layout(

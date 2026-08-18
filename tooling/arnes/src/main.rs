@@ -63,7 +63,26 @@ fn main() -> ExitCode {
         format,
     } = command;
 
-    let diagnostics = match resource {
+    let diagnostics = diagnose(resource, agent, scope);
+    let report = Report::new(diagnostics);
+    let output = match format {
+        Format::Human => report.human(),
+        Format::Json => report.json().expect("diagnostics are JSON serializable"),
+    };
+
+    if let Err(error) = write_output(&output) {
+        eprintln!("output: could not write diagnostics: {error}");
+        return ExitCode::from(2);
+    }
+    ExitCode::from(report.exit_code())
+}
+
+fn diagnose(
+    resource: Option<Resource>,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+) -> Vec<Diagnostic> {
+    match resource {
         None | Some(Resource::Manifest) => match Roots::from_environment() {
             Ok(roots) => vec![diagnose_manifest(&roots)],
             Err(error) => vec![Diagnostic::new("manifest", State::Error, error.to_string())],
@@ -93,18 +112,7 @@ fn main() -> ExitCode {
             Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
         },
         _ => Vec::new(),
-    };
-    let report = Report::new(diagnostics);
-    let output = match format {
-        Format::Human => report.human(),
-        Format::Json => report.json().expect("diagnostics are JSON serializable"),
-    };
-
-    if let Err(error) = write_output(&output) {
-        eprintln!("output: could not write diagnostics: {error}");
-        return ExitCode::from(2);
     }
-    ExitCode::from(report.exit_code())
 }
 
 fn write_output(output: &str) -> io::Result<()> {
