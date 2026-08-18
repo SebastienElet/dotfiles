@@ -2,13 +2,29 @@ use crate::Roots;
 use crate::manifest::Scope;
 use std::fs;
 use std::io::ErrorKind;
+use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct FileIdentity {
+    device: u64,
+    inode: u64,
+}
 
 pub fn canonical_within(path: &Path, root: &Path) -> Option<PathBuf> {
     let canonical_root = fs::canonicalize(root).ok()?;
     symlinks_within(path, root, &canonical_root, &mut Vec::new())
         .then(|| fs::canonicalize(path).ok())?
         .filter(|path| path.starts_with(canonical_root))
+}
+
+pub fn file_identity_within(path: &Path, root: &Path) -> Option<FileIdentity> {
+    let canonical = canonical_within(path, root)?;
+    let metadata = fs::metadata(canonical).ok()?;
+    Some(FileIdentity {
+        device: metadata.dev(),
+        inode: metadata.ino(),
+    })
 }
 
 fn symlinks_within(

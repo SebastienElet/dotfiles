@@ -2,16 +2,31 @@ use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, CommandBinding, Manifest, Prompt, PromptProjection, Scope};
 use crate::prompts::{self, Failure, ProjectionTracker};
+use std::collections::HashSet;
 use std::path::Path;
 
 mod binding;
 mod capability;
+#[cfg(test)]
+mod tests;
 
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,
     agent: Option<Agent>,
     scope: Option<Scope>,
+) -> Vec<Diagnostic> {
+    diagnose_with_tracker(roots, manifest, agent, scope, |scopes| {
+        ProjectionTracker::new_for_scopes(roots, manifest, scopes)
+    })
+}
+
+fn diagnose_with_tracker(
+    roots: &Roots,
+    manifest: &Manifest,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+    create_tracker: impl FnOnce(&[Scope]) -> ProjectionTracker,
 ) -> Vec<Diagnostic> {
     let selected = manifest
         .commands()
@@ -22,12 +37,50 @@ pub fn diagnose(
     if selected.is_empty() {
         return vec![unsupported(agent, scope, None)];
     }
+    let combinations = selected
+        .iter()
+        .filter(|binding| capability::supported(binding.agent, binding.scope))
+        .map(|binding| (binding.agent, binding.scope))
+        .collect::<HashSet<_>>();
+    if combinations.is_empty() {
+        return selected
+            .into_iter()
+            .map(|binding| unsupported_binding(binding))
+            .collect();
+    }
     let prompts = manifest.prompts().collect::<Vec<_>>();
-    let mut topology = ProjectionTracker::new(roots, manifest);
+    let scopes = combinations
+        .iter()
+        .map(|(_, scope)| *scope)
+        .collect::<Vec<_>>();
+    let mut topology = create_tracker(&scopes);
+    seed_unbound_projections(roots, &selected, &prompts, &combinations, &mut topology);
     selected
         .into_iter()
         .map(|binding| diagnose_binding(roots, binding, &prompts, &mut topology))
         .collect()
+}
+
+fn seed_unbound_projections(
+    roots: &Roots,
+    selected: &[CommandBinding<'_>],
+    prompts: &[Prompt<'_>],
+    combinations: &HashSet<(Agent, Scope)>,
+    topology: &mut ProjectionTracker,
+) {
+    let referenced = selected
+        .iter()
+        .filter(|binding| combinations.contains(&(binding.agent, binding.scope)))
+        .map(|binding| (binding.prompt(), binding.agent, binding.scope))
+        .collect::<HashSet<_>>();
+    for prompt in prompts {
+        for projection in prompt.projections().filter(|projection| {
+            combinations.contains(&(projection.agent, projection.scope))
+                && !referenced.contains(&(prompt.id(), projection.agent, projection.scope))
+        }) {
+            topology.seed_projection_destination(roots, *prompt, projection);
+        }
+    }
 }
 
 fn diagnose_binding(
@@ -122,6 +175,14 @@ fn unsupported(agent: Option<Agent>, scope: Option<Scope>, name: Option<&str>) -
         format!("{subject} is not declared or has no stable command contract"),
     )
     .with_human(group, "capability · unsupported")
+}
+
+fn unsupported_binding(command: CommandBinding<'_>) -> Diagnostic {
+    unsupported(
+        Some(command.agent),
+        Some(command.scope),
+        Some(command.name()),
+    )
 }
 
 fn broken(command: CommandBinding<'_>, failure: Failure) -> Diagnostic {

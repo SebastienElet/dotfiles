@@ -167,6 +167,10 @@ fn frontmatter_and_description_mismatches_are_drift() {
             "description must be a string",
         ),
         (
+            "---\ndescription: null\n---\nDeploy now\n",
+            "description must be a string",
+        ),
+        (
             "---\ndescription: Deploy unsafely\n---\nDeploy now\n",
             "description differs from manifest",
         ),

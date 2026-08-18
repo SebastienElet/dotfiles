@@ -75,6 +75,66 @@ fn command_destinations_cannot_alias_managed_resources() {
     assert_collision(&fixture, "aliases managed destination resource");
 }
 
+#[test]
+fn command_destinations_cannot_alias_unreferenced_prompt_projections() {
+    let fixture = Fixture::new();
+    let prompts = format!(
+        "{}{}",
+        prompt(
+            "deploy",
+            "claude",
+            "user",
+            "file",
+            ".claude/commands/deploy.md"
+        ),
+        prompt(
+            "other",
+            "claude",
+            "user",
+            "file",
+            ".claude/commands/alias/deploy.md"
+        )
+    );
+    let commands = command(
+        "deploy",
+        "deploy",
+        "      - { agent: claude, scope: user }\n",
+    );
+    fixture.write_home(".arnes.yaml", &manifest(&prompts, &commands));
+    fixture.write_repository("harness/prompts/deploy.md", CONTENTS);
+    fixture.write_repository("harness/prompts/other.md", CONTENTS);
+    fixture.write_home(".claude/commands/deploy.md", CONTENTS);
+    symlink(".", fixture.home().join(".claude/commands/alias")).unwrap();
+
+    assert_collision(&fixture, "aliases managed destination");
+}
+
+#[test]
+fn hardlinked_command_destinations_cannot_alias_each_other() {
+    let fixture = Fixture::new();
+    let prompts = format!(
+        "{}{}",
+        prompt("one", "claude", "user", "file", ".claude/commands/one.md"),
+        prompt("two", "claude", "user", "file", ".claude/commands/two.md")
+    );
+    let commands = format!(
+        "{}{}",
+        command("one", "one", "      - { agent: claude, scope: user }\n"),
+        command("two", "two", "      - { agent: claude, scope: user }\n")
+    );
+    fixture.write_home(".arnes.yaml", &manifest(&prompts, &commands));
+    fixture.write_repository("harness/prompts/one.md", CONTENTS);
+    fixture.write_repository("harness/prompts/two.md", CONTENTS);
+    fixture.write_home(".claude/commands/one.md", CONTENTS);
+    fs::hard_link(
+        fixture.home().join(".claude/commands/one.md"),
+        fixture.home().join(".claude/commands/two.md"),
+    )
+    .unwrap();
+
+    assert_collision(&fixture, "aliases managed destination");
+}
+
 fn assert_collision(fixture: &Fixture, expected: &str) {
     let (code, stdout, stderr) = run(fixture, CLAUDE_USER);
     assert_eq!(code, 2, "{stdout}");

@@ -219,3 +219,21 @@ fn unmanaged_and_plugin_neighbors_are_ignored() {
     assert!(!stdout.contains("opsx"));
     assert!(stderr.is_empty());
 }
+
+#[test]
+fn crlf_frontmatter_is_supported() {
+    let fixture = configured_fixture();
+    let contents = CONTENTS.replace('\n', "\r\n");
+    fixture.write_repository("harness/prompts/deploy.md", &contents);
+    fixture.write_repository(".claude/commands/deploy.md", &contents);
+    let (code, stdout, stderr) = run(
+        &fixture,
+        &[
+            "doctor", "commands", "--agent", "claude", "--scope", "project",
+        ],
+    );
+
+    assert_eq!(code, 0, "{stdout}");
+    assert!(stdout.contains("healthy     deploy · current"));
+    assert!(stderr.is_empty());
+}
