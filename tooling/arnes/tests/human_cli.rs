@@ -39,9 +39,7 @@ fn verbose_json_is_rejected_before_home_is_read() {
 
 #[test]
 fn duplicate_format_is_rejected_by_clap() {
-    let output = run(&[
-        "doctor", "skills", "--format", "human", "--format", "json",
-    ]);
+    let output = run(&["doctor", "skills", "--format", "human", "--format", "json"]);
     let stderr = String::from_utf8(output.stderr).unwrap();
 
     assert_eq!(output.status.code(), Some(2));

@@ -1,5 +1,7 @@
 use super::{Diagnostic, State, human_field};
 
+mod sections;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct SectionCount {
     singular: &'static str,
@@ -80,8 +82,17 @@ pub(super) fn render(
     if diagnostics.is_empty() {
         return "No diagnostics".to_owned();
     }
+    let structured = diagnostics
+        .iter()
+        .all(|diagnostic| diagnostic.section().is_some());
+    let (section_count, body) = if structured {
+        let (count, lines) = sections::render(diagnostics, options);
+        (Some(count), lines)
+    } else {
+        (None, render_flat(diagnostics, options))
+    };
     let mut lines = vec![
-        context.heading(None),
+        context.heading(section_count),
         format!("✓ {} healthy", state_count(diagnostics, State::Healthy)),
     ];
     let unsupported = state_count(diagnostics, State::Unsupported);
@@ -89,7 +100,7 @@ pub(super) fn render(
         lines.push(format!("! {unsupported} unsupported (non-blocking)"));
     }
     lines.push(String::new());
-    lines.extend(render_flat(diagnostics, options));
+    lines.extend(body);
     trim_trailing_empty(&mut lines);
     lines.join("\n")
 }

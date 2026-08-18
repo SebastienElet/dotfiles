@@ -1,0 +1,22 @@
+Skills · user scope · 3 agents
+✓ 2 healthy
+! 3 unsupported (non-blocking)
+
+CURSOR
+  1 issue · 1 unsupported · 1 healthy
+
+  DRIFT enforcement-code
+    expected  managed skill present
+    actual    destination missing
+    path      ~/.cursor/skills/enforcement-code
+  UNSUPPORTED extension skill exposure
+
+CLAUDE
+  1 unsupported · 1 healthy
+
+  UNSUPPORTED system skills inventory
+
+CODEX
+  1 unsupported · 0 healthy
+
+  UNSUPPORTED browser plugin version/cache

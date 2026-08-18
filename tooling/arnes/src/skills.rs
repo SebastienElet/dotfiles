@@ -1,5 +1,5 @@
 use crate::Roots;
-use crate::diagnostic::{Diagnostic, State};
+use crate::diagnostic::{Diagnostic, HumanSection, State};
 use crate::manifest::{Agent, Manifest, Scope, SkillLayout, SkillProjection};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -21,12 +21,24 @@ pub fn diagnose(
         .filter(|(_, candidate)| scope.is_none_or(|scope| scope == *candidate))
         .collect::<Vec<_>>();
     if combinations.is_empty() {
-        return vec![unsupported(agent, scope)];
+        let diagnostic = unsupported(agent, scope);
+        return vec![match (agent, scope) {
+            (Some(agent), Some(scope)) => diagnostic.with_human_section(section(agent, scope)),
+            _ => diagnostic,
+        }];
     }
     combinations
         .into_iter()
-        .flat_map(|(agent, scope)| diagnose_one(roots, manifest, agent, scope))
+        .flat_map(|(agent, scope)| {
+            diagnose_one(roots, manifest, agent, scope)
+                .into_iter()
+                .map(move |diagnostic| diagnostic.with_human_section(section(agent, scope)))
+        })
         .collect()
+}
+
+fn section(agent: Agent, scope: Scope) -> HumanSection {
+    HumanSection::new(format!("{agent}:{scope}"), agent.to_string().to_uppercase())
 }
 
 fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) -> Vec<Diagnostic> {

@@ -1,4 +1,4 @@
-use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report, State};
+use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, HumanSection, Report, State};
 
 fn report() -> Report {
     Report::new(vec![
@@ -17,6 +17,10 @@ fn context() -> HumanContext {
     HumanContext::new("Diagnostics")
 }
 
+fn section(key: &str, label: &str) -> HumanSection {
+    HumanSection::new(key, label)
+}
+
 #[test]
 fn normal_human_output_hides_healthy_details() {
     assert_eq!(
@@ -28,10 +32,7 @@ fn normal_human_output_hides_healthy_details() {
 #[test]
 fn verbose_human_output_includes_healthy_details() {
     assert_eq!(
-        format!(
-            "{}\n",
-            report().human(&context(), HumanOptions::verbose())
-        ),
+        format!("{}\n", report().human(&context(), HumanOptions::verbose())),
         include_str!("fixtures/diagnostic/report-verbose.txt")
     );
 }
@@ -128,4 +129,62 @@ fn human_groups_compact_diagnostics_without_changing_json() {
     let json = report.json().unwrap();
     assert!(json.contains("verbose first"));
     assert!(!json.contains("ponytail · allowed"));
+}
+
+#[test]
+fn structured_sections_sort_by_severity_without_mutating_report_order() {
+    let report = Report::new(vec![
+        Diagnostic::new("skills", State::Unsupported, "claude limitation")
+            .with_human_section(section("claude:user", "CLAUDE")),
+        Diagnostic::new("skills", State::Healthy, "cursor current")
+            .with_human_section(section("cursor:user", "CURSOR")),
+        Diagnostic::new("skills", State::Drift, "cursor missing")
+            .with_human_section(section("cursor:user", "CURSOR")),
+    ]);
+
+    let output = report.human(&context(), HumanOptions::normal());
+
+    assert!(output.find("CURSOR").unwrap() < output.find("CLAUDE").unwrap());
+    assert!(!output.contains("cursor current"));
+    assert_eq!(
+        report
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.message.as_str())
+            .collect::<Vec<_>>(),
+        ["claude limitation", "cursor current", "cursor missing"]
+    );
+}
+
+#[test]
+fn verbose_places_healthy_diagnostics_after_other_states() {
+    let report = Report::new(vec![
+        Diagnostic::new("skills", State::Healthy, "current")
+            .with_human_section(section("cursor:user", "CURSOR")),
+        Diagnostic::new("skills", State::Unsupported, "inventory unavailable")
+            .with_human_section(section("cursor:user", "CURSOR")),
+    ]);
+
+    let output = report.human(&context(), HumanOptions::verbose());
+
+    assert!(output.find("inventory unavailable").unwrap() < output.find("current").unwrap());
+}
+
+#[test]
+fn healthy_only_section_is_hidden_until_verbose() {
+    let report = Report::new(vec![
+        Diagnostic::new("skills", State::Healthy, "claude current")
+            .with_human_section(section("claude:user", "CLAUDE")),
+    ]);
+
+    assert!(
+        !report
+            .human(&context(), HumanOptions::normal())
+            .contains("CLAUDE")
+    );
+    assert!(
+        report
+            .human(&context(), HumanOptions::verbose())
+            .contains("CLAUDE")
+    );
 }
