@@ -179,4 +179,24 @@ env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository"
 [[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
 assert_link "$hooks_file.tmp" "$victim"
 
+case_root=$test_root/measurement_wiring
+test_home=$case_root/home
+mkdir -p "$test_home"
+for agent in codex claude-code cursor; do
+  target=$agent-measurement-hooks
+  trace=$case_root/$target
+  env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$target" >"$trace"
+  expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$target does not install its measurement hook exactly once"
+  grep -F -q -- 'cargo build --release' "$trace" || fail "$target does not depend on arnes"
+
+  trace=$case_root/$agent
+  env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$agent" >"$trace"
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$agent does not wire its measurement target exactly once"
+done
+
+handoff_line=$(grep -n -F -- 'old_command=' "$case_root/codex" | cut -d: -f1)
+measurement_line=$(grep -n -F -- 'measure install-hooks --agent codex' "$case_root/codex" | cut -d: -f1)
+[[ -n $handoff_line && -n $measurement_line && $handoff_line -lt $measurement_line ]] || fail "Codex handoff hook is not installed before measurement hooks"
+
 echo "Makefile tests passed"

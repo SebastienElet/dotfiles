@@ -1,4 +1,6 @@
 mod cli;
+mod cli_output;
+mod measure_cli;
 
 use clap::Parser;
 use std::io::{self, IsTerminal};
@@ -12,20 +14,34 @@ use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
 use arnes::skills;
-use cli::{Cli, Command, Format, Resource, validate_render_options};
+use cli::{Cli, Color, Command, Format, Resource, validate_render_options};
+use cli_output::write_output;
+use measure_cli::run_measure;
 
 fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
-    let Command::Doctor {
-        resource,
-        agent,
-        scope,
-        format,
-        color,
-        verbose,
-    } = command;
+    match command {
+        Command::Doctor {
+            resource,
+            agent,
+            scope,
+            format,
+            color,
+            verbose,
+        } => run_doctor(resource, agent, scope, format, color, verbose),
+        Command::Measure { command } => run_measure(command),
+    }
+}
 
+fn run_doctor(
+    resource: Option<Resource>,
+    agent: Option<Agent>,
+    scope: Option<Scope>,
+    format: Format,
+    color: Color,
+    verbose: bool,
+) -> ExitCode {
     if let Err(error) = validate_render_options(format, verbose, color) {
         eprintln!("{error}");
         return ExitCode::from(2);
@@ -130,24 +146,6 @@ fn diagnose(
         },
         _ => Vec::new(),
     }
-}
-
-fn write_output(output: &str) -> io::Result<()> {
-    if output.is_empty() {
-        return Ok(());
-    }
-
-    let output = format!("{output}\n");
-    let mut remaining = output.as_bytes();
-    while !remaining.is_empty() {
-        let written =
-            rustix::io::write(rustix::stdio::stdout(), remaining).map_err(io::Error::from)?;
-        if written == 0 {
-            return Err(io::Error::from(io::ErrorKind::WriteZero));
-        }
-        remaining = &remaining[written..];
-    }
-    Ok(())
 }
 
 fn diagnose_manifest(roots: &Roots) -> Diagnostic {
