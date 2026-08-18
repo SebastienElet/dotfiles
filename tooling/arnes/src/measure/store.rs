@@ -17,14 +17,16 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn open(repository: &Path) -> Result<Self, MeasureError> {
+    pub fn open(repositories: &[PathBuf]) -> Result<Self, MeasureError> {
         let root = state_root()?;
         let resolved = resolve_candidate(&root)?;
-        let repository = fs::canonicalize(repository)?;
-        if resolved.starts_with(&repository) {
-            return Err(MeasureError::new(
-                "state root cannot resolve inside the repository",
-            ));
+        for repository in repositories {
+            let repository = fs::canonicalize(repository)?;
+            if resolved.starts_with(&repository) {
+                return Err(MeasureError::new(
+                    "state root cannot resolve inside the repository",
+                ));
+            }
         }
         ensure_state_base(root.parent().unwrap().parent().unwrap())?;
         create_private_dir(root.parent().unwrap())?;

@@ -18,13 +18,18 @@ pub fn observe(directory: &Path) -> Option<RepositoryRecord> {
     })
 }
 
-pub fn protected_root(directory: &Path) -> PathBuf {
-    directory
+pub fn protected_roots(directory: &Path, observed: Option<&Path>) -> Vec<PathBuf> {
+    let marker_root = directory
         .ancestors()
         .filter(|ancestor| fs::symlink_metadata(ancestor.join(".git")).is_ok())
         .last()
         .unwrap_or(directory)
-        .to_owned()
+        .to_owned();
+    let mut roots = vec![marker_root];
+    if let Some(observed) = observed.filter(|observed| !roots.iter().any(|root| root == observed)) {
+        roots.push(observed.to_owned());
+    }
+    roots
 }
 
 fn git(directory: &Path, args: &[&str]) -> Option<String> {

@@ -392,6 +392,37 @@ fn refuses_state_inside_git_root_when_git_is_unavailable_from_a_subdirectory() {
 }
 
 #[test]
+fn refuses_state_inside_repository_observed_only_through_git_environment() {
+    let harness = Harness::new();
+    let git_dir = harness._root.path().join("external.git");
+    git(
+        &harness.repository,
+        &["init", "--bare", git_dir.to_str().unwrap()],
+    );
+    let nested = harness.repository.join("nested");
+    fs::create_dir(&nested).unwrap();
+    let state = harness.repository.join("state");
+    let mut command = harness.command("codex");
+    command
+        .current_dir(nested)
+        .env("GIT_DIR", &git_dir)
+        .env("GIT_WORK_TREE", &harness.repository)
+        .env("XDG_STATE_HOME", &state);
+    let mut child = command.spawn().unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(br#"{"session_id":"session"}"#)
+        .unwrap();
+
+    let output = child.wait_with_output().unwrap();
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(!state.exists());
+}
+
+#[test]
 fn nested_fake_git_marker_cannot_shrink_the_protected_repository() {
     let harness = Harness::new();
     git(&harness.repository, &["init"]);
@@ -448,14 +479,14 @@ fn nested_git_repository_is_observed_while_both_repository_boundaries_are_protec
     ));
     let first = run_record(&harness, "one");
     assert_eq!(
-        first["repository"]["root"],
+        first["repository"],
         fs::canonicalize(&inner).unwrap().to_str().unwrap()
     );
     assert_eq!(
-        first["repository"]["head"],
+        first["repository_commit"],
         git_value(&inner, &["rev-parse", "HEAD"])
     );
-    assert_eq!(first["repository"]["branch"], "inner");
+    assert_eq!(first["repository_branch"], "inner");
 
     fs::write(harness.repository.join("AGENTS.md"), "outer two").unwrap();
     assert_success(&run_at(
@@ -494,7 +525,7 @@ fn git_repository_root_preserves_trailing_spaces() {
 
     let first = capture_run(&harness, "codex", "session_id", "one");
     assert_eq!(
-        first["repository"]["root"],
+        first["repository"],
         fs::canonicalize(&harness.repository)
             .unwrap()
             .to_str()
@@ -815,15 +846,16 @@ fn records_git_metadata_model_and_deployed_harness_fingerprint() {
 
     assert_eq!(first_run["model"], "gpt-test");
     assert_eq!(
-        first_run["repository"]["root"],
+        first_run["repository"],
         fs::canonicalize(&harness.repository)
             .unwrap()
             .to_str()
             .unwrap()
     );
-    assert_eq!(first_run["repository"]["branch"], "measurement");
-    assert_eq!(first_run["repository"]["dirty"], true);
-    assert_eq!(first_run["repository"]["head"].as_str().unwrap().len(), 40);
+    assert_eq!(first_run["repository_branch"], "measurement");
+    assert_eq!(first_run["repository_dirty"], true);
+    assert_eq!(first_run["repository_commit"].as_str().unwrap().len(), 40);
+    assert_eq!(first_run.as_object().unwrap().len(), 12);
     assert_ne!(
         first_run["harness_fingerprint"],
         second_run["harness_fingerprint"]

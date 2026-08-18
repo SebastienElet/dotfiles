@@ -35,13 +35,14 @@ pub struct RunRecord {
     pub session_id: String,
     pub started_at_ms: u64,
     pub model: Option<String>,
-    pub repository: Option<RepositoryRecord>,
+    pub repository: Option<String>,
+    pub repository_commit: Option<String>,
+    pub repository_branch: Option<String>,
+    pub repository_dirty: Option<bool>,
     pub harness_fingerprint: String,
     pub harness_fingerprint_limitations: Vec<String>,
 }
 
-#[derive(Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
 pub struct RepositoryRecord {
     pub root: String,
     pub head: Option<String>,

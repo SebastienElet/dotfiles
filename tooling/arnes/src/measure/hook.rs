@@ -14,16 +14,20 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 static EVENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-
 pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
     let observed = env::current_dir()?;
-    let protected_root = repository::protected_root(&observed);
     let repository = repository::observe(&observed);
+    let protected_roots = repository::protected_roots(
+        &observed,
+        repository
+            .as_ref()
+            .map(|repository| Path::new(&repository.root)),
+    );
     let deployment_root = repository
         .as_ref()
         .map(|repository| PathBuf::from(&repository.root))
         .unwrap_or_else(|| observed.clone());
-    let store = Store::open(&protected_root)?;
+    let store = Store::open(&protected_roots)?;
     let payload = Payload::read(&store, agent)?;
     let session = required_string(payload.value(), agent.session_key())
         .map(str::to_owned)
@@ -84,6 +88,16 @@ fn build_run(
         .map(PathBuf::from)
         .ok_or_else(|| MeasureError::new("HOME is required for harness fingerprinting"))?;
     let fingerprint = fingerprint::deployed(agent, &home, deployment_root)?;
+    let (repository, repository_commit, repository_branch, repository_dirty) = repository
+        .map(|repository| {
+            (
+                Some(repository.root),
+                repository.head,
+                repository.branch,
+                Some(repository.dirty),
+            )
+        })
+        .unwrap_or_default();
     Ok(RunRecord {
         schema_version: 1,
         run_id,
@@ -92,6 +106,9 @@ fn build_run(
         started_at_ms: timestamp_ms,
         model: model(raw).map(|model| redact_string(&model)),
         repository,
+        repository_commit,
+        repository_branch,
+        repository_dirty,
         harness_fingerprint: fingerprint.digest,
         harness_fingerprint_limitations: fingerprint.limitations,
     })
