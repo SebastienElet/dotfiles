@@ -87,7 +87,7 @@ fn build_run(
     Ok(RunRecord {
         schema_version: 1,
         run_id,
-        agent: agent.as_str(),
+        agent: agent.as_str().to_owned(),
         session_id: session.to_owned(),
         started_at_ms: timestamp_ms,
         model: model(raw).map(|model| redact_string(&model)),

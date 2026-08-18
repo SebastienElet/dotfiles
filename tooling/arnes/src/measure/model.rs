@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
@@ -26,11 +26,12 @@ impl HookAgent {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct RunRecord {
     pub schema_version: u8,
     pub run_id: String,
-    pub agent: &'static str,
+    pub agent: String,
     pub session_id: String,
     pub started_at_ms: u64,
     pub model: Option<String>,
@@ -39,7 +40,8 @@ pub struct RunRecord {
     pub harness_fingerprint_limitations: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct RepositoryRecord {
     pub root: String,
     pub head: Option<String>,

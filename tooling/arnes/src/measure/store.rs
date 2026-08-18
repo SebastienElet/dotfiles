@@ -1,9 +1,9 @@
 use super::MeasureError;
 mod validation;
 use self::validation::{
-    ensure_regular_file, ensure_regular_or_missing, ensure_single_link, validate_json,
-    validate_jsonl,
+    ensure_regular_file, ensure_regular_or_missing, ensure_single_link, read_run, validate_jsonl,
 };
+use super::model::RunRecord;
 use serde::Serialize;
 use std::env;
 use std::fs::{self, File, OpenOptions};
@@ -58,16 +58,15 @@ pub fn append_jsonl<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureE
     Ok(())
 }
 
-pub fn write_json_once<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {
+pub fn write_json_once(path: &Path, value: &RunRecord) -> Result<(), MeasureError> {
     let lock_path = path.with_extension("json.lock");
     let lock = open_private_append(&lock_path)?;
     lock.lock()?;
     match fs::symlink_metadata(path) {
         Ok(_) => {
             ensure_regular_file(path)?;
-            let current = validate_json(path)?;
-            let expected = serde_json::to_value(value)?;
-            validation::validate_run(&current, &expected)?;
+            let current = read_run(path)?;
+            validation::validate_run(&current, value)?;
             Ok(())
         }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {

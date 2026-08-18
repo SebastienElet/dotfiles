@@ -25,6 +25,7 @@ pub fn deployed(
     let mut remaining = MAX_FILES;
     let mut selected = selected_roots(agent, home, repository);
     let plugins = plugins::selected(agent, home, repository)?;
+    hash_markers(&plugins.markers, &mut hasher, &mut remaining)?;
     selected.extend(plugins.roots);
     for root in selected {
         let result = hash_selected(&root, &mut hasher, &mut seen, &mut remaining);
@@ -82,6 +83,7 @@ fn home_roots(agent: HookAgent) -> &'static [&'static str] {
         ],
         HookAgent::Cursor => &[
             ".cursor/cli-config.json",
+            ".arnes.yaml",
             ".cursor/hooks.json",
             ".cursor/rules",
             ".cursor/skills",
@@ -229,5 +231,17 @@ fn consume_entry(remaining: &mut usize) -> std::io::Result<()> {
         ));
     }
     *remaining -= 1;
+    Ok(())
+}
+
+fn hash_markers(
+    markers: &[String],
+    hasher: &mut Sha256,
+    remaining: &mut usize,
+) -> Result<(), MeasureError> {
+    for marker in markers {
+        consume_entry(remaining).map_err(MeasureError::from)?;
+        write!(hasher, "plugin-state\0{marker}\0").map_err(MeasureError::from)?;
+    }
     Ok(())
 }

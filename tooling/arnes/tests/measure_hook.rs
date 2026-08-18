@@ -602,6 +602,72 @@ fn refuses_hardlinked_and_corrupt_managed_files() {
 }
 
 #[test]
+fn refuses_incompletely_typed_run_records_without_appending() {
+    for (field, replacement) in [
+        ("model", Some(json!([]))),
+        ("repository", Some(json!(["wrong"]))),
+        ("model", None),
+        ("harness_fingerprint_limitations", Some(json!(false))),
+    ] {
+        let harness = Harness::new();
+        let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
+        assert_success(&harness.run("codex", payload));
+        let run = harness.only_run();
+        let run_json = run.join("run.json");
+        let events = run.join("events.jsonl");
+        let artifacts = run.join("artifacts/hooks");
+        let before_events = fs::read(&events).unwrap();
+        let before_artifacts = fs::read_dir(&artifacts).unwrap().count();
+        let mut record = read_json(&run_json);
+        match replacement {
+            Some(value) => record[field] = value,
+            None => {
+                record.as_object_mut().unwrap().remove(field);
+            }
+        }
+        let corrupted = serde_json::to_vec(&record).unwrap();
+        fs::write(&run_json, &corrupted).unwrap();
+        assert_eq!(harness.runs().len(), 1);
+        assert_eq!(fs::read(&run_json).unwrap(), corrupted);
+
+        let output = harness.run("codex", payload);
+
+        assert_eq!(harness.runs(), vec![run.clone()]);
+        assert_eq!(fs::read(&run_json).unwrap(), corrupted, "field {field}");
+        assert_eq!(output.status.code(), Some(2), "field {field}");
+        assert_eq!(fs::read(&events).unwrap(), before_events, "field {field}");
+        assert_eq!(
+            fs::read_dir(artifacts).unwrap().count(),
+            before_artifacts,
+            "field {field}"
+        );
+    }
+}
+
+#[test]
+fn refuses_duplicate_run_record_keys_without_appending() {
+    let harness = Harness::new();
+    let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
+    assert_success(&harness.run("codex", payload));
+    let run = harness.only_run();
+    let run_json = run.join("run.json");
+    let events = run.join("events.jsonl");
+    let artifacts = run.join("artifacts/hooks");
+    let original = fs::read_to_string(&run_json).unwrap();
+    let corrupted = original.replacen('{', r#"{"agent":"evil","#, 1);
+    fs::write(&run_json, &corrupted).unwrap();
+    let before_events = fs::read(&events).unwrap();
+    let before_artifacts = fs::read_dir(&artifacts).unwrap().count();
+
+    let output = harness.run("codex", payload);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(fs::read_to_string(run_json).unwrap(), corrupted);
+    assert_eq!(fs::read(events).unwrap(), before_events);
+    assert_eq!(fs::read_dir(artifacts).unwrap().count(), before_artifacts);
+}
+
+#[test]
 fn refuses_a_broken_run_json_symlink_instead_of_replacing_it() {
     let harness = Harness::new();
     let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
@@ -944,47 +1010,151 @@ fn unsupported_claude_registry_excludes_plugin_files_with_a_limitation() {
 }
 
 #[test]
-fn codex_and_cursor_fingerprints_exclude_plugin_files_but_track_activation_config() {
-    for (agent, session_key, config, cache, enabled, disabled) in [
-        (
-            "codex",
-            "session_id",
-            ".codex/config.toml",
-            ".codex/plugins/cache/marketplace/demo/1.0.0/plugin.json",
-            "[plugins.\"demo@marketplace\"]\nenabled = true\n",
-            "[plugins.\"demo@marketplace\"]\nenabled = false\n",
-        ),
-        (
-            "cursor",
-            "conversation_id",
-            ".cursor/cli-config.json",
-            ".cursor/plugins/local/demo/plugin.json",
-            r#"{"enabledPlugins":{"demo":true}}"#,
-            r#"{"enabledPlugins":{"demo":false}}"#,
-        ),
-    ] {
-        let harness = Harness::new();
-        let config = harness.home.join(config);
-        let cache = harness.home.join(cache);
-        fs::create_dir_all(config.parent().unwrap()).unwrap();
-        fs::create_dir_all(cache.parent().unwrap()).unwrap();
-        fs::write(&config, enabled).unwrap();
-        fs::write(&cache, "cache one").unwrap();
-        let first = capture_run(&harness, agent, session_key, "one");
-        fs::write(&cache, "cache two").unwrap();
-        let second = capture_run(&harness, agent, session_key, "two");
-        assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
-        fs::write(&config, disabled).unwrap();
-        let third = capture_run(&harness, agent, session_key, "three");
-        assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
-        assert!(
-            third["harness_fingerprint_limitations"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|value| value.as_str().unwrap().contains("excluded"))
-        );
+fn codex_fingerprint_hashes_only_single_version_enabled_plugins() {
+    let harness = Harness::new();
+    fs::create_dir_all(harness.home.join(".codex")).unwrap();
+    fs::write(
+        harness.home.join(".codex/config.toml"),
+        "[plugins.\"active@marketplace\"]\nenabled = true\n[plugins.\"disabled@marketplace\"]\nenabled = false\n",
+    )
+    .unwrap();
+    let active = harness
+        .home
+        .join(".codex/plugins/cache/marketplace/active/1.0.0/plugin.json");
+    let disabled = harness
+        .home
+        .join(".codex/plugins/cache/marketplace/disabled/1.0.0/plugin.json");
+    fs::create_dir_all(active.parent().unwrap()).unwrap();
+    fs::create_dir_all(disabled.parent().unwrap()).unwrap();
+    fs::write(&active, "active one").unwrap();
+    fs::write(&disabled, "disabled one").unwrap();
+
+    let first = capture_run(&harness, "codex", "session_id", "one");
+    fs::write(&disabled, "disabled two").unwrap();
+    let second = capture_run(&harness, "codex", "session_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+    fs::write(&active, "active two").unwrap();
+    let third = capture_run(&harness, "codex", "session_id", "three");
+    assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
+}
+
+#[test]
+fn codex_fingerprint_records_ambiguous_enabled_plugin_versions() {
+    let harness = Harness::new();
+    fs::create_dir_all(harness.home.join(".codex")).unwrap();
+    fs::write(
+        harness.home.join(".codex/config.toml"),
+        "[plugins.\"demo@marketplace\"]\nenabled = true\n",
+    )
+    .unwrap();
+    let cache = harness.home.join(".codex/plugins/cache/marketplace/demo");
+    for version in ["1.0.0", "2.0.0"] {
+        fs::create_dir_all(cache.join(version)).unwrap();
+        fs::write(cache.join(version).join("plugin.json"), version).unwrap();
     }
+
+    let first = capture_run(&harness, "codex", "session_id", "one");
+    assert!(
+        first["harness_fingerprint_limitations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value.as_str().unwrap().contains("ambiguous"))
+    );
+    fs::create_dir_all(cache.join("3.0.0")).unwrap();
+    fs::write(cache.join("3.0.0/plugin.json"), "three").unwrap();
+    let second = capture_run(&harness, "codex", "session_id", "two");
+    assert_ne!(first["harness_fingerprint"], second["harness_fingerprint"]);
+}
+
+#[test]
+fn codex_ambiguous_version_sets_have_unambiguous_fingerprints() {
+    let capture = |versions: &[&str]| {
+        let harness = Harness::new();
+        fs::create_dir_all(harness.home.join(".codex")).unwrap();
+        fs::write(
+            harness.home.join(".codex/config.toml"),
+            "[plugins.\"demo@marketplace\"]\nenabled = true\n",
+        )
+        .unwrap();
+        let cache = harness.home.join(".codex/plugins/cache/marketplace/demo");
+        for version in versions {
+            fs::create_dir_all(cache.join(version)).unwrap();
+        }
+        capture_run(&harness, "codex", "session_id", "session")["harness_fingerprint"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
+
+    assert_ne!(capture(&["a,b", "c"]), capture(&["a", "b,c"]));
+}
+
+#[test]
+fn codex_plugin_roots_cannot_escape_the_cache() {
+    let escaped = Harness::new();
+    fs::create_dir_all(escaped.home.join(".codex")).unwrap();
+    fs::write(
+        escaped.home.join(".codex/config.toml"),
+        "[plugins.\"payload@../../../outside\"]\nenabled = true\n",
+    )
+    .unwrap();
+    let escaped_file = escaped.home.join("outside/payload/1.0.0/plugin.json");
+    fs::create_dir_all(escaped_file.parent().unwrap()).unwrap();
+    fs::write(&escaped_file, "one").unwrap();
+    let first = capture_run(&escaped, "codex", "session_id", "one");
+    fs::write(&escaped_file, "two").unwrap();
+    let second = capture_run(&escaped, "codex", "session_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+
+    let linked = Harness::new();
+    fs::create_dir_all(linked.home.join(".codex/plugins/cache/marketplace")).unwrap();
+    fs::write(
+        linked.home.join(".codex/config.toml"),
+        "[plugins.\"active@marketplace\"]\nenabled = true\n",
+    )
+    .unwrap();
+    let outside = linked.home.join("outside/active");
+    let linked_file = outside.join("1.0.0/plugin.json");
+    fs::create_dir_all(linked_file.parent().unwrap()).unwrap();
+    fs::write(&linked_file, "one").unwrap();
+    symlink(
+        &outside,
+        linked.home.join(".codex/plugins/cache/marketplace/active"),
+    )
+    .unwrap();
+    let first = capture_run(&linked, "codex", "session_id", "one");
+    fs::write(&linked_file, "two").unwrap();
+    let second = capture_run(&linked, "codex", "session_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+}
+
+#[test]
+fn cursor_fingerprint_hashes_only_declared_local_plugins() {
+    let harness = Harness::new();
+    fs::write(
+        harness.home.join(".arnes.yaml"),
+        "version: 1\nagents:\n  - id: cursor\n    scopes: [user]\nexternal:\n  roots: []\n  plugins:\n    - { agent: cursor, scope: user, id: active }\n  skills: []\nresources: []\n",
+    )
+    .unwrap();
+    let active = harness
+        .home
+        .join(".cursor/plugins/local/active/plugin.json");
+    let inactive = harness
+        .home
+        .join(".cursor/plugins/local/inactive/plugin.json");
+    fs::create_dir_all(active.parent().unwrap()).unwrap();
+    fs::create_dir_all(inactive.parent().unwrap()).unwrap();
+    fs::write(&active, "active one").unwrap();
+    fs::write(&inactive, "inactive one").unwrap();
+
+    let first = capture_run(&harness, "cursor", "conversation_id", "one");
+    fs::write(&inactive, "inactive two").unwrap();
+    let second = capture_run(&harness, "cursor", "conversation_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+    fs::write(&active, "active two").unwrap();
+    let third = capture_run(&harness, "cursor", "conversation_id", "three");
+    assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
 }
 
 #[test]

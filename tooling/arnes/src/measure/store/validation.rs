@@ -1,6 +1,7 @@
 use super::super::MeasureError;
+use super::super::model::RunRecord;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::Path;
 
@@ -48,40 +49,44 @@ pub fn validate_jsonl(file: &File) -> Result<(), MeasureError> {
     Ok(())
 }
 
-pub fn validate_json(path: &Path) -> Result<serde_json::Value, MeasureError> {
-    let file = OpenOptions::new()
+pub fn read_run(path: &Path) -> Result<RunRecord, MeasureError> {
+    let mut file = OpenOptions::new()
         .read(true)
         .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
         .open(path)?;
     ensure_single_link(&file.metadata()?, path)?;
-    Ok(serde_json::from_reader(file)?)
+    let mut bytes = Vec::new();
+    file.by_ref().take(1_048_577).read_to_end(&mut bytes)?;
+    if bytes.len() > 1_048_576 {
+        return Err(MeasureError::new("managed run.json is oversized"));
+    }
+    let record: RunRecord = serde_json::from_slice(&bytes).map_err(|error| {
+        MeasureError::new(format!("managed run.json has an invalid schema: {error}"))
+    })?;
+    let raw: serde_json::Value = serde_json::from_slice(&bytes)?;
+    if serde_json::to_value(&record)? != raw {
+        return Err(MeasureError::new(
+            "managed run.json does not exactly match its schema",
+        ));
+    }
+    Ok(record)
 }
 
-pub fn validate_run(
-    current: &serde_json::Value,
-    expected: &serde_json::Value,
-) -> Result<(), MeasureError> {
-    let current = current
-        .as_object()
-        .ok_or_else(|| MeasureError::new("managed run.json must be an object"))?;
-    let expected = expected
-        .as_object()
-        .ok_or_else(|| MeasureError::new("expected run record must be an object"))?;
-    for key in ["schema_version", "run_id", "agent", "session_id"] {
-        if current.get(key) != expected.get(key) {
+pub fn validate_run(current: &RunRecord, expected: &RunRecord) -> Result<(), MeasureError> {
+    for (key, matches) in [
+        (
+            "schema_version",
+            current.schema_version == expected.schema_version,
+        ),
+        ("run_id", current.run_id == expected.run_id),
+        ("agent", current.agent == expected.agent),
+        ("session_id", current.session_id == expected.session_id),
+    ] {
+        if !matches {
             return Err(MeasureError::new(format!(
                 "managed run.json has an unexpected {key}"
             )));
         }
-    }
-    if !current
-        .get("started_at_ms")
-        .is_some_and(serde_json::Value::is_u64)
-        || !current
-            .get("harness_fingerprint")
-            .is_some_and(serde_json::Value::is_string)
-    {
-        return Err(MeasureError::new("managed run.json has an invalid schema"));
     }
     Ok(())
 }

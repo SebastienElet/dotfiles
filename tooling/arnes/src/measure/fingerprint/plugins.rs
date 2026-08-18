@@ -1,3 +1,5 @@
+mod codex;
+mod cursor;
 use super::SelectedRoot;
 use crate::measure::{MeasureError, model::HookAgent};
 use serde_json::Value as JsonValue;
@@ -11,6 +13,7 @@ const MAX_MANIFEST_BYTES: u64 = 1_048_576;
 pub struct PluginSelection {
     pub roots: Vec<SelectedRoot>,
     pub limitations: Vec<String>,
+    pub markers: Vec<String>,
 }
 
 pub fn selected(
@@ -19,17 +22,9 @@ pub fn selected(
     repository: &Path,
 ) -> Result<PluginSelection, MeasureError> {
     Ok(match agent {
-        HookAgent::Codex => unavailable_runtime(
-            "codex plugin runtime version is not observable; activation configuration fingerprinted; cache excluded",
-        ),
+        HookAgent::Codex => codex::selected(home)?,
         HookAgent::ClaudeCode => claude(home, repository)?,
-        HookAgent::Cursor => PluginSelection {
-            roots: Vec::new(),
-            limitations: vec![
-                "cursor plugin runtime activation is not observable; configuration fingerprinted; plugin files excluded"
-                    .to_owned(),
-            ],
-        },
+        HookAgent::Cursor => cursor::selected(home)?,
     })
 }
 
@@ -37,6 +32,7 @@ fn unavailable_runtime(limitation: &str) -> PluginSelection {
     PluginSelection {
         roots: Vec::new(),
         limitations: vec![limitation.to_owned()],
+        markers: Vec::new(),
     }
 }
 
@@ -51,6 +47,7 @@ fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureErro
         return Ok(PluginSelection {
             roots: Vec::new(),
             limitations: Vec::new(),
+            markers: Vec::new(),
         });
     }
     let Some(plugins) = registry
@@ -83,6 +80,7 @@ fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureErro
             })
             .into_iter()
             .collect(),
+        markers: Vec::new(),
     })
 }
 
@@ -116,7 +114,7 @@ fn read_json(path: &Path) -> Result<Option<JsonValue>, MeasureError> {
         .transpose()
 }
 
-fn read_manifest(path: &Path) -> Result<Option<String>, MeasureError> {
+pub(super) fn read_manifest(path: &Path) -> Result<Option<String>, MeasureError> {
     let mut file = match File::open(path) {
         Ok(file) => file,
         Err(_) => return Ok(None),
@@ -154,7 +152,7 @@ fn claude_installation(root: &Path, id: &str, value: &JsonValue) -> Option<Selec
     })
 }
 
-fn within(path: &Path, root: &Path) -> bool {
+pub(super) fn within(path: &Path, root: &Path) -> bool {
     if !path.is_absolute()
         || !path.starts_with(root)
         || path
@@ -170,7 +168,7 @@ fn within(path: &Path, root: &Path) -> bool {
     }
 }
 
-fn safe_label(value: &str) -> String {
+pub(super) fn safe_label(value: &str) -> String {
     value
         .chars()
         .map(|character| {
