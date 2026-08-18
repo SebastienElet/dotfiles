@@ -1,39 +1,8 @@
 use super::super::MeasureError;
 use super::super::model::RunRecord;
-use super::MAX_RECORD_BYTES;
-use std::fs::{self, File, OpenOptions};
+use super::{MAX_RECORD_BYTES, ManagedPath};
+use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
-use std::path::Path;
-
-pub fn ensure_regular_or_missing(path: &Path) -> Result<(), MeasureError> {
-    match fs::symlink_metadata(path) {
-        Ok(_) => ensure_regular_file(path),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.into()),
-    }
-}
-
-pub fn ensure_regular_file(path: &Path) -> Result<(), MeasureError> {
-    let metadata = fs::symlink_metadata(path)?;
-    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.nlink() != 1 {
-        return Err(MeasureError::new(format!(
-            "managed path is not a single-link regular file: {}",
-            path.display()
-        )));
-    }
-    Ok(())
-}
-
-pub fn ensure_single_link(metadata: &fs::Metadata, path: &Path) -> Result<(), MeasureError> {
-    if metadata.nlink() != 1 {
-        return Err(MeasureError::new(format!(
-            "managed file has multiple hardlinks: {}",
-            path.display()
-        )));
-    }
-    Ok(())
-}
 
 pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
     let length = file.metadata()?.len();
@@ -60,12 +29,8 @@ pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
     Ok(())
 }
 
-pub fn read_run(path: &Path) -> Result<RunRecord, MeasureError> {
-    let mut file = OpenOptions::new()
-        .read(true)
-        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
-        .open(path)?;
-    ensure_single_link(&file.metadata()?, path)?;
+pub fn read_run(path: &ManagedPath) -> Result<RunRecord, MeasureError> {
+    let mut file = path.open_read()?;
     let mut bytes = Vec::new();
     file.by_ref().take(1_048_577).read_to_end(&mut bytes)?;
     if bytes.len() > 1_048_576 {

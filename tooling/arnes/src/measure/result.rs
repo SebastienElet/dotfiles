@@ -7,11 +7,11 @@ mod records;
 use super::MeasureError;
 use super::model::HookAgent;
 use super::repository;
-use super::store::Store;
+use super::store::{ManagedPath, Store};
 use clap::{Args, ValueEnum};
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub use feedback::record as feedback;
 pub use finish::record as finish;
@@ -129,17 +129,13 @@ pub(super) fn open_store() -> Result<Store, MeasureError> {
     Store::open(&protected)
 }
 
-pub(super) fn open_run(store: &Store, run_id: &str) -> Result<PathBuf, MeasureError> {
+pub(super) fn open_run(store: &Store, run_id: &str) -> Result<ManagedPath, MeasureError> {
     validate_run_id(run_id)?;
     let path = store.run_path(run_id);
-    let metadata =
-        std::fs::symlink_metadata(&path).map_err(|error| map_unknown_run(error, run_id))?;
-    if !metadata.is_dir() || metadata.file_type().is_symlink() {
-        return Err(MeasureError::new(format!(
-            "managed run path is not a real directory: {}",
-            path.display()
-        )));
+    if !path.exists()? {
+        return Err(MeasureError::new(format!("unknown run: {run_id}")));
     }
+    path.open_directory()?;
     let run = super::store::validation::read_run(&path.join("run.json"))?;
     if run.schema_version != 1 || run.run_id != run_id || !valid_agent(&run.agent) {
         return Err(MeasureError::new(
@@ -160,14 +156,6 @@ fn validate_run_id(run_id: &str) -> Result<(), MeasureError> {
     Err(MeasureError::new(
         "run id must be exactly 64 lowercase hexadecimal characters",
     ))
-}
-
-fn map_unknown_run(error: std::io::Error, run_id: &str) -> MeasureError {
-    if error.kind() == std::io::ErrorKind::NotFound {
-        MeasureError::new(format!("unknown run: {run_id}"))
-    } else {
-        error.into()
-    }
 }
 
 fn valid_agent(agent: &str) -> bool {

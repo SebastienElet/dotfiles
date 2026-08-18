@@ -44,6 +44,12 @@ impl From<std::io::Error> for MeasureError {
     }
 }
 
+impl From<rustix::io::Errno> for MeasureError {
+    fn from(error: rustix::io::Errno) -> Self {
+        std::io::Error::from(error).into()
+    }
+}
+
 impl From<serde_json::Error> for MeasureError {
     fn from(error: serde_json::Error) -> Self {
         Self(error.to_string())

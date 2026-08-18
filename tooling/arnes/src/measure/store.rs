@@ -1,96 +1,102 @@
 use super::MeasureError;
+use super::model::RunRecord;
+use serde::Serialize;
+use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+mod path;
 mod serialization;
 #[cfg(test)]
 mod tests;
 pub(super) mod validation;
-use self::validation::{
-    ensure_regular_file, ensure_regular_or_missing, ensure_single_link, read_run,
-};
-use super::model::RunRecord;
-use serde::Serialize;
-pub use serialization::{append_jsonl, write_json_atomic};
+
+pub(super) use path::ManagedPath;
+#[cfg(test)]
+pub use serialization::{append_jsonl, write_json_atomic_test};
 pub(super) use serialization::{
     append_jsonl_bytes, compact_json_bytes, json_bytes, jsonl_bytes, write_json_atomic_bytes,
 };
-use std::env;
-use std::fs::{self, File, OpenOptions};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
-use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 pub(super) const MAX_RECORD_BYTES: usize = 1_100_000;
 
 pub struct Store {
-    root: PathBuf,
+    root: ManagedPath,
 }
 
 impl Store {
     pub fn open(repositories: &[PathBuf]) -> Result<Self, MeasureError> {
-        let root = state_root()?;
-        let resolved = resolve_candidate(&root)?;
-        for repository in repositories {
-            let repository = fs::canonicalize(repository)?;
-            if resolved.starts_with(&repository) {
-                return Err(MeasureError::new(
-                    "state root cannot resolve inside the repository",
-                ));
-            }
-        }
-        ensure_state_base(root.parent().unwrap().parent().unwrap())?;
-        create_private_dir(root.parent().unwrap())?;
-        create_private_dir(&root)?;
-        Ok(Self { root })
+        let resolved = resolve_candidate(&state_base()?)?.join("dotfiles/agent-harness");
+        reject_repositories(&resolved, repositories)?;
+        let directory = path::open_root(&resolved)?;
+        Ok(Self {
+            root: ManagedPath::root(directory, resolved),
+        })
     }
 
-    pub fn run_dir(&self, run_id: &str) -> Result<PathBuf, MeasureError> {
+    pub fn run_dir(&self, run_id: &str) -> Result<ManagedPath, MeasureError> {
         let run = self.run_path(run_id);
-        let runs = run.parent().unwrap();
-        create_private_dir(runs)?;
-        create_private_dir(&run)?;
-        create_private_dir(&run.join("artifacts"))?;
-        create_private_dir(&run.join("artifacts/hooks"))?;
+        for path in [
+            self.runs_path(),
+            run.clone(),
+            run.join("artifacts"),
+            run.join("artifacts/hooks"),
+        ] {
+            path.create_dir_all()?;
+        }
         Ok(run)
     }
 
-    pub fn run_path(&self, run_id: &str) -> PathBuf {
+    pub fn run_path(&self, run_id: &str) -> ManagedPath {
         self.root.join("runs").join(run_id)
     }
 
-    pub fn runs_path(&self) -> PathBuf {
+    pub fn runs_path(&self) -> ManagedPath {
         self.root.join("runs")
     }
 
     pub fn append_invalid<T: Serialize>(&self, record: &T) -> Result<(), MeasureError> {
-        append_jsonl(&self.root.join("invalid.jsonl"), record)
+        let bytes = jsonl_bytes(record)?;
+        append_jsonl_bytes(&self.root.join("invalid.jsonl"), &bytes)
     }
 }
 
 pub fn write_json_once(
-    path: &Path,
+    path: &ManagedPath,
     value: Option<&RunRecord>,
     agent: &str,
     session: &str,
     run_id: &str,
 ) -> Result<(), MeasureError> {
-    let lock_path = path.with_extension("json.lock");
-    let lock = open_private_append(&lock_path)?;
+    let lock = open_private_append(&path.join_extension("json.lock"))?;
     lock.lock()?;
-    match fs::symlink_metadata(path) {
-        Ok(_) => {
-            ensure_regular_file(path)?;
-            let current = read_run(path)?;
-            validation::validate_run(&current, agent, session, run_id)?;
-            Ok(())
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            let value = value.ok_or_else(|| MeasureError::new("managed run.json disappeared"))?;
-            write_json_atomic(path, value)
-        }
-        Err(error) => Err(error.into()),
+    if path.exists()? {
+        let current = validation::read_run(path)?;
+        validation::validate_run(&current, agent, session, run_id)
+    } else {
+        let value = value.ok_or_else(|| MeasureError::new("managed run.json disappeared"))?;
+        serialization::write_json_atomic(path, value)
     }
 }
 
-fn state_root() -> Result<PathBuf, MeasureError> {
+pub(super) fn open_private_append(path: &ManagedPath) -> Result<std::fs::File, MeasureError> {
+    path.open_append()
+}
+
+pub(super) fn open_private_new(path: &ManagedPath) -> Result<std::fs::File, MeasureError> {
+    path.open_new()
+}
+
+pub(super) fn temporary_path(path: &ManagedPath) -> ManagedPath {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    path.join_extension(format!("tmp-{}-{nanos}", std::process::id()))
+}
+
+fn state_base() -> Result<PathBuf, MeasureError> {
     let base = match env::var_os("XDG_STATE_HOME") {
         Some(path) => checked_absolute(path, "XDG_STATE_HOME")?,
         None => checked_absolute(
@@ -99,7 +105,7 @@ fn state_root() -> Result<PathBuf, MeasureError> {
         )?
         .join(".local/state"),
     };
-    Ok(base.join("dotfiles/agent-harness"))
+    Ok(base)
 }
 
 fn checked_absolute(value: std::ffi::OsString, name: &str) -> Result<PathBuf, MeasureError> {
@@ -115,87 +121,16 @@ fn checked_absolute(value: std::ffi::OsString, name: &str) -> Result<PathBuf, Me
     Ok(path)
 }
 
-fn ensure_state_base(path: &Path) -> Result<(), MeasureError> {
-    if path.exists() {
-        return ensure_directory(path);
-    }
-    let mut missing = Vec::new();
-    let mut existing = path;
-    while !existing.exists() {
-        missing.push(existing);
-        existing = existing
-            .parent()
-            .ok_or_else(|| MeasureError::new("state base has no existing ancestor"))?;
-    }
-    ensure_directory(existing)?;
-    for directory in missing.into_iter().rev() {
-        create_private_dir(directory)?;
-    }
-    Ok(())
-}
-
-fn create_private_dir(path: &Path) -> Result<(), MeasureError> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if !metadata.is_dir() || metadata.file_type().is_symlink() => {
-            return Err(MeasureError::new(format!(
-                "managed path is not a real directory: {}",
-                path.display()
-            )));
+fn reject_repositories(root: &Path, repositories: &[PathBuf]) -> Result<(), MeasureError> {
+    for repository in repositories {
+        let repository = fs::canonicalize(repository)?;
+        if root.starts_with(&repository) {
+            return Err(MeasureError::new(
+                "state root cannot resolve inside the repository",
+            ));
         }
-        Ok(_) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => match fs::create_dir(path) {
-            Ok(()) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-                let metadata = fs::symlink_metadata(path)?;
-                if !metadata.is_dir() || metadata.file_type().is_symlink() {
-                    return Err(MeasureError::new(format!(
-                        "managed path is not a real directory: {}",
-                        path.display()
-                    )));
-                }
-            }
-            Err(error) => return Err(error.into()),
-        },
-        Err(error) => return Err(error.into()),
-    }
-    fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
-    Ok(())
-}
-
-fn ensure_directory(path: &Path) -> Result<(), MeasureError> {
-    let metadata = fs::metadata(path)?;
-    if !metadata.is_dir() {
-        return Err(MeasureError::new(format!(
-            "state path is not a directory: {}",
-            path.display()
-        )));
     }
     Ok(())
-}
-
-pub(super) fn open_private_append(path: &Path) -> Result<File, MeasureError> {
-    ensure_regular_or_missing(path)?;
-    let file = OpenOptions::new()
-        .create(true)
-        .read(true)
-        .append(true)
-        .mode(0o600)
-        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
-        .open(path)?;
-    ensure_single_link(&file.metadata()?, path)?;
-    file.set_permissions(fs::Permissions::from_mode(0o600))?;
-    Ok(file)
-}
-
-pub(super) fn open_private_new(path: &Path) -> Result<File, MeasureError> {
-    let file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
-        .open(path)?;
-    file.set_permissions(fs::Permissions::from_mode(0o600))?;
-    Ok(file)
 }
 
 fn resolve_candidate(path: &Path) -> Result<PathBuf, MeasureError> {
@@ -216,12 +151,4 @@ fn resolve_candidate(path: &Path) -> Result<PathBuf, MeasureError> {
         resolved.push(component);
     }
     Ok(resolved)
-}
-
-pub(super) fn temporary_path(path: &Path) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    path.with_extension(format!("tmp-{}-{nanos}", std::process::id()))
 }

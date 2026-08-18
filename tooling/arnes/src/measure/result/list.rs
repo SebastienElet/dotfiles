@@ -4,7 +4,6 @@ use super::io::read_optional_json;
 use super::records::{ResultState, read_events_with, read_first_prompt, result_state};
 use super::{ListArgs, ListFormat, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
-use std::fs;
 
 #[derive(Serialize)]
 struct ListedRun {
@@ -21,15 +20,11 @@ struct ListedRun {
 pub fn render(args: ListArgs) -> Result<String, MeasureError> {
     let store = open_store()?;
     let runs_path = store.runs_path();
-    let mut runs = match fs::symlink_metadata(&runs_path) {
-        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => collect(&store)?,
-        Ok(_) => {
-            return Err(MeasureError::new(
-                "managed runs path is not a real directory",
-            ));
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
-        Err(error) => return Err(error.into()),
+    let mut runs = if runs_path.exists()? {
+        runs_path.open_directory()?;
+        collect(&store)?
+    } else {
+        Vec::new()
     };
     if let Some(agent) = args.agent {
         runs.retain(|run| run.agent == agent.as_str());
@@ -47,10 +42,8 @@ pub fn render(args: ListArgs) -> Result<String, MeasureError> {
 
 fn collect(store: &super::super::store::Store) -> Result<Vec<ListedRun>, MeasureError> {
     let mut runs = Vec::new();
-    for entry in fs::read_dir(store.runs_path())? {
-        let entry = entry?;
-        let run_id = entry
-            .file_name()
+    for name in store.runs_path().read_dir_names()? {
+        let run_id = name
             .into_string()
             .map_err(|_| MeasureError::new("managed run id is not UTF-8"))?;
         let run_dir = open_run(store, &run_id)?;

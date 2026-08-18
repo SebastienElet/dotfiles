@@ -51,6 +51,25 @@ fn recursively_redacts_secret_keys_tokens_and_internal_reasoning() {
 }
 
 #[test]
+fn prompt_redaction_preserves_words_and_masks_plausible_tokens() {
+    let harness = Harness::new();
+    let prompt = "task-specific risk-based sk-short sk-abcdefghijklmnopqrstuvwxyz";
+    let payload = json!({
+        "session_id":"session",
+        "hook_event_name":"UserPromptSubmit",
+        "prompt":prompt
+    });
+
+    assert_success(&harness.run("codex", payload.to_string().as_bytes()));
+
+    let prompts = read_jsonl(harness.only_run().join("prompts.jsonl"));
+    assert_eq!(
+        prompts[0]["prompt"],
+        "task-specific risk-based sk-short [REDACTED]"
+    );
+}
+
+#[test]
 fn after_agent_thought_never_persists_reasoning_values() {
     let harness = Harness::new();
     let secret = "manually-injected-private-thought";

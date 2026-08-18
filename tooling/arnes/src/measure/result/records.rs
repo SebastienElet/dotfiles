@@ -1,10 +1,10 @@
 use super::super::MeasureError;
 use super::super::model::{PromptRecord, RunRecord};
+use super::super::store::ManagedPath;
 use super::MergeReady;
 use super::io::visit_jsonl_typed;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use std::path::Path;
 
 mod history;
 pub use history::{
@@ -41,7 +41,7 @@ pub struct StoredEvent {
 }
 
 pub fn read_first_prompt(
-    path: &Path,
+    path: &ManagedPath,
     run: &RunRecord,
 ) -> Result<Option<PromptRecord>, MeasureError> {
     let mut first = None;
@@ -137,7 +137,7 @@ fn validate_verdict(result: &ResultRecord) -> Result<(), MeasureError> {
     }
 }
 
-fn is_digest(value: &str) -> bool {
+pub(super) fn is_digest(value: &str) -> bool {
     value.len() == 64
         && value
             .bytes()

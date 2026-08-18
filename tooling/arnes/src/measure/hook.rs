@@ -61,21 +61,19 @@ fn persist_hook(
     let run_id = digest(&[agent.as_str().as_bytes(), session.as_bytes()]);
     let run_dir = store.run_path(&run_id);
     let run_json = run_dir.join("run.json");
-    let run = match std::fs::symlink_metadata(&run_json) {
-        Ok(_) => None,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            Some(run::build(run::NewRun {
-                agent,
-                session,
-                run_id: run_id.clone(),
-                timestamp_ms,
-                raw: &raw,
-                repository_root,
-                observed,
-                deployment_root,
-            })?)
-        }
-        Err(error) => return Err(error.into()),
+    let run = if run_json.exists()? {
+        None
+    } else {
+        Some(run::build(run::NewRun {
+            agent,
+            session,
+            run_id: run_id.clone(),
+            timestamp_ms,
+            raw: &raw,
+            repository_root,
+            observed,
+            deployment_root,
+        })?)
     };
     let event_id = event_id(agent, session, &raw);
     let artifact_path = format!("artifacts/hooks/{event_id}.json");

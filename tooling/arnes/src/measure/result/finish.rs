@@ -1,17 +1,15 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
 use super::super::store::{
-    json_bytes, jsonl_bytes, open_private_append, open_private_new, temporary_path,
+    ManagedPath, json_bytes, jsonl_bytes, open_private_append, open_private_new, temporary_path,
 };
 use super::io::read_optional_json;
 use super::records::{EventHistory, ResultState, latest_result, read_events_file, result_state};
 use super::{FinishArgs, MergeReady, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use serde_json::json;
-use std::fs;
 use std::fs::File;
 use std::io::{Seek, SeekFrom, Write};
-use std::path::Path;
 
 #[cfg(test)]
 mod tests;
@@ -53,11 +51,9 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     let result_bytes = json_bytes(&result)?;
     let event = result_event_bytes(&result)?;
     let temporary = prepare_result(&result_path, &result_bytes)?;
-    let committed = append_then_commit(&mut events, &event, || {
-        fs::rename(&temporary, &result_path).map_err(Into::into)
-    });
+    let committed = append_then_commit(&mut events, &event, || temporary.rename_to(&result_path));
     if committed.is_err() {
-        let _ = fs::remove_file(&temporary);
+        let _ = temporary.remove_file();
     }
     committed
 }
@@ -156,7 +152,7 @@ fn result_event_bytes(result: &ResultRecord) -> Result<Vec<u8>, MeasureError> {
     jsonl_bytes(&event)
 }
 
-fn prepare_result(path: &Path, bytes: &[u8]) -> Result<std::path::PathBuf, MeasureError> {
+fn prepare_result(path: &ManagedPath, bytes: &[u8]) -> Result<ManagedPath, MeasureError> {
     let temporary = temporary_path(path);
     let mut file = open_private_new(&temporary)?;
     file.write_all(bytes)?;

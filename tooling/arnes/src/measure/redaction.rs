@@ -32,10 +32,9 @@ pub fn redact_string(value: &str) -> String {
     if contains_private_key(value) {
         return MARKER.to_owned();
     }
-    let mut result = value.to_owned();
+    let mut result = redact_token_prefix(value, "sk-", 12);
     for prefix in [
         "bearer ",
-        "sk-",
         "ghp_",
         "github_pat_",
         "glpat-",
@@ -51,6 +50,40 @@ pub fn redact_string(value: &str) -> String {
         result = redact_prefix(&result, prefix);
     }
     result
+}
+
+fn redact_token_prefix(value: &str, prefix: &str, minimum_suffix: usize) -> String {
+    let mut output = String::new();
+    let mut remaining = value;
+    while let Some(start) = remaining.to_ascii_lowercase().find(prefix) {
+        let token_start = start + prefix.len();
+        let token_len = token_length(&remaining[token_start..]);
+        if token_boundary(remaining, start) && token_len >= minimum_suffix {
+            output.push_str(&remaining[..start]);
+            output.push_str(MARKER);
+            remaining = &remaining[token_start + token_len..];
+        } else {
+            output.push_str(&remaining[..token_start]);
+            remaining = &remaining[token_start..];
+        }
+    }
+    output.push_str(remaining);
+    output
+}
+
+fn token_boundary(value: &str, start: usize) -> bool {
+    value[..start]
+        .chars()
+        .next_back()
+        .is_none_or(|character| !character.is_ascii_alphanumeric() && character != '_')
+}
+
+fn token_length(value: &str) -> usize {
+    value
+        .chars()
+        .take_while(|character| token_character(*character))
+        .map(char::len_utf8)
+        .sum()
 }
 
 fn sensitive_key(key: &str) -> bool {
@@ -124,11 +157,7 @@ fn redact_prefix(value: &str, prefix: &str) -> String {
     while let Some(start) = remaining.to_ascii_lowercase().find(prefix) {
         output.push_str(&remaining[..start]);
         let token_start = start + prefix.len();
-        let token_len = remaining[token_start..]
-            .chars()
-            .take_while(|character| token_character(*character))
-            .map(char::len_utf8)
-            .sum::<usize>();
+        let token_len = token_length(&remaining[token_start..]);
         if token_len == 0 {
             output.push_str(&remaining[start..token_start]);
             remaining = &remaining[token_start..];

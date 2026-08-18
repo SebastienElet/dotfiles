@@ -1,31 +1,27 @@
 use super::super::MeasureError;
-use super::super::store::MAX_RECORD_BYTES;
-use super::super::store::validation::{ensure_regular_file, ensure_single_link};
+use super::super::store::{MAX_RECORD_BYTES, ManagedPath};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
-use std::os::unix::fs::OpenOptionsExt;
-use std::path::Path;
 
-pub fn read_optional_json<T>(path: &Path, label: &str) -> Result<Option<T>, MeasureError>
+pub fn read_optional_json<T>(path: &ManagedPath, label: &str) -> Result<Option<T>, MeasureError>
 where
     T: DeserializeOwned + Serialize,
 {
-    match std::fs::symlink_metadata(path) {
-        Ok(_) => read_json(path, label).map(Some),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(error) => Err(error.into()),
+    if path.exists()? {
+        read_json(path, label).map(Some)
+    } else {
+        Ok(None)
     }
 }
 
-pub fn read_json<T>(path: &Path, label: &str) -> Result<T, MeasureError>
+pub fn read_json<T>(path: &ManagedPath, label: &str) -> Result<T, MeasureError>
 where
     T: DeserializeOwned + Serialize,
 {
-    ensure_regular_file(path)?;
-    let mut file = open_read(path)?;
+    let mut file = path.open_read()?;
     let mut bytes = Vec::new();
     file.by_ref()
         .take((MAX_RECORD_BYTES + 1) as u64)
@@ -45,32 +41,26 @@ where
 }
 
 pub fn visit_jsonl_typed<T>(
-    path: &Path,
+    path: &ManagedPath,
     label: &str,
     visitor: impl FnMut(T) -> Result<(), MeasureError>,
 ) -> Result<(), MeasureError>
 where
     T: DeserializeOwned + Serialize,
 {
-    match std::fs::symlink_metadata(path) {
-        Ok(_) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(error.into()),
+    if !path.exists()? {
+        return Ok(());
     }
-    ensure_regular_file(path)?;
-    let mut file = open_read(path)?;
+    let mut file = path.open_read()?;
     file.lock()?;
     visit_jsonl_typed_file(&mut file, label, visitor)
 }
 
-pub fn open_locked_jsonl(path: &Path) -> Result<Option<File>, MeasureError> {
-    match std::fs::symlink_metadata(path) {
-        Ok(_) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(error) => return Err(error.into()),
+pub fn open_locked_jsonl(path: &ManagedPath) -> Result<Option<File>, MeasureError> {
+    if !path.exists()? {
+        return Ok(None);
     }
-    ensure_regular_file(path)?;
-    let file = open_read(path)?;
+    let file = path.open_read()?;
     file.lock()?;
     Ok(Some(file))
 }
@@ -120,18 +110,10 @@ where
     Ok(record)
 }
 
-fn open_read(path: &Path) -> Result<File, MeasureError> {
-    let file = OpenOptions::new()
-        .read(true)
-        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
-        .open(path)?;
-    ensure_single_link(&file.metadata()?, path)?;
-    Ok(file)
-}
-
 #[cfg(test)]
 mod tests {
     use super::visit_jsonl_typed;
+    use crate::measure::store::ManagedPath;
     use serde::{Deserialize, Serialize};
     use std::io::Write;
 
@@ -149,11 +131,15 @@ mod tests {
         let mut count = 0;
         let mut last = None;
 
-        visit_jsonl_typed::<Record>(file.path(), "records.jsonl", |record| {
-            count += 1;
-            last = Some(record.sequence);
-            Ok(())
-        })
+        visit_jsonl_typed::<Record>(
+            &ManagedPath::test_path(file.path()),
+            "records.jsonl",
+            |record| {
+                count += 1;
+                last = Some(record.sequence);
+                Ok(())
+            },
+        )
         .unwrap();
 
         assert_eq!(count, 20_000);

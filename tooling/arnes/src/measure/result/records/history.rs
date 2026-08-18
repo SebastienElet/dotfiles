@@ -1,9 +1,9 @@
 use super::super::super::MeasureError;
+use super::super::super::store::ManagedPath;
 use super::super::io::{open_locked_jsonl, visit_jsonl_typed_file};
 use super::{ResultRecord, StoredEvent, invalid_event};
 use serde::Serialize;
 use std::fs::File;
-use std::path::Path;
 
 pub struct EventHistory {
     last_event: Option<String>,
@@ -32,7 +32,7 @@ impl ResultState {
 }
 
 pub fn read_events_with<T>(
-    path: &Path,
+    path: &ManagedPath,
     run_id: &str,
     read_result: impl FnOnce() -> Result<T, MeasureError>,
 ) -> Result<(EventHistory, T), MeasureError> {
@@ -135,6 +135,7 @@ fn revision_error() -> MeasureError {
 #[cfg(test)]
 mod tests {
     use super::read_events_with;
+    use crate::measure::store::ManagedPath;
     use serde_json::json;
     use std::fs::OpenOptions;
     use std::io::Write;
@@ -159,7 +160,7 @@ mod tests {
         )
         .unwrap();
 
-        let (_, result) = read_events_with(&path, &"b".repeat(64), || {
+        let (_, result) = read_events_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
             let other = OpenOptions::new().read(true).write(true).open(&path)?;
             assert!(other.try_lock().is_err());
             Ok(7)

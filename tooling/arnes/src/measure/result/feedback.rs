@@ -1,7 +1,8 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
-use super::super::store::{append_jsonl_bytes, jsonl_bytes, open_private_append};
+use super::super::store::{ManagedPath, append_jsonl_bytes, jsonl_bytes, open_private_append};
 use super::io::visit_jsonl_typed;
+use super::records::is_digest;
 use super::{Adjudication, FeedbackArgs, Severity, open_run, open_store};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -84,7 +85,7 @@ fn validate(args: &FeedbackArgs) -> Result<(), MeasureError> {
     Ok(())
 }
 
-fn validate_existing(path: &std::path::Path, run_id: &str) -> Result<(), MeasureError> {
+fn validate_existing(path: &ManagedPath, run_id: &str) -> Result<(), MeasureError> {
     visit_jsonl_typed::<FeedbackRecord>(path, "feedback.jsonl", |feedback| {
         validate_feedback(&feedback, run_id)
     })
@@ -93,7 +94,7 @@ fn validate_existing(path: &std::path::Path, run_id: &str) -> Result<(), Measure
 fn validate_feedback(feedback: &FeedbackRecord, run_id: &str) -> Result<(), MeasureError> {
     if feedback.schema_version != 1
         || feedback.run_id != run_id
-        || feedback.feedback_id.len() != 64
+        || !is_digest(&feedback.feedback_id)
         || feedback.recorded_at_ms == 0
         || feedback.source_id.trim().is_empty()
         || feedback.scope.trim().is_empty()
@@ -133,4 +134,34 @@ fn feedback_id(args: &FeedbackArgs, timestamp: u64) -> String {
         hasher.update(value);
     }
     format!("{:x}", hasher.finalize())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::measure::{FailureCategory, FeedbackSource, Resolution};
+
+    #[test]
+    fn rejects_non_hexadecimal_feedback_ids() {
+        let record = FeedbackRecord {
+            schema_version: 1,
+            feedback_id: "z".repeat(64),
+            run_id: "a".repeat(64),
+            recorded_at_ms: 1,
+            source_type: FeedbackSource::Human,
+            source_id: "review".to_owned(),
+            scope: "correctness".to_owned(),
+            observed: "bad".to_owned(),
+            expected: "good".to_owned(),
+            evidence: Vec::new(),
+            invariants: Vec::new(),
+            severity: Severity::Major,
+            adjudication: Adjudication::Confirmed,
+            resolution: Resolution::Open,
+            failure_category: FailureCategory::Correctness,
+            analysis_blocking: false,
+        };
+
+        assert!(validate_feedback(&record, &record.run_id).is_err());
+    }
 }
