@@ -54,6 +54,17 @@ impl Harness {
         command
     }
 
+    fn list(&self) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_arnes"))
+            .args(["measure", "list", "--format", "json"])
+            .current_dir(&self.repository)
+            .env_clear()
+            .env("HOME", &self.home)
+            .env("XDG_STATE_HOME", &self.state)
+            .output()
+            .unwrap()
+    }
+
     fn measure_root(&self) -> PathBuf {
         self.state.join("dotfiles/agent-harness")
     }
@@ -226,6 +237,62 @@ fn preserves_unknown_events_and_fields_in_the_redacted_artifact() {
     assert_eq!(events[0]["native_ids"]["event_id"], "native-event");
     let artifact = read_json(run.join(events[0]["artifact"].as_str().unwrap()));
     assert_eq!(artifact["future"]["answer"], 42);
+}
+
+#[test]
+fn compact_large_artifact_remains_capturable_and_listable() {
+    let harness = Harness::new();
+    let payload = json!({
+        "session_id": "compact-large",
+        "hook_event_name": "FutureEvent",
+        "data": vec![0; 250_000]
+    });
+    let compact = serde_json::to_vec(&payload).unwrap();
+    assert!(compact.len() < 1_048_576);
+    assert!(serde_json::to_vec_pretty(&payload).unwrap().len() > 1_100_000);
+
+    assert_success(&harness.run("codex", &compact));
+
+    let run = harness.only_run();
+    let artifact = fs::read_dir(run.join("artifacts/hooks"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    let artifact = fs::read(artifact).unwrap();
+    assert!(artifact.len() <= 1_100_000);
+    assert_eq!(serde_json::from_slice::<Value>(&artifact).unwrap(), payload);
+    let listed = harness.list();
+    assert_eq!(listed.status.code(), Some(0));
+    assert!(listed.stderr.is_empty());
+    let listed: Value = serde_json::from_slice(&listed.stdout).unwrap();
+    assert_eq!(listed.as_array().unwrap().len(), 1);
+}
+
+#[test]
+fn expanded_artifact_is_rejected_without_a_partial_run() {
+    let harness = Harness::new();
+    let payload = json!({
+        "session_id": "expanded-large",
+        "hook_event_name": "FutureEvent",
+        "data": vec![json!({"token": "x"}); 65_000]
+    });
+    let compact = serde_json::to_vec(&payload).unwrap();
+    assert!(compact.len() < 1_048_576);
+
+    let output = harness.run("codex", &compact);
+
+    assert_advisory_failure(&output);
+    assert!(harness.runs().is_empty());
+    let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"));
+    assert_eq!(invalid.len(), 1);
+    assert!(
+        invalid[0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("exceeds 1100000 bytes")
+    );
 }
 
 #[test]

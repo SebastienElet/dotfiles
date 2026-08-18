@@ -9,7 +9,9 @@ use self::validation::{
 use super::model::RunRecord;
 use serde::Serialize;
 pub use serialization::{append_jsonl, write_json_atomic};
-pub(super) use serialization::{append_jsonl_bytes, json_bytes, jsonl_bytes};
+pub(super) use serialization::{
+    append_jsonl_bytes, compact_json_bytes, json_bytes, jsonl_bytes, write_json_atomic_bytes,
+};
 use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};

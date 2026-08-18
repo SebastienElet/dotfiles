@@ -5,7 +5,10 @@ use super::model::{HookAgent, PromptRecord};
 use super::redaction::{capture as redact_capture, redact_string};
 use super::repository;
 use super::run;
-use super::store::{Store, append_jsonl_bytes, jsonl_bytes, write_json_atomic, write_json_once};
+use super::store::{
+    Store, append_jsonl_bytes, compact_json_bytes, jsonl_bytes, write_json_atomic_bytes,
+    write_json_once,
+};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::env;
@@ -86,9 +89,10 @@ fn persist_hook(
     let event_bytes = jsonl_bytes(&event)?;
     let prompt = prompt_record(timestamp_ms, &event_id, session, &raw);
     let prompt_bytes = prompt.as_ref().map(jsonl_bytes).transpose()?;
+    let artifact_bytes = compact_json_bytes(&raw)?;
     let run_dir = store.run_dir(&run_id)?;
     write_json_once(&run_json, run.as_ref(), agent.as_str(), session, &run_id)?;
-    write_json_atomic(&run_dir.join(&artifact_path), &raw)?;
+    write_json_atomic_bytes(&run_dir.join(&artifact_path), &artifact_bytes)?;
     append_jsonl_bytes(&run_dir.join("events.jsonl"), &event_bytes)?;
     if let Some(bytes) = prompt_bytes {
         append_jsonl_bytes(&run_dir.join("prompts.jsonl"), &bytes)?;
