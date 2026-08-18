@@ -42,8 +42,13 @@ fn normalized(native: &str) -> &'static str {
         "subagentstart" => "subagent.start",
         "subagentstop" => "subagent.stop",
         "permissionrequest" => "permission.request",
+        "permissiondenied" => "permission.denied",
         "pretooluse" => "tool.before",
         "posttooluse" => "tool.after",
+        "posttoolusefailure" => "tool.failure",
+        "stopfailure" => "agent.failure",
+        "precompact" => "context.compact.before",
+        "postcompact" => "context.compact.after",
         "beforefileedit"
         | "beforereadfile"
         | "beforetabfileread"

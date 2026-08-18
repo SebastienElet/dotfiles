@@ -366,7 +366,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 # Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
@@ -380,8 +380,12 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
 	${CREATE_SYMLINK}
 
+.PHONY: cursor-measurement-hooks
+cursor-measurement-hooks: arnes
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
+
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -411,8 +415,12 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
 	${CREATE_SYMLINK}
 
+.PHONY: claude-code-measurement-hooks
+claude-code-measurement-hooks: arnes
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent claude-code --command "${LOCAL_BIN}/arnes"
+
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @openai/codex
 ~/.codex:
@@ -434,7 +442,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook
-codex-handoff-hook: | ~/.codex
+codex-handoff-hook: ${BREW_BIN}/jq | ~/.codex
 	@set -eu; \
 	command='${DOTFILES_PATH}/tooling/agent-handoff'; \
 	old_command='${DOTFILES_PATH}/scripts/agent_handoff'; \
@@ -446,6 +454,10 @@ codex-handoff-hook: | ~/.codex
 	jq -n --arg command "$$command" --arg old_command "$$old_command" --argjson had_current "$$had_current" --slurpfile current "$$input" '$$current as $$documents | if $$had_current and ($$documents | length) != 1 then error("hooks.json must contain one JSON document") else (if $$had_current then $$documents[0] else {} end) as $$config | if ($$config | type) != "object" or ($$config | has("hooks") and ($$config.hooks | type) != "object") or (($$config.hooks // {}) | has("Stop") and ($$config.hooks.Stop | type) != "array") or any(($$config.hooks.Stop // [])[]; type != "object" or (has("hooks") | not) or (.hooks | type) != "array") or any(($$config.hooks.Stop // [])[]?.hooks[]?; type != "object") then error("invalid hooks.json structure") else $$config | .hooks //= {} | .hooks.Stop //= [] | ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)] | length) as $$new_count | ([.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)] | length) as $$old_count | if $$new_count == 1 and $$old_count == 0 then . else ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)][0] // [.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)][0] // {type: "command", command: $$command}) as $$candidate | ($$candidate | .command = $$command) as $$hook | .hooks.Stop |= (map(.hooks |= map(select(.command != $$old_command and .command != $$command))) | map(select((.hooks | length) > 0))) | .hooks.Stop += [{hooks: [$$hook]}] end end end' > "$$tmp"; \
 	mv "$$tmp" "$$hooks"; \
 	trap - 0
+
+.PHONY: codex-measurement-hooks
+codex-measurement-hooks: arnes codex-handoff-hook
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent codex --command "${LOCAL_BIN}/arnes"
 
 .PHONY: codexbar
 codexbar: brew ${APP_BIN}/CodexBar.app
