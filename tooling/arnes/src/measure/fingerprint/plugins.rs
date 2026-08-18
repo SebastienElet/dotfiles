@@ -1,6 +1,5 @@
 use super::SelectedRoot;
 use crate::measure::{MeasureError, model::HookAgent};
-use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -14,87 +13,107 @@ pub struct PluginSelection {
     pub limitations: Vec<String>,
 }
 
-#[derive(Default, Deserialize)]
-struct CodexConfig {
-    #[serde(default)]
-    plugins: BTreeMap<String, CodexPlugin>,
-}
-
-#[derive(Deserialize)]
-struct CodexPlugin {
-    enabled: Option<bool>,
-}
-
-pub fn selected(agent: HookAgent, home: &Path) -> Result<PluginSelection, MeasureError> {
+pub fn selected(
+    agent: HookAgent,
+    home: &Path,
+    repository: &Path,
+) -> Result<PluginSelection, MeasureError> {
     Ok(match agent {
-        HookAgent::Codex => codex(home)?,
-        HookAgent::ClaudeCode => claude(home)?,
+        HookAgent::Codex => unavailable_runtime(
+            "codex plugin runtime version is not observable; activation configuration fingerprinted; cache excluded",
+        ),
+        HookAgent::ClaudeCode => claude(home, repository)?,
         HookAgent::Cursor => PluginSelection {
             roots: Vec::new(),
             limitations: vec![
-                "cursor marketplace and extension activation have no filesystem registry; local plugins fingerprinted"
+                "cursor plugin runtime activation is not observable; configuration fingerprinted; plugin files excluded"
                     .to_owned(),
             ],
         },
     })
 }
 
-fn codex(home: &Path) -> Result<PluginSelection, MeasureError> {
-    let mut roots = Vec::new();
-    let config = read_manifest(&home.join(".codex/config.toml"))?
-        .and_then(|contents| toml::from_str::<CodexConfig>(&contents).ok())
-        .unwrap_or_default();
-    for (id, plugin) in config.plugins {
-        if plugin.enabled == Some(true) {
-            roots.extend(codex_plugin_root(home, &id));
-        }
+fn unavailable_runtime(limitation: &str) -> PluginSelection {
+    PluginSelection {
+        roots: Vec::new(),
+        limitations: vec![limitation.to_owned()],
     }
-    let limitations = if roots.is_empty() {
-        Vec::new()
-    } else {
-        vec![
-            "codex active plugin version is not recorded; enabled plugin cache candidates fingerprinted"
-                .to_owned(),
-        ]
-    };
-    Ok(PluginSelection { roots, limitations })
 }
 
-fn codex_plugin_root(home: &Path, id: &str) -> Option<SelectedRoot> {
-    let (plugin, marketplace) = id.split_once('@')?;
-    if !safe_name(plugin) || !safe_name(marketplace) {
-        return None;
-    }
-    Some(SelectedRoot {
-        label: Path::new("home/.codex/plugins/cache-candidates")
-            .join(marketplace)
-            .join(plugin),
-        path: home
-            .join(".codex/plugins/cache")
-            .join(marketplace)
-            .join(plugin),
-    })
-}
-
-fn claude(home: &Path) -> Result<PluginSelection, MeasureError> {
+fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureError> {
     let plugin_root = home.join(".claude/plugins");
-    let registry = read_manifest(&plugin_root.join("installed_plugins.json"))?
-        .and_then(|contents| serde_json::from_str::<JsonValue>(&contents).ok());
+    let registry = read_json(&plugin_root.join("installed_plugins.json"))?;
+    let enabled: Vec<String> = claude_settings(home, repository)?
+        .into_iter()
+        .filter_map(|(id, enabled)| enabled.then_some(id))
+        .collect();
+    if enabled.is_empty() {
+        return Ok(PluginSelection {
+            roots: Vec::new(),
+            limitations: Vec::new(),
+        });
+    }
+    let Some(plugins) = registry
+        .as_ref()
+        .filter(|value| value.get("version") == Some(&JsonValue::from(2)))
+        .and_then(|value| value.get("plugins"))
+        .and_then(JsonValue::as_object)
+    else {
+        return Ok(unavailable_runtime(
+            "claude plugin registry is not observable in supported version 2; enabled plugin files excluded",
+        ));
+    };
     let mut roots = Vec::new();
-    if registry.as_ref().and_then(|value| value.get("version")) == Some(&JsonValue::from(2))
-        && let Some(plugins) = registry
-            .as_ref()
-            .and_then(|value| value.get("plugins"))
-            .and_then(JsonValue::as_object)
-    {
-        for (id, installations) in plugins {
-            roots.extend(claude_installations(&plugin_root, id, installations));
+    let mut unresolved = false;
+    for id in enabled {
+        match plugins
+            .get(&id)
+            .and_then(|value| claude_installation(&plugin_root, &id, value))
+        {
+            Some(root) => roots.push(root),
+            None => unresolved = true,
         }
     }
     Ok(PluginSelection {
         roots,
-        limitations: Vec::new(),
+        limitations: unresolved
+            .then(|| {
+                "claude enabled plugin installation is not uniquely observable; unresolved plugin files excluded"
+                    .to_owned()
+            })
+            .into_iter()
+            .collect(),
     })
+}
+
+fn claude_settings(home: &Path, repository: &Path) -> Result<BTreeMap<String, bool>, MeasureError> {
+    let mut enabled = BTreeMap::new();
+    for path in [
+        home.join(".claude/settings.json"),
+        repository.join(".claude/settings.json"),
+        repository.join(".claude/settings.local.json"),
+    ] {
+        let Some(settings) = read_json(&path)? else {
+            continue;
+        };
+        if let Some(values) = settings
+            .get("enabledPlugins")
+            .and_then(JsonValue::as_object)
+        {
+            for (id, value) in values {
+                if let Some(value) = value.as_bool() {
+                    enabled.insert(id.to_owned(), value);
+                }
+            }
+        }
+    }
+    Ok(enabled)
+}
+
+fn read_json(path: &Path) -> Result<Option<JsonValue>, MeasureError> {
+    read_manifest(path)?
+        .map(|contents| serde_json::from_str(&contents).map_err(MeasureError::from))
+        .transpose()
 }
 
 fn read_manifest(path: &Path) -> Result<Option<String>, MeasureError> {
@@ -112,23 +131,27 @@ fn read_manifest(path: &Path) -> Result<Option<String>, MeasureError> {
     Ok(String::from_utf8(bytes).ok())
 }
 
-fn claude_installations(root: &Path, id: &str, value: &JsonValue) -> Vec<SelectedRoot> {
-    value
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|installation| installation.get("installPath"))
-        .filter_map(JsonValue::as_str)
-        .map(PathBuf::from)
-        .filter(|path| within(path, root))
-        .enumerate()
-        .map(|(index, path)| SelectedRoot {
-            label: Path::new("home/.claude/plugins/registered")
-                .join(id.replace('/', "_"))
-                .join(index.to_string()),
-            path,
-        })
-        .collect()
+fn claude_installation(root: &Path, id: &str, value: &JsonValue) -> Option<SelectedRoot> {
+    let installations = value.as_array()?;
+    if installations.len() != 1 {
+        return None;
+    }
+    let installation = installations.first()?;
+    let path = PathBuf::from(installation.get("installPath")?.as_str()?);
+    if !within(&path, root) {
+        return None;
+    }
+    let version = installation
+        .get("version")
+        .and_then(JsonValue::as_str)
+        .unwrap_or("unknown");
+    Some(SelectedRoot {
+        label: Path::new("home/.claude/plugins/active")
+            .join(safe_label(id))
+            .join(safe_label(version)),
+        path,
+        bounded: true,
+    })
 }
 
 fn within(path: &Path, root: &Path) -> bool {
@@ -147,9 +170,15 @@ fn within(path: &Path, root: &Path) -> bool {
     }
 }
 
-fn safe_name(value: &str) -> bool {
-    !value.is_empty()
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.')
+fn safe_label(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '@') {
+                character
+            } else {
+                '_'
+            }
         })
+        .collect()
 }

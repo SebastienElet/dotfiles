@@ -24,16 +24,10 @@ pub fn deployed(
     let mut seen = HashSet::new();
     let mut remaining = MAX_FILES;
     let mut selected = selected_roots(agent, home, repository);
-    let plugins = plugins::selected(agent, home)?;
+    let plugins = plugins::selected(agent, home, repository)?;
     selected.extend(plugins.roots);
     for root in selected {
-        let result = hash_path(
-            &root.path,
-            &root.label,
-            &mut hasher,
-            &mut seen,
-            &mut remaining,
-        );
+        let result = hash_selected(&root, &mut hasher, &mut seen, &mut remaining);
         if let Err(error) = result {
             if error.kind() == std::io::ErrorKind::InvalidData {
                 return Err(MeasureError::new(error.to_string()));
@@ -50,6 +44,7 @@ pub fn deployed(
 struct SelectedRoot {
     label: PathBuf,
     path: PathBuf,
+    bounded: bool,
 }
 
 fn selected_roots(agent: HookAgent, home: &Path, repository: &Path) -> Vec<SelectedRoot> {
@@ -57,10 +52,12 @@ fn selected_roots(agent: HookAgent, home: &Path, repository: &Path) -> Vec<Selec
     selected.extend(home_roots(agent).iter().map(|path| SelectedRoot {
         label: Path::new("home").join(path),
         path: home.join(path),
+        bounded: false,
     }));
     selected.extend(repository_roots(agent).iter().map(|path| SelectedRoot {
         label: Path::new("repository").join(path),
         path: repository.join(path),
+        bounded: false,
     }));
     selected
 }
@@ -82,14 +79,12 @@ fn home_roots(agent: HookAgent) -> &'static [&'static str] {
             ".claude/hooks",
             ".claude/rules",
             ".claude/skills",
-            ".claude/plugins/installed_plugins.json",
         ],
         HookAgent::Cursor => &[
             ".cursor/cli-config.json",
             ".cursor/hooks.json",
             ".cursor/rules",
             ".cursor/skills",
-            ".cursor/plugins/local",
         ],
     }
 }
@@ -106,6 +101,7 @@ fn repository_roots(agent: HookAgent) -> &'static [&'static str] {
             "AGENTS.md",
             "CLAUDE.md",
             ".claude/settings.json",
+            ".claude/settings.local.json",
             ".claude/hooks",
             ".claude/skills",
         ],
@@ -125,6 +121,7 @@ fn hash_path(
     hasher: &mut Sha256,
     seen: &mut HashSet<PathBuf>,
     remaining: &mut usize,
+    boundary: Option<&Path>,
 ) -> std::io::Result<()> {
     write!(hasher, "{}\0", label.display())?;
     if !path.exists() {
@@ -133,13 +130,17 @@ fn hash_path(
     }
     consume_entry(remaining)?;
     let canonical = fs::canonicalize(path)?;
+    if boundary.is_some_and(|boundary| !canonical.starts_with(boundary)) {
+        hasher.update(b"escape\0");
+        return Ok(());
+    }
     if !seen.insert(canonical) {
         hasher.update(b"cycle\0");
         return Ok(());
     }
     let metadata = fs::metadata(path)?;
     if metadata.is_dir() {
-        hash_directory(path, label, hasher, seen, remaining)
+        hash_directory(path, label, hasher, seen, remaining, boundary)
     } else if metadata.is_file() {
         hash_file(path, metadata.len(), hasher)
     } else {
@@ -154,6 +155,7 @@ fn hash_directory(
     hasher: &mut Sha256,
     seen: &mut HashSet<PathBuf>,
     remaining: &mut usize,
+    boundary: Option<&Path>,
 ) -> std::io::Result<()> {
     hasher.update(b"directory\0");
     let limit = *remaining;
@@ -174,16 +176,49 @@ fn hash_directory(
             hasher,
             seen,
             remaining,
+            boundary,
         )?;
     }
     Ok(())
 }
 
 fn hash_file(path: &Path, size: u64, hasher: &mut Sha256) -> std::io::Result<()> {
+    if size > MAX_FILE_BYTES {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "fingerprint file exceeds 1048576 bytes",
+        ));
+    }
     write!(hasher, "file\0{size}\0")?;
-    let mut file = File::open(path)?.take(MAX_FILE_BYTES);
-    std::io::copy(&mut file, hasher)?;
+    let mut file = File::open(path)?.take(MAX_FILE_BYTES + 1);
+    if std::io::copy(&mut file, hasher)? > MAX_FILE_BYTES {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "fingerprint file exceeds 1048576 bytes",
+        ));
+    }
     Ok(())
+}
+
+fn hash_selected(
+    root: &SelectedRoot,
+    hasher: &mut Sha256,
+    seen: &mut HashSet<PathBuf>,
+    remaining: &mut usize,
+) -> std::io::Result<()> {
+    let boundary = if root.bounded && root.path.exists() {
+        Some(fs::canonicalize(&root.path)?)
+    } else {
+        None
+    };
+    hash_path(
+        &root.path,
+        &root.label,
+        hasher,
+        seen,
+        remaining,
+        boundary.as_deref(),
+    )
 }
 
 fn consume_entry(remaining: &mut usize) -> std::io::Result<()> {

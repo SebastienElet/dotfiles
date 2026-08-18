@@ -18,7 +18,11 @@ static EVENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
     let observed = env::current_dir()?;
     let protected_root = repository::protected_root(&observed);
-    let repository = repository::observe(&protected_root);
+    let repository = repository::observe(&observed);
+    let deployment_root = repository
+        .as_ref()
+        .map(|repository| PathBuf::from(&repository.root))
+        .unwrap_or_else(|| observed.clone());
     let store = Store::open(&protected_root)?;
     let payload = Payload::read(&store, agent)?;
     let session = required_string(payload.value(), agent.session_key())
@@ -32,7 +36,7 @@ pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
         &session,
         payload.into_value(),
         repository,
-        &protected_root,
+        &deployment_root,
     )
 }
 

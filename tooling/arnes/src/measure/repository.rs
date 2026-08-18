@@ -33,8 +33,9 @@ fn git(directory: &Path, args: &[&str]) -> Option<String> {
         .current_dir(directory)
         .output()
         .ok()?;
-    output
-        .status
-        .success()
-        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+    output.status.success().then(|| {
+        let value = String::from_utf8_lossy(&output.stdout);
+        let value = value.strip_suffix('\n').unwrap_or(&value);
+        value.strip_suffix('\r').unwrap_or(value).to_owned()
+    })
 }

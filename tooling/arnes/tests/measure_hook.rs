@@ -15,9 +15,13 @@ struct Harness {
 
 impl Harness {
     fn new() -> Self {
+        Self::with_repository_name("repository")
+    }
+
+    fn with_repository_name(name: &str) -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join("home");
-        let repository = root.path().join("repository");
+        let repository = root.path().join(name);
         let state = root.path().join("state");
         fs::create_dir(&home).unwrap();
         fs::create_dir(&repository).unwrap();
@@ -81,6 +85,38 @@ fn assert_success(output: &Output) {
     );
     assert!(output.stdout.is_empty());
     assert!(output.stderr.is_empty());
+}
+
+fn run_at(harness: &Harness, current: &Path, state: &Path, payload: &[u8]) -> Output {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
+        .args(["measure", "hook", "--agent", "codex"])
+        .current_dir(current)
+        .env_clear()
+        .env("HOME", &harness.home)
+        .env("XDG_STATE_HOME", state)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child.stdin.take().unwrap().write_all(payload).unwrap();
+    child.wait_with_output().unwrap()
+}
+
+fn run_record(harness: &Harness, session: &str) -> Value {
+    harness
+        .runs()
+        .into_iter()
+        .map(|path| read_json(path.join("run.json")))
+        .find(|run| run["session_id"] == session)
+        .unwrap()
+}
+
+fn capture_run(harness: &Harness, agent: &str, session_key: &str, session: &str) -> Value {
+    let mut payload = json!({});
+    payload[session_key] = json!(session);
+    assert_success(&harness.run(agent, payload.to_string().as_bytes()));
+    run_record(harness, session)
 }
 
 fn read_json(path: impl AsRef<Path>) -> Value {
@@ -389,6 +425,87 @@ fn nested_fake_git_marker_cannot_shrink_the_protected_repository() {
 }
 
 #[test]
+fn nested_git_repository_is_observed_while_both_repository_boundaries_are_protected() {
+    let harness = Harness::new();
+    git(&harness.repository, &["init", "-b", "outer"]);
+    fs::write(harness.repository.join("outer-file"), "outer").unwrap();
+    git(&harness.repository, &["add", "outer-file"]);
+    commit(&harness.repository, "outer");
+    fs::write(harness.repository.join("AGENTS.md"), "outer one").unwrap();
+    let inner = harness.repository.join("inner");
+    fs::create_dir(&inner).unwrap();
+    git(&inner, &["init", "-b", "inner"]);
+    fs::write(inner.join("inner-file"), "inner").unwrap();
+    git(&inner, &["add", "inner-file"]);
+    commit(&inner, "inner");
+    fs::write(inner.join("AGENTS.md"), "inner one").unwrap();
+
+    assert_success(&run_at(
+        &harness,
+        &inner,
+        &harness.state,
+        br#"{"session_id":"one"}"#,
+    ));
+    let first = run_record(&harness, "one");
+    assert_eq!(
+        first["repository"]["root"],
+        fs::canonicalize(&inner).unwrap().to_str().unwrap()
+    );
+    assert_eq!(
+        first["repository"]["head"],
+        git_value(&inner, &["rev-parse", "HEAD"])
+    );
+    assert_eq!(first["repository"]["branch"], "inner");
+
+    fs::write(harness.repository.join("AGENTS.md"), "outer two").unwrap();
+    assert_success(&run_at(
+        &harness,
+        &inner,
+        &harness.state,
+        br#"{"session_id":"two"}"#,
+    ));
+    let second = run_record(&harness, "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+    fs::write(inner.join("AGENTS.md"), "inner two").unwrap();
+    assert_success(&run_at(
+        &harness,
+        &inner,
+        &harness.state,
+        br#"{"session_id":"three"}"#,
+    ));
+    let third = run_record(&harness, "three");
+    assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
+
+    for state in [inner.join("state"), harness.repository.join("state")] {
+        let output = run_at(&harness, &inner, &state, br#"{"session_id":"blocked"}"#);
+        assert_eq!(output.status.code(), Some(2));
+        assert!(!state.exists());
+    }
+}
+
+#[test]
+fn git_repository_root_preserves_trailing_spaces() {
+    let harness = Harness::with_repository_name("repository ");
+    git(&harness.repository, &["init", "-b", "measurement"]);
+    fs::write(harness.repository.join("tracked"), "tracked").unwrap();
+    git(&harness.repository, &["add", "tracked"]);
+    commit(&harness.repository, "initial");
+    fs::write(harness.repository.join("AGENTS.md"), "one").unwrap();
+
+    let first = capture_run(&harness, "codex", "session_id", "one");
+    assert_eq!(
+        first["repository"]["root"],
+        fs::canonicalize(&harness.repository)
+            .unwrap()
+            .to_str()
+            .unwrap()
+    );
+    fs::write(harness.repository.join("AGENTS.md"), "two").unwrap();
+    let second = capture_run(&harness, "codex", "session_id", "two");
+    assert_ne!(first["harness_fingerprint"], second["harness_fingerprint"]);
+}
+
+#[test]
 fn creates_managed_directories_and_files_with_private_modes() {
     let harness = Harness::new();
     assert_success(&harness.run(
@@ -691,87 +808,182 @@ fn fingerprint_tracks_project_instructions_config_hooks_and_skills() {
 }
 
 #[test]
-fn fingerprint_tracks_each_agents_static_plugin_surface() {
-    for (agent, session_key) in [
-        ("codex", "session_id"),
-        ("claude-code", "session_id"),
-        ("cursor", "conversation_id"),
-    ] {
-        let harness = Harness::new();
-        let plugin = configure_active_plugin(&harness, agent);
-        fs::create_dir_all(plugin.parent().unwrap()).unwrap();
-        fs::write(&plugin, "first plugin deployment").unwrap();
-        let mut first_payload = json!({});
-        first_payload[session_key] = json!("one");
-        assert_success(&harness.run(agent, first_payload.to_string().as_bytes()));
-        let first = harness
-            .runs()
-            .into_iter()
-            .map(|path| read_json(path.join("run.json")))
-            .find(|run| run["session_id"] == "one")
-            .unwrap();
-        if agent == "codex" {
-            assert!(
-                first["harness_fingerprint_limitations"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .any(|value| value.as_str().unwrap().contains("cache candidates"))
-            );
-        }
-        fs::write(&plugin, "second plugin deployment").unwrap();
-        let mut second_payload = json!({});
-        second_payload[session_key] = json!("two");
-        assert_success(&harness.run(agent, second_payload.to_string().as_bytes()));
-        let second = harness
-            .runs()
-            .into_iter()
-            .map(|path| read_json(path.join("run.json")))
-            .find(|run| run["session_id"] == "two")
-            .unwrap();
+fn claude_fingerprint_hashes_only_enabled_registered_plugins() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    let active = plugins.join("cache/marketplace/active/1.0.0/plugin.json");
+    let disabled = plugins.join("cache/marketplace/disabled/1.0.0/plugin.json");
+    fs::create_dir_all(active.parent().unwrap()).unwrap();
+    fs::create_dir_all(disabled.parent().unwrap()).unwrap();
+    fs::write(&active, "active one").unwrap();
+    fs::write(&disabled, "disabled one").unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        r#"{"enabledPlugins":{"active@marketplace":true,"disabled@marketplace":false}}"#,
+    )
+    .unwrap();
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({
+            "version":2,
+            "plugins":{
+                "active@marketplace":[{"scope":"user","installPath":active.parent().unwrap(),"version":"1.0.0"}],
+                "disabled@marketplace":[{"scope":"user","installPath":disabled.parent().unwrap(),"version":"1.0.0"}]
+            }
+        })
+        .to_string(),
+    )
+    .unwrap();
 
-        assert_ne!(
-            first["harness_fingerprint"], second["harness_fingerprint"],
-            "{agent} plugin deployment was omitted"
-        );
-    }
+    let first = capture_run(&harness, "claude-code", "session_id", "one");
+    fs::write(&disabled, "disabled two").unwrap();
+    let second = capture_run(&harness, "claude-code", "session_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+    fs::write(&active, "active two").unwrap();
+    let third = capture_run(&harness, "claude-code", "session_id", "three");
+    assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
 }
 
-fn configure_active_plugin(harness: &Harness, agent: &str) -> PathBuf {
-    match agent {
-        "codex" => {
-            fs::create_dir_all(harness.home.join(".codex")).unwrap();
-            fs::write(
-                harness.home.join(".codex/config.toml"),
-                "[plugins.\"demo@marketplace\"]\nenabled = true\n",
-            )
-            .unwrap();
-            harness
-                .home
-                .join(".codex/plugins/cache/marketplace/demo/1.0.0/plugin.json")
-        }
-        "claude-code" => {
-            let root = harness
-                .home
-                .join(".claude/plugins/cache/marketplace/demo/1.0.0");
-            fs::create_dir_all(harness.home.join(".claude/plugins")).unwrap();
-            fs::write(
-                harness.home.join(".claude/plugins/installed_plugins.json"),
-                json!({
-                    "version":2,
-                    "plugins":{"demo@marketplace":[{
-                        "scope":"user",
-                        "installPath":root,
-                        "version":"1.0.0"
-                    }]}
-                })
-                .to_string(),
-            )
-            .unwrap();
-            root.join("plugin.json")
-        }
-        "cursor" => harness.home.join(".cursor/plugins/local/demo/plugin.json"),
-        _ => unreachable!(),
+#[test]
+fn claude_fingerprint_does_not_follow_active_plugin_symlinks_outside_the_installation() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    let active = plugins.join("cache/marketplace/active/1.0.0");
+    fs::create_dir_all(&active).unwrap();
+    fs::write(active.join("plugin.json"), "plugin").unwrap();
+    let transcript = harness.home.join("session.jsonl");
+    fs::write(&transcript, "session one").unwrap();
+    symlink(&transcript, active.join("session.jsonl")).unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        r#"{"enabledPlugins":{"active@marketplace":true}}"#,
+    )
+    .unwrap();
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({
+            "version":2,
+            "plugins":{"active@marketplace":[{"scope":"user","installPath":active,"version":"1.0.0"}]}
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let first = capture_run(&harness, "claude-code", "session_id", "one");
+    fs::write(transcript, "session two").unwrap();
+    let second = capture_run(&harness, "claude-code", "session_id", "two");
+
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+}
+
+#[test]
+fn claude_fingerprint_refuses_oversized_active_plugin_files() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    let active = plugins.join("cache/marketplace/active/1.0.0");
+    fs::create_dir_all(&active).unwrap();
+    fs::write(active.join("plugin.bin"), vec![b'x'; 1_048_577]).unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        r#"{"enabledPlugins":{"active@marketplace":true}}"#,
+    )
+    .unwrap();
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({
+            "version":2,
+            "plugins":{"active@marketplace":[{"scope":"user","installPath":active,"version":"1.0.0"}]}
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("fingerprint file exceeds 1048576 bytes")
+    );
+}
+
+#[test]
+fn unsupported_claude_registry_excludes_plugin_files_with_a_limitation() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    let active = plugins.join("cache/marketplace/active/1.0.0");
+    fs::create_dir_all(&active).unwrap();
+    fs::write(active.join("plugin.json"), "plugin one").unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        r#"{"enabledPlugins":{"active@marketplace":true}}"#,
+    )
+    .unwrap();
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({
+            "version":3,
+            "plugins":{"active@marketplace":[{"scope":"user","installPath":active,"version":"1.0.0"}]}
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let first = capture_run(&harness, "claude-code", "session_id", "one");
+    assert!(
+        first["harness_fingerprint_limitations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value.as_str().unwrap().contains("registry"))
+    );
+    fs::write(active.join("plugin.json"), "plugin two").unwrap();
+    let second = capture_run(&harness, "claude-code", "session_id", "two");
+    assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+}
+
+#[test]
+fn codex_and_cursor_fingerprints_exclude_plugin_files_but_track_activation_config() {
+    for (agent, session_key, config, cache, enabled, disabled) in [
+        (
+            "codex",
+            "session_id",
+            ".codex/config.toml",
+            ".codex/plugins/cache/marketplace/demo/1.0.0/plugin.json",
+            "[plugins.\"demo@marketplace\"]\nenabled = true\n",
+            "[plugins.\"demo@marketplace\"]\nenabled = false\n",
+        ),
+        (
+            "cursor",
+            "conversation_id",
+            ".cursor/cli-config.json",
+            ".cursor/plugins/local/demo/plugin.json",
+            r#"{"enabledPlugins":{"demo":true}}"#,
+            r#"{"enabledPlugins":{"demo":false}}"#,
+        ),
+    ] {
+        let harness = Harness::new();
+        let config = harness.home.join(config);
+        let cache = harness.home.join(cache);
+        fs::create_dir_all(config.parent().unwrap()).unwrap();
+        fs::create_dir_all(cache.parent().unwrap()).unwrap();
+        fs::write(&config, enabled).unwrap();
+        fs::write(&cache, "cache one").unwrap();
+        let first = capture_run(&harness, agent, session_key, "one");
+        fs::write(&cache, "cache two").unwrap();
+        let second = capture_run(&harness, agent, session_key, "two");
+        assert_eq!(first["harness_fingerprint"], second["harness_fingerprint"]);
+        fs::write(&config, disabled).unwrap();
+        let third = capture_run(&harness, agent, session_key, "three");
+        assert_ne!(second["harness_fingerprint"], third["harness_fingerprint"]);
+        assert!(
+            third["harness_fingerprint_limitations"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|value| value.as_str().unwrap().contains("excluded"))
+        );
     }
 }
 
@@ -831,14 +1043,23 @@ fn fingerprint_refuses_more_than_512_registered_plugin_file_roots() {
     let plugins = harness.home.join(".claude/plugins");
     fs::create_dir_all(&plugins).unwrap();
     let mut registered = serde_json::Map::new();
+    let mut enabled = serde_json::Map::new();
     for index in 0..513 {
         let plugin = plugins.join(format!("plugin-{index:03}.json"));
         fs::write(&plugin, "plugin").unwrap();
+        let id = format!("plugin-{index:03}@marketplace");
         registered.insert(
-            format!("plugin-{index:03}@marketplace"),
+            id.clone(),
             json!([{"installPath":plugin,"version":"1.0.0"}]),
         );
+        enabled.insert(id, json!(true));
     }
+    fs::create_dir_all(harness.home.join(".claude")).unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        json!({"enabledPlugins":enabled}).to_string(),
+    )
+    .unwrap();
     fs::write(
         plugins.join("installed_plugins.json"),
         json!({"version":2,"plugins":registered}).to_string(),
@@ -863,12 +1084,21 @@ fn fingerprint_counts_registered_plugin_aliases_against_the_global_limit() {
     let plugin = plugins.join("shared.json");
     fs::write(&plugin, "plugin").unwrap();
     let mut registered = serde_json::Map::new();
+    let mut enabled = serde_json::Map::new();
     for index in 0..513 {
+        let id = format!("plugin-{index:03}@marketplace");
         registered.insert(
-            format!("plugin-{index:03}@marketplace"),
+            id.clone(),
             json!([{"installPath":plugin,"version":"1.0.0"}]),
         );
+        enabled.insert(id, json!(true));
     }
+    fs::create_dir_all(harness.home.join(".claude")).unwrap();
+    fs::write(
+        harness.home.join(".claude/settings.json"),
+        json!({"enabledPlugins":enabled}).to_string(),
+    )
+    .unwrap();
     fs::write(
         plugins.join("installed_plugins.json"),
         json!({"version":2,"plugins":registered}).to_string(),
@@ -917,4 +1147,29 @@ fn git(repository: &Path, args: &[&str]) {
         "git {args:?}: {}",
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn commit(repository: &Path, message: &str) {
+    git(
+        repository,
+        &[
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-m",
+            message,
+        ],
+    );
+}
+
+fn git_value(repository: &Path, args: &[&str]) -> String {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(repository)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    String::from_utf8(output.stdout).unwrap().trim().to_owned()
 }
