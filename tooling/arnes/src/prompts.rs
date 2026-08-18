@@ -26,8 +26,15 @@ pub fn diagnose(
     }
 
     let prompts = manifest.prompts().collect::<Vec<_>>();
+    let selected_scopes = combinations
+        .iter()
+        .filter(|(agent, scope)| capability::registry(*agent, *scope).is_some())
+        .map(|(_, scope)| *scope)
+        .collect::<Vec<_>>();
+    let scopes = ProjectionTracker::relevant_scopes(roots, &selected_scopes);
     let mut diagnostics = Vec::new();
-    let mut topology = topology::Tracker::new(roots, manifest);
+    let mut topology =
+        (!scopes.is_empty()).then(|| ProjectionTracker::new_for_scopes(roots, manifest, &scopes));
     for (agent, scope) in combinations {
         if capability::registry(agent, scope).is_none() {
             diagnostics.push(unsupported_combination(Some(agent), Some(scope)));
@@ -40,6 +47,9 @@ pub fn diagnose(
                 .filter(|projection| projection.agent == agent && projection.scope == scope)
             {
                 projected = true;
+                let topology = topology
+                    .as_mut()
+                    .expect("supported prompt projections initialize topology");
                 if let Err(failure) = topology.validate(roots, *prompt, projection) {
                     diagnostics.push(broken(*prompt, projection, failure));
                 } else {

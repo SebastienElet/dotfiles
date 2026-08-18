@@ -2,9 +2,10 @@
 mod command_support;
 mod support;
 
-use command_support::{CONTENTS, command, manifest, prompt, run};
+use command_support::{CONTENTS, command, manifest, output_tuple, prompt, run};
 use std::fs;
 use std::os::unix::fs::symlink;
+use std::process::Command;
 use support::Fixture;
 
 const CLAUDE_USER: &[&str] = &[
@@ -135,8 +136,83 @@ fn hardlinked_command_destinations_cannot_alias_each_other() {
     assert_collision(&fixture, "aliases managed destination");
 }
 
+#[test]
+fn shared_roots_cannot_hide_cross_scope_resource_collisions() {
+    let fixture = Fixture::new();
+    let prompts = prompt(
+        "deploy",
+        "claude",
+        "user",
+        "file",
+        ".claude/commands/deploy.md",
+    );
+    let commands = command(
+        "deploy",
+        "deploy",
+        "      - { agent: claude, scope: user }\n",
+    );
+    let configured = manifest(&prompts, &commands).replace(
+        "resources: []",
+        "resources:\n  - id: managed-resource\n    kind: instructions\n    agent: claude\n    scope: project\n    source: { root: repository, path: harness/AGENTS.md }\n    destination: { root: repository, path: .claude/commands/deploy.md }",
+    );
+    fixture.write_repository(".arnes.yaml", &configured);
+    fixture.write_repository("harness/prompts/deploy.md", CONTENTS);
+    fixture.write_repository(".claude/commands/deploy.md", CONTENTS);
+
+    assert_shared_root_collision(&fixture, "aliases managed destination resource");
+}
+
+#[test]
+fn shared_roots_cannot_hide_cross_scope_prompt_collisions() {
+    let fixture = Fixture::new();
+    let prompts = format!(
+        "{}{}",
+        prompt(
+            "deploy",
+            "claude",
+            "user",
+            "file",
+            ".claude/commands/deploy.md"
+        ),
+        prompt(
+            "other",
+            "claude",
+            "project",
+            "file",
+            ".claude/commands/deploy.md"
+        )
+    );
+    let commands = command(
+        "deploy",
+        "deploy",
+        "      - { agent: claude, scope: user }\n",
+    );
+    fixture.write_repository(".arnes.yaml", &manifest(&prompts, &commands));
+    fixture.write_repository("harness/prompts/deploy.md", CONTENTS);
+    fixture.write_repository("harness/prompts/other.md", CONTENTS);
+    fixture.write_repository(".claude/commands/deploy.md", CONTENTS);
+
+    assert_shared_root_collision(&fixture, "aliases managed destination");
+}
+
 fn assert_collision(fixture: &Fixture, expected: &str) {
     let (code, stdout, stderr) = run(fixture, CLAUDE_USER);
+    assert_eq!(code, 2, "{stdout}");
+    assert!(stdout.contains(expected), "missing {expected}: {stdout}");
+    assert!(stderr.is_empty());
+}
+
+fn assert_shared_root_collision(fixture: &Fixture, expected: &str) {
+    let before = fixture.snapshot();
+    let output = Command::new(env!("CARGO_BIN_EXE_arnes"))
+        .args(CLAUDE_USER)
+        .current_dir(fixture.repository())
+        .env_clear()
+        .env("HOME", fixture.repository())
+        .output()
+        .unwrap();
+    assert_eq!(fixture.snapshot(), before);
+    let (code, stdout, stderr) = output_tuple(output);
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     assert!(stderr.is_empty());

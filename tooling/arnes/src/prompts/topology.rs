@@ -5,7 +5,8 @@ use crate::files::paths::{
     FileIdentity, canonical_within, destination, file_identity_within, label, planned_within,
 };
 use crate::manifest::{Manifest, Prompt, PromptProjection, PromptRepresentation, Scope};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::path::PathBuf;
 
 pub struct Tracker {
@@ -14,10 +15,6 @@ pub struct Tracker {
 }
 
 impl Tracker {
-    pub fn new(roots: &Roots, manifest: &Manifest) -> Self {
-        Self::new_for_scopes(roots, manifest, &[Scope::User, Scope::Project])
-    }
-
     pub fn new_for_scopes(roots: &Roots, manifest: &Manifest, scopes: &[Scope]) -> Self {
         let mut tracker = Self {
             sources: HashMap::new(),
@@ -30,6 +27,21 @@ impl Tracker {
             tracker.seed_resource(roots, scope, path);
         }
         tracker
+    }
+
+    pub fn relevant_scopes(roots: &Roots, selected: &[Scope]) -> Vec<Scope> {
+        let mut scopes = selected.iter().copied().collect::<HashSet<_>>();
+        let shared = matches!(
+            (
+                fs::canonicalize(roots.home()).ok(),
+                fs::canonicalize(roots.repository()).ok()
+            ),
+            (Some(home), Some(repository)) if home == repository
+        );
+        if shared {
+            scopes.extend([Scope::User, Scope::Project]);
+        }
+        scopes.into_iter().collect()
     }
 
     pub fn seed_projection_destination(

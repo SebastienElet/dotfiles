@@ -49,12 +49,23 @@ fn diagnose_with_tracker(
             .collect();
     }
     let prompts = manifest.prompts().collect::<Vec<_>>();
-    let scopes = combinations
+    let selected_scopes = combinations
         .iter()
         .map(|(_, scope)| *scope)
         .collect::<Vec<_>>();
+    let scopes = ProjectionTracker::relevant_scopes(roots, &selected_scopes);
+    let topology_combinations = combinations
+        .iter()
+        .flat_map(|(agent, _)| scopes.iter().map(|scope| (*agent, *scope)))
+        .collect::<HashSet<_>>();
     let mut topology = create_tracker(&scopes);
-    seed_unbound_projections(roots, &selected, &prompts, &combinations, &mut topology);
+    seed_unbound_projections(
+        roots,
+        &selected,
+        &prompts,
+        &topology_combinations,
+        &mut topology,
+    );
     selected
         .into_iter()
         .map(|binding| diagnose_binding(roots, binding, &prompts, &mut topology))

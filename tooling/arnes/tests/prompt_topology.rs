@@ -11,6 +11,10 @@ const CLAUDE_PROJECT: &[&str] = &[
     "doctor", "prompts", "--agent", "claude", "--scope", "project", "--format", "json",
 ];
 
+const CLAUDE_USER: &[&str] = &[
+    "doctor", "prompts", "--agent", "claude", "--scope", "user", "--format", "json",
+];
+
 #[test]
 fn prompt_destinations_cannot_alias_other_managed_resources() {
     let fixture = Fixture::new();
@@ -83,6 +87,39 @@ fn resolved_source_destination_aliases_only_allow_direct_project_files() {
         }
         assert!(stderr.is_empty());
     }
+}
+
+#[test]
+fn filtered_scopes_ignore_hardlinked_resources_in_distinct_roots() {
+    let fixture = Fixture::new();
+    let prompt = "  - id: deploy
+    source: { root: repository, path: harness/prompts/deploy.md }
+    includes: []
+    variables: []
+    projections:
+      - agent: claude
+        scope: user
+        representation: rendered
+        destination: { root: home, path: .claude/commands/deploy.md }
+";
+    let configured = manifest(prompt).replace(
+        "resources: []",
+        "resources:\n  - id: managed-resource\n    kind: instructions\n    agent: claude\n    scope: project\n    source: { root: repository, path: harness/AGENTS.md }\n    destination: { root: repository, path: .claude/resource.md }",
+    );
+    fixture.write_home(".arnes.yaml", &configured);
+    fixture.write_repository("harness/prompts/deploy.md", "same\n");
+    fixture.write_repository(".claude/resource.md", "same\n");
+    fs::create_dir_all(fixture.home().join(".claude/commands")).unwrap();
+    fs::hard_link(
+        fixture.repository().join(".claude/resource.md"),
+        fixture.home().join(".claude/commands/deploy.md"),
+    )
+    .unwrap();
+
+    let (code, stdout, stderr) = run(&fixture, CLAUDE_USER);
+    assert_eq!(code, 0, "{stdout}");
+    assert!(stdout.contains("\"state\": \"healthy\""));
+    assert!(stderr.is_empty());
 }
 
 fn assert_collision(fixture: &Fixture, expected: &str) {
