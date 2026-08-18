@@ -1,4 +1,4 @@
-use super::*;
+use super::support::*;
 
 #[test]
 fn normalizes_cross_agent_event_names_and_preserves_native_names() {
