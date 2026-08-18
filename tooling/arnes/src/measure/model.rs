@@ -36,6 +36,7 @@ pub struct RunRecord {
     pub model: Option<String>,
     pub repository: Option<RepositoryRecord>,
     pub harness_fingerprint: String,
+    pub harness_fingerprint_limitations: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -51,6 +52,7 @@ pub struct EventRecord {
     pub timestamp_ms: u64,
     pub event_id: String,
     pub event: String,
+    pub native_event: String,
     pub artifact: String,
     pub native_ids: Map<String, Value>,
 }

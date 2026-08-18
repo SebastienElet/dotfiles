@@ -1,7 +1,8 @@
 use super::MeasureError;
+use super::events;
 use super::fingerprint;
 use super::input::Payload;
-use super::model::{EventRecord, HookAgent, PromptRecord, RepositoryRecord, RunRecord};
+use super::model::{HookAgent, PromptRecord, RepositoryRecord, RunRecord};
 use super::redaction::{redact, redact_string};
 use super::repository;
 use super::store::{Store, append_jsonl, write_json_atomic, write_json_once};
@@ -78,6 +79,7 @@ fn build_run(
     let home = env::var_os("HOME")
         .map(PathBuf::from)
         .ok_or_else(|| MeasureError::new("HOME is required for harness fingerprinting"))?;
+    let fingerprint = fingerprint::deployed(agent, &home, deployment_root)?;
     Ok(RunRecord {
         schema_version: 1,
         run_id,
@@ -86,7 +88,8 @@ fn build_run(
         started_at_ms: timestamp_ms,
         model: model(raw).map(|model| redact_string(&model)),
         repository,
-        harness_fingerprint: fingerprint::deployed(agent, &home, deployment_root)?,
+        harness_fingerprint: fingerprint.digest,
+        harness_fingerprint_limitations: fingerprint.limitations,
     })
 }
 
@@ -97,13 +100,7 @@ fn append_event(
     artifact: String,
     raw: &Value,
 ) -> Result<(), MeasureError> {
-    let event = EventRecord {
-        timestamp_ms,
-        event_id: event_id.to_owned(),
-        event: event_name(raw),
-        artifact,
-        native_ids: native_ids(raw),
-    };
+    let event = events::record(timestamp_ms, event_id, artifact, native_ids(raw), raw);
     append_jsonl(&run_dir.join("events.jsonl"), &event)
 }
 
@@ -135,14 +132,6 @@ fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, MeasureEr
         .ok_or_else(|| {
             MeasureError::new(format!("{key} is required and must be a non-empty string"))
         })
-}
-
-fn event_name(value: &Value) -> String {
-    let event = ["hook_event_name", "event", "type"]
-        .iter()
-        .find_map(|key| value.get(key).and_then(Value::as_str))
-        .unwrap_or("unknown");
-    redact_string(event)
 }
 
 fn model(value: &Value) -> Option<String> {

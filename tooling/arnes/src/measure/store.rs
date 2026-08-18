@@ -62,14 +62,19 @@ pub fn write_json_once<T: Serialize>(path: &Path, value: &T) -> Result<(), Measu
     let lock_path = path.with_extension("json.lock");
     let lock = open_private_append(&lock_path)?;
     lock.lock()?;
-    if path.exists() {
-        ensure_regular_file(path)?;
-        let current = validate_json(path)?;
-        let expected = serde_json::to_value(value)?;
-        validation::validate_run(&current, &expected)?;
-        return Ok(());
+    match fs::symlink_metadata(path) {
+        Ok(_) => {
+            ensure_regular_file(path)?;
+            let current = validate_json(path)?;
+            let expected = serde_json::to_value(value)?;
+            validation::validate_run(&current, &expected)?;
+            Ok(())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            write_json_atomic(path, value)
+        }
+        Err(error) => Err(error.into()),
     }
-    write_json_atomic(path, value)
 }
 
 pub fn write_json_atomic<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {

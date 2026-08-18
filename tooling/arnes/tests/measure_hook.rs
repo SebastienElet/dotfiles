@@ -179,10 +179,58 @@ fn preserves_unknown_events_and_fields_in_the_redacted_artifact() {
     let run = harness.only_run();
     let events = read_jsonl(run.join("events.jsonl"));
     assert_eq!(events.len(), 1);
-    assert_eq!(events[0]["event"], "FutureEvent");
+    assert_eq!(events[0]["event"], "unknown");
+    assert_eq!(events[0]["native_event"], "FutureEvent");
     assert_eq!(events[0]["native_ids"]["event_id"], "native-event");
     let artifact = read_json(run.join(events[0]["artifact"].as_str().unwrap()));
     assert_eq!(artifact["future"]["answer"], 42);
+}
+
+#[test]
+fn normalizes_cross_agent_event_names_and_preserves_native_names() {
+    for (agent, session_key, native_events) in [
+        (
+            "codex",
+            "session_id",
+            ["SessionStart", "UserPromptSubmit", "Stop", "SubagentStop"],
+        ),
+        (
+            "claude-code",
+            "session_id",
+            ["SessionStart", "UserPromptSubmit", "Stop", "SubagentStop"],
+        ),
+        (
+            "cursor",
+            "conversation_id",
+            ["sessionStart", "beforeSubmitPrompt", "stop", "subagentStop"],
+        ),
+    ] {
+        let harness = Harness::new();
+        for native_event in native_events {
+            let mut payload = json!({"hook_event_name":native_event});
+            payload[session_key] = json!("session");
+            assert_success(&harness.run(agent, payload.to_string().as_bytes()));
+        }
+        let events = read_jsonl(harness.only_run().join("events.jsonl"));
+        let normalized: Vec<&str> = events
+            .iter()
+            .map(|event| event["event"].as_str().unwrap())
+            .collect();
+        let native: Vec<&str> = events
+            .iter()
+            .map(|event| event["native_event"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            normalized,
+            [
+                "session.start",
+                "prompt.submit",
+                "agent.stop",
+                "subagent.stop"
+            ]
+        );
+        assert_eq!(native, native_events);
+    }
 }
 
 #[test]
@@ -308,6 +356,39 @@ fn refuses_state_inside_git_root_when_git_is_unavailable_from_a_subdirectory() {
 }
 
 #[test]
+fn nested_fake_git_marker_cannot_shrink_the_protected_repository() {
+    let harness = Harness::new();
+    git(&harness.repository, &["init"]);
+    let nested = harness.repository.join("nested");
+    fs::create_dir(&nested).unwrap();
+    fs::create_dir(nested.join(".git")).unwrap();
+    let current = nested.join("deeper");
+    fs::create_dir(&current).unwrap();
+    let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
+        .args(["measure", "hook", "--agent", "codex"])
+        .current_dir(current)
+        .env_clear()
+        .env("HOME", &harness.home)
+        .env("PATH", "/nonexistent")
+        .env("XDG_STATE_HOME", harness.repository.join("state"))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(br#"{"session_id":"session"}"#)
+        .unwrap();
+    let output = child.wait_with_output().unwrap();
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(!harness.repository.join("state").exists());
+}
+
+#[test]
 fn creates_managed_directories_and_files_with_private_modes() {
     let harness = Harness::new();
     assert_success(&harness.run(
@@ -401,6 +482,24 @@ fn refuses_hardlinked_and_corrupt_managed_files() {
     let output = harness.run("codex", payload);
     assert_eq!(output.status.code(), Some(2));
     assert_eq!(fs::read_to_string(events).unwrap(), r#"{"partial"#);
+}
+
+#[test]
+fn refuses_a_broken_run_json_symlink_instead_of_replacing_it() {
+    let harness = Harness::new();
+    let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
+    assert_success(&harness.run("codex", payload));
+    let run_json = harness.only_run().join("run.json");
+    fs::remove_file(&run_json).unwrap();
+    symlink("missing-target", &run_json).unwrap();
+
+    let output = harness.run("codex", payload);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(
+        fs::read_link(run_json).unwrap(),
+        Path::new("missing-target")
+    );
 }
 
 #[test]
@@ -592,6 +691,91 @@ fn fingerprint_tracks_project_instructions_config_hooks_and_skills() {
 }
 
 #[test]
+fn fingerprint_tracks_each_agents_static_plugin_surface() {
+    for (agent, session_key) in [
+        ("codex", "session_id"),
+        ("claude-code", "session_id"),
+        ("cursor", "conversation_id"),
+    ] {
+        let harness = Harness::new();
+        let plugin = configure_active_plugin(&harness, agent);
+        fs::create_dir_all(plugin.parent().unwrap()).unwrap();
+        fs::write(&plugin, "first plugin deployment").unwrap();
+        let mut first_payload = json!({});
+        first_payload[session_key] = json!("one");
+        assert_success(&harness.run(agent, first_payload.to_string().as_bytes()));
+        let first = harness
+            .runs()
+            .into_iter()
+            .map(|path| read_json(path.join("run.json")))
+            .find(|run| run["session_id"] == "one")
+            .unwrap();
+        if agent == "codex" {
+            assert!(
+                first["harness_fingerprint_limitations"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|value| value.as_str().unwrap().contains("cache candidates"))
+            );
+        }
+        fs::write(&plugin, "second plugin deployment").unwrap();
+        let mut second_payload = json!({});
+        second_payload[session_key] = json!("two");
+        assert_success(&harness.run(agent, second_payload.to_string().as_bytes()));
+        let second = harness
+            .runs()
+            .into_iter()
+            .map(|path| read_json(path.join("run.json")))
+            .find(|run| run["session_id"] == "two")
+            .unwrap();
+
+        assert_ne!(
+            first["harness_fingerprint"], second["harness_fingerprint"],
+            "{agent} plugin deployment was omitted"
+        );
+    }
+}
+
+fn configure_active_plugin(harness: &Harness, agent: &str) -> PathBuf {
+    match agent {
+        "codex" => {
+            fs::create_dir_all(harness.home.join(".codex")).unwrap();
+            fs::write(
+                harness.home.join(".codex/config.toml"),
+                "[plugins.\"demo@marketplace\"]\nenabled = true\n",
+            )
+            .unwrap();
+            harness
+                .home
+                .join(".codex/plugins/cache/marketplace/demo/1.0.0/plugin.json")
+        }
+        "claude-code" => {
+            let root = harness
+                .home
+                .join(".claude/plugins/cache/marketplace/demo/1.0.0");
+            fs::create_dir_all(harness.home.join(".claude/plugins")).unwrap();
+            fs::write(
+                harness.home.join(".claude/plugins/installed_plugins.json"),
+                json!({
+                    "version":2,
+                    "plugins":{"demo@marketplace":[{
+                        "scope":"user",
+                        "installPath":root,
+                        "version":"1.0.0"
+                    }]}
+                })
+                .to_string(),
+            )
+            .unwrap();
+            root.join("plugin.json")
+        }
+        "cursor" => harness.home.join(".cursor/plugins/local/demo/plugin.json"),
+        _ => unreachable!(),
+    }
+}
+
+#[test]
 fn fingerprint_includes_the_first_512_sorted_deployment_entries() {
     let harness = Harness::new();
     let skills = harness.home.join(".agents/skills");
@@ -638,6 +822,87 @@ fn fingerprint_refuses_deployments_exceeding_512_entries() {
         String::from_utf8(output.stderr)
             .unwrap()
             .contains("fingerprint inventory exceeds 512 entries")
+    );
+}
+
+#[test]
+fn fingerprint_refuses_more_than_512_registered_plugin_file_roots() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    fs::create_dir_all(&plugins).unwrap();
+    let mut registered = serde_json::Map::new();
+    for index in 0..513 {
+        let plugin = plugins.join(format!("plugin-{index:03}.json"));
+        fs::write(&plugin, "plugin").unwrap();
+        registered.insert(
+            format!("plugin-{index:03}@marketplace"),
+            json!([{"installPath":plugin,"version":"1.0.0"}]),
+        );
+    }
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({"version":2,"plugins":registered}).to_string(),
+    )
+    .unwrap();
+
+    let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("fingerprint inventory exceeds 512 entries")
+    );
+}
+
+#[test]
+fn fingerprint_counts_registered_plugin_aliases_against_the_global_limit() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    fs::create_dir_all(&plugins).unwrap();
+    let plugin = plugins.join("shared.json");
+    fs::write(&plugin, "plugin").unwrap();
+    let mut registered = serde_json::Map::new();
+    for index in 0..513 {
+        registered.insert(
+            format!("plugin-{index:03}@marketplace"),
+            json!([{"installPath":plugin,"version":"1.0.0"}]),
+        );
+    }
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        json!({"version":2,"plugins":registered}).to_string(),
+    )
+    .unwrap();
+
+    let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("fingerprint inventory exceeds 512 entries")
+    );
+}
+
+#[test]
+fn fingerprint_refuses_oversized_plugin_manifests() {
+    let harness = Harness::new();
+    let plugins = harness.home.join(".claude/plugins");
+    fs::create_dir_all(&plugins).unwrap();
+    fs::write(
+        plugins.join("installed_plugins.json"),
+        vec![b' '; 1_048_577],
+    )
+    .unwrap();
+
+    let output = harness.run("claude-code", br#"{"session_id":"session"}"#);
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("plugin manifest exceeds 1048576 bytes")
     );
 }
 

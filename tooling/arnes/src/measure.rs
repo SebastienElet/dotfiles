@@ -1,3 +1,4 @@
+mod events;
 mod fingerprint;
 mod hook;
 mod input;

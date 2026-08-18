@@ -21,7 +21,8 @@ pub fn observe(directory: &Path) -> Option<RepositoryRecord> {
 pub fn protected_root(directory: &Path) -> PathBuf {
     directory
         .ancestors()
-        .find(|ancestor| fs::symlink_metadata(ancestor.join(".git")).is_ok())
+        .filter(|ancestor| fs::symlink_metadata(ancestor.join(".git")).is_ok())
+        .last()
         .unwrap_or(directory)
         .to_owned()
 }
