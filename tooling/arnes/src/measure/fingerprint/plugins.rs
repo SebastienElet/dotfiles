@@ -1,14 +1,12 @@
 mod codex;
 mod cursor;
+mod manifest;
 use super::SelectedRoot;
 use crate::measure::{MeasureError, model::HookAgent};
 use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
-use std::fs::{self, File};
-use std::io::Read;
+use std::fs;
 use std::path::{Component, Path, PathBuf};
-
-const MAX_MANIFEST_BYTES: u64 = 1_048_576;
 
 pub struct PluginSelection {
     pub roots: Vec<SelectedRoot>,
@@ -28,27 +26,21 @@ pub fn selected(
     })
 }
 
-fn unavailable_runtime(limitation: &str) -> PluginSelection {
-    PluginSelection {
-        roots: Vec::new(),
-        limitations: vec![limitation.to_owned()],
-        markers: Vec::new(),
-    }
-}
-
 fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureError> {
     let plugin_root = home.join(".claude/plugins");
-    let registry = read_json(&plugin_root.join("installed_plugins.json"))?;
-    let enabled: Vec<String> = claude_settings(home, repository)?
+    let mut selection = PluginSelection {
+        roots: Vec::new(),
+        limitations: Vec::new(),
+        markers: Vec::new(),
+    };
+    let (registry, marker) = read_json(&plugin_root.join("installed_plugins.json"))?;
+    add_manifest_marker(&mut selection, "claude:registry", marker);
+    let enabled: Vec<String> = claude_settings(home, repository, &mut selection)?
         .into_iter()
         .filter_map(|(id, enabled)| enabled.then_some(id))
         .collect();
     if enabled.is_empty() {
-        return Ok(PluginSelection {
-            roots: Vec::new(),
-            limitations: Vec::new(),
-            markers: Vec::new(),
-        });
+        return Ok(selection);
     }
     let Some(plugins) = registry
         .as_ref()
@@ -56,9 +48,11 @@ fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureErro
         .and_then(|value| value.get("plugins"))
         .and_then(JsonValue::as_object)
     else {
-        return Ok(unavailable_runtime(
-            "claude plugin registry is not observable in supported version 2; enabled plugin files excluded",
-        ));
+        selection.limitations.push(
+            "claude plugin registry is not observable in supported version 2; enabled plugin files excluded"
+                .to_owned(),
+        );
+        return Ok(selection);
     };
     let mut roots = Vec::new();
     let mut unresolved = false;
@@ -71,27 +65,34 @@ fn claude(home: &Path, repository: &Path) -> Result<PluginSelection, MeasureErro
             None => unresolved = true,
         }
     }
-    Ok(PluginSelection {
-        roots,
-        limitations: unresolved
-            .then(|| {
-                "claude enabled plugin installation is not uniquely observable; unresolved plugin files excluded"
-                    .to_owned()
-            })
-            .into_iter()
-            .collect(),
-        markers: Vec::new(),
-    })
+    selection.roots = roots;
+    selection.limitations.extend(unresolved.then(|| {
+        "claude enabled plugin installation is not uniquely observable; unresolved plugin files excluded"
+            .to_owned()
+    }));
+    Ok(selection)
 }
 
-fn claude_settings(home: &Path, repository: &Path) -> Result<BTreeMap<String, bool>, MeasureError> {
+fn claude_settings(
+    home: &Path,
+    repository: &Path,
+    selection: &mut PluginSelection,
+) -> Result<BTreeMap<String, bool>, MeasureError> {
     let mut enabled = BTreeMap::new();
-    for path in [
-        home.join(".claude/settings.json"),
-        repository.join(".claude/settings.json"),
-        repository.join(".claude/settings.local.json"),
+    for (label, path) in [
+        ("claude:settings:user", home.join(".claude/settings.json")),
+        (
+            "claude:settings:project",
+            repository.join(".claude/settings.json"),
+        ),
+        (
+            "claude:settings:project-local",
+            repository.join(".claude/settings.local.json"),
+        ),
     ] {
-        let Some(settings) = read_json(&path)? else {
+        let (settings, marker) = read_json(&path)?;
+        add_manifest_marker(selection, label, marker);
+        let Some(settings) = settings else {
             continue;
         };
         if let Some(values) = settings
@@ -108,25 +109,22 @@ fn claude_settings(home: &Path, repository: &Path) -> Result<BTreeMap<String, bo
     Ok(enabled)
 }
 
-fn read_json(path: &Path) -> Result<Option<JsonValue>, MeasureError> {
-    read_manifest(path)?
+fn read_json(path: &Path) -> Result<(Option<JsonValue>, Option<String>), MeasureError> {
+    let manifest = manifest::read(path)?;
+    let value = manifest
+        .contents
         .map(|contents| serde_json::from_str(&contents).map_err(MeasureError::from))
-        .transpose()
+        .transpose()?;
+    Ok((value, manifest.marker))
 }
 
-pub(super) fn read_manifest(path: &Path) -> Result<Option<String>, MeasureError> {
-    let mut file = match File::open(path) {
-        Ok(file) => file,
-        Err(_) => return Ok(None),
-    };
-    let mut bytes = Vec::new();
-    file.by_ref()
-        .take(MAX_MANIFEST_BYTES + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > MAX_MANIFEST_BYTES {
-        return Err(MeasureError::new("plugin manifest exceeds 1048576 bytes"));
+fn add_manifest_marker(selection: &mut PluginSelection, label: &str, marker: Option<String>) {
+    if let Some(marker) = marker {
+        selection.markers.push(format!("{label}:{marker}"));
+        selection
+            .limitations
+            .push("oversized plugin manifest uses size and boundary windows".to_owned());
     }
-    Ok(String::from_utf8(bytes).ok())
 }
 
 fn claude_installation(root: &Path, id: &str, value: &JsonValue) -> Option<SelectedRoot> {

@@ -3,6 +3,7 @@ mod fingerprint;
 mod hook;
 mod input;
 mod install;
+mod json;
 mod model;
 mod redaction;
 mod repository;

@@ -1,9 +1,12 @@
-use super::{PluginSelection, read_manifest, safe_label, within};
+use super::{PluginSelection, manifest, safe_label, within};
 use crate::measure::MeasureError;
 use crate::measure::fingerprint::SelectedRoot;
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, BinaryHeap};
+use std::fmt::Write;
 use std::fs;
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Component, Path, PathBuf};
 
 const MAX_VERSIONS: usize = 512;
@@ -20,7 +23,9 @@ struct Plugin {
 }
 
 pub fn selected(home: &Path) -> Result<PluginSelection, MeasureError> {
-    let config = read_manifest(&home.join(".codex/config.toml"))?
+    let manifest = manifest::read(&home.join(".codex/config.toml"))?;
+    let config = manifest
+        .contents
         .map(|value| toml::from_str::<Config>(&value))
         .transpose()
         .map_err(|error| MeasureError::new(error.to_string()))?
@@ -30,6 +35,13 @@ pub fn selected(home: &Path) -> Result<PluginSelection, MeasureError> {
         limitations: Vec::new(),
         markers: Vec::new(),
     };
+    if let Some(marker) = manifest.marker {
+        selection.markers.push(format!("codex:config:{marker}"));
+        add_limitation(
+            &mut selection,
+            "oversized plugin manifest uses size and boundary windows",
+        );
+    }
     for (id, plugin) in config.plugins {
         if plugin.enabled == Some(true) {
             select_enabled(home, &id, &mut selection)?;
@@ -59,7 +71,7 @@ fn select_enabled(
         return Ok(());
     }
     let versions = versions(&base)?;
-    match versions.as_slice() {
+    match versions.entries.as_slice() {
         [(version, path)] => selection.roots.push(SelectedRoot {
             label: Path::new("home/.codex/plugins/active")
                 .join(safe_label(id))
@@ -72,15 +84,11 @@ fn select_enabled(
             add_limitation(selection, "codex enabled plugin cache version is missing");
         }
         _ => {
-            let names = versions
-                .iter()
-                .fold(String::new(), |mut names, (version, _)| {
-                    names.push_str(&format!("{}:{version}", version.len()));
-                    names
-                });
-            selection
-                .markers
-                .push(format!("codex:{id}:ambiguous:{names}"));
+            selection.markers.push(format!(
+                "codex:{id}:ambiguous:{}:{}",
+                versions.total,
+                hex(&versions.aggregate)
+            ));
             add_limitation(selection, "codex enabled plugin cache version is ambiguous");
         }
     }
@@ -99,29 +107,62 @@ fn normal_component(value: &str) -> bool {
         && components.next().is_none()
 }
 
-fn versions(base: &Path) -> Result<Vec<(String, PathBuf)>, MeasureError> {
+struct Versions {
+    entries: Vec<(String, PathBuf)>,
+    total: usize,
+    aggregate: [u8; 32],
+}
+
+fn versions(base: &Path) -> Result<Versions, MeasureError> {
     let entries = match fs::read_dir(base) {
         Ok(entries) => entries,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(empty_versions()),
         Err(error) => return Err(error.into()),
     };
-    let mut versions = entries
-        .take(MAX_VERSIONS + 1)
-        .collect::<Result<Vec<_>, _>>()?;
-    if versions.len() > MAX_VERSIONS {
-        return Err(MeasureError::new("codex plugin cache exceeds 512 versions"));
+    let mut selected = BinaryHeap::new();
+    let mut aggregate = [0_u8; 32];
+    let mut total = 0;
+    for entry in entries {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        for (target, byte) in aggregate.iter_mut().zip(Sha256::digest(name.as_bytes())) {
+            *target ^= byte;
+        }
+        selected.push((name, entry.path()));
+        total += 1;
+        if selected.len() > MAX_VERSIONS {
+            selected.pop();
+        }
     }
-    versions.retain(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()));
-    versions.sort_by_key(|entry| entry.file_name());
-    Ok(versions
-        .into_iter()
-        .map(|entry| {
-            (
-                entry.file_name().to_string_lossy().into_owned(),
-                entry.path(),
-            )
-        })
-        .collect())
+    let mut entries = selected.into_vec();
+    entries.sort();
+    Ok(Versions {
+        entries: entries
+            .into_iter()
+            .map(|(name, path)| (name.to_string_lossy().into_owned(), path))
+            .collect(),
+        total,
+        aggregate,
+    })
+}
+
+fn empty_versions() -> Versions {
+    Versions {
+        entries: Vec::new(),
+        total: 0,
+        aggregate: [0; 32],
+    }
+}
+
+fn hex(bytes: &[u8]) -> String {
+    let mut value = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        write!(value, "{byte:02x}").expect("writing to a string cannot fail");
+    }
+    value
 }
 
 fn add_limitation(selection: &mut PluginSelection, limitation: &str) {

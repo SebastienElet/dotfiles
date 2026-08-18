@@ -92,8 +92,8 @@ fn sensitive_key(key: &str) -> bool {
 fn after_agent_thought(value: &Value) -> bool {
     ["hook_event_name", "event", "type"]
         .iter()
-        .find_map(|key| value.get(key).and_then(Value::as_str))
-        .is_some_and(|event| event.eq_ignore_ascii_case("afterAgentThought"))
+        .filter_map(|key| value.get(key).and_then(Value::as_str))
+        .any(|event| event.eq_ignore_ascii_case("afterAgentThought"))
 }
 
 fn neutralized_thought(value: &Value) -> Value {

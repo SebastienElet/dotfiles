@@ -19,7 +19,7 @@ impl Payload {
         if raw.oversized {
             return raw.reject(store, agent, "payload exceeds 1048576 bytes");
         }
-        let value = match serde_json::from_slice(&raw.bytes) {
+        let value = match super::json::parse(&raw.bytes) {
             Ok(value) => value,
             Err(error) => {
                 return raw.reject(store, agent, &format!("invalid JSON: {error}"));
