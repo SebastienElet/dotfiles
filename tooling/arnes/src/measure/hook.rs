@@ -2,7 +2,7 @@ use super::MeasureError;
 use super::events;
 use super::input::Payload;
 use super::model::{HookAgent, PromptRecord};
-use super::redaction::{redact, redact_string};
+use super::redaction::{capture as redact_capture, redact_string};
 use super::repository;
 use super::run;
 use super::store::{Store, append_jsonl, write_json_atomic, write_json_once};
@@ -34,7 +34,7 @@ pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
         &store,
         agent,
         &session,
-        payload.value().clone(),
+        redact_capture(payload.value()),
         repository_root,
         &observed,
         &deployment_root,
@@ -77,8 +77,7 @@ fn persist_hook(
     let run_dir = store.run_dir(&run_id)?;
     write_json_once(&run_json, run.as_ref(), agent.as_str(), session, &run_id)?;
     let event_id = event_id(agent, session, &raw);
-    let mut artifact = raw.clone();
-    redact(&mut artifact);
+    let artifact = raw.clone();
     let artifact_path = format!("artifacts/hooks/{event_id}.json");
     write_json_atomic(&run_dir.join(&artifact_path), &artifact)?;
     append_event(&run_dir, timestamp_ms, &event_id, artifact_path, &raw)?;

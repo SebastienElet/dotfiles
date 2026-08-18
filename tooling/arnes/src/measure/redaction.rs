@@ -2,6 +2,15 @@ use serde_json::Value;
 
 const MARKER: &str = "[REDACTED]";
 
+pub fn capture(value: &Value) -> Value {
+    if after_agent_thought(value) {
+        return neutralized_thought(value);
+    }
+    let mut captured = value.clone();
+    redact(&mut captured);
+    captured
+}
+
 pub fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
@@ -78,6 +87,30 @@ fn sensitive_key(key: &str) -> bool {
         || ["password", "passwd", "token", "privatekey", "accesskey"]
             .iter()
             .any(|suffix| normalized.ends_with(suffix))
+}
+
+fn after_agent_thought(value: &Value) -> bool {
+    ["hook_event_name", "event", "type"]
+        .iter()
+        .find_map(|key| value.get(key).and_then(Value::as_str))
+        .is_some_and(|event| event.eq_ignore_ascii_case("afterAgentThought"))
+}
+
+fn neutralized_thought(value: &Value) -> Value {
+    let mut captured = serde_json::Map::new();
+    for key in [
+        "session_id",
+        "conversation_id",
+        "hook_event_name",
+        "event",
+        "type",
+    ] {
+        if let Some(value) = value.get(key) {
+            captured.insert(key.to_owned(), value.clone());
+        }
+    }
+    captured.insert("payload".to_owned(), Value::String(MARKER.to_owned()));
+    Value::Object(captured)
 }
 
 fn contains_private_key(value: &str) -> bool {

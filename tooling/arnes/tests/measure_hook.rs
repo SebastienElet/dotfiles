@@ -778,6 +778,9 @@ fn after_agent_thought_never_persists_reasoning_values() {
     let payload = json!({
         "session_id":"session",
         "hook_event_name":"afterAgentThought",
+        "text":secret,
+        "prompt":secret,
+        "unclassified":secret,
         "thought":secret,
         "nested":{
             "thoughts":secret,
@@ -799,7 +802,32 @@ fn after_agent_thought_never_persists_reasoning_values() {
     )
     .unwrap();
     assert!(!artifact.contains(secret));
-    assert_eq!(artifact.matches("[REDACTED]").count(), 4);
+    assert!(!run.join("prompts.jsonl").exists());
+}
+
+#[test]
+fn after_agent_response_preserves_non_reasoning_text() {
+    let harness = Harness::new();
+    let text = "visible-agent-response";
+    let payload = json!({
+        "conversation_id":"session",
+        "hook_event_name":"afterAgentResponse",
+        "text":text
+    });
+
+    assert_success(&harness.run("cursor", payload.to_string().as_bytes()));
+
+    let run = harness.only_run();
+    let artifact = fs::read_to_string(
+        fs::read_dir(run.join("artifacts/hooks"))
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path(),
+    )
+    .unwrap();
+    assert!(artifact.contains(text));
 }
 
 #[test]
