@@ -2,24 +2,11 @@ use super::measure_support::*;
 use serde_json::json;
 use std::fs;
 
-#[test]
-fn feedback_preserves_private_multiline_text_and_never_mutates_result() {
-    let harness = Harness::new();
-    let run_id = harness.capture("claude-code", "session_id", "session", "prompt");
+fn record_private_feedback(harness: &Harness, run_id: &str) {
     assert_success(&harness.run(&[
         "measure",
-        "finish",
-        &run_id,
-        "--merge-ready",
-        "pass",
-        "--human-minutes",
-        "1",
-    ]));
-    let result_before = fs::read(harness.run_path(&run_id).join("result.json")).unwrap();
-    let output = harness.run(&[
-        "measure",
         "feedback",
-        &run_id,
+        run_id,
         "--source-type",
         "human",
         "--source-id",
@@ -42,8 +29,24 @@ fn feedback_preserves_private_multiline_text_and_never_mutates_result() {
         "open",
         "--failure-category",
         "correctness",
-    ]);
-    assert_success(&output);
+    ]));
+}
+
+#[test]
+fn feedback_preserves_private_multiline_text_and_never_mutates_result() {
+    let harness = Harness::new();
+    let run_id = harness.capture("claude-code", "session_id", "session", "prompt");
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "1",
+    ]));
+    let result_before = fs::read(harness.run_path(&run_id).join("result.json")).unwrap();
+    record_private_feedback(&harness, &run_id);
 
     let feedback = read_jsonl(harness.run_path(&run_id).join("feedback.jsonl"));
     assert_eq!(feedback.len(), 1);

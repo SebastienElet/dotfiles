@@ -2,6 +2,33 @@ use super::measure_support::*;
 use serde_json::{Value, json};
 use std::fs;
 
+fn seed_result_one_revision_behind(harness: &Harness, run_id: &str, result_path: &std::path::Path) {
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        run_id,
+        "--merge-ready",
+        "fail",
+        "--human-minutes",
+        "1",
+        "--failure-reason",
+        "revision one",
+    ]));
+    let revision_one = fs::read(result_path).unwrap();
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        run_id,
+        "--merge-ready",
+        "unjudgeable",
+        "--human-minutes",
+        "2",
+        "--evidence",
+        "revision two evidence",
+    ]));
+    fs::write(result_path, revision_one).unwrap();
+}
+
 #[test]
 fn finish_recovers_a_missing_result_from_the_complete_event_snapshot() {
     let harness = Harness::new();
@@ -59,30 +86,7 @@ fn finish_recovers_when_result_is_exactly_one_revision_behind_history() {
     let run_id = harness.capture("codex", "session_id", "session", "prompt");
     let run = harness.run_path(&run_id);
     let result_path = run.join("result.json");
-    assert_success(&harness.run(&[
-        "measure",
-        "finish",
-        &run_id,
-        "--merge-ready",
-        "fail",
-        "--human-minutes",
-        "1",
-        "--failure-reason",
-        "revision one",
-    ]));
-    let revision_one = fs::read(&result_path).unwrap();
-    assert_success(&harness.run(&[
-        "measure",
-        "finish",
-        &run_id,
-        "--merge-ready",
-        "unjudgeable",
-        "--human-minutes",
-        "2",
-        "--evidence",
-        "revision two evidence",
-    ]));
-    fs::write(&result_path, revision_one).unwrap();
+    seed_result_one_revision_behind(&harness, &run_id, &result_path);
 
     assert_success(&harness.run(&[
         "measure",
