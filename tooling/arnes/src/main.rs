@@ -1,4 +1,6 @@
 mod cli;
+mod cli_output;
+mod measure_cli;
 
 use clap::Parser;
 use std::io::{self, IsTerminal};
@@ -10,10 +12,11 @@ use arnes::config;
 use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
-use arnes::measure;
 use arnes::prompts;
 use arnes::skills;
-use cli::{Cli, Color, Command, Format, MeasureCommand, Resource, validate_render_options};
+use cli::{Cli, Color, Command, Format, Resource, validate_render_options};
+use cli_output::write_output;
+use measure_cli::run_measure;
 
 fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
@@ -29,40 +32,6 @@ fn main() -> ExitCode {
         } => run_doctor(resource, agent, scope, format, color, verbose),
         Command::Measure { command } => run_measure(command),
     }
-}
-
-fn run_measure(command: MeasureCommand) -> ExitCode {
-    match command {
-        MeasureCommand::Hook { agent } => match measure::capture(agent) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(error) => {
-                eprintln!("measure hook: {error}");
-                ExitCode::SUCCESS
-            }
-        },
-        MeasureCommand::List(args) => match measure::list(args) {
-            Ok(output) => match write_output(&output) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(error) => fail_measure(error),
-            },
-            Err(error) => fail_measure(error),
-        },
-        MeasureCommand::Finish(args) => finish_measure(measure::finish(args)),
-        MeasureCommand::Feedback(args) => finish_measure(measure::feedback(args)),
-        MeasureCommand::InstallHooks(args) => finish_measure(measure::install_hooks(args)),
-    }
-}
-
-fn finish_measure(result: Result<(), measure::MeasureError>) -> ExitCode {
-    match result {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(error) => fail_measure(error),
-    }
-}
-
-fn fail_measure(error: impl std::fmt::Display) -> ExitCode {
-    eprintln!("measure: {error}");
-    ExitCode::from(2)
 }
 
 fn run_doctor(
@@ -177,24 +146,6 @@ fn diagnose(
         },
         _ => Vec::new(),
     }
-}
-
-fn write_output(output: &str) -> io::Result<()> {
-    if output.is_empty() {
-        return Ok(());
-    }
-
-    let output = format!("{output}\n");
-    let mut remaining = output.as_bytes();
-    while !remaining.is_empty() {
-        let written =
-            rustix::io::write(rustix::stdio::stdout(), remaining).map_err(io::Error::from)?;
-        if written == 0 {
-            return Err(io::Error::from(io::ErrorKind::WriteZero));
-        }
-        remaining = &remaining[written..];
-    }
-    Ok(())
 }
 
 fn diagnose_manifest(roots: &Roots) -> Diagnostic {

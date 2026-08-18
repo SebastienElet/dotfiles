@@ -83,54 +83,47 @@ fn incomplete_recognized_hook_handlers_are_rejected_without_mutation() {
 
 #[test]
 fn preserves_all_documented_third_party_handler_types() {
-    let harness = Harness::new();
-    harness.write_config(
-        "codex",
-        &serde_json::json!({"hooks":{"Stop":[{"hooks":[
-            {"type":"prompt","prompt":"review"},
-            {"type":"agent","prompt":"investigate"}
-        ]}]}}),
-    );
-    assert_success(&harness.install("codex"));
-    let codex = read_json(harness.config("codex"));
-    assert_eq!(
-        codex["hooks"]["Stop"][0]["hooks"].as_array().unwrap().len(),
-        2
-    );
+    assert_handler_count("codex", codex_handler_types(), "Stop", 2);
+    assert_handler_count("claude-code", claude_handler_types(), "Stop", 5);
+    assert_handler_count("cursor", cursor_handler_types(), "stop", 4);
+}
 
+fn assert_handler_count(agent: &str, config: Value, event: &str, expected: usize) {
     let harness = Harness::new();
-    harness.write_config(
-        "claude-code",
-        &serde_json::json!({"hooks":{"Stop":[{"hooks":[
+    harness.write_config(agent, &config);
+    assert_success(&harness.install(agent));
+    let installed = read_json(harness.config(agent));
+    let handlers = if agent == "cursor" {
+        installed["hooks"][event].as_array().unwrap()
+    } else {
+        installed["hooks"][event][0]["hooks"].as_array().unwrap()
+    };
+    assert_eq!(handlers.len(), expected);
+}
+
+fn codex_handler_types() -> Value {
+    serde_json::json!({"hooks":{"Stop":[{"hooks":[
+        {"type":"prompt","prompt":"review"},
+        {"type":"agent","prompt":"investigate"}
+    ]}]}})
+}
+
+fn claude_handler_types() -> Value {
+    serde_json::json!({"hooks":{"Stop":[{"hooks":[
             {"type":"command","command":"third-party"},
             {"type":"http","url":"https://example.com/hook"},
             {"type":"mcp_tool","server":"review","tool":"record","input":{"ok":true}},
             {"type":"prompt","prompt":"review"},
             {"type":"agent","prompt":"investigate"}
-        ]}]}}),
-    );
-    assert_success(&harness.install("claude-code"));
-    let claude = read_json(harness.config("claude-code"));
-    assert_eq!(
-        claude["hooks"]["Stop"][0]["hooks"]
-            .as_array()
-            .unwrap()
-            .len(),
-        5
-    );
+    ]}]}})
+}
 
-    let harness = Harness::new();
-    harness.write_config(
-        "cursor",
-        &serde_json::json!({"version":1,"hooks":{"stop":[
-            {"command":"third-party"},
-            {"type":"command","command":"typed-third-party"},
-            {"type":"prompt","prompt":"review"}
-        ]}}),
-    );
-    assert_success(&harness.install("cursor"));
-    let cursor = read_json(harness.config("cursor"));
-    assert_eq!(cursor["hooks"]["stop"].as_array().unwrap().len(), 4);
+fn cursor_handler_types() -> Value {
+    serde_json::json!({"version":1,"hooks":{"stop":[
+        {"command":"third-party"},
+        {"type":"command","command":"typed-third-party"},
+        {"type":"prompt","prompt":"review"}
+    ]}})
 }
 
 #[test]

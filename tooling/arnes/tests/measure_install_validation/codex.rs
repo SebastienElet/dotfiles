@@ -2,7 +2,18 @@ use super::*;
 
 #[test]
 fn codex_known_handler_fields_fail_closed_by_agent_event_and_variant() {
-    for (label, event, handler) in [
+    assert_invalid_codex_handlers(numeric_field_failures());
+    assert_invalid_codex_handlers(command_field_failures());
+}
+
+fn assert_invalid_codex_handlers(cases: Vec<(&str, &str, Value)>) {
+    for (label, event, handler) in cases {
+        assert_failure_without_mutation("codex", label, nested(event, handler));
+    }
+}
+
+fn numeric_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "codex Stop command timeout",
             "Stop",
@@ -33,6 +44,11 @@ fn codex_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "Stop",
             json!({"type":"command","command":"x","additionalContextLimit":1.5}),
         ),
+    ]
+}
+
+fn command_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "codex Stop command commandWindows",
             "Stop",
@@ -61,7 +77,5 @@ fn codex_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "SessionEnd",
             json!({"type":"command","command":"x","timeout":4}),
         ),
-    ] {
-        assert_failure_without_mutation("codex", label, nested(event, handler));
-    }
+    ]
 }

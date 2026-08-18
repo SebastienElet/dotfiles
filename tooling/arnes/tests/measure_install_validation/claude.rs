@@ -2,7 +2,18 @@ use super::*;
 
 #[test]
 fn claude_known_handler_fields_fail_closed_by_agent_event_and_variant() {
-    for (label, event, handler) in [
+    assert_invalid_claude_handlers(command_field_failures());
+    assert_invalid_claude_handlers(variant_field_failures());
+}
+
+fn assert_invalid_claude_handlers(cases: Vec<(&str, &str, Value)>) {
+    for (label, event, handler) in cases {
+        assert_failure_without_mutation("claude-code", label, nested(event, handler));
+    }
+}
+
+fn command_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "claude Stop command timeout",
             "Stop",
@@ -43,6 +54,11 @@ fn claude_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "Stop",
             json!({"type":"command","command":"x","shell":"zsh"}),
         ),
+    ]
+}
+
+fn variant_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "claude Stop http headers",
             "Stop",
@@ -83,9 +99,7 @@ fn claude_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "ConfigChange",
             json!({"type":"prompt","prompt":"x"}),
         ),
-    ] {
-        assert_failure_without_mutation("claude-code", label, nested(event, handler));
-    }
+    ]
 }
 
 #[test]

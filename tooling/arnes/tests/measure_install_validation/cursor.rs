@@ -2,7 +2,18 @@ use super::*;
 
 #[test]
 fn cursor_known_handler_fields_fail_closed_by_agent_event_and_variant() {
-    for (label, event, handler) in [
+    assert_invalid_cursor_handlers(common_field_failures());
+    assert_invalid_cursor_handlers(incompatible_field_failures());
+}
+
+fn assert_invalid_cursor_handlers(cases: Vec<(&str, &str, Value)>) {
+    for (label, event, handler) in cases {
+        assert_failure_without_mutation("cursor", label, direct(event, handler));
+    }
+}
+
+fn common_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "cursor stop command timeout",
             "stop",
@@ -28,6 +39,11 @@ fn cursor_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "stop",
             json!({"type":"prompt","prompt":"x","model":1}),
         ),
+    ]
+}
+
+fn incompatible_field_failures() -> Vec<(&'static str, &'static str, Value)> {
+    vec![
         (
             "cursor stop prompt command incompatible",
             "stop",
@@ -53,9 +69,7 @@ fn cursor_known_handler_fields_fail_closed_by_agent_event_and_variant() {
             "postCompact",
             json!({"command":"x","timeout":"30"}),
         ),
-    ] {
-        assert_failure_without_mutation("cursor", label, direct(event, handler));
-    }
+    ]
 }
 
 #[test]

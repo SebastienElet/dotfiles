@@ -1,144 +1,149 @@
 use super::*;
 
+const CODEX_EVENTS: &[&str] = &[
+    "SessionStart",
+    "UserPromptSubmit",
+    "PreToolUse",
+    "PermissionRequest",
+    "PostToolUse",
+    "PreCompact",
+    "PostCompact",
+    "SubagentStart",
+    "SubagentStop",
+    "Stop",
+    "SessionEnd",
+];
+const CLAUDE_EVENTS: &[&str] = &[
+    "SessionStart",
+    "UserPromptSubmit",
+    "PreToolUse",
+    "PermissionRequest",
+    "PermissionDenied",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "SubagentStart",
+    "SubagentStop",
+    "Stop",
+    "StopFailure",
+    "PreCompact",
+    "PostCompact",
+    "SessionEnd",
+];
+const CURSOR_EVENTS: &[&str] = &[
+    "sessionStart",
+    "beforeSubmitPrompt",
+    "preToolUse",
+    "postToolUse",
+    "postToolUseFailure",
+    "subagentStart",
+    "subagentStop",
+    "afterAgentResponse",
+    "stop",
+    "preCompact",
+    "postCompact",
+    "sessionEnd",
+];
+
 #[test]
 fn installs_hooks_when_agent_configuration_is_absent() {
-    for (agent, expected) in [
-        (
-            "codex",
-            &[
-                "SessionStart",
-                "UserPromptSubmit",
-                "PreToolUse",
-                "PermissionRequest",
-                "PostToolUse",
-                "PreCompact",
-                "PostCompact",
-                "SubagentStart",
-                "SubagentStop",
-                "Stop",
-                "SessionEnd",
-            ][..],
-        ),
-        (
-            "claude-code",
-            &[
-                "SessionStart",
-                "UserPromptSubmit",
-                "PreToolUse",
-                "PermissionRequest",
-                "PermissionDenied",
-                "PostToolUse",
-                "PostToolUseFailure",
-                "SubagentStart",
-                "SubagentStop",
-                "Stop",
-                "StopFailure",
-                "PreCompact",
-                "PostCompact",
-                "SessionEnd",
-            ][..],
-        ),
-        (
-            "cursor",
-            &[
-                "sessionStart",
-                "beforeSubmitPrompt",
-                "preToolUse",
-                "postToolUse",
-                "postToolUseFailure",
-                "subagentStart",
-                "subagentStop",
-                "afterAgentResponse",
-                "stop",
-                "preCompact",
-                "postCompact",
-                "sessionEnd",
-            ][..],
-        ),
-    ] {
-        let harness = Harness::new();
+    for agent in ["codex", "claude-code", "cursor"] {
+        assert_hooks_installed(agent);
+    }
+}
 
-        assert_success(&harness.install(agent));
+fn assert_hooks_installed(agent: &str) {
+    let harness = Harness::new();
+    assert_success(&harness.install(agent));
+    let config = read_json(harness.config(agent));
+    let hooks = config["hooks"].as_object().unwrap();
+    let mut actual: Vec<&str> = hooks.keys().map(String::as_str).collect();
+    actual.sort_unstable();
+    let mut expected = expected_events(agent).to_vec();
+    expected.sort_unstable();
+    assert_eq!(actual, expected);
+    assert!(!hooks.contains_key("afterAgentThought"));
+    for entries in hooks.values() {
+        let command = match agent {
+            "cursor" => &entries[0]["command"],
+            _ => &entries[0]["hooks"][0]["command"],
+        };
+        assert_eq!(command.as_str().unwrap(), harness.command(agent));
+    }
+    match agent {
+        "cursor" => assert_eq!(config["version"], 1),
+        _ => assert!(config.get("version").is_none()),
+    }
+}
 
-        let config = read_json(harness.config(agent));
-        let hooks = config["hooks"].as_object().unwrap();
-        let mut actual: Vec<&str> = hooks.keys().map(String::as_str).collect();
-        actual.sort_unstable();
-        let mut expected = expected.to_vec();
-        expected.sort_unstable();
-        assert_eq!(actual, expected);
-        assert!(!hooks.contains_key("afterAgentThought"));
-        for entries in hooks.values() {
-            let command = if agent == "cursor" {
-                entries[0]["command"].as_str().unwrap()
-            } else {
-                entries[0]["hooks"][0]["command"].as_str().unwrap()
-            };
-            assert_eq!(command, harness.command(agent));
-        }
-        if agent == "cursor" {
-            assert_eq!(config["version"], 1);
-        } else {
-            assert!(config.get("version").is_none());
-        }
+fn expected_events(agent: &str) -> &'static [&'static str] {
+    match agent {
+        "codex" => CODEX_EVENTS,
+        "claude-code" => CLAUDE_EVENTS,
+        "cursor" => CURSOR_EVENTS,
+        _ => unreachable!(),
     }
 }
 
 #[test]
 fn preserves_third_party_hooks_matchers_top_level_settings_and_cursor_version() {
     for agent in ["codex", "claude-code"] {
-        let harness = Harness::new();
-        let command = harness.command(agent);
-        harness.write_config(
-            agent,
-            &serde_json::json!({
-                "theme":"dark",
-                "hooks":{
-                    "Stop":[
-                        {"matcher":"empty", "hooks":[]},
-                        {"matcher":"kept", "hooks":[{"type":"command","command":"third-party"}]}
-                    ],
-                    "FutureHooks":[{"hooks":[
-                        {"type":"command","command":command.clone()},
-                        {"type":"prompt","prompt":"keep","futureField":command}
-                    ]}],
-                    "FutureEvent":{"opaque":true}
-                }
-            }),
-        );
-
-        assert_success(&harness.install(agent));
-
-        let config = read_json(harness.config(agent));
-        assert_eq!(config["theme"], "dark");
-        assert_eq!(config["hooks"]["FutureEvent"]["opaque"], true);
-        assert_eq!(
-            config["hooks"]["FutureHooks"][0]["hooks"][0]["type"],
-            "prompt"
-        );
-        assert_eq!(
-            config["hooks"]["FutureHooks"][0]["hooks"]
-                .as_array()
-                .unwrap()
-                .len(),
-            1
-        );
-        assert_eq!(config["hooks"]["Stop"][0]["matcher"], "empty");
-        assert_eq!(config["hooks"]["Stop"][0]["hooks"], serde_json::json!([]));
-        assert_eq!(config["hooks"]["Stop"][1]["matcher"], "kept");
-        assert_eq!(
-            config["hooks"]["Stop"][1]["hooks"][0]["command"],
-            "third-party"
-        );
+        assert_nested_third_party_config_preserved(agent);
     }
+    assert_cursor_third_party_config_preserved();
+}
 
+fn assert_nested_third_party_config_preserved(agent: &str) {
+    let harness = Harness::new();
+    let command = harness.command(agent);
+    harness.write_config(
+        agent,
+        &serde_json::json!({
+            "theme":"dark",
+            "hooks":{
+                "Stop":[
+                    {"matcher":"empty", "hooks":[]},
+                    {"matcher":"kept", "hooks":[{"type":"command","command":"third-party"}]}
+                ],
+                "FutureHooks":[{"hooks":[
+                    {"type":"command","command":command.clone()},
+                    {"type":"prompt","prompt":"keep","futureField":command}
+                ]}],
+                "FutureEvent":{"opaque":true}
+            }
+        }),
+    );
+    assert_success(&harness.install(agent));
+    let config = read_json(harness.config(agent));
+    assert_eq!(config["theme"], "dark");
+    assert_eq!(config["hooks"]["FutureEvent"]["opaque"], true);
+    assert_eq!(
+        config["hooks"]["FutureHooks"][0]["hooks"][0]["type"],
+        "prompt"
+    );
+    assert_eq!(
+        config["hooks"]["FutureHooks"][0]["hooks"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        config["hooks"]["Stop"][0],
+        serde_json::json!({"matcher":"empty","hooks":[]})
+    );
+    assert_eq!(config["hooks"]["Stop"][1]["matcher"], "kept");
+    assert_eq!(
+        config["hooks"]["Stop"][1]["hooks"][0]["command"],
+        "third-party"
+    );
+}
+
+fn assert_cursor_third_party_config_preserved() {
     let harness = Harness::new();
     harness.write_config(
         "cursor",
         &serde_json::json!({
-            "version":7,
-            "theme":"dark",
-            "hooks":{
+            "version":7, "theme":"dark", "hooks":{
                 "stop":[{"command":"third-party","matcher":"kept"}],
                 "futureEvent":{"opaque":true}
             }
