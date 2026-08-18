@@ -1,7 +1,7 @@
 use super::super::MeasureError;
 use super::super::model::{PromptRecord, RunRecord};
 use super::io::read_optional_json;
-use super::records::{StoredEvent, read_events, read_prompts};
+use super::records::{StoredEvent, read_events, read_prompts, validate_result_coherence};
 use super::{ListArgs, ListFormat, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use std::fs;
@@ -61,6 +61,7 @@ fn collect(store: &super::super::store::Store) -> Result<Vec<ListedRun>, Measure
         if let Some(result) = &result {
             validate_result_record(result, &run_id)?;
         }
+        validate_result_coherence(&events, result.as_ref())?;
         runs.push(ListedRun {
             run_id,
             agent: run.agent,

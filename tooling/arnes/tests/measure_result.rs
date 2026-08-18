@@ -396,6 +396,137 @@ fn parallel_finish_calls_keep_unique_contiguous_revisions() {
 }
 
 #[test]
+fn finish_recovers_a_missing_result_from_the_complete_event_snapshot() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let run = harness.run_path(&run_id);
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "fail",
+        "--human-minutes",
+        "3",
+        "--failure-reason",
+        "first adjudication",
+        "--evidence",
+        "review-one",
+    ]));
+    fs::remove_file(run.join("result.json")).unwrap();
+
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "5",
+        "--evidence",
+        "review-two",
+    ]));
+
+    let result = read_json(run.join("result.json"));
+    assert_eq!(result["revision"], 2);
+    assert_eq!(result["merge_ready"], "pass");
+    let events = read_jsonl(run.join("events.jsonl"));
+    let decisions: Vec<&Value> = events
+        .iter()
+        .filter(|event| event["event"] == "result_recorded")
+        .collect();
+    assert_eq!(decisions.len(), 2);
+    assert_eq!(decisions[0]["result"]["revision"], 1);
+    assert_eq!(decisions[0]["result"]["merge_ready"], "fail");
+    assert_eq!(
+        decisions[0]["result"]["failure_reason"],
+        "first adjudication"
+    );
+    assert_eq!(decisions[1]["result"]["revision"], 2);
+    assert_eq!(decisions[1]["result"]["merge_ready"], "pass");
+}
+
+#[test]
+fn finish_refuses_result_and_event_history_divergence_without_mutation() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let run = harness.run_path(&run_id);
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "1",
+    ]));
+    let result_path = run.join("result.json");
+    let events_path = run.join("events.jsonl");
+    let mut result = read_json(&result_path);
+    result["human_minutes"] = json!(999.0);
+    fs::write(&result_path, serde_json::to_vec(&result).unwrap()).unwrap();
+    let result_before = fs::read(&result_path).unwrap();
+    let events_before = fs::read(&events_path).unwrap();
+
+    let output = harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "2",
+    ]);
+    assert_failure(&output, "result.json diverges from result_recorded history");
+    assert_eq!(fs::read(result_path).unwrap(), result_before);
+    assert_eq!(fs::read(events_path).unwrap(), events_before);
+}
+
+#[test]
+fn finish_refuses_duplicate_result_revisions_without_mutation() {
+    let harness = Harness::new();
+    let run_id = harness.capture("codex", "session_id", "session", "prompt");
+    let run = harness.run_path(&run_id);
+    assert_success(&harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "1",
+    ]));
+    let events_path = run.join("events.jsonl");
+    let decisions: Vec<String> = fs::read_to_string(&events_path)
+        .unwrap()
+        .lines()
+        .filter(|line| line.contains("result_recorded"))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(decisions.len(), 1);
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&events_path)
+        .unwrap();
+    writeln!(file, "{}", decisions[0]).unwrap();
+    let events_before = fs::read(&events_path).unwrap();
+    let result_before = fs::read(run.join("result.json")).unwrap();
+
+    let output = harness.run(&[
+        "measure",
+        "finish",
+        &run_id,
+        "--merge-ready",
+        "pass",
+        "--human-minutes",
+        "2",
+    ]);
+    assert_failure(&output, "result revisions must be unique and continuous");
+    assert_eq!(fs::read(events_path).unwrap(), events_before);
+    assert_eq!(fs::read(run.join("result.json")).unwrap(), result_before);
+}
+
+#[test]
 fn finish_fails_closed_for_unknown_runs_and_malformed_managed_files() {
     let harness = Harness::new();
     let unknown = "0".repeat(64);

@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 use std::fs::File;
 use std::path::Path;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ResultRecord {
     pub schema_version: u8,
@@ -84,6 +84,23 @@ pub fn validate_result_record(result: &ResultRecord, run_id: &str) -> Result<(),
     validate_verdict(result)
 }
 
+pub fn latest_result(events: &[StoredEvent]) -> Option<&ResultRecord> {
+    events.iter().rev().find_map(|event| event.result.as_ref())
+}
+
+pub fn validate_result_coherence(
+    events: &[StoredEvent],
+    result: Option<&ResultRecord>,
+) -> Result<(), MeasureError> {
+    match (latest_result(events), result) {
+        (None, None) => Ok(()),
+        (Some(history), Some(result)) if history == result => Ok(()),
+        _ => Err(MeasureError::new(
+            "managed result.json diverges from result_recorded history",
+        )),
+    }
+}
+
 fn validate_events(
     events: Vec<StoredEvent>,
     run_id: &str,
@@ -93,7 +110,23 @@ fn validate_events(
             "managed events.jsonl has an invalid record",
         ));
     }
+    validate_revisions(&events)?;
     Ok(events)
+}
+
+fn validate_revisions(events: &[StoredEvent]) -> Result<(), MeasureError> {
+    let mut expected = 1_u64;
+    for result in events.iter().filter_map(|event| event.result.as_ref()) {
+        if result.revision != expected {
+            return Err(MeasureError::new(
+                "result revisions must be unique and continuous",
+            ));
+        }
+        expected = expected
+            .checked_add(1)
+            .ok_or_else(|| MeasureError::new("result revisions must be unique and continuous"))?;
+    }
+    Ok(())
 }
 
 fn invalid_event(event: &StoredEvent, run_id: &str) -> bool {

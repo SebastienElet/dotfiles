@@ -1,8 +1,10 @@
 use super::super::MeasureError;
 use super::super::hook::now_ms;
-use super::super::store::{open_private_append, open_private_new, temporary_path};
+use super::super::store::{
+    open_private_append, open_private_new, temporary_path, write_json_atomic,
+};
 use super::io::read_optional_json;
-use super::records::read_events_file;
+use super::records::{StoredEvent, latest_result, read_events_file, validate_result_coherence};
 use super::{FinishArgs, MergeReady, ResultRecord, open_run, open_store, validate_result_record};
 use serde::Serialize;
 use serde_json::json;
@@ -39,12 +41,14 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     let events_path = run_dir.join("events.jsonl");
     let mut events = open_private_append(&events_path)?;
     events.lock()?;
-    read_events_file(&mut events, &args.run_id)?;
-    let revision = current
-        .map_or(Ok(1), |result| result.revision.checked_add(1).ok_or(()))
+    let history = read_events_file(&mut events, &args.run_id)?;
+    let result_path = run_dir.join("result.json");
+    let previous_revision = reconcile_result(&result_path, &history, current.as_ref())?;
+    let revision = previous_revision
+        .checked_add(1)
+        .ok_or(())
         .map_err(|()| MeasureError::new("result revision overflow"))?;
     let result = build(args, revision);
-    let result_path = run_dir.join("result.json");
     let temporary = prepare_result(&result_path, &result)?;
     let event = result_event_bytes(&result)?;
     let committed = append_then_commit(&mut events, &event, || {
@@ -54,6 +58,22 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
         let _ = fs::remove_file(&temporary);
     }
     committed
+}
+
+fn reconcile_result(
+    path: &Path,
+    history: &[StoredEvent],
+    current: Option<&ResultRecord>,
+) -> Result<u64, MeasureError> {
+    match (latest_result(history), current) {
+        (None, None) => Ok(0),
+        (Some(latest), None) => {
+            write_json_atomic(path, latest)?;
+            Ok(latest.revision)
+        }
+        (Some(latest), Some(current)) if latest == current => Ok(latest.revision),
+        _ => validate_result_coherence(history, current).map(|()| 0),
+    }
 }
 
 fn validate(args: &FinishArgs) -> Result<(), MeasureError> {
