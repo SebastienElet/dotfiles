@@ -23,7 +23,10 @@ La sortie humaine affiche le nombre de diagnostics `healthy`, masque leur détai
 problèmes ainsi que les limites `unsupported`. Pour les skills, elle regroupe cet inventaire par
 agent et place les agents en défaut en premier. `-v` ou `--verbose` rétablit le détail des
 diagnostics `healthy` pour tous les doctors. `--format json` reste exhaustif et conserve l'ordre
-canonique ; il ne se combine pas avec `--verbose`.
+canonique ; il ne se combine pas avec `--verbose`. `--color auto|always|never` règle la couleur de
+toutes les sorties humaines, avec `auto` par défaut : stdout doit être un TTY et `NO_COLOR` doit être
+absent ou vide. `always` garde priorité sur `NO_COLOR`; `never` et le JSON ne produisent aucun ANSI.
+`--format json --color always` échoue avant tout diagnostic.
 
 ## Codex
 

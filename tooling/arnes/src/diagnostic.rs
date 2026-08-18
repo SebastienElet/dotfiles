@@ -3,7 +3,7 @@ use std::fmt::{self, Display};
 
 mod human;
 
-pub use human::{HumanContext, HumanOptions};
+pub use human::{ColorMode, HumanContext, HumanOptions};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
