@@ -12,7 +12,9 @@ fn direct_project_files_are_healthy_for_claude_and_cursor() {
         let fixture = configured_fixture();
         let (code, stdout, stderr) = run(
             &fixture,
-            &["doctor", "prompts", "--agent", agent, "--scope", "project"],
+            &[
+                "doctor", "prompts", "--agent", agent, "--scope", "project", "-v",
+            ],
         );
 
         assert_eq!(code, 0, "{stdout}");
@@ -33,7 +35,7 @@ fn prompt_content_does_not_validate_command_names_or_metadata() {
     let (code, stdout, stderr) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project",
+            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 
@@ -47,7 +49,9 @@ fn rendered_user_file_resolves_nested_includes_and_declared_variables() {
     let fixture = configured_fixture();
     let (code, stdout, stderr) = run(
         &fixture,
-        &["doctor", "prompts", "--agent", "claude", "--scope", "user"],
+        &[
+            "doctor", "prompts", "--agent", "claude", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -83,7 +87,7 @@ fn supported_combinations_without_managed_projections_are_explicitly_unsupported
     let (code, stdout, stderr) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project",
+            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 
@@ -103,7 +107,7 @@ fn symlink_representation_is_unsupported_without_inspecting_its_source() {
     let (code, stdout, _) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project",
+            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 
@@ -127,7 +131,7 @@ fn filters_prevent_io_for_unselected_prompt_projections() {
     let (code, stdout, _) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project",
+            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 
@@ -153,7 +157,7 @@ fn human_and_json_preserve_manifest_prompt_order() {
     let (_, human, _) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project",
+            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
     let (_, json, _) = run(
@@ -198,6 +202,6 @@ fn doctor_without_resource_still_reports_only_the_manifest() {
     let (code, stdout, stderr) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "healthy manifest: manifest is valid\n");
+    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
     assert!(stderr.is_empty());
 }

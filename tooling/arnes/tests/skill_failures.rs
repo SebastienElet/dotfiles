@@ -15,8 +15,8 @@ fn missing_skills_and_projection_destinations_are_broken() {
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     );
     assert_eq!(code, 1);
-    assert!(stdout.contains("broken managed claude user skill alpha"));
-    assert!(stdout.contains("is missing"));
+    assert!(stdout.contains("DRIFT alpha"));
+    assert!(stdout.contains("actual    destination missing"));
 
     let fixture = configured_fixture();
     fs::remove_file(fixture.repository().join(".claude/skills")).unwrap();
@@ -27,8 +27,8 @@ fn missing_skills_and_projection_destinations_are_broken() {
         ],
     );
     assert_eq!(code, 1);
-    assert!(stdout.contains("broken managed claude project skills projection"));
-    assert!(stdout.contains("is missing"));
+    assert!(stdout.contains("DRIFT managed skills projection"));
+    assert!(stdout.contains("actual    destination missing"));
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn manifest_failures_fail_closed_as_skill_errors() {
     assert_eq!(code, 2);
     assert_eq!(
         stdout,
-        "error skills: version: unsupported version 2; expected 1\n"
+        "Skills · user scope · all agents\n✓ 0 healthy\n\nerror skills: version: unsupported version 2; expected 1\n"
     );
     assert!(stderr.is_empty());
 }

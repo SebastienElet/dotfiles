@@ -15,7 +15,9 @@ fn claude_user_and_project_bindings_are_healthy() {
         let fixture = configured_fixture();
         let (code, stdout, stderr) = run(
             &fixture,
-            &["doctor", "commands", "--agent", "claude", "--scope", scope],
+            &[
+                "doctor", "commands", "--agent", "claude", "--scope", scope, "-v",
+            ],
         );
 
         assert_eq!(code, 0, "{stdout}");
@@ -54,7 +56,7 @@ fn doctor_commands_routes_root_errors_to_commands() {
     let (code, stdout, stderr) = output_tuple(output);
 
     assert_eq!(code, 2);
-    assert!(stdout.starts_with("error commands:"));
+    assert!(stdout.contains("error commands:"));
     assert!(stderr.is_empty());
 }
 
@@ -128,7 +130,7 @@ fn filters_exclude_bindings_before_io() {
     let (code, stdout, stderr) = run(
         &fixture,
         &[
-            "doctor", "commands", "--agent", "claude", "--scope", "project",
+            "doctor", "commands", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 
@@ -179,7 +181,7 @@ fn diagnostics_preserve_command_then_binding_order() {
         fixture.write_repository(format!("harness/prompts/{name}.md"), CONTENTS);
         fixture.write_home(format!(".claude/commands/{name}.md"), CONTENTS);
     }
-    let (_, human, _) = run(&fixture, &["doctor", "commands", "--scope", "user"]);
+    let (_, human, _) = run(&fixture, &["doctor", "commands", "--scope", "user", "-v"]);
     let positions = [
         "zeta · current",
         "capability · unsupported",
@@ -229,7 +231,7 @@ fn crlf_frontmatter_is_supported() {
     let (code, stdout, stderr) = run(
         &fixture,
         &[
-            "doctor", "commands", "--agent", "claude", "--scope", "project",
+            "doctor", "commands", "--agent", "claude", "--scope", "project", "-v",
         ],
     );
 

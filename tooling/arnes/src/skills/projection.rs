@@ -1,6 +1,6 @@
 use super::references;
 use crate::Roots;
-use crate::diagnostic::{Diagnostic, State};
+use crate::diagnostic::{Diagnostic, HumanDetail, State};
 use crate::files::paths::{ancestor_within, canonical_within, destination, label};
 use crate::manifest::{Scope, SkillProjection};
 use std::fs;
@@ -17,10 +17,19 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
     );
     let source = roots.repository().join(resource.source).join(name);
     let destination = destination(roots, resource.scope, &installed);
-    match expected_link(roots, resource.scope, &source, &destination, &subject)
-        .and_then(|_| references::validate(&destination, &subject))
+    let human = ProjectionHuman::new(name, label(resource.scope, &installed));
+    match expected_link(
+        roots,
+        resource.scope,
+        &source,
+        &destination,
+        &subject,
+        &human,
+    )
+    .and_then(|_| references::validate(&destination, &subject))
     {
-        Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current")),
+        Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
+            .with_human_summary(name),
         Err(diagnostic) => diagnostic,
     }
 }
@@ -38,7 +47,18 @@ pub fn root(
         resource.scope,
         label(resource.scope, resource.destination)
     );
-    expected_link(roots, resource.scope, &source, &destination, &subject)?;
+    let human = ProjectionHuman::new(
+        "managed skills projection",
+        label(resource.scope, resource.destination),
+    );
+    expected_link(
+        roots,
+        resource.scope,
+        &source,
+        &destination,
+        &subject,
+        &human,
+    )?;
     Ok(skills
         .iter()
         .map(|name| root_skill(roots, resource, &source, &destination, Path::new(name)))
@@ -66,8 +86,33 @@ fn root_skill(
         .and_then(|expected| same_target(&installed, &expected, &subject))
         .and_then(|_| references::validate(&installed, &subject));
     match result {
-        Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current")),
+        Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
+            .with_human_summary(name.display().to_string()),
         Err(diagnostic) => diagnostic,
+    }
+}
+
+struct ProjectionHuman {
+    summary: String,
+    path: String,
+}
+
+impl ProjectionHuman {
+    fn new(summary: impl Into<String>, path: impl Into<String>) -> Self {
+        Self {
+            summary: summary.into(),
+            path: path.into(),
+        }
+    }
+
+    fn missing_destination(&self, diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic
+            .with_human_summary(&self.summary)
+            .with_human_details([
+                HumanDetail::new("expected", "managed skill present"),
+                HumanDetail::new("actual", "destination missing"),
+                HumanDetail::new("path", &self.path),
+            ])
     }
 }
 
@@ -77,6 +122,7 @@ fn expected_link(
     source: &Path,
     destination: &Path,
     subject: &str,
+    human: &ProjectionHuman,
 ) -> Result<(), Diagnostic> {
     let expected = source_directory(source, roots.repository(), subject)?;
     let boundary = match scope {
@@ -94,11 +140,11 @@ fn expected_link(
         ));
     }
     let metadata = fs::symlink_metadata(destination).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => broken(
+        ErrorKind::NotFound => human.missing_destination(broken(
             subject,
             State::Drift,
             format!("destination {} is missing", destination.display()),
-        ),
+        )),
         _ => broken(
             subject,
             State::Error,

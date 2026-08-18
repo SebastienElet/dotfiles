@@ -8,16 +8,12 @@ use support::Fixture;
 #[test]
 fn user_scope_is_default_for_declared_skills() {
     let fixture = configured_fixture();
-    let (code, stdout, stderr) = run(&fixture, &["doctor", "skills"]);
+    let (code, stdout, stderr) = run(&fixture, &["doctor", "skills", "-v"]);
 
     assert_eq!(code, 0, "{stdout}");
-    assert_eq!(stdout.matches("healthy skills: managed").count(), 3);
+    assert_eq!(stdout.matches("  HEALTHY alpha").count(), 3);
     assert!(!stdout.contains(" project "));
-    for expected in [
-        "managed claude user skill alpha",
-        "managed cursor user skill alpha",
-        "managed codex user skill alpha",
-    ] {
+    for expected in ["CLAUDE", "CURSOR", "CODEX"] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
     assert!(stderr.is_empty());
@@ -29,7 +25,7 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     let (code, stdout, _) = run(
         &fixture,
         &[
-            "doctor", "skills", "--agent", "cursor", "--scope", "project",
+            "doctor", "skills", "--agent", "cursor", "--scope", "project", "-v",
         ],
     );
 
@@ -37,31 +33,23 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     assert_eq!(
         stdout
             .lines()
-            .filter(|line| line.starts_with("healthy skills: managed cursor project"))
+            .filter(|line| line.trim_start().starts_with("HEALTHY alpha"))
             .count(),
         1
     );
     assert_eq!(
         stdout
             .lines()
-            .filter(|line| line.contains("drift       beta · managed"))
+            .filter(|line| line.contains("DRIFT beta · managed"))
             .count(),
         1
     );
-    assert!(stdout.lines().filter(|line| !line.is_empty()).all(|line| {
-        line.contains("cursor project")
-            || line.contains("beta · managed")
-            || line.starts_with("  unsupported")
-    }));
+    assert!(stdout.starts_with("Skills · project scope · cursor agent"));
 
     let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--scope", "user"]);
     assert_eq!(code, 0, "{stdout}");
-    assert!(
-        stdout
-            .lines()
-            .filter(|line| !line.is_empty() && !line.starts_with("  "))
-            .all(|line| line.contains(" user "))
-    );
+    assert!(stdout.starts_with("Skills · user scope · 3 agents"));
+    assert!(!stdout.contains(" project "));
 }
 
 #[test]
@@ -73,7 +61,7 @@ fn undeclared_and_unsupported_projections_are_reported() {
     );
     let (code, stdout, _) = run(&fixture, &["doctor", "skills"]);
     assert_eq!(code, 0);
-    assert!(stdout.contains("unsupported skills: claude user skill projection"));
+    assert!(stdout.contains("UNSUPPORTED claude user skill projection"));
 
     let fixture = Fixture::new();
     fixture.write_home(
@@ -112,5 +100,5 @@ fn doctor_without_resource_does_not_aggregate_skills_yet() {
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "healthy manifest: manifest is valid\n");
+    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
 }

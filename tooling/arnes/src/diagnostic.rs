@@ -1,6 +1,10 @@
 use serde::Serialize;
 use std::fmt::{self, Display};
 
+mod human;
+
+pub use human::{HumanContext, HumanOptions};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum State {
@@ -27,13 +31,76 @@ pub struct Diagnostic {
     pub state: State,
     pub message: String,
     #[serde(skip)]
-    human: Option<HumanDiagnostic>,
+    human: Option<Box<HumanDiagnostic>>,
+    #[serde(skip)]
+    section: Option<Box<HumanSection>>,
 }
 
 #[derive(Debug, Eq, PartialEq)]
-struct HumanDiagnostic {
+pub(super) struct HumanDiagnostic {
     group: String,
     summary: String,
+    details: Vec<HumanDetail>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HumanDetail {
+    label: String,
+    value: String,
+}
+
+impl HumanDetail {
+    pub fn new(label: impl Into<String>, value: impl Into<String>) -> Self {
+        Self {
+            label: label.into(),
+            value: value.into(),
+        }
+    }
+
+    pub(super) fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub(super) fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HumanSection {
+    key: String,
+    label: String,
+}
+
+impl HumanSection {
+    pub fn new(key: impl Into<String>, label: impl Into<String>) -> Self {
+        Self {
+            key: key.into(),
+            label: label.into(),
+        }
+    }
+
+    pub(super) fn key(&self) -> &str {
+        &self.key
+    }
+
+    pub(super) fn label(&self) -> &str {
+        &self.label
+    }
+}
+
+impl HumanDiagnostic {
+    pub(super) fn group(&self) -> &str {
+        &self.group
+    }
+
+    pub(super) fn summary(&self) -> &str {
+        &self.summary
+    }
+
+    pub(super) fn details(&self) -> &[HumanDetail] {
+        &self.details
+    }
 }
 
 impl Diagnostic {
@@ -43,15 +110,57 @@ impl Diagnostic {
             state,
             message: message.into(),
             human: None,
+            section: None,
         }
     }
 
     pub fn with_human(mut self, group: impl Into<String>, summary: impl Into<String>) -> Self {
-        self.human = Some(HumanDiagnostic {
+        self.human = Some(Box::new(HumanDiagnostic {
             group: group.into(),
             summary: summary.into(),
-        });
+            details: Vec::new(),
+        }));
         self
+    }
+
+    pub fn with_human_summary(mut self, summary: impl Into<String>) -> Self {
+        let summary = summary.into();
+        match &mut self.human {
+            Some(human) => human.summary = summary,
+            None => {
+                self.human = Some(Box::new(HumanDiagnostic {
+                    group: String::new(),
+                    summary,
+                    details: Vec::new(),
+                }));
+            }
+        }
+        self
+    }
+
+    pub fn with_human_details(mut self, details: impl IntoIterator<Item = HumanDetail>) -> Self {
+        let human = self.human.get_or_insert_with(|| {
+            Box::new(HumanDiagnostic {
+                group: String::new(),
+                summary: self.message.clone(),
+                details: Vec::new(),
+            })
+        });
+        human.details = details.into_iter().collect();
+        self
+    }
+
+    pub fn with_human_section(mut self, section: HumanSection) -> Self {
+        self.section = Some(Box::new(section));
+        self
+    }
+
+    pub(super) fn human(&self) -> Option<&HumanDiagnostic> {
+        self.human.as_deref()
+    }
+
+    pub(super) fn section(&self) -> Option<&HumanSection> {
+        self.section.as_deref()
     }
 }
 
@@ -67,7 +176,7 @@ impl Display for Diagnostic {
     }
 }
 
-fn human_field(value: &str) -> String {
+pub(super) fn human_field(value: &str) -> String {
     value.replace('\r', "\\r").replace('\n', "\\n")
 }
 
@@ -97,29 +206,8 @@ impl Report {
             .unwrap_or(0)
     }
 
-    pub fn human(&self) -> String {
-        let mut lines = Vec::new();
-        let mut group = None;
-        for diagnostic in &self.diagnostics {
-            if let Some(human) = &diagnostic.human {
-                if group != Some(human.group.as_str()) {
-                    if !lines.is_empty() {
-                        lines.push(String::new());
-                    }
-                    lines.push(human.group.clone());
-                    group = Some(&human.group);
-                }
-                lines.push(format!(
-                    "  {:11} {}",
-                    diagnostic.state.to_string(),
-                    human.summary
-                ));
-            } else {
-                group = None;
-                lines.push(diagnostic.to_string());
-            }
-        }
-        lines.join("\n")
+    pub fn human(&self, context: &HumanContext, options: HumanOptions) -> String {
+        human::render(&self.diagnostics, context, options)
     }
 
     pub fn json(&self) -> Result<String, serde_json::Error> {

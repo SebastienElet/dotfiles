@@ -2,6 +2,7 @@ Diagnostics
 ✓ 1 healthy
 ! 1 unsupported (non-blocking)
 
+healthy manifest: manifest is valid
 unsupported rules: cursor does not expose native user rules
 drift skills: destination is missing
 error config: settings.json could not be read

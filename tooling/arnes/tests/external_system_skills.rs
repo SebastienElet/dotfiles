@@ -32,7 +32,9 @@ fn codex_system_skills_report_policy_without_claiming_runtime_activation() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 1, "{stdout}");
@@ -57,7 +59,9 @@ fn disabled_system_skill_is_visible_but_not_active_or_drift() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -71,7 +75,9 @@ fn absent_roots_and_allowed_skills_do_not_drift() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -86,7 +92,9 @@ fn undeclared_system_mechanism_is_explicitly_unsupported() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
@@ -105,7 +113,9 @@ fn external_inventory_runs_without_a_managed_projection() {
 
     let (code, stdout, _) = run(
         &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
+        &[
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "-v",
+        ],
     );
 
     assert_eq!(code, 0, "{stdout}");
