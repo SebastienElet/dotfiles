@@ -73,6 +73,7 @@ fn inspect_plugin(root: &Path, entry: DirEntry) -> Option<Plugin> {
         Err(_) => {
             return Some(Plugin {
                 id: entry.file_name().to_string_lossy().into_owned(),
+                artifact: None,
                 version: None,
                 path: Some(entry.path()),
                 exposure: Exposure::Unknown,
@@ -87,6 +88,7 @@ fn inspect_plugin(root: &Path, entry: DirEntry) -> Option<Plugin> {
     if fs::metadata(&path).is_err() || canonical_within(&path, root).is_none() {
         return Some(Plugin {
             id: entry.file_name().to_string_lossy().into_owned(),
+            artifact: None,
             version: None,
             path: Some(path),
             exposure: Exposure::Enabled,
@@ -108,6 +110,7 @@ fn inspect_plugin(root: &Path, entry: DirEntry) -> Option<Plugin> {
     };
     Some(Plugin {
         id,
+        artifact: None,
         version: inspected.version,
         path: Some(path),
         exposure: Exposure::Enabled,

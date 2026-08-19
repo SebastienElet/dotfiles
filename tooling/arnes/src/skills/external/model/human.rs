@@ -6,15 +6,20 @@ pub(super) fn plugin_group(agent: Agent, scope: Scope, plugin: &Plugin) -> Strin
     format!(
         "{agent} {scope} plugin {}@{}",
         plugin.id,
-        plugin.version.as_deref().unwrap_or("?")
+        plugin
+            .version
+            .as_deref()
+            .or(plugin.artifact.as_deref())
+            .unwrap_or("?")
     )
 }
 
 pub(super) fn plugin_summary(plugin: &Plugin, policy: &str) -> String {
     format!(
-        "plugin · {} · {} · {policy}{}{}",
+        "plugin · {} · {} · {policy}{}{}{}",
         plugin.exposure,
         plugin.topology,
+        artifact(plugin.artifact.as_deref()),
         path(plugin.topology, plugin.path.as_deref()),
         detail(plugin.detail.as_deref()),
     )
@@ -44,6 +49,10 @@ pub(super) fn system_skill_summary(skill: &SystemSkill, policy: &str) -> String 
 
 fn detail(value: Option<&str>) -> String {
     value.map_or_else(String::new, |value| format!(" — {value}"))
+}
+
+fn artifact(value: Option<&str>) -> String {
+    value.map_or_else(String::new, |value| format!(" · artifact={value}"))
 }
 
 fn path(topology: Topology, path: Option<&Path>) -> String {

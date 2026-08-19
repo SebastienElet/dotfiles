@@ -40,15 +40,26 @@ d'implémentation local explicite, pas une convention Codex universelle. Arnes p
 `openai-docs` sous cette racine sans transformer une observation de HOME en table Rust. Une autre
 installation doit déclarer sa propre racine stable ou accepter un diagnostic `unsupported`.
 
-Les plugins ont une identité `.codex-plugin/plugin.json`, un état on/off dans
-`~/.codex/config.toml` et un cache versionné sous
-`~/.codex/plugins/cache/$MARKETPLACE/$PLUGIN/$VERSION`. La configuration publique ne désigne pas la
-version active du cache. Arnes rapporte donc l'état observable du plugin, mais garde sa topologie et
-ses skills `unsupported` au lieu de choisir arbitrairement une version ou d'énumérer les caches.
+Codex CLI 0.147.0 expose `codex plugin marketplace list --json` et `codex plugin list --json`. La
+première commande fournit les marketplaces considérées ; la seconde fournit la sélection installée,
+son état on/off et son identifiant d'artefact. Son champ `source.path` désigne la source marketplace,
+pas l'artefact actif, et n'est jamais inspecté par Arnes. Il s'agit du schéma structuré du binaire
+installé et de son code source tagué, pas d'une interface publique stable. Un schéma absent, invalide
+ou incompatible reste donc `unsupported`.
+
+Arnes joint exhaustivement cette sélection à `~/.codex/config.toml` par l'identifiant complet du
+plugin et exige une sélection, une identité et une marketplace uniques. Il reconstruit ensuite le
+chemin avec le contrat `PluginStore::plugin_root` de Codex 0.147.0, puis le confine sous
+`~/.codex/plugins/cache` avant inspection. L'identifiant d'artefact Codex reste distinct de la
+version sémantique de `.codex-plugin/plugin.json` : une révision marketplace `11c74d6b` peut ainsi
+contenir un manifeste `5.1.3`. Les skills proviennent uniquement de cet artefact résolu. Le contenu
+du cache ne choisit jamais la version, même lorsqu'un plugin ne contient qu'un seul répertoire.
 
 Sources : [Build skills](https://learn.chatgpt.com/docs/build-skills),
 [Plugins](https://learn.chatgpt.com/docs/plugins),
-[Package your plugin](https://developers.openai.com/plugins/build/plugins).
+[Package your plugin](https://developers.openai.com/plugins/build/plugins),
+[`plugin_cmd.rs` de Codex CLI 0.147.0](https://github.com/openai/codex/blob/rust-v0.147.0/codex-rs/cli/src/plugin_cmd.rs),
+[`store.rs` de Codex CLI 0.147.0](https://github.com/openai/codex/blob/rust-v0.147.0/codex-rs/core-plugins/src/store.rs).
 
 ## Claude Code
 
@@ -92,5 +103,9 @@ Sources : [Skills](https://cursor.com/docs/skills),
 Chaque scan part d'une racine déclarée, d'un registre installé ou d'une configuration effectivement
 lue par l'agent. Les symlinks absolus et relatifs sont acceptés seulement si leur cible canonique
 reste dans cette racine. Un lien pendant ou une sortie par un composant intermédiaire est rapporté
-sans être traversé. `doctor` n'appelle aucun gestionnaire de plugin, n'analyse aucun cache orphelin,
-ne charge aucune capacité et ne modifie ni le repository ni HOME.
+sans être traversé. `doctor` n'analyse aucun cache orphelin et ne charge aucune capacité. La seule
+frontière exécutée est le résolveur JSON Codex pour ses plugins ; elle reçoit le HOME injecté, est
+lancée depuis HOME pour exclure les réglages du projet appelant, et possède une limite de cinq
+secondes et de 1 Mio par flux. Codex 0.147.0 crée et supprime pendant son démarrage des alias
+temporaires sous `CODEX_HOME/tmp/arg0` ; Arnes n'effectue aucune installation ni écriture durable
+dans le repository ou HOME.
