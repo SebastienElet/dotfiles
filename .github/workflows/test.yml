@@ -45,3 +45,16 @@ jobs:
         run: |
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
+
+      - name: Verify Hunspell dictionaries
+        if: matrix.target == 'hunspell' || matrix.target == 'all'
+        run: |
+          discovery=$(hunspell -D </dev/null 2>&1)
+          printf '%s\n' "$discovery"
+          printf '%s\n' "$discovery" | grep -F "$HOME/Library/Spelling/fr"
+          printf '%s\n' "$discovery" | grep -F "$HOME/Library/Spelling/en_US"
+
+          misspellings=$(printf '%s\n' français hello bonjouurr hellloo | hunspell -d fr,en_US -l)
+          expected=$(printf '%s\n' bonjouurr hellloo)
+          printf '%s\n' "$misspellings"
+          test "$misspellings" = "$expected"
