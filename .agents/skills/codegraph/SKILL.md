@@ -1,10 +1,11 @@
 ---
 name: codegraph
 description: >
-  Explore large repositories structurally with CodeGraph. Use when locating architecture, call
-  paths, dependencies, cross-package behavior, change impact, or validating an existing .codegraph
-  index. Make sure to use this skill before broad file-by-file exploration, even if CodeGraph was
-  not requested.
+  Explore large repositories structurally with CodeGraph. Use when auditing an unfamiliar
+  repository, or when locating architecture, call paths, dependencies, cross-package behavior,
+  change impact, or validating an existing .codegraph index. Make sure to use this skill before any
+  broad exploration, including an audit or a technical-debt review, even if CodeGraph was not
+  requested.
 metadata:
   category: dev
 ---

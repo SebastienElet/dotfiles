@@ -18,6 +18,16 @@
       "reason": "Existing index freshness and synchronization"
     },
     {
+      "query": "Fais un audit de ce dépôt et liste-moi la dette technique",
+      "should_activate": true,
+      "reason": "Repository-wide audit is open-ended structural exploration before file-by-file reading"
+    },
+    {
+      "query": "Je découvre ce monorepo, aide-moi à le cartographier",
+      "should_activate": true,
+      "reason": "First contact with an unfamiliar repository needs structural retrieval, not targeted reads"
+    },
+    {
       "query": "Trouve exactement la chaîne FEATURE_FLAG_DISABLED avec rg",
       "should_activate": false,
       "reason": "Exact literal lookup must stay on rg"
