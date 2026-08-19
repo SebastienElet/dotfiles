@@ -36,7 +36,14 @@ impl Harness {
 
     pub(super) fn run(&self, agent: &str, payload: &[u8]) -> Output {
         let mut child = self.command(agent).spawn().unwrap();
-        child.stdin.take().unwrap().write_all(payload).unwrap();
+        let mut stdin = child.stdin.take().unwrap();
+        // clap rejects an invalid --agent and exits before reading stdin, so EPIPE is expected.
+        match stdin.write_all(payload) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => {}
+            Err(error) => panic!("writing the hook payload failed: {error}"),
+        }
+        drop(stdin);
         child.wait_with_output().unwrap()
     }
 
