@@ -2,9 +2,9 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-fixture="$root/codegraph/fixtures/freshness"
-probe="$root/codegraph/mcp_probe.mjs"
-canary="$root/codegraph/network_canary.mjs"
+fixture="$root/tooling/codegraph/fixtures/freshness"
+probe="$root/tooling/codegraph/mcp_probe.mjs"
+canary="$root/tooling/codegraph/network_canary.mjs"
 tmp=$(mktemp -d)
 repository="$tmp/repository"
 network="$tmp/network"

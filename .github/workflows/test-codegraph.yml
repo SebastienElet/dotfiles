@@ -5,16 +5,16 @@ on:
     paths:
       - .agents/skills/codegraph/**
       - .config/git/ignore
-      - codegraph/**
-      - scripts/codegraph_*
+      - tooling/codegraph/**
+      - tooling/codegraph-*
       - Makefile
       - .github/workflows/test-codegraph.yml
   pull_request:
     paths:
       - .agents/skills/codegraph/**
       - .config/git/ignore
-      - codegraph/**
-      - scripts/codegraph_*
+      - tooling/codegraph/**
+      - tooling/codegraph-*
       - Makefile
       - .github/workflows/test-codegraph.yml
 
@@ -33,6 +33,6 @@ jobs:
           codex --version
           codegraph --version
       - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
-      - run: bash scripts/codegraph_configure_test
-      - run: bash scripts/codegraph_mcp_test
-      - run: bash scripts/codegraph_network_test
+      - run: bash tooling/codegraph-configure-test
+      - run: bash tooling/codegraph-mcp-test
+      - run: bash tooling/codegraph-network-test

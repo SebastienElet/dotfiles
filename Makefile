@@ -474,14 +474,14 @@ ${APP_BIN}/CodexBar.app:
 
 .PHONY: codegraph
 codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
-	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph_configure
+	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph-configure
 
 .PHONY: codegraph-test
 codegraph-test:
 	bash .agents/skills/codegraph/scripts/measure_repository_test.sh
-	bash tooling/codegraph_configure_test
-	bash tooling/codegraph_mcp_test
-	bash tooling/codegraph_network_test
+	bash tooling/codegraph-configure-test
+	bash tooling/codegraph-mcp-test
+	bash tooling/codegraph-network-test
 
 .PHONY: codegraph-cli
 codegraph-cli: ${VOLTA_BIN}/node
