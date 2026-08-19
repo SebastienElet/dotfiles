@@ -13,6 +13,7 @@ This directory is the single source of truth for reusable agent skills.
 
 | Skill              | Description                                                                                          |
 | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `codegraph`        | Explore large repositories structurally with CodeGraph.                                              |
 | `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
 | `merge-verdict`    | Deliver a merge verdict on an open pull request, yours or another author's.                          |
 | `neovim`           | Maintain this repository's Neovim and LazyVim configuration.                                         |

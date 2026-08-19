@@ -1,6 +1,8 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
+CODEGRAPH_VERSION:=1.5.0
+CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
@@ -366,7 +368,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 # Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
@@ -375,6 +377,8 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/sk
 # points at .agents/skills, so only the global link is needed.
 ~/.cursor/skills:
 	mkdir -p $@
+~/.cursor/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
@@ -385,7 +389,7 @@ cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-code-measurement-hooks
+claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -406,6 +410,8 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
 	${CREATE_SYMLINK}
+~/.claude/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.claude/skills
+	${CREATE_SYMLINK}
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
 	${CREATE_SYMLINK}
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
@@ -420,9 +426,9 @@ claude-code-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent claude-code --command "${LOCAL_BIN}/arnes"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g @openai/codex
+	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
 	mkdir -p $@
 # Codex ignores AGENTS.md @import directives, so the sources are assembled
@@ -434,6 +440,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 # Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
 	mkdir -p $@
+~/.agents/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.agents/skills
+	${CREATE_SYMLINK}
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.agents/skills
@@ -465,9 +473,38 @@ ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
 .PHONY: codegraph
-codegraph: ${VOLTA_BIN}/codegraph
-${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
-	${BREW_BIN}/volta install @colbymchenry/codegraph
+codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
+	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph-configure
+
+.PHONY: codegraph-test
+codegraph-test:
+	bash .agents/skills/codegraph/scripts/measure_repository_test.sh
+	bash tooling/codegraph-configure-test
+	bash tooling/codegraph-mcp-test
+	bash tooling/codegraph-network-test
+
+.PHONY: codegraph-cli
+codegraph-cli: ${VOLTA_BIN}/node
+	@if [ ! -x "${VOLTA_BIN}/codegraph" ] || [ "$$(${VOLTA_BIN}/codegraph --version)" != "${CODEGRAPH_VERSION}" ]; then \
+		${BREW_BIN}/volta install @colbymchenry/codegraph@${CODEGRAPH_VERSION}; \
+	fi
+
+.PHONY: codegraph-ignore
+codegraph-ignore:
+	@expected='${DOTFILES_PATH}/.config/git/ignore'; \
+	target='${CODEGRAPH_GLOBAL_IGNORE}'; \
+	if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$expected" ]; then \
+		exit 0; \
+	fi; \
+	if [ -e "$$target" ] || [ -L "$$target" ]; then \
+		echo "Error: $$target exists and is not the expected symbolic link" >&2; \
+		exit 1; \
+	fi; \
+	mkdir -p "$$(dirname "$$target")"; \
+	ln -s "$$expected" "$$target"
+
+${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/.agents/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
+	${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli
 googleworkspace-cli: ${VOLTA_BIN}/gws
