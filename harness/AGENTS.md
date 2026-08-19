@@ -7,19 +7,31 @@
 
 Before implementing any request:
 
-- Challenge unclear requirements and the assumptions behind them, not just the request
-- Point out if a request might conflict with existing code or architecture
+- Treat issues, specs and proposed implementations as claims to verify, not authority.
+  Challenge material assumptions and conflicts with the current code or architecture.
+- For architecture changes, business invariants or poorly understood historical areas,
+  verify the relevant ADRs, documentation, personas and specs. If intent is unclear,
+  map the current flow and inspect relevant ADRs, commits, PRs and issues.
+- An ADR in force is the primary source for architectural intent. Verify its status and
+  scope. Code is the implemented reality; tests are evidence, not architectural authority.
+- A certain contradiction that affects the current task blocks implementation. If an
+  exception or migration could plausibly explain it, investigate first. If material
+  uncertainty remains, stop and propose a focused experiment or a minimal blocking issue.
+- If an ADR itself appears wrong, do not repair it opportunistically. Propose a minimal
+  issue naming the ADR, the proven contradiction and its impact; leave the investigation
+  and correction to a fresh agent/session after validation.
+- Before compensating in owned code for an assumed behavior of an external dependency,
+  verify its current official documentation and the local configuration.
 - Cite a source by its status, not its title: a proposal is not authority, and a dated
   legal or specification reference must be the version in force before anything leans
   on it.
-- Never record a workaround for a defect in code we own: fix it, or open a ticket and
-  reference it. A memorized dance around our own bug guarantees the bug survives.
+- Never record a workaround for a defect in code we own as intended behavior: fix it, or
+  open a ticket and reference it.
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, put `.agents/skills/merge-verdict/references/failure-classes.md` to the design; the
   failure-path test ships in the same commit.
 
-Raising a concern never blocks delivery: state it, then proceed as described
-in `USER.md`.
+Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
 ## Context Management
 
@@ -57,6 +69,7 @@ Escalate only when the previous tier fails; never start above the first tier:
 
 ## Code Style
 
+- Prefer names and structure that express intent directly.
 - **Write no comment.** One is admissible only when it records a fact living outside the file
   — upstream defect, protocol quirk, deliberate deviation — and names that fact. Doc comments
   a project's tooling requires are out of scope.
