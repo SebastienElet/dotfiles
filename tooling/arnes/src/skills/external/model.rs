@@ -44,6 +44,7 @@ impl Display for Topology {
 
 pub(super) struct Plugin {
     pub id: String,
+    pub artifact: Option<String>,
     pub version: Option<String>,
     pub path: Option<PathBuf>,
     pub exposure: Exposure,
@@ -107,9 +108,10 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
         "skills",
         state(plugin.topology, plugin.exposure, allowed),
         format!(
-            "external {agent} {scope} plugin {} origin=plugin ownership=external version={} exposure={} topology={} policy={} activation={} path={}{}",
+            "external {agent} {scope} plugin {} origin=plugin ownership=external version={}{} exposure={} topology={} policy={} activation={} path={}{}",
             plugin.id,
             plugin.version.as_deref().unwrap_or("unknown"),
+            artifact(plugin.artifact.as_deref()),
             plugin.exposure,
             plugin.topology,
             policy(allowed),
@@ -138,10 +140,11 @@ fn skill_diagnostic(
         "skills",
         state(skill.topology, plugin.exposure, allowed),
         format!(
-            "external {agent} {scope} skill {} origin=plugin ownership=external container={} version={} exposure={} topology={} policy={} activation={} path={}{}",
+            "external {agent} {scope} skill {} origin=plugin ownership=external container={} version={}{} exposure={} topology={} policy={} activation={} path={}{}",
             skill.slug,
             plugin.id,
             plugin.version.as_deref().unwrap_or("unknown"),
+            artifact(plugin.artifact.as_deref()),
             plugin.exposure,
             skill.topology,
             policy(allowed),
@@ -205,4 +208,8 @@ fn activation(exposure: Exposure) -> &'static str {
 
 fn detail(value: Option<&str>) -> String {
     value.map_or_else(String::new, |value| format!(" detail={value}"))
+}
+
+fn artifact(value: Option<&str>) -> String {
+    value.map_or_else(String::new, |value| format!(" artifact={value}"))
 }

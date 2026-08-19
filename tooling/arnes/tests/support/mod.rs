@@ -44,6 +44,7 @@ impl Fixture {
             .current_dir(&self.repository)
             .env_clear()
             .env("HOME", &self.home)
+            .env("PATH", self.home.join("bin"))
             .output()
             .unwrap()
     }

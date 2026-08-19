@@ -77,6 +77,7 @@ fn inspect_skills_directory_entry(
     Some(Plugin {
         exposure: settings::exposure(settings, &id),
         id,
+        artifact: None,
         version: inspected.version,
         path: Some(path),
         topology: inspected.topology,
