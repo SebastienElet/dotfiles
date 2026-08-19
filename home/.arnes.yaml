@@ -38,38 +38,6 @@ external:
       scope: user
       id: superpowers@openai-curated
   skills:
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail-audit
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail-debt
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail-gain
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail-help
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: ponytail-review
-    - agent: codex
-      scope: user
-      origin: managed
-      slug: ponytail
-    - agent: codex
-      scope: user
-      origin: managed
-      slug: ponytail-help
     - agent: codex
       scope: user
       origin: system
