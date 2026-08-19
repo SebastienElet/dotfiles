@@ -1,10 +1,11 @@
 ---
 name: codegraph
 description: >
-  Explore large repositories structurally with CodeGraph. Use when locating architecture, call
-  paths, dependencies, cross-package behavior, change impact, or validating an existing .codegraph
-  index. Make sure to use this skill before broad file-by-file exploration, even if CodeGraph was
-  not requested.
+  Explore large repositories structurally with CodeGraph. Use when auditing an unfamiliar
+  repository, or when locating architecture, call paths, dependencies, cross-package behavior,
+  change impact, or validating an existing .codegraph index. Make sure to use this skill before any
+  broad exploration, including an audit or a technical-debt review, even if CodeGraph was not
+  requested.
 metadata:
   category: dev
 ---
@@ -30,15 +31,18 @@ monorepo`.
    measuring or initializing CodeGraph.
 2. For structural exploration, check whether `.codegraph/` exists.
 3. When the index exists, prefix the CLI environment below and run `codegraph status --json`.
-4. If status is healthy, use `codegraph_explore` before broad grep, find, or file reads.
-5. If status reports stale or incomplete state, run `codegraph sync` once and check status again.
-6. When the index is absent, run `codegraph-repository-size .`.
-7. If `initialize` is true, prefix the CLI environment, run `codegraph init`, confirm status, then
+4. If status reports a non-null `worktreeMismatch`, the index belongs to another working tree: do
+   not query it. Measure this worktree and initialize here when the threshold is met, otherwise
+   continue with `rg` and `fd`.
+5. If status is healthy, use `codegraph_explore` before broad grep, find, or file reads.
+6. If status reports stale or incomplete state, run `codegraph sync` once and check status again.
+7. When the index is absent, run `codegraph-repository-size .`.
+8. If `initialize` is true, prefix the CLI environment, run `codegraph init`, confirm status, then
    use `codegraph_explore`.
-8. If `initialize` is false, continue with `rg` and `fd` without initializing.
-9. If measurement, initialization, synchronization, or the second status check fails, name the
-   failure and fall back explicitly to `rg` and `fd`.
-10. Verify important graph claims in the source before editing.
+9. If `initialize` is false, continue with `rg` and `fd` without initializing.
+10. If measurement, initialization, synchronization, or the second status check fails, name the
+    failure and fall back explicitly to `rg` and `fd`.
+11. Verify important graph claims in the source before editing.
 
 Prefix every CodeGraph CLI call with:
 
@@ -55,6 +59,9 @@ threshold. Initialization uses OR: 50000 source lines or 500 source files.
   the task first and keep literals, regular expressions, and known paths on `rg` or `fd`.
 - **Trusting unchecked graph state** — a stale index can produce obsolete conclusions; run status
   before structural exploration and synchronize at most once when required.
+- **Querying a sibling working tree** — an index resolved from a parent repository reports
+  `state: complete` while describing another checkout; read `worktreeMismatch` before trusting
+  freshness.
 - **Recovering destructively** — automatic uninitialization or reindexing can discard useful state;
   diagnose corruption, locks, or incompatibility and request approval before recovery.
 - **Treating retrieval as refactoring or debugging** — graph results do not provide semantic edits
