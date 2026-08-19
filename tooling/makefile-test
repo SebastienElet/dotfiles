@@ -199,4 +199,26 @@ handoff_line=$(grep -n -F -- 'old_command=' "$case_root/codex" | cut -d: -f1)
 measurement_line=$(grep -n -F -- 'measure install-hooks --agent codex' "$case_root/codex" | cut -d: -f1)
 [[ -n $handoff_line && -n $measurement_line && $handoff_line -lt $measurement_line ]] || fail "Codex handoff hook is not installed before measurement hooks"
 
+case_root=$test_root/hunspell_wiring
+test_home=$case_root/home
+fake_bin=$case_root/bin
+mkdir -p "$test_home" "$fake_bin"
+hunspell_trace=$case_root/hunspell
+claude_trace=$case_root/claude-code
+revision=f2ff99058268502bdcf4cad25c1ca2935ad8aa7d
+base_url=https://raw.githubusercontent.com/LibreOffice/dictionaries/$revision
+env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" hunspell >"$hunspell_trace"
+[[ $(grep -F -c -- 'brew install hunspell' "$hunspell_trace") == 1 ]] || fail "hunspell does not install its Homebrew formula exactly once"
+for specification in \
+  "fr_FR/dictionaries/fr.aff c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5 fr.aff" \
+  "fr_FR/dictionaries/fr.dic b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c fr.dic" \
+  "en/en_US.aff e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e en_US.aff" \
+  "en/en_US.dic f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647 en_US.dic"; do
+  read -r source checksum destination_name <<<"$specification"
+  expected="\"$repository/tooling/install-hunspell-dictionary\" \"$base_url/$source\" \"$checksum\" \"$test_home/Library/Spelling/$destination_name\""
+  [[ $(grep -F -c -- "$expected" "$hunspell_trace") == 1 ]] || fail "hunspell does not deploy $destination_name exactly once"
+done
+env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" claude-code >"$claude_trace"
+grep -F -q -- 'brew install hunspell' "$claude_trace" || fail "claude-code does not depend on hunspell"
+
 echo "Makefile tests passed"

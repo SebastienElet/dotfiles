@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repository=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+installer=$repository/tooling/install-hunspell-dictionary
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/hunspell-dictionaries-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "hunspell-dictionaries-test: $*" >&2
+  exit 1
+}
+
+assert_failure() {
+  if "$@" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail "command unexpectedly succeeded: $*"
+  fi
+}
+
+fake_bin=$test_root/bin
+source_file=$test_root/source
+destination=$test_root/Library/Spelling/fr.aff
+mkdir -p "$fake_bin"
+printf 'dictionary\n' >"$source_file"
+checksum=$(shasum -a 256 "$source_file" | awk '{print $1}')
+real_shasum=$(command -v shasum)
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  '[[ -z ${CURL_MARKER:-} ]] || : >"$CURL_MARKER"' \
+  '[[ ${CURL_SHOULD_FAIL:-0} == 0 ]] || exit 99' \
+  'while (( $# > 0 )); do' \
+  '  if [[ $1 == -o ]]; then' \
+  '    cp "$CURL_SOURCE" "$2"' \
+  '    if [[ -n ${RACE_DESTINATION:-} ]]; then' \
+  '      printf "racing writer\n" >"$RACE_DESTINATION"' \
+  '    fi' \
+  '    if [[ -n ${RACE_DIRECTORY:-} ]]; then' \
+  '      mkdir "$RACE_DIRECTORY"' \
+  '    fi' \
+  '    exit 0' \
+  '  fi' \
+  '  shift' \
+  'done' \
+  'exit 64' >"$fake_bin/curl"
+chmod +x "$fake_bin/curl"
+
+env HOME="$test_root" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+
+cmp -s "$source_file" "$destination" || fail "downloaded dictionary differs from source"
+
+env HOME="$test_root" CURL_SHOULD_FAIL=1 PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+
+printf 'local dictionary\n' >"$destination"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ $(cat "$destination") == "local dictionary" ]] || fail "existing dictionary changed"
+
+rm "$destination"
+victim=$test_root/victim
+printf 'keep\n' >"$victim"
+ln -s "$victim" "$destination"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ -L $destination ]] || fail "dictionary symlink was replaced"
+[[ $(cat "$victim") == keep ]] || fail "dictionary symlink target changed"
+
+rm "$destination"
+printf 'corrupted\n' >"$source_file"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ ! -e $destination ]] || fail "corrupted dictionary was published"
+
+printf 'dictionary\n' >"$source_file"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" RACE_DESTINATION="$destination" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ $(cat "$destination") == "racing writer" ]] || fail "concurrent dictionary was replaced"
+
+rm "$destination"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" RACE_DIRECTORY="$destination" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ -d $destination ]] || fail "concurrent dictionary directory was replaced"
+[[ -z $(find "$destination" -mindepth 1 -print -quit) ]] || fail "dictionary was linked inside a concurrent directory"
+
+rmdir "$destination"
+curl_marker=$test_root/curl-called
+assert_failure env HOME="$test_root" CURL_MARKER="$curl_marker" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff not-a-sha "$destination"
+[[ ! -e $curl_marker ]] || fail "invalid checksum reached curl"
+
+workflow=$repository/.github/workflows/test-deployment.yml
+[[ $(grep -F -c -- '      - tooling/install-hunspell-dictionary' "$workflow") == 2 ]] || fail "dictionary installer does not trigger deployment tests"
+[[ $(grep -F -c -- '      - tooling/hunspell-dictionaries-test' "$workflow") == 2 ]] || fail "dictionary tests do not trigger deployment tests"
+grep -F -q -- '      - run: tooling/hunspell-dictionaries-test' "$workflow" || fail "dictionary tests are not executed by deployment tests"
+
+symlink_home=$test_root/symlink-home
+actual_spelling=$test_root/actual-spelling
+mkdir -p "$symlink_home/Library" "$actual_spelling"
+ln -s "$actual_spelling" "$symlink_home/Library/Spelling"
+assert_failure env HOME="$symlink_home" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$symlink_home/Library/Spelling/fr.aff"
+[[ -z $(find "$actual_spelling" -mindepth 1 -print -quit) ]] || fail "dictionary was installed through a directory symlink"
+
+ancestor_home=$test_root/ancestor-home
+actual_library=$test_root/actual-library
+mkdir "$ancestor_home" "$actual_library"
+ln -s "$actual_library" "$ancestor_home/Library"
+assert_failure env HOME="$ancestor_home" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$ancestor_home/Library/Spelling/fr.aff"
+[[ -z $(find "$actual_library" -mindepth 1 -print -quit) ]] || fail "dictionary was installed through an ancestor symlink"
+
+assert_failure env HOME="$test_root" CURL_SHOULD_FAIL=1 PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ ! -e $destination ]] || fail "failed download published a dictionary"
+
+printf 'dictionary\n' >"$destination"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'path=${@: -1}' \
+  'if [[ $path == "$SWAP_DESTINATION" ]]; then' \
+  '  rm "$SWAP_DESTINATION"' \
+  '  ln -s "$SWAP_TARGET" "$SWAP_DESTINATION"' \
+  'fi' \
+  'exec "$REAL_SHASUM" "$@"' >"$fake_bin/shasum"
+chmod +x "$fake_bin/shasum"
+assert_failure env HOME="$test_root" REAL_SHASUM="$real_shasum" SWAP_DESTINATION="$destination" SWAP_TARGET="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ -L $destination ]] || fail "dictionary replacement race did not run"
+
+rm "$destination"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 127' >"$fake_bin/shasum"
+chmod +x "$fake_bin/shasum"
+assert_failure env HOME="$test_root" CURL_SOURCE="$source_file" PATH="$fake_bin:$PATH" \
+  "$installer" https://example.test/fr.aff "$checksum" "$destination"
+[[ ! -e $destination ]] || fail "dictionary was published without checksum verification"
+[[ -z $(find "$(dirname "$destination")" -name '.hunspell-dictionary.*' -print -quit) ]] || fail "temporary dictionary was not removed"
+
+echo "Hunspell dictionary tests passed"

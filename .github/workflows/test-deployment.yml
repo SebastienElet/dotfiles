@@ -7,6 +7,8 @@ on:
       - harness/**
       - tooling/makefile-test
       - tooling/fish-deployment-test
+      - tooling/install-hunspell-dictionary
+      - tooling/hunspell-dictionaries-test
       - Makefile
       - .github/workflows/test-deployment.yml
   pull_request:
@@ -15,6 +17,8 @@ on:
       - harness/**
       - tooling/makefile-test
       - tooling/fish-deployment-test
+      - tooling/install-hunspell-dictionary
+      - tooling/hunspell-dictionaries-test
       - Makefile
       - .github/workflows/test-deployment.yml
 
@@ -29,3 +33,4 @@ jobs:
       - uses: actions/checkout@v5
       - run: tooling/makefile-test
       - run: tooling/fish-deployment-test
+      - run: tooling/hunspell-dictionaries-test
