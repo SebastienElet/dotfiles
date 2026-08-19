@@ -95,6 +95,9 @@ workflow=$repository/.github/workflows/test-deployment.yml
 [[ $(grep -F -c -- '      - tooling/install-hunspell-dictionary' "$workflow") == 2 ]] || fail "dictionary installer does not trigger deployment tests"
 [[ $(grep -F -c -- '      - tooling/hunspell-dictionaries-test' "$workflow") == 2 ]] || fail "dictionary tests do not trigger deployment tests"
 grep -F -q -- '      - run: tooling/hunspell-dictionaries-test' "$workflow" || fail "dictionary tests are not executed by deployment tests"
+smoke_workflow=$repository/.github/workflows/test.yml
+grep -F -q -- 'hunspell -D' "$smoke_workflow" || fail "smoke tests do not verify dictionary discovery"
+grep -F -q -- 'hunspell -d fr,en_US -l' "$smoke_workflow" || fail "smoke tests do not verify bilingual spelling"
 
 symlink_home=$test_root/symlink-home
 actual_spelling=$test_root/actual-spelling
