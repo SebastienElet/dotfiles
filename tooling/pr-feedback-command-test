@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repository=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+command_file=${1:-"$repository/harness/commands/pr-feedback.md"}
+
+fail() {
+  printf 'PR feedback command contract failed: %s\n' "$1" >&2
+  exit 1
+}
+
+assert_contains() {
+  local expected=$1
+
+  grep -F -q -- "$expected" "$command_file" || fail "missing '$expected'"
+}
+
+assert_excludes() {
+  local forbidden=$1
+
+  if grep -F -q -- "$forbidden" "$command_file"; then
+    fail "forbidden '$forbidden'"
+  fi
+}
+
+[[ -f $command_file ]] || fail "missing file '$command_file'"
+[[ -r $command_file ]] || fail "unreadable file '$command_file'"
+
+assert_contains '## Constitution des constats'
+assert_contains '## Constats consolidés'
+assert_contains '## Signaux écartés'
+assert_contains '## Limites de collecte'
+assert_contains "N'inspecte pas le harnais"
+assert_contains 'ne formule aucune recommandation'
+
+assert_excludes '## Correctifs de harnais'
+assert_excludes '## Seuil de récurrence'
+assert_excludes '## Propositions'
+assert_excludes "Pourquoi était-ce absent du développement initial"
+assert_excludes 'texte exact à coller'
+
+printf 'PR feedback static contract passed (advisory)\n'

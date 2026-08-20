@@ -9,6 +9,7 @@ on:
       - tooling/fish-deployment-test
       - tooling/install-hunspell-dictionary
       - tooling/hunspell-dictionaries-test
+      - tooling/pr-feedback-command-test
       - Makefile
       - .github/workflows/test-deployment.yml
   pull_request:
@@ -19,6 +20,7 @@ on:
       - tooling/fish-deployment-test
       - tooling/install-hunspell-dictionary
       - tooling/hunspell-dictionaries-test
+      - tooling/pr-feedback-command-test
       - Makefile
       - .github/workflows/test-deployment.yml
 
@@ -34,3 +36,4 @@ jobs:
       - run: tooling/makefile-test
       - run: tooling/fish-deployment-test
       - run: tooling/hunspell-dictionaries-test
+      - run: tooling/pr-feedback-command-test
