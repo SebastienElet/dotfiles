@@ -17,6 +17,12 @@ This directory is the canonical source for user-scoped agent skills.
 | `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
 | `merge-verdict`    | Deliver a merge verdict on an open pull request, yours or another author's.                          |
 
+## Product
+
+| Skill               | Description                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| `linear-issue-spec` | Prepare implementation-ready Linear development issues as functional specifications. |
+
 ## Ops
 
 | Skill           | Description                                                                                      |
