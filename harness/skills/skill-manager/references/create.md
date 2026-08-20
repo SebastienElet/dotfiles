@@ -18,15 +18,18 @@ Ask one question at a time when an unknown answer changes behavior. Do not inven
 1. Read `conventions.md` completely.
 2. Normalize the requested slug and verify it is 1–64 lowercase letters, digits, or hyphens, with
    no leading, trailing, or consecutive hyphen.
-3. Confirm `.agents/skills/<slug>/` does not already exist. Never overwrite it.
-4. Create `.agents/skills/<slug>/` and only the resource directories established by the inputs:
+3. Select `<skills-root>` from the requested scope and confirm the slug exists in neither canonical
+   collection. Never overwrite it.
+4. Create `<skills-root>/<slug>/` and only the resource directories established by the inputs:
    `agents/`, `references/`, `scripts/`, `assets/`, or `evals/`.
 5. Write `SKILL.md` from the minimal template below.
 6. Add optional frontmatter fields only when they have a real valid value.
 7. Put executable shell with positional argument placeholders in `scripts/`, never in `SKILL.md`.
 8. Route scoped sibling references from `## Steps` when behavior differs by scope.
-9. Validate standard rules with `skills-ref` when available, then run local doctor.
-10. Validate any eval JSON, run its scenarios when required, and run `sync-index` twice.
+9. For a user skill, add its requested agent installations to `home/.arnes.yaml` and the matching
+   `Makefile` leaf targets.
+10. Validate standard rules with `skills-ref` when available, then run local doctor.
+11. Validate any eval JSON, run its scenarios when required, and run `sync-index` twice.
 
 ## Minimal template
 
@@ -77,7 +80,7 @@ unless established. `allowed-tools` is experimental and must be a space-separate
 If `skills-ref` is available:
 
 ```bash
-skills-ref validate ./.agents/skills/<slug>
+skills-ref validate ./<skills-root>/<slug>
 ```
 
 Otherwise report standard validation unavailable and continue doctor. Creation is complete only

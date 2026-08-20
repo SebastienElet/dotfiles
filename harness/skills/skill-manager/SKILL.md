@@ -1,11 +1,10 @@
 ---
 name: skill-manager
 description: >
-  Manage .agents/skills: create, doctor, fix, cross-check, and sync the README index. Use when
-  creating or changing any skill, including requested behavior changes to a passing skill. Make
-  sure to use this skill whenever editing SKILL.md, validating portability, resolving inter-skill
-  conflicts, or rebuilding the skills index, even for one frontmatter field; read
-  references/conventions.md first.
+  Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes.
+  Use when creating or changing any skill, including requested behavior changes to a passing skill.
+  Make sure to use this skill whenever editing SKILL.md, validating portability, resolving
+  inter-skill conflicts, or rebuilding a skills index; read references/conventions.md first.
 metadata:
   category: ops
 ---
@@ -14,22 +13,25 @@ metadata:
 
 ## Overview
 
-Manage the repository-wide `.agents/skills/` source of truth. The five operations scaffold skills,
-audit individual quality, apply justified changes, detect inter-skill conflicts, and rebuild the
-derived README index without changing the repository's adapter architecture.
+Manage the user-scoped `harness/skills/` collection and the project-scoped `.agents/skills/`
+collection. The five operations scaffold skills, audit individual quality, apply justified changes,
+detect conflicts, and rebuild the selected collection's derived README index.
 
 ## Usage
 
 ```text
-/skill-manager create <name>    — scaffold a new skill
-/skill-manager doctor [name]    — check one skill or all skills
-/skill-manager fix <name>       — fix findings or apply an explicitly requested evolution
-/skill-manager cross-check      — report inter-skill inconsistencies without writing
-/skill-manager sync-index       — rebuild the deterministic README index
+/skill-manager create <name> [user|project] — scaffold a new skill
+/skill-manager doctor [name] [user|project] — check one skill or one collection
+/skill-manager fix <name> [user|project]    — fix findings or apply a requested evolution
+/skill-manager cross-check [user|project]   — report inter-skill inconsistencies without writing
+/skill-manager sync-index [user|project]    — rebuild the deterministic README index
 ```
 
 - `<name>` is a kebab-case skill slug.
-- Omitting `[name]` from `doctor` audits every skill.
+- `user` selects `harness/skills/`; `project` selects `.agents/skills/`.
+- An existing slug found in exactly one collection selects that collection; otherwise the default
+  is `user`.
+- Omitting `[name]` from `doctor` audits every skill in the selected collection.
 - Omitting `<name>` from `fix` requires asking which skill to change.
 
 Examples:
@@ -43,17 +45,17 @@ Examples:
 
 ## Steps
 
-1. Identify `create`, `doctor`, `fix`, `cross-check`, or `sync-index`.
+1. Identify `create`, `doctor`, `fix`, `cross-check`, or `sync-index` and select one collection.
 2. Read `references/conventions.md` completely.
 3. Read the operation reference listed below and follow it exactly.
 4. For `cross-check`, present the report and stop; every write requires a later `fix` operation.
-5. After create, fix, rename, or delete, run `sync-index` and verify its second run is byte-identical.
+5. After create, fix, rename, or delete, run `sync-index` for that collection and verify its second
+   run is byte-identical.
 
 ## Gotchas
 
-- **Editing an adapter path** — `.agents/skills/` is canonical; `.claude/skills`, `.cursor/skills`,
-  and `.codex/skills` are relative symlinks to it. Edit the source, never synchronize copies or
-  reverse a link.
+- **Conflating user and project scope** — the same slug is discovered twice. Keep reusable personal
+  skills in `harness/skills/` and repository-only skills in `.agents/skills/`.
 - **Skipping conventions for a small edit** — one frontmatter field can break discovery on every
   agent. Read `references/conventions.md` before any skill write.
 - **Treating host-only fields as portable** — only six frontmatter fields belong to the standard,
@@ -73,6 +75,8 @@ Examples:
 ## Constraints
 
 - Always read `references/conventions.md` before writing any skill file.
+- Never place a user-installed skill in `.agents/skills/` or a repository-only skill in
+  `harness/skills/`.
 - Never overwrite an existing `SKILL.md` without an explicit create, fix, rename, or delete request.
 - Use only standard frontmatter fields and keep local indexing data under `metadata`.
 - Never install validation tooling implicitly.

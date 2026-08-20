@@ -102,10 +102,6 @@ impl Manifest {
             .map(|skill| skill.slug.as_str())
     }
 
-    pub fn declared_skills(&self) -> impl Iterator<Item = &str> {
-        self.skills.iter().map(|skill| skill.slug.as_str())
-    }
-
     pub fn external_roots(&self) -> impl Iterator<Item = ExternalRoot<'_>> {
         self.external.roots()
     }

@@ -102,7 +102,7 @@ seconde est celle qui produit le correctif de harnais ; un constat sans elle n'a
    | `arbitrage` | Divergence de jugement légitime, pas une erreur | Rien. Le noter et passer |
 
    Vérifie avant de classer : `grep` la règle supposée dans `AGENTS.md`, `.agents/rules/`,
-   `.agents/skills/`, `MEMORY.md`. Une règle que tu supposes existante sans l'avoir trouvée est
+   `.agents/skills/`, `harness/skills/`, `MEMORY.md`. Une règle que tu supposes existante sans l'avoir trouvée est
    `inconnue`, pas `non-appliquée`.
 
 ## Correctifs de harnais — échelle
@@ -170,5 +170,5 @@ Une section vide s'écrit `_néant_`. Pas de préambule, pas de conclusion.
   substitutions `$(...)` et les heredocs.
 - Avec `bkt`, `--jq` exige `--json` dans la même commande.
 - Chaque texte à coller respecte la langue de son fichier cible : anglais pour `AGENTS.md`,
-  `.agents/rules/`, `.agents/skills/`, `MEMORY.md` ; français pour un ADR.
+  `.agents/rules/`, `.agents/skills/`, `harness/skills/`, `MEMORY.md` ; français pour un ADR.
 - Ne modifie aucun fichier. La décision de promouvoir reste à moi.

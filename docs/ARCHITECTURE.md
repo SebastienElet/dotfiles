@@ -10,9 +10,9 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 | Chemin                            | Responsabilité                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------ |
 | `home/`                           | Configuration déployée sous `$HOME`, avec le même chemin relatif que sa destination. |
-| `harness/`                        | Instructions et services partagés entre les différents agents.                       |
+| `harness/`                        | Instructions, skills user et services partagés entre les différents agents.          |
 | `tooling/`                        | Applications locales et exécutables maintenus par ce dépôt.                          |
-| `.agents/skills/`                 | Source unique des skills partagées.                                                  |
+| `.agents/skills/`                 | Source canonique des skills limitées à ce dépôt.                                     |
 | `.claude/`, `.codex/`, `.cursor/` | Adaptateurs placés aux chemins de découverte imposés par chaque agent.               |
 | `.github/workflows/`              | Barrières de lint, de test et d'installation.                                        |
 | `docs/adr/`                       | Décisions d'architecture encore en vigueur.                                          |
@@ -59,9 +59,12 @@ Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
 Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
 `Makefile` ne peut donc pas y distribuer cette source.
 
-Les skills vivent dans `.agents/skills/`. Les répertoires `.claude/`, `.codex/`
-et `.cursor/` ne dupliquent pas leur contenu : ils fournissent uniquement les
-adaptateurs nécessaires à leur découverte.
+Les skills user vivent dans `harness/skills/` et sont déployées individuellement
+vers les répertoires utilisateur de Claude, Cursor et Codex. Les skills propres
+au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et
+`.cursor/skills` restent leurs adaptateurs de découverte projet. Un slug ne doit
+pas exister dans les deux collections, car les agents peuvent alors exposer les
+deux occurrences.
 
 ## Outillage maintenu
 

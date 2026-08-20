@@ -3,7 +3,7 @@ name: CodeGraph tests
 on:
   push:
     paths:
-      - .agents/skills/codegraph/**
+      - harness/skills/codegraph/**
       - .config/git/ignore
       - tooling/codegraph/**
       - tooling/codegraph-*
@@ -11,7 +11,7 @@ on:
       - .github/workflows/test-codegraph.yml
   pull_request:
     paths:
-      - .agents/skills/codegraph/**
+      - harness/skills/codegraph/**
       - .config/git/ignore
       - tooling/codegraph/**
       - tooling/codegraph-*
@@ -32,7 +32,7 @@ jobs:
           claude --version
           codex --version
           codegraph --version
-      - run: bash .agents/skills/codegraph/scripts/measure_repository_test.sh
+      - run: bash harness/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash tooling/codegraph-configure-test
       - run: bash tooling/codegraph-mcp-test
       - run: bash tooling/codegraph-network-test

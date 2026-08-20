@@ -87,7 +87,7 @@ fn verbose_skills_output_matches_the_exact_fixture() {
 fn skills_doctor_attaches_agent_sections_without_reading_real_home() {
     let fixture = configured_fixture();
     std::fs::remove_file(fixture.home().join(".claude/skills/alpha")).unwrap();
-    skill_support::link_home_relative(&fixture, ".agents/skills/alpha", ".claude/skills/alpha");
+    skill_support::link_home_relative(&fixture, "harness/skills/alpha", ".claude/skills/alpha");
     std::fs::remove_file(fixture.home().join(".cursor/skills/alpha")).unwrap();
 
     let (code, normal, stderr) = run(&fixture, &["doctor", "skills"]);

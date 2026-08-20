@@ -32,6 +32,21 @@ fn missing_skills_and_projection_destinations_are_broken() {
 }
 
 #[test]
+fn missing_user_skill_source_fails_closed() {
+    let fixture = configured_fixture();
+    fs::remove_dir_all(fixture.repository().join("harness/skills")).unwrap();
+
+    let (code, stdout, _) = run(
+        &fixture,
+        &["doctor", "skills", "--agent", "claude", "--scope", "user"],
+    );
+
+    assert_eq!(code, 2, "{stdout}");
+    assert!(stdout.contains("source"));
+    assert!(stdout.contains("harness/skills/alpha is missing"));
+}
+
+#[test]
 fn broken_and_incorrect_symlinks_are_drift() {
     let fixture = configured_fixture();
     let link = fixture.home().join(".cursor/skills/alpha");
@@ -59,7 +74,7 @@ fn broken_and_incorrect_symlinks_are_drift() {
 #[test]
 fn skill_file_must_exist_and_be_a_file() {
     let fixture = configured_fixture();
-    fs::remove_file(fixture.repository().join(".agents/skills/alpha/SKILL.md")).unwrap();
+    fs::remove_file(fixture.repository().join("harness/skills/alpha/SKILL.md")).unwrap();
     let (code, stdout, _) = run(
         &fixture,
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
@@ -68,7 +83,7 @@ fn skill_file_must_exist_and_be_a_file() {
     assert!(stdout.contains("SKILL.md is missing"));
 
     let fixture = configured_fixture();
-    let file = fixture.repository().join(".agents/skills/alpha/SKILL.md");
+    let file = fixture.repository().join("harness/skills/alpha/SKILL.md");
     fs::remove_file(&file).unwrap();
     fs::create_dir(&file).unwrap();
     let (code, stdout, _) = run(
@@ -85,7 +100,7 @@ fn missing_relative_resources_are_broken() {
     fs::remove_file(
         fixture
             .repository()
-            .join(".agents/skills/alpha/references/guide.md"),
+            .join("harness/skills/alpha/references/guide.md"),
     )
     .unwrap();
     let (code, stdout, _) = run(
@@ -98,7 +113,7 @@ fn missing_relative_resources_are_broken() {
 
     let fixture = configured_fixture();
     fixture.write_repository(
-        ".agents/skills/alpha/SKILL.md",
+        "harness/skills/alpha/SKILL.md",
         "[missing root resource](guide.md)\n",
     );
     let (code, stdout, _) = run(
@@ -110,9 +125,14 @@ fn missing_relative_resources_are_broken() {
 }
 
 #[test]
-fn project_discovery_survives_managed_skill_drift() {
+fn project_source_failures_are_reported_independently() {
     let fixture = configured_fixture();
-    fs::remove_file(fixture.repository().join(".agents/skills/alpha/SKILL.md")).unwrap();
+    fs::remove_file(
+        fixture
+            .repository()
+            .join(".agents/skills/project-alpha/SKILL.md"),
+    )
+    .unwrap();
     let (code, stdout, _) = run(
         &fixture,
         &[
@@ -121,9 +141,8 @@ fn project_discovery_survives_managed_skill_drift() {
     );
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("broken managed claude project skill alpha"));
-    assert!(stdout.contains("beta · managed · enabled · healthy · unexpected"));
-    assert!(!stdout.contains("local resource references/missing.md"));
+    assert!(stdout.contains("broken managed claude project skill project-alpha"));
+    assert!(stdout.contains("local resource references/missing.md is missing"));
 }
 
 #[test]

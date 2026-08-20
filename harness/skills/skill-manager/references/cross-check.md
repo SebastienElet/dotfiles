@@ -2,7 +2,7 @@
 
 ## Scope
 
-- `/skill-manager cross-check` — analyse all skills in `.agents/skills/` to detect inter-skill
+- `/skill-manager cross-check` — analyse all skills in the selected `<skills-root>/` to detect inter-skill
   inconsistencies
 
 This operation is **read-only**: it never modifies any file. It produces a report, presents findings
@@ -15,7 +15,7 @@ to the user, and stops. No fix is applied without explicit user instruction.
 1. **Collect all skills**
 
    ```bash
-   ls .agents/skills/
+   ls <skills-root>/
    ```
 
    Exclude `README.md`. For each skill directory found, read its `SKILL.md`.
@@ -106,8 +106,8 @@ causes divergence over time.
 
 ### D3 — Dead Reference
 
-**Goal**: Detect a skill that mentions another skill (by slug) that does not exist in
-`.agents/skills/`.
+**Goal**: Detect a skill that mentions another skill (by slug) that does not exist in the selected
+`<skills-root>/`.
 
 **Method**:
 
@@ -118,7 +118,7 @@ causes divergence over time.
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
   `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
   identifiers containing a namespace separator such as `superpowers:requesting-code-review`
-- Verify each extracted slug has a matching directory under `.agents/skills/`
+- Verify each extracted slug has a matching directory under `<skills-root>/`
 
 **Output format**:
 
@@ -156,12 +156,13 @@ causes divergence over time.
 
 ### D5 — Slug Ambiguity
 
-**Goal**: Detect two skills whose names are close enough to cause confusion (typo, plural, name
-variation).
+**Goal**: Detect two skills whose names are identical across user and project scope or close enough
+to cause confusion (typo, plural, name variation).
 
 **Method**:
 
-- Compare all slugs pairwise
+- Compare all selected slugs pairwise and list the other canonical collection's slugs
+- Flag an exact slug in both collections as CRITICAL because hosts can discover both copies
 - Flag if: same root with different suffix (`git-commit` / `git-commits`), or Levenshtein distance ≤
   2, or same domain + similar verb (`pr-create` / `pr-open`)
 
@@ -241,7 +242,7 @@ Step 4 — **Routing coverage check**:
 ## Output Format
 
 ```text
-# Cross-Check Report — .agents/skills/
+# Cross-Check Report — <skills-root>/
 
 Analysed: <N> skills | Detectors: D1 D2 D3 D4 D5 D6
 Date: <date>
@@ -318,8 +319,8 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 
 ## Constraints
 
-- **Strict scope**: never read any file outside `.agents/skills/`, even to validate a dead reference
-  (D3), confirm a rule (D4), or verify a routing pattern (D6).
+- **Strict scope**: never read skill content outside `<skills-root>/`; listing slugs in the other
+  canonical collection is allowed only for D5.
 - If an out-of-scope check seems necessary, **complete the full analysis first**, then ask the user
   for confirmation at the end of the report, explaining why the extra read would be needed.
 - **This operation is read-only** — if the user asks you to apply a fix inline during the
@@ -338,8 +339,8 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 - **D2 does not detect semantics** — two procedures expressed differently but doing the same thing
   may go undetected.
 - **D3 only checks slug-style references** — it does not validate absolute paths (`.cursor/rules/`,
-  `services/api/...`, `AGENTS.md`, etc.) or URLs. References to files outside
-  `.agents/skills/` are intentionally out of scope and will not be flagged.
+  `services/api/...`, `AGENTS.md`, etc.) or URLs. References to files outside `<skills-root>/` are
+  intentionally out of scope and will not be flagged.
 - **D4 requires human judgment** — some contradictions are intentional (e.g. "always use Jest" in a
   backend skill, "never use Jest" in a frontend skill).
 - **D6 similarity thresholds are approximate** — 80% / 60% are heuristic; a 79% similar pair may

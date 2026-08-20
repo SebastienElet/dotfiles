@@ -100,6 +100,31 @@ printf 'keep\n' >"$claude_rule"
 env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule"
 [[ $(cat "$claude_rule") == keep ]] || fail "Claude rule destination changed"
 
+case_root=$test_root/user_skills
+test_home=$case_root/home
+mkdir -p "$test_home"
+for specification in \
+  ".claude/skills/codegraph codegraph" \
+  ".claude/skills/enforcement-code enforcement-code" \
+  ".claude/skills/handoff handoff" \
+  ".claude/skills/merge-verdict merge-verdict" \
+  ".claude/skills/skill-manager skill-manager" \
+  ".cursor/skills/codegraph codegraph" \
+  ".cursor/skills/enforcement-code enforcement-code" \
+  ".cursor/skills/merge-verdict merge-verdict" \
+  ".cursor/skills/skill-manager skill-manager" \
+  ".agents/skills/codegraph codegraph" \
+  ".agents/skills/enforcement-code enforcement-code" \
+  ".agents/skills/handoff handoff" \
+  ".agents/skills/merge-verdict merge-verdict" \
+  ".agents/skills/skill-manager skill-manager"; do
+  read -r relative_destination slug <<<"$specification"
+  destination=$test_home/$relative_destination
+  env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$destination"
+  assert_link "$destination" "$repository/harness/skills/$slug"
+  [[ ! -e $repository/.agents/skills/$slug ]] || fail "$slug remains in the project skill collection"
+done
+
 case_root=$test_root/daily_routine_config
 test_home=$case_root/home
 config_file=$test_home/.config/daily-routine/config.toml

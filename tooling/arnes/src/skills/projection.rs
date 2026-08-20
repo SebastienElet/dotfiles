@@ -37,8 +37,7 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
 pub fn root(
     roots: &Roots,
     resource: &SkillProjection<'_>,
-    skills: &[&str],
-) -> Result<Vec<Diagnostic>, Diagnostic> {
+) -> Result<(Vec<Diagnostic>, Vec<PathBuf>), Diagnostic> {
     let source = roots.repository().join(resource.source);
     let destination = destination(roots, resource.scope, resource.destination);
     let subject = format!(
@@ -59,10 +58,13 @@ pub fn root(
         &subject,
         &human,
     )?;
-    Ok(skills
+    let skills = super::discovery::installations(&source)
+        .map_err(|reason| broken(&subject, State::Error, reason))?;
+    let diagnostics = skills
         .iter()
-        .map(|name| root_skill(roots, resource, &source, &destination, Path::new(name)))
-        .collect())
+        .map(|name| root_skill(roots, resource, &source, &destination, name))
+        .collect();
+    Ok((diagnostics, skills))
 }
 
 fn root_skill(

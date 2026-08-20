@@ -1,0 +1,25 @@
+# User Skills
+
+This directory is the canonical source for user-scoped agent skills.
+
+## Conventions
+
+- One skill per subdirectory.
+- Each skill must include a `SKILL.md` file.
+- Optional folders: `agents/`, `scripts/`, `references/`, `assets/`, `evals/`.
+- Manage skills with `/skill-manager`.
+
+## Dev
+
+| Skill              | Description                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `codegraph`        | Explore large repositories structurally with CodeGraph.                                              |
+| `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
+| `merge-verdict`    | Deliver a merge verdict on an open pull request, yours or another author's.                          |
+
+## Ops
+
+| Skill           | Description                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `handoff`       | Hand the current work to a fresh session instead of letting the context compact.                 |
+| `skill-manager` | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |

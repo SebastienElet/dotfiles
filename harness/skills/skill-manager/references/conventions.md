@@ -1,7 +1,8 @@
 # Skill Conventions
 
-This file is the source of truth for every skill under `.agents/skills/`. It separates the
-agentskills.io standard from this repository's stricter local quality and indexing rules.
+This file is the source of truth for skills under `harness/skills/` and `.agents/skills/`. It
+separates the agentskills.io standard from this repository's stricter local quality, scope, and
+indexing rules.
 
 ## 1. Progressive disclosure
 
@@ -68,12 +69,23 @@ Aim below 400 characters because host skill lists truncate descriptions or omit 
 standard's 1024-character ceiling. Avoid generic descriptions, passive labels, and appended trigger
 keyword dumps.
 
-## 3. Canonical directory and adapters
+## 3. Canonical collections and adapters
 
-Every project skill physically lives at:
+Select exactly one canonical collection before operating:
+
+| Scope     | Canonical source  | Purpose                                                        |
+| --------- | ----------------- | -------------------------------------------------------------- |
+| `user`    | `harness/skills/` | Personal capabilities projected into agent user directories    |
+| `project` | `.agents/skills/` | Skills relevant only while working in this repository checkout |
+
+An existing slug in exactly one collection selects its scope. An explicit scope overrides the
+default. New skills and collection-wide operations default to `user`. In the procedures below,
+`<skills-root>` means the selected canonical source.
+
+Every skill physically lives at:
 
 ```text
-.agents/skills/<slug>/
+<skills-root>/<slug>/
   SKILL.md
   agents/       optional product-specific machine metadata
   references/   optional detailed guidance
@@ -85,18 +97,19 @@ Every project skill physically lives at:
 Do not create a local `rules/` directory. Add only tracked resource directories the skill actually
 needs; ignore untracked or gitignored runtime artifacts during repository audits.
 
-The repository exposes the canonical directory through three relative symlinks:
+Project skills are exposed through relative repository adapters:
 
 | Consumer                    | Project path      | Repository state               |
 | --------------------------- | ----------------- | ------------------------------ |
-| Codex and compatible agents | `.agents/skills/` | canonical directory            |
+| Codex and compatible agents | `.agents/skills/` | project canonical directory    |
 | Claude Code                 | `.claude/skills`  | symlink to `../.agents/skills` |
 | Cursor                      | `.cursor/skills`  | symlink to `../.agents/skills` |
 | Codex compatibility adapter | `.codex/skills`   | symlink to `../.agents/skills` |
 
-Never reverse these links, create parallel copies, or edit through multiple paths as if they were
-independent. A project skill stays self-contained in the repository; a required external skill is
-copied and becomes the repository's own version rather than linked outside the checkout.
+User skills are deployed as individual symlinks from `harness/skills/<slug>` to each agent's user
+skill directory. Never point a project adapter at `harness/skills/`, place one slug in both
+collections, or edit through a deployed destination. A required external skill is copied into its
+chosen canonical collection rather than linked outside the checkout.
 
 ## 4. Reference segmentation
 
@@ -169,7 +182,7 @@ consequence, and the correction. Avoid generic advice that a capable agent alrea
 ```markdown
 ## Gotchas
 
-- **Editing an adapter** — parallel copies diverge. Edit `.agents/skills/` only.
+- **Editing an adapter** — parallel copies diverge. Edit the selected canonical collection only.
 - **Skipping a failed probe** — the audit becomes a false PASS. Report the unavailable check.
 - **Using a vague trigger** — the skill never loads. Name the concrete situation first.
 ```
@@ -200,9 +213,9 @@ design document.
 
 ## 11. README index
 
-`.agents/skills/README.md` is derived from `name`, folded `description`, and
-`metadata.category`. Never edit table rows manually. Run `sync-index` after create, fix, rename, or
-delete, and require a second run to produce byte-identical output.
+`<skills-root>/README.md` is derived from `name`, folded `description`, and `metadata.category`.
+Never edit table rows manually. Run `sync-index` after create, fix, rename, or delete, and require a
+second run to produce byte-identical output.
 
 Categories are local indexing metadata:
 
@@ -218,7 +231,7 @@ Categories are local indexing metadata:
 When `skills-ref` exists, run:
 
 ```bash
-skills-ref validate ./.agents/skills/<slug>
+skills-ref validate ./<skills-root>/<slug>
 ```
 
 When absent, report `Standard validation: unavailable (skills-ref not installed)`, continue local
@@ -235,5 +248,7 @@ Before declaring a skill clean, verify:
 - no executable positional placeholders in the body;
 - valid eval JSON when present;
 - README membership and deterministic regeneration;
-- adapter symlinks still point to `../.agents/skills`;
+- a slug does not exist in both canonical collections;
+- project adapter symlinks still point to `../.agents/skills`;
+- user installations resolve to `harness/skills/<slug>` for every declared target agent;
 - no unapproved activation router rule.

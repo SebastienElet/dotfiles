@@ -368,20 +368,18 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
-# Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
-# own built-ins and is resynchronised from its registry, so a link dropped there
-# would be wiped without warning. Inside this repository .cursor/skills already
-# points at .agents/skills, so only the global link is needed.
 ~/.cursor/skills:
 	mkdir -p $@
-~/.cursor/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.cursor/skills
+~/.cursor/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.cursor/skills
 	${CREATE_SYMLINK}
-~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.cursor/skills
+~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.cursor/skills
 	${CREATE_SYMLINK}
-~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
+~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
 	${CREATE_SYMLINK}
 
 .PHONY: cursor-measurement-hooks
@@ -389,7 +387,7 @@ cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-code-measurement-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict ~/.claude/skills/skill-manager claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -410,15 +408,17 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
 	${CREATE_SYMLINK}
-~/.claude/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.claude/skills
+~/.claude/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.claude/skills
 	${CREATE_SYMLINK}
-~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
+~/.claude/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff | ~/.claude/skills
 	${CREATE_SYMLINK}
-~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
+~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.claude/skills
 	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
 # review, which is never this one.
-~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
+~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
 	${CREATE_SYMLINK}
 
 .PHONY: claude-code-measurement-hooks
@@ -438,7 +438,7 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -449,16 +449,17 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.codex
 	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md > $@.tmp
 	mv $@.tmp $@
-# Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
 	mkdir -p $@
-~/.agents/skills/codegraph: ${DOTFILES_PATH}/.agents/skills/codegraph | ~/.agents/skills
+~/.agents/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.agents/skills
 	${CREATE_SYMLINK}
-~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
+~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.agents/skills
 	${CREATE_SYMLINK}
-~/.agents/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.agents/skills
+~/.agents/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff | ~/.agents/skills
 	${CREATE_SYMLINK}
-~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.agents/skills
+~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
 	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook
@@ -490,7 +491,7 @@ codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/
 
 .PHONY: codegraph-test
 codegraph-test:
-	bash .agents/skills/codegraph/scripts/measure_repository_test.sh
+	bash harness/skills/codegraph/scripts/measure_repository_test.sh
 	bash tooling/codegraph-configure-test
 	bash tooling/codegraph-mcp-test
 	bash tooling/codegraph-network-test
@@ -515,7 +516,7 @@ codegraph-ignore:
 	mkdir -p "$$(dirname "$$target")"; \
 	ln -s "$$expected" "$$target"
 
-${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/.agents/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
+${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/harness/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
 	${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli

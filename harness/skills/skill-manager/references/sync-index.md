@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Rebuild `.agents/skills/README.md` deterministically from skill frontmatter. The README is a derived
+Rebuild `<skills-root>/README.md` deterministically from skill frontmatter. The README is a derived
 index, never an independent source of metadata.
 
 ## Procedure
 
-1. Enumerate every immediate directory under `.agents/skills/` that contains a `SKILL.md`, including
+1. Enumerate every immediate directory under `<skills-root>/` that contains a `SKILL.md`, including
    a newly created untracked skill. Ignore untracked or gitignored runtime directories without one;
    report a tracked skill directory whose `SKILL.md` is missing.
 2. Read `name`, the complete folded `description`, and `metadata.category`.
@@ -17,7 +17,9 @@ index, never an independent source of metadata.
 5. Escape a Markdown table pipe in the extracted sentence.
 6. Group entries in `Dev`, `Support`, `Product`, `Ops`, then `Uncategorized` order.
 7. Omit empty sections and sort slugs bytewise within every section.
-8. Rewrite the complete README from the template below.
+8. Rewrite the complete README from the template below, using `User Skills` and
+   `user-scoped agent skills` for `harness/skills/`, or `Project Skills` and
+   `repository-scoped agent skills` for `.agents/skills/`.
 9. Format the README with Prettier.
 10. Report added, removed, moved, and invalid entries.
 11. Run the procedure again and require byte-identical output.
@@ -28,9 +30,9 @@ index generation must not hide it.
 ## Template
 
 ```markdown
-# Shared Skills
+# <scope-title>
 
-This directory is the single source of truth for reusable agent skills.
+This directory is the canonical source for <scope-description>.
 
 ## Conventions
 
@@ -55,7 +57,7 @@ not calculate or preserve manual padding.
 After the first generation and formatting:
 
 ```bash
-shasum -a 256 .agents/skills/README.md > /tmp/skills-index.sha256
+shasum -a 256 <skills-root>/README.md > /tmp/skills-index.sha256
 ```
 
 Run sync again, then:

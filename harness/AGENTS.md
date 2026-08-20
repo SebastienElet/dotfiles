@@ -28,7 +28,7 @@ Before implementing any request:
 - Never record a workaround for a defect in code we own as intended behavior: fix it, or
   open a ticket and reference it.
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
-  field, put `.agents/skills/merge-verdict/references/failure-classes.md` to the design; the
+  field, put `harness/skills/merge-verdict/references/failure-classes.md` to the design; the
   failure-path test ships in the same commit.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.

@@ -26,6 +26,11 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: skill-manager
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
 external:
   roots:
     - agent: codex
@@ -293,21 +298,21 @@ resources:
     agent: claude
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .claude/skills }
   - id: cursor-user-skills
     kind: skills
     agent: cursor
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .cursor/skills }
   - id: codex-user-skills
     kind: skills
     agent: codex
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .agents/skills }
   - id: claude-project-skills
     kind: skills

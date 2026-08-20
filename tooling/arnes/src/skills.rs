@@ -99,15 +99,15 @@ fn diagnose_root(
     manifest: &Manifest,
     resource: &SkillProjection<'_>,
 ) -> Vec<Diagnostic> {
-    let skills = manifest.declared_skills().collect::<Vec<_>>();
-    let declared = skills
-        .iter()
-        .map(|skill| resource.destination.join(*skill))
-        .collect::<HashSet<PathBuf>>();
-    let mut diagnostics = match projection::root(roots, resource, &skills) {
-        Ok(diagnostics) => diagnostics,
+    let (diagnostics, skills) = match projection::root(roots, resource) {
+        Ok(result) => result,
         Err(diagnostic) => return vec![diagnostic],
     };
+    let declared = skills
+        .iter()
+        .map(|skill| resource.destination.join(skill))
+        .collect::<HashSet<PathBuf>>();
+    let mut diagnostics = diagnostics;
     diagnostics.extend(discovery::unmanaged(
         roots,
         resource.agent,
@@ -120,7 +120,13 @@ fn diagnose_root(
 }
 
 fn declaration_supported(resource: &SkillProjection<'_>) -> bool {
-    resource.source == Path::new(".agents/skills")
+    matches!(
+        (resource.scope, resource.layout, resource.source),
+        (Scope::User, SkillLayout::Leaves, source) if source == Path::new("harness/skills")
+    ) || matches!(
+        (resource.scope, resource.layout, resource.source),
+        (Scope::Project, SkillLayout::Root, source) if source == Path::new(".agents/skills")
+    )
 }
 
 fn unsupported(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {

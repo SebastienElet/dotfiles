@@ -63,7 +63,7 @@ ici sont les dates d'auteur.
 | [025](025-agents-md-source-unique.md) | `AGENTS.md` comme source unique agent-agnostique | 2026-02 |
 | [026](026-agents-cli-plutot-que-copilot.md) | Agents CLI plutôt que Copilot | 2025-10 |
 | [027](027-soul-et-user-separes.md) | `SOUL.md` et `USER.md` séparés de `AGENTS.md` | 2026-08 |
-| [028](028-skills-ssot.md) | `.agents/skills/` comme source unique des skills | 2026-05 |
+| [028](028-skills-ssot.md) | `.agents/skills/` comme source unique des skills projet | 2026-05 |
 | [029](029-pas-de-skills-tierces.md) | Skills tierces refusées par défaut | 2026-05 |
 | [030](030-brain-memoire-durable.md) | `~/Brain` comme mémoire durable partagée | 2026-07 |
 | [031](031-mcp-en-conteneurs-nommes.md) | MCP en conteneurs Docker nommés | 2026-08 |
@@ -75,3 +75,4 @@ ici sont les dates d'auteur.
 | [037](037-commentaire-absent-par-defaut.md) | Commentaire absent par défaut, comptabilisé dans le compte rendu | 2026-08 |
 | [038](038-frontieres-home-harness-tooling.md) | Frontières `home/`, `harness/` et `tooling/` | 2026-08 |
 | [039](039-codegraph-recuperation-structurelle.md) | CodeGraph à la demande pour la récupération structurelle | 2026-08 |
+| [040](040-skills-user-dans-harness.md) | Skills user dans `harness/` | 2026-08 |

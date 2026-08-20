@@ -2,9 +2,9 @@
 
 ## Scope
 
-- `/skill-manager doctor` audits every directory under `.agents/skills/`.
+- `/skill-manager doctor` audits every directory under the selected `<skills-root>`.
 - `/skill-manager doctor <name>` audits one skill.
-- `.agents/skills/README.md` is not a skill directory.
+- `<skills-root>/README.md` is not a skill directory.
 
 Doctor is read-only. It reports findings for a later `fix` operation.
 
@@ -26,7 +26,7 @@ Doctor is read-only. It reports findings for a later `fix` operation.
 
 ## Standard checks
 
-When `skills-ref` exists, run `skills-ref validate ./.agents/skills/<slug>` and preserve its full
+When `skills-ref` exists, run `skills-ref validate ./<skills-root>/<slug>` and preserve its full
 failure. When absent, report `Standard validation: unavailable (skills-ref not installed)` and apply
 these checks manually:
 
@@ -67,6 +67,8 @@ these checks manually:
 - same-topic scoped sibling references have explicit conditional routing in `SKILL.md`;
 - identical cross-scope content is not duplicated;
 - the repository adapters still resolve to `../.agents/skills`;
+- the slug does not exist in the other canonical collection;
+- a user skill's declared installations resolve back to `harness/skills/<slug>`;
 - absence of an activation router is never a finding;
 - a router rule is WARN unless its repeated behavioral evidence is identified.
 

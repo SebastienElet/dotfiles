@@ -11,7 +11,7 @@ fn relative_symlinks_to_declared_sources_are_managed() {
     let fixture = configured_fixture();
     let link = fixture.home().join(".claude/skills/alpha");
     fs::remove_file(&link).unwrap();
-    link_home_relative(&fixture, ".agents/skills/alpha", ".claude/skills/alpha");
+    link_home_relative(&fixture, "harness/skills/alpha", ".claude/skills/alpha");
 
     let (code, stdout, _) = run(
         &fixture,
@@ -27,7 +27,7 @@ fn relative_symlinks_to_declared_sources_are_managed() {
 #[test]
 fn source_components_cannot_escape_the_repository() {
     let fixture = configured_fixture();
-    let source = fixture.repository().join(".agents/skills/alpha");
+    let source = fixture.repository().join("harness/skills/alpha");
     let outside = fixture.repository().parent().unwrap().join("outside-alpha");
     fs::rename(&source, &outside).unwrap();
     symlink("../../../outside-alpha", source).unwrap();
@@ -64,7 +64,7 @@ fn destination_components_cannot_escape_home_or_trigger_outside_discovery() {
 #[test]
 fn referenced_resource_symlinks_cannot_escape_the_effective_skill() {
     let fixture = configured_fixture();
-    let references = fixture.repository().join(".agents/skills/alpha/references");
+    let references = fixture.repository().join("harness/skills/alpha/references");
     fs::remove_dir_all(&references).unwrap();
     let outside = fixture.repository().join("outside-references");
     fs::create_dir(&outside).unwrap();
@@ -83,9 +83,9 @@ fn referenced_resource_symlinks_cannot_escape_the_effective_skill() {
 #[test]
 fn non_local_markdown_targets_do_not_create_resource_findings() {
     let fixture = configured_fixture();
-    fixture.write_repository(".agents/skills/alpha/guide(with-parentheses).md", "guide\n");
+    fixture.write_repository("harness/skills/alpha/guide(with-parentheses).md", "guide\n");
     fixture.write_repository(
-        ".agents/skills/alpha/SKILL.md",
+        "harness/skills/alpha/SKILL.md",
         "[web](https://example.com/missing.md) [anchor](#missing) \
          [absolute](/missing.md) [local](guide(with-parentheses).md) plain-missing.md\n\
          ```sh\nscripts/fenced-example.sh\n```\n",
@@ -105,7 +105,7 @@ fn undeclared_aliases_of_managed_sources_remain_unmanaged() {
     let fixture = configured_fixture();
     let destination = fixture.home().join(".cursor/skills/plugin-owned");
     symlink(
-        fixture.repository().join(".agents/skills/alpha"),
+        fixture.repository().join("harness/skills/alpha"),
         &destination,
     )
     .unwrap();

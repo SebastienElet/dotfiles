@@ -33,23 +33,24 @@ fn agent_and_scope_filters_isolate_skill_projections() {
     assert_eq!(
         stdout
             .lines()
-            .filter(|line| line.trim_start().starts_with("HEALTHY alpha"))
+            .filter(|line| line.trim_start().starts_with("HEALTHY project-alpha"))
             .count(),
         1
     );
-    assert_eq!(
+    assert!(
         stdout
             .lines()
-            .filter(|line| line.contains("DRIFT beta · managed"))
-            .count(),
-        1
+            .any(|line| line.contains("DRIFT broken managed cursor project skill beta")),
+        "{stdout}"
     );
+    assert!(!stdout.lines().any(|line| line.contains("HEALTHY alpha")));
     assert!(stdout.starts_with("Skills · project scope · cursor agent"));
 
     let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--scope", "user"]);
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.starts_with("Skills · user scope · 3 agents"));
     assert!(!stdout.contains(" project "));
+    assert!(!stdout.contains("project-alpha"));
 }
 
 #[test]
@@ -67,7 +68,7 @@ fn undeclared_and_unsupported_projections_are_reported() {
     fixture.write_home(
         ".arnes.yaml",
         &MANIFEST.replacen(
-            "source: { root: repository, path: .agents/skills }",
+            "source: { root: repository, path: harness/skills }",
             "source: { root: repository, path: .agents/other }",
             1,
         ),

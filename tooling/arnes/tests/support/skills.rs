@@ -23,7 +23,7 @@ resources:
     agent: claude
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .claude/skills }
   - id: claude-project-skills
     kind: skills
@@ -37,7 +37,7 @@ resources:
     agent: cursor
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .cursor/skills }
   - id: cursor-project-skills
     kind: skills
@@ -51,7 +51,7 @@ resources:
     agent: codex
     scope: user
     layout: leaves
-    source: { root: repository, path: .agents/skills }
+    source: { root: repository, path: harness/skills }
     destination: { root: home, path: .agents/skills }
   - id: codex-project-skills
     kind: skills
@@ -66,10 +66,11 @@ pub fn configured_fixture() -> Fixture {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", MANIFEST);
     fixture.write_repository(
-        ".agents/skills/alpha/SKILL.md",
+        "harness/skills/alpha/SKILL.md",
         "# Alpha\n[guide](references/guide.md)\n",
     );
-    fixture.write_repository(".agents/skills/alpha/references/guide.md", "guide\n");
+    fixture.write_repository("harness/skills/alpha/references/guide.md", "guide\n");
+    fixture.write_repository(".agents/skills/project-alpha/SKILL.md", "# Project Alpha\n");
     fixture.write_repository(
         ".agents/skills/beta/SKILL.md",
         "# Beta\n[missing](references/missing.md)\n",
@@ -79,7 +80,7 @@ pub fn configured_fixture() -> Fixture {
         ".cursor/skills/alpha",
         ".agents/skills/alpha",
     ] {
-        link_home(&fixture, ".agents/skills/alpha", destination);
+        link_home(&fixture, "harness/skills/alpha", destination);
     }
     for destination in [".claude/skills", ".cursor/skills", ".codex/skills"] {
         link_project(&fixture, destination);

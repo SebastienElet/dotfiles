@@ -8,6 +8,11 @@
       "reason": "Creating a skill is a skill-manager operation"
     },
     {
+      "query": "Install a reusable personal skill in my agent harness",
+      "should_activate": true,
+      "reason": "User-scoped skill creation and installation are skill-manager operations"
+    },
+    {
       "query": "Change one frontmatter field in the scripts skill",
       "should_activate": true,
       "reason": "Any SKILL.md edit must use skill-manager"
