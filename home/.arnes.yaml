@@ -16,7 +16,12 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: merge-verdict
+  - slug: pr-verdict
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: pr-fix
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }

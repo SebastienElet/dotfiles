@@ -1,7 +1,7 @@
-# Failure Classes
+# Failure classes
 
 Ten questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
-answer is a sentence about *this* diff. Record one of three outcomes per class.
+answer is a sentence about _this_ diff. Record one of three outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
 - **holds because `<evidence>`** — name the constraint, the transaction, the schema, the test.

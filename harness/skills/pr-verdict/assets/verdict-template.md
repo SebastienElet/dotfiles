@@ -1,4 +1,4 @@
-# Verdict template
+# PR verdict template
 
 Fill this into `verdict.md`, then publish with the commands in `references/forges.md`. A slot marked
 REQUIRED that cannot be filled means the phase it belongs to was not done — go back to it instead of

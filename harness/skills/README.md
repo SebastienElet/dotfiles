@@ -15,7 +15,8 @@ This directory is the canonical source for user-scoped agent skills.
 | ------------------ | ---------------------------------------------------------------------------------------------------- |
 | `codegraph`        | Explore large repositories structurally with CodeGraph.                                              |
 | `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
-| `merge-verdict`    | Deliver a merge verdict on an open pull request, yours or another author's.                          |
+| `pr-fix`           | Repair an open pull request after an independent merge review.                                       |
+| `pr-verdict`       | Deliver a merge verdict on an open pull request, yours or another author's.                          |
 
 ## Product
 

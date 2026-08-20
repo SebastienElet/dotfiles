@@ -1,5 +1,5 @@
 ---
-name: merge-verdict
+name: pr-verdict
 description: >
   Deliver a merge verdict on an open pull request, yours or another author's. Use when asked to
   review a PR, whether it is safe to merge or approve, for a blocking review, or a re-review after
@@ -12,7 +12,7 @@ metadata:
   category: dev
 ---
 
-# Merge Verdict
+# PR Verdict
 
 ## Overview
 
@@ -31,7 +31,7 @@ a blocking review on your own PR.
 
 ## Usage
 
-`/merge-verdict <pr-number|pr-url>` — the forge is detected from `git remote get-url origin`.
+`/pr-verdict <pr-number|pr-url>` — the forge is detected from `git remote get-url origin`.
 
 Typical cases: "is #1042 safe to merge?" (phase 1 finds the branch stacked and the shown diff twice
 its real size), "review this PR before I approve it" (phase 3 turns a vague unease into a named
@@ -39,9 +39,12 @@ mechanism, or drops it), "they pushed the fixes, re-review" (phase 6 finds the p
 sees a new SHA, and publishes a second verdict rather than editing the first).
 
 Run the six phases in order; phase 4 precedes phase 5 because a verdict without an executed barrier
-is an opinion. This skill and its references are English; the published verdict follows the language
-of the PR. Publishing (phase 6) is outward-facing and visible to the team — ask for confirmation
-first, unless the request explicitly says to post directly.
+is an opinion. When `pr-fix` composes this skill before changing the head, stop after phase 5 and
+return the unpublished verdict to that workflow: opening a ticket or publishing a verdict for a
+head about to be repaired would create stale external state. This skill and its references are
+English; the published verdict follows the language of the PR. Publishing (phase 6) is
+outward-facing and visible to the team — ask for confirmation first, unless the request explicitly
+says to post directly.
 
 ## Steps
 
@@ -82,8 +85,10 @@ first, unless the request explicitly says to post directly.
    bounded; a mechanism that can lose or corrupt data blocks even when the author disagrees. A
    style, naming or structure preference never blocks: label it non-blocking, or drop it.
 
-6. **Trace and publish.** Open or reuse a fix ticket for blocking defects, and link the initial
-   verdict if one exists. Never open a ticket solely to request or record a re-review: the new
+6. **Trace and publish.** When running inside the pre-repair pass of `pr-fix`, return the phase 5
+   verdict without a ticket or publication and let that workflow continue. Otherwise, open or reuse
+   a fix ticket for blocking defects, and link the initial verdict if one exists. Never open a
+   ticket solely to request or record a re-review: the new
    head-specific verdict comment is that record. Write one general comment from
    `assets/verdict-template.md`, prefixed with the idempotency marker
    `<!-- merge-verdict:<pr>:<head-sha-12> -->` — not a rain of inline comments. Search the existing
@@ -105,6 +110,9 @@ first, unless the request explicitly says to post directly.
 - **The comment body passed inline** — apostrophes and backticks in a verdict break shell quoting
   and silently truncate the comment. Always pass the body through a file (see
   `references/forges.md`).
+- **Renaming the visible command marker** — existing comments become invisible to the duplicate
+  guard. Keep the historical `merge-verdict` marker as the stable external protocol key even though
+  the skill is now invoked as `pr-verdict`.
 - **A stale marker updated instead of superseded** — the SHA in the marker going stale on the next
   push is the point. Same `<pr>:<sha>` → update that comment; different SHA → publish a new verdict
   and leave the old one as the record of what was judged.
@@ -135,6 +143,7 @@ first, unless the request explicitly says to post directly.
 - Never publish two verdicts for the same `<pr>:<sha>`; update the existing comment instead.
 - Never sweep the failure classes on a head you wrote in this session from the context that wrote it.
 - Never create a ticket solely to request, schedule or record a re-review.
+- Never create a ticket or publish the pre-repair verdict when `pr-fix` composes phases 1 through 5.
 - Never publish without confirmation, unless the request explicitly says to post directly.
 
 ## References

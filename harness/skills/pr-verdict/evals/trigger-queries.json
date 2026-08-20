@@ -1,7 +1,12 @@
 {
-  "skill": "merge-verdict",
+  "skill": "pr-verdict",
   "version": "1.0",
   "queries": [
+    {
+      "query": "/pr-verdict 1042",
+      "should_activate": true,
+      "reason": "Explicit invocation of the non-mutating pull request verdict"
+    },
     {
       "query": "Review this PR: https://github.com/acme/api/pull/1042",
       "should_activate": true,
@@ -36,6 +41,11 @@
       "query": "Ma PR est ouverte, dis-moi si elle est fusionnable",
       "should_activate": true,
       "reason": "Own pull request, but open: the verdict is unchanged, only its enforcement differs"
+    },
+    {
+      "query": "/pr-fix 1042",
+      "should_activate": false,
+      "reason": "An explicit repair request belongs to pr-fix, which composes this skill internally"
     },
     {
       "query": "Relis mon diff avant que je commite",

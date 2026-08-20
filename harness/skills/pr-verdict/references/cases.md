@@ -1,4 +1,4 @@
-# Cases
+# Verdict cases
 
 Two end-to-end cases. Each names the PR to point the skill at, the verdict it must reach, and the
 criteria that decide pass or fail. They are assigned to different forges so that both command sets in

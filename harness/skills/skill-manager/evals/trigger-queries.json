@@ -40,7 +40,7 @@
     {
       "query": "Review whether this pull request is safe to merge",
       "should_activate": false,
-      "reason": "A normal pull request review belongs to merge-verdict"
+      "reason": "A normal pull request review belongs to pr-verdict"
     },
     {
       "query": "Correct a typo in the repository README",

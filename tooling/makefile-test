@@ -102,21 +102,27 @@ env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository"
 
 case_root=$test_root/user_skills
 test_home=$case_root/home
-mkdir -p "$test_home"
+mkdir -p "$test_home/.claude/skills" "$test_home/.cursor/skills" "$test_home/.agents/skills"
+ln -s "$repository/harness/skills/merge-verdict" "$test_home/.claude/skills/merge-verdict"
+ln -s "$repository/harness/skills/merge-verdict" "$test_home/.cursor/skills/merge-verdict"
+ln -s "$repository/harness/skills/merge-verdict" "$test_home/.agents/skills/merge-verdict"
 for specification in \
   ".claude/skills/codegraph codegraph" \
   ".claude/skills/enforcement-code enforcement-code" \
   ".claude/skills/handoff handoff" \
-  ".claude/skills/merge-verdict merge-verdict" \
+  ".claude/skills/pr-fix pr-fix" \
+  ".claude/skills/pr-verdict pr-verdict" \
   ".claude/skills/skill-manager skill-manager" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
-  ".cursor/skills/merge-verdict merge-verdict" \
+  ".cursor/skills/pr-fix pr-fix" \
+  ".cursor/skills/pr-verdict pr-verdict" \
   ".cursor/skills/skill-manager skill-manager" \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
   ".agents/skills/handoff handoff" \
-  ".agents/skills/merge-verdict merge-verdict" \
+  ".agents/skills/pr-fix pr-fix" \
+  ".agents/skills/pr-verdict pr-verdict" \
   ".agents/skills/skill-manager skill-manager"; do
   read -r relative_destination slug <<<"$specification"
   destination=$test_home/$relative_destination
@@ -124,6 +130,62 @@ for specification in \
   assert_link "$destination" "$repository/harness/skills/$slug"
   [[ ! -e $repository/.agents/skills/$slug ]] || fail "$slug remains in the project skill collection"
 done
+for relative_destination in \
+  ".claude/skills/merge-verdict" \
+  ".cursor/skills/merge-verdict" \
+  ".agents/skills/merge-verdict"; do
+  [[ ! -e $test_home/$relative_destination && ! -L $test_home/$relative_destination ]] || fail "$relative_destination was not migrated"
+done
+
+case_root=$test_root/user_skill_migration_refuses_unexpected_link
+test_home=$case_root/home
+legacy_skill=$test_home/.agents/skills/merge-verdict
+new_skill=$test_home/.agents/skills/pr-verdict
+unexpected_source=$case_root/unexpected
+mkdir -p "$test_home/.agents/skills" "$unexpected_source"
+ln -s "$unexpected_source" "$legacy_skill"
+if env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$new_skill"; then
+  fail "PR skill migration accepted an unexpected legacy link"
+fi
+assert_link "$legacy_skill" "$unexpected_source"
+[[ ! -e $new_skill && ! -L $new_skill ]] || fail "PR verdict link exists after refused migration"
+
+case_root=$test_root/user_skill_migration_refuses_file
+test_home=$case_root/home
+legacy_skill=$test_home/.agents/skills/merge-verdict
+new_skill=$test_home/.agents/skills/pr-verdict
+mkdir -p "$test_home/.agents/skills"
+printf 'keep\n' >"$legacy_skill"
+if env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$new_skill"; then
+  fail "PR skill migration accepted a legacy file"
+fi
+[[ $(cat "$legacy_skill") == keep ]] || fail "legacy PR skill file changed"
+[[ ! -e $new_skill && ! -L $new_skill ]] || fail "PR verdict link exists after refused file migration"
+
+case_root=$test_root/user_skill_migration_refuses_new_link
+test_home=$case_root/home
+legacy_skill=$test_home/.agents/skills/merge-verdict
+new_skill=$test_home/.agents/skills/pr-verdict
+unexpected_source=$case_root/unexpected
+mkdir -p "$test_home/.agents/skills" "$unexpected_source"
+ln -s "$repository/harness/skills/merge-verdict" "$legacy_skill"
+ln -s "$unexpected_source" "$new_skill"
+if env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$new_skill"; then
+  fail "PR skill migration accepted an unexpected new link"
+fi
+assert_link "$legacy_skill" "$repository/harness/skills/merge-verdict"
+assert_link "$new_skill" "$unexpected_source"
+
+case_root=$test_root/user_skill_migration_removes_legacy_alias
+test_home=$case_root/home
+legacy_skill=$test_home/.agents/skills/merge-verdict
+new_skill=$test_home/.agents/skills/pr-verdict
+mkdir -p "$test_home/.agents/skills"
+ln -s "$repository/harness/skills/merge-verdict" "$legacy_skill"
+ln -s "$repository/harness/skills/pr-verdict" "$new_skill"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$new_skill"
+[[ ! -e $legacy_skill && ! -L $legacy_skill ]] || fail "legacy PR skill alias remains beside pr-verdict"
+assert_link "$new_skill" "$repository/harness/skills/pr-verdict"
 
 case_root=$test_root/daily_routine_config
 test_home=$case_root/home

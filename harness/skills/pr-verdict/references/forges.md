@@ -1,4 +1,4 @@
-# Forges
+# PR forges
 
 Read this before the first CLI call of phase 1.
 
@@ -17,17 +17,17 @@ about. Look for it before falling back here.
 
 ## Command parity
 
-| Step | GitHub (`gh`) | Bitbucket (`bkt`) |
-| --- | --- | --- |
-| Metadata | `gh pr view <n> --json headRefOid,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json` |
-| Head SHA | `.headRefOid` | Cloud `.pull_request.source.commit.hash`, DC `.fromRef.latestCommit` — confirm the path against the actual payload |
-| Fetch the head | `gh pr checkout <n>` | `bkt pr checkout <n>` |
-| CI state | `gh pr checks <n>` | `bkt pr checks <n>` |
-| Diff | `gh pr diff <n>` | `bkt pr diff <n>` |
-| Existing comments | `gh pr view <n> --json comments` | `bkt pr comments <n> --json` |
-| Publish | `gh pr comment <n> --body-file verdict.md` | `bkt pr comment <n> --text "$(cat verdict.md)"` |
-| Update | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md` | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -` |
-| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR | no reliable equivalent |
+| Step                | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Metadata            | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                           |
+| Head SHA            | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash`, DC `.fromRef.latestCommit` — confirm the path against the actual payload |
+| Fetch the head      | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                              |
+| CI state            | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                |
+| Diff                | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                  |
+| Existing comments   | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                       |
+| Publish             | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                    |
+| Update              | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                            |
+| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                             |
 
 `bkt` covers both Bitbucket Cloud and Data Center; the two differ on JSON shape and on some flags
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
@@ -47,6 +47,25 @@ test "$(git rev-parse HEAD)" = "$(git rev-parse a1b2c3d4e5f6)" || echo "head mov
 
 If the SHA is gone from the local objects, the head was force-pushed while you were reading it. Stop
 and re-anchor: everything measured so far belongs to a commit nobody will merge.
+
+## Resolving the repair target
+
+`pr-fix` pushes to the PR source, which is not necessarily `origin`. Parse the same metadata payload
+used for the head anchor and require every source value before editing:
+
+- GitHub: `.headRepository.nameWithOwner`, `.headRefName` and `.headRefOid`.
+  `.maintainerCanModify` describes the author's fork setting, not the authenticated token's complete
+  permission set; a normal push is the permission check.
+- Bitbucket Cloud: `.pull_request.source.repository.full_name`,
+  `.pull_request.source.branch.name` and `.pull_request.source.commit.hash`.
+- Bitbucket Data Center: `.fromRef.repository.project.key`, `.fromRef.repository.slug`,
+  `.fromRef.id` and `.fromRef.latestCommit`.
+
+Validate the branch with `git check-ref-format --branch`, quote every parsed value, and obtain the
+source repository's clone URL from the same forge payload or repository endpoint. Add a dedicated
+temporary remote and push `HEAD` normally to that source branch. An absent value, invalid ref,
+changed SHA, unavailable clone URL or rejected push stops the repair; never fall back to `origin` or
+a force option.
 
 ## Finding the real base
 
@@ -98,7 +117,7 @@ in place; it is the record of what was judged on the superseded head.
 
 ## The two forges are not equivalent on enforcement
 
-On GitHub, *changes required* is a repository state: `gh pr review --request-changes` blocks the
+On GitHub, _changes required_ is a repository state: `gh pr review --request-changes` blocks the
 merge button until it is dismissed, so the comment text is documentation of a block that already
 exists.
 

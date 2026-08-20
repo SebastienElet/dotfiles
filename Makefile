@@ -11,6 +11,15 @@ SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
+define MIGRATE_MERGE_VERDICT_SKILL
+set -eu; \
+new_skill="$(1)/pr-verdict"; \
+legacy_skill="$(1)/merge-verdict"; \
+if [ -L "$$new_skill" ]; then test "$$(readlink "$$new_skill")" = "${DOTFILES_PATH}/harness/skills/pr-verdict"; else test ! -e "$$new_skill"; fi; \
+if [ -L "$$legacy_skill" ]; then test "$$(readlink "$$legacy_skill")" = "${DOTFILES_PATH}/harness/skills/merge-verdict"; else test ! -e "$$legacy_skill"; fi; \
+if [ ! -L "$$new_skill" ]; then ln -s "${DOTFILES_PATH}/harness/skills/pr-verdict" "$$new_skill"; fi; \
+if [ -L "$$legacy_skill" ]; then unlink "$$legacy_skill"; fi
+endef
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 # Avoid Homebrew confirmation prompts during setup.
@@ -368,7 +377,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/merge-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
@@ -379,8 +388,13 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/en
 	${CREATE_SYMLINK}
 ~/.cursor/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.cursor/skills
 	${CREATE_SYMLINK}
-~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.cursor/skills
+~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
 	${CREATE_SYMLINK}
+.PHONY: cursor-pr-verdict-migration
+cursor-pr-verdict-migration: | ~/.cursor/skills
+	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.cursor/skills)
+~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.cursor/skills cursor-pr-verdict-migration
+	test -L "$@" && test "$$(readlink "$@")" = "$<"
 ~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
 	${CREATE_SYMLINK}
 
@@ -389,7 +403,7 @@ cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/linear-issue-spec ~/.claude/skills/merge-verdict ~/.claude/skills/skill-manager claude-code-measurement-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/linear-issue-spec ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -420,8 +434,13 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
 # review, which is never this one.
-~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.claude/skills
+~/.claude/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.claude/skills
 	${CREATE_SYMLINK}
+.PHONY: claude-pr-verdict-migration
+claude-pr-verdict-migration: | ~/.claude/skills
+	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.claude/skills)
+~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills claude-pr-verdict-migration
+	test -L "$@" && test "$$(readlink "$@")" = "$<"
 ~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
 	${CREATE_SYMLINK}
 
@@ -442,7 +461,7 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/merge-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -463,8 +482,13 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 ~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.agents/skills
 	${CREATE_SYMLINK}
-~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/harness/skills/merge-verdict | ~/.agents/skills
+~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
 	${CREATE_SYMLINK}
+.PHONY: codex-pr-verdict-migration
+codex-pr-verdict-migration: | ~/.agents/skills
+	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.agents/skills)
+~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills codex-pr-verdict-migration
+	test -L "$@" && test "$$(readlink "$@")" = "$<"
 ~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
 	${CREATE_SYMLINK}
 
