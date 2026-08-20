@@ -1,10 +1,11 @@
 ---
-description: Analyse les retours de revue et les correctifs poussés par les relecteurs sur mes PR, puis en déduit les correctifs de harnais
+description: Produit un relevé factuel et traçable des problèmes relevés en revue et des correctifs poussés par les relecteurs sur mes PR
 ---
 
-Tu analyses les retours reçus sur mes pull requests pour en tirer des correctifs de harnais.
-Objectif : réduire le volume de retours sur les PR suivantes. Lecture seule — tu proposes, tu
-n'édites rien.
+Tu analyses les retours reçus sur mes pull requests et les correctifs poussés par les relecteurs.
+Tu produis un relevé condensé, structuré et transmissible tel quel à l'agent qui améliore le
+harnais. Tu établis les problèmes observés et leurs preuves ; tu ne proposes aucune amélioration.
+Lecture seule — tu n'édites rien.
 
 ## Portée
 
@@ -43,8 +44,10 @@ bkt api "/repositories/<slug>/pullrequests/<id>/activity?pagelen=50" --json --jq
 gh pr view <id> --json commits --jq '.commits[] | "\(.committedDate) | \(.authors[0] | if (.login // "") == "" then .name else .login end) | \(.oid[0:12]) | \(.messageHeadline)"'
 ```
 
-Toute poussée par quelqu'un d'autre que moi, après ma dernière poussée, est un **correctif de
-relecteur**. C'est la source la plus riche : ce sont des retours qui n'ont jamais été écrits.
+Une poussée par quelqu'un d'autre que moi est un **correctif de relecteur potentiel**. Ne la
+retiens qu'après avoir vérifié son delta : une fusion de la branche cible, un rebase ou une mise à
+jour automatique n'est pas un correctif. Ne te limite pas aux poussées postérieures à ma dernière
+poussée ; un correctif peut précéder une reprise de ma part.
 
 **2. Le delta correctif** — ce que le relecteur a ajouté par-dessus mon travail.
 L'activité ne liste pas tous mes pushes, et une branche absorbe des fusions de la branche
@@ -68,7 +71,9 @@ gh api "repos/<slug>/compare/<borne>...<sien>" --jq '.files[] | "\(.status) +\(.
 gh api "repos/<slug>/compare/<borne>...<sien>" --jq '.files[] | select(.filename == "<fichier>") | .patch'
 ```
 
-Lis ce diff en entier : chaque hunk est un manque de la conception initiale.
+Lis ce diff en entier. Un hunk ne devient un constat que s'il corrige ou prévient un comportement
+identifiable ; regroupements de commits, formatage mécanique et synchronisations de branche ne
+sont pas des problèmes de conception.
 
 **3. Les commentaires et les tâches** :
 
@@ -79,87 +84,66 @@ gh pr view <id> --json comments,reviews --jq '(.comments[], (.reviews[] | select
 gh api "repos/<slug>/pulls/<id>/comments" --jq '.[] | "\(.user.login) | \(.path):\(.line) | \(.body)"'
 ```
 
-Trois émetteurs à distinguer, ne les mélange pas :
+Trois émetteurs à distinguer, sans les mélanger :
 
-- **humain** — un relecteur ; poids maximal ;
-- **revue IA** (posté par la CI, souvent sous mon compte) ; poids moyen, souvent bruyant ;
+- **humain** — un relecteur ;
+- **revue IA** (postée par la CI, souvent sous mon compte) ;
 - **moi-même** (notes de rebase, auto-commentaires) ; à écarter.
 
-## Analyse, par constat
+## Constitution des constats
 
-Pour chaque hunk correctif et chaque commentaire retenu, réponds à **deux** questions. La
-seconde est celle qui produit le correctif de harnais ; un constat sans elle n'a aucune valeur.
+Transforme chaque commentaire retenu et chaque hunk correctif en un problème formulé en termes de
+comportement, jamais en termes de solution. Un constat répond uniquement à ces questions :
 
-1. **Qu'est-ce qui manquait ?** Une phrase, en termes de comportement, pas de diff.
-2. **Pourquoi était-ce absent du développement initial ?** Une catégorie, et une seule :
+1. **Qu'a relevé ou corrigé le relecteur ?** Une phrase factuelle.
+2. **Quelle preuve l'établit ?** Lien du commentaire ou SHA, fichier et résumé du changement.
+3. **Quelle suite est observable ?** Corrigé par moi, corrigé par le relecteur, écarté explicitement,
+   resté sans suite, ou indéterminé.
+4. **Quel impact a été observé ?** Seulement s'il est explicite dans la revue ou démontré par le
+   correctif ; sinon `non établi`.
 
-   | Catégorie | Signification | Correctif visé |
-   | --- | --- | --- |
-   | `non-appliquée` | La règle existait, écrite, et n'a pas été suivie | Un contrôle automatique |
-   | `non-chargée` | La règle existait, mais dans une couche jamais lue sur ce chemin | Un déplacement de couche |
-   | `inconnue` | Aucune règle n'existait | Une règle neuve, à la couche la moins chère |
-   | `angle-mort` | Cas limite non pensé : erreur, nul, vide, délai, concurrence, multiplicité | Une étape de skill ou un test canonique |
-   | `arbitrage` | Divergence de jugement légitime, pas une erreur | Rien. Le noter et passer |
-
-   Vérifie avant de classer : `grep` la règle supposée dans `AGENTS.md`, `.agents/rules/`,
-   `.agents/skills/`, `harness/skills/`, `MEMORY.md`. Une règle que tu supposes existante sans l'avoir trouvée est
-   `inconnue`, pas `non-appliquée`.
-
-## Correctifs de harnais — échelle
-
-Un constat récurrent mérite le **barreau le plus bas qui tient**, jamais plus haut :
-
-1. **Un contrôle automatique** — règle de linter, hook pre-commit, étape CI, contrainte de
-   schéma, type. Le seul barreau qui ne dépend pas de la mémoire d'un agent. Vise-le d'abord.
-2. **Une règle `.agents/rules/*.mdc` à glob étroit** — si le manque ne concerne qu'une famille de
-   fichiers.
-3. **Une étape dans un skill existant** — si le manque est procédural et que le skill est déjà
-   invoqué sur ce chemin. Ne crée pas un skill neuf pour une étape.
-4. **Une ligne dans `AGENTS.md`** — seulement si la règle s'applique partout et à plus de 80 % des
-   tours. Le budget de lignes est celui que fixe le dépôt : toute ligne ajoutée en chasse une
-   autre, dis laquelle.
-5. **Une entrée `MEMORY.md`** — pour un piège découvert, non dérivable du code. Descriptif, pas
-   prescriptif.
-
-Une seule proposition par constat. Si deux barreaux tiennent, prends le plus bas et n'évoque pas
-l'autre.
-
-## Seuil de récurrence
-
-Ne propose un changement durable que si le constat apparaît **au moins deux fois, sur deux PR
-distinctes**, ou une seule fois avec conséquence sévère (perte de données, faille, donnée
-personnelle, contrat cassé). Le reste va dans une liste « vu une fois » sans proposition — un
-harnais gonflé par des cas isolés coûte plus qu'il ne rapporte.
+Déduplique un commentaire et le commit qui le corrige en un seul constat, tout en conservant les
+deux preuves. Regroupe un même problème apparu sur plusieurs PR, sans effacer ses occurrences. Ne
+déduis ni la cause du développement initial, ni la règle qui aurait manqué, ni le changement de
+harnais à effectuer. Une interprétation non prouvée va dans `Incertitude`, jamais dans le constat.
 
 ## Sortie
 
 ```
-## Correctifs de relecteur, par PR
-- PR <id> — <relecteur> a poussé <n> hunk(s) après mon dernier SHA
-  - <fichier> — <ce qui manquait> → `<catégorie>`
+# Retours de review — <dépôt>
+
+## Périmètre
+| PR | Titre | Relecteur(s) | Fusion | Sources examinées |
+| --- | --- | --- | --- | --- |
+| <id + lien> | <titre> | <identités> | <date, auteur de la fusion> | <n commentaires, n tâches, n commits tiers> |
 ```
 
 ```
-## Thèmes récurrents
-| # | Thème | Occurrences (PR) | Catégorie dominante |
+## Constats consolidés
+
+### C01 — <problème formulé en comportement>
+- Occurrences : <PR concernées>
+- Preuves :
+  - <PR + lien> · <commentaire humain|revue IA> · <auteur> · <fichier:ligne> — <reformulation fidèle>
+  - <PR + lien> · correctif du relecteur · <auteur> · <SHA> · <fichier> — <comportement avant → après>
+- Suite observée : <statut et auteur du correctif, sans causalité supposée>
+- Impact observé : <fait établi|non établi>
+- Incertitude : <limite précise|aucune>
 ```
 
 ```
-## Propositions, du barreau le plus bas au plus haut
-### <barreau> — <thème>
-- Preuve : <PR + fichier, deux occurrences minimum>
-- Changement : <fichier de harnais visé, et le texte exact à coller>
-- Coût : <ce que ça retire, ou la ligne d'AGENTS.md que ça remplace>
+## Inventaire par PR
+- PR <id> — <n constats : C01, C03> ; <n signaux écartés>
 ```
 
 ```
-## Vu une fois — pas de règle
-- <constat> (PR <id>)
+## Signaux écartés
+- <PR + lien> · <signal> — <raison factuelle : doublon, administratif, auto-commentaire, synchronisation de branche>
 ```
 
 ```
-## Arbitrages — rien à corriger
-- <constat> (PR <id>)
+## Limites de collecte
+- <source indisponible, pagination incomplète, attribution ou borne de diff incertaine>
 ```
 
 Une section vide s'écrit `_néant_`. Pas de préambule, pas de conclusion.
@@ -169,6 +153,8 @@ Une section vide s'écrit `_néant_`. Pas de préambule, pas de conclusion.
 - Une commande par appel : le garde-fou de worktree refuse les boucles shell, les
   substitutions `$(...)` et les heredocs.
 - Avec `bkt`, `--jq` exige `--json` dans la même commande.
-- Chaque texte à coller respecte la langue de son fichier cible : anglais pour `AGENTS.md`,
-  `.agents/rules/`, `.agents/skills/`, `harness/skills/`, `MEMORY.md` ; français pour un ADR.
-- Ne modifie aucun fichier. La décision de promouvoir reste à moi.
+- Chaque affirmation renvoie à une PR, un commentaire ou un SHA ; sans preuve, écris la limite au
+  lieu de compléter par vraisemblance.
+- N'inspecte pas le harnais pour expliquer les constats et ne formule aucune recommandation,
+  priorité, règle ou texte à coller.
+- Ne modifie aucun fichier.
