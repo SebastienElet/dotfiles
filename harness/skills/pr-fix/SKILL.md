@@ -52,21 +52,37 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
    useful behavioral test gets the repository's relevant smoke or validation check. Do not turn
    naming, style or speculative cleanup into repair work.
 
-5. **Run the real barrier.** Execute the merge-blocking lint, typecheck and test commands on the
-   repair worktree, including the changed extensions and the failure-path tests. Record counts and
-   evidence gaps as `pr-verdict` requires. Keep independent mechanisms in separate commits and
-   coupled corrections together.
+5. **Run a barrier sized to the delta.** Take the merge-blocking commands from the CI configuration,
+   never from a same-named package script, then run the tier the corrections actually reach on the
+   repair worktree:
 
-6. **Re-anchor before pushing.** Query the forge again and validate that the source repository,
-   source ref and head SHA are all present and still identify the anchored head. If the head moved,
-   do not push: anchor the new head, inspect the overlap, and reapply only corrections that remain
-   valid. Push the commits normally to the resolved source ref; never use a force option. A rejected
-   push or missing permission leaves the commits local and becomes an explicit delivery blocker.
+   | Delta                                                 | Barrier                                                                             |
+   | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+   | Comments, documentation or PR text only                | format, spellcheck, lint, typecheck                                                 |
+   | Code that changes no observable behavior               | the above, plus the unit tests of every touched package                             |
+   | Behavior, a seam, a contract, a schema or a migration  | the full merge-blocking barrier, failure-path tests and end-to-end suites included   |
+
+   A tier is a floor, not a ceiling: run the full barrier whenever the delta's reach is uncertain,
+   and never let a tier excuse a gate the corrections do reach. Name the tier you ran in the report,
+   so a reader sees which gates were skipped and why. Record counts and evidence gaps as
+   `pr-verdict` requires. Keep independent mechanisms in separate commits and coupled corrections
+   together.
+
+6. **Re-anchor, then land the whole slate in one push.** Query the forge again and validate that the
+   source repository, source ref and head SHA are all present and still identify the anchored head.
+   If the head moved, do not push: anchor the new head, inspect the overlap, and reapply only
+   corrections that remain valid. Push every correction of the slate together, normally, to the
+   resolved source ref; never use a force option. A rejected push or missing permission leaves the
+   commits local and becomes an explicit delivery blocker. One repair produces one judged head:
+   every extra push discards a verdict already delegated and buys another review pass.
 
 7. **Judge the pushed head independently.** Resolve the SHA now shown by the PR and delegate a full
-   `pr-verdict` review of that exact head to a fresh context, including its barrier. Return only that
-   head's final verdict as current. Publish it only when the user separately confirms publication or
-   explicitly included publication in the original request.
+   `pr-verdict` review of that exact head to a fresh context, including its barrier. Do not delegate
+   while a correction is still pending — a head you intend to amend is a head whose verdict you are
+   about to throw away. When that review does find a defect in the repair itself, correct it, push
+   once, and scope the second delegation to the new delta and its barrier tier instead of repeating
+   the whole sweep. Return only the final head's verdict as current. Publish it only when the user
+   separately confirms publication or explicitly included publication in the original request.
 
 8. **Close the repair.** Report the original findings, commits pushed, final SHA, final verdict and
    residual evidence gaps. Do not create a fix ticket for a defect corrected by this run. Remove the
@@ -89,13 +105,21 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
   consent. Treat branch mutation and verdict publication as separate permissions.
 - **A failed push worktree is discarded** — the only copy of useful commits becomes hard to recover.
   Preserve the worktree and report the commit SHAs when the branch cannot be updated.
+- **The head is amended after its verdict was delegated** — the fresh context spends its whole pass
+  judging a SHA nobody will merge, and the repair turns into a fix-review-fix loop that finds
+  something new every round. Freeze the slate, push once, then delegate.
+- **The full barrier is re-run for a reworded comment** — end-to-end suites cost minutes and prove
+  nothing about a doc change, so each round lengthens the feedback loop without adding evidence.
+  Size the barrier to the delta and name the tier.
 
 ## Constraints
 
 - Never mutate a PR unless the user explicitly asked to correct it or invoked `pr-fix`.
 - Never force-push, overwrite a moved head or guess the PR source repository or ref.
 - Never publish a verdict, create an issue or open another PR from repair authority alone.
-- Never claim a defect fixed before its failure-path test and the merge-blocking barrier pass.
+- Never claim a defect fixed before its failure-path test and the barrier tier its delta reaches
+  both pass, and never report a gate you did not run.
 - Never let the context that wrote the repaired head perform its final failure-class sweep.
+- Never delegate a verdict on a head you still intend to amend; one repair lands one judged head.
 - Never repair subjective preferences or broaden the change beyond proven findings.
 - Never remove a temporary worktree that contains unpushed commits or uncommitted changes.
