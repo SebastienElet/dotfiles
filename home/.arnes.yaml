@@ -44,9 +44,6 @@ external:
     - agent: cursor
       scope: user
       id: superpowers
-    - agent: codex
-      scope: user
-      id: superpowers@openai-curated
   skills:
     - agent: codex
       scope: user
@@ -191,76 +188,6 @@ external:
       scope: user
       origin: plugin
       plugin: superpowers
-      slug: writing-skills
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: brainstorming
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: dispatching-parallel-agents
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: executing-plans
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: finishing-a-development-branch
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: receiving-code-review
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: requesting-code-review
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: subagent-driven-development
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: systematic-debugging
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: test-driven-development
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: using-git-worktrees
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: using-superpowers
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: verification-before-completion
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
-      slug: writing-plans
-    - agent: codex
-      scope: user
-      origin: plugin
-      plugin: superpowers@openai-curated
       slug: writing-skills
 resources:
   - id: claude-user-instructions
