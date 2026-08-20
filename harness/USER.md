@@ -52,6 +52,17 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
   comportements observables, jamais les détails d'implémentation ou du coverage pour lui-même.
+- **État React local et dérivé.** Garder l'état au niveau le plus local qui porte réellement
+  la décision ; ne pas dupliquer une valeur qui peut être dérivée d'une source de vérité existante.
+  Remonter ou globaliser l'état seulement lorsqu'une coordination réelle entre plusieurs branches
+  de l'UI l'exige. Considérer `useEffect` comme une frontière avec un système extérieur, pas comme
+  un mécanisme normal d'orchestration de l'état React ; effets en chaîne, correctifs entre effets
+  et synchronisation d'états dérivables sont des signaux de conception à reprendre.
+- **Frontend testable par construction.** Les dépendances à effets d'un composant doivent pouvoir
+  être substituées sans mocks globaux ni patchs de modules complexes. Ne pas imposer un mécanisme
+  d'injection particulier : suivre les patterns React actuels et les conventions du projet. Avant
+  de refactorer un composant historique non testé, sécuriser d'abord le comportement observable
+  que le changement risque d'affecter.
 - **Rien de cassé n'est toléré.** Un test intermittent est un bug : ni `retry`, ni `skip`, chercher
   la cause. Le coverage peut être un garde-fou modéré selon l'état du projet, jamais un objectif
   qui justifie des tests sans valeur.
@@ -96,6 +107,11 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 - **Service avant pureté.** Sur incident, restaurer le service rapidement et tracer la cause
   racine ; ne pas pérenniser un workaround d'un défaut possédé. Refactorer le chemin directement
   concerné si cela simplifie la feature ; demander avant d'élargir aux abstractions voisines.
+- **Réécriture selon le risque et la coordination.** Sur un chemin en production, utilisé par des
+  clients ou critique, préférer une évolution progressive et vérifiable. Avant mise en production,
+  sans utilisateurs et sur une zone peu partagée, accepter une réécriture cohérente plus large si
+  elle réduit réellement le coût de coordination et de review. Si d'autres développeurs modifient
+  activement la même zone, coordonner le changement ou attendre un point de synchronisation.
 - **Exploitation intégrée.** Logs structurés et contextualisés sur les chemins critiques ; éviter
   `console.log` et le bruit. Préférer migrations, handlers, workers, backoffice ou CLI supportée
   aux scripts ad hoc ; un script one-shot reste un dernier recours. Supprimer le code mort : Git
@@ -112,6 +128,11 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 - **Validation concise.** Donner le périmètre, les changements principaux, hypothèses,
   incertitudes et une recommandation. Pour un changement complexe, préférer une vue du
   diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
+- **Spécifier le résultat, redécouvrir l'implémentation.** Une issue ou spécification doit être
+  précise sur le comportement attendu, les contraintes produit, les états visibles, les designs
+  ou composants à respecter et les critères d'acceptation, sans figer architecture, fichiers ou
+  étapes techniques. L'agent qui implémente refait sa discovery avec l'état courant du code, de
+  la documentation et des outils ; ne pas l'ancrer sur une solution technique préparée plus tôt.
 - **Plan seulement quand il aide.** Sur une tâche simple et stable, plan court si utile.
   Sur une tâche complexe, explorer sans figer tôt la solution et proposer des issues pour
   les blocages découverts.
