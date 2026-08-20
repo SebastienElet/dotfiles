@@ -33,6 +33,24 @@ about. Look for it before falling back here.
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
 repository — re-check `--help` when a command is rejected rather than guessing a flag.
 
+## Reading the author's evidence
+
+The description and the comments carry attachments: a screenshot of an output, a pasted log, a
+recording. The JSON body returns them as raw markup, so list the uploads and open each one.
+
+```sh
+gh pr view 1042 --json body,comments --jq '.body, (.comments[].body)' \
+  | grep -oE 'https://github\.com/user-attachments/assets/[0-9a-f-]+' | sort -u
+curl -sSL -H "Authorization: token $(gh auth token)" -o attachment-1.png <url>
+```
+
+Read the downloaded file as an image. An unopened attachment is unread evidence, and phase 4 must
+attribute it to the author instead of calling it absent. Verified with `gh` 2.97 against a private
+repository: the token is required, and the upload answers `200 image/png`. Older bodies embed
+`https://<host>/<owner>/<repo>/assets/<id>` instead, which the same command reaches. The Bitbucket
+attachment endpoint has not been exercised from this skill — read `bkt pr view --help` before
+claiming an equivalent rather than assuming one.
+
 ## Checking out the exact head
 
 Neither `gh pr checkout` nor `bkt pr checkout` guarantees the recorded SHA: both land on a local

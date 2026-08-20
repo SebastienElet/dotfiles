@@ -21,7 +21,9 @@ the verdict is "approved".>
 
 <Barrier paragraph — REQUIRED. Open with "Authenticated local validation on this exact head:"
 and give counts, never adjectives. Then, in the same paragraph, REQUIRED: what this evidence does
-not cover. The verdict is invalid without that second half.>
+not cover. The verdict is invalid without that second half. Evidence the author supplied — an
+attachment, a pasted output — is named as theirs: never counted as measured here, never reported
+as absent.>
 
 <Non-blocking remarks — three lines at most, one per remark, each prefixed "Non-blocking:". Keep
 the ones that would change a reviewer's decision, drop the rest: past three, the section is a
@@ -78,6 +80,9 @@ Do not approve or merge this head.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
 - The barrier paragraph names the command it ran, and that command is the one CI runs.
+- Every attachment in the description and the comments was opened, and evidence the author supplied
+  is attributed to them rather than reported missing.
+- No lift criterion asks for a run the PR already shows; it names the control the repository lacks.
 - At most three non-blocking lines; a fourth means the section is competing with the verdict.
 - No re-review ticket or `Re-review:` slot; the head-specific verdict is the re-review record.
 - Total under about thirty lines. Past that, preferences have leaked into the blocking section.

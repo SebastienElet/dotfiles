@@ -58,7 +58,10 @@ says to post directly.
    branch instead is a review of something the team has not proposed to merge.
 
 2. **Understand before judging.** Read the PR description, the design documents it cites, and the
-   whole diff. Restate the invariant the code claims to hold, in one sentence. Producing a blocking
+   whole diff. The attachments are part of the description: a screenshot or an uploaded log is
+   evidence the author supplied, and the forge returns it as raw markup that a text pass slides
+   over — download every one and look at it, in the comments too (`references/forges.md`).
+   Restate the invariant the code claims to hold, in one sentence. Producing a blocking
    finding before the flow is traced end to end is forbidden: the mechanism is what makes a finding
    blocking, and you cannot name a mechanism you have not followed.
 
@@ -77,7 +80,12 @@ says to post directly.
    tests run. Then enumerate what the barrier does not reach: sequential tests say nothing about a
    race, jsdom nothing about a browser, an in-memory database nothing about PostgreSQL, one platform
    nothing about the others. If nothing exercises the changed code, that absence is the review's
-   first finding, not a reason to announce green.
+   first finding, not a reason to announce green. Then attribute each piece of evidence: measured
+   here, supplied by the author and not reproduced here, or absent. The three are not
+   interchangeable — "not observed" written over evidence sitting in the description is a false
+   statement about the author's work, and a lift criterion asking for a run the PR already shows
+   asks them to repeat themselves. What is missing in that case is a control in the repository:
+   name the control, not the re-run.
 
 5. **Return a verdict.** Exactly one of _changes required_, _approved with reservations_,
    _approved_. Each blocking finding carries its named mechanism and its lift criterion — what must
@@ -124,6 +132,11 @@ says to post directly.
 - **A missing feature reported as an omission** — an absent regulatory or business control is either
   a declared contract (what, why, lift condition) or a blocker. Silence is the defect, not the
   absence.
+- **The author's evidence read as absent** — a screenshot of the output comes back from the forge
+  as an `<img>` tag inside the body, and a text pass slides over it. The verdict then announces that
+  nothing was observed and makes the merge conditional on steps the author has already run and
+  attached, which reads as not having read the PR. Open every attachment in phase 2, and label
+  supplied-but-unreproduced evidence as theirs.
 - **Numbers copied from the PR's own pipeline** — a green pipeline is context for phase 1, never the
   barrier of phase 4. The barrier is what you ran, authenticated, on the head you checked out.
 - **The package script mistaken for the CI gate** — the repository's `lint` script may walk the whole
@@ -140,6 +153,7 @@ says to post directly.
 - Never block on style, naming or structure preference; label it non-blocking.
 - Never open a review that is not anchored on a head SHA.
 - Never leave a limit of the evidence implicit; the barrier's gaps belong in the verdict text.
+- Never report as absent, or demand in a lift criterion, evidence the PR already supplies.
 - Never publish two verdicts for the same `<pr>:<sha>`; update the existing comment instead.
 - Never sweep the failure classes on a head you wrote in this session from the context that wrote it.
 - Never create a ticket solely to request, schedule or record a re-review.
