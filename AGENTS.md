@@ -14,8 +14,9 @@ This file is the single source of truth for all coding agents working in this re
 
 - Optimize for cohesion, not the fewest files. Minimal means the least code that remains easy to
   understand and change safely.
-- Keep one responsibility per function and file. Parsing, orchestration, policy, I/O, and mutation
-  are separate responsibilities unless their implementation is trivial.
+- Follow the Unix philosophy: make each tool do one thing well. Likewise, keep one responsibility
+  per function and file. Parsing, orchestration, policy, I/O, and mutation are separate
+  responsibilities unless their implementation is trivial.
 - Treat 50 logical lines per production function and 250 lines per hand-written file as review
   triggers: split the unit or justify in the delivery note why keeping it intact is more cohesive.
 - Do not extract a helper solely to satisfy a size trigger; every extracted unit must have a clear
