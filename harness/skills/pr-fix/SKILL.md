@@ -20,6 +20,8 @@ Turn a head-specific verdict into reviewed corrections on the contributor's bran
 repair request authorizes edits, commits and a standard push to that branch; it does not authorize a
 force-push, issue creation or verdict publication. The repaired head earns its own verdict from a
 fresh context because the context that wrote a fix cannot independently validate it.
+Mutating someone else's branch also carries a mandatory public repair record: it documents what was
+changed and proved, engages no merge decision, and therefore does not require publication consent.
 
 ## Usage
 
@@ -84,7 +86,14 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
    the whole sweep. Return only the final head's verdict as current. Publish it only when the user
    separately confirms publication or explicitly included publication in the original request.
 
-8. **Close the repair.** Report the original findings, commits pushed, final SHA, final verdict and
+8. **Publish the repair record.** Fill `assets/repair-record.md` in the pull request's language and
+   pass it as a body file with the forge commands from `pr-verdict/references/forges.md`. Search
+   existing comments for `<!-- pr-fix:<pr>:<final-head-sha-12> -->`: update the same marker in place,
+   or publish one new comment when the SHA differs. Publish even after merge and without
+   confirmation. This mandatory factual record is not the verdict; step 7 still governs verdict
+   publication.
+
+9. **Close the repair.** Report the original findings, commits pushed, final SHA, final verdict and
    residual evidence gaps. Do not create a fix ticket for a defect corrected by this run. Remove the
    temporary worktree only after its commits are pushed and it is clean.
 
@@ -101,8 +110,13 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
   it moved.
 - **Small remarks become a cleanup pass** — the PR gains unrelated churn and review risk. Keep at
   most three objective, localized non-blockers and drop preferences.
-- **Publication is inferred from repair authority** — a team-visible verdict appears without
-  consent. Treat branch mutation and verdict publication as separate permissions.
+- **Repair publication and verdict publication are conflated** — either a team-visible merge
+  decision appears without consent or the contributor receives no account of mutations already
+  made to their branch. Publish the factual repair record without confirmation, including after
+  merge; keep the verdict subject to separate consent.
+- **The record follows commits instead of mechanisms** — commits expose chronology but omit why a
+  correction works, while one mechanism may span several commits. Use the compact mechanism and
+  proof list from the template, including corrections to earlier corrections and reasoned omissions.
 - **A failed push worktree is discarded** — the only copy of useful commits becomes hard to recover.
   Preserve the worktree and report the commit SHAs when the branch cannot be updated.
 - **The head is amended after its verdict was delegated** — the fresh context spends its whole pass
@@ -116,10 +130,22 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
 
 - Never mutate a PR unless the user explicitly asked to correct it or invoked `pr-fix`.
 - Never force-push, overwrite a moved head or guess the PR source repository or ref.
-- Never publish a verdict, create an issue or open another PR from repair authority alone.
+- Never publish a verdict, create an issue or open another PR from repair authority alone; the
+  mandatory factual repair record is not a verdict and requires no confirmation.
+- Never close a repair without publishing exactly one record for the final `<pr>:<sha>` marker,
+  updating the matching comment in place even when the pull request is already merged; always pass
+  its body through a file.
+- Never organize the record by commit or open with defects: start with what held, then give every
+  correction its mechanism and proof, every omission its reason, and numeric barrier evidence
+  immediately followed by its limits.
 - Never claim a defect fixed before its failure-path test and the barrier tier its delta reaches
   both pass, and never report a gate you did not run.
 - Never let the context that wrote the repaired head perform its final failure-class sweep.
 - Never delegate a verdict on a head you still intend to amend; one repair lands one judged head.
 - Never repair subjective preferences or broaden the change beyond proven findings.
 - Never remove a temporary worktree that contains unpushed commits or uncommitted changes.
+
+## References
+
+- [assets/repair-record.md](assets/repair-record.md) — skeleton and publication self-check. Fill it
+  in step 8.
