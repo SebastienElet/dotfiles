@@ -35,14 +35,21 @@ monorepo`.
    not query it. Measure this worktree and initialize here when the threshold is met, otherwise
    continue with `rg` and `fd`.
 5. If status is healthy, use `codegraph_explore` before broad grep, find, or file reads.
-6. If status reports stale or incomplete state, run `codegraph sync` once and check status again.
+6. If status reports stale or incomplete state, apply the cache-write check in step 8, synchronize
+   once when allowed, and check status again.
 7. When the index is absent, run `codegraph-repository-size .`.
-8. If `initialize` is true, prefix the CLI environment, run `codegraph init`, confirm status, then
-   use `codegraph_explore`.
-9. If `initialize` is false, continue with `rg` and `fd` without initializing.
-10. If measurement, initialization, synchronization, or the second status check fails, name the
+8. Before `codegraph init` or `codegraph sync`, run
+   `git check-ignore -q --no-index .codegraph/index.db`. When it succeeds, `.codegraph/` is ignored
+   retrieval state: a read-only analysis still permits the cache write unless the user explicitly
+   forbids local cache writes or all filesystem writes. Do not infer a cache-write prohibition from
+   a request to analyze, review, or audit without editing the repository. When the check fails,
+   name the missing exclusion and fall back without editing a project ignore file.
+9. If `initialize` is true and the cache-write check permits it, prefix the CLI environment, run
+   `codegraph init`, confirm status, then use `codegraph_explore`.
+10. If `initialize` is false, continue with `rg` and `fd` without initializing.
+11. If measurement, initialization, synchronization, or the second status check fails, name the
     failure and fall back explicitly to `rg` and `fd`.
-11. Verify important graph claims in the source before editing.
+12. Verify important graph claims in the source before editing.
 
 Prefix every CodeGraph CLI call with:
 
@@ -62,6 +69,9 @@ threshold. Initialization uses OR: 50000 source lines or 500 source files.
 - **Querying a sibling working tree** — an index resolved from a parent repository reports
   `state: complete` while describing another checkout; read `worktreeMismatch` before trusting
   freshness.
+- **Treating an ignored index as a source edit** — broad analysis needlessly falls back to file
+  scans; verify the global or local Git exclusion and allow the retrieval cache unless writes were
+  explicitly forbidden.
 - **Recovering destructively** — automatic uninitialization or reindexing can discard useful state;
   diagnose corruption, locks, or incompatibility and request approval before recovery.
 - **Treating retrieval as refactoring or debugging** — graph results do not provide semantic edits
@@ -70,6 +80,8 @@ threshold. Initialization uses OR: 50000 source lines or 500 source files.
 ## Constraints
 
 - Never initialize below both thresholds unless `.codegraph/` already exists.
+- Never edit a project `.gitignore` to initialize CodeGraph.
+- Never write or synchronize `.codegraph/` unless Git confirms that the path is ignored.
 - Never run `codegraph uninit --force`, `codegraph index`, or remove `.codegraph/` automatically.
 - Never describe a failed or unchecked index as fresh.
 - Use only the default `codegraph_explore` MCP surface; do not enable hidden tools or add a query

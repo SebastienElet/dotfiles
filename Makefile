@@ -502,6 +502,7 @@ codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/
 
 .PHONY: codegraph-test
 codegraph-test:
+	bash harness/skills/codegraph/scripts/skill_contract_test.sh
 	bash harness/skills/codegraph/scripts/measure_repository_test.sh
 	bash tooling/codegraph-configure-test
 	bash tooling/codegraph-mcp-test

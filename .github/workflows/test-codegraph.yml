@@ -32,6 +32,7 @@ jobs:
           claude --version
           codex --version
           codegraph --version
+      - run: bash harness/skills/codegraph/scripts/skill_contract_test.sh
       - run: bash harness/skills/codegraph/scripts/measure_repository_test.sh
       - run: bash tooling/codegraph-configure-test
       - run: bash tooling/codegraph-mcp-test
