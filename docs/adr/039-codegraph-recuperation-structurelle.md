@@ -6,16 +6,17 @@
 ## Contexte
 
 L'issue #86 n'a pas produit de benchmark comparatif valide. L'issue #97 vise désormais une
-intégration opérationnelle simple de CodeGraph 1.5.0 dans plusieurs dépôts et trois agents. Les
+intégration opérationnelle simple de CodeGraph dans plusieurs dépôts et trois agents. Les
 résultats upstream montrent un coût fixe visible autour de 110 fichiers et des gains plus réguliers
 à partir d'environ 640 fichiers ; ils motivent un seuil pragmatique, pas une preuve locale de
 supériorité.
 
 ## Décision
 
-Installer CodeGraph 1.5.0 globalement et exposer son serveur MCP stdio upstream à Codex, Claude Code
-et Cursor. Utiliser `codegraph_explore` pour l'exploration structurelle ; conserver `rg` et `fd`
-pour les littéraux, expressions régulières, chemins connus et vérifications ciblées.
+Installer CodeGraph globalement, le mettre à jour avec les autres paquets npm globaux et exposer son
+serveur MCP stdio upstream à Codex, Claude Code et Cursor. Utiliser `codegraph_explore` pour
+l'exploration structurelle ; conserver `rg` et `fd` pour les littéraux, expressions régulières,
+chemins connus et vérifications ciblées.
 
 Lorsqu'une exploration structurelle rencontre un dépôt sans index, initialiser automatiquement à
 partir de 50 000 lignes de source ou 500 fichiers source. Sous les deux seuils, ne pas initialiser.
@@ -29,7 +30,7 @@ Distribuer la politique conditionnelle par la skill partagée `codegraph`.
 
 - Chaque dépôt ou worktree indexé paie son propre espace disque.
 - La télémétrie, le contrôle de version et le téléchargement de secours sont désactivés à
-  l'exécution ; l'installation épinglée reste le seul téléchargement attendu.
+  l'exécution ; installation et mise à jour passent par le flux central `tooling/upgrade`.
 - Une panne ou un état périmé produit un repli explicite vers `rg` et `fd`, jamais une réponse
   silencieusement obsolète.
 - CodeGraph reste une couche de récupération. Les refactorings sémantiques et le débogage relèvent
@@ -43,3 +44,4 @@ Distribuer la politique conditionnelle par la skill partagée `codegraph`.
 - Stocker les index hors dépôt par symlink : contournement d'une capacité upstream absente.
 - Réactiver les outils MCP cachés ou ajouter une façade : surface et maintenance sans besoin établi.
 - Ajouter la règle à `harness/AGENTS.md` : instruction permanente sans ablation marginale.
+- Épingler CodeGraph : empêche de bénéficier normalement des correctifs et améliorations upstream.

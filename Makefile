@@ -1,7 +1,6 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
-CODEGRAPH_VERSION:=1.5.0
 CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
@@ -531,10 +530,9 @@ codegraph-test:
 	bash tooling/codegraph-network-test
 
 .PHONY: codegraph-cli
-codegraph-cli: ${VOLTA_BIN}/node
-	@if [ ! -x "${VOLTA_BIN}/codegraph" ] || [ "$$(${VOLTA_BIN}/codegraph --version)" != "${CODEGRAPH_VERSION}" ]; then \
-		${BREW_BIN}/volta install @colbymchenry/codegraph@${CODEGRAPH_VERSION}; \
-	fi
+codegraph-cli: ${VOLTA_BIN}/codegraph
+${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
+	${BREW_BIN}/volta install @colbymchenry/codegraph
 
 .PHONY: codegraph-ignore
 codegraph-ignore:

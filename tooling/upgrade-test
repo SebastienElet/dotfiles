@@ -22,6 +22,7 @@ repository=$test_home/.dotfiles
 remote=$test_root/remote.git
 mock_bin=$test_root/bin
 git_log=$test_root/git.log
+command_log=$test_root/command.log
 mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin"
 cp "$upgrade" "$main_branch_helper" "$repository/tooling/"
 printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
@@ -39,7 +40,10 @@ printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
 remote_tip=$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)
 
 for command_name in brew make mas npm volta skills claude jq; do
-  printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$mock_bin/$command_name"
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'printf "%s %s\n" "$(basename "$0")" "$*" >>"$COMMAND_LOG"' \
+    'exit 0' >"$mock_bin/$command_name"
 done
 printf '%s\n' \
   '#!/usr/bin/env bash' \
@@ -64,9 +68,11 @@ chmod +x "$mock_bin"/*
 run_upgrade() {
   output=$test_root/$1.out
   : >"$git_log"
+  : >"$command_log"
   if env \
       HOME="$test_home" \
       PATH="$mock_bin:/usr/bin:/bin" \
+      COMMAND_LOG="$command_log" \
       REAL_GIT="$real_git" \
       GIT_LOG="$git_log" \
       GIT_FAIL_PROBE="${4-}" \
@@ -88,6 +94,9 @@ assert_equal "$("$real_git" -C "$repository" rev-list --count "$remote_tip..HEAD
 assert_equal "$("$real_git" -C "$repository" log -1 --format=%s)" "chore(nvim): update plugins" "lockfile commit message"
 assert_equal "$("$real_git" -C "$repository" show --format= --name-only HEAD)" "home/.config/nvim/lazy-lock.json" "lockfile commit scope"
 assert_equal "$(cat "$git_log")" $'pull\ncommit' "unexpected main Git mutations"
+grep -Fxq 'npm update -g --before=2026-08-13T00:00:00Z --min-release-age-exclude=@openai/codex' "$command_log" ||
+  fail "npm quarantine does not exempt Codex"
+grep -Fxq 'claude update' "$command_log" || fail "Claude update is not independent from npm"
 
 "$real_git" -C "$repository" checkout -q -B feature-test origin/main
 printf 'feature\n' >"$repository/feature-change"

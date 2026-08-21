@@ -197,6 +197,12 @@ if printf '%s\n' "$codex_install" | rg -q 'npm install -g @openai/codex'; then
   exit 1
 fi
 
+codegraph_install=$(make -Bn -C "$root" HOME="$tmp/make-home" codegraph-cli)
+printf '%s\n' "$codegraph_install" | rg -q '/volta install @colbymchenry/codegraph$'
+if printf '%s\n' "$codegraph_install" | rg -q '@colbymchenry/codegraph@'; then
+  exit 1
+fi
+
 real_claude=${CODEGRAPH_REAL_CLAUDE_BIN:-}
 if [ -z "$real_claude" ]; then
   real_claude=$(command -v claude || true)
