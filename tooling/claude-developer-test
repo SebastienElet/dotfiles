@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_directory=$(cd "$(dirname "$0")" && pwd)
+runner="$tooling_directory/claude-developer"
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/claude-developer-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_failure() {
+  local expected_status=$1
+  shift
+
+  set +e
+  "$@" >"$test_root/stdout" 2>"$test_root/stderr"
+  local actual_status=$?
+  set -e
+  [[ $actual_status == "$expected_status" ]] || fail "expected status $expected_status, got $actual_status"
+}
+
+source_repository="$test_root/source-repository"
+repository="$test_root/repository"
+mkdir -p "$source_repository" "$test_root/bin"
+git -C "$source_repository" init -q
+git -C "$source_repository" config user.email test@example.com
+git -C "$source_repository" config user.name Test
+printf 'initial\n' >"$source_repository/tracked.txt"
+git -C "$source_repository" add tracked.txt
+git -C "$source_repository" commit -qm initial
+git -C "$source_repository" worktree add -qb test-worktree "$repository"
+
+fake_claude="$test_root/bin/claude"
+apply_log="$test_root/apply-arguments"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'printf "%s\n" "$@" >"$CLAUDE_DEVELOPER_TEST_LOG"' \
+  'printf "{\"result\":\"done\",\"session_id\":\"11111111-1111-4111-8111-111111111111\"}\n"' \
+  'exit "${CLAUDE_DEVELOPER_TEST_STATUS:-0}"' >"$fake_claude"
+chmod +x "$fake_claude"
+
+output=$(
+  cd "$repository"
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$apply_log" \
+    "$runner" --max-turns 12 --model sonnet --allow-tool 'Bash(make test)' -- 'Implement the feature'
+)
+[[ $output == '{"result":"done","session_id":"11111111-1111-4111-8111-111111111111"}' ]] || fail "Claude output changed"
+cat >"$test_root/expected-apply-arguments" <<'EOF'
+-p
+--output-format
+json
+--permission-mode
+dontAsk
+--allowedTools
+Read,Glob,Grep,Edit,Write,Bash(make test)
+--max-turns
+12
+--no-chrome
+--append-system-prompt
+Follow the repository instructions, inspect the current implementation before editing, and leave the worktree ready for independent review.
+--model
+sonnet
+Implement the feature
+EOF
+cmp "$test_root/expected-apply-arguments" "$apply_log" || fail "apply arguments changed"
+
+printf 'changed\n' >>"$repository/tracked.txt"
+(
+  cd "$repository"
+  assert_failure 65 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/dirty-log" \
+    "$runner" -- 'Continue without a session'
+)
+grep -Fq 'worktree has changes' "$test_root/stderr" || fail "dirty worktree error is missing"
+[[ ! -e $test_root/dirty-log ]] || fail "Claude ran in a dirty initial worktree"
+
+resume_log="$test_root/resume-arguments"
+(
+  cd "$repository"
+  printf 'Continue the implementation\n' | \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$resume_log" \
+    "$runner" --resume 11111111-1111-4111-8111-111111111111 >/dev/null
+)
+grep -Fxq -- '--resume' "$resume_log" || fail "resume flag is missing"
+grep -Fxq -- '11111111-1111-4111-8111-111111111111' "$resume_log" || fail "resume identifier is missing"
+grep -Fxq -- 'Continue the implementation' "$resume_log" || fail "stdin prompt is missing"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/invalid-log" \
+  "$runner" --max-turns zero -- task
+grep -Fq 'positive integer' "$test_root/stderr" || fail "invalid max-turns error is missing"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/unknown-log" \
+  "$runner" --unknown -- task
+grep -Fq 'unknown option' "$test_root/stderr" || fail "unknown option error is missing"
+
+for unsafe_tool_rule in \
+  'Bash' \
+  ' Bash' \
+  'Bash(*)' \
+  'Bash(* *)' \
+  'Bash(bash *)' \
+  'Bash(eval *)' \
+  'Bash(make test && publish *)' \
+  'Bash(make test $(publish) *)' \
+  'Read,Write'; do
+  assert_failure 64 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/unsafe-tool-log" \
+    "$runner" --allow-tool "$unsafe_tool_rule" -- task
+  [[ ! -e $test_root/unsafe-tool-log ]] || fail "Claude ran with an unsafe tool rule: $unsafe_tool_rule"
+done
+
+unsafe_tool_rule=$(printf 'Bash(make test *)\nRead')
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/multiline-tool-log" \
+  "$runner" --allow-tool "$unsafe_tool_rule" -- task
+[[ ! -e $test_root/multiline-tool-log ]] || fail "Claude ran with a multiline tool rule"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/overflow-log" \
+  "$runner" --max-turns 9223372036854775808 -- task
+grep -Fq 'must not exceed 100' "$test_root/stderr" || fail "overflowing max-turns error is missing"
+[[ ! -e $test_root/overflow-log ]] || fail "Claude ran with an overflowing turn limit"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/duplicate-log" \
+  "$runner" --max-turns 0 --max-turns 1 -- task
+grep -Fq 'positive integer' "$test_root/stderr" || fail "overwritten max-turns error is missing"
+[[ ! -e $test_root/duplicate-log ]] || fail "Claude ran after an overwritten invalid option"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/help-log" \
+  "$runner" --max-turns 0 --help
+grep -Fq 'positive integer' "$test_root/stderr" || fail "help bypassed invalid input"
+[[ ! -e $test_root/help-log ]] || fail "Claude ran after help bypassed invalid input"
+
+assert_failure 64 env \
+  CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+  CLAUDE_DEVELOPER_TEST_LOG="$test_root/multiple-prompts-log" \
+  "$runner" -- left right
+grep -Fq 'exactly one prompt argument' "$test_root/stderr" || fail "multiple prompt error is missing"
+[[ ! -e $test_root/multiple-prompts-log ]] || fail "Claude ran with flattened prompt arguments"
+
+(
+  cd "$repository"
+  assert_failure 69 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$test_root/bin/missing" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/missing-log" \
+    "$runner" --resume 11111111-1111-4111-8111-111111111111 -- task
+)
+grep -Fq 'Claude executable is unavailable' "$test_root/stderr" || fail "missing Claude error is absent"
+
+(
+  cd "$repository"
+  assert_failure 17 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/failure-log" \
+    CLAUDE_DEVELOPER_TEST_STATUS=17 \
+    "$runner" --resume 11111111-1111-4111-8111-111111111111 -- task
+)
+
+outside_repository="$test_root/outside"
+mkdir "$outside_repository"
+(
+  cd "$outside_repository"
+  assert_failure 69 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/outside-log" \
+    "$runner" -- task
+)
+grep -Fq 'not inside a Git worktree' "$test_root/stderr" || fail "non-repository error is missing"
+
+(
+  cd "$source_repository"
+  assert_failure 69 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/non-linked-log" \
+    "$runner" -- task
+)
+grep -Fq 'not a linked Git worktree' "$test_root/stderr" || fail "non-linked worktree error is missing"
+[[ ! -e $test_root/non-linked-log ]] || fail "Claude ran outside a linked worktree"
+
+bare_repository="$test_root/bare"
+git init -q --bare "$bare_repository"
+(
+  cd "$bare_repository"
+  assert_failure 69 env \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/bare-log" \
+    "$runner" -- task
+)
+grep -Fq 'not inside a Git worktree' "$test_root/stderr" || fail "bare repository error is missing"
+[[ ! -e $test_root/bare-log ]] || fail "Claude ran inside a bare repository"
+
+(
+  cd "$outside_repository"
+  assert_failure 64 env \
+    GIT_DIR="$source_repository/.git" \
+    GIT_WORK_TREE="$source_repository" \
+    CLAUDE_DEVELOPER_CLAUDE_BIN="$fake_claude" \
+    CLAUDE_DEVELOPER_TEST_LOG="$test_root/git-environment-log" \
+    "$runner" -- task
+)
+grep -Fq 'Git environment overrides are forbidden' "$test_root/stderr" || fail "Git environment error is missing"
+[[ ! -e $test_root/git-environment-log ]] || fail "Claude ran with injected Git boundaries"

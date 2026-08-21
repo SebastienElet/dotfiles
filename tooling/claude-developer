@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo 'Usage: claude-developer [--max-turns N] [--model MODEL] [--allow-tool SCOPED_BASH_RULE] [--resume UUID] [--] [PROMPT]' >&2
+}
+
+fail() {
+  local status=$1
+  shift
+  echo "claude-developer: $*" >&2
+  exit "$status"
+}
+
+require_value() {
+  local option=$1
+  local value=${2:-}
+  [[ -n $value ]] || fail 64 "$option requires a value"
+}
+
+validate_tool_rule() {
+  local rule=$1
+
+  [[ $rule =~ ^Bash\([A-Za-z0-9_./:@=+-]+([[:space:]][A-Za-z0-9_./:@=+-]+)*\)$ ]] ||
+    fail 64 'tool rules must use the exact Bash(command) form without wildcards or shell metacharacters'
+}
+
+validate_max_turns() {
+  local value=$1
+
+  [[ $value =~ ^[1-9][0-9]*$ ]] || fail 64 "max-turns must be a positive integer: $value"
+  ((${#value} <= 3)) || fail 64 "max-turns must not exceed 100: $value"
+  ((10#$value <= 100)) || fail 64 "max-turns must not exceed 100: $value"
+}
+
+resolve_claude() {
+  local candidate=$1
+
+  if [[ $candidate == */* ]]; then
+    [[ -x $candidate && ! -d $candidate ]] || fail 69 "Claude executable is unavailable: $candidate"
+    printf '%s\n' "$candidate"
+    return
+  fi
+
+  command -v "$candidate" || fail 69 "Claude executable is unavailable: $candidate"
+}
+
+max_turns=30
+model=
+resume=
+allowed_tools=Read,Glob,Grep,Edit,Write
+prompt_parts=()
+max_turns_seen=false
+model_seen=false
+resume_seen=false
+
+while (($#)); do
+  case $1 in
+    --max-turns)
+      require_value "$1" "${2:-}"
+      [[ $max_turns_seen == false ]] || fail 64 'max-turns cannot be specified more than once'
+      validate_max_turns "$2"
+      max_turns=$2
+      max_turns_seen=true
+      shift 2
+      ;;
+    --model)
+      require_value "$1" "${2:-}"
+      [[ $model_seen == false ]] || fail 64 'model cannot be specified more than once'
+      [[ $2 =~ ^[A-Za-z0-9._:-]+$ ]] || fail 64 "invalid model: $2"
+      model=$2
+      model_seen=true
+      shift 2
+      ;;
+    --allow-tool)
+      require_value "$1" "${2:-}"
+      validate_tool_rule "$2"
+      allowed_tools="$allowed_tools,$2"
+      shift 2
+      ;;
+    --resume)
+      require_value "$1" "${2:-}"
+      [[ $resume_seen == false ]] || fail 64 'resume cannot be specified more than once'
+      [[ $2 =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[1-8][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$ ]] || fail 64 "invalid session UUID: $2"
+      resume=$2
+      resume_seen=true
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      prompt_parts=("$@")
+      break
+      ;;
+    -*)
+      usage
+      fail 64 "unknown option: $1"
+      ;;
+    *)
+      prompt_parts=("$@")
+      break
+      ;;
+  esac
+done
+
+if ((${#prompt_parts[@]})); then
+  ((${#prompt_parts[@]} == 1)) || fail 64 'exactly one prompt argument is required; quote prompts containing spaces'
+  prompt=${prompt_parts[0]}
+elif [[ -t 0 ]]; then
+  usage
+  fail 64 'a prompt argument or stdin is required'
+else
+  prompt=$(cat)
+fi
+[[ $prompt =~ [^[:space:]] ]] || fail 64 'the prompt must contain non-whitespace text'
+
+command -v git >/dev/null || fail 69 'Git is unavailable'
+if [[ -n ${GIT_DIR+x} || -n ${GIT_WORK_TREE+x} || -n ${GIT_COMMON_DIR+x} || -n ${GIT_INDEX_FILE+x} || -n ${GIT_OBJECT_DIRECTORY+x} || -n ${GIT_ALTERNATE_OBJECT_DIRECTORIES+x} ]]; then
+  fail 64 'Git environment overrides are forbidden'
+fi
+inside_worktree=$(git rev-parse --is-inside-work-tree) || fail 69 'current directory is not inside a Git worktree'
+[[ $inside_worktree == true ]] || fail 69 'current directory is not inside a Git worktree'
+git_directory=$(git rev-parse --absolute-git-dir) || fail 69 'Git directory is unavailable'
+common_directory=$(git rev-parse --git-common-dir) || fail 69 'Git common directory is unavailable'
+git_directory=$(cd "$git_directory" && pwd -P) || fail 69 'Git directory is unavailable'
+common_directory=$(cd "$common_directory" && pwd -P) || fail 69 'Git common directory is unavailable'
+[[ $git_directory != "$common_directory" ]] || fail 69 'current directory is not a linked Git worktree'
+if ! worktree_status=$(git status --porcelain --untracked-files=all); then
+  fail 69 'Git worktree status is unavailable'
+fi
+if [[ -z $resume && -n $worktree_status ]]; then
+  fail 65 'worktree has changes; start in a clean isolated worktree or resume the existing Claude session'
+fi
+
+claude_bin=$(resolve_claude "${CLAUDE_DEVELOPER_CLAUDE_BIN:-claude}")
+arguments=(
+  -p
+  --output-format json
+  --permission-mode dontAsk
+  --allowedTools "$allowed_tools"
+  --max-turns "$max_turns"
+  --no-chrome
+  --append-system-prompt 'Follow the repository instructions, inspect the current implementation before editing, and leave the worktree ready for independent review.'
+)
+[[ -z $model ]] || arguments+=(--model "$model")
+[[ -z $resume ]] || arguments+=(--resume "$resume")
+arguments+=("$prompt")
+
+exec "$claude_bin" "${arguments[@]}" </dev/null

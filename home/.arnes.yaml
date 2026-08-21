@@ -7,6 +7,9 @@ agents:
   - id: codex
     scopes: [user, project]
 skills:
+  - slug: claude-developer
+    installations:
+      - { agent: codex, scope: user }
   - slug: handoff
     installations:
       - { agent: claude, scope: user }
