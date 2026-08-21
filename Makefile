@@ -4,7 +4,6 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
-BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
@@ -213,7 +212,6 @@ work: \
 .PHONY: ai
 ai: \
 	arnes \
-	brain \
 	chatgpt \
 	claude \
 	claude-code \
@@ -235,26 +233,6 @@ ai: \
 arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
 	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
-
-.PHONY: brain
-brain:
-	@if [ ! -d "$(BRAIN_PATH)" ]; then \
-		exit 0; \
-	fi; \
-	if [ -L "$(HOME)/Brain" ]; then \
-		if [ "$$(readlink "$(HOME)/Brain")" = "$(BRAIN_PATH)" ]; then \
-			echo "Brain symlink already configured"; \
-		else \
-			echo "Error: $(HOME)/Brain is not the expected symbolic link" >&2; \
-			exit 1; \
-		fi; \
-	elif [ -e "$(HOME)/Brain" ]; then \
-		echo "Error: $(HOME)/Brain already exists and is not a symbolic link" >&2; \
-		exit 1; \
-	else \
-		ln -s "$(BRAIN_PATH)" "$(HOME)/Brain" && \
-		echo "Created $(HOME)/Brain symlink"; \
-	fi
 
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app

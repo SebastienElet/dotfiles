@@ -30,11 +30,6 @@ This file is the single source of truth for all coding agents working in this re
 - Never contradict an ADR silently. Either follow it, or state the conflict, then deliver what was asked along with the ADR that would need superseding.
 - Routine changes — adding a tool target, updating a lockfile, editing a skill — need no ADR.
 
-## Personal Brain
-
-- Before operating on content under `~/Brain`, read and follow `~/Brain/AGENTS.md`.
-- Default durable memory target is `~/Brain`, not an agent-specific memory store: facts, decisions, and reference info worth recalling later belong there so every agent can reuse them. Only use an agent-specific memory system for things scoped to that agent's own behavior (e.g. its interaction preferences with this user).
-
 ## Shared Skills
 
 - Agent-specific directories must not duplicate repository-wide rules or skill content.

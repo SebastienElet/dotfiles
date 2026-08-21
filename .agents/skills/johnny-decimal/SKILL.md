@@ -15,7 +15,7 @@ metadata:
 Organize personal files under `~/Documents` with a hybrid of
 [Johnny Decimal](https://johnnydecimal.com/) structure and
 [PARA](https://fortelabs.com/blog/para/). Use it when filing, naming, moving, or locating a numbered
-personal document. This skill governs only `~/Documents`; it does not govern `~/Brain`.
+personal document. This skill governs only `~/Documents`.
 
 ### Structure
 
@@ -55,8 +55,7 @@ Examples:
 
 ## Steps
 
-1. Confirm that the request concerns `~/Documents`. If it concerns `~/Brain`, do not apply these
-   filesystem rules.
+1. Confirm that the request concerns `~/Documents`; do not apply these filesystem rules elsewhere.
 2. Resolve the destination without inventing index data:
    - If the user provides an authoritative indexed folder or path, use it directly.
    - If lookup or validation is needed, consult the Johnny Decimal index in Apple Notes using an
@@ -111,8 +110,8 @@ Examples:
   Keep the file directly in the indexed category or ID folder.
 - **Renumbering an archived item automatically**: moving an item does not authorize a new ID. Use
   the indexed archive destination and preserve its ID unless the index explicitly says otherwise.
-- **Applying these paths to `~/Brain`**: the two roots have different governance. Restrict this
-  skill's filesystem decisions to `~/Documents`.
+- **Applying these paths outside `~/Documents`**: other roots can have different governance.
+  Restrict this skill's filesystem decisions to `~/Documents`.
 
 ## Constraints
 

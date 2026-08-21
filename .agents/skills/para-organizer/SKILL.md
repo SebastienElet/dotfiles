@@ -1,10 +1,9 @@
 ---
 name: para-organizer
 description: >
-  Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents and
-  ~/Brain. Use when setting up, auditing, or reclassifying folders by actionability. Make sure to
-  use it whenever a request mentions PARA or asks where a folder belongs. For ~/Documents use
-  johnny-decimal.
+  Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents. Use when
+  setting up, auditing, or reclassifying folders by actionability. Make sure to use it whenever a
+  request mentions PARA or asks where a folder belongs. For ~/Documents use johnny-decimal.
 metadata:
   category: ops
   author: Tiago Forte (Forte Labs)
@@ -20,8 +19,7 @@ then execute and write an inventory. It follows the book's "Sixty-Second PARA Se
 everything first, create project folders for what is active now, and let areas and resources emerge
 just in time.
 
-Scope: any folder the user names **except** `~/Documents` (governed by `johnny-decimal`) and
-`~/Brain` (governed by `~/Brain/AGENTS.md`).
+Scope: any folder the user names **except** `~/Documents` (governed by `johnny-decimal`).
 
 ## Usage
 
@@ -37,8 +35,7 @@ Examples:
 
 ## Steps
 
-1. Confirm the target folder. If it is `~/Documents`, stop and use `johnny-decimal` instead. If it is
-   `~/Brain`, read `~/Brain/AGENTS.md` and follow that instead.
+1. Confirm the target folder. If it is `~/Documents`, stop and use `johnny-decimal` instead.
 2. Read `references/para-framework.md` — the source of truth for category definitions.
 3. Read `references/workflow.md` and execute its four phases in order: Discover (read-only) →
    Present the Plan → Execute (only after approval) → Output Inventory.
@@ -122,8 +119,6 @@ version of the story.
 - **Applying the `1 Projects/` layout to `~/Documents`** — that root uses numbered Johnny Decimal
   ranges (`10-19 - Projects`, `20-29 - Areas`, …) and its index lives in Apple Notes. Creating PARA's
   named folders there corrupts the index. Hand the request to `johnny-decimal`.
-- **Touching `~/Brain`** — it has its own governance in `~/Brain/AGENTS.md`, which must be read first
-  and overrides everything here.
 - **Executing before the plan is approved** — the whole value of this skill is the approval gate. A
   "quick" folder creation before Phase 2 breaks the trust the skill is built on.
 - **Silently archiving screenshots and images** — they are usually captured for a reason. Flag them
@@ -138,7 +133,7 @@ version of the story.
 - Never create, move, rename, or delete anything before presenting a complete plan and receiving
   explicit approval.
 - Never delete a file. Archiving is the only removal mechanism.
-- Restrict this skill to the folder the user names, and never to `~/Documents` or `~/Brain`.
+- Restrict this skill to the folder the user names, and never to `~/Documents`.
 - Read `references/para-framework.md` before classifying anything — it is the source of truth for
   category definitions.
 - Never create an empty folder, and never leave a file loose at the root of a PARA category folder.

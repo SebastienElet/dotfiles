@@ -24,5 +24,5 @@ This directory is the canonical source for repository-scoped agent skills.
 | `do-nothing-script` | Turn a repeated manual procedure into a do-nothing script (Slimmon): one function per step, printed then awaiting the operator, automated one step at a time. |
 | `dotfiles`          | Apply this repository's conventions for configuration, symlinks, platform differences, and tool installation.                                                 |
 | `johnny-decimal`    | Organize ~/Documents with the Johnny Decimal and PARA hybrid.                                                                                                 |
-| `para-organizer`    | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents and ~/Brain.                                                             |
+| `para-organizer`    | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents.                                                                         |
 | `things-tasks`      | Manage Things 3 tasks, projects, and areas through the thangs CLI.                                                                                            |

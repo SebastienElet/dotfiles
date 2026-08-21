@@ -65,7 +65,6 @@ ici sont les dates d'auteur.
 | [027](027-soul-et-user-separes.md) | `SOUL.md` et `USER.md` séparés de `AGENTS.md` | 2026-08 |
 | [028](028-skills-ssot.md) | `.agents/skills/` comme source unique des skills projet | 2026-05 |
 | [029](029-pas-de-skills-tierces.md) | Skills tierces refusées par défaut | 2026-05 |
-| [030](030-brain-memoire-durable.md) | `~/Brain` comme mémoire durable partagée | 2026-07 |
 | [031](031-mcp-en-conteneurs-nommes.md) | MCP en conteneurs Docker nommés | 2026-08 |
 | [032](032-johnny-decimal-documents.md) | Johnny Decimal pour `~/Documents` | 2025-08 |
 | [033](033-pas-de-rtk.md) | Ne pas utiliser RTK | 2026-08 |
