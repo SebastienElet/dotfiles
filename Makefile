@@ -206,6 +206,7 @@ work: \
 	tableplus \
 	terraform \
 	uv \
+	vale \
 	1password \
 	vibe-island
 
@@ -347,6 +348,11 @@ ${BREW_BIN}/terraform:
 uv: brew ${BREW_BIN}/uv
 ${BREW_BIN}/uv:
 	brew install uv
+
+.PHONY: vale
+vale: brew ${BREW_BIN}/vale
+${BREW_BIN}/vale:
+	brew install vale
 
 .PHONY: 1password
 1password: brew ${APP_BIN}/1Password.app
