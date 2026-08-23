@@ -251,4 +251,23 @@ describe("Bitbucket Cloud entrypoint", () => {
     expect(result.stdout.toString()).toBe("");
     expect(result.stderr.toString()).toContain("bkt missing");
   });
+
+  test("redacts credentials from rejected fetch URLs", async () => {
+    const secret = "example-secret";
+    const result = await run(
+      {
+        remotes: {
+          origin: {
+            urls: [`https://user:${secret}@bitbucket.org/acme/service/extra`],
+            head: "develop",
+          },
+        },
+      },
+      "--bitbucket-cloud",
+    );
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout.toString()).toBe("");
+    expect(result.stderr.toString()).not.toContain(secret);
+    expect(result.stderr.toString()).toContain("fetch URL");
+  });
 });

@@ -189,7 +189,8 @@ function evidenceForRemote(
     try {
       parsed = parseBitbucketIdentity(url);
     } catch (error) {
-      fail(error instanceof Error ? error.message : String(error));
+      const detail = error instanceof Error ? error.message : String(error);
+      fail(`remote ${remote}: ${detail}`);
     }
     const provider =
       providerCache.get(parsed.identity) ??

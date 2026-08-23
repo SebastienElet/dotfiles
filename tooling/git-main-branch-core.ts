@@ -15,31 +15,31 @@ const componentPattern = /^[A-Za-z0-9._-]+$/;
 const uuidPattern =
   /^\{[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}\}$/;
 
-function identityFromPath(path: string, source: string): BitbucketIdentity {
+function identityFromPath(path: string): BitbucketIdentity {
   const normalized = path.replace(/^\//, "").replace(/\.git$/, "");
   const components = normalized.split("/");
   if (
     components.length !== 2 ||
     components.some((value) => !componentPattern.test(value))
   ) {
-    throw new Error(`unsupported Bitbucket Cloud fetch URL: ${source}`);
+    throw new Error("unsupported Bitbucket Cloud fetch URL");
   }
   const [workspace, slug] = components;
   if (workspace === undefined || slug === undefined) {
-    throw new Error(`unsupported Bitbucket Cloud fetch URL: ${source}`);
+    throw new Error("unsupported Bitbucket Cloud fetch URL");
   }
   return { identity: `${workspace}/${slug}`, workspace, slug };
 }
 
 export function parseBitbucketIdentity(source: string): BitbucketIdentity {
   const scp = /^git@bitbucket\.org:(.+)$/i.exec(source);
-  if (scp?.[1]) return identityFromPath(scp[1], source);
+  if (scp?.[1]) return identityFromPath(scp[1]);
 
   let url: URL;
   try {
     url = new URL(source);
   } catch {
-    throw new Error(`unsupported Bitbucket Cloud fetch URL: ${source}`);
+    throw new Error("unsupported Bitbucket Cloud fetch URL");
   }
   const validHttps = url.protocol === "https:";
   const validSsh =
@@ -52,9 +52,9 @@ export function parseBitbucketIdentity(source: string): BitbucketIdentity {
     url.hash !== "" ||
     url.pathname.includes("%")
   ) {
-    throw new Error(`unsupported Bitbucket Cloud fetch URL: ${source}`);
+    throw new Error("unsupported Bitbucket Cloud fetch URL");
   }
-  return identityFromPath(url.pathname, source);
+  return identityFromPath(url.pathname);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -28,8 +28,24 @@ describe("parseBitbucketIdentity", () => {
     "https://bitbucket.org/acme/%2Fservice",
     "ssh://someone@bitbucket.org/acme/service.git",
   ])("rejects %s", (url) =>
-    expect(() => parseBitbucketIdentity(url)).toThrow(url),
+    expect(() => parseBitbucketIdentity(url)).toThrow(),
   );
+
+  test("does not expose URL credentials in diagnostics", () => {
+    const secret = "example-secret";
+    expect(() =>
+      parseBitbucketIdentity(
+        `https://user:${secret}@bitbucket.org/acme/service/extra`,
+      ),
+    ).toThrow("unsupported Bitbucket Cloud fetch URL");
+    try {
+      parseBitbucketIdentity(
+        `https://user:${secret}@bitbucket.org/acme/service/extra`,
+      );
+    } catch (error) {
+      expect(String(error)).not.toContain(secret);
+    }
+  });
 });
 
 test("parseCloudContexts requires exactly one named Cloud context", () => {
