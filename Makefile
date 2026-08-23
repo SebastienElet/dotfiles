@@ -120,7 +120,7 @@ ${BREW_BIN}/fd:
 	brew install fd
 
 .PHONY: fish
-fish: brew starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
+fish: brew bun starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
 	@echo 'If you want to switch your shell to fish, please run the following command'
