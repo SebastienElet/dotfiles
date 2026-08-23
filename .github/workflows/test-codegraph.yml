@@ -57,5 +57,5 @@ jobs:
       - run: bash harness/skills/codegraph/scripts/skill_contract_test.sh
       - run: bun test tooling/codegraph-repository-*.test.ts
       - run: CODEGRAPH_REAL_CLAUDE_BIN="$HOME/.local/bin/claude" CODEGRAPH_REAL_CODEX_BIN="$HOME/.volta/bin/codex" bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
-      - run: bash tooling/codegraph-mcp-test
-      - run: bash tooling/codegraph-network-test
+      - run: CODEGRAPH_INTEGRATION=1 bun test tooling/codegraph-integration.test.ts
+      - run: bun run typecheck
