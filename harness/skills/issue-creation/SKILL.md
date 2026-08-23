@@ -53,7 +53,10 @@ user's language and the target project's canonical vocabulary and issue conventi
    and neighboring vocabulary rather than only the proposed title. Inspect likely matches and
    record duplicates, overlaps, dependencies, and conflicting work. A probable duplicate blocks
    creation until the user chooses the existing issue or explicitly distinguishes the new outcome;
-   continue any independent drafting while that decision is open.
+   continue any independent drafting while that decision is open. This search is a best-effort
+   snapshot, not a uniqueness guarantee: it cannot serialize concurrent creators. Use a verified
+   provider idempotency or uniqueness mechanism when one exists; otherwise report that concurrent
+   duplicate creation remains possible.
 
 5. **Prepare the candidate.** State the title, observable outcome, promised deliverables,
    requirements, established constraints, open questions, deliberate non-goals, and observable
@@ -100,6 +103,8 @@ user's language and the target project's canonical vocabulary and issue conventi
   retrieve the issue independently and compare the stored result.
 - **Retrying after an ambiguous write** — the first creation may have succeeded and a retry creates
   a duplicate; search exact and recent candidates before deciding whether another write is safe.
+- **Treating duplicate search as uniqueness** — concurrent creators can both observe no match and
+  publish; use a verified provider-side guard when available and report the residual race otherwise.
 - **Making session limits into issue scope** — the future implementer receives a false non-goal;
   keep draft-session boundaries in the response and out of the issue body.
 - **Letting a specialist publish** — lifecycle ownership becomes duplicated and confirmation rules
