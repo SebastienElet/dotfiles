@@ -8,7 +8,7 @@ the PR.
 ## Skeleton
 
 ```text
-<!-- merge-verdict:<pr>:<head-sha-12> -->
+<!-- pr-verdict:<pr>:<head-sha-12> -->
 ## Independent verdict — <changes required | approved with reservations | approved>
 
 <Anchor sentence — REQUIRED. Whose work, on which head SHA, against which base: the real one,
@@ -48,7 +48,7 @@ are; a real verdict is written in the language of its PR. Note what the barrier 
 gives numbers, then immediately spends a sentence dismantling its own green.
 
 ```text
-<!-- merge-verdict:1042:a1b2c3d4e5f6 -->
+<!-- pr-verdict:1042:a1b2c3d4e5f6 -->
 ## Independent verdict — changes required
 
 Review of PR #1042 on a1b2c3d4e5f6, stacked base feat/ledger-read-side@9f8e7d6c5b4a.

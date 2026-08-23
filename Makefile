@@ -9,15 +9,6 @@ SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
-define MIGRATE_MERGE_VERDICT_SKILL
-set -eu; \
-new_skill="$(1)/pr-verdict"; \
-legacy_skill="$(1)/merge-verdict"; \
-if [ -L "$$new_skill" ]; then test "$$(readlink "$$new_skill")" = "${DOTFILES_PATH}/harness/skills/pr-verdict"; else test ! -e "$$new_skill"; fi; \
-if [ -L "$$legacy_skill" ]; then test "$$(readlink "$$legacy_skill")" = "${DOTFILES_PATH}/harness/skills/merge-verdict"; else test ! -e "$$legacy_skill"; fi; \
-if [ ! -L "$$new_skill" ]; then ln -s "${DOTFILES_PATH}/harness/skills/pr-verdict" "$$new_skill"; fi; \
-if [ -L "$$legacy_skill" ]; then unlink "$$legacy_skill"; fi
-endef
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 # Avoid Homebrew confirmation prompts during setup.
@@ -373,11 +364,8 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/en
 	${CREATE_SYMLINK}
 ~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
 	${CREATE_SYMLINK}
-.PHONY: cursor-pr-verdict-migration
-cursor-pr-verdict-migration: | ~/.cursor/skills
-	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.cursor/skills)
-~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.cursor/skills cursor-pr-verdict-migration
-	test -L "$@" && test "$$(readlink "$@")" = "$<"
+~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
 	${CREATE_SYMLINK}
 
@@ -419,11 +407,8 @@ ${LOCAL_BIN}/claude:
 # review, which is never this one.
 ~/.claude/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.claude/skills
 	${CREATE_SYMLINK}
-.PHONY: claude-pr-verdict-migration
-claude-pr-verdict-migration: | ~/.claude/skills
-	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.claude/skills)
-~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills claude-pr-verdict-migration
-	test -L "$@" && test "$$(readlink "$@")" = "$<"
+~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills
+	${CREATE_SYMLINK}
 ~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
 	${CREATE_SYMLINK}
 
@@ -471,11 +456,8 @@ ${LOCAL_BIN}/claude-developer: ${DOTFILES_PATH}/tooling/claude-developer | ${LOC
 	${CREATE_SYMLINK}
 ~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
 	${CREATE_SYMLINK}
-.PHONY: codex-pr-verdict-migration
-codex-pr-verdict-migration: | ~/.agents/skills
-	$(call MIGRATE_MERGE_VERDICT_SKILL,$(HOME)/.agents/skills)
-~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills codex-pr-verdict-migration
-	test -L "$@" && test "$$(readlink "$@")" = "$<"
+~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills
+	${CREATE_SYMLINK}
 ~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
 	${CREATE_SYMLINK}
 

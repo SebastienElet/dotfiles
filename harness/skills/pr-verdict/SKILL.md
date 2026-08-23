@@ -1,7 +1,7 @@
 ---
 name: pr-verdict
 description: >
-  Deliver a merge verdict on an open pull request, yours or another author's. Use when asked to
+  Deliver a PR verdict on an open pull request, yours or another author's. Use when asked to
   review a PR, whether it is safe to merge or approve, for a blocking review, or a re-review after
   fixes. Make sure to use it whenever a merge decision is at stake, even if the request only says
   "look at this PR".
@@ -98,7 +98,7 @@ says to post directly.
    ticket solely to request or record a re-review: the new
    head-specific verdict comment is that record. Write one general comment from
    `assets/verdict-template.md`, prefixed with the idempotency marker
-   `<!-- merge-verdict:<pr>:<head-sha-12> -->` — not a rain of inline comments. Search the existing
+   `<!-- pr-verdict:<pr>:<head-sha-12> -->` — not a rain of inline comments. Search the existing
    comments for that marker first: a verdict carrying the same `<pr>:<sha>` is updated in place,
    never duplicated. Re-read before publishing — past about thirty lines, non-blocking remarks are
    posing as blockers. On GitHub, _changes required_ is published with
@@ -118,8 +118,7 @@ says to post directly.
   and silently truncate the comment. Always pass the body through a file (see
   `references/forges.md`).
 - **Renaming the visible command marker** — existing comments become invisible to the duplicate
-  guard. Keep the historical `merge-verdict` marker as the stable external protocol key even though
-  the skill is now invoked as `pr-verdict`.
+  guard. Keep `pr-verdict` as the stable external protocol key.
 - **A stale marker updated instead of superseded** — the SHA in the marker going stale on the next
   push is the point. Same `<pr>:<sha>` → update that comment; different SHA → publish a new verdict
   and leave the old one as the record of what was judged.

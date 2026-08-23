@@ -50,7 +50,7 @@
     {
       "query": "Relis mon diff avant que je commite",
       "should_activate": false,
-      "reason": "Own diff before committing; that is code-review, not a merge verdict"
+      "reason": "Own diff before committing; that is code-review, not a PR verdict"
     },
     {
       "query": "Open a PR for this branch with a description",

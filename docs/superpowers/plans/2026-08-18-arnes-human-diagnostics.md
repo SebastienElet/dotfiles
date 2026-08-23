@@ -588,8 +588,8 @@ fn report() -> Report {
         diagnostic(
             cursor.clone(),
             State::Healthy,
-            "merge-verdict current",
-            "merge-verdict",
+            "pr-verdict current",
+            "pr-verdict",
         ),
         diagnostic(
             cursor.clone(),
@@ -682,7 +682,7 @@ CURSOR
     actual    destination missing
     path      ~/.cursor/skills/enforcement-code
   UNSUPPORTED extension skill exposure
-  HEALTHY merge-verdict
+  HEALTHY pr-verdict
 
 CLAUDE
   1 unsupported · 1 healthy

@@ -121,13 +121,13 @@ comment's current `version` — read it from `bkt pr comments <n> --json` first.
 
 ## Finding a previous verdict
 
-The marker is the lookup key. Search the comment bodies for `<!-- merge-verdict:` before publishing:
+The marker is the lookup key. Search the comment bodies for `<!-- pr-verdict:` before publishing:
 
 ```sh
 gh pr view 1042 --json comments \
-  --jq '.comments[] | select(.body | startswith("<!-- merge-verdict:")) | {id, body: .body[0:60]}'
+  --jq '.comments[] | select(.body | startswith("<!-- pr-verdict:")) | {id, body: .body[0:60]}'
 
-bkt pr comments 1042 --json --jq '.[] | select(.content.raw // .text | startswith("<!-- merge-verdict:"))'
+bkt pr comments 1042 --json --jq '.[] | select(.content.raw // .text | startswith("<!-- pr-verdict:"))'
 ```
 
 Same `<pr>:<sha>` → update that comment. Different SHA → publish a new verdict and leave the old one

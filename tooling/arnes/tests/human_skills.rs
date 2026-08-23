@@ -32,8 +32,8 @@ fn report() -> Report {
         diagnostic(
             cursor.clone(),
             State::Healthy,
-            "merge-verdict current",
-            "merge-verdict",
+            "pr-verdict current",
+            "pr-verdict",
         ),
         diagnostic(
             cursor.clone(),

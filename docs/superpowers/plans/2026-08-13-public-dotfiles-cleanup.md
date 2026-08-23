@@ -75,13 +75,13 @@ Delete exactly the thirteen physical files listed under commit 1. Do not delete
 Replace the complete Cursor block in `Makefile` with:
 
 ```make
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/merge-verdict
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/pr-verdict
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
 	mkdir -p $@
-~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/.agents/skills/pr-verdict | ~/.cursor/skills
+	ln -s ${DOTFILES_PATH}/.agents/skills/pr-verdict $@
 ```
 
 Preserve aggregate wiring around `cursor`. Remove the `Cursor.app` sentinel,
@@ -179,7 +179,7 @@ fish --no-config -c 'source fish/conf.d/git-abbreviations.fish; abbr --show' | r
 bash -n scripts/jdl scripts/git_main_branch scripts/review
 make -n -B cursor | tee /tmp/issue-64-cursor-plan
 rg -F 'curl https://cursor.com/install -fsS | bash' /tmp/issue-64-cursor-plan
-rg -F '.agents/skills/merge-verdict' /tmp/issue-64-cursor-plan
+rg -F '.agents/skills/pr-verdict' /tmp/issue-64-cursor-plan
 ! rg 'Cursor\.app|brew install --cask cursor|\.config/Cursor/User|\.dotfiles/cursor/' /tmp/issue-64-cursor-plan
 make -n -B aws | rg -F 'brew install awscli'
 test -x scripts/git_main_branch
@@ -416,7 +416,7 @@ Create `.agents/skills/skill-manager/evals/trigger-queries.json` with exactly:
     {
       "query": "Review whether this pull request is safe to merge",
       "should_activate": false,
-      "reason": "A normal pull request review belongs to merge-verdict"
+      "reason": "A normal pull request review belongs to pr-verdict"
     },
     {
       "query": "Correct a typo in the repository README",

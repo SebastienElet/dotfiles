@@ -158,7 +158,7 @@ CURSOR
   UNSUPPORTED marketplace plugin activation
   UNSUPPORTED extension skill exposure
 
-  HEALTHY merge-verdict · managed skill
+  HEALTHY pr-verdict · managed skill
   HEALTHY superpowers · enabled plugin
   HEALTHY brainstorming · enabled skill
   ...
