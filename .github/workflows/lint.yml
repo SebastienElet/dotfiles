@@ -114,6 +114,7 @@ jobs:
           tooling/agent-handoff-test
           tooling/upgrade-test
           tooling/ci-smoke-targets-test
+          tooling/makefile-test
           echo "✅ Shell scripts OK"
 
   cspell:
@@ -132,4 +133,4 @@ jobs:
           trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
           printf '%s\n' "$trace"
           printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
-          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt harness/rules/agent-instructions.md
+          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt harness/skills/agent-instructions/SKILL.md harness/skills/agent-instructions/references/maintenance.md

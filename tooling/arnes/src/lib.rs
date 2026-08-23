@@ -7,6 +7,7 @@ pub mod manifest;
 pub mod measure;
 pub mod prompts;
 pub mod roots;
+pub mod rules;
 pub mod skills;
 
 pub use roots::Roots;

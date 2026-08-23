@@ -49,12 +49,13 @@ est suivie par l'issue #152.
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-les règles sous `harness/rules/`, ainsi que les services associés comme
-`harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
+les skills et leurs adaptateurs sous `harness/rules/`, ainsi que les services
+associés comme `harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
 Claude reçoit des liens symboliques, tandis que Codex reçoit un
 `~/.codex/AGENTS.md` assemblé.
 
-La règle globale `agent-instructions` n'est déployée que vers Claude et Codex.
+La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
+issues de la même source canonique sous `harness/skills/`.
 Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
 Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
 `Makefile` ne peut donc pas y distribuer cette source.

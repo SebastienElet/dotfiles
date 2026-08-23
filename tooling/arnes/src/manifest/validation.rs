@@ -6,6 +6,7 @@ use std::path::{Component, Path};
 mod commands;
 mod external;
 mod prompts;
+mod rules;
 mod skills;
 
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
@@ -119,6 +120,7 @@ fn validate_resources(
         validate_normalized_resource_kind(resource, index)?;
         validate_resource_paths(resource, index)?;
         validate_resource_layout(resource, index)?;
+        rules::validate(resource, index)?;
         if resource.kind == super::ResourceKind::Skills
             && let Some(previous) =
                 skill_projections.insert((resource.agent, resource.scope), index)

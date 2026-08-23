@@ -3,12 +3,16 @@ name: Arnes tests
 on:
   push:
     paths:
+      - Makefile
       - home/.arnes.yaml
+      - harness/**
       - tooling/arnes/**
       - .github/workflows/test-arnes.yml
   pull_request:
     paths:
+      - Makefile
       - home/.arnes.yaml
+      - harness/**
       - tooling/arnes/**
       - .github/workflows/test-arnes.yml
 

@@ -17,6 +17,9 @@ agents:
       model: gpt-5.6-sol
       effort: medium
 skills:
+  - slug: agent-instructions
+    installations:
+      - { agent: codex, scope: user }
   - slug: claude-developer
     installations:
       - { agent: cursor, scope: user }
@@ -85,6 +88,16 @@ resources:
     scope: user
     source: { root: repository, path: harness/USER.md }
     destination: { root: home, path: .claude/USER.md }
+  - id: claude-user-agent-instructions
+    kind: rules
+    agent: claude
+    scope: user
+    source:
+      {
+        root: repository,
+        path: harness/skills/agent-instructions/references/maintenance.md,
+      }
+    destination: { root: home, path: .claude/rules/agent-instructions.md }
   - id: claude-project-instructions
     kind: instructions
     agent: claude

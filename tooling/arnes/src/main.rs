@@ -13,6 +13,7 @@ use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Repor
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
+use arnes::rules;
 use arnes::skills;
 use cli::{Cli, Color, Command, Format, Resource, validate_render_options};
 use cli_output::write_output;
@@ -144,6 +145,10 @@ fn diagnose(
             Ok(roots) => diagnose_commands(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
         },
+        Some(Resource::Rules) => match Roots::from_environment() {
+            Ok(roots) => diagnose_rules(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("rules", State::Error, error.to_string())],
+        },
         _ => Vec::new(),
     }
 }
@@ -195,5 +200,12 @@ fn diagnose_commands(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) 
     match manifest::load(roots.home()) {
         Ok(manifest) => commands::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_rules(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => rules::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("rules", State::Error, error.to_string())],
     }
 }

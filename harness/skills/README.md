@@ -11,13 +11,14 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Dev
 
-| Skill              | Description                                                                                          |
-| ------------------ | ---------------------------------------------------------------------------------------------------- |
-| `claude-developer` | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
-| `codegraph`        | Explore large repositories structurally with CodeGraph.                                              |
-| `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
-| `pr-fix`           | Repair an open pull request after an independent merge review.                                       |
-| `pr-verdict`       | Deliver a PR verdict on an open pull request, yours or another author's.                             |
+| Skill                | Description                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `agent-instructions` | Maintain coding-agent instructions and their discovery paths.                                        |
+| `claude-developer`   | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
+| `codegraph`          | Explore large repositories structurally with CodeGraph.                                              |
+| `enforcement-code`   | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
+| `pr-fix`             | Repair an open pull request after an independent merge review.                                       |
+| `pr-verdict`         | Deliver a PR verdict on an open pull request, yours or another author's.                             |
 
 ## Product
 

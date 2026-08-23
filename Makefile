@@ -431,7 +431,7 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -439,11 +439,13 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 # Codex ignores AGENTS.md @import directives, so the sources are assembled
 # here instead of symlinked. Written to a temporary path then moved, so an
 # existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.codex
-	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/harness/rules/agent-instructions.md > $@.tmp
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/Makefile | ~/.codex
+	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md > $@.tmp
 	mv $@.tmp $@
 ~/.agents/skills:
 	mkdir -p $@
+~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions | ~/.agents/skills
+	${CREATE_SYMLINK}
 ~/.agents/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.agents/skills

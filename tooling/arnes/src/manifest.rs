@@ -8,6 +8,7 @@ mod config;
 mod external;
 mod parsing;
 mod prompts;
+mod rules;
 mod validation;
 
 pub use commands::{Command, CommandBinding};
@@ -15,6 +16,7 @@ pub use config::UserConfig;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
+pub use rules::RuleResource;
 
 const MANIFEST_FILE: &str = ".arnes.yaml";
 const SCHEMA_VERSION: u64 = 1;
