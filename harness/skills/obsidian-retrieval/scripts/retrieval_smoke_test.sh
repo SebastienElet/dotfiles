@@ -45,14 +45,19 @@ conceptual_retrieval() {
 obsidian_retrieval() {
   local root=$1
   local target=$2
+  local expected_root reported_root
 
   if command -v obsidian >/dev/null 2>&1 && obsidian version >/dev/null 2>&1; then
-    (
-      cd "$root"
-      obsidian backlinks path="$target" format=tsv
-      obsidian read path="$target"
-    )
-    return
+    expected_root=$(cd "$root" && pwd -P)
+    reported_root=$(cd "$root" && obsidian vault info=path) || reported_root=
+    if [[ $reported_root == "$expected_root" ]]; then
+      (
+        cd "$root"
+        obsidian backlinks path="$target" format=tsv
+        obsidian read path="$target"
+      )
+      return
+    fi
   fi
   printf 'degraded=obsidian-unavailable; fallback=filesystem\n'
   lexical_candidates "$root" "$target"
@@ -85,6 +90,13 @@ if [[ ${OBSIDIAN_SMOKE_DISABLED:-} == 1 && $1 == version ]]; then
 fi
 case "$1" in
   version) printf '1.12.7\n' ;;
+  vault)
+    if [[ -n ${OBSIDIAN_SMOKE_WRONG_ROOT:-} ]]; then
+      printf '%s\n' "$OBSIDIAN_SMOKE_WRONG_ROOT"
+    else
+      printf '%s\n' "$OBSIDIAN_SMOKE_ROOT"
+    fi
+    ;;
   backlinks) printf 'index.md\t1\n' ;;
   read) sed -n '1,120p' "$OBSIDIAN_SMOKE_ROOT/${2#path=}" ;;
   *) exit 64 ;;
@@ -93,11 +105,13 @@ EOF
 chmod +x "$test_root/bin/obsidian"
 
 export OBSIDIAN_SMOKE_LOG=$test_root/obsidian.log
-export OBSIDIAN_SMOKE_ROOT=$vault
+export OBSIDIAN_SMOKE_ROOT
+OBSIDIAN_SMOKE_ROOT=$(cd "$vault" && pwd -P)
 relation=$(PATH="$test_root/bin:/usr/bin:/bin" obsidian_retrieval "$vault" 'decisions/portable-retrieval.md')
 [[ $relation == *$'index.md\t1'* && $relation == *'source-only detail'* ]] || fail 'Obsidian relation retrieval did not read the source'
-[[ $(sed -n '2p' "$OBSIDIAN_SMOKE_LOG") == 'backlinks path=decisions/portable-retrieval.md format=tsv' ]] || fail 'read-only backlinks command was not used'
-[[ $(sed -n '3p' "$OBSIDIAN_SMOKE_LOG") == 'read path=decisions/portable-retrieval.md' ]] || fail 'Obsidian source was not read'
+[[ $(sed -n '2p' "$OBSIDIAN_SMOKE_LOG") == 'vault info=path' ]] || fail 'selected Obsidian vault was not verified'
+[[ $(sed -n '3p' "$OBSIDIAN_SMOKE_LOG") == 'backlinks path=decisions/portable-retrieval.md format=tsv' ]] || fail 'read-only backlinks command was not used'
+[[ $(sed -n '4p' "$OBSIDIAN_SMOKE_LOG") == 'read path=decisions/portable-retrieval.md' ]] || fail 'Obsidian source was not read'
 
 unavailable=$(PATH="/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retrieval')
 [[ $unavailable == *'degraded=obsidian-unavailable; fallback=filesystem'* ]] || fail 'missing Obsidian CLI was not reported'
@@ -106,6 +120,10 @@ unavailable=$(PATH="/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retriev
 disabled=$(OBSIDIAN_SMOKE_DISABLED=1 PATH="$test_root/bin:/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retrieval')
 [[ $disabled == *'degraded=obsidian-unavailable; fallback=filesystem'* ]] || fail 'disabled Obsidian CLI was not reported'
 [[ $disabled == *'portable-retrieval.md'* ]] || fail 'disabled Obsidian CLI did not fall back to filesystem retrieval'
+
+wrong_vault=$(OBSIDIAN_SMOKE_WRONG_ROOT="$test_root/other-vault" PATH="$test_root/bin:/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retrieval')
+[[ $wrong_vault == *'degraded=obsidian-unavailable; fallback=filesystem'* ]] || fail 'wrong Obsidian vault was not reported'
+[[ $wrong_vault == *'portable-retrieval.md'* ]] || fail 'wrong Obsidian vault did not fall back to filesystem retrieval'
 
 concept=$(PATH="/usr/bin:/bin" conceptual_retrieval "$vault" 'Distributed decisions')
 [[ $concept == *'degraded=semantic-unavailable; fallback=lexical'* ]] || fail 'missing QMD was not reported'

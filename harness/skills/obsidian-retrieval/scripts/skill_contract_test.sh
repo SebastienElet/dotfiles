@@ -24,9 +24,9 @@ require_reference() {
 [[ -f $evals ]] || fail 'trigger evaluations are absent'
 
 require_skill 'explicit corpus input'
-require_skill 'nearest ancestor containing `.obsidian/`'
+require_skill "nearest ancestor containing \`.obsidian/\`"
 require_skill 'single current workspace root'
-require_skill 'Never search parent directories, `$HOME`, or Obsidian'
+require_skill "Never search parent directories, \`\$HOME\`, or Obsidian"
 require_skill 'Exact anchors'
 require_skill 'Conceptual questions'
 require_skill 'Obsidian semantics'
@@ -93,13 +93,21 @@ def validate_reference(reference_text, skill_text):
     permission_pattern = rf"(?i)\b(?:allow(?:ed)?|permit(?:ted)?|run|invoke|expose)\b[^\n]{{0,100}}(?<![\w:])(?:{unsafe_pattern})(?![\w:])"
     permission_text = "\n".join(
         line for line in (reference_text + "\n" + skill_text).splitlines()
-        if not line.startswith("- Never ")
+        if not line.startswith("- Never ") and "Do not " not in line
     )
     if re.search(permission_pattern, permission_text):
         raise ValueError("unsafe command is described as permitted")
     invocations = re.findall(r"\bobsidian\s+([a-z][a-z:-]*)", reference_text + "\n" + skill_text)
     if not set(invocations) <= {"version", "vault"}:
         raise ValueError(f"unsafe Obsidian invocation: {invocations}")
+    positive_skill_lines = (
+        line for line in skill_text.splitlines()
+        if not line.startswith("- Never ") and "Do not " not in line
+    )
+    for line in positive_skill_lines:
+        tokens = set(re.findall(r"`([^`]+)`", line))
+        if tokens & unsafe_commands:
+            raise ValueError(f"unsafe command exposed in SKILL.md: {sorted(tokens & unsafe_commands)}")
 
 try:
     validate_reference(reference, skill)
@@ -122,6 +130,12 @@ try:
         pass
     else:
         raise ValueError("adversarial skill instruction bypassed the validator")
+    try:
+        validate_reference(reference, skill + "\nUse `create` to add a note.\n")
+    except ValueError:
+        pass
+    else:
+        raise ValueError("backticked SKILL.md mutator bypassed the validator")
 except ValueError as error:
     raise SystemExit(str(error)) from error
 
