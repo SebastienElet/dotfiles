@@ -2,7 +2,9 @@ import { join } from "node:path";
 
 const entryPoint = join(import.meta.dir, "agent-handoff");
 const inheritedEnvironment = Object.fromEntries(
-  Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
+  Object.entries(process.env).filter(
+    (entry): entry is [string, string] => entry[1] !== undefined,
+  ),
 );
 
 export type HookResult = Readonly<{
@@ -39,7 +41,11 @@ export function codexUsage(used: number, window = 100_000): string {
   });
 }
 
-export function event(transcriptPath: string, sessionId: string, stopHookActive = false): string {
+export function event(
+  transcriptPath: string,
+  sessionId: string,
+  stopHookActive = false,
+): string {
   return JSON.stringify({
     hook_event_name: "Stop",
     session_id: sessionId,
