@@ -192,8 +192,14 @@ fn merge_claude_stop(config: &mut Value, current: &str, legacy: &str) -> Result<
     let mut handler = current_handler
         .or(legacy_handler)
         .unwrap_or_else(|| json!({"type":"command"}));
-    handler["command"] = json!(current);
-    handler["args"] = json!([]);
+    let handler = handler
+        .as_object_mut()
+        .ok_or_else(|| MeasureError::new("Claude Stop hook handler must be an object"))?;
+    for field in ["async", "asyncRewake", "once", "if"] {
+        handler.remove(field);
+    }
+    handler.insert("command".into(), json!(current));
+    handler.insert("args".into(), json!([]));
     entries.push(json!({"hooks":[handler]}));
     Ok(())
 }

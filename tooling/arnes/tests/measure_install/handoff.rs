@@ -10,7 +10,15 @@ fn installs_and_migrates_the_owned_claude_stop_hook_in_the_same_write() {
     harness.write_config(
         "claude-code",
         &serde_json::json!({"keep":true,"hooks":{"Stop":[{"hooks":[
-            {"type":"command","command":legacy,"timeout":7},
+            {
+                "type":"command",
+                "command":legacy,
+                "timeout":7,
+                "async":true,
+                "asyncRewake":true,
+                "once":true,
+                "if":"never"
+            },
             {"type":"command","command":"third-party"}
         ]}]}}),
     );
@@ -32,4 +40,7 @@ fn installs_and_migrates_the_owned_claude_stop_hook_in_the_same_write() {
         .unwrap();
     assert_eq!(owned["args"], serde_json::json!([]));
     assert_eq!(owned["timeout"], 7);
+    for field in ["async", "asyncRewake", "once", "if"] {
+        assert!(owned.get(field).is_none(), "{field} was preserved");
+    }
 }
