@@ -417,8 +417,12 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 
 .PHONY: claude-handoff-hook
-claude-handoff-hook: arnes ${DOTFILES_PATH}/tooling/claude-handoff-hook
-	@"${DOTFILES_PATH}/tooling/claude-handoff-hook" "${LOCAL_BIN}/arnes" "${DOTFILES_PATH}/tooling/agent-handoff" "${DOTFILES_PATH}/scripts/agent_handoff"
+claude-handoff-hook: arnes
+	"${LOCAL_BIN}/arnes" measure install-hooks \
+		--agent claude-code \
+		--command "${LOCAL_BIN}/arnes" \
+		--claude-stop-command "${DOTFILES_PATH}/tooling/agent-handoff" \
+		--claude-legacy-stop-command "${DOTFILES_PATH}/scripts/agent_handoff"
 
 .PHONY: claude-code-measurement-hooks
 claude-code-measurement-hooks: claude-handoff-hook

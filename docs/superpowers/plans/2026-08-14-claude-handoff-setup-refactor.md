@@ -3,23 +3,23 @@
 **Objectif :** installer l'entrée Stop de handoff sans multiplier les writers de la configuration
 Claude.
 
-**Architecture :** le script Bash valide les chemins et délègue à Arnes l'installation atomique des
-hooks de mesure et de handoff. Le test reste un exécutable direct de la CI; le Makefile ne fournit
-qu'une façade phony.
+**Architecture :** le Makefile délègue directement à Arnes l'installation atomique des hooks de
+mesure et de handoff. Arnes reste le seul applicatif qui lit, valide et écrit la configuration
+Claude.
 
 ### 1. Réduire le test aux garanties utiles
 
-Fichier : `tooling/claude-handoff-hook-test`
+Fichier : `tooling/makefile-test`
 
-- Couvrir la délégation exacte vers Arnes.
-- Couvrir la résolution du script depuis un répertoire extérieur au dépôt.
+- Couvrir l'appel exact d'Arnes sans intermédiaire Shell.
+- Couvrir la résolution des chemins depuis un répertoire extérieur au dépôt.
 - Conserver les garanties de mutation JSON et de concurrence dans les tests Arnes.
 
-### 2. Simplifier le setup
+### 2. Intégrer le setup à Arnes
 
-Fichier : `tooling/claude-handoff-hook`
+Fichiers : `tooling/arnes/src/measure/install.rs` et ses tests
 
-- Valider les trois chemins absolus à la frontière Bash.
+- Valider les chemins absolus dans le CLI typé.
 - Installer le hook de mesure et le hook de handoff dans la même transformation Arnes.
 - Réutiliser l'échange atomique avec comparaison du snapshot pour ne perdre aucune écriture
   concurrente.
@@ -28,10 +28,10 @@ Fichier : `tooling/claude-handoff-hook`
 
 ### 3. Vérifier les barrières concernées
 
-Fichiers : les quatre scripts Bash, `Makefile` et `.github/workflows/lint.yml`.
+Fichiers : Arnes, `Makefile` et `.github/workflows/lint.yml`.
 
-- Exécuter `bash -n` et le ShellCheck complet sur les quatre scripts.
-- Exécuter `tooling/agent-handoff-test` et `tooling/claude-handoff-hook-test` sur macOS.
+- Exécuter le formatage, Clippy et les tests Arnes.
+- Exécuter `tooling/agent-handoff-test`, `tooling/makefile-test` et les tests Arnes sur macOS.
 - Vérifier que le lint CI découvre les scripts imbriqués, le dry-run Make, le YAML et
   `git diff --check`.
 - Auto-relire le diff, committer, pousser puis surveiller les checks de la PR.

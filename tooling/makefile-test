@@ -220,7 +220,14 @@ for agent in codex claude-code cursor; do
   trace=$case_root/$target
   env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$target" >"$trace"
   if [[ $agent == claude-code ]]; then
-    expected="$repository/tooling/claude-handoff-hook"
+    expected="\"$test_home/.local/bin/arnes\" measure install-hooks"
+    grep -F -q -- '--agent claude-code' "$trace" || fail "$target does not select Claude Code"
+    grep -F -q -- "--command \"$test_home/.local/bin/arnes\"" "$trace" \
+      || fail "$target does not install measurement hooks through Arnes"
+    grep -F -q -- "--claude-stop-command \"$repository/tooling/agent-handoff\"" "$trace" \
+      || fail "$target does not install the current handoff hook"
+    grep -F -q -- "--claude-legacy-stop-command \"$repository/scripts/agent_handoff\"" "$trace" \
+      || fail "$target does not migrate the legacy handoff hook"
   else
     expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
   fi

@@ -7,14 +7,14 @@ réglages. Le setup reste distinct du hook runtime `tooling/agent-handoff`.
 
 ## Structure
 
-- `tooling/claude-handoff-hook` valide les chemins puis délègue l'unique écriture à Arnes.
-- Arnes installe en même temps ses hooks de mesure et l'entrée Stop de handoff.
-- `tooling/claude-handoff-hook-test` vérifie la délégation et l'appel Make hors dépôt.
-- `claude-handoff-hook` reste une façade phony du Makefile.
+- Arnes valide les chemins et installe en même temps ses hooks de mesure et l'entrée Stop de
+  handoff.
+- `claude-handoff-hook` reste une façade phony du Makefile et appelle directement Arnes.
+- `tooling/makefile-test` vérifie l'appel Arnes complet depuis un répertoire extérieur au dépôt.
 - Le lint CI appelle directement le script de test, sans target Make de test.
 
-Le script reçoit les chemins absolus d'Arnes et des hooks runtime courant et historique. Le Makefile
-les résout depuis `DOTFILES_PATH`, y compris lorsqu'il est appelé hors du dépôt.
+Le Makefile transmet à Arnes les chemins absolus des hooks runtime courant et historique, résolus
+depuis `DOTFILES_PATH`, y compris lorsqu'il est appelé hors du dépôt.
 
 ## Garanties
 
@@ -34,4 +34,5 @@ refus sans mutation d'un contenu ou chemin invalide et les écritures concurrent
 publication. Une target Make de test reste hors périmètre.
 
 `.PHONY: claude-code` et `.PHONY: claude-handoff-hook` restent immédiatement devant leurs targets.
-Les targets Codex voisines ne sont pas modifiées.
+Les targets Codex voisines ne sont pas modifiées et aucun script Shell ne lit ou n'écrit les
+réglages Claude.
