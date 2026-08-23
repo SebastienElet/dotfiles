@@ -174,6 +174,18 @@ describe("ci-smoke-targets entry point", () => {
     expectTargets(repository, ["all"]);
   });
 
+  test("selects all when a tab-indented define body changes", () => {
+    const repository = newRepository("define-body");
+    const makefile = (value: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\ndefine SHARED_RECIPE\n\t${value}\nendef\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile("original"));
+    commit(repository, "add define body");
+    write(repository, "Makefile", makefile("changed"));
+    commit(repository, "change define body");
+
+    expectTargets(repository, ["all"]);
+  });
+
   test("selects all when a target is deleted", () => {
     const repository = newRepository("deleted-target");
     write(

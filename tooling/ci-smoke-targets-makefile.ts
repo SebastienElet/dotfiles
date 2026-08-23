@@ -44,9 +44,28 @@ function endsWithUnescapedBackslash(content: string): boolean {
   return backslashes % 2 === 1;
 }
 
+function isInsideDefine(makefile: readonly string[], line: number): boolean {
+  return (
+    makefile.slice(0, line - 1).reduce((depth, content) => {
+      if (/^[ ]*endef(?:\s|$)/.test(content)) {
+        return Math.max(0, depth - 1);
+      }
+      if (
+        /^[ ]*(?:(?:export|override|private)\s+)*define(?:\s|$)/.test(content)
+      ) {
+        return depth + 1;
+      }
+      return depth;
+    }, 0) > 0
+  );
+}
+
 function classifyLine(makefile: readonly string[], line: number): string {
   const content = makefile[line - 1] ?? "";
   const target = targetAtLine(makefile, line);
+  if (isInsideDefine(makefile, line)) {
+    return "all";
+  }
   if (assignmentPattern.test(content) || directivePattern.test(content)) {
     return "all";
   }
