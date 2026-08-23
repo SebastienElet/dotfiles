@@ -4,8 +4,6 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
-BUN_VERSION:=1.4.0
-BUN_BIN:=$(HOME)/.bun/bin/bun
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
@@ -387,33 +385,6 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
-.PHONY: bun
-bun: | $(HOME)/.bun/bin
-	@set -eu; \
-	version=missing; \
-	if [ -x "${BUN_BIN}" ]; then version=$$("${BUN_BIN}" --version) || version=unreadable; fi; \
-	if [ "$$version" = "${BUN_VERSION}" ]; then exit 0; fi; \
-	case "$$(uname -m)" in \
-		arm64) archive_arch=aarch64; checksum=c669e97f6164e1c96e0701748db98dfa77492908cbd8394c7557134a735de381 ;; \
-		x86_64) archive_arch=x64; checksum=1d0211b8f1dc991182344687ad15e72ee86f154845a5f7fa477994cd341dd9b0 ;; \
-		*) echo "Error: unsupported Bun architecture: $$(uname -m)" >&2; exit 1 ;; \
-	esac; \
-	temporary=$$(mktemp -d); \
-	staged=; \
-	trap 'rm -rf "$$temporary"; if [ -n "$$staged" ]; then rm -f "$$staged"; fi' 0; \
-	archive="$$temporary/bun.zip"; \
-	curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-darwin-$$archive_arch.zip" -o "$$archive"; \
-	printf '%s  %s\n' "$$checksum" "$$archive" | shasum -a 256 -c -; \
-	unzip -q "$$archive" -d "$$temporary"; \
-	staged=$$(mktemp "${BUN_BIN}.tmp.XXXXXX"); \
-	install -m 755 "$$temporary/bun-darwin-$$archive_arch/bun" "$$staged"; \
-	installed_version=$$("$$staged" --version); \
-	test "$$installed_version" = "${BUN_VERSION}" || { echo "Error: downloaded Bun is $$installed_version, expected ${BUN_VERSION}" >&2; exit 1; }; \
-	mv "$$staged" "${BUN_BIN}"; \
-	staged=
-$(HOME)/.bun/bin:
-	mkdir -p $@
-
 .PHONY: claude-code
 claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
@@ -554,10 +525,10 @@ codegraph-test:
 	bash tooling/codegraph-network-test
 
 .PHONY: obsidian-retrieval-test
-obsidian-retrieval-test: bun
-	cd "${DOTFILES_PATH}" && "${BUN_BIN}" ci
-	cd "${DOTFILES_PATH}" && "${BUN_BIN}" run typecheck
-	cd "${DOTFILES_PATH}" && "${BUN_BIN}" test tooling/obsidian-retrieval/contract.test.ts
+obsidian-retrieval-test: ${BREW_BIN}/bun
+	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" ci
+	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" run typecheck
+	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" test tooling/obsidian-retrieval/contract.test.ts
 
 .PHONY: codegraph-cli
 codegraph-cli: ${VOLTA_BIN}/codegraph
@@ -938,6 +909,11 @@ node: ${VOLTA_BIN}/node
 ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
 	touch $@
+
+.PHONY: bun
+bun: ${BREW_BIN}/bun
+${BREW_BIN}/bun: | brew
+	brew install bun
 
 .PHONY: pnpm
 pnpm: ${VOLTA_BIN}/pnpm

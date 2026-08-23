@@ -189,4 +189,21 @@ describe("agent-handoff failures", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("cannot create handoff sentinel");
   });
+
+  test("does not inspect usage before the latest 500 physical lines", async () => {
+    const transcript = writeTranscript("physical-window.jsonl", [
+      claudeUsage(90_000),
+      ...Array.from({ length: 500 }, () => ""),
+    ]);
+    const input = claudeEvent(transcript, "physical-window");
+
+    expect(await runHook(input)).toEqual({
+      exitCode: 1,
+      stderr: "agent-handoff: no supported usage record in transcript\n",
+      stdout: "",
+    });
+
+    writeFileSync(transcript, `${claudeUsage(90_000)}\n`);
+    expect((await runHook(input)).stdout).not.toBe("");
+  });
 });
