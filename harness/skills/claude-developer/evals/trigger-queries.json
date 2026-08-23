@@ -1,0 +1,36 @@
+{
+  "skill": "claude-developer",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Delegate the approved authentication fix to Claude Code",
+      "should_activate": true,
+      "reason": "Every explicit Claude delegation is converted into a manual prompt"
+    },
+    {
+      "query": "Write a prompt I can paste into Claude Code for this migration",
+      "should_activate": true,
+      "reason": "The user explicitly requests a manual Claude Code prompt"
+    },
+    {
+      "query": "Claude implemented the first version; prepare the next correction prompt",
+      "should_activate": true,
+      "reason": "A user-controlled corrective iteration belongs to this workflow"
+    },
+    {
+      "query": "Launch Claude Code and have it implement this change automatically",
+      "should_activate": true,
+      "reason": "The skill must intercept automatic delegation and return a manual prompt instead"
+    },
+    {
+      "query": "Implement the approved authentication fix",
+      "should_activate": false,
+      "reason": "A direct implementation request without Claude stays with the current agent"
+    },
+    {
+      "query": "Review whether this pull request is safe to merge",
+      "should_activate": false,
+      "reason": "A pull request verdict belongs to the review workflow"
+    }
+  ]
+}

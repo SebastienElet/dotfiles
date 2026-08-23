@@ -112,7 +112,6 @@ jobs:
             | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
 
           tooling/agent-handoff-test
-          tooling/claude-developer-test
           tooling/upgrade-test
           tooling/ci-smoke-targets-test
           echo "✅ Shell scripts OK"

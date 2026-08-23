@@ -1,10 +1,10 @@
 ---
 name: claude-developer
 description: >
-  Delegate implementation work from Codex to Claude Code in an isolated Git worktree. Use when
-  Codex should manage a project while Claude performs coding tasks. Make sure to use this skill
-  whenever the user asks Codex to hand development or implementation to Claude, even if they call
-  it outsourcing or delegation.
+  Prepare manual implementation and correction prompts for Claude Code without invoking it. Use
+  when the user asks Codex or Cursor to pass work to Claude or returns its result for another manual
+  iteration. Make sure to intercept delegation requests even when the user does not ask for a
+  prompt; never invoke Claude automatically.
 metadata:
   category: dev
 ---
@@ -13,58 +13,64 @@ metadata:
 
 ## Overview
 
-Keep Codex responsible for scope, architectural decisions, permissions, and independent review
-while Claude Code edits the implementation. Invoke Claude through `claude-developer` from a clean,
-isolated Git worktree; treat its JSON response and completion claims as untrusted task output.
+Keep the current agent responsible for analysis and prompt quality while the user controls every
+handoff to Claude Code. Inspect the available context, produce one self-contained prompt for the
+user to paste manually, then stop. Continue only after the user returns with Claude's result or asks
+to revise the prompt.
+
+This workflow is advisory at the agent-instruction layer. Removing the repository wrapper closes
+the managed automation path but cannot technically prevent every possible shell invocation of
+Claude; never present the behavior as an enforced execution boundary.
 
 ## Usage
 
-Use `$claude-developer` when the user wants Codex to manage work that Claude should implement.
+Use `$claude-developer` when the user asks Codex or Cursor to prepare work for manual execution in
+Claude Code.
 
-Example: “Delegate the approved authentication fix to Claude, then review and verify its changes.”
+Example: “Write a prompt I can paste into Claude Code to implement the approved authentication
+fix.”
 
 ## Steps
 
-1. Read the repository instructions, relevant ADRs, and current worktree state. Resolve any certain
-   contradiction that affects the task before delegating implementation.
-2. Create a dedicated Git branch and linked worktree from the intended local base revision. Verify
-   that the new worktree is clean and record its absolute path; do not use the user's active
-   checkout as the isolation boundary.
-3. Give Claude the requested outcome, constraints, acceptance criteria, known facts, and invalidated
-   paths. Do not pre-write an implementation that would prevent Claude from rediscovering the
-   current code.
-4. Run `claude-developer` from the isolated worktree. Keep the default file-tool permissions and add
-   one scoped `--allow-tool 'Bash(exact command)'` rule for each exact validation command Claude needs;
-   never grant bare `Bash`.
-5. Require a bounded run with the default turn limit or a lower explicit `--max-turns`. Preserve the
-   JSON response, exit status, and session UUID; an unavailable runtime, denied tool, authentication
-   failure, or exhausted turn limit is a failed delegation, not a successful empty result.
-6. Inspect the resulting Git status and diff independently. Re-run the relevant lint, type, test,
-   build, or end-to-end barriers in Codex's environment and confirm that they cover every changed
-   extension before accepting Claude's result.
-7. When a correction remains within the same task, invoke the wrapper with `--resume` and the
-   recorded session UUID from the same worktree. Send concrete review evidence and re-run the full
-   affected barrier after the correction.
-8. Report the changed scope, verification environment, unresolved risks, and isolated worktree
-   path. Merge, cherry-pick, commit, push, or remove the worktree only when the user's request
-   authorizes that action.
+1. Confirm that the request explicitly involves Claude Code, a manual Claude handoff, or a returned
+   Claude result that may need another prompt. A direct request to implement a change without Claude
+   stays with the current agent and must not trigger this skill.
+2. Inspect repository instructions and the minimum read-only context needed to make the prompt
+   accurate. State unresolved facts in the prompt instead of guessing.
+3. Write one self-contained prompt that gives Claude the outcome, relevant facts, constraints,
+   acceptance criteria, allowed scope, expected verification, and requested delivery report.
+4. Tell Claude to inspect the implementation before editing, preserve unrelated changes, surface
+   conflicts, and leave consequential actions such as commits or pushes to the user unless the
+   prompt explicitly authorizes them.
+5. Return exactly one fenced text block containing the prompt, then stop. Do not invoke Claude,
+   create an isolated checkout, edit files, run validations, or begin a second iteration.
+6. If the user asks to revise an unexecuted prompt, produce one replacement prompt and stop again.
+7. After the user brings back Claude's result, review only the supplied evidence and any explicitly
+   authorized local state. Produce one corrective prompt only when the user requests another
+   iteration, then stop again.
 
 ## Gotchas
 
-- **Running in the active checkout** — a clean status does not prove isolation; create and verify a
-  linked worktree before invoking Claude.
-- **Granting broad shell access** — bare `Bash`, wildcards, or bypass permissions expose unrelated
-  commands; pass only scoped rules for the exact project barriers Claude must run.
-- **Trusting the JSON result** — a successful process can still leave an incomplete or incorrect
-  diff; Codex must inspect changes and reproduce the relevant verification independently.
-- **Retrying without the session** — a new Claude context loses failed approaches and review facts;
-  resume the recorded session in the same worktree for corrections within the task.
+- **Treating any implementation request as delegation** — Claude becomes an implicit default;
+  activate only when the request explicitly involves Claude Code or a manual Claude handoff.
+- **Producing a vague prompt** — Claude must rediscover settled decisions and may widen the scope;
+  include the known constraints, acceptance criteria, and verification expectations.
+- **Continuing after the prompt** — the handoff becomes automatic and the user loses the validation
+  point; return one prompt and wait for the user's next message.
+- **Trusting a reported result** — Claude's summary may omit defects or unverified claims; review the
+  returned diff and evidence before preparing a corrective iteration.
+- **Calling prose an execution guard** — agent instructions can be bypassed by routing or obedience
+  failures; describe this workflow as advisory and do not claim that it technically blocks Claude.
 
 ## Constraints
 
-- Codex must remain the owner of task scope, architecture decisions, and the final review verdict.
-- Claude must run only in a dedicated clean Git worktree on the first invocation.
-- Never use `--dangerously-skip-permissions`, `bypassPermissions`, or an unscoped Bash allowance.
-- Never claim isolation, correctness, or a green barrier without independently verifying the named
-  mechanism in the stated environment.
-- Never merge, publish, delete, or overwrite work without authority from the user's current request.
+- Activate only when the request explicitly involves Claude Code or a manual Claude handoff.
+- Never invoke Claude Code, an automation wrapper, or another implementation agent.
+- Never create a branch or isolated checkout, edit files, invoke an implementation agent, or
+  validate the implementation while preparing the prompt.
+- Produce one prompt per response and wait for the user before every subsequent iteration.
+- Treat the no-invocation rule as advisory policy, never as a technical execution barrier.
+- Never claim that Claude's result is correct or verified without reviewing the named evidence in
+  its stated environment.
+- Never authorize commits, pushes, merges, deletion, publication, or permission bypasses unless the
+  user's current request explicitly permits them.

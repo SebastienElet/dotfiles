@@ -110,6 +110,7 @@ for specification in \
   ".claude/skills/pr-fix pr-fix" \
   ".claude/skills/pr-verdict pr-verdict" \
   ".claude/skills/skill-manager skill-manager" \
+  ".cursor/skills/claude-developer claude-developer" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
   ".cursor/skills/pr-fix pr-fix" \
@@ -128,10 +129,6 @@ for specification in \
   assert_link "$destination" "$repository/harness/skills/$slug"
   [[ ! -e $repository/.agents/skills/$slug ]] || fail "$slug remains in the project skill collection"
 done
-
-claude_developer=$test_home/.local/bin/claude-developer
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_developer"
-assert_link "$claude_developer" "$repository/tooling/claude-developer"
 
 case_root=$test_root/daily_routine_config
 test_home=$case_root/home

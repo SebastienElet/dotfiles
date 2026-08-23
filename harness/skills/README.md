@@ -13,7 +13,7 @@ This directory is the canonical source for user-scoped agent skills.
 
 | Skill              | Description                                                                                          |
 | ------------------ | ---------------------------------------------------------------------------------------------------- |
-| `claude-developer` | Delegate implementation work from Codex to Claude Code in an isolated Git worktree.                  |
+| `claude-developer` | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
 | `codegraph`        | Explore large repositories structurally with CodeGraph.                                              |
 | `enforcement-code` | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
 | `pr-fix`           | Repair an open pull request after an independent merge review.                                       |

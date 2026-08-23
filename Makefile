@@ -351,11 +351,13 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
 	mkdir -p $@
+~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.cursor/skills
@@ -429,11 +431,9 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ${LOCAL_BIN}/claude-developer ~/.codex/AGENTS.md ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
-${LOCAL_BIN}/claude-developer: ${DOTFILES_PATH}/tooling/claude-developer | ${LOCAL_BIN}
-	${CREATE_SYMLINK}
 ~/.codex:
 	mkdir -p $@
 # Codex ignores AGENTS.md @import directives, so the sources are assembled
