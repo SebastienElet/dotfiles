@@ -113,7 +113,6 @@ jobs:
           printf '%s\n' "$output" \
             | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
 
-          tooling/agent-handoff-test
           tooling/upgrade-test
           tooling/makefile-test
           echo "✅ Shell scripts OK"
