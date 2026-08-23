@@ -86,7 +86,15 @@ function mutateConfiguration(value: string): void {
 
 function finish(expectedOperation: string): never {
   if (process.env.CODEGRAPH_TEST_PAUSE === `${provider}:${expectedOperation}`) {
-    Bun.sleepSync(400);
+    const ready = requiredEnvironment("CODEGRAPH_TEST_PAUSE_READY");
+    const release = requiredEnvironment("CODEGRAPH_TEST_PAUSE_RELEASE");
+    writeFileSync(ready, "ready\n");
+    for (let attempt = 0; attempt < 1_000 && !existsSync(release); attempt++) {
+      Bun.sleepSync(5);
+    }
+    if (!existsSync(release)) {
+      process.exit(8);
+    }
   }
   if (process.env.CODEGRAPH_TEST_EMIT === "1") {
     console.log(`out ${provider}:${expectedOperation}`);

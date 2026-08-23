@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  existsSync,
   linkSync,
   lstatSync,
   readFileSync,
@@ -180,28 +181,28 @@ describe("codegraph-configure entry point", () => {
   test("restores native configurations when the Cursor write cannot start", () => {
     const fixture = createFixture({}, true);
     const before = snapshot(fixture);
-    const blockingParent = join(fixture.directory, "cursor-parent");
-    writeFileSync(blockingParent, "not a directory\n");
-    fixture.cursorConfig = join(blockingParent, "mcp.json");
+    fixture.cursorConfig = join(fixture.directory, "c".repeat(220));
     fixture.environment.CODEGRAPH_CURSOR_CONFIG = fixture.cursorConfig;
 
     const result = run(fixture);
 
     expect(result.exitCode).not.toBe(0);
     expect(snapshot(fixture)).toEqual({ ...before, cursor: "<absent>" });
+    expect(readLog(fixture)).toContain("codex mcp add");
   });
 
   test("refuses an overlapping transaction before it can roll back a committed update", async () => {
-    const fixture = createFixture({ CODEGRAPH_TEST_PAUSE: "claude:mcp add" });
+    const ready = join(tmpdir(), `codegraph-ready-${crypto.randomUUID()}`);
+    const release = join(tmpdir(), `codegraph-release-${crypto.randomUUID()}`);
+    const fixture = createFixture({
+      CODEGRAPH_TEST_PAUSE: "claude:mcp add",
+      CODEGRAPH_TEST_PAUSE_READY: ready,
+      CODEGRAPH_TEST_PAUSE_RELEASE: release,
+    });
     const first = start(fixture);
-    for (
-      let attempt = 0;
-      attempt < 100 && !readLog(fixture).includes("claude mcp add");
-      attempt++
-    ) {
+    for (let attempt = 0; attempt < 1_000 && !existsSync(ready); attempt++) {
       Bun.sleepSync(5);
     }
-    expect(readLog(fixture)).toContain("claude mcp add");
     const competingFixture = {
       ...fixture,
       environment: {
@@ -211,7 +212,13 @@ describe("codegraph-configure entry point", () => {
       },
     };
 
-    const competing = run(competingFixture);
+    let competing: ReturnType<typeof run>;
+    try {
+      expect(existsSync(ready)).toBe(true);
+      competing = run(competingFixture);
+    } finally {
+      writeFileSync(release, "release\n");
+    }
 
     expect(competing.exitCode).toBe(2);
     expect(competing.stderr).toContain(

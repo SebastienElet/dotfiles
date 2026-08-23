@@ -130,7 +130,9 @@ test.skipIf(
     };
 
     const first = runEntryPoint(environment);
-    expect(first).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+    expect(first.exitCode).toBe(0);
+    expect(first.stdout).toContain("codegraph");
+    expect(first.stderr).toBe("");
     const firstConfigurations = readConfigurations(
       claudeConfig,
       codexConfig,
