@@ -110,6 +110,8 @@ fn assert_failure(output: &Output) {
 
 #[path = "measure_install/filesystem.rs"]
 mod filesystem;
+#[path = "measure_install/handoff.rs"]
+mod handoff;
 #[path = "measure_install/installation.rs"]
 mod installation;
 #[path = "measure_install/ownership.rs"]
