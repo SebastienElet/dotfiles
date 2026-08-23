@@ -118,12 +118,15 @@ jobs:
           echo "✅ Shell scripts OK"
 
   cspell:
-    name: CSpell
+    name: Text configuration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - run: npm install --global cspell
+      - run: npm install --global cspell prettier
+
+      - name: Check issue form syntax and formatting
+        run: prettier --check .github/ISSUE_TEMPLATE/change.yml
 
       - name: Check configuration and user dictionary
         run: |
