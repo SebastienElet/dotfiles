@@ -807,12 +807,12 @@ zsh: ~/.zshrc
 .PHONY: git-delta
 git-delta: brew ${BREW_BIN}/delta ~/.config/git/config.delta
 	@includes=$$(git config --global --get-all include.path || test $$? -eq 1) || exit; \
-	if printf '%s\n' "$$includes" | grep -Fxq '~/.gitconfig.delta'; then \
-		git config --global --unset-all include.path '^~/[.]gitconfig[.]delta$$'; \
-	fi; \
 	if ! printf '%s\n' "$$includes" | grep -Fxq '~/.config/git/config.delta'; then \
-		git config --global --add include.path '~/.config/git/config.delta'; \
+		git config --global --add include.path '~/.config/git/config.delta' || exit; \
 		echo "Added include.path to Git's global configuration"; \
+	fi; \
+	if printf '%s\n' "$$includes" | grep -Fxq '~/.gitconfig.delta'; then \
+		git config --global --unset-all include.path '^~/[.]gitconfig[.]delta$$' || exit; \
 	fi
 ${BREW_BIN}/delta:
 	brew install git-delta

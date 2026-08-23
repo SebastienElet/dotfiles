@@ -75,15 +75,35 @@ git_failure_bin=$test_root/git-failure-bin
 mkdir "$git_failure_bin"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'if [[ $* == "config --global --get-all include.path" ]]; then exit 128; fi' \
+  'if [[ $* == "config --global $GIT_FAIL_ARGUMENTS" ]]; then exit 128; fi' \
   'exec "$REAL_GIT" "$@"' >"$git_failure_bin/git"
 chmod +x "$git_failure_bin/git"
+
+git config --file "$test_home/.gitconfig" --unset-all include.path '^~/.config/git/config[.]delta$'
+git config --file "$test_home/.gitconfig" --add include.path '~/.gitconfig.delta'
 config_before=$(cksum "$test_home/.gitconfig")
-if env HOME="$test_home" PATH="$git_failure_bin:$PATH" REAL_GIT="$real_git" \
+if env HOME="$test_home" PATH="$git_failure_bin:$PATH" REAL_GIT="$real_git" GIT_FAIL_ARGUMENTS='--add include.path ~/.config/git/config.delta' \
+  make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta; then
+  fail "Git include add failure did not stop the migration"
+fi
+config_after=$(cksum "$test_home/.gitconfig")
+[[ $config_before == "$config_after" ]] || fail "failed Git include addition changed the configuration"
+
+git config --file "$test_home/.gitconfig" --add include.path '~/.config/git/config.delta'
+if env HOME="$test_home" PATH="$git_failure_bin:$PATH" REAL_GIT="$real_git" GIT_FAIL_ARGUMENTS="--unset-all include.path ^~/[.]gitconfig[.]delta$" \
+  make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta; then
+  fail "Git include removal failure did not stop the migration"
+fi
+include_paths=$(git config --file "$test_home/.gitconfig" --get-all include.path)
+[[ $(grep -Fxc '~/.config/git/config.delta' <<<"$include_paths") == 1 ]] || fail "failed old include removal lost the new include"
+[[ $(grep -Fxc '~/.gitconfig.delta' <<<"$include_paths") == 1 ]] || fail "failed old include removal changed the old include"
+
+config_before=$(cksum "$test_home/.gitconfig")
+if env HOME="$test_home" PATH="$git_failure_bin:$PATH" REAL_GIT="$real_git" GIT_FAIL_ARGUMENTS='--get-all include.path' \
   make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta; then
   fail "Git include read failure did not stop the migration"
 fi
 config_after=$(cksum "$test_home/.gitconfig")
-[[ $config_before == "$config_after" ]] || fail "failed Git include migration changed the configuration"
+[[ $config_before == "$config_after" ]] || fail "failed Git include read changed the configuration"
 
 echo "XDG configuration tests passed"
