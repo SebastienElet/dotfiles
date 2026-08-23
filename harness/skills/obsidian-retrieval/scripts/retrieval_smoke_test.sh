@@ -14,10 +14,12 @@ lexical_candidates() {
   local query=$2
 
   if command -v rg >/dev/null 2>&1; then
-    rg -n -F --glob '*.md' --glob '!.obsidian/**' -- "$query" "$root"
+    rg --files --glob '*.md' --glob '!.obsidian/**' "$root" | grep -F -- "$query" || true
+    rg -n -F --glob '*.md' --glob '!.obsidian/**' -- "$query" "$root" || true
     return
   fi
-  find "$root" -type f -name '*.md' ! -path '*/.obsidian/*' -exec grep -nH -F -- "$query" {} +
+  find "$root" -type f -name '*.md' ! -path '*/.obsidian/*' -print | grep -F -- "$query" || true
+  find "$root" -type f -name '*.md' ! -path '*/.obsidian/*' -exec grep -nH -F -- "$query" {} + || true
 }
 
 read_candidate() {
@@ -78,6 +80,9 @@ cat > "$test_root/bin/obsidian" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "$OBSIDIAN_SMOKE_LOG"
+if [[ ${OBSIDIAN_SMOKE_DISABLED:-} == 1 && $1 == version ]]; then
+  exit 69
+fi
 case "$1" in
   version) printf '1.12.7\n' ;;
   backlinks) printf 'index.md\t1\n' ;;
@@ -93,6 +98,14 @@ relation=$(PATH="$test_root/bin:/usr/bin:/bin" obsidian_retrieval "$vault" 'deci
 [[ $relation == *$'index.md\t1'* && $relation == *'source-only detail'* ]] || fail 'Obsidian relation retrieval did not read the source'
 [[ $(sed -n '2p' "$OBSIDIAN_SMOKE_LOG") == 'backlinks path=decisions/portable-retrieval.md format=tsv' ]] || fail 'read-only backlinks command was not used'
 [[ $(sed -n '3p' "$OBSIDIAN_SMOKE_LOG") == 'read path=decisions/portable-retrieval.md' ]] || fail 'Obsidian source was not read'
+
+unavailable=$(PATH="/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retrieval')
+[[ $unavailable == *'degraded=obsidian-unavailable; fallback=filesystem'* ]] || fail 'missing Obsidian CLI was not reported'
+[[ $unavailable == *'portable-retrieval.md'* ]] || fail 'missing Obsidian CLI did not fall back to filesystem retrieval'
+
+disabled=$(OBSIDIAN_SMOKE_DISABLED=1 PATH="$test_root/bin:/usr/bin:/bin" obsidian_retrieval "$vault" 'portable-retrieval')
+[[ $disabled == *'degraded=obsidian-unavailable; fallback=filesystem'* ]] || fail 'disabled Obsidian CLI was not reported'
+[[ $disabled == *'portable-retrieval.md'* ]] || fail 'disabled Obsidian CLI did not fall back to filesystem retrieval'
 
 concept=$(PATH="/usr/bin:/bin" conceptual_retrieval "$vault" 'Distributed decisions')
 [[ $concept == *'degraded=semantic-unavailable; fallback=lexical'* ]] || fail 'missing QMD was not reported'

@@ -22,18 +22,17 @@ name or identifier.
 
 ## Read-only allowlist
 
-- `search` returns matching paths; `search:context` adds matching line context.
-- `read` returns note content for an exact `path` or resolved `file`.
-- `backlinks` lists notes linking to a target; `links` lists a note's outgoing links.
-- `properties` and `property:read` inspect properties without changing them.
-- `tasks` lists tasks and may filter them by file, path, or status.
-- `bases`, `base:views`, and `base:query` inspect Bases and evaluate a selected view.
-- `file`, `files`, `vault`, `vaults`, `aliases`, `tags`, and `tag` provide read-only inventory and
-  metadata.
+Only these commands are allowed: `aliases`, `backlinks`, `base:query`, `base:views`, `bases`, `file`,
+`files`, `links`, `properties`, `property:read`, `read`, `search`, `search:context`, `tag`, `tags`,
+`tasks`, and `vault`.
 
-Prefer exact root-relative `path` parameters over ambiguous file-name resolution. Request structured
-output where the command supports it, but treat every returned path as a candidate and read the note
-before answering from it.
+This closed set covers text search, source reads, links, properties, tasks, Bases, target-vault
+validation, and vault-local inventory. It excludes the global known-vault inventory because that
+would reveal paths outside the selected corpus.
+
+Prefer exact root-relative path parameters over ambiguous file-name resolution. Request structured
+output where supported, but treat every returned path as a candidate and read the note before
+answering from it.
 
 ## Degraded behavior
 
