@@ -236,6 +236,11 @@ for agent in claude-code codex; do
   [[ $(grep -F -c -- 'bun-v1.4.0' "$trace") == 1 ]] || fail "$agent does not install pinned Bun exactly once"
   grep -Fq -- "$test_home/.bun/bin/bun" "$trace" || fail "$agent does not install Bun on the configured Fish path"
 done
+trace=$case_root/obsidian-retrieval-test
+env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" obsidian-retrieval-test >"$trace"
+[[ $(grep -F -c -- 'bun-v1.4.0' "$trace") == 1 ]] || fail "obsidian-retrieval-test does not install pinned Bun exactly once"
+grep -Fq -- "$test_home/.bun/bin/bun" "$trace" || fail "obsidian-retrieval-test does not use the shared Bun"
+! grep -Fq -- 'brew install bun' "$trace" || fail "obsidian-retrieval-test installs a second Bun"
 
 case_root=$test_root/measurement_wiring
 test_home=$case_root/home

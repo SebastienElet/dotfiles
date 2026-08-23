@@ -554,10 +554,10 @@ codegraph-test:
 	bash tooling/codegraph-network-test
 
 .PHONY: obsidian-retrieval-test
-obsidian-retrieval-test: ${BREW_BIN}/bun
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" ci
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" run typecheck
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" test tooling/obsidian-retrieval/contract.test.ts
+obsidian-retrieval-test: bun
+	cd "${DOTFILES_PATH}" && "${BUN_BIN}" ci
+	cd "${DOTFILES_PATH}" && "${BUN_BIN}" run typecheck
+	cd "${DOTFILES_PATH}" && "${BUN_BIN}" test tooling/obsidian-retrieval/contract.test.ts
 
 .PHONY: codegraph-cli
 codegraph-cli: ${VOLTA_BIN}/codegraph
@@ -938,11 +938,6 @@ node: ${VOLTA_BIN}/node
 ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 	${BREW_BIN}/volta install node@lts
 	touch $@
-
-.PHONY: bun
-bun: ${BREW_BIN}/bun
-${BREW_BIN}/bun: | brew
-	brew install bun
 
 .PHONY: pnpm
 pnpm: ${VOLTA_BIN}/pnpm
