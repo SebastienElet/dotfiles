@@ -31,7 +31,8 @@ remote_main_branch() {
   if ! response=$(command git "${git_arguments[@]}" ls-remote --symref "$remote" HEAD); then
     return 1
   fi
-  branch=$(printf '%s\n' "$response" | awk '$1 == "ref:" && $3 == "HEAD" {sub("refs/heads/", "", $2); print $2}')
+  branch=$(printf '%s\n' "$response" |
+    awk '$1 == "ref:" && $2 ~ /^refs\/heads\// && $3 == "HEAD" {sub("refs/heads/", "", $2); print $2}')
   if [[ -z $branch || $branch == *$'\n'* ]] ||
     ! command git "${git_arguments[@]}" check-ref-format --branch "$branch" >/dev/null; then
     return 1
@@ -87,7 +88,7 @@ provider_repository() {
   '
 }
 
-if [[ -n $strict ]]; then
+if [[ -n $strict || -n $provider ]]; then
   if ! command git "${git_arguments[@]}" rev-parse --git-dir >/dev/null; then
     exit 1
   fi

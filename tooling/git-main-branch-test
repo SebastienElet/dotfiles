@@ -47,8 +47,9 @@ printf '%s\n' \
   '      identity=${identity%.git}' \
   '      fixture=${identity//\//__}' \
   '      [[ -f $BKT_FIXTURE_DIR/$fixture.head ]] || exit 1' \
-  '      branch=$(cat "$BKT_FIXTURE_DIR/$fixture.head")' \
-  '      printf "ref: refs/heads/%s\\tHEAD\\n%s\\tHEAD\\n" "$branch" 1111111111111111111111111111111111111111' \
+  '      ref=$(cat "$BKT_FIXTURE_DIR/$fixture.head")' \
+  '      case $ref in refs/*) ;; *) ref=refs/heads/$ref ;; esac' \
+  '      printf "ref: %s\\tHEAD\\n%s\\tHEAD\\n" "$ref" 1111111111111111111111111111111111111111' \
   '      exit 0' \
   '      ;;' \
   '  esac' \
@@ -159,6 +160,11 @@ create_repository invalid-branch git@bitbucket.org:acme/invalid-branch.git devel
 write_fixture acme/invalid-branch '{66666666-6666-6666-6666-666666666666}' '-invalid'
 assert_fails invalid-branch run_helper --strict --bitbucket-cloud -C "$repository"
 
+create_repository invalid-head git@bitbucket.org:acme/invalid-head.git develop
+write_fixture acme/invalid-head '{77777777-7777-7777-7777-777777777777}' v1
+printf '%s\n' refs/tags/v1 >"$fixture_dir/acme__invalid-head.head"
+assert_fails invalid-head run_helper --bitbucket-cloud -C "$repository"
+
 create_repository unavailable git@bitbucket.org:acme/unavailable.git develop
 assert_fails unavailable run_helper --strict --bitbucket-cloud -C "$repository"
 assert_fails unavailable-permissive run_helper --bitbucket-cloud -C "$repository"
@@ -173,6 +179,7 @@ assert_fails no-remote run_helper --strict -C "$empty_repository"
 assert_equal "$(run_helper -C "$empty_repository")" main "permissive repository fallback"
 
 assert_fails outside run_helper --strict -C "$test_root"
+assert_fails outside-provider run_helper --bitbucket-cloud -C "$test_root"
 assert_equal "$(run_helper -C "$test_root")" main "permissive outside fallback"
 
 printf 'git-main-branch tests passed\n'
