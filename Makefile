@@ -5,6 +5,7 @@ CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 BUN_VERSION:=1.4.0
+BUN_BIN:=$(HOME)/.bun/bin/bun
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
@@ -387,9 +388,9 @@ cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: bun
-bun: ${LOCAL_BIN}/bun
+bun: ${BUN_BIN}
 	@version=$$("$<" --version); test "$$version" = "${BUN_VERSION}" || { echo "Error: $< is Bun $$version, expected ${BUN_VERSION}" >&2; exit 1; }
-${LOCAL_BIN}/bun: | ${LOCAL_BIN}
+${BUN_BIN}: | $(HOME)/.bun/bin
 	@set -eu; \
 	case "$$(uname -m)" in \
 		arm64) archive_arch=aarch64; checksum=c669e97f6164e1c96e0701748db98dfa77492908cbd8394c7557134a735de381 ;; \
@@ -403,6 +404,8 @@ ${LOCAL_BIN}/bun: | ${LOCAL_BIN}
 	printf '%s  %s\n' "$$checksum" "$$archive" | shasum -a 256 -c -; \
 	unzip -q "$$archive" -d "$$temporary"; \
 	install -m 755 "$$temporary/bun-darwin-$$archive_arch/bun" "$@"
+$(HOME)/.bun/bin:
+	mkdir -p $@
 
 .PHONY: claude-code
 claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
