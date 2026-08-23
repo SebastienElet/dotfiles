@@ -39,6 +39,11 @@ function ruleAtLine(
     .findLast((rule) => rule !== undefined);
 }
 
+function endsWithUnescapedBackslash(content: string): boolean {
+  const backslashes = /\\+$/.exec(content.trimEnd())?.[0].length ?? 0;
+  return backslashes % 2 === 1;
+}
+
 function classifyLine(makefile: readonly string[], line: number): string {
   const content = makefile[line - 1] ?? "";
   const target = targetAtLine(makefile, line);
@@ -50,11 +55,14 @@ function classifyLine(makefile: readonly string[], line: number): string {
   if (rule && (rule.target === null || rule.target !== target)) {
     return "all";
   }
-  if (/^\s*(?:#.*)?$/.test(content) || content.startsWith(".PHONY: ")) {
-    return target ?? "all";
-  }
   if (content.startsWith("\t")) {
     return rule?.target === target ? (target ?? "all") : "all";
+  }
+  if (/^\s*$/.test(content) || content.startsWith(".PHONY: ")) {
+    return target ?? "all";
+  }
+  if (/^\s*#/.test(content)) {
+    return endsWithUnescapedBackslash(content) ? "all" : (target ?? "all");
   }
   const declaredRule = parseRule(content);
   if (declaredRule?.target === target) {

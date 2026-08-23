@@ -150,6 +150,18 @@ describe("ci-smoke-targets entry point", () => {
     expectTargets(repository, ["all"]);
   });
 
+  test("selects all when a comment starts a logical-line continuation", () => {
+    const repository = newRepository("comment-continuation");
+    const makefile = (suffix: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\n# shared${suffix}\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile(""));
+    commit(repository, "add comment");
+    write(repository, "Makefile", makefile(" \\"));
+    commit(repository, "continue comment");
+
+    expectTargets(repository, ["all"]);
+  });
+
   test("selects all when a target is deleted", () => {
     const repository = newRepository("deleted-target");
     write(
