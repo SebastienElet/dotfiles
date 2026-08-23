@@ -50,7 +50,17 @@ function classifyLine(makefile: readonly string[], line: number): string {
   if (rule && (rule.target === null || rule.target !== target)) {
     return "all";
   }
-  return target ?? "all";
+  if (/^\s*(?:#.*)?$/.test(content) || content.startsWith(".PHONY: ")) {
+    return target ?? "all";
+  }
+  if (content.startsWith("\t")) {
+    return rule?.target === target ? (target ?? "all") : "all";
+  }
+  const declaredRule = parseRule(content);
+  if (declaredRule?.target === target) {
+    return target ?? "all";
+  }
+  return "all";
 }
 
 function parseRange(start: string, count: string | undefined): Range {
