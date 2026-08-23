@@ -85,6 +85,9 @@ function mutateConfiguration(value: string): void {
 }
 
 function finish(expectedOperation: string): never {
+  if (process.env.CODEGRAPH_TEST_PAUSE === `${provider}:${expectedOperation}`) {
+    Bun.sleepSync(400);
+  }
   if (process.env.CODEGRAPH_TEST_FAIL === `${provider}:${expectedOperation}`) {
     console.error(`failed ${provider}:${expectedOperation}`);
     process.exit(9);

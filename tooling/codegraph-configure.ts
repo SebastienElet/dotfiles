@@ -4,6 +4,7 @@ import { configureCursor, ConfigurationError } from "./codegraph-config.ts";
 import {
   inspectConfiguration,
   restoreConfigurations,
+  withConfigurationLocks,
   writeJsonAtomically,
   type ConfigurationSnapshot,
 } from "./codegraph-config-files.ts";
@@ -40,29 +41,31 @@ function configureCodegraph(): void {
     requireExecutable(binary);
   }
 
-  const claude = inspectConfiguration(
-    claudePath,
-    "agent config",
-    "Claude configuration",
-  );
-  const codex = inspectConfiguration(codexPath, "agent config");
-  const cursor = inspectConfiguration(
-    cursorPath,
-    "Cursor MCP config",
-    "Cursor MCP",
-  );
-  const snapshots = [claude.snapshot, codex.snapshot, cursor.snapshot];
-
-  runTransaction(snapshots, () => {
-    const claudeRegistration = probeClaude(claudeBinary);
-    const codexRegistration = probeCodex(codexBinary);
-    requireSuccess(runCommand(codegraphBinary, ["telemetry", "off"]));
-    configureClaude(claudeBinary, codegraphBinary, claudeRegistration);
-    configureCodex(codexBinary, codegraphBinary, codexRegistration);
-    writeJsonAtomically(
-      cursorPath,
-      configureCursor(cursor.parsed ?? {}, codegraphBinary),
+  withConfigurationLocks([claudePath, codexPath, cursorPath], () => {
+    const claude = inspectConfiguration(
+      claudePath,
+      "agent config",
+      "Claude configuration",
     );
+    const codex = inspectConfiguration(codexPath, "agent config");
+    const cursor = inspectConfiguration(
+      cursorPath,
+      "Cursor MCP config",
+      "Cursor MCP",
+    );
+    const snapshots = [claude.snapshot, codex.snapshot, cursor.snapshot];
+
+    runTransaction(snapshots, () => {
+      const claudeRegistration = probeClaude(claudeBinary);
+      const codexRegistration = probeCodex(codexBinary);
+      requireSuccess(runCommand(codegraphBinary, ["telemetry", "off"]));
+      configureClaude(claudeBinary, codegraphBinary, claudeRegistration);
+      configureCodex(codexBinary, codegraphBinary, codexRegistration);
+      writeJsonAtomically(
+        cursorPath,
+        configureCursor(cursor.parsed ?? {}, codegraphBinary),
+      );
+    });
   });
 }
 

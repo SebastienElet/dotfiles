@@ -14,6 +14,7 @@ import {
   readLog,
   run,
   snapshot,
+  start,
 } from "./codegraph-configure-test-support.ts";
 
 afterEach(cleanupFixtures);
@@ -156,6 +157,59 @@ describe("codegraph-configure entry point", () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(snapshot(fixture)).toEqual({ ...before, cursor: "<absent>" });
+  });
+
+  test("refuses an overlapping transaction before it can roll back a committed update", async () => {
+    const fixture = createFixture({ CODEGRAPH_TEST_PAUSE: "claude:mcp add" });
+    const first = start(fixture);
+    for (
+      let attempt = 0;
+      attempt < 100 && !readLog(fixture).includes("claude mcp add");
+      attempt++
+    ) {
+      Bun.sleepSync(5);
+    }
+    expect(readLog(fixture)).toContain("claude mcp add");
+    const competingFixture = {
+      ...fixture,
+      environment: {
+        ...fixture.environment,
+        CODEGRAPH_TEST_PAUSE: "",
+        CODEGRAPH_TEST_FAIL: "codex:mcp add",
+      },
+    };
+
+    const competing = run(competingFixture);
+
+    expect(competing.exitCode).toBe(2);
+    expect(competing.stderr).toContain(
+      "configuration update already in progress",
+    );
+    expect(await first.exited).toBe(0);
+    const configurations = snapshot(fixture);
+    expect(
+      JSON.parse(configurations.claude).mcpServers.codegraph,
+    ).toBeDefined();
+    expect(configurations.codex).toContain("codex:added");
+    expect(
+      JSON.parse(configurations.cursor).mcpServers.codegraph,
+    ).toBeDefined();
+  });
+
+  test("fails closed when an existing lock prevents serialization", () => {
+    const fixture = createFixture();
+    writeFileSync(
+      `${fixture.claudeConfig}.codegraph-configure.lock`,
+      `${process.pid}\n`,
+    );
+    const before = snapshot(fixture);
+
+    const result = run(fixture);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("configuration update already in progress");
+    expect(snapshot(fixture)).toEqual(before);
+    expect(readLog(fixture)).toBe("");
   });
 
   test("rejects symlinked configuration paths before mutation", () => {

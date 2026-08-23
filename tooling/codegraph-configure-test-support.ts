@@ -76,15 +76,23 @@ export function cleanupFixtures(): void {
 }
 
 export function run(fixture: Fixture) {
-  const result = Bun.spawnSync([entryPoint], {
-    cwd: root,
-    env: { ...process.env, ...fixture.environment },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const result = Bun.spawnSync([entryPoint], spawnOptions(fixture));
   return {
     exitCode: result.exitCode,
     stderr: result.stderr.toString(),
+  };
+}
+
+export function start(fixture: Fixture) {
+  return Bun.spawn([entryPoint], spawnOptions(fixture));
+}
+
+function spawnOptions(fixture: Fixture) {
+  return {
+    cwd: root,
+    env: { ...process.env, ...fixture.environment },
+    stdout: "pipe" as const,
+    stderr: "pipe" as const,
   };
 }
 

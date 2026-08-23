@@ -1,14 +1,17 @@
 import {
   chmodSync,
+  closeSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readFileSync,
   renameSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname } from "node:path";
+import { basename, dirname, join } from "node:path";
 import {
   ConfigurationError,
   parseJsonObject,
@@ -21,6 +24,36 @@ export type ConfigurationSnapshot = {
   mode?: number;
 };
 
+export function withConfigurationLocks(
+  paths: string[],
+  action: () => void,
+): void {
+  const lockPaths: string[] = [];
+  try {
+    for (const path of canonicalPaths(paths)) {
+      const lockPath = `${path}.codegraph-configure.lock`;
+      let descriptor: number;
+      try {
+        descriptor = openSync(lockPath, "wx", 0o600);
+      } catch (error) {
+        if (isExistingFile(error)) {
+          throw new ConfigurationError(
+            `configuration update already in progress: ${lockPath}`,
+          );
+        }
+        throw error;
+      }
+      lockPaths.push(lockPath);
+      closeSync(descriptor);
+    }
+    action();
+  } finally {
+    for (const lockPath of lockPaths.toReversed()) {
+      rmSync(lockPath, { force: true });
+    }
+  }
+}
+
 export function inspectConfiguration(
   path: string,
   fileLabel: string,
@@ -31,10 +64,9 @@ export function inspectConfiguration(
     status = lstatSync(path);
   } catch (error) {
     if (isMissingFile(error)) {
-      return {
-        snapshot: { path },
-        parsed: jsonLabel === undefined ? undefined : {},
-      };
+      return jsonLabel === undefined
+        ? { snapshot: { path } }
+        : { snapshot: { path }, parsed: {} };
     }
     throw error;
   }
@@ -45,13 +77,13 @@ export function inspectConfiguration(
     throw new ConfigurationError(`${fileLabel} is not a regular file: ${path}`);
   }
   const content = readFileSync(path);
-  return {
-    snapshot: { path, content, mode: status.mode },
-    parsed:
-      jsonLabel === undefined
-        ? undefined
-        : parseJsonObject(content.toString("utf8"), jsonLabel),
-  };
+  const snapshot = { path, content, mode: status.mode };
+  return jsonLabel === undefined
+    ? { snapshot }
+    : {
+        snapshot,
+        parsed: parseJsonObject(content.toString("utf8"), jsonLabel),
+      };
 }
 
 export function writeJsonAtomically(path: string, value: JsonObject): void {
@@ -102,6 +134,21 @@ function writeAtomically(path: string, content: Buffer, mode?: number): void {
 
 function isMissingFile(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
+}
+
+function isExistingFile(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "EEXIST";
+}
+
+function canonicalPaths(paths: string[]): string[] {
+  return [
+    ...new Set(
+      paths.map((path) => {
+        mkdirSync(dirname(path), { recursive: true });
+        return join(realpathSync.native(dirname(path)), basename(path));
+      }),
+    ),
+  ].sort();
 }
 
 function errorMessage(error: unknown): string {

@@ -513,14 +513,14 @@ ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
 .PHONY: codegraph
-codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
-	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph-configure
+codegraph: bun codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
+	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph ${BREW_BIN}/bun tooling/codegraph-configure
 
 .PHONY: codegraph-test
-codegraph-test:
+codegraph-test: bun
 	bash harness/skills/codegraph/scripts/skill_contract_test.sh
 	bash harness/skills/codegraph/scripts/measure_repository_test.sh
-	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
+	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex ${BREW_BIN}/bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
 	bash tooling/codegraph-mcp-test
 	bash tooling/codegraph-network-test
 

@@ -32,6 +32,10 @@ describe("CodeGraph deployment", () => {
     expect(result.stdout).toContain("CODEGRAPH_CLAUDE_BIN=");
     expect(result.stdout).toContain("CODEGRAPH_CODEX_BIN=");
     expect(result.stdout).toContain("CODEGRAPH_BIN=");
+    expect(result.stdout).toContain(
+      `${directory}/brew/bin/bun tooling/codegraph-configure`,
+    );
+    expect(result.stdout).toContain("brew install bun");
   });
 
   test("CodeGraph installation remains delegated to unpinned Volta commands", () => {
@@ -118,7 +122,7 @@ test.skipIf(realClaude === undefined || realCodex === undefined)(
     };
 
     const first = runEntryPoint(environment);
-    expect(first.exitCode).toBe(0);
+    expect(first).toEqual({ exitCode: 0, stdout: "", stderr: "" });
     const firstConfigurations = readConfigurations(
       claudeConfig,
       codexConfig,
@@ -156,7 +160,14 @@ function createTemporaryDirectory(): string {
 }
 
 function makeDryRun(home: string, target: string) {
-  return runMake(["-Bn", `HOME=${home}`, target]);
+  return runMake([
+    "-Bn",
+    `HOME=${home}`,
+    `BREW_BIN=${join(home, "brew", "bin")}`,
+    `VOLTA_BIN=${join(home, ".volta", "bin")}`,
+    `LOCAL_BIN=${join(home, ".local", "bin")}`,
+    target,
+  ]);
 }
 
 function runMake(arguments_: string[]) {
