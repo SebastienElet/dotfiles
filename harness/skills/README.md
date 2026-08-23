@@ -30,7 +30,8 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Ops
 
-| Skill           | Description                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------ |
-| `handoff`       | Hand the current work to a fresh session instead of letting the context compact.                 |
-| `skill-manager` | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |
+| Skill                 | Description                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `handoff`             | Hand the current work to a fresh session instead of letting the context compact.                 |
+| `skill-manager`       | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |
+| `workflow-automation` | Turn evidenced repeated human or agent workflows into supported automation.                      |

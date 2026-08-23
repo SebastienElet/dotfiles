@@ -116,6 +116,7 @@ for specification in \
   ".claude/skills/pr-fix pr-fix" \
   ".claude/skills/pr-verdict pr-verdict" \
   ".claude/skills/skill-manager skill-manager" \
+  ".claude/skills/workflow-automation workflow-automation" \
   ".cursor/skills/claude-developer claude-developer" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
@@ -125,6 +126,7 @@ for specification in \
   ".cursor/skills/pr-fix pr-fix" \
   ".cursor/skills/pr-verdict pr-verdict" \
   ".cursor/skills/skill-manager skill-manager" \
+  ".cursor/skills/workflow-automation workflow-automation" \
   ".agents/skills/claude-developer claude-developer" \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
@@ -134,7 +136,8 @@ for specification in \
   ".agents/skills/linear-issue-spec linear-issue-spec" \
   ".agents/skills/pr-fix pr-fix" \
   ".agents/skills/pr-verdict pr-verdict" \
-  ".agents/skills/skill-manager skill-manager"; do
+  ".agents/skills/skill-manager skill-manager" \
+  ".agents/skills/workflow-automation workflow-automation"; do
   read -r relative_destination slug <<<"$specification"
   destination=$test_home/$relative_destination
   env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$destination"
