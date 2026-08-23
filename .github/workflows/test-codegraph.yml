@@ -7,6 +7,9 @@ on:
       - .config/git/ignore
       - tooling/codegraph/**
       - tooling/codegraph-*
+      - package.json
+      - bun.lock
+      - tsconfig.json
       - Makefile
       - .github/workflows/test-codegraph.yml
   pull_request:
@@ -15,6 +18,9 @@ on:
       - .config/git/ignore
       - tooling/codegraph/**
       - tooling/codegraph-*
+      - package.json
+      - bun.lock
+      - tsconfig.json
       - Makefile
       - .github/workflows/test-codegraph.yml
 
@@ -24,6 +30,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
       - run: make jq tokei ripgrep codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
       - run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -34,6 +44,6 @@ jobs:
           codegraph --version
       - run: bash harness/skills/codegraph/scripts/skill_contract_test.sh
       - run: bash harness/skills/codegraph/scripts/measure_repository_test.sh
-      - run: bash tooling/codegraph-configure-test
+      - run: CODEGRAPH_REAL_CLAUDE_BIN="$HOME/.local/bin/claude" CODEGRAPH_REAL_CODEX_BIN="$HOME/.volta/bin/codex" bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
       - run: bash tooling/codegraph-mcp-test
       - run: bash tooling/codegraph-network-test
