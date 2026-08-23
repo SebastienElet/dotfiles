@@ -139,7 +139,7 @@ const positiveDangerousGuidance = (skill: string): string[] => {
       );
     });
     const imperativePattern = new RegExp(
-      `\\b(?:allow(?:ed)?|permit(?:ted)?|run|use|invoke|expose)\\b.{0,120}?(?<![\\w:])(${unsafeCommandPattern})(?![\\w:])`,
+      `\\b(?:allow(?:ed)?|permit(?:ted)?|run|use|invoke|expose)\\s+(?:the\\s+)?(?:command\\s+)?(${unsafeCommandPattern})(?![\\w:])`,
       "gi",
     );
     const imperativeDangerous = [
@@ -187,7 +187,7 @@ export const validateContract = ({
     .filter((command) => command !== "version" && command !== "vault");
   if (invocations.length > 0)
     errors.push(`unsafe Obsidian invocations: ${invocations.join(", ")}`);
-  const dangerous = positiveDangerousGuidance(skill);
+  const dangerous = positiveDangerousGuidance(`${skill}\n${reference}`);
   if (dangerous.length > 0)
     errors.push(`positive dangerous guidance: ${dangerous.join(", ")}`);
   errors.push(...validateEvaluations(evaluations));

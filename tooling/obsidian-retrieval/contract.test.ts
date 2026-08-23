@@ -18,12 +18,12 @@ const mutate = (
 ): ContractSources => ({ ...sources, [field]: transform(sources[field]) });
 
 describe("Obsidian retrieval contract", () => {
-  test("runs with the pinned Bun version", async () => {
+  test("declares the pinned Bun version", async () => {
     const packageDocument = z
       .object({ packageManager: z.string() })
       .parse(await Bun.file(join(repositoryRoot, "package.json")).json());
 
-    expect(packageDocument.packageManager).toBe(`bun@${Bun.version}`);
+    expect(packageDocument.packageManager).toBe("bun@1.4.0");
   });
 
   test("accepts the repository skill", async () => {
@@ -73,6 +73,20 @@ describe("Obsidian retrieval contract", () => {
     expect(
       validateContract(
         mutate(sources, "skill", (value) => `${value}\n\n${guidance}\n`),
+      ),
+    ).not.toEqual([]);
+  });
+
+  test("rejects positive dangerous guidance in the reference", async () => {
+    const sources = await loadContractSources(repositoryRoot);
+
+    expect(
+      validateContract(
+        mutate(
+          sources,
+          "reference",
+          (value) => `${value}\n\nUse create to add a note.\n`,
+        ),
       ),
     ).not.toEqual([]);
   });
