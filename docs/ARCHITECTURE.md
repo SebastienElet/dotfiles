@@ -32,14 +32,15 @@ Les points d'entrée restent à la racine :
 
 `home/` reproduit le chemin relatif de chaque artefact sous `$HOME` :
 
-| Source                       | Destination               |
-| ---------------------------- | ------------------------- |
-| `home/.config/fish/`         | `~/.config/fish/`         |
-| `home/.config/nvim/`         | `~/.config/nvim/`         |
-| `home/.config/starship.toml` | `~/.config/starship.toml` |
-| `home/.wezterm.lua`          | `~/.wezterm.lua`          |
-| `home/.tmux.conf`            | `~/.tmux.conf`            |
-| `home/cspell.json`           | `~/cspell.json`           |
+| Source                             | Destination                     |
+| ---------------------------------- | ------------------------------- |
+| `home/.config/fish/`               | `~/.config/fish/`               |
+| `home/.config/git/config.delta`    | `~/.config/git/config.delta`    |
+| `home/.config/nvim/`               | `~/.config/nvim/`               |
+| `home/.config/starship.toml`       | `~/.config/starship.toml`       |
+| `home/.config/tmux/tmux.conf`      | `~/.config/tmux/tmux.conf`      |
+| `home/.config/wezterm/wezterm.lua` | `~/.config/wezterm/wezterm.lua` |
+| `home/cspell.json`                 | `~/cspell.json`                 |
 
 Le `Makefile` déploie les artefacts statiques comme cibles fichier ordinaires
 et lie les exécutables générés après leur build. Chaque recette vérifie que la

@@ -61,10 +61,9 @@ test_home=$case_root/home
 mkdir -p "$test_home"
 (
   cd "$case_root"
-  env HOME="$test_home" make -f "$repository/Makefile" "$test_home/.tmux.conf"
+  env HOME="$test_home" make -f "$repository/Makefile" "$test_home/.config/tmux/tmux.conf"
 )
-assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
-rm "$test_home/.tmux.conf"
+assert_link "$test_home/.config/tmux/tmux.conf" "$repository/home/.config/tmux/tmux.conf"
 starship_destination=$test_home/.config/starship.toml
 env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
 assert_link "$starship_destination" "$repository/home/.config/starship.toml"
