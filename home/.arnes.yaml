@@ -2,10 +2,21 @@ version: 1
 agents:
   - id: claude
     scopes: [user, project]
+    user_config:
+      model: opus[1m]
+      effort: high
+      auto_compact_window: 600000
   - id: cursor
     scopes: [user, project]
+    user_config:
+      model: grok-4.6
+      max_mode: false
   - id: codex
     scopes: [user, project]
+    user_config:
+      model: gpt-5.6-sol
+      effort: medium
+      context_window: 270000
 skills:
   - slug: claude-developer
     installations:
