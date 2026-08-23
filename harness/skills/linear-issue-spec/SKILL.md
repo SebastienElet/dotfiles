@@ -19,8 +19,10 @@ technical discovery and implementation design to a fresh implementation agent. E
 journey and product evidence before choosing scope, then optimize the slice for recognizable user
 value and coordination cost rather than the smallest code change.
 
-The deliverable is proposed issue content, not an implementation plan. Publishing or modifying the
-issue in Linear is a separate external write and requires explicit authorization.
+The deliverable is the substantive product draft, not an implementation plan. When issue drafting,
+review, or publication is requested, compose with `issue-creation` by responsibility regardless of
+activation order: this skill owns product content, while `issue-creation` owns lifecycle validation,
+publication authority, the external write, and verification of the stored issue.
 
 ## Usage
 
@@ -109,6 +111,9 @@ Provide the draft in the user's language. Preserve canonical product terms from 
    Why this scope
    ```
 
+   Hand this substantive draft to `issue-creation` whenever its lifecycle applies. Do not assume it
+   ran earlier or duplicate its coherence, authority, publication, and retrieval procedure here.
+
 9. **Verify the handoff.** Ensure every acceptance criterion is observable by a user, product owner,
    or tester and collectively proves the increment complete. Remove implementation steps, file
    paths, architecture, classes, functions, library choices, and speculative technical constraints.
@@ -130,8 +135,9 @@ Provide the draft in the user's language. Preserve canonical product terms from 
   adjacent work when coordination savings are material.
 - **Presenting a proposal as established fact** — product assumptions silently become acceptance
   criteria. Label provenance on every material requirement and expose unresolved proposals.
-- **Publishing during preparation** — an external issue changes before the user reviews the scope.
-  Return the draft first and write to Linear only after explicit authorization.
+- **Taking over issue publication** — lifecycle authority and verification depend on which skill ran
+  first. Supply the product draft and let `issue-creation` decide whether the request authorizes a
+  write and verify the stored issue.
 
 ## Constraints
 
@@ -144,4 +150,5 @@ Provide the draft in the user's language. Preserve canonical product terms from 
   verifiable product value.
 - Never defer a known journey state without an explicit product rationale or dependency.
 - Never claim inaccessible Linear, design, or specification evidence was inspected.
-- Never publish or modify a Linear issue unless the user explicitly authorizes that external write.
+- Never publish or modify a Linear issue from this procedure; route lifecycle writes through
+  `issue-creation`, which evaluates the user's publication authority.
