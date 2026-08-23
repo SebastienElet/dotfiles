@@ -150,6 +150,66 @@ describe("ci-smoke-targets entry point", () => {
     expectTargets(repository, ["all"]);
   });
 
+  test("selects all when a tab-indented global continuation changes", () => {
+    const repository = newRepository("tabbed-global-continuation");
+    const makefile = (value: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\nGLOBAL = one \\\n\t${value}\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile("original"));
+    commit(repository, "add tabbed global continuation");
+    write(repository, "Makefile", makefile("changed"));
+    commit(repository, "change tabbed global continuation");
+
+    expectTargets(repository, ["all"]);
+  });
+
+  test("selects all when a comment starts a logical-line continuation", () => {
+    const repository = newRepository("comment-continuation");
+    const makefile = (suffix: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\n# shared${suffix}\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile(""));
+    commit(repository, "add comment");
+    write(repository, "Makefile", makefile(" \\"));
+    commit(repository, "continue comment");
+
+    expectTargets(repository, ["all"]);
+  });
+
+  test("selects all when an inline comment continues a logical line", () => {
+    const repository = newRepository("inline-comment-continuation");
+    const makefile = (suffix: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\nalpha: # shared${suffix}\ninclude shared.mk\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile(""));
+    commit(repository, "add inline comment");
+    write(repository, "Makefile", makefile(" \\"));
+    commit(repository, "continue inline comment");
+
+    expectTargets(repository, ["all"]);
+  });
+
+  test("selects all when a tab-indented define body changes", () => {
+    const repository = newRepository("define-body");
+    const makefile = (value: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\ndefine SHARED_RECIPE\n\t${value}\nendef\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile("original"));
+    commit(repository, "add define body");
+    write(repository, "Makefile", makefile("changed"));
+    commit(repository, "change define body");
+
+    expectTargets(repository, ["all"]);
+  });
+
+  test("selects all when a continued define body changes", () => {
+    const repository = newRepository("continued-define-body");
+    const makefile = (value: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\ndefine GLOBAL\none \\\nendef\n\t${value}\nendef\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile("original"));
+    commit(repository, "add continued define body");
+    write(repository, "Makefile", makefile("changed"));
+    commit(repository, "change continued define body");
+
+    expectTargets(repository, ["all"]);
+  });
+
   test("selects all when a target is deleted", () => {
     const repository = newRepository("deleted-target");
     write(

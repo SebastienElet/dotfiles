@@ -39,9 +39,54 @@ function ruleAtLine(
     .findLast((rule) => rule !== undefined);
 }
 
+function endsWithUnescapedBackslash(content: string): boolean {
+  const backslashes = /\\+$/.exec(content.trimEnd())?.[0].length ?? 0;
+  return backslashes % 2 === 1;
+}
+
+function logicalLineStart(makefile: readonly string[], line: number): number {
+  let start = line - 1;
+  while (start > 0 && endsWithUnescapedBackslash(makefile[start - 1] ?? "")) {
+    start -= 1;
+  }
+  return start;
+}
+
+function isGlobalContinuation(
+  makefile: readonly string[],
+  line: number,
+): boolean {
+  const start = logicalLineStart(makefile, line);
+  return start < line - 1 && !makefile[start]?.startsWith("\t");
+}
+
+function isInsideDefine(makefile: readonly string[], line: number): boolean {
+  return (
+    makefile.slice(0, line - 1).reduce((depth, content, index) => {
+      const startsLogicalLine =
+        index === 0 || !endsWithUnescapedBackslash(makefile[index - 1] ?? "");
+      if (!startsLogicalLine) {
+        return depth;
+      }
+      if (/^[ ]*endef[ ]*$/.test(content)) {
+        return Math.max(0, depth - 1);
+      }
+      if (
+        /^[ ]*(?:(?:export|override|private)\s+)*define(?:\s|$)/.test(content)
+      ) {
+        return depth + 1;
+      }
+      return depth;
+    }, 0) > 0
+  );
+}
+
 function classifyLine(makefile: readonly string[], line: number): string {
   const content = makefile[line - 1] ?? "";
   const target = targetAtLine(makefile, line);
+  if (isGlobalContinuation(makefile, line) || isInsideDefine(makefile, line)) {
+    return "all";
+  }
   if (assignmentPattern.test(content) || directivePattern.test(content)) {
     return "all";
   }
@@ -50,11 +95,17 @@ function classifyLine(makefile: readonly string[], line: number): string {
   if (rule && (rule.target === null || rule.target !== target)) {
     return "all";
   }
-  if (/^\s*(?:#.*)?$/.test(content) || content.startsWith(".PHONY: ")) {
-    return target ?? "all";
-  }
   if (content.startsWith("\t")) {
     return rule?.target === target ? (target ?? "all") : "all";
+  }
+  if (endsWithUnescapedBackslash(content)) {
+    return "all";
+  }
+  if (/^\s*$/.test(content) || content.startsWith(".PHONY: ")) {
+    return target ?? "all";
+  }
+  if (/^\s*#/.test(content)) {
+    return target ?? "all";
   }
   const declaredRule = parseRule(content);
   if (declaredRule?.target === target) {
