@@ -4,7 +4,7 @@ description: >
   Draft, validate, review, and publish tracker issues across forges. Use when creating or checking
   an issue artifact. Make sure to use this skill whenever a request may publish an issue, even if
   the user names only GitHub, GitLab, Linear, a ticket, or a compatible future forge.
-compatibility: Requires read access to the target tracker and write access for publication.
+compatibility: Requires tracker read access for search or review; publication also requires write access.
 metadata:
   category: dev
 ---
