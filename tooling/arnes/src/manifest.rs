@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 mod commands;
 mod config;
 mod external;
+mod hooks;
 mod parsing;
 mod prompts;
 mod rules;
@@ -14,6 +15,7 @@ mod validation;
 pub use commands::{Command, CommandBinding};
 pub use config::UserConfig;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
+pub use hooks::HookKind;
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
 pub use rules::RuleResource;
@@ -58,6 +60,8 @@ pub struct Manifest {
     prompts: Vec<prompts::PromptDeclaration>,
     #[serde(default)]
     commands: Vec<commands::CommandDeclaration>,
+    #[serde(default)]
+    hooks: Vec<hooks::HookDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 
@@ -131,10 +135,6 @@ impl Manifest {
 
     pub fn prompts(&self) -> impl Iterator<Item = Prompt<'_>> {
         self.prompts.iter().map(Prompt::from)
-    }
-
-    pub fn commands(&self) -> impl Iterator<Item = Command<'_>> {
-        self.commands.iter().map(Command::from)
     }
 
     pub(crate) fn resource_destinations(&self) -> impl Iterator<Item = (Scope, &Path)> {

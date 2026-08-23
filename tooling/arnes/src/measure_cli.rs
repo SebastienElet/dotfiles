@@ -22,7 +22,6 @@ pub(super) fn run_measure(command: MeasureCommand) -> ExitCode {
         },
         MeasureCommand::Finish(args) => finish_measure(measure::finish(args)),
         MeasureCommand::Feedback(args) => finish_measure(measure::feedback(args)),
-        MeasureCommand::InstallHooks(args) => finish_measure(measure::install_hooks(args)),
     }
 }
 

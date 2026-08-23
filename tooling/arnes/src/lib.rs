@@ -2,6 +2,7 @@ pub mod commands;
 pub mod config;
 pub mod diagnostic;
 mod files;
+pub mod hooks;
 pub mod instructions;
 pub mod manifest;
 pub mod measure;

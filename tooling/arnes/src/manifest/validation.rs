@@ -5,6 +5,7 @@ use std::path::{Component, Path};
 
 mod commands;
 mod external;
+mod hooks;
 mod prompts;
 mod rules;
 mod skills;
@@ -82,6 +83,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     validate_resources(&manifest.resources, &agents)?;
     prompts::validate(&manifest.prompts, &manifest.resources, &agents)?;
     commands::validate(&manifest.commands, &manifest.prompts, &agents)?;
+    hooks::validate(&manifest.hooks, &agents)?;
     skills::validate(&manifest.skills, &manifest.resources, &agents)?;
     external::validate(&manifest.external, &agents)
 }

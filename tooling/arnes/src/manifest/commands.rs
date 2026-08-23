@@ -1,4 +1,4 @@
-use super::{Agent, Scope};
+use super::{Agent, Manifest, Scope};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -27,6 +27,12 @@ pub struct CommandBinding<'a> {
     command: &'a CommandDeclaration,
     pub agent: Agent,
     pub scope: Scope,
+}
+
+impl Manifest {
+    pub fn commands(&self) -> impl Iterator<Item = Command<'_>> {
+        self.commands.iter().map(Command::from)
+    }
 }
 
 impl<'a> From<&'a CommandDeclaration> for Command<'a> {

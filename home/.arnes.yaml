@@ -73,6 +73,16 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+hooks:
+  - id: measurement
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - id: handoff
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
 external:
   roots:
     - agent: codex

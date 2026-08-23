@@ -29,6 +29,44 @@ fn repository_manifest_is_valid() {
     manifest::parse(&fs::read_to_string(path).unwrap()).unwrap();
 }
 
+fn hook_error(agents: &str, hooks: &str) -> String {
+    let input = format!("version: 1\nagents:\n{agents}hooks:\n{hooks}resources: []\n");
+    match manifest::parse(&input) {
+        Ok(_) => panic!("hook manifest unexpectedly passed validation"),
+        Err(error) => error.to_string(),
+    }
+}
+
+#[test]
+fn hook_declarations_are_closed_and_unambiguous() {
+    let agents =
+        "  - id: claude\n    scopes: [user, project]\n  - id: cursor\n    scopes: [user]\n";
+    for (hooks, expected) in [
+        (
+            "  - id: measurement\n    installations: []\n",
+            "hooks[0].installations: at least one hook installation is required",
+        ),
+        (
+            "  - id: measurement\n    installations:\n      - { agent: claude, scope: user }\n  - id: measurement\n    installations:\n      - { agent: claude, scope: user }\n",
+            "hooks[1].id: duplicate hook identifier",
+        ),
+        (
+            "  - id: measurement\n    installations:\n      - { agent: claude, scope: user }\n      - { agent: claude, scope: user }\n",
+            "hooks[0].installations[1]: duplicate hook installation",
+        ),
+        (
+            "  - id: measurement\n    installations:\n      - { agent: claude, scope: project }\n",
+            "hooks[0].installations[0].scope: hooks only support the user scope",
+        ),
+        (
+            "  - id: handoff\n    installations:\n      - { agent: cursor, scope: user }\n",
+            "hooks[0].installations[0].agent: Cursor does not support the handoff hook",
+        ),
+    ] {
+        assert_eq!(hook_error(agents, hooks), expected);
+    }
+}
+
 #[test]
 fn unsupported_version_precedes_resource_validation() {
     assert_eq!(

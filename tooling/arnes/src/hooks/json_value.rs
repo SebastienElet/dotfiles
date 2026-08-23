@@ -1,16 +1,16 @@
-use super::super::MeasureError;
+use super::HooksError;
 use serde::Deserialize;
 use serde::de::{Error, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Number, Value};
 use std::fmt;
 
-pub fn parse(bytes: &[u8]) -> Result<Value, MeasureError> {
+pub fn parse(bytes: &[u8]) -> Result<Value, HooksError> {
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let value = UniqueValue::deserialize(&mut deserializer)
-        .map_err(|error| MeasureError::new(format!("hook configuration is malformed: {error}")))?;
+        .map_err(|error| HooksError::new(format!("hook configuration is malformed: {error}")))?;
     deserializer
         .end()
-        .map_err(|error| MeasureError::new(format!("hook configuration is malformed: {error}")))?;
+        .map_err(|error| HooksError::new(format!("hook configuration is malformed: {error}")))?;
     Ok(value.0)
 }
 

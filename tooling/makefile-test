@@ -24,13 +24,6 @@ assert_failure() {
   fi
 }
 
-assert_hooks_failure_preserves() {
-  before=$(cksum "$hooks_file")
-  assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-  after=$(cksum "$hooks_file")
-  [[ $before == "$after" ]] || fail "invalid Codex hooks file changed"
-}
-
 case_root=$test_root/existing_directory
 test_home=$case_root/home
 test_repository=$case_root/repository
@@ -165,98 +158,28 @@ ln -s "$case_root/missing" "$config_file"
 assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
 assert_link "$config_file" "$case_root/missing"
 
-case_root=$test_root/codex_hook
-test_home=$case_root/home
-hooks_file=$test_home/.codex/hooks.json
-old_command=$repository/scripts/agent_handoff
-new_command=$repository/tooling/agent-handoff
-mkdir -p "$test_home/.codex"
-printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"}]}]}}\n' "$old_command" >"$hooks_file"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "old Codex hook was not migrated"
-[[ $(jq -r --arg command "$old_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 0 ]] || fail "old Codex hook remains"
-
-printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$new_command" >"$hooks_file"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate Codex hook was not removed"
-before=$(cksum "$hooks_file")
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-after=$(cksum "$hooks_file")
-[[ $before == "$after" ]] || fail "Codex hook migration is not idempotent"
-
-printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$old_command" >"$hooks_file"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate old Codex hooks were not collapsed"
-
-printf 'invalid json\n' >"$hooks_file"
-assert_hooks_failure_preserves
-printf '{"hooks":{"Stop":{}}}\n' >"$hooks_file"
-assert_hooks_failure_preserves
-for malformed in null false '{"hooks":{"Stop":false}}'; do
-  printf '%s\n' "$malformed" >"$hooks_file"
-  assert_hooks_failure_preserves
-done
-printf '%s\n%s\n' '{"hooks":{"Stop":[]}}' '{"second":"document"}' >"$hooks_file"
-assert_hooks_failure_preserves
-: >"$hooks_file"
-assert_hooks_failure_preserves
-
-printf '{"hooks":{"Stop":[]}}\n' >"$hooks_file"
-before=$(cksum "$hooks_file")
-assert_failure env HOME="$test_home" PATH="$case_root/empty-path" /usr/bin/make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-after=$(cksum "$hooks_file")
-[[ $before == "$after" ]] || fail "Codex hooks file changed without jq"
-
-rm "$hooks_file"
-mkdir "$hooks_file"
-assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ -d $hooks_file ]] || fail "Codex hooks directory changed"
-rmdir "$hooks_file"
-mkfifo "$hooks_file"
-assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ -p $hooks_file ]] || fail "Codex hooks FIFO changed"
-rm "$hooks_file"
-
-victim=$case_root/victim
-printf 'keep\n' >"$victim"
-ln -s "$victim" "$hooks_file.tmp"
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
-[[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
-assert_link "$hooks_file.tmp" "$victim"
-
-case_root=$test_root/measurement_wiring
+case_root=$test_root/hooks_wiring
 test_home=$case_root/home
 mkdir -p "$test_home"
-for agent in codex claude-code cursor; do
-  target=$agent-measurement-hooks
+for specification in "codex codex" "claude-code claude" "cursor cursor"; do
+  read -r agent setup_agent <<<"$specification"
+  target=$agent-hooks
   trace=$case_root/$target
   env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$target" >"$trace"
-  if [[ $agent == claude-code ]]; then
-    expected="\"$test_home/.local/bin/arnes\" measure install-hooks"
-    grep -F -q -- '--agent claude-code' "$trace" || fail "$target does not select Claude Code"
-    grep -F -q -- "--command \"$test_home/.local/bin/arnes\"" "$trace" \
-      || fail "$target does not install measurement hooks through Arnes"
-    grep -F -q -- "--claude-stop-command \"$repository/tooling/agent-handoff\"" "$trace" \
-      || fail "$target does not install the current handoff hook"
-    grep -F -q -- "--claude-legacy-stop-command \"$repository/scripts/agent_handoff\"" "$trace" \
-      || fail "$target does not migrate the legacy handoff hook"
-  else
-    expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
-  fi
-  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$target does not install its measurement hook exactly once"
+  expected="\"$test_home/.local/bin/arnes\" setup hooks --agent $setup_agent"
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$target does not reconcile hooks exactly once"
   grep -F -q -- 'cargo build --release' "$trace" || fail "$target does not depend on arnes"
+  if [[ $agent != cursor ]]; then
+    grep -F -q -- "$test_home/.local/bin/agent-handoff" "$trace" || fail "$target does not deploy agent-handoff"
+  fi
 
   trace=$case_root/$agent
   env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$agent" >"$trace"
-  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$agent does not wire its measurement target exactly once"
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$agent does not wire its hook target exactly once"
   if [[ $agent == codex ]]; then
     grep -F -q -- "$repository/harness/skills/agent-instructions" "$trace" || fail "codex does not install the agent-instructions skill"
   fi
 done
-
-handoff_line=$(grep -n -F -- 'old_command=' "$case_root/codex" | cut -d: -f1)
-measurement_line=$(grep -n -F -- 'measure install-hooks --agent codex' "$case_root/codex" | cut -d: -f1)
-[[ -n $handoff_line && -n $measurement_line && $handoff_line -lt $measurement_line ]] || fail "Codex handoff hook is not installed before measurement hooks"
 
 case_root=$test_root/hunspell_wiring
 test_home=$case_root/home

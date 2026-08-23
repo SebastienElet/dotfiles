@@ -2,37 +2,35 @@
 
 ## Objectif
 
-Installer le hook de handoff et les hooks de mesure Claude dans une seule mutation sûre des
-réglages. Le setup reste distinct du hook runtime `tooling/agent-handoff`.
+Déclarer les hooks de harness dans le manifeste et les réconcilier par agent dans une seule mutation
+sûre. Le setup reste distinct des callbacks runtime de mesure et de handoff.
 
 ## Structure
 
-- Arnes valide les chemins et installe en même temps ses hooks de mesure et l'entrée Stop de
-  handoff.
-- `claude-handoff-hook` reste une façade phony du Makefile et appelle directement Arnes.
-- `tooling/makefile-test` vérifie l'appel Arnes complet depuis un répertoire extérieur au dépôt.
-- Le lint CI appelle directement le script de test, sans target Make de test.
+- `home/.arnes.yaml` est la source déclarative des capacités `measurement` et `handoff` et de leurs
+  installations par agent.
+- `arnes setup hooks --agent <agent>` charge ce manifeste puis délègue le format natif à l'adapter
+  Claude, Codex ou Cursor.
+- `arnes measure hook` reste uniquement le callback runtime de la capacité de mesure.
+- Make déploie les exécutables stables sous `~/.local/bin`, puis appelle le setup Arnes sans porter
+  de politique de hook ni de chemin de migration.
 
-Le Makefile transmet à Arnes les chemins absolus des hooks runtime courant et historique, résolus
-depuis `DOTFILES_PATH`, y compris lorsqu'il est appelé hors du dépôt.
+Le manifeste ne reproduit aucun JSON fournisseur : les événements, variantes, propriétés possédées
+et migrations restent typés dans les adapters Rust.
 
 ## Garanties
 
-Arnes crée `~/.claude/settings.json` si nécessaire, préserve les réglages sans rapport avec ses
-entrées, migre l'ancien chemin et les doublons vers une entrée unique avec `args: []`, puis reste
-idempotent. Il refuse les structures ambiguës ou invalides et les chemins non réguliers sans
-mutation. Son échange atomique compare le fichier remplacé au snapshot lu et restaure une écriture
-concurrente au lieu de l'écraser.
+Arnes crée la configuration native si nécessaire, préserve les réglages sans rapport avec ses
+entrées, retire les capacités absentes du manifeste, migre les anciens chemins et doublons, puis
+reste idempotent. Il refuse les manifestes, structures ou exécutables invalides sans mutation. Son
+échange atomique compare le fichier remplacé au snapshot lu et restaure une écriture concurrente au
+lieu de l'écraser.
 
-Les événements et variantes Claude connus sont validés avant mutation; les extensions inconnues
-restent opaques et sont conservées.
+Les événements et variantes connus de chaque agent sont validés avant mutation; les extensions
+inconnues restent opaques et sont conservées.
 
 ## Tests et périmètre
 
-Les scénarios couvrent la création, la préservation, la migration, les doublons, l'idempotence, le
-refus sans mutation d'un contenu ou chemin invalide et les écritures concurrentes avant et après
-publication. Une target Make de test reste hors périmètre.
-
-`.PHONY: claude-code` et `.PHONY: claude-handoff-hook` restent immédiatement devant leurs targets.
-Les targets Codex voisines ne sont pas modifiées et aucun script Shell ne lit ou n'écrit les
-réglages Claude.
+Les scénarios couvrent la validation du manifeste, la sélection par agent, la création, le retrait,
+la préservation, la migration, les doublons, l'idempotence, les entrées invalides et les écritures
+concurrentes. Aucun script Shell ne lit ou n'écrit une configuration native d'agent.

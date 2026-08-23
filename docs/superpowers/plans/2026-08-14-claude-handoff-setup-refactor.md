@@ -1,29 +1,30 @@
 # Plan du refactor du setup du hook Claude
 
-**Objectif :** installer l'entrée Stop de handoff sans multiplier les writers de la configuration
-Claude.
+**Objectif :** réconcilier les hooks de harness depuis une source déclarative sans multiplier les
+writers des configurations natives.
 
-**Architecture :** le Makefile délègue directement à Arnes l'installation atomique des hooks de
-mesure et de handoff. Arnes reste le seul applicatif qui lit, valide et écrit la configuration
-Claude.
+**Architecture :** le manifeste déclare les capacités, Make orchestre l'installation et
+`arnes setup hooks` réconcilie atomiquement les formats Claude, Codex et Cursor.
 
 ### 1. Réduire le test aux garanties utiles
 
 Fichier : `tooling/makefile-test`
 
-- Couvrir l'appel exact d'Arnes sans intermédiaire Shell.
-- Couvrir la résolution des chemins depuis un répertoire extérieur au dépôt.
+- Couvrir l'appel `setup hooks` sans politique dupliquée dans Make.
+- Couvrir le déploiement des exécutables stables depuis un répertoire extérieur au dépôt.
 - Conserver les garanties de mutation JSON et de concurrence dans les tests Arnes.
 
-### 2. Intégrer le setup à Arnes
+### 2. Déclarer et réconcilier les hooks
 
-Fichiers : `tooling/arnes/src/measure/install.rs` et ses tests
+Fichiers : `home/.arnes.yaml`, le domaine `tooling/arnes/src/hooks` et ses tests
 
-- Valider les chemins absolus dans le CLI typé.
-- Installer le hook de mesure et le hook de handoff dans la même transformation Arnes.
+- Valider les capacités fermées et leurs installations dans le manifeste.
+- Ajouter `arnes setup hooks --agent <agent>` et garder `measure hook` au runtime.
+- Réconcilier mesure et handoff dans une même transformation par adapter.
 - Réutiliser l'échange atomique avec comparaison du snapshot pour ne perdre aucune écriture
   concurrente.
-- Préserver les données étrangères et migrer l'ancien chemin du hook.
+- Préserver les données étrangères, retirer les capacités non déclarées et migrer les anciens
+  chemins.
 - Exécuter le test jusqu'au succès.
 
 ### 3. Vérifier les barrières concernées

@@ -209,7 +209,7 @@ fn quotes_spaces_and_single_quotes_in_the_executable_path() {
 }
 
 #[test]
-fn rejects_relative_missing_and_non_file_commands_without_creating_configuration() {
+fn rejects_unavailable_and_non_executable_managed_commands_without_creating_configuration() {
     let harness = Harness::new();
     let non_executable = harness.home.join("non-executable");
     fs::write(&non_executable, b"binary").unwrap();
@@ -228,12 +228,18 @@ fn rejects_relative_missing_and_non_file_commands_without_creating_configuration
 #[test]
 fn accepts_an_executable_symlink_like_the_deployed_arnes_command() {
     let harness = Harness::new();
-    let command = harness.home.join("arnes-link");
-    symlink(&harness.executable, &command).unwrap();
-    assert_success(&harness.install_with("codex", &command));
+    let target = harness.home.join("arnes-target");
+    fs::write(&target, b"binary").unwrap();
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::remove_file(&harness.executable).unwrap();
+    symlink(&target, &harness.executable).unwrap();
+    assert_success(&harness.install("codex"));
     let config = read_json(harness.config("codex"));
     assert_eq!(
         config["hooks"]["Stop"][0]["hooks"][0]["command"],
-        format!("'{}' measure hook --agent codex", command.display())
+        format!(
+            "'{}' measure hook --agent codex",
+            harness.executable.display()
+        )
     );
 }

@@ -1,21 +1,22 @@
-use super::super::{HookAgent, MeasureError};
+use super::HooksError;
+use crate::manifest::Agent;
 use serde_json::Value;
 
 pub fn remove_everywhere(
     config: &mut Value,
-    agent: HookAgent,
+    agent: Agent,
     command: &str,
-) -> Result<(), MeasureError> {
+) -> Result<(), HooksError> {
     let Some(hooks) = config.get_mut("hooks") else {
         return Ok(());
     };
     let hooks = hooks
         .as_object_mut()
-        .ok_or_else(|| MeasureError::new("hooks must be a JSON object"))?;
+        .ok_or_else(|| HooksError::new("hooks must be a JSON object"))?;
     for entries in hooks.values_mut() {
         match agent {
-            HookAgent::Codex | HookAgent::ClaudeCode => remove_nested(entries, command),
-            HookAgent::Cursor => remove_direct(entries, command),
+            Agent::Codex | Agent::Claude => remove_nested(entries, command),
+            Agent::Cursor => remove_direct(entries, command),
         }
     }
     Ok(())
