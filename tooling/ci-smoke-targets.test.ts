@@ -123,6 +123,33 @@ describe("ci-smoke-targets entry point", () => {
     expectTargets(repository, ["all"]);
   });
 
+  test.each(["export SHARED", "unexport SHARED"])(
+    "selects all when the global directive %s is added",
+    (directive) => {
+      const repository = newRepository(`global-${directive.split(" ")[0]}`);
+      write(
+        repository,
+        "Makefile",
+        `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\n.PHONY: beta\nbeta:\n\t@echo beta\n${directive}\n`,
+      );
+      commit(repository, "add global directive");
+
+      expectTargets(repository, ["all"]);
+    },
+  );
+
+  test("selects all when a global assignment continuation changes", () => {
+    const repository = newRepository("global-continuation");
+    const makefile = (value: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\nGLOBAL = one \\\n  ${value}\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile("original"));
+    commit(repository, "add global continuation");
+    write(repository, "Makefile", makefile("changed"));
+    commit(repository, "change global continuation");
+
+    expectTargets(repository, ["all"]);
+  });
+
   test("selects all when a target is deleted", () => {
     const repository = newRepository("deleted-target");
     write(
