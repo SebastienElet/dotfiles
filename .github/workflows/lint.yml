@@ -126,8 +126,14 @@ jobs:
 
       - run: npm install --global cspell prettier
 
-      - name: Check issue form syntax and formatting
-        run: prettier --check .github/ISSUE_TEMPLATE/change.yml
+      - name: Check text syntax and formatting
+        run: >-
+          prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
+          tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
+          tooling/obsidian-retrieval/evaluation-contract.ts
+          harness/skills/obsidian-retrieval/SKILL.md
+          harness/skills/obsidian-retrieval/references/obsidian-cli.md
+          harness/skills/obsidian-retrieval/evals/trigger-queries.json
 
       - name: Check issue skill syntax and formatting
         run: >-
@@ -148,9 +154,16 @@ jobs:
           HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
             home/cspell.json \
             home/.config/cspell/user.txt \
+            .agents/skills/scripts/SKILL.md \
             harness/skills/agent-instructions/SKILL.md \
             harness/skills/agent-instructions/references/maintenance.md \
             harness/skills/issue-creation/SKILL.md \
             harness/skills/issue-creation/references/forge-capabilities.md \
             harness/skills/issue-creation/evals/trigger-queries.json \
-            harness/skills/linear-issue-spec/SKILL.md
+            harness/skills/linear-issue-spec/SKILL.md \
+            harness/skills/obsidian-retrieval/SKILL.md \
+            harness/skills/obsidian-retrieval/references/obsidian-cli.md \
+            harness/skills/obsidian-retrieval/evals/trigger-queries.json \
+            tooling/obsidian-retrieval/contract.ts \
+            tooling/obsidian-retrieval/contract.test.ts \
+            tooling/obsidian-retrieval/evaluation-contract.ts

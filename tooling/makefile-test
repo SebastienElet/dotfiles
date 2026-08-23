@@ -100,6 +100,7 @@ test_home=$case_root/home
 mkdir -p "$test_home/.claude/skills" "$test_home/.cursor/skills" "$test_home/.agents/skills"
 for specification in \
   ".agents/skills/agent-instructions agent-instructions" \
+  ".claude/skills/obsidian-retrieval obsidian-retrieval" \
   ".claude/skills/codegraph codegraph" \
   ".claude/skills/enforcement-code enforcement-code" \
   ".claude/skills/harness-reflection harness-reflection" \
@@ -111,6 +112,7 @@ for specification in \
   ".claude/skills/skill-manager skill-manager" \
   ".claude/skills/workflow-automation workflow-automation" \
   ".cursor/skills/claude-developer claude-developer" \
+  ".cursor/skills/obsidian-retrieval obsidian-retrieval" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
   ".cursor/skills/harness-reflection harness-reflection" \
@@ -121,6 +123,7 @@ for specification in \
   ".cursor/skills/skill-manager skill-manager" \
   ".cursor/skills/workflow-automation workflow-automation" \
   ".agents/skills/claude-developer claude-developer" \
+  ".agents/skills/obsidian-retrieval obsidian-retrieval" \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
   ".agents/skills/harness-reflection harness-reflection" \

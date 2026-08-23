@@ -47,13 +47,15 @@ $scripts decide whether this shell helper belongs in TypeScript or Rust
 7. For TypeScript, keep production code and `bun:test` tests in normal modules. Pin Bun and
    TypeScript 7, commit the lockfile, run `bun test`, and gate `tsc --noEmit` in CI; Bun's runtime
    execution is not evidence that type-checking passed.
-8. Keep non-trivial fakes, parsers, fixtures, and assertions outside Shell. Do not embed TypeScript,
+8. Parse every external or structured input once at the TypeScript boundary with a Zod schema,
+   derive the trusted type from that schema, and fail closed with the validation error.
+9. Keep non-trivial fakes, parsers, fixtures, and assertions outside Shell. Do not embed TypeScript,
    Python, Ruby, or another implementation language inside a Shell heredoc.
-9. For a permitted Bash wrapper, use `#!/usr/bin/env bash`, a descriptive extensionless kebab-case
-   name under `tooling/`, meaningful non-zero exits, and commands portable to macOS and Linux.
-10. Preserve the executable bit, run `bash -n` and ShellCheck on the exact file, and exercise the
+10. For a permitted Bash wrapper, use `#!/usr/bin/env bash`, a descriptive extensionless kebab-case
+    name under `tooling/`, meaningful non-zero exits, and commands portable to macOS and Linux.
+11. Preserve the executable bit, run `bash -n` and ShellCheck on the exact file, and exercise the
     wrapper on every platform whose behavior it can change.
-11. For destructive behavior, default to inspection or dry-run and refuse unsafe paths.
+12. For destructive behavior, default to inspection or dry-run and refuse unsafe paths.
 
 ## Gotchas
 
@@ -65,6 +67,8 @@ $scripts decide whether this shell helper belongs in TypeScript or Rust
   implementation boundary; create a normal TypeScript or Rust module with ordinary tests instead.
 - **Treating Bun execution as type safety** — Bun strips types without proving them; run the pinned
   TypeScript 7 compiler with `--noEmit` as a separate gate.
+- **Hand-writing input type guards** — validation rules and trusted types drift apart; define the
+  boundary schema in Zod and infer the downstream type from it.
 - **Choosing Rust for every parser** — small utilities pay compilation and implementation overhead
   without gaining a material guarantee; prefer typed, validated TypeScript until the CLI boundary or
   system constraints justify Rust.
@@ -86,6 +90,8 @@ $scripts decide whether this shell helper belongs in TypeScript or Rust
   boundary; require Rust only when its delivery or correctness properties are material.
 - Every TypeScript utility must be covered by `bun test` and a pinned TypeScript 7 `tsc --noEmit`
   gate that runs in CI.
+- Every external or structured TypeScript input must be validated with Zod at its boundary; do not
+  replace the schema with casts, handwritten type guards, or permissive defaults.
 - Use `#!/usr/bin/env bash` for every permitted new executable Shell wrapper.
 - Keep executable script names extensionless, descriptive, and kebab-case.
 - Never ignore command failures that affect correctness.
