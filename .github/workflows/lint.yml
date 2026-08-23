@@ -130,6 +130,7 @@ jobs:
           prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
+          tooling/install-hunspell-dictionary*.ts
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
@@ -165,4 +166,5 @@ jobs:
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
-            tooling/obsidian-retrieval/evaluation-contract.ts
+            tooling/obsidian-retrieval/evaluation-contract.ts \
+            tooling/install-hunspell-dictionary*.ts
