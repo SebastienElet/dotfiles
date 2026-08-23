@@ -23,11 +23,10 @@ review, and the limits of that evidence are declared inside the verdict. A green
 stay implicit is the failure this skill exists to prevent — a verdict is only as strong as what it
 admits it did not test.
 
-Not for re-reading your own diff before committing: that is
-`superpowers:requesting-code-review` and `superpowers:verification-before-completion`. This skill
-judges an open pull request and engages a decision the team will act on. That the PR is your own
-changes nothing about the verdict, only about how it is enforced — see phase 6, since GitHub refuses
-a blocking review on your own PR.
+Not for re-reading your own diff before committing: perform that review and verification directly.
+This skill judges an open pull request and engages a decision the team will act on. That the PR is
+your own changes nothing about the verdict, only about how it is enforced — see phase 6, since
+GitHub refuses a blocking review on your own PR.
 
 ## Usage
 
