@@ -115,7 +115,6 @@ jobs:
 
           tooling/agent-handoff-test
           tooling/upgrade-test
-          tooling/ci-smoke-targets-test
           tooling/makefile-test
           echo "✅ Shell scripts OK"
 

@@ -9,6 +9,7 @@ home/.config/fish/completions
 PRODUCTIVITY_REVIEW.md
 tooling/daily-routine/target/
 tooling/arnes/target/
+node_modules/
 
 # Claude Code
 .claude/*
