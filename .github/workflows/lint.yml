@@ -76,6 +76,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+
       - name: Install ShellCheck
         run: brew install actionlint jq shellcheck
 
@@ -128,6 +134,10 @@ jobs:
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
+          tooling/git-main-branch-core.ts tooling/git-main-branch-core.test.ts
+          tooling/git-main-branch-cli.ts tooling/git-main-branch-entry.test.ts
+          tooling/git-main-branch.test-support/fake-command.ts
+          tooling/git-main-branch.test-support/harness.ts
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
           tooling/install-hunspell-dictionary*.ts
