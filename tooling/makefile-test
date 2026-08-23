@@ -110,12 +110,16 @@ for specification in \
   ".claude/skills/codegraph codegraph" \
   ".claude/skills/enforcement-code enforcement-code" \
   ".claude/skills/handoff handoff" \
+  ".claude/skills/issue-creation issue-creation" \
+  ".claude/skills/linear-issue-spec linear-issue-spec" \
   ".claude/skills/pr-fix pr-fix" \
   ".claude/skills/pr-verdict pr-verdict" \
   ".claude/skills/skill-manager skill-manager" \
   ".cursor/skills/claude-developer claude-developer" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
+  ".cursor/skills/issue-creation issue-creation" \
+  ".cursor/skills/linear-issue-spec linear-issue-spec" \
   ".cursor/skills/pr-fix pr-fix" \
   ".cursor/skills/pr-verdict pr-verdict" \
   ".cursor/skills/skill-manager skill-manager" \
@@ -123,6 +127,8 @@ for specification in \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
   ".agents/skills/handoff handoff" \
+  ".agents/skills/issue-creation issue-creation" \
+  ".agents/skills/linear-issue-spec linear-issue-spec" \
   ".agents/skills/pr-fix pr-fix" \
   ".agents/skills/pr-verdict pr-verdict" \
   ".agents/skills/skill-manager skill-manager"; do
