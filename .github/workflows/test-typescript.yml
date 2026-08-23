@@ -13,6 +13,8 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun test
+        env:
+          SCRAPLING_DOCKER_SMOKE: "1"
 
   typecheck:
     name: TypeScript types
