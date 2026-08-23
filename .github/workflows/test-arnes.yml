@@ -3,6 +3,7 @@ name: Arnes tests
 on:
   push:
     paths:
+      - .cargo/**
       - Makefile
       - home/.arnes.yaml
       - harness/**
@@ -10,6 +11,7 @@ on:
       - .github/workflows/test-arnes.yml
   pull_request:
     paths:
+      - .cargo/**
       - Makefile
       - home/.arnes.yaml
       - harness/**
@@ -19,6 +21,8 @@ on:
 jobs:
   arnes:
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Funsafe-code
     steps:
       - uses: actions/checkout@v5
       - run: cargo fmt --manifest-path tooling/arnes/Cargo.toml --check

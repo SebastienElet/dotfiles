@@ -13,36 +13,24 @@ const MAX_COMMAND_OUTPUT_BYTES: usize = 8 * 1024 * 1024;
 const COMMAND_POLL_INTERVAL: Duration = Duration::from_millis(5);
 
 mod posix {
-    use std::ffi::c_int;
+    use rustix::io::Errno;
+    use rustix::process::{Pid, Signal};
     use std::io;
 
-    const SIGKILL: c_int = 9;
-    const ESRCH: c_int = 3;
-
-    unsafe extern "C" {
-        #[link_name = "kill"]
-        fn kill_process(process: c_int, signal: c_int) -> c_int;
-    }
-
     pub fn kill_process_group(process_group: u32) -> io::Result<()> {
-        let process_group = c_int::try_from(process_group)
+        let process_group = i32::try_from(process_group)
             .map_err(|_| io::Error::other("process group ID does not fit in a POSIX pid_t"))?;
         if process_group <= 1 {
             return Err(io::Error::other(
                 "refusing to signal an unsafe process group ID",
             ));
         }
+        let process_group = Pid::from_raw(process_group)
+            .ok_or_else(|| io::Error::other("process group ID cannot be zero"))?;
 
-        // SAFETY: kill accepts scalar integers, and the validated negative PID targets one group.
-        if unsafe { kill_process(-process_group, SIGKILL) } == 0 {
-            return Ok(());
-        }
-
-        let error = io::Error::last_os_error();
-        if error.raw_os_error() == Some(ESRCH) {
-            Ok(())
-        } else {
-            Err(error)
+        match rustix::process::kill_process_group(process_group, Signal::KILL) {
+            Ok(()) | Err(Errno::SRCH) => Ok(()),
+            Err(error) => Err(error.into()),
         }
     }
 }
@@ -608,8 +596,8 @@ pub fn run_json<T: DeserializeOwned>(program: &str, args: &[String]) -> Result<T
 #[cfg(test)]
 mod tests {
     use super::{
-        ChildOutcome, CommandError, CommandErrorKind, ExecutionLimits, finish_execution, run,
-        run_json, run_with_limits,
+        ChildOutcome, CommandError, CommandErrorKind, ExecutionLimits, finish_execution, posix,
+        run, run_json, run_with_limits,
     };
     use serde::Deserialize;
     use std::error::Error as _;
@@ -620,6 +608,18 @@ mod tests {
     #[derive(Debug, Deserialize, Eq, PartialEq)]
     struct Response {
         value: u32,
+    }
+
+    #[test]
+    fn process_group_kill_rejects_dangerous_and_out_of_range_ids() {
+        assert!(posix::kill_process_group(0).is_err());
+        assert!(posix::kill_process_group(1).is_err());
+        assert!(posix::kill_process_group(u32::MAX).is_err());
+    }
+
+    #[test]
+    fn missing_process_group_is_already_stopped() {
+        posix::kill_process_group(i32::MAX as u32).unwrap();
     }
 
     #[test]
