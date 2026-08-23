@@ -11,18 +11,17 @@ This directory is the canonical source for repository-scoped agent skills.
 
 ## Dev
 
-| Skill     | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| `neovim`  | Maintain this repository's Neovim and LazyVim configuration.  |
-| `scripts` | Create and maintain portable Bash scripts in this repository. |
+| Skill     | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. |
+| `scripts` | Choose and maintain repository scripting boundaries.         |
 
 ## Ops
 
-| Skill               | Description                                                                                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apple-notes`       | Write to Apple Notes with AppleScript: create, move, rename notes and folders, HTML bodies, attachments.                                                      |
-| `do-nothing-script` | Turn a repeated manual procedure into a do-nothing script (Slimmon): one function per step, printed then awaiting the operator, automated one step at a time. |
-| `dotfiles`          | Apply this repository's conventions for configuration, symlinks, platform differences, and tool installation.                                                 |
-| `johnny-decimal`    | Organize ~/Documents with the Johnny Decimal and PARA hybrid.                                                                                                 |
-| `para-organizer`    | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents.                                                                         |
-| `things-tasks`      | Manage Things 3 tasks, projects, and areas through the thangs CLI.                                                                                            |
+| Skill            | Description                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| `apple-notes`    | Write to Apple Notes with AppleScript: create, move, rename notes and folders, HTML bodies, attachments.      |
+| `dotfiles`       | Apply this repository's conventions for configuration, symlinks, platform differences, and tool installation. |
+| `johnny-decimal` | Organize ~/Documents with the Johnny Decimal and PARA hybrid.                                                 |
+| `para-organizer` | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents.                         |
+| `things-tasks`   | Manage Things 3 tasks, projects, and areas through the thangs CLI.                                            |

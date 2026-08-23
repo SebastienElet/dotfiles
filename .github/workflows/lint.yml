@@ -117,8 +117,17 @@ jobs:
           tooling/upgrade-test
           tooling/ci-smoke-targets-test
           tooling/makefile-test
-          make obsidian-retrieval-test
           echo "✅ Shell scripts OK"
+
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun ci
+      - run: bun run typecheck
+      - run: bun test
 
   cspell:
     name: Text configuration
@@ -129,7 +138,21 @@ jobs:
       - run: npm install --global cspell prettier
 
       - name: Check text syntax and formatting
-        run: prettier --check .github/ISSUE_TEMPLATE/change.yml harness/skills/obsidian-retrieval/SKILL.md harness/skills/obsidian-retrieval/references/obsidian-cli.md harness/skills/obsidian-retrieval/evals/trigger-queries.json
+        run: >-
+          prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
+          tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
+          tooling/obsidian-retrieval/evaluation-contract.ts
+          harness/skills/obsidian-retrieval/SKILL.md
+          harness/skills/obsidian-retrieval/references/obsidian-cli.md
+          harness/skills/obsidian-retrieval/evals/trigger-queries.json
+
+      - name: Check issue skill syntax and formatting
+        run: >-
+          prettier --check home/.arnes.yaml harness/skills/README.md
+          harness/skills/issue-creation/SKILL.md
+          harness/skills/issue-creation/references/forge-capabilities.md
+          harness/skills/issue-creation/evals/trigger-queries.json
+          harness/skills/linear-issue-spec/SKILL.md
 
       - name: Check configuration and user dictionary
         run: |
@@ -139,4 +162,18 @@ jobs:
           trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
           printf '%s\n' "$trace"
           printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
-          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt harness/skills/agent-instructions/SKILL.md harness/skills/agent-instructions/references/maintenance.md harness/skills/obsidian-retrieval/SKILL.md harness/skills/obsidian-retrieval/references/obsidian-cli.md harness/skills/obsidian-retrieval/evals/trigger-queries.json
+          HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
+            home/cspell.json \
+            home/.config/cspell/user.txt \
+            harness/skills/agent-instructions/SKILL.md \
+            harness/skills/agent-instructions/references/maintenance.md \
+            harness/skills/issue-creation/SKILL.md \
+            harness/skills/issue-creation/references/forge-capabilities.md \
+            harness/skills/issue-creation/evals/trigger-queries.json \
+            harness/skills/linear-issue-spec/SKILL.md \
+            harness/skills/obsidian-retrieval/SKILL.md \
+            harness/skills/obsidian-retrieval/references/obsidian-cli.md \
+            harness/skills/obsidian-retrieval/evals/trigger-queries.json \
+            tooling/obsidian-retrieval/contract.ts \
+            tooling/obsidian-retrieval/contract.test.ts \
+            tooling/obsidian-retrieval/evaluation-contract.ts
