@@ -141,6 +141,7 @@ jobs:
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
           tooling/install-hunspell-dictionary*.ts
+          .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
@@ -177,4 +178,6 @@ jobs:
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
             tooling/obsidian-retrieval/evaluation-contract.ts \
-            tooling/install-hunspell-dictionary*.ts
+            tooling/install-hunspell-dictionary*.ts \
+            .agents/skills/apple-notes/scripts/*.ts \
+            tooling/apple-notes*.ts

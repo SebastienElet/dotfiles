@@ -3,22 +3,26 @@ name: Deployment tests
 on:
   push:
     paths:
+      - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
       - tooling/makefile-test
       - tooling/fish-deployment-test
       - tooling/install-hunspell-dictionary*
+      - tooling/apple-notes*.ts
       - tooling/pr-feedback-command-test
       - tooling/xdg-config-test
       - Makefile
       - .github/workflows/test-deployment.yml
   pull_request:
     paths:
+      - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
       - tooling/makefile-test
       - tooling/fish-deployment-test
       - tooling/install-hunspell-dictionary*
+      - tooling/apple-notes*.ts
       - tooling/pr-feedback-command-test
       - tooling/xdg-config-test
       - Makefile
@@ -40,5 +44,6 @@ jobs:
       - run: tooling/makefile-test
       - run: tooling/fish-deployment-test
       - run: bun test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
+      - run: bun test tooling/apple-notes*.test.ts
       - run: tooling/pr-feedback-command-test
       - run: tooling/xdg-config-test

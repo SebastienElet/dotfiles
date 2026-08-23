@@ -1,8 +1,14 @@
+AppleScript
 backlink
 backlinks
 backticked
+cstring
 evals
 extensionless
 frontmatter
 glab
+libc
+osascript
+renameat
+renamex
 wikilinks
