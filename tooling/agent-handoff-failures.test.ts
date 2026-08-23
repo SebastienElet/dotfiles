@@ -190,12 +190,20 @@ describe("agent-handoff failures", () => {
     expect(result.stderr).toContain("cannot create handoff sentinel");
   });
 
-  test("does not inspect usage before the latest 500 physical lines", async () => {
-    const transcript = writeTranscript("physical-window.jsonl", [
+  test("retains exactly the latest 500 physical lines", async () => {
+    const boundary = writeTranscript("physical-window-boundary.jsonl", [
+      claudeUsage(90_000),
+      ...Array.from({ length: 499 }, () => ""),
+    ]);
+    expect(
+      (await runHook(claudeEvent(boundary, "physical-window-boundary"))).stdout,
+    ).not.toBe("");
+
+    const outside = writeTranscript("physical-window-outside.jsonl", [
       claudeUsage(90_000),
       ...Array.from({ length: 500 }, () => ""),
     ]);
-    const input = claudeEvent(transcript, "physical-window");
+    const input = claudeEvent(outside, "physical-window-outside");
 
     expect(await runHook(input)).toEqual({
       exitCode: 1,
@@ -203,7 +211,7 @@ describe("agent-handoff failures", () => {
       stdout: "",
     });
 
-    writeFileSync(transcript, `${claudeUsage(90_000)}\n`);
+    writeFileSync(outside, `${claudeUsage(90_000)}\n`);
     expect((await runHook(input)).stdout).not.toBe("");
   });
 });

@@ -75,7 +75,10 @@ function parseCodexUsage(record: Record<string, unknown>): Usage | undefined {
 }
 
 export function findLatestUsage(transcript: string): Usage {
-  const lines = transcript.split("\n").slice(-500);
+  const splitLines = transcript.split("\n");
+  const physicalLines =
+    splitLines.at(-1) === "" ? splitLines.slice(0, -1) : splitLines;
+  const lines = physicalLines.slice(-500);
   let latest: Usage | undefined;
   for (const [index, line] of lines.entries()) {
     if (line.trim() === "") continue;
