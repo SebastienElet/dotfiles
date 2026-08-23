@@ -48,6 +48,16 @@
       "reason": "Post-publication retrieval and body verification belong to the shared lifecycle"
     },
     {
+      "query": "Issue creation timed out and a search found nothing; decide whether to retry",
+      "should_activate": true,
+      "reason": "An ambiguous write must stop unless a verified provider-side guard makes retry idempotent"
+    },
+    {
+      "query": "Create a title-only issue named Upgrade the staging database and leave its body empty",
+      "should_activate": true,
+      "reason": "An explicit title-only request uses the coherence exception without inventing body deliverables"
+    },
+    {
       "query": "Explain why this database issue causes deadlocks",
       "should_activate": false,
       "reason": "The word issue describes a technical problem rather than a tracker artifact workflow"

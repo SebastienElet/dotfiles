@@ -65,8 +65,10 @@ user's language and the target project's canonical vocabulary and issue conventi
    user explicitly requests a title-only issue; record that exception as part of the approved
    candidate.
 
-6. **Run the coherence gate.** Build a short trace from each title promise and deliverable to at
-   least one acceptance criterion that proves it. Compare the title, outcome, deliverables,
+6. **Run the coherence gate.** For an explicitly approved title-only candidate, verify that the
+   title states the requested outcome and that no known contradiction changes its scope, then skip
+   checks that require a body. Otherwise, build a short trace from each title promise and deliverable
+   to at least one acceptance criterion that proves it. Compare the title, outcome, deliverables,
    requirements, open questions, and non-goals in both directions. Reject the candidate when a
    deliverable lacks proof, a non-goal negates the title, outcome, or deliverable, or an unresolved
    question materially changes scope. Remove limits of the current drafting session, such as not
@@ -82,8 +84,10 @@ user's language and the target project's canonical vocabulary and issue conventi
 8. **Publish once.** Submit the validated title and complete body through the verified provider
    path, using a body file or structured connector fields when supported. Preserve intended labels,
    state, relationships, and target metadata. If the result is ambiguous because the response is
-   lost or times out, search the target for the exact candidate and recent creations before any
-   retry; never create a second issue blindly.
+   lost or times out, search the target for the exact candidate and recent creations to recover a
+   successful write. A search miss is not proof that the write failed. When no match is visible,
+   report the result as indeterminate and stop; retry only through a verified provider idempotency
+   or uniqueness mechanism that makes repeating the operation safe.
 
 9. **Retrieve and verify.** Use a fresh read by returned identifier or URL, not the create response.
    Compare the stored title and body with the validated candidate and detect an empty, placeholder,
@@ -101,8 +105,9 @@ user's language and the target project's canonical vocabulary and issue conventi
 
 - **Treating a create response as stored truth** — a proxy or provider can alter or drop fields;
   retrieve the issue independently and compare the stored result.
-- **Retrying after an ambiguous write** — the first creation may have succeeded and a retry creates
-  a duplicate; search exact and recent candidates before deciding whether another write is safe.
+- **Retrying after an ambiguous write** — the first creation may have succeeded but not reached the
+  search index; recover a visible match, or stop indeterminate unless a provider guard makes retry
+  idempotent.
 - **Treating duplicate search as uniqueness** — concurrent creators can both observe no match and
   publish; use a verified provider-side guard when available and report the residual race otherwise.
 - **Making session limits into issue scope** — the future implementer receives a false non-goal;
@@ -120,6 +125,8 @@ user's language and the target project's canonical vocabulary and issue conventi
   explicit title-only request makes the empty body intentional.
 - Never require a second confirmation after a coherent explicit create or publish request.
 - Never infer publication authority from drafting, refinement, or review alone.
+- Never retry an ambiguous creation without a verified provider-side mechanism that prevents a
+  second issue.
 - Never claim verification for a field that was not returned by a fresh provider read.
 - Never start implementing the issue without a separate request.
 
