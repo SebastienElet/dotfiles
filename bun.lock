@@ -1,9 +1,9 @@
 {
-  "lockfileVersion": 1,
+  "lockfileVersion": 2,
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "dotfiles-tooling",
+      "name": "dotfiles",
       "dependencies": {
         "zod": "4.4.3",
       },

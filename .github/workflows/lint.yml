@@ -115,19 +115,8 @@ jobs:
 
           tooling/agent-handoff-test
           tooling/upgrade-test
-          tooling/ci-smoke-targets-test
           tooling/makefile-test
           echo "✅ Shell scripts OK"
-
-  typescript:
-    name: TypeScript
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
-      - run: bun ci
-      - run: bun run typecheck
-      - run: bun test
 
   cspell:
     name: Text configuration

@@ -1,14 +1,22 @@
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
     "exactOptionalPropertyTypes": true,
+    "lib": ["ESNext"],
+    "target": "ESNext",
     "module": "Preserve",
+    "moduleDetection": "force",
+    "types": ["bun"],
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true,
-    "noUncheckedIndexedAccess": true,
     "strict": true,
-    "target": "ES2024",
-    "types": ["bun"]
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["tooling/**/*.ts"]
 }
