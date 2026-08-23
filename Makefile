@@ -650,6 +650,7 @@ vibe-island: /Applications/Vibe\ Island.app
 personal: \
 	apple-notes-exporter \
 	calibre \
+	discord \
 	obsidian \
 	perplexity \
 	whatsapp
@@ -674,6 +675,11 @@ ${APP_BIN}/Apple\ Notes\ Exporter.app:
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
+
+.PHONY: discord
+discord: brew ${APP_BIN}/Discord.app
+${APP_BIN}/Discord.app:
+	brew install --cask discord
 
 .PHONY: obsidian
 obsidian: brew ${APP_BIN}/Obsidian.app
