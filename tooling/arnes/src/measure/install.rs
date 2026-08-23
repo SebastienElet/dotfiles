@@ -17,10 +17,15 @@ pub struct InstallHooksArgs {
     pub agent: HookAgent,
     #[arg(long)]
     pub command: PathBuf,
+    #[arg(long, requires = "claude_legacy_stop_command")]
+    pub claude_stop_command: Option<PathBuf>,
+    #[arg(long, requires = "claude_stop_command")]
+    pub claude_legacy_stop_command: Option<PathBuf>,
 }
 
 pub fn install_hooks(args: InstallHooksArgs) -> Result<(), MeasureError> {
     validate_command(&args.command)?;
+    let claude_stop_commands = validate_claude_stop_commands(&args)?;
     let home =
         PathBuf::from(env::var_os("HOME").ok_or_else(|| MeasureError::new("HOME is required"))?);
     if !home.is_absolute() {
@@ -38,7 +43,39 @@ pub fn install_hooks(args: InstallHooksArgs) -> Result<(), MeasureError> {
     ownership::remove_everywhere(&mut config, args.agent, &command)?;
     merge(&mut config, policy.events, policy.nested, &command)?;
     remove_excluded(&mut config, policy.excluded, &command)?;
+    if let Some((current, legacy)) = claude_stop_commands {
+        merge_claude_stop(&mut config, current, legacy)?;
+    }
     file.replace(&serde_json::to_vec_pretty(&config)?)
+}
+
+fn validate_claude_stop_commands(
+    args: &InstallHooksArgs,
+) -> Result<Option<(&str, &str)>, MeasureError> {
+    let (Some(current), Some(legacy)) = (
+        args.claude_stop_command.as_deref(),
+        args.claude_legacy_stop_command.as_deref(),
+    ) else {
+        return Ok(None);
+    };
+    if args.agent != HookAgent::ClaudeCode {
+        return Err(MeasureError::new(
+            "Claude Stop commands require the claude-code agent",
+        ));
+    }
+    validate_command(current)?;
+    if !legacy.is_absolute() || current == legacy {
+        return Err(MeasureError::new(
+            "legacy Claude Stop command must be a distinct absolute path",
+        ));
+    }
+    let current = current
+        .to_str()
+        .ok_or_else(|| MeasureError::new("Claude Stop command path must be valid UTF-8"))?;
+    let legacy = legacy
+        .to_str()
+        .ok_or_else(|| MeasureError::new("legacy Claude Stop command path must be valid UTF-8"))?;
+    Ok(Some((current, legacy)))
 }
 
 fn validate_command(command: &Path) -> Result<(), MeasureError> {
@@ -135,6 +172,39 @@ fn merge_direct(entries: &mut Value, command: &str) -> Result<(), MeasureError> 
     entries.retain(|handler| !ownership::direct(handler, command));
     entries.push(json!({"command":command}));
     Ok(())
+}
+
+fn merge_claude_stop(config: &mut Value, current: &str, legacy: &str) -> Result<(), MeasureError> {
+    let entries = config["hooks"]["Stop"]
+        .as_array_mut()
+        .ok_or_else(|| MeasureError::new("Claude Stop hook event must be an array"))?;
+    let current_handler = find_nested_handler(entries, current);
+    let legacy_handler = find_nested_handler(entries, legacy);
+    for group in entries.iter_mut() {
+        let handlers = group["hooks"].as_array_mut().ok_or_else(|| {
+            MeasureError::new("Claude Stop hook group must contain a hooks array")
+        })?;
+        handlers.retain(|handler| {
+            !ownership::nested(handler, current) && !ownership::nested(handler, legacy)
+        });
+    }
+    entries.retain(|group| !group["hooks"].as_array().is_some_and(Vec::is_empty));
+    let mut handler = current_handler
+        .or(legacy_handler)
+        .unwrap_or_else(|| json!({"type":"command"}));
+    handler["command"] = json!(current);
+    handler["args"] = json!([]);
+    entries.push(json!({"hooks":[handler]}));
+    Ok(())
+}
+
+fn find_nested_handler(entries: &[Value], command: &str) -> Option<Value> {
+    entries
+        .iter()
+        .filter_map(|group| group.get("hooks").and_then(Value::as_array))
+        .flatten()
+        .find(|handler| ownership::nested(handler, command))
+        .cloned()
 }
 
 fn remove_excluded(config: &mut Value, events: &[&str], command: &str) -> Result<(), MeasureError> {

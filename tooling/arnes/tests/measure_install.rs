@@ -45,6 +45,26 @@ impl Harness {
             .unwrap()
     }
 
+    fn install_claude_with_handoff(&self, current: &Path, legacy: &Path) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_arnes"))
+            .args([
+                "measure",
+                "install-hooks",
+                "--agent",
+                "claude-code",
+                "--command",
+            ])
+            .arg(&self.executable)
+            .arg("--claude-stop-command")
+            .arg(current)
+            .arg("--claude-legacy-stop-command")
+            .arg(legacy)
+            .env_clear()
+            .env("HOME", &self.home)
+            .output()
+            .unwrap()
+    }
+
     fn config(&self, agent: &str) -> PathBuf {
         let relative = match agent {
             "codex" => ".codex/hooks.json",

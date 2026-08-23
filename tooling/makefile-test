@@ -219,7 +219,11 @@ for agent in codex claude-code cursor; do
   target=$agent-measurement-hooks
   trace=$case_root/$target
   env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$target" >"$trace"
-  expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
+  if [[ $agent == claude-code ]]; then
+    expected="$repository/tooling/claude-handoff-hook"
+  else
+    expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
+  fi
   [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$target does not install its measurement hook exactly once"
   grep -F -q -- 'cargo build --release' "$trace" || fail "$target does not depend on arnes"
 

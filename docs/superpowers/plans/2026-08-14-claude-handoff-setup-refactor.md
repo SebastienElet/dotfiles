@@ -1,30 +1,29 @@
 # Plan du refactor du setup du hook Claude
 
-**Objectif :** remplacer la validation générale de Claude par un setup court qui ne modifie que
-notre entrée Stop.
+**Objectif :** installer l'entrée Stop de handoff sans multiplier les writers de la configuration
+Claude.
 
-**Architecture :** le script Bash expose une fonction par étape et délègue la seule transformation
-JSON à un filtre `jq` court. Le test reste un exécutable direct de la CI; le Makefile ne fournit
+**Architecture :** le script Bash valide les chemins et délègue à Arnes l'installation atomique des
+hooks de mesure et de handoff. Le test reste un exécutable direct de la CI; le Makefile ne fournit
 qu'une façade phony.
 
 ### 1. Réduire le test aux garanties utiles
 
 Fichier : `tooling/claude-handoff-hook-test`
 
-- Conserver création, préservation, migration, idempotence et JSON invalide.
-- Ajouter un handler de type inconnu à préserver pour obtenir un échec avec l'implémentation
-  actuelle.
-- Retirer les tests de validation globale, signaux, liens symboliques, runner sélectif et Makefile.
-- Exécuter le test et constater l'échec sur le handler inconnu.
+- Couvrir la délégation exacte vers Arnes.
+- Couvrir la résolution du script depuis un répertoire extérieur au dépôt.
+- Conserver les garanties de mutation JSON et de concurrence dans les tests Arnes.
 
 ### 2. Simplifier le setup
 
 Fichier : `tooling/claude-handoff-hook`
 
-- Écrire de petites fonctions pour valider l'entrée, lire les réglages, ajouter ou migrer notre
-  entrée et installer atomiquement le résultat.
-- Limiter le filtre `jq` au chemin `.hooks.Stop` et à la commande reçue.
-- Préserver les données étrangères sans tenter de connaître le schéma Claude complet.
+- Valider les trois chemins absolus à la frontière Bash.
+- Installer le hook de mesure et le hook de handoff dans la même transformation Arnes.
+- Réutiliser l'échange atomique avec comparaison du snapshot pour ne perdre aucune écriture
+  concurrente.
+- Préserver les données étrangères et migrer l'ancien chemin du hook.
 - Exécuter le test jusqu'au succès.
 
 ### 3. Vérifier les barrières concernées
