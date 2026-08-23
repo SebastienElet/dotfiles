@@ -520,7 +520,7 @@ codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/
 codegraph-test:
 	bash harness/skills/codegraph/scripts/skill_contract_test.sh
 	bash harness/skills/codegraph/scripts/measure_repository_test.sh
-	bash tooling/codegraph-configure-test
+	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
 	bash tooling/codegraph-mcp-test
 	bash tooling/codegraph-network-test
 
