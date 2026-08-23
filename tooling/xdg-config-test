@@ -6,7 +6,9 @@ repository=$(cd "$tooling_dir/.." && pwd)
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/xdg-config-test.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT
 test_home=$test_root/home
-mkdir -p "$test_home"
+fake_bin=$test_root/bin
+mkdir -p "$test_home" "$fake_bin"
+touch "$fake_bin/brew" "$fake_bin/delta"
 
 fail() {
   echo "FAIL: $1" >&2
@@ -43,11 +45,16 @@ assert_link "$test_home/.wezterm.lua" "$repository/home/.wezterm.lua"
 assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
 assert_link "$test_home/.gitconfig.delta" "$repository/home/.gitconfig.delta"
 
+wiring_home=$test_root/wiring-home
+mkdir "$wiring_home"
 public_targets=(wezterm tmux git-delta)
 for index in 0 1 2; do
-  dry_run=$(env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "${public_targets[$index]}")
-  grep -Fq "${xdg_targets[$index]}" <<<"$dry_run" || fail "${public_targets[$index]} does not deploy its XDG target"
+  expected_target=${xdg_targets[$index]/$test_home/$wiring_home}
+  dry_run=$(env HOME="$wiring_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "${public_targets[$index]}")
+  grep -Fq "$expected_target" <<<"$dry_run" || fail "${public_targets[$index]} does not deploy its XDG target"
 done
+
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta
 
 include_paths=$(git config --file "$test_home/.gitconfig" --get-all include.path)
 [[ $(grep -Fxc '~/.config/git/config.delta' <<<"$include_paths") == 1 ]] || fail "Git delta include was not migrated"
@@ -57,10 +64,26 @@ include_paths=$(git config --file "$test_home/.gitconfig" --get-all include.path
 
 config_before=$(cksum "$test_home/.gitconfig")
 links_before=$(LC_ALL=C ls -di "${xdg_targets[@]}")
-env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "${xdg_targets[@]}"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta
 config_after=$(cksum "$test_home/.gitconfig")
 links_after=$(LC_ALL=C ls -di "${xdg_targets[@]}")
 [[ $config_before == "$config_after" ]] || fail "Git include migration is not idempotent"
 [[ $links_before == "$links_after" ]] || fail "XDG links were redeployed"
+
+real_git=$(command -v git)
+git_failure_bin=$test_root/git-failure-bin
+mkdir "$git_failure_bin"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [[ $* == "config --global --get-all include.path" ]]; then exit 128; fi' \
+  'exec "$REAL_GIT" "$@"' >"$git_failure_bin/git"
+chmod +x "$git_failure_bin/git"
+config_before=$(cksum "$test_home/.gitconfig")
+if env HOME="$test_home" PATH="$git_failure_bin:$PATH" REAL_GIT="$real_git" \
+  make -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" git-delta; then
+  fail "Git include read failure did not stop the migration"
+fi
+config_after=$(cksum "$test_home/.gitconfig")
+[[ $config_before == "$config_after" ]] || fail "failed Git include migration changed the configuration"
 
 echo "XDG configuration tests passed"

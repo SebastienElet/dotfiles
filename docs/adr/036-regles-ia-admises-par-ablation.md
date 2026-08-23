@@ -25,10 +25,10 @@ Protocole : trois scénarios × deux conditions × trois réplicats, plus trois 
 *placebo*, soit 21 exécutions d'Opus 5 (effort `xhigh`, `claude -p`), chacune dans un dépôt
 synthétique jetable dont le comportement a été vérifié avant les runs. Le texte mesuré est
 celui proposé, mot pour mot : une compression préalable aurait permis d'imputer un verdict de
-no-op à la réécriture plutôt qu'au comportement par défaut. Le hook `SessionEnd` de distillation
-vers `~/Brain` est neutralisé par `CLAUDE_BRAIN_DISTILL=1`, sans quoi 21 notes de test y
-seraient écrites. Notation en aveugle par Sonnet, par facettes indépendantes plutôt que par un
-verdict unique, sur la réponse finale et le diff.
+no-op à la réécriture plutôt qu'au comportement par défaut. Les hooks de session du dépôt sont
+neutralisés afin d'éviter des écritures externes pendant les 21 runs. Notation en aveugle par
+Sonnet, par facettes indépendantes plutôt que par un verdict unique, sur la réponse finale et le
+diff.
 
 Scénarios : (S1) ajouter une option à un script `.sh` dans un dépôt dont le linter ne traite
 que les `.js` et dont les tests ne couvrent que `src/`, puis dire si c'est livrable ;

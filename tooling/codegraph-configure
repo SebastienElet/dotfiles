@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+claude_bin=${CODEGRAPH_CLAUDE_BIN:-claude}
+codex_bin=${CODEGRAPH_CODEX_BIN:-codex}
+codegraph_bin=${CODEGRAPH_BIN:-codegraph}
+cursor_config=${CODEGRAPH_CURSOR_CONFIG:-$HOME/.cursor/mcp.json}
+claude_config=${CODEGRAPH_CLAUDE_CONFIG:-$HOME/.claude.json}
+codex_home=${CODEX_HOME:-$HOME/.codex}
+codex_config=${CODEGRAPH_CODEX_CONFIG:-$codex_home/config.toml}
+
+require_command() {
+  if [[ "$1" == */* ]]; then
+    [ -x "$1" ] || { echo "missing executable: $1" >&2; exit 2; }
+  else
+    command -v "$1" >/dev/null 2>&1 || { echo "missing executable: $1" >&2; exit 2; }
+  fi
+}
+
+require_command "$claude_bin"
+require_command "$codex_bin"
+require_command "$codegraph_bin"
+require_command jq
+
+if [ -L "$cursor_config" ]; then
+  echo 'Cursor MCP config must not be a symlink' >&2
+  exit 2
+fi
+
+if [ -e "$cursor_config" ] && ! jq -s -e '
+  length == 1
+  and (.[0] | type == "object")
+  and (.[0].mcpServers == null or (.[0].mcpServers | type == "object"))
+' "$cursor_config" >/dev/null 2>&1; then
+  echo 'invalid Cursor MCP JSON' >&2
+  exit 2
+fi
+
+for config in "$claude_config" "$codex_config"; do
+  if [ -L "$config" ]; then
+    echo "agent config must not be a symlink: $config" >&2
+    exit 2
+  fi
+  if [ -e "$config" ] && [ ! -f "$config" ]; then
+    echo "agent config is not a regular file: $config" >&2
+    exit 2
+  fi
+done
+
+transaction=$(mktemp -d)
+claude_existed=0
+codex_existed=0
+cursor_tmp=''
+committed=0
+if [ -f "$claude_config" ]; then
+  cp -p "$claude_config" "$transaction/claude"
+  claude_existed=1
+fi
+if [ -f "$codex_config" ]; then
+  cp -p "$codex_config" "$transaction/codex"
+  codex_existed=1
+fi
+
+finish() {
+  result=$?
+  trap - EXIT
+  if [ "$committed" -eq 0 ]; then
+    if [ "$claude_existed" -eq 1 ]; then
+      cp -p "$transaction/claude" "$claude_config"
+    else
+      rm -f "$claude_config"
+    fi
+    if [ "$codex_existed" -eq 1 ]; then
+      cp -p "$transaction/codex" "$codex_config"
+    else
+      rm -f "$codex_config"
+    fi
+  fi
+  [ -z "$cursor_tmp" ] || rm -f "$cursor_tmp"
+  rm -rf "$transaction"
+  exit "$result"
+}
+trap finish EXIT
+
+claude_registered=0
+if "$claude_bin" mcp get codegraph >"$transaction/claude-get" 2>&1; then
+  claude_registered=1
+else
+  claude_get_exit=$?
+  claude_get_error=$(<"$transaction/claude-get")
+  claude_absent='No MCP server named "codegraph".'
+  claude_absent_pending='No MCP server named "codegraph". .mcp.json servers are awaiting approval — run `claude` in this directory to review them.'
+  if [ "$claude_get_exit" -ne 1 ] || { [ "$claude_get_error" != "$claude_absent" ] && [ "$claude_get_error" != "$claude_absent_pending" ]; }; then
+    printf '%s\n' "$claude_get_error" >&2
+    exit "$claude_get_exit"
+  fi
+fi
+
+codex_registered=0
+if "$codex_bin" mcp get --json codegraph >"$transaction/codex-get" 2>&1; then
+  codex_registered=1
+else
+  codex_get_exit=$?
+  codex_get_error=$(<"$transaction/codex-get")
+  if [ "$codex_get_exit" -ne 1 ] || [ "$codex_get_error" != "Error: No MCP server named 'codegraph' found." ]; then
+    printf '%s\n' "$codex_get_error" >&2
+    exit "$codex_get_exit"
+  fi
+fi
+
+"$codegraph_bin" telemetry off
+
+if [ "$claude_registered" -eq 1 ]; then
+  "$claude_bin" mcp remove --scope user codegraph
+fi
+"$claude_bin" mcp add --scope user codegraph \
+  -e CODEGRAPH_TELEMETRY=0 \
+  -e CODEGRAPH_NO_UPDATE_CHECK=1 \
+  -e CODEGRAPH_NO_DOWNLOAD=1 \
+  -- "$codegraph_bin" serve --mcp
+
+if [ "$codex_registered" -eq 1 ]; then
+  "$codex_bin" mcp remove codegraph
+fi
+"$codex_bin" mcp add codegraph \
+  --env CODEGRAPH_TELEMETRY=0 \
+  --env CODEGRAPH_NO_UPDATE_CHECK=1 \
+  --env CODEGRAPH_NO_DOWNLOAD=1 \
+  -- "$codegraph_bin" serve --mcp
+
+mkdir -p "$(dirname "$cursor_config")"
+cursor_tmp=$(mktemp "${cursor_config}.tmp.XXXXXX")
+input=/dev/null
+[ -e "$cursor_config" ] && input=$cursor_config
+jq -n --arg command "$codegraph_bin" --slurpfile current "$input" '
+  ($current[0] // {})
+  | .mcpServers //= {}
+  | .mcpServers.codegraph = {
+      type: "stdio",
+      command: $command,
+      args: ["serve", "--mcp", "--path", "${workspaceFolder}"],
+      env: {
+        CODEGRAPH_TELEMETRY: "0",
+        CODEGRAPH_NO_UPDATE_CHECK: "1",
+        CODEGRAPH_NO_DOWNLOAD: "1"
+      }
+    }
+' >"$cursor_tmp"
+jq empty "$cursor_tmp"
+mv "$cursor_tmp" "$cursor_config"
+cursor_tmp=''
+committed=1

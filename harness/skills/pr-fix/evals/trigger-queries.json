@@ -1,0 +1,46 @@
+{
+  "skill": "pr-fix",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "/pr-fix 1042",
+      "should_activate": true,
+      "reason": "Explicit invocation authorizes the pull request repair workflow"
+    },
+    {
+      "query": "Review this PR and correct the blockers directly on the contributor's branch",
+      "should_activate": true,
+      "reason": "The request combines a merge review with authorized branch corrections"
+    },
+    {
+      "query": "Nous avons le droit de pousser sur sa PR, corrige aussi les petits problèmes objectifs",
+      "should_activate": true,
+      "reason": "Direct fixes to another contributor's PR are explicitly authorized"
+    },
+    {
+      "query": "Fix the findings you just reported on PR 17",
+      "should_activate": true,
+      "reason": "The user authorizes implementation of the current PR findings"
+    },
+    {
+      "query": "Is PR 1042 safe to merge?",
+      "should_activate": false,
+      "reason": "A merge decision without mutation belongs to pr-verdict"
+    },
+    {
+      "query": "The author pushed fixes; re-review PR 1042",
+      "should_activate": false,
+      "reason": "Re-reviewing an already changed head belongs to pr-verdict"
+    },
+    {
+      "query": "Fix my local diff before I commit",
+      "should_activate": false,
+      "reason": "A local pre-commit change is not an open pull request repair"
+    },
+    {
+      "query": "Post the verdict you prepared on PR 1042",
+      "should_activate": false,
+      "reason": "Publishing a verdict does not authorize branch mutation"
+    }
+  ]
+}

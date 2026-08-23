@@ -1,0 +1,175 @@
+use serde_json::Value;
+
+const MARKER: &str = "[REDACTED]";
+
+pub fn capture(value: &Value) -> Value {
+    if after_agent_thought(value) {
+        return neutralized_thought(value);
+    }
+    let mut captured = value.clone();
+    redact(&mut captured);
+    captured
+}
+
+pub fn redact(value: &mut Value) {
+    match value {
+        Value::Object(fields) => {
+            for (key, value) in fields {
+                if sensitive_key(key) {
+                    *value = Value::String(MARKER.to_owned());
+                } else {
+                    redact(value);
+                }
+            }
+        }
+        Value::Array(values) => values.iter_mut().for_each(redact),
+        Value::String(value) => *value = redact_string(value),
+        _ => {}
+    }
+}
+
+pub fn redact_string(value: &str) -> String {
+    if contains_private_key(value) {
+        return MARKER.to_owned();
+    }
+    let mut result = redact_token_prefix(value, "sk-", 12);
+    for prefix in [
+        "bearer ",
+        "ghp_",
+        "github_pat_",
+        "glpat-",
+        "akia",
+        "aiza",
+        "npm_",
+        "xoxa-",
+        "xoxb-",
+        "xoxp-",
+        "xoxr-",
+        "xoxs-",
+    ] {
+        result = redact_prefix(&result, prefix);
+    }
+    result
+}
+
+fn redact_token_prefix(value: &str, prefix: &str, minimum_suffix: usize) -> String {
+    let mut output = String::new();
+    let mut remaining = value;
+    while let Some(start) = remaining.to_ascii_lowercase().find(prefix) {
+        let token_start = start + prefix.len();
+        let token_len = token_length(&remaining[token_start..]);
+        if token_boundary(remaining, start) && token_len >= minimum_suffix {
+            output.push_str(&remaining[..start]);
+            output.push_str(MARKER);
+            remaining = &remaining[token_start + token_len..];
+        } else {
+            output.push_str(&remaining[..token_start]);
+            remaining = &remaining[token_start..];
+        }
+    }
+    output.push_str(remaining);
+    output
+}
+
+fn token_boundary(value: &str, start: usize) -> bool {
+    value[..start]
+        .chars()
+        .next_back()
+        .is_none_or(|character| !character.is_ascii_alphanumeric() && character != '_')
+}
+
+fn token_length(value: &str) -> usize {
+    value
+        .chars()
+        .take_while(|character| token_character(*character))
+        .map(char::len_utf8)
+        .sum()
+}
+
+fn sensitive_key(key: &str) -> bool {
+    let normalized: String = key
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect();
+    matches!(
+        normalized.as_str(),
+        "apikey"
+            | "apitoken"
+            | "accesskey"
+            | "accesstoken"
+            | "refreshtoken"
+            | "idtoken"
+            | "authtoken"
+            | "authorization"
+            | "cookie"
+            | "password"
+            | "passwd"
+            | "privatekey"
+            | "secret"
+            | "token"
+            | "thought"
+            | "reasoning"
+            | "chainofthought"
+            | "thoughts"
+            | "thinking"
+    ) || normalized.contains("secret")
+        || normalized.starts_with("reasoning")
+        || normalized == "analysis"
+        || normalized.ends_with("credentials")
+        || ["password", "passwd", "token", "privatekey", "accesskey"]
+            .iter()
+            .any(|suffix| normalized.ends_with(suffix))
+}
+
+fn after_agent_thought(value: &Value) -> bool {
+    ["hook_event_name", "event", "type"]
+        .iter()
+        .filter_map(|key| value.get(key).and_then(Value::as_str))
+        .any(|event| event.eq_ignore_ascii_case("afterAgentThought"))
+}
+
+fn neutralized_thought(value: &Value) -> Value {
+    let mut captured = serde_json::Map::new();
+    for key in [
+        "session_id",
+        "conversation_id",
+        "hook_event_name",
+        "event",
+        "type",
+    ] {
+        if let Some(value) = value.get(key) {
+            captured.insert(key.to_owned(), value.clone());
+        }
+    }
+    captured.insert("payload".to_owned(), Value::String(MARKER.to_owned()));
+    Value::Object(captured)
+}
+
+fn contains_private_key(value: &str) -> bool {
+    let uppercase = value.to_ascii_uppercase();
+    uppercase.contains("-----BEGIN") && uppercase.contains("PRIVATE KEY-----")
+}
+
+fn redact_prefix(value: &str, prefix: &str) -> String {
+    let mut output = String::new();
+    let mut remaining = value;
+    while let Some(start) = remaining.to_ascii_lowercase().find(prefix) {
+        output.push_str(&remaining[..start]);
+        let token_start = start + prefix.len();
+        let token_len = token_length(&remaining[token_start..]);
+        if token_len == 0 {
+            output.push_str(&remaining[start..token_start]);
+            remaining = &remaining[token_start..];
+        } else {
+            output.push_str(MARKER);
+            remaining = &remaining[token_start + token_len..];
+        }
+    }
+    output.push_str(remaining);
+    output
+}
+
+fn token_character(character: char) -> bool {
+    character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-' | '/' | '+')
+}

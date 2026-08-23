@@ -1,0 +1,8 @@
+version: 1
+agents: []
+prompts:
+  - id: review
+    source: { root: repository, path: harness/prompts/review.md }
+    includes: []
+    projections: []
+resources: []

@@ -1,0 +1,13 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+skills: []
+resources:
+  - id: claude-user-instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    layout: leaves
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .claude/CLAUDE.md }

@@ -1,0 +1,47 @@
+name: Development issue
+description: Define an observable outcome without prescribing implementation
+title: ""
+labels: []
+assignees: []
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: State the problem and the observable desired state in a few sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contract
+    attributes:
+      label: Contract
+      description: List only non-negotiable behavior, constraints, or true invariants.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Current evidence
+      description: Separate observed facts from unknowns and name the source, status, and environment when relevant.
+      placeholder: |
+        Observed:
+        Unknown:
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: List observable checks that prove the contract without prescribing architecture, files, or tools.
+      placeholder: "- [ ]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: limits
+    attributes:
+      label: Limits
+      description: Add only boundaries that prevent material scope drift.

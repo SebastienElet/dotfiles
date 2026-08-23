@@ -10,9 +10,9 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 | Chemin                            | Responsabilité                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------ |
 | `home/`                           | Configuration déployée sous `$HOME`, avec le même chemin relatif que sa destination. |
-| `harness/`                        | Instructions et services partagés entre les différents agents.                       |
+| `harness/`                        | Instructions, skills user et services partagés entre les différents agents.          |
 | `tooling/`                        | Applications locales et exécutables maintenus par ce dépôt.                          |
-| `.agents/skills/`                 | Source unique des skills partagées.                                                  |
+| `.agents/skills/`                 | Source canonique des skills limitées à ce dépôt.                                     |
 | `.claude/`, `.codex/`, `.cursor/` | Adaptateurs placés aux chemins de découverte imposés par chaque agent.               |
 | `.github/workflows/`              | Barrières de lint, de test et d'installation.                                        |
 | `docs/adr/`                       | Décisions d'architecture encore en vigueur.                                          |
@@ -42,21 +42,31 @@ Les points d'entrée restent à la racine :
 | `home/.config/wezterm/wezterm.lua` | `~/.config/wezterm/wezterm.lua` |
 | `home/cspell.json`                 | `~/cspell.json`                 |
 
-Le `Makefile` déploie ces sources par liens symboliques. `tooling/deploy-link`
-crée une destination absente, conserve un lien déjà correct et migre seulement
-un lien vers l'ancienne source exacte. Il refuse tout fichier, répertoire ou
-lien inattendu afin de ne pas écraser de données locales.
+Le `Makefile` déploie les artefacts statiques comme cibles fichier ordinaires
+et lie les exécutables générés après leur build. Chaque recette vérifie que la
+destination est absente avant `ln -s`. La réparation explicite d'un lien erroné
+est suivie par l'issue #152.
 
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-ainsi que les services associés comme `harness/firecrawl/`. Le `Makefile` les
-adapte aux contraintes de chaque agent : Claude reçoit des liens symboliques,
-tandis que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
+les skills et leurs adaptateurs sous `harness/rules/`, ainsi que les services
+associés comme `harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
+Claude reçoit des liens symboliques, tandis que Codex reçoit un
+`~/.codex/AGENTS.md` assemblé.
 
-Les skills vivent dans `.agents/skills/`. Les répertoires `.claude/`, `.codex/`
-et `.cursor/` ne dupliquent pas leur contenu : ils fournissent uniquement les
-adaptateurs nécessaires à leur découverte.
+La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
+issues de la même source canonique sous `harness/skills/`.
+Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
+Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
+`Makefile` ne peut donc pas y distribuer cette source.
+
+Les skills user vivent dans `harness/skills/` et sont déployées individuellement
+vers les répertoires utilisateur de Claude, Cursor et Codex. Les skills propres
+au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et
+`.cursor/skills` restent leurs adaptateurs de découverte projet. Un slug ne doit
+pas exister dans les deux collections, car les agents peuvent alors exposer les
+deux occurrences.
 
 ## Outillage maintenu
 
@@ -69,7 +79,7 @@ adaptateurs nécessaires à leur découverte.
 
 Les exécutables destinés au `PATH` sont liés depuis le `Makefile`, généralement
 sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
-`make all`, ce qui applique aussi les migrations de chemins.
+`make all`, ce qui déploie les nouveaux chemins.
 
 ## Flux de changement
 

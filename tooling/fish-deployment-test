@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+repository=$(cd "$tooling_dir/.." && pwd)
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/fish-deployment-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+test_home=$test_root/home
+test_repository=$test_root/repository
+fake_bin=$test_root/bin
+new_config=$test_repository/home/.config/fish
+bindings=$test_home/.config/fish/functions/fzf_configure_bindings.fish
+marker=$test_root/fish-called
+
+assert_failure() {
+  if "$@" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    echo "FAIL: command unexpectedly succeeded: $*" >&2
+    exit 1
+  fi
+}
+
+mkdir -p "$test_home/.config" "$new_config" "$fake_bin"
+printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' "printf \"%s\\n\" \"\$*\" >\"\$FISH_MARKER\"" "mkdir -p \"\$HOME/.config/fish/functions\"" ": >\"\$HOME/.config/fish/functions/fzf_configure_bindings.fish\"" >"$fake_bin/fish"
+chmod +x "$fake_bin/fish"
+
+env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
+
+[[ $(readlink "$test_home/.config/fish") == "$new_config" ]]
+[[ -f $bindings ]]
+[[ $(cat "$marker") == "-c fisher install PatrickF1/fzf.fish" ]]
+
+rm "$marker"
+env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
+[[ ! -e $marker ]]
+
+rm "$bindings"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$fake_bin/fish"
+chmod +x "$fake_bin/fish"
+assert_failure env HOME="$test_home" FISH_MARKER="$marker" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" BREW_BIN="$fake_bin" "$bindings"
+grep -q "Error: Fisher did not install $bindings" "$test_root/stderr"
+
+echo "fish deployment tests passed"

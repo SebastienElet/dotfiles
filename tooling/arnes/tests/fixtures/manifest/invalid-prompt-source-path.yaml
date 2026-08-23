@@ -1,0 +1,9 @@
+version: 1
+agents: []
+prompts:
+  - id: review
+    source: { root: repository, path: ../review.md }
+    includes: []
+    variables: []
+    projections: []
+resources: []

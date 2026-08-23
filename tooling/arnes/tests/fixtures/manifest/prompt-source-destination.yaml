@@ -1,0 +1,15 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [project]
+prompts:
+  - id: review
+    source: &source { root: repository, path: .claude/commands/review.md }
+    includes: []
+    variables: []
+    projections:
+      - agent: claude
+        scope: project
+        representation: file
+        destination: *source
+resources: []

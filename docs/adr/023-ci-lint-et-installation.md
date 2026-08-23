@@ -18,17 +18,22 @@ Fish sur macOS et Linux, le Lua Neovim, les scripts shell et le chargement de
 la configuration CSpell avec son dictionnaire. `test-fish.yml` exécute les
 tests Fish sur les deux systèmes lorsque les fichiers couverts changent.
 `test-rust.yml` vérifie le formatage, exécute Clippy et les tests de
-`tooling/daily-routine` sur macOS. `test-deployment.yml` attaque la migration
-des liens sur macOS et Linux. `test.yml` exécute deux fois l'installation
-complète sur un runner macOS, apps payantes exclues (`SKIP_PAID_APPS`) et
-cibles Docker ignorées en l'absence de daemon (`DOCKER_OR_SKIP`).
+`tooling/daily-routine` sur macOS. `test-deployment.yml` attaque le déploiement
+des liens sur macOS et Linux. Sur `main`, `test.yml` exécute deux fois
+l'installation par défaut sur un runner macOS. Sur une pull request,
+`ci-smoke-targets` repère les blocs `.PHONY` modifiés et les exécute sur des
+runners macOS isolés et parallèles. Une sélection ambiguë ou un changement de
+l'infrastructure d'installation retombe sur `all`. Les apps payantes sont
+exclues (`SKIP_PAID_APPS`) et les cibles Docker ignorées en l'absence de daemon
+(`DOCKER_OR_SKIP`).
 
 ## Conséquences
 
-- Le `Makefile` est vérifié en continu, pas seulement lors d'une
-  réinstallation.
-- Le test d'installation est long, d'où les timeouts relevés à plusieurs
-  reprises dans l'historique.
+- Le chemin par défaut reste vérifié après chaque intégration dans `main` ; la
+  sélection des pull requests n'est qu'une accélération anticipée.
+- Le temps d'une pull request devient proportionnel à ses cibles modifiées,
+  avec une durée murale bornée par la cible la plus lente lorsqu'il y en a
+  plusieurs.
 - La CI impose des garde-fous au `Makefile` (approbation des taps, absence de
   daemon Docker) qui n'ont pas d'utilité sur un poste réel.
 
@@ -38,3 +43,5 @@ cibles Docker ignorées en l'absence de daemon (`DOCKER_OR_SKIP`).
   anodin.
 - Test d'installation dans une VM locale : plus lent, non déclenché
   automatiquement.
+- `make -j` sur un runner unique : Homebrew, `/Applications` et `$HOME`
+  constituent un état partagé impropre à des installations concurrentes.

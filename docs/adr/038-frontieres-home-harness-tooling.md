@@ -30,10 +30,9 @@ Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
 `CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
 
-Les anciens liens sont migrés par le déploiement normal. Chaque destination
-absente est créée ; un lien textuellement égal à son ancienne source exacte
-est remplacé ; un fichier, un répertoire ou tout autre lien fait échouer la
-cible sans modifier cette destination. Aucun lien de compatibilité n'est
+Le déploiement normal laisse Make créer chaque destination absente avec
+`ln -s`. La recette n'écrase aucune destination existante et ne revalide pas le
+contenu d'une cible que Make juge à jour. Aucun lien de compatibilité n'est
 conservé dans le dépôt.
 
 ## Conséquences

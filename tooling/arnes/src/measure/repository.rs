@@ -1,0 +1,49 @@
+use super::model::RepositoryRecord;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+pub fn root(directory: &Path) -> Option<String> {
+    git(directory, &["rev-parse", "--show-toplevel"])
+}
+
+pub fn observe(directory: &Path, root: String) -> RepositoryRecord {
+    let head = git(directory, &["rev-parse", "HEAD"]);
+    let branch = git(directory, &["branch", "--show-current"]).filter(|value| !value.is_empty());
+    let dirty = git(directory, &["status", "--porcelain"])
+        .map(|value| !value.is_empty())
+        .unwrap_or(true);
+    RepositoryRecord {
+        root,
+        head,
+        branch,
+        dirty,
+    }
+}
+
+pub fn protected_roots(directory: &Path, observed: Option<&Path>) -> Vec<PathBuf> {
+    let mut roots = directory
+        .ancestors()
+        .filter(|ancestor| fs::symlink_metadata(ancestor.join(".git")).is_ok())
+        .last()
+        .map(Path::to_owned)
+        .into_iter()
+        .collect::<Vec<_>>();
+    if let Some(observed) = observed.filter(|observed| !roots.iter().any(|root| root == observed)) {
+        roots.push(observed.to_owned());
+    }
+    roots
+}
+
+fn git(directory: &Path, args: &[&str]) -> Option<String> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(directory)
+        .output()
+        .ok()?;
+    output.status.success().then(|| {
+        let value = String::from_utf8_lossy(&output.stdout);
+        let value = value.strip_suffix('\n').unwrap_or(&value);
+        value.strip_suffix('\r').unwrap_or(value).to_owned()
+    })
+}

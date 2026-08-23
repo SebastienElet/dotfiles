@@ -1,0 +1,21 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+prompts:
+  - id: review
+    source: { root: repository, path: harness/prompts/review.md }
+    includes: []
+    variables: []
+    projections:
+      - agent: claude
+        scope: user
+        representation: symlink
+        destination: { root: home, path: .claude/commands/review.md }
+resources:
+  - id: claude-user-instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .claude/commands/review.md }

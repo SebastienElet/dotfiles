@@ -1,8 +1,33 @@
 #!/bin/bash
 
+upgrade_status=0
+dotfiles_repo=$HOME/.dotfiles
+
+on_dotfiles_main_branch() {
+  local action=$1 current_branch main_branch
+
+  if ! current_branch=$(git -C "$dotfiles_repo" branch --show-current); then
+    echo "  Warning: unable to determine the dotfiles branch, skipping $action"
+    upgrade_status=1
+    return 1
+  elif [[ -z $current_branch ]]; then
+    echo "  Skipping $action: detached HEAD"
+    return 1
+  elif ! main_branch=$("$dotfiles_repo/tooling/git-main-branch" --strict -C "$dotfiles_repo"); then
+    echo "  Warning: unable to determine the main dotfiles branch, skipping $action"
+    upgrade_status=1
+    return 1
+  elif [[ $current_branch != "$main_branch" ]]; then
+    echo "  Skipping $action: on branch $current_branch"
+    return 1
+  fi
+}
+
 echo "ℹ️  Dotfiles"
-if [[ -d ~/.dotfiles && -d ~/.dotfiles/.git ]]; then
-  (cd ~/.dotfiles && git pull) && make -C ~/.dotfiles all
+if [[ -d $dotfiles_repo && -d $dotfiles_repo/.git ]]; then
+  if on_dotfiles_main_branch "repository update"; then
+    (cd "$dotfiles_repo" && git pull) && make -C "$dotfiles_repo" all
+  fi
 else
   echo "  Warning: ~/.dotfiles not a git repo, skipping"
 fi
@@ -30,8 +55,9 @@ fi
 
 echo "ℹ️  npm global packages upgrade"
 if command -v npm &> /dev/null; then
-  # 3-day quarantine: ignore versions published too recently to be vetted
-  npm update -g --before="$(date -u -v-3d +%Y-%m-%dT%H:%M:%SZ)"
+  npm update -g \
+    --before="$(date -u -v-3d +%Y-%m-%dT%H:%M:%SZ)" \
+    --min-release-age-exclude=@openai/codex
 else
   echo "  Warning: npm not found, skipping npm global package updates"
 fi
@@ -62,10 +88,17 @@ fi
 echo "ℹ️  NeoVim plugins"
 if command -v nvim &> /dev/null; then
   nvim --headless '+Lazy! sync' +qa
-  if [[ -n "$(git -C ~/.dotfiles status --porcelain -- home/.config/nvim/lazy-lock.json)" ]]; then
-    git -C ~/.dotfiles commit -m "chore(nvim): update plugins" -- home/.config/nvim/lazy-lock.json &&
-      git -C ~/.dotfiles push
+  if on_dotfiles_main_branch "lockfile commit"; then
+    if ! lockfile_status=$(git -C "$dotfiles_repo" status --porcelain -- home/.config/nvim/lazy-lock.json); then
+      echo "  Warning: unable to inspect the NeoVim lockfile, skipping commit"
+      upgrade_status=1
+    elif [[ -n $lockfile_status ]] &&
+      ! git -C "$dotfiles_repo" commit -m "chore(nvim): update plugins" -- home/.config/nvim/lazy-lock.json; then
+      upgrade_status=1
+    fi
   fi
 else
   echo "  Warning: nvim not found, skipping NeoVim plugin updates"
 fi
+
+exit "$upgrade_status"

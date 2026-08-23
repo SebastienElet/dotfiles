@@ -1,0 +1,20 @@
+name: Daily Routine tests
+
+on:
+  push:
+    paths:
+      - tooling/daily-routine/**
+      - .github/workflows/test-daily-routine.yml
+  pull_request:
+    paths:
+      - tooling/daily-routine/**
+      - .github/workflows/test-daily-routine.yml
+
+jobs:
+  daily-routine:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cargo fmt --manifest-path tooling/daily-routine/Cargo.toml --check
+      - run: cargo clippy --manifest-path tooling/daily-routine/Cargo.toml -- -D warnings
+      - run: cargo test --manifest-path tooling/daily-routine/Cargo.toml

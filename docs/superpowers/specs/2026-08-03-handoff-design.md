@@ -60,7 +60,7 @@ which is a real file and not version-controlled.
   past. At 510k against a 567k compaction point the margin covers it.
 - Sentinels accumulate under `~/.local/state/dotfiles/handoff` and are never pruned.
 - A resumed session that already handed off cannot hand off again.
-- Two blocking Stop hooks now coexist in this repo (this one and the brain-distill prompt hook);
+- Two blocking Stop hooks now coexist in this repo (this one and the instruction-distillation hook);
   both reasons reach the model together.
 
 ## Verification

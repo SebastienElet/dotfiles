@@ -1,5 +1,5 @@
 # Initialize Volta
 if test -d ~/.volta
     export VOLTA_HOME="$HOME/.volta"
-    set -x PATH ~/.volta/bin $PATH
+    fish_add_path --global --move --path ~/.volta/bin
 end

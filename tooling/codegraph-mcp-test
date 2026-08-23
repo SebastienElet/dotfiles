@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+fixture="$root/tooling/codegraph/fixtures/freshness"
+probe="$root/tooling/codegraph/mcp_probe.mjs"
+tmp=$(mktemp -d)
+repository="$tmp/repository"
+trap 'CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1 codegraph uninit --force "$repository" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+
+command -v codegraph >/dev/null 2>&1 || { echo 'codegraph is required' >&2; exit 2; }
+command -v git >/dev/null 2>&1 || { echo 'git is required' >&2; exit 2; }
+command -v jq >/dev/null 2>&1 || { echo 'jq is required' >&2; exit 2; }
+command -v node >/dev/null 2>&1 || { echo 'node is required' >&2; exit 2; }
+[ -x /usr/bin/time ] || { echo '/usr/bin/time is required' >&2; exit 2; }
+
+cp -R "$fixture" "$repository"
+git -C "$repository" init -b main >/dev/null
+git -C "$repository" config user.email codegraph-fixture@example.invalid
+git -C "$repository" config user.name 'CodeGraph Fixture'
+git -C "$repository" add .
+git -C "$repository" commit -m baseline >/dev/null
+git -C "$repository" switch -c codegraph-alt >/dev/null
+printf '%s\n' \
+  'export const branchAltValue = 30' \
+  'export const branchSentinel = "FIXTURE_BRANCH_ALT"' >"$repository/src/branch.ts"
+git -C "$repository" add src/branch.ts
+git -C "$repository" commit -m alternate >/dev/null
+git -C "$repository" switch main >/dev/null
+
+SECONDS=0
+time_log="$tmp/index-time"
+/usr/bin/time -l -o "$time_log" env \
+  CODEGRAPH_TELEMETRY=0 \
+  CODEGRAPH_NO_UPDATE_CHECK=1 \
+  CODEGRAPH_NO_DOWNLOAD=1 \
+  codegraph init "$repository" >/dev/null
+initial_index_seconds=$SECONDS
+CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1 \
+  codegraph status --json "$repository" | jq empty
+
+probe_result=$(node "$probe" "$repository")
+printf '%s' "$probe_result" | jq -e '
+  .tools == ["codegraph_explore"]
+  and (.scenarios | keys) == [
+    "branchSwitch",
+    "daemonStopped",
+    "delete",
+    "edit",
+    "initial",
+    "reconciliation",
+    "rename",
+    "restart",
+    "watcherInterruption"
+  ]
+  and .scenarios.branchSwitch == true
+  and .scenarios.daemonStopped == true
+  and .scenarios.delete == true
+  and .scenarios.edit == true
+  and .scenarios.initial == true
+  and .scenarios.reconciliation == true
+  and .scenarios.rename == true
+  and .scenarios.restart == true
+  and (.scenarios.watcherInterruption == "fresh" or .scenarios.watcherInterruption == "alerted-stale")
+' >/dev/null
+
+disk_kib=$(du -sk "$repository/.codegraph" | awk '{print $1}')
+max_rss_bytes=$(awk '/maximum resident set size/ {print $1}' "$time_log")
+cpu_user_seconds=$(awk 'NR == 1 {print $3}' "$time_log")
+cpu_system_seconds=$(awk 'NR == 1 {print $5}' "$time_log")
+jq -n \
+  --argjson probe "$probe_result" \
+  --argjson initialIndexSeconds "$initial_index_seconds" \
+  --argjson diskKiB "$disk_kib" \
+  --argjson maxRssBytes "${max_rss_bytes:-0}" \
+  --argjson cpuUserSeconds "${cpu_user_seconds:-0}" \
+  --argjson cpuSystemSeconds "${cpu_system_seconds:-0}" \
+  '{
+    environment: {os: "macOS", linuxExercised: false},
+    initialIndexSeconds: $initialIndexSeconds,
+    initialIndexMaxRssBytes: $maxRssBytes,
+    initialIndexCpuUserSeconds: $cpuUserSeconds,
+    initialIndexCpuSystemSeconds: $cpuSystemSeconds,
+    indexDiskKiB: $diskKiB,
+    mcp: $probe
+  }'
+
+CODEGRAPH_TELEMETRY=0 CODEGRAPH_NO_UPDATE_CHECK=1 CODEGRAPH_NO_DOWNLOAD=1 \
+  codegraph uninit --force "$repository" >/dev/null
+test ! -e "$repository/.codegraph"

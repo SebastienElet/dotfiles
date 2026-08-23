@@ -6,18 +6,18 @@ if [[ ${1-} == "--strict" ]]; then
   shift
 fi
 
-# Check if we're in a git repository
-if ! command git "$@" rev-parse --git-dir &>/dev/null; then
-  if [[ -n $strict ]]; then
+if [[ -n $strict ]]; then
+  if ! command git "$@" rev-parse --git-dir >/dev/null; then
     exit 1
   fi
+elif ! command git "$@" rev-parse --git-dir &>/dev/null; then
   echo "main"
   exit 0
 fi
 
 # Try common branch names that exist locally
 for branch in main master trunk; do
-  if git "$@" show-ref -q --verify "refs/heads/$branch" 2>/dev/null; then
+  if git "$@" show-ref -q --verify "refs/heads/$branch"; then
     echo "$branch"
     exit 0
   else

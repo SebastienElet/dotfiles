@@ -14,8 +14,9 @@ This file is the single source of truth for all coding agents working in this re
 
 - Optimize for cohesion, not the fewest files. Minimal means the least code that remains easy to
   understand and change safely.
-- Keep one responsibility per function and file. Parsing, orchestration, policy, I/O, and mutation
-  are separate responsibilities unless their implementation is trivial.
+- Follow the Unix philosophy: make each tool do one thing well. Likewise, keep one responsibility
+  per function and file. Parsing, orchestration, policy, I/O, and mutation are separate
+  responsibilities unless their implementation is trivial.
 - Treat 50 logical lines per production function and 250 lines per hand-written file as review
   triggers: split the unit or justify in the delivery note why keeping it intact is more cohesive.
 - Do not extract a helper solely to satisfy a size trigger; every extracted unit must have a clear
@@ -28,11 +29,6 @@ This file is the single source of truth for all coding agents working in this re
 - `docs/adr/` records the structural decisions of this repository, indexed in `docs/adr/README.md`. Only decisions still in force are recorded.
 - Never contradict an ADR silently. Either follow it, or state the conflict, then deliver what was asked along with the ADR that would need superseding.
 - Routine changes — adding a tool target, updating a lockfile, editing a skill — need no ADR.
-
-## Personal Brain
-
-- Before operating on content under `~/Brain`, read and follow `~/Brain/AGENTS.md`.
-- Default durable memory target is `~/Brain`, not an agent-specific memory store: facts, decisions, and reference info worth recalling later belong there so every agent can reuse them. Only use an agent-specific memory system for things scoped to that agent's own behavior (e.g. its interaction preferences with this user).
 
 ## Shared Skills
 
