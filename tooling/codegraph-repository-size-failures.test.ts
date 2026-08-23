@@ -76,6 +76,33 @@ describe("codegraph-repository-size failures", () => {
     expect(result.stderr).toContain("tokei operational failure");
   });
 
+  test("rejects invalid UTF-8 from Git without publishing a measurement", () => {
+    const fixture = createFixture();
+    const result = runEntryPoint(fixture.repository, {
+      ...fixture.environment,
+      CODEGRAPH_GIT_BIN: fixture.fakeGit,
+      CODEGRAPH_TEST_GIT_REPOSITORY: "1",
+      CODEGRAPH_TEST_GIT_INVALID_UTF8: "1",
+    });
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("invalid UTF-8");
+    expect(readArguments(fixture.argumentsLog)).toHaveLength(2);
+  });
+
+  test("rejects invalid UTF-8 from Tokei without publishing a measurement", () => {
+    const fixture = createFixture();
+    const result = runEntryPoint(fixture.repository, {
+      ...fixture.environment,
+      CODEGRAPH_TEST_TOKEI_INVALID_UTF8: "1",
+    });
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("invalid UTF-8");
+  });
+
   test("rejects missing dependencies before measurement", () => {
     const fixture = createFixture();
     for (const [name, environment] of [

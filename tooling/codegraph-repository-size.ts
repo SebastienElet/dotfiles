@@ -182,9 +182,17 @@ function runCommand(
   });
   return {
     exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
+    stdout: result.exitCode === 0 ? decodeStandardOutput(result.stdout) : "",
     stderr: result.stderr.toString(),
   };
+}
+
+function decodeStandardOutput(output: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(output);
+  } catch {
+    throw new MeasurementError("command stdout contains invalid UTF-8");
+  }
 }
 
 function commandError(result: ReturnType<typeof runCommand>): MeasurementError {

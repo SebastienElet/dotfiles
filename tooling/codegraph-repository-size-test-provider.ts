@@ -13,6 +13,10 @@ if (arguments_.includes("rev-parse")) {
 }
 
 if (arguments_.includes("ls-files")) {
+  if (process.env.CODEGRAPH_TEST_GIT_INVALID_UTF8 === "1") {
+    process.stdout.write(new Uint8Array([0xff, 0]));
+    process.exit(0);
+  }
   const files = process.env.CODEGRAPH_TEST_GIT_FILES_JSON;
   finishGit(
     "ls-files",
@@ -32,6 +36,10 @@ if (failure !== undefined) {
 const streamingIndex = arguments_.indexOf("--streaming");
 const inputs = streamingIndex === -1 ? [] : arguments_.slice(0, streamingIndex);
 if (arguments_[0] !== undefined && lstatSync(arguments_[0]).isDirectory()) {
+  if (process.env.CODEGRAPH_TEST_TOKEI_INVALID_UTF8 === "1") {
+    process.stdout.write(new Uint8Array([0xff, 0x0a]));
+    process.exit(0);
+  }
   process.stdout.write(process.env.CODEGRAPH_TEST_TOKEI_OUTPUT ?? "");
   process.exit(0);
 }
