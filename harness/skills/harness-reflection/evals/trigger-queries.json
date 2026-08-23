@@ -1,0 +1,36 @@
+{
+  "skill": "harness-reflection",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "On vient encore d'oublier la même validation après l'avoir corrigée hier. Qu'est-ce que mon harnais devrait apprendre ?",
+      "should_activate": true,
+      "reason": "Repeated material failure and an explicit request for a harness learning"
+    },
+    {
+      "query": "La même commande échoue une deuxième fois avec le même résultat malgré notre correction, arrête de boucler et analyse le pattern",
+      "should_activate": true,
+      "reason": "A second equivalent failure means retries no longer add information"
+    },
+    {
+      "query": "Le reviewer retrouve sur trois PR différentes l'absence du même test de failure path",
+      "should_activate": true,
+      "reason": "Independent recurring evidence may justify a scoped behavioral trial"
+    },
+    {
+      "query": "cargo test échoue parce que j'ai fait une faute de frappe, corrige-la",
+      "should_activate": false,
+      "reason": "One ordinary error already exposes its direct correction"
+    },
+    {
+      "query": "Ajoute un hook qui bloque rm -rf hors du dépôt",
+      "should_activate": false,
+      "reason": "Enforcement Code owns creation of a pass-or-fail hook"
+    },
+    {
+      "query": "Prépare un prompt pour que Claude corrige cette implémentation",
+      "should_activate": false,
+      "reason": "Claude Developer owns manual delegation without a repeated-failure learning request"
+    }
+  ]
+}

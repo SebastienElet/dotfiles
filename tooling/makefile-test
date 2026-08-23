@@ -109,23 +109,35 @@ for specification in \
   ".agents/skills/agent-instructions agent-instructions" \
   ".claude/skills/codegraph codegraph" \
   ".claude/skills/enforcement-code enforcement-code" \
+  ".claude/skills/harness-reflection harness-reflection" \
   ".claude/skills/handoff handoff" \
+  ".claude/skills/issue-creation issue-creation" \
+  ".claude/skills/linear-issue-spec linear-issue-spec" \
   ".claude/skills/pr-fix pr-fix" \
   ".claude/skills/pr-verdict pr-verdict" \
   ".claude/skills/skill-manager skill-manager" \
+  ".claude/skills/workflow-automation workflow-automation" \
   ".cursor/skills/claude-developer claude-developer" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
+  ".cursor/skills/harness-reflection harness-reflection" \
+  ".cursor/skills/issue-creation issue-creation" \
+  ".cursor/skills/linear-issue-spec linear-issue-spec" \
   ".cursor/skills/pr-fix pr-fix" \
   ".cursor/skills/pr-verdict pr-verdict" \
   ".cursor/skills/skill-manager skill-manager" \
+  ".cursor/skills/workflow-automation workflow-automation" \
   ".agents/skills/claude-developer claude-developer" \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
+  ".agents/skills/harness-reflection harness-reflection" \
   ".agents/skills/handoff handoff" \
+  ".agents/skills/issue-creation issue-creation" \
+  ".agents/skills/linear-issue-spec linear-issue-spec" \
   ".agents/skills/pr-fix pr-fix" \
   ".agents/skills/pr-verdict pr-verdict" \
-  ".agents/skills/skill-manager skill-manager"; do
+  ".agents/skills/skill-manager skill-manager" \
+  ".agents/skills/workflow-automation workflow-automation"; do
   read -r relative_destination slug <<<"$specification"
   destination=$test_home/$relative_destination
   env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$destination"

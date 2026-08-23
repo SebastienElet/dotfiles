@@ -353,7 +353,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
@@ -364,6 +364,10 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 	${CREATE_SYMLINK}
 ~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.cursor/skills
 	${CREATE_SYMLINK}
+~/.cursor/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
@@ -372,13 +376,15 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 	${CREATE_SYMLINK}
 ~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
 	${CREATE_SYMLINK}
+~/.cursor/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.cursor/skills
+	${CREATE_SYMLINK}
 
 .PHONY: cursor-measurement-hooks
 cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/linear-issue-spec ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager claude-code-measurement-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -405,6 +411,10 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.claude/skills
 	${CREATE_SYMLINK}
+~/.claude/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection | ~/.claude/skills
+	${CREATE_SYMLINK}
 ~/.claude/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.claude/skills
 	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
@@ -414,6 +424,8 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills
 	${CREATE_SYMLINK}
 ~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.claude/skills
 	${CREATE_SYMLINK}
 
 .PHONY: claude-handoff-hook
@@ -440,7 +452,7 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -463,6 +475,10 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 ~/.agents/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff | ~/.agents/skills
 	${CREATE_SYMLINK}
+~/.agents/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection | ~/.agents/skills
+	${CREATE_SYMLINK}
 ~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
@@ -470,6 +486,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.agents/skills
 	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook

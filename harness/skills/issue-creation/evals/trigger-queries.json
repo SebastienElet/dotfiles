@@ -1,0 +1,76 @@
+{
+  "skill": "issue-creation",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Create a GitHub issue in owner/repository for the validated deployment gap",
+      "should_activate": true,
+      "reason": "An explicit GitHub issue creation request needs the shared publication lifecycle"
+    },
+    {
+      "query": "Open a GitLab issue in group/project for this confirmed runner failure",
+      "should_activate": true,
+      "reason": "An explicit GitLab issue creation request needs the shared publication lifecycle"
+    },
+    {
+      "query": "Create a Linear product issue for the onboarding journey and make it ready for an implementation agent",
+      "should_activate": true,
+      "reason": "Issue publication applies while linear-issue-spec supplies the product specification"
+    },
+    {
+      "query": "Draft a GitHub issue about the flaky backup but do not publish it",
+      "should_activate": true,
+      "reason": "Drafting uses the lifecycle and coherence gate but must not perform an external write"
+    },
+    {
+      "query": "Review issue ENG-482 for scope contradictions without changing it",
+      "should_activate": true,
+      "reason": "Reviewing issue coherence uses the validation stage without publication authority"
+    },
+    {
+      "query": "Create an issue for SSO even though issue ENG-410 may already cover the same outcome",
+      "should_activate": true,
+      "reason": "A probable duplicate must be resolved before creation"
+    },
+    {
+      "query": "Create an issue whose deliverable is implementing the backup skill and whose non-goals exclude implementing that skill",
+      "should_activate": true,
+      "reason": "The issue lifecycle must reject the issue 184 regression scenario before publication"
+    },
+    {
+      "query": "Publish an issue promising CSV export with acceptance criteria that only prove PDF export",
+      "should_activate": true,
+      "reason": "The coherence gate must reject a deliverable without an acceptance criterion"
+    },
+    {
+      "query": "Create the issue, then verify that the forge did not publish an empty or truncated body",
+      "should_activate": true,
+      "reason": "Post-publication retrieval and body verification belong to the shared lifecycle"
+    },
+    {
+      "query": "Issue creation timed out and a search found nothing; decide whether to retry",
+      "should_activate": true,
+      "reason": "An ambiguous write must stop unless a verified provider-side guard makes retry idempotent"
+    },
+    {
+      "query": "Create a title-only issue named Upgrade the staging database and leave its body empty",
+      "should_activate": true,
+      "reason": "An explicit title-only request uses the coherence exception without inventing body deliverables"
+    },
+    {
+      "query": "Explain why this database issue causes deadlocks",
+      "should_activate": false,
+      "reason": "The word issue describes a technical problem rather than a tracker artifact workflow"
+    },
+    {
+      "query": "Implement GitHub issue 184",
+      "should_activate": false,
+      "reason": "Implementing an existing issue is outside issue drafting, validation, and publication"
+    },
+    {
+      "query": "Review pull request 203 and decide whether it is safe to merge",
+      "should_activate": false,
+      "reason": "Pull request review belongs to pr-verdict"
+    }
+  ]
+}

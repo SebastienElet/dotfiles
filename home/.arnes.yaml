@@ -28,6 +28,11 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
+  - slug: harness-reflection
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: enforcement-code
     installations:
       - { agent: claude, scope: user }
@@ -54,6 +59,16 @@ skills:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - slug: linear-issue-spec
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: issue-creation
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: workflow-automation
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }

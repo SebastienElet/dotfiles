@@ -17,6 +17,8 @@ This directory is the canonical source for user-scoped agent skills.
 | `claude-developer`   | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
 | `codegraph`          | Explore large repositories structurally with CodeGraph.                                              |
 | `enforcement-code`   | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
+| `harness-reflection` | Turn repeated agent failures into evidence-backed harness improvements.                              |
+| `issue-creation`     | Draft, validate, review, and publish tracker issues across forges.                                   |
 | `pr-fix`             | Repair an open pull request after an independent merge review.                                       |
 | `pr-verdict`         | Deliver a PR verdict on an open pull request, yours or another author's.                             |
 
@@ -28,7 +30,8 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Ops
 
-| Skill           | Description                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------ |
-| `handoff`       | Hand the current work to a fresh session instead of letting the context compact.                 |
-| `skill-manager` | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |
+| Skill                 | Description                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `handoff`             | Hand the current work to a fresh session instead of letting the context compact.                 |
+| `skill-manager`       | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |
+| `workflow-automation` | Turn evidenced repeated human or agent workflows into supported automation.                      |
