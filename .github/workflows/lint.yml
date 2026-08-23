@@ -128,8 +128,8 @@ jobs:
 
       - run: npm install --global cspell prettier
 
-      - name: Check issue form syntax and formatting
-        run: prettier --check .github/ISSUE_TEMPLATE/change.yml
+      - name: Check text syntax and formatting
+        run: prettier --check .github/ISSUE_TEMPLATE/change.yml harness/skills/obsidian-retrieval/SKILL.md harness/skills/obsidian-retrieval/references/obsidian-cli.md harness/skills/obsidian-retrieval/evals/trigger-queries.json
 
       - name: Check configuration and user dictionary
         run: |

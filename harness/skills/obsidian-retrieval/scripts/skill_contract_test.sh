@@ -12,11 +12,11 @@ fail() {
 }
 
 require_skill() {
-  rg -qF -- "$1" "$skill" || fail "SKILL.md missing: $1"
+  grep -Fq -- "$1" "$skill" || fail "SKILL.md missing: $1"
 }
 
 require_reference() {
-  rg -qF -- "$1" "$reference" || fail "Obsidian CLI reference missing: $1"
+  grep -Fq -- "$1" "$reference" || fail "Obsidian CLI reference missing: $1"
 }
 
 [[ -f $skill ]] || fail 'SKILL.md is absent'
@@ -49,23 +49,36 @@ require_reference '`tasks`'
 require_reference '`bases`, `base:views`, and `base:query`'
 
 for command in create append prepend move rename delete property:set property:remove eval command; do
-  if rg -q -- "obsidian( [^ ]+)* $command([ :]|$)" "$skill" "$reference"; then
+  if grep -Eq -- "obsidian( [^ ]+)* $command([ :]|$)" "$skill" "$reference"; then
     fail "mutating or unrestricted Obsidian command exposed: $command"
   fi
 done
 
-jq -e '
-  .skill == "obsidian-retrieval" and
-  (.version | type == "string") and
-  ([.queries[].should_activate] | any) and
-  ([.queries[].should_activate] | any(. == false)) and
-  ([.queries[].query] | any(test("exact|title|identifier|tag"; "i"))) and
-  ([.queries[].query] | any(test("concept|idea|theme"; "i"))) and
-  ([.queries[].query] | any(test("backlink|propert|task|base"; "i"))) and
-  ([.queries[].query] | any(test("web|weather"; "i"))) and
-  ([.queries[].query] | any(test("write|create|edit"; "i"))) and
-  ([.queries[].reason] | any(test("missing|unavailable"; "i"))) and
-  ([.queries[].reason] | any(test("empty|no match"; "i")))
-' "$evals" >/dev/null || fail 'trigger evaluations do not cover the acceptance cases'
+python3 - "$evals" <<'PY' || fail 'trigger evaluations do not cover the acceptance cases'
+import json
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    document = json.load(source)
+
+queries = document.get("queries", [])
+texts = [query.get("query", "") for query in queries]
+reasons = [query.get("reason", "") for query in queries]
+activations = [query.get("should_activate") for query in queries]
+
+assert document.get("skill") == "obsidian-retrieval"
+assert isinstance(document.get("version"), str)
+assert queries and all(isinstance(value, bool) for value in activations)
+assert any(activations) and any(value is False for value in activations)
+assert all(isinstance(value, str) for value in texts + reasons)
+assert any(re.search(r"exact|title|identifier|tag", value, re.I) for value in texts)
+assert any(re.search(r"concept|idea|theme", value, re.I) for value in texts)
+assert any(re.search(r"backlink|propert|task|base", value, re.I) for value in texts)
+assert any(re.search(r"web|weather", value, re.I) for value in texts)
+assert any(re.search(r"write|create|edit", value, re.I) for value in texts)
+assert any(re.search(r"missing|unavailable", value, re.I) for value in reasons)
+assert any(re.search(r"empty|no match", value, re.I) for value in reasons)
+PY
 
 printf 'Obsidian retrieval skill contract passed\n'
