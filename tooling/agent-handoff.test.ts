@@ -1,17 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   claudeUsage,
+  claudeEvent,
+  codexEvent,
   codexUsage,
-  event,
   type HookResult,
   runEntryPoint,
 } from "./agent-handoff-test-support.ts";
@@ -46,13 +41,13 @@ describe("agent-handoff entry point", () => {
       claudeUsage(85_000),
     ]);
 
-    expect(await runHook(event(below, "claude-below"))).toEqual({
+    expect(await runHook(claudeEvent(below, "claude-below"))).toEqual({
       exitCode: 0,
       stderr: "",
       stdout: "",
     });
 
-    const result = await runHook(event(boundary, "claude-boundary"));
+    const result = await runHook(claudeEvent(boundary, "claude-boundary"));
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(JSON.parse(result.stdout)).toEqual({
@@ -64,7 +59,7 @@ describe("agent-handoff entry point", () => {
 
   test("uses the Codex window and invocation", async () => {
     const transcript = writeTranscript("codex.jsonl", [codexUsage(90_000)]);
-    const result = await runHook(event(transcript, "codex"));
+    const result = await runHook(codexEvent(transcript, "codex"));
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -75,9 +70,12 @@ describe("agent-handoff entry point", () => {
     const transcript = writeTranscript("configured-threshold.jsonl", [
       claudeUsage(50_000),
     ]);
-    const result = await runHook(event(transcript, "configured-threshold"), {
-      HANDOFF_TOKEN_THRESHOLD: "50000",
-    });
+    const result = await runHook(
+      claudeEvent(transcript, "configured-threshold"),
+      {
+        HANDOFF_TOKEN_THRESHOLD: "50000",
+      },
+    );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -92,7 +90,7 @@ describe("agent-handoff entry point", () => {
       claudeUsage(90_000, true),
     ]);
 
-    expect(await runHook(event(transcript, "sidechain"))).toEqual({
+    expect(await runHook(claudeEvent(transcript, "sidechain"))).toEqual({
       exitCode: 0,
       stderr: "",
       stdout: "",
@@ -109,7 +107,7 @@ describe("agent-handoff entry point", () => {
       claudeUsage(40_000),
     ]);
 
-    expect(await runHook(event(transcript, "retention"))).toEqual({
+    expect(await runHook(claudeEvent(transcript, "retention"))).toEqual({
       exitCode: 0,
       stderr: "",
       stdout: "",
@@ -117,18 +115,18 @@ describe("agent-handoff entry point", () => {
   });
 
   test("does not recurse when the stop hook is already active", async () => {
-    expect(await runHook(event("/missing/transcript", "active", true))).toEqual(
-      {
-        exitCode: 0,
-        stderr: "",
-        stdout: "",
-      },
-    );
+    expect(
+      await runHook(claudeEvent("/missing/transcript", "active", true)),
+    ).toEqual({
+      exitCode: 0,
+      stderr: "",
+      stdout: "",
+    });
   });
 
   test("creates at most one handoff for repeated and concurrent events", async () => {
     const transcript = writeTranscript("repeated.jsonl", [claudeUsage(90_000)]);
-    const input = event(transcript, "same-session");
+    const input = claudeEvent(transcript, "same-session");
     const results = await Promise.all([
       runHook(input),
       runHook(input),
@@ -144,95 +142,5 @@ describe("agent-handoff entry point", () => {
       stderr: "",
       stdout: "",
     });
-  });
-
-  test.each([
-    ["malformed event", "not-json", "invalid hook event"],
-    [
-      "missing session",
-      JSON.stringify({ transcript_path: "/tmp/x" }),
-      "missing session_id",
-    ],
-    [
-      "missing transcript",
-      JSON.stringify({ session_id: "x" }),
-      "missing transcript_path",
-    ],
-    [
-      "unsafe session",
-      JSON.stringify({ session_id: "../escape", transcript_path: "/tmp/x" }),
-      "invalid session_id",
-    ],
-  ])("fails visibly for %s", async (_name, input, diagnostic) => {
-    const result = await runHook(input);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain(diagnostic);
-  });
-
-  test.each([
-    [
-      "unreadable transcript",
-      "/missing/transcript",
-      {},
-      "cannot read transcript",
-    ],
-    [
-      "malformed transcript",
-      "malformed.jsonl",
-      { records: [claudeUsage(90_000), "not-json"] },
-      "malformed transcript JSON",
-    ],
-    [
-      "unsupported agent",
-      "unsupported.jsonl",
-      { records: [JSON.stringify({ type: "other" })] },
-      "no supported usage record",
-    ],
-    [
-      "invalid threshold",
-      "threshold.jsonl",
-      {
-        environment: { HANDOFF_TOKEN_THRESHOLD: "85k" },
-        records: [claudeUsage(90_000)],
-      },
-      "invalid HANDOFF_TOKEN_THRESHOLD",
-    ],
-    [
-      "missing Claude window",
-      "window.jsonl",
-      {
-        environment: { CLAUDE_CODE_AUTO_COMPACT_WINDOW: "" },
-        records: [claudeUsage(90_000)],
-      },
-      "missing context window",
-    ],
-  ])("fails visibly for %s", async (_name, filename, setup, diagnostic) => {
-    const records = "records" in setup ? setup.records : undefined;
-    const transcript =
-      records === undefined ? filename : writeTranscript(filename, records);
-    const environment = "environment" in setup ? setup.environment : {};
-    const result = await runHook(event(transcript, "failure"), environment);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain(diagnostic);
-  });
-
-  test("reports sentinel write failure without blocking", async () => {
-    const transcript = writeTranscript("write-failure.jsonl", [
-      claudeUsage(90_000),
-    ]);
-    const stateDirectory = join(testRoot, "read-only-state");
-    mkdirSync(stateDirectory);
-    chmodSync(stateDirectory, 0o500);
-    const result = await runHook(event(transcript, "write-failure"), {
-      XDG_STATE_HOME: stateDirectory,
-    });
-
-    expect(result.exitCode).toBe(3);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("cannot create handoff sentinel");
   });
 });

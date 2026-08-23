@@ -388,22 +388,29 @@ cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: bun
-bun: ${BUN_BIN}
-	@version=$$("$<" --version); test "$$version" = "${BUN_VERSION}" || { echo "Error: $< is Bun $$version, expected ${BUN_VERSION}" >&2; exit 1; }
-${BUN_BIN}: | $(HOME)/.bun/bin
+bun: | $(HOME)/.bun/bin
 	@set -eu; \
+	version=missing; \
+	if [ -x "${BUN_BIN}" ]; then version=$$("${BUN_BIN}" --version) || version=unreadable; fi; \
+	if [ "$$version" = "${BUN_VERSION}" ]; then exit 0; fi; \
 	case "$$(uname -m)" in \
 		arm64) archive_arch=aarch64; checksum=c669e97f6164e1c96e0701748db98dfa77492908cbd8394c7557134a735de381 ;; \
 		x86_64) archive_arch=x64; checksum=1d0211b8f1dc991182344687ad15e72ee86f154845a5f7fa477994cd341dd9b0 ;; \
 		*) echo "Error: unsupported Bun architecture: $$(uname -m)" >&2; exit 1 ;; \
 	esac; \
 	temporary=$$(mktemp -d); \
-	trap 'rm -rf "$$temporary"' 0; \
+	staged=; \
+	trap 'rm -rf "$$temporary"; if [ -n "$$staged" ]; then rm -f "$$staged"; fi' 0; \
 	archive="$$temporary/bun.zip"; \
 	curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-darwin-$$archive_arch.zip" -o "$$archive"; \
 	printf '%s  %s\n' "$$checksum" "$$archive" | shasum -a 256 -c -; \
 	unzip -q "$$archive" -d "$$temporary"; \
-	install -m 755 "$$temporary/bun-darwin-$$archive_arch/bun" "$@"
+	staged=$$(mktemp "${BUN_BIN}.tmp.XXXXXX"); \
+	install -m 755 "$$temporary/bun-darwin-$$archive_arch/bun" "$$staged"; \
+	installed_version=$$("$$staged" --version); \
+	test "$$installed_version" = "${BUN_VERSION}" || { echo "Error: downloaded Bun is $$installed_version, expected ${BUN_VERSION}" >&2; exit 1; }; \
+	mv "$$staged" "${BUN_BIN}"; \
+	staged=
 $(HOME)/.bun/bin:
 	mkdir -p $@
 

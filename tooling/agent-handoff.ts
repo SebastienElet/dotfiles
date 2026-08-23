@@ -1,28 +1,13 @@
 import { mkdir, open, readFile, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
-
-type Agent = "Claude Code" | "Codex";
+import { HandoffError } from "./agent-handoff-error.ts";
+import { findLatestUsage, type Usage } from "./agent-handoff-transcript.ts";
 
 type HookEvent = Readonly<{
   sessionId: string;
   stopHookActive: boolean;
   transcriptPath: string;
 }>;
-
-type Usage = Readonly<{
-  agent: Agent;
-  used: number;
-  window?: number;
-}>;
-
-class HandoffError extends Error {
-  constructor(
-    message: string,
-    readonly exitCode: number,
-  ) {
-    super(message);
-  }
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -37,6 +22,17 @@ function parseHookEvent(input: string): HookEvent {
   }
   if (!isRecord(value))
     throw new HandoffError("invalid hook event: expected an object", 1);
+  const claudeEvent = value.hook_event_name;
+  const codexEvent = value.event;
+  if (claudeEvent === undefined && codexEvent === undefined) {
+    throw new HandoffError("missing Stop event", 1);
+  }
+  if (
+    (claudeEvent !== undefined && claudeEvent !== "Stop") ||
+    (codexEvent !== undefined && codexEvent !== "Stop")
+  ) {
+    throw new HandoffError("unsupported hook event", 1);
+  }
   if (typeof value.session_id !== "string" || value.session_id.length === 0) {
     throw new HandoffError("missing session_id", 1);
   }
@@ -60,83 +56,6 @@ function parseHookEvent(input: string): HookEvent {
     stopHookActive: value.stop_hook_active ?? false,
     transcriptPath: value.transcript_path,
   };
-}
-
-function parseTokenCount(
-  value: unknown,
-  field: string,
-  fallback?: number,
-): number {
-  if (value === undefined && fallback !== undefined) return fallback;
-  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
-    throw new HandoffError(`invalid ${field}`, 1);
-  }
-  return value;
-}
-
-function parseClaudeUsage(record: Record<string, unknown>): Usage | undefined {
-  if (record.type !== "assistant" || record.isSidechain === true)
-    return undefined;
-  if (!isRecord(record.message) || !isRecord(record.message.usage))
-    return undefined;
-  const usage = record.message.usage;
-  const input = parseTokenCount(usage.input_tokens, "Claude input_tokens");
-  const cacheRead = parseTokenCount(
-    usage.cache_read_input_tokens,
-    "Claude cache_read_input_tokens",
-    0,
-  );
-  const cacheCreation = parseTokenCount(
-    usage.cache_creation_input_tokens,
-    "Claude cache_creation_input_tokens",
-    0,
-  );
-  const used = input + cacheRead + cacheCreation;
-  if (!Number.isSafeInteger(used))
-    throw new HandoffError("invalid Claude token total", 1);
-  return { agent: "Claude Code", used };
-}
-
-function parseCodexUsage(record: Record<string, unknown>): Usage | undefined {
-  if (record.type !== "event_msg" || !isRecord(record.payload))
-    return undefined;
-  if (record.payload.type !== "token_count" || !isRecord(record.payload.info))
-    return undefined;
-  const info = record.payload.info;
-  if (!isRecord(info.last_token_usage)) return undefined;
-  return {
-    agent: "Codex",
-    used: parseTokenCount(
-      info.last_token_usage.input_tokens,
-      "Codex input_tokens",
-    ),
-    window: parseTokenCount(
-      info.model_context_window,
-      "Codex model_context_window",
-    ),
-  };
-}
-
-function findLatestUsage(transcript: string): Usage {
-  const lines = transcript.trimEnd().split("\n").slice(-500);
-  let latest: Usage | undefined;
-  for (const [index, line] of lines.entries()) {
-    if (line.trim() === "") continue;
-    let record: unknown;
-    try {
-      record = JSON.parse(line);
-    } catch {
-      throw new HandoffError(
-        `malformed transcript JSON at retained line ${index + 1}`,
-        1,
-      );
-    }
-    if (!isRecord(record)) continue;
-    latest = parseClaudeUsage(record) ?? parseCodexUsage(record) ?? latest;
-  }
-  if (latest === undefined)
-    throw new HandoffError("no supported usage record in transcript", 1);
-  return latest;
 }
 
 function parsePositiveInteger(value: string, name: string): number {

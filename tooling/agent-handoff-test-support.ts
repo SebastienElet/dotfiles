@@ -41,7 +41,7 @@ export function codexUsage(used: number, window = 100_000): string {
   });
 }
 
-export function event(
+export function claudeEvent(
   transcriptPath: string,
   sessionId: string,
   stopHookActive = false,
@@ -50,6 +50,14 @@ export function event(
     hook_event_name: "Stop",
     session_id: sessionId,
     stop_hook_active: stopHookActive,
+    transcript_path: transcriptPath,
+  });
+}
+
+export function codexEvent(transcriptPath: string, sessionId: string): string {
+  return JSON.stringify({
+    event: "Stop",
+    session_id: sessionId,
     transcript_path: transcriptPath,
   });
 }
