@@ -513,13 +513,13 @@ ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
 .PHONY: codegraph
-codegraph: bun codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
+codegraph: bun tokei codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
 	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph ${BREW_BIN}/bun tooling/codegraph-configure
 
 .PHONY: codegraph-test
-codegraph-test: bun
+codegraph-test: bun tokei
 	bash harness/skills/codegraph/scripts/skill_contract_test.sh
-	bash harness/skills/codegraph/scripts/measure_repository_test.sh
+	${BREW_BIN}/bun test tooling/codegraph-repository-*.test.ts
 	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex ${BREW_BIN}/bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
 	bash tooling/codegraph-mcp-test
 	bash tooling/codegraph-network-test
@@ -549,7 +549,7 @@ codegraph-ignore:
 	mkdir -p "$$(dirname "$$target")"; \
 	ln -s "$$expected" "$$target"
 
-${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/harness/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
+${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size | ${LOCAL_BIN}
 	${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli
