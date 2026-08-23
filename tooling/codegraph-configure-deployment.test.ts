@@ -85,8 +85,15 @@ describe("CodeGraph deployment", () => {
 
 const realClaude = process.env.CODEGRAPH_REAL_CLAUDE_BIN;
 const realCodex = process.env.CODEGRAPH_REAL_CODEX_BIN;
+const realVoltaHome =
+  process.env.VOLTA_HOME ??
+  (realCodex === undefined ? undefined : dirname(dirname(realCodex)));
 
-test.skipIf(realClaude === undefined || realCodex === undefined)(
+test.skipIf(
+  realClaude === undefined ||
+    realCodex === undefined ||
+    realVoltaHome === undefined,
+)(
   "the real Claude and Codex CLIs preserve unrelated configuration",
   () => {
     const directory = createTemporaryDirectory();
@@ -109,6 +116,7 @@ test.skipIf(realClaude === undefined || realCodex === undefined)(
     const environment = {
       ...process.env,
       HOME: home,
+      VOLTA_HOME: realVoltaHome,
       CODEX_HOME: codexHome,
       CODEGRAPH_CLAUDE_BIN: realClaude,
       CODEGRAPH_CODEX_BIN: realCodex,

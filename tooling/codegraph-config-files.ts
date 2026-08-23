@@ -76,6 +76,11 @@ export function inspectConfiguration(
   if (!status.isFile()) {
     throw new ConfigurationError(`${fileLabel} is not a regular file: ${path}`);
   }
+  if (status.nlink > 1) {
+    throw new ConfigurationError(
+      `${fileLabel} must not have multiple hard links: ${path}`,
+    );
+  }
   const content = readFileSync(path);
   const snapshot = { path, content, mode: status.mode };
   return jsonLabel === undefined

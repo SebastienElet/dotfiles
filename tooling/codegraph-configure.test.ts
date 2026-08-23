@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  linkSync,
   lstatSync,
   readFileSync,
   statSync,
@@ -223,6 +224,19 @@ describe("codegraph-configure entry point", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("must not be a symlink");
     expect(lstatSync(fixture.cursorConfig).isSymbolicLink()).toBe(true);
+    expect(readLog(fixture)).toBe("");
+  });
+
+  test("rejects hard-linked configuration paths before mutation", () => {
+    const fixture = createFixture();
+    const alias = join(fixture.directory, "cursor-alias.json");
+    writeFileSync(alias, "{}\n");
+    linkSync(alias, fixture.cursorConfig);
+
+    const result = run(fixture);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("must not have multiple hard links");
     expect(readLog(fixture)).toBe("");
   });
 });
