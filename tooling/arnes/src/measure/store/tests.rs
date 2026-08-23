@@ -68,9 +68,8 @@ fn opened_store_anchors_new_existing_and_invalid_writes() {
     fs::create_dir_all(repository.join("dotfiles/agent-harness/runs/existing/artifacts/hooks"))
         .unwrap();
     symlink(&external, &state_link).unwrap();
-    let previous = std::env::var_os("XDG_STATE_HOME");
-    unsafe { std::env::set_var("XDG_STATE_HOME", &state_link) };
-    let store = Store::open(std::slice::from_ref(&repository)).unwrap();
+    let store =
+        Store::open_from_state_base(&state_link, std::slice::from_ref(&repository)).unwrap();
     fs::remove_file(&state_link).unwrap();
     symlink(&repository, &state_link).unwrap();
 
@@ -83,7 +82,6 @@ fn opened_store_anchors_new_existing_and_invalid_writes() {
         .append_invalid(&serde_json::json!({"safe":true}))
         .unwrap();
 
-    restore_xdg(previous);
     assert!(
         root.join("runs/existing/artifacts/hooks/existing.json")
             .is_file()
@@ -97,13 +95,6 @@ fn opened_store_anchors_new_existing_and_invalid_writes() {
             .join("dotfiles/agent-harness/invalid.jsonl")
             .exists()
     );
-}
-
-fn restore_xdg(previous: Option<std::ffi::OsString>) {
-    match previous {
-        Some(value) => unsafe { std::env::set_var("XDG_STATE_HOME", value) },
-        None => unsafe { std::env::remove_var("XDG_STATE_HOME") },
-    }
 }
 
 #[test]

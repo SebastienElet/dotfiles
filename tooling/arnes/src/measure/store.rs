@@ -27,7 +27,14 @@ pub struct Store {
 
 impl Store {
     pub fn open(repositories: &[PathBuf]) -> Result<Self, MeasureError> {
-        let resolved = resolve_candidate(&state_base()?)?.join("dotfiles/agent-harness");
+        Self::open_from_state_base(&state_base()?, repositories)
+    }
+
+    fn open_from_state_base(
+        state_base: &Path,
+        repositories: &[PathBuf],
+    ) -> Result<Self, MeasureError> {
+        let resolved = resolve_candidate(state_base)?.join("dotfiles/agent-harness");
         reject_repositories(&resolved, repositories)?;
         let directory = path::open_root(&resolved)?;
         Ok(Self {
