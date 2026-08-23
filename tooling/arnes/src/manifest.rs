@@ -4,12 +4,14 @@ use std::fmt::{self, Display};
 use std::path::{Path, PathBuf};
 
 mod commands;
+mod config;
 mod external;
 mod parsing;
 mod prompts;
 mod validation;
 
 pub use commands::{Command, CommandBinding};
+pub use config::UserConfig;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
@@ -62,6 +64,13 @@ impl Manifest {
         self.agents
             .iter()
             .flat_map(|agent| agent.scopes.iter().map(move |scope| (agent.id, *scope)))
+    }
+
+    pub fn user_config(&self, agent: Agent) -> Option<&UserConfig> {
+        self.agents
+            .iter()
+            .find(|declaration| declaration.id == agent)
+            .and_then(|declaration| declaration.user_config.as_ref())
     }
 
     pub fn instruction_resources(&self) -> impl Iterator<Item = InstructionResource<'_>> {
@@ -171,6 +180,7 @@ struct SkillInstallation {
 struct AgentDeclaration {
     id: Agent,
     scopes: Vec<Scope>,
+    user_config: Option<UserConfig>,
 }
 
 #[derive(Deserialize)]

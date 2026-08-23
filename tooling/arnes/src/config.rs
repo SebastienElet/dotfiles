@@ -6,20 +6,10 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 
-#[derive(Clone, Copy)]
-enum ConfigFormat {
-    Json,
-    Toml,
-}
+mod defaults;
+mod format;
 
-impl Display for ConfigFormat {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
-            Self::Json => "JSON",
-            Self::Toml => "TOML",
-        })
-    }
-}
+use format::{ConfigFormat, ParseError};
 
 struct Specification {
     root: &'static str,
@@ -49,11 +39,11 @@ pub fn diagnose(
 
     combinations
         .into_iter()
-        .map(|(agent, scope)| diagnose_one(roots, agent, scope))
+        .map(|(agent, scope)| diagnose_one(roots, manifest, agent, scope))
         .collect()
 }
 
-fn diagnose_one(roots: &Roots, agent: Agent, scope: Scope) -> Diagnostic {
+fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) -> Diagnostic {
     let specification = specification(agent, scope);
     let base = match scope {
         Scope::User => roots.home(),
@@ -76,12 +66,8 @@ fn diagnose_one(roots: &Roots, agent: Agent, scope: Scope) -> Diagnostic {
         Err(diagnostic) => return diagnostic,
     };
 
-    match validate(&input, specification.format) {
-        Ok(()) => Diagnostic::new(
-            "config",
-            State::Healthy,
-            format!("{subject} file {file_label} is valid"),
-        ),
+    match format::parse(&input, specification.format) {
+        Ok(value) => diagnose_defaults(manifest, agent, scope, &value, &subject, &file_label),
         Err(ParseError::Malformed) => Diagnostic::new(
             "config",
             State::Error,
@@ -98,6 +84,39 @@ fn diagnose_one(roots: &Roots, agent: Agent, scope: Scope) -> Diagnostic {
                 specification.format
             ),
         ),
+    }
+}
+
+fn diagnose_defaults(
+    manifest: &Manifest,
+    agent: Agent,
+    scope: Scope,
+    value: &serde_json::Value,
+    subject: &str,
+    file_label: &str,
+) -> Diagnostic {
+    let mismatches = match scope {
+        Scope::User => manifest
+            .user_config(agent)
+            .map(|config| defaults::mismatches(agent, config, value))
+            .unwrap_or_default(),
+        Scope::Project => Vec::new(),
+    };
+    if mismatches.is_empty() {
+        Diagnostic::new(
+            "config",
+            State::Healthy,
+            format!("{subject} file {file_label} is valid"),
+        )
+    } else {
+        Diagnostic::new(
+            "config",
+            State::Drift,
+            format!(
+                "{subject} file {file_label} differs from manifest defaults: {}",
+                mismatches.join(", ")
+            ),
+        )
     }
 }
 
@@ -154,26 +173,6 @@ fn unreadable(subject: &str, kind: &str, path: &str) -> Diagnostic {
         State::Error,
         format!("{subject} {kind} {path} could not be read"),
     )
-}
-
-enum ParseError {
-    Malformed,
-    WrongRoot,
-}
-
-fn validate(input: &str, format: ConfigFormat) -> Result<(), ParseError> {
-    match format {
-        ConfigFormat::Json => match serde_json::from_str::<serde_json::Value>(input) {
-            Ok(serde_json::Value::Object(_)) => Ok(()),
-            Ok(_) => Err(ParseError::WrongRoot),
-            Err(_) => Err(ParseError::Malformed),
-        },
-        ConfigFormat::Toml => match toml::from_str::<toml::Value>(input) {
-            Ok(toml::Value::Table(_)) => Ok(()),
-            Ok(_) => Err(ParseError::WrongRoot),
-            Err(_) => Err(ParseError::Malformed),
-        },
-    }
 }
 
 fn specification(agent: Agent, scope: Scope) -> Specification {

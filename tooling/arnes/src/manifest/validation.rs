@@ -74,6 +74,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
                 ));
             }
         }
+        super::config::validate(&manifest.agents, agent_index)?;
         agents.insert(agent.id, scopes);
     }
 
