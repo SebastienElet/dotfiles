@@ -15,6 +15,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: oven-sh/setup-bun@v2
+        if: github.event_name == 'pull_request'
+        with:
+          bun-version-file: package.json
+
       - name: Select install targets
         id: targets
         env:
