@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { z } from "zod";
 import { validateEvaluations } from "./evaluation-contract.ts";
 
 export type ContractSources = Readonly<{
@@ -96,6 +97,10 @@ const allowedReferenceTokens = new Set([
   "obsidian vault info=path",
   "obsidian version",
 ]);
+
+const repositoryRootSchema = z
+  .string()
+  .min(1, "repository root must not be empty");
 
 const sameSet = (values: string[], expected: Set<string>): boolean =>
   values.length === expected.size &&
@@ -216,9 +221,11 @@ export const loadContractSources = async (
 
 if (import.meta.main) {
   try {
-    const errors = validateContract(
-      await loadContractSources(process.argv[2] ?? process.cwd()),
-    );
+    const repositoryRoot =
+      process.argv[2] === undefined
+        ? process.cwd()
+        : repositoryRootSchema.parse(process.argv[2]);
+    const errors = validateContract(await loadContractSources(repositoryRoot));
     if (errors.length > 0) throw new Error(errors.join("\n"));
     console.log("Obsidian retrieval contract passed");
   } catch (error) {

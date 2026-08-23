@@ -165,6 +165,7 @@ jobs:
           HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
             home/cspell.json \
             home/.config/cspell/user.txt \
+            .agents/skills/scripts/SKILL.md \
             harness/skills/agent-instructions/SKILL.md \
             harness/skills/agent-instructions/references/maintenance.md \
             harness/skills/issue-creation/SKILL.md \

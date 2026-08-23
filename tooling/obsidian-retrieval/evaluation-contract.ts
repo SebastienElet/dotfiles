@@ -29,7 +29,7 @@ export const validateEvaluations = (value: unknown): string[] => {
     activations.includes(true) && activations.includes(false),
     texts.some((text) => /exact|title|identifier|tag/i.test(text)),
     texts.some((text) => /concept|idea|theme/i.test(text)),
-    texts.some((text) => /backlink|propert|task|base/i.test(text)),
+    texts.some((text) => /backlink|property|properties|task|base/i.test(text)),
     texts.some((text) => /web|weather/i.test(text)),
     texts.some((text) => /write|create|edit/i.test(text)),
     reasons.some((reason) => /missing|unavailable/i.test(reason)),

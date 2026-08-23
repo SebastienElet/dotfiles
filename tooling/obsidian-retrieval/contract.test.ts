@@ -148,4 +148,21 @@ describe("Obsidian retrieval contract", () => {
       "unable to read contract inputs",
     );
   });
+
+  test("the command rejects an empty repository root", async () => {
+    const process = Bun.spawn(
+      [
+        Bun.which("bun") ?? "bun",
+        "run",
+        join(import.meta.dir, "contract.ts"),
+        "",
+      ],
+      { stderr: "pipe", stdout: "pipe" },
+    );
+
+    expect(await process.exited).not.toBe(0);
+    expect(await new Response(process.stderr).text()).toContain(
+      "repository root",
+    );
+  });
 });
