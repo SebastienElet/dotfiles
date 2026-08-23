@@ -77,7 +77,7 @@ of degraded or incomplete retrieval. It does not provide note-writing operations
   and a semantic index may be stale. Verify the selected corpus and health before trusting results.
 - **Guessing a vault path** — scanning parent directories or the home directory can cross privacy
   boundaries. Use the closed root-selection order and stop on ambiguity.
-- **Presenting no matches as absence** — lexical wording and incomplete indexes create false
+- **Presenting no matches as absence** — lexical wording and incomplete indexes can cause false
   negatives. Report the query and coverage limits instead of claiming the vault lacks the fact.
 - **Emulating Obsidian relations with grep** — raw wikilinks and YAML do not reproduce link
   resolution, task state, or Bases evaluation. Label the filesystem fallback as degraded and partial.

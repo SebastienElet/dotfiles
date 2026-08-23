@@ -72,8 +72,24 @@ publish:remove random reload rename restart search:open snippet:disable snippet:
 sync:restore tab:open task template:insert theme theme:install theme:set theme:uninstall unique
 vault:open vaults web workspace:delete workspace:load workspace:save
 """.split())
+mutating_commands = {
+    "append", "base:create", "create", "daily:append", "daily:prepend", "delete", "move",
+    "plugin:disable", "plugin:enable", "plugin:install", "plugin:uninstall", "prepend",
+    "property:remove", "property:set", "publish:add", "publish:remove", "rename",
+    "snippet:disable", "snippet:enable", "template:insert", "theme:install", "theme:set",
+    "theme:uninstall", "workspace:delete", "workspace:save", "write",
+}
 allowed_reference_tokens = expected_commands | {".base", "obsidian vault info=path", "obsidian version"}
 unsafe_pattern = "|".join(sorted((re.escape(command) for command in unsafe_commands), key=len, reverse=True))
+mutating_pattern = "|".join(sorted((re.escape(command) for command in mutating_commands), key=len, reverse=True))
+
+def reject_positive_unsafe_commands(text, document_name):
+    normalized_text = re.sub(r"\s+", " ", text)
+    sentences = re.split(r"(?<=[.!?])\s+", normalized_text)
+    for sentence in sentences:
+        for match in re.finditer(rf"(?<![\w:])(?:{mutating_pattern})(?![\w:])", sentence, re.I):
+            if not re.search(r"(?i)\b(?:do not|never)\b", sentence[:match.start()]):
+                raise ValueError(f"unsafe command exposed in {document_name}: {match.group(0)}")
 
 def validate_reference(reference_text, skill_text):
     if reference_text.count("## Read-only allowlist") != 1:
@@ -90,7 +106,7 @@ def validate_reference(reference_text, skill_text):
     reference_tokens = set(re.findall(r"`([^`]+)`", reference_text))
     if not reference_tokens <= allowed_reference_tokens:
         raise ValueError(f"unexpected command-like reference token: {sorted(reference_tokens)}")
-    permission_pattern = rf"(?i)\b(?:allow(?:ed)?|permit(?:ted)?|run|invoke|expose)\b[^\n]{{0,100}}(?<![\w:])(?:{unsafe_pattern})(?![\w:])"
+    permission_pattern = rf"(?i)\b(?:allow(?:ed)?|permit(?:ted)?|run|use|invoke|expose)\b[^\n]{{0,100}}(?<![\w:])(?:{unsafe_pattern})(?![\w:])"
     permission_text = "\n".join(
         line for line in (reference_text + "\n" + skill_text).splitlines()
         if not line.startswith("- Never ") and "Do not " not in line
@@ -100,14 +116,7 @@ def validate_reference(reference_text, skill_text):
     invocations = re.findall(r"\bobsidian\s+([a-z][a-z:-]*)", reference_text + "\n" + skill_text)
     if not set(invocations) <= {"version", "vault"}:
         raise ValueError(f"unsafe Obsidian invocation: {invocations}")
-    positive_skill_lines = (
-        line for line in skill_text.splitlines()
-        if not line.startswith("- Never ") and "Do not " not in line
-    )
-    for line in positive_skill_lines:
-        tokens = set(re.findall(r"`([^`]+)`", line))
-        if tokens & unsafe_commands:
-            raise ValueError(f"unsafe command exposed in SKILL.md: {sorted(tokens & unsafe_commands)}")
+    reject_positive_unsafe_commands(skill_text, "SKILL.md")
 
 try:
     validate_reference(reference, skill)
@@ -136,6 +145,16 @@ try:
         pass
     else:
         raise ValueError("backticked SKILL.md mutator bypassed the validator")
+    adversarial_skills = (
+        skill + "\n\nUse create to add a note.\n",
+        skill + "\n\nUse\ncreate to add a note.\n",
+    )
+    for adversarial_skill in adversarial_skills:
+        try:
+            validate_reference(reference, adversarial_skill)
+        except ValueError:
+            continue
+        raise ValueError("plain SKILL.md mutator bypassed the validator")
 except ValueError as error:
     raise SystemExit(str(error)) from error
 
