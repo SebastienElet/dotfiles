@@ -10,6 +10,7 @@ on:
       - tooling/install-hunspell-dictionary
       - tooling/hunspell-dictionaries-test
       - tooling/pr-feedback-command-test
+      - tooling/xdg-config-test
       - Makefile
       - .github/workflows/test-deployment.yml
   pull_request:
@@ -21,6 +22,7 @@ on:
       - tooling/install-hunspell-dictionary
       - tooling/hunspell-dictionaries-test
       - tooling/pr-feedback-command-test
+      - tooling/xdg-config-test
       - Makefile
       - .github/workflows/test-deployment.yml
 
@@ -37,3 +39,4 @@ jobs:
       - run: tooling/fish-deployment-test
       - run: tooling/hunspell-dictionaries-test
       - run: tooling/pr-feedback-command-test
+      - run: tooling/xdg-config-test

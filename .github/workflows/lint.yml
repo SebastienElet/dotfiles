@@ -52,7 +52,7 @@ jobs:
           echo "✅ Fish formatting OK"
 
   lua:
-    name: Lua (NeoVim)
+    name: Lua
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -65,7 +65,9 @@ jobs:
           set -euo pipefail
           echo "Checking Lua syntax..."
           test -f home/.config/nvim/init.lua
+          test -f home/.config/wezterm/wezterm.lua
           luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
+          luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
           echo "✅ Lua syntax OK"
 
   shellcheck:

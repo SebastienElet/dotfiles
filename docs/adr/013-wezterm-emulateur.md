@@ -13,9 +13,9 @@ changé plusieurs fois.
 
 ## Décision
 
-Adopter WezTerm, configuré par un `home/.wezterm.lua` versionné et symlinké. Le
-cask `nightly` est installé (`a372ba5`), la version stable accusant un retard
-important sur les correctifs de rendu.
+Adopter WezTerm, configuré par un `home/.config/wezterm/wezterm.lua` versionné
+et symlinké. Le cask `nightly` est installé (`a372ba5`), la version stable
+accusant un retard important sur les correctifs de rendu.
 
 ## Conséquences
 

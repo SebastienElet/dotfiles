@@ -157,13 +157,15 @@ ${BREW_BIN}/tokei:
 	brew install tokei
 
 .PHONY: wezterm
-wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.wezterm.lua
+wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.app ~/.config/wezterm/wezterm.lua
 /Applications/WezTerm.app:
 	brew tap wez/wezterm
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
 	brew install --cask wez/wezterm/wezterm-nightly
-~/.wezterm.lua: ${DOTFILES_PATH}/home/.wezterm.lua
+~/.config/wezterm:
+	mkdir -p $@
+~/.config/wezterm/wezterm.lua: ${DOTFILES_PATH}/home/.config/wezterm/wezterm.lua | ~/.config/wezterm
 	${CREATE_SYMLINK}
 
 ################################################################################
@@ -807,14 +809,20 @@ zsh: ~/.zshrc
 	${CREATE_SYMLINK}
 
 .PHONY: git-delta
-git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
-	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
-		git config --global include.path "~/.gitconfig.delta"; \
-		echo "Added include.path to ~/.gitconfig"; \
+git-delta: brew ${BREW_BIN}/delta ~/.config/git/config.delta
+	@includes=$$(git config --global --get-all include.path || test $$? -eq 1) || exit; \
+	if ! printf '%s\n' "$$includes" | grep -Fxq '~/.config/git/config.delta'; then \
+		git config --global --add include.path '~/.config/git/config.delta' || exit; \
+		echo "Added include.path to Git's global configuration"; \
+	fi; \
+	if printf '%s\n' "$$includes" | grep -Fxq '~/.gitconfig.delta'; then \
+		git config --global --unset-all include.path '^~/[.]gitconfig[.]delta$$' || exit; \
 	fi
 ${BREW_BIN}/delta:
 	brew install git-delta
-~/.gitconfig.delta: ${DOTFILES_PATH}/home/.gitconfig.delta
+~/.config/git:
+	mkdir -p $@
+~/.config/git/config.delta: ${DOTFILES_PATH}/home/.config/git/config.delta | ~/.config/git
 	${CREATE_SYMLINK}
 
 .PHONY: starship
@@ -825,10 +833,12 @@ ${BREW_BIN}/starship:
 	${CREATE_SYMLINK}
 
 .PHONY: tmux
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
+tmux: brew ${BREW_BIN}/tmux ~/.config/tmux/tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf: ${DOTFILES_PATH}/home/.tmux.conf
+~/.config/tmux:
+	mkdir -p $@
+~/.config/tmux/tmux.conf: ${DOTFILES_PATH}/home/.config/tmux/tmux.conf | ~/.config/tmux
 	${CREATE_SYMLINK}
 ~/.tmux/plugins:
 	mkdir -p $@
