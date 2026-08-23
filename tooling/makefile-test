@@ -109,6 +109,7 @@ for specification in \
   ".agents/skills/agent-instructions agent-instructions" \
   ".claude/skills/codegraph codegraph" \
   ".claude/skills/enforcement-code enforcement-code" \
+  ".claude/skills/harness-reflection harness-reflection" \
   ".claude/skills/handoff handoff" \
   ".claude/skills/issue-creation issue-creation" \
   ".claude/skills/linear-issue-spec linear-issue-spec" \
@@ -118,6 +119,7 @@ for specification in \
   ".cursor/skills/claude-developer claude-developer" \
   ".cursor/skills/codegraph codegraph" \
   ".cursor/skills/enforcement-code enforcement-code" \
+  ".cursor/skills/harness-reflection harness-reflection" \
   ".cursor/skills/issue-creation issue-creation" \
   ".cursor/skills/linear-issue-spec linear-issue-spec" \
   ".cursor/skills/pr-fix pr-fix" \
@@ -126,6 +128,7 @@ for specification in \
   ".agents/skills/claude-developer claude-developer" \
   ".agents/skills/codegraph codegraph" \
   ".agents/skills/enforcement-code enforcement-code" \
+  ".agents/skills/harness-reflection harness-reflection" \
   ".agents/skills/handoff handoff" \
   ".agents/skills/issue-creation issue-creation" \
   ".agents/skills/linear-issue-spec linear-issue-spec" \
