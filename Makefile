@@ -4,6 +4,7 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
+BUN_VERSION:=1.4.0
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
@@ -385,8 +386,26 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 cursor-measurement-hooks: arnes
 	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
+.PHONY: bun
+bun: ${LOCAL_BIN}/bun
+	@version=$$("$<" --version); test "$$version" = "${BUN_VERSION}" || { echo "Error: $< is Bun $$version, expected ${BUN_VERSION}" >&2; exit 1; }
+${LOCAL_BIN}/bun: | ${LOCAL_BIN}
+	@set -eu; \
+	case "$$(uname -m)" in \
+		arm64) archive_arch=aarch64; checksum=c669e97f6164e1c96e0701748db98dfa77492908cbd8394c7557134a735de381 ;; \
+		x86_64) archive_arch=x64; checksum=1d0211b8f1dc991182344687ad15e72ee86f154845a5f7fa477994cd341dd9b0 ;; \
+		*) echo "Error: unsupported Bun architecture: $$(uname -m)" >&2; exit 1 ;; \
+	esac; \
+	temporary=$$(mktemp -d); \
+	trap 'rm -rf "$$temporary"' 0; \
+	archive="$$temporary/bun.zip"; \
+	curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-darwin-$$archive_arch.zip" -o "$$archive"; \
+	printf '%s  %s\n' "$$checksum" "$$archive" | shasum -a 256 -c -; \
+	unzip -q "$$archive" -d "$$temporary"; \
+	install -m 755 "$$temporary/bun-darwin-$$archive_arch/bun" "$@"
+
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -449,7 +468,7 @@ hunspell-dictionaries:
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-measurement-hooks
+codex: bun ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:

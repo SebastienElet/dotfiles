@@ -227,6 +227,15 @@ env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository"
 [[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
 assert_link "$hooks_file.tmp" "$victim"
 
+case_root=$test_root/bun_wiring
+test_home=$case_root/home
+mkdir -p "$test_home"
+for agent in claude-code codex; do
+  trace=$case_root/$agent
+  env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$agent" >"$trace"
+  [[ $(grep -F -c -- 'bun-v1.4.0' "$trace") == 1 ]] || fail "$agent does not install pinned Bun exactly once"
+done
+
 case_root=$test_root/measurement_wiring
 test_home=$case_root/home
 mkdir -p "$test_home"
