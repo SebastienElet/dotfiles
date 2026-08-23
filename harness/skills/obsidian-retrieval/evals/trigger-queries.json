@@ -1,0 +1,51 @@
+{
+  "skill": "obsidian-retrieval",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Find the note titled Architecture Decision 183 and summarize the exact source.",
+      "should_activate": true,
+      "reason": "A known title is an exact-anchor retrieval request"
+    },
+    {
+      "query": "Look through this Markdown vault for identifier ADR-183 and tag #retrieval.",
+      "should_activate": true,
+      "reason": "Identifiers and tags require lexical retrieval followed by source reading"
+    },
+    {
+      "query": "What ideas connect my notes about bounded contexts and team ownership?",
+      "should_activate": true,
+      "reason": "A conceptual question over local notes belongs to read-only corpus retrieval"
+    },
+    {
+      "query": "Which notes backlink to Architecture, and what do those sources say?",
+      "should_activate": true,
+      "reason": "Backlinks depend on Obsidian semantics when its CLI is healthy"
+    },
+    {
+      "query": "List the status property, incomplete tasks, and matching Base rows for Project Atlas.",
+      "should_activate": true,
+      "reason": "Properties, tasks, and Bases require the read-only Obsidian workflow"
+    },
+    {
+      "query": "Find themes in this vault even though no semantic search tool is installed.",
+      "should_activate": true,
+      "reason": "Missing optional tools require an explicit lexical fallback"
+    },
+    {
+      "query": "Search this vault for Project Chimera and tell me what an empty result establishes.",
+      "should_activate": true,
+      "reason": "An empty or no-match result must be reported without claiming absence"
+    },
+    {
+      "query": "Search the web for tomorrow's weather in Paris.",
+      "should_activate": false,
+      "reason": "An unrelated web question does not use a local Markdown corpus"
+    },
+    {
+      "query": "Create a new Obsidian note for today's meeting and edit its task list.",
+      "should_activate": false,
+      "reason": "Note writing and editing are explicitly outside this read-only skill"
+    }
+  ]
+}

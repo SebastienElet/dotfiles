@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "Preserve",
