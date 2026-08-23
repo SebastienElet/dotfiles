@@ -2,8 +2,8 @@
 name: scripts
 description: >
   Create and maintain portable Bash scripts in this repository. Use when adding or editing
-  standalone scripts, shebangs, error handling, or executable tooling. Make sure to use it
-  whenever a change touches scripts/, even if the request calls it a helper or a hook.
+  standalone scripts, shebangs, error handling, or executable tooling. Make sure to use it whenever
+  a change touches an executable directly under tooling/, even if it is called a helper or a hook.
 metadata:
   category: dev
 ---
@@ -12,7 +12,7 @@ metadata:
 
 ## Overview
 
-Maintain executable Bash tooling under `scripts/` without introducing host-specific assumptions.
+Maintain executable Bash tooling directly under `tooling/` without introducing host-specific assumptions.
 New scripts must work on both macOS and Linux and remain easy to invoke from the Makefile or Git
 hooks.
 
@@ -29,17 +29,17 @@ $scripts make this hook portable across macOS and Linux
 
 1. Inspect neighboring scripts and every caller before changing names, arguments, or exit codes.
 2. Use Bash for standalone scripts and `#!/usr/bin/env bash` for new files.
-3. Give executable scripts descriptive, extensionless names such as `claude_handoff_check`.
+3. Give executable scripts descriptive, extensionless kebab-case names such as `claude-handoff-check`.
 4. Add explicit validation and meaningful non-zero exit codes for invalid input or failed work.
 5. Prefer commands available on both macOS and Linux; gate unavoidable platform differences with
    an explicit `uname` check.
-6. Preserve the executable bit and verify syntax with `bash -n scripts/<name>`.
+6. Preserve the executable bit and verify syntax with `bash -n tooling/<name>`.
 7. For destructive behavior, default to inspection or dry-run and refuse unsafe paths.
 
 ## Gotchas
 
-- **Adding a `.sh` extension** — executable helpers in this repository are invoked by their command
-  name — use an extensionless filename and preserve executable mode.
+- **Adding a `.sh` extension or underscores** — executable helpers in this repository are invoked
+  by their command name — use an extensionless kebab-case filename and preserve executable mode.
 - **Depending on modern Bash features** — macOS may provide an older Bash — avoid features such as
   associative arrays unless the script explicitly verifies a compatible runtime.
 - **Using GNU-only utilities** — flags supported on Linux may fail on macOS — prefer portable syntax
@@ -51,7 +51,7 @@ $scripts make this hook portable across macOS and Linux
 
 - Use Bash, not Fish, for standalone repository scripts.
 - Use `#!/usr/bin/env bash` for every new executable script.
-- Keep executable script names extensionless and descriptive.
+- Keep executable script names extensionless, descriptive, and kebab-case.
 - Never ignore command failures that affect correctness.
 - Never assume GNU-specific commands or flags are available on macOS.
 - Do not rename existing scripts or change their interface without checking all callers.

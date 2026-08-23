@@ -17,9 +17,11 @@ ils créaient un conteneur par session : le commit `0525f5a` constate
 Livrer ces MCP par images Docker et n'exécuter qu'un conteneur nommé par
 service : un script d'enveloppe démarre le conteneur à la demande
 (`docker start` ou `docker run`) puis lance le serveur stdio de chaque session
-à l'intérieur. Une escalade par paliers est inscrite dans les instructions
-globales : fetch intégré, puis `stealthy_fetch`, puis CloakBrowser, avec
-`--idle-timeout` pour l'arrêt automatique.
+à l'intérieur. L'enveloppe Scrapling vit sous `tooling/scrapling-mcp` et la
+composition Firecrawl sous `harness/firecrawl/compose.yml`. Une escalade par
+paliers est inscrite dans les instructions globales : fetch intégré, puis
+`stealthy_fetch`, puis CloakBrowser, avec `--idle-timeout` pour l'arrêt
+automatique.
 
 ## Conséquences
 

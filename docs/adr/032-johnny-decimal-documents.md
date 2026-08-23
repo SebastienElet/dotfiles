@@ -13,7 +13,7 @@ hétérogènes qui rendent la recherche inopérante.
 ## Décision
 
 Appliquer Johnny Decimal, hybridé avec PARA, à `~/Documents` : catégories
-numérotées, un préfixe par document. Le script `scripts/jdl` vérifie la
+numérotées, un préfixe par document. Le script `tooling/jdl` vérifie la
 structure et renomme les fichiers non conformes avec `--fix`. La skill
 `johnny-decimal` porte la convention pour les agents ; `para-organizer`
 couvre les arborescences hors `~/Documents`.

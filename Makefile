@@ -1,14 +1,14 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
+CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
-BRAIN_PATH?=$(HOME)/Library/Mobile Documents/com~apple~CloudDocs/Brain
 APP_BIN:=/Applications
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
-# DOTFILES_PATH should be ~/.dotfiles when installed normally
-DOTFILES_PATH:=$(shell pwd)
+DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
 SKIP_PAID_APPS?=0
 # Avoid Homebrew confirmation prompts during setup.
@@ -21,6 +21,9 @@ DOCKER_OR_SKIP=docker info >/dev/null 2>&1 || { echo "Docker unavailable, skippi
 .PHONY: usage
 usage:
 	@echo all - Setup dev env
+
+.PHONY: FORCE
+FORCE:
 
 .PHONY: utils
 utils: \
@@ -41,8 +44,7 @@ all: \
 	extra \
 	terminal \
 	work \
-	utils \
-	personal
+	utils
 
 .PHONY: extra
 extra: \
@@ -118,15 +120,21 @@ ${BREW_BIN}/fd:
 	brew install fd
 
 .PHONY: fish
-fish: brew starship ~/.config/fish ${BREW_BIN}/fish
+fish: brew starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
-	fish -c 'fisher install PatrickF1/fzf.fish'
 	@echo 'If you want to switch your shell to fish, please run the following command'
 	@echo '$> sudo chpass -s ${BREW_BIN}/fish ${USER}'
 
-~/.config/fish: ${DOTFILES_PATH}/fish | ~/.config
-	ln -s ${DOTFILES_PATH}/fish $@
+~/.config/fish: ${DOTFILES_PATH}/home/.config/fish | ~/.config
+	${CREATE_SYMLINK}
+~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
+	@if [ ! -e "$@" ]; then \
+		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
+			echo "Error: Fisher did not install $@" >&2; \
+			exit 1; \
+		fi; \
+	fi
 
 .PHONY: gnu-sed
 gnu-sed: brew ${BREW_GNU_BIN}/gnu-sed
@@ -155,8 +163,8 @@ wezterm: brew font-jetbrains-mono font-iosevka-nerd-font /Applications/WezTerm.a
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap wez/wezterm; fi
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --cask wez/wezterm/wezterm-nightly; fi
 	brew install --cask wez/wezterm/wezterm-nightly
-~/.wezterm.lua: ${DOTFILES_PATH}/.wezterm.lua
-	ln -s ${DOTFILES_PATH}/.wezterm.lua $@
+~/.wezterm.lua: ${DOTFILES_PATH}/home/.wezterm.lua
+	${CREATE_SYMLINK}
 
 ################################################################################
 # End of the terminal section
@@ -174,10 +182,8 @@ work: \
 	daily-routine \
 	flow \
 	language-tool \
-	qovery-cli \
 	docker \
 	doppler \
-	frontcli \
 	gh \
 	google-chrome \
 	javascript \
@@ -191,12 +197,13 @@ work: \
 	tableplus \
 	terraform \
 	uv \
+	vale \
 	1password \
 	vibe-island
 
 .PHONY: ai
 ai: \
-	brain \
+	arnes \
 	chatgpt \
 	claude \
 	claude-code \
@@ -206,34 +213,18 @@ ai: \
 	codexbar \
 	cursor \
 	firecrawl \
-	googleworkspace-cli \
 	llmfit \
-	mistral-vibe \
-	opencode \
 	openspec \
-	pi-coding-agent \
 	scrapling \
 	skills
 
-.PHONY: brain
-brain:
-	@if [ ! -d "$(BRAIN_PATH)" ]; then \
-		exit 0; \
-	fi; \
-	if [ -L "$(HOME)/Brain" ]; then \
-		if [ "$$(readlink "$(HOME)/Brain")" = "$(BRAIN_PATH)" ]; then \
-			echo "Brain symlink already configured"; \
-		else \
-			echo "Error: $(HOME)/Brain is not the expected symbolic link" >&2; \
-			exit 1; \
-		fi; \
-	elif [ -e "$(HOME)/Brain" ]; then \
-		echo "Error: $(HOME)/Brain already exists and is not a symbolic link" >&2; \
-		exit 1; \
-	else \
-		ln -s "$(BRAIN_PATH)" "$(HOME)/Brain" && \
-		echo "Created $(HOME)/Brain symlink"; \
-	fi
+~/.arnes.yaml: ${DOTFILES_PATH}/home/.arnes.yaml
+	${CREATE_SYMLINK}
+
+.PHONY: arnes
+arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
+	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
+	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
@@ -254,28 +245,14 @@ ${BREW_BIN}/bkt:
 	brew install avivsinai/tap/bitbucket-cli
 
 .PHONY: daily-routine
-daily-routine: ${LOCAL_BIN}/daily-routine
-
-.PHONY: check-daily-routine-destination
-check-daily-routine-destination:
-	@if [ -L "${LOCAL_BIN}/daily-routine" ]; then \
-		if [ "$$(readlink "${LOCAL_BIN}/daily-routine")" != "${DOTFILES_PATH}/daily-routine/target/release/daily-routine" ]; then \
-			echo "Error: ${LOCAL_BIN}/daily-routine is not the expected daily-routine release symlink" >&2; \
-			exit 1; \
-		fi; \
-	elif [ -e "${LOCAL_BIN}/daily-routine" ]; then \
-		echo "Error: ${LOCAL_BIN}/daily-routine already exists and is not a symbolic link" >&2; \
-		exit 1; \
-	fi
-
-${LOCAL_BIN}/daily-routine: \
-	${DOTFILES_PATH}/daily-routine/Cargo.toml \
-	${DOTFILES_PATH}/daily-routine/Cargo.lock \
-	${DOTFILES_PATH}/daily-routine/config.example.toml \
-	$(wildcard ${DOTFILES_PATH}/daily-routine/src/*.rs) \
-	| ${LOCAL_BIN} rust check-daily-routine-destination
-	cd ${DOTFILES_PATH}/daily-routine && ${BREW_BIN}/cargo build --release
-	ln -sf ${DOTFILES_PATH}/daily-routine/target/release/daily-routine $@
+daily-routine: rust ~/.config/daily-routine/config.toml | ${LOCAL_BIN}
+	cd ${DOTFILES_PATH}/tooling/daily-routine && ${BREW_BIN}/cargo build --release
+	test -e ${LOCAL_BIN}/daily-routine || ln -s ${DOTFILES_PATH}/tooling/daily-routine/target/release/daily-routine ${LOCAL_BIN}/daily-routine
+~/.config/daily-routine: | ~/.config
+	mkdir -p "$@"
+~/.config/daily-routine/config.toml: | ~/.config/daily-routine ${DOTFILES_PATH}/tooling/daily-routine/config.example.toml
+	test ! -e "$@" && test ! -L "$@"
+	install -m 600 "${DOTFILES_PATH}/tooling/daily-routine/config.example.toml" "$@"
 
 .PHONY: docker
 docker: brew lazydocker /Applications/Orbstack.app
@@ -337,8 +314,8 @@ ${BREW_BIN}/mosh:
 postgresql: brew ${BREW_GNU_BIN}/postgresql@16/bin/psql ~/.psqlrc
 ${BREW_GNU_BIN}/postgresql@16/bin/psql:
 	brew install postgresql@16
-~/.psqlrc: ${DOTFILES_PATH}/.psqlrc
-	ln -s ${DOTFILES_PATH}/.psqlrc $@
+~/.psqlrc: ${DOTFILES_PATH}/home/.psqlrc
+	${CREATE_SYMLINK}
 
 .PHONY: renovate
 renovate: brew ${VOLTA_BIN}/renovate
@@ -363,86 +340,150 @@ uv: brew ${BREW_BIN}/uv
 ${BREW_BIN}/uv:
 	brew install uv
 
+.PHONY: vale
+vale: brew ${BREW_BIN}/vale
+${BREW_BIN}/vale:
+	brew install vale
+
 .PHONY: 1password
 1password: brew ${APP_BIN}/1Password.app
 ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/enforcement-code ~/.cursor/skills/merge-verdict
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager cursor-measurement-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
-# Personal skills go in ~/.cursor/skills; ~/.cursor/skills-cursor holds Cursor's
-# own built-ins and is resynchronised from its registry, so a link dropped there
-# would be wiped without warning. Inside this repository .cursor/skills already
-# points at .agents/skills, so only the global link is needed.
 ~/.cursor/skills:
 	mkdir -p $@
-~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.cursor/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
-~/.cursor/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.cursor/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
+	${CREATE_SYMLINK}
+
+.PHONY: cursor-measurement-hooks
+cursor-measurement-hooks: arnes
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
 
 .PHONY: claude-code
-claude-code: ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/hooks/agent_handoff ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/merge-verdict claude-handoff-hook
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/linear-issue-spec ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager claude-code-measurement-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
 	mkdir -p $@
-~/.claude/CLAUDE.md: ${DOTFILES_PATH}/ai/AGENTS.md | ~/.claude
-	ln -s ${DOTFILES_PATH}/ai/AGENTS.md $@
+~/.claude/CLAUDE.md: ${DOTFILES_PATH}/harness/AGENTS.md | ~/.claude
+	${CREATE_SYMLINK}
 # Imported by AGENTS.md; linked as siblings so the @import resolves whether the
 # tool follows the symlink or reads it from the destination directory.
-~/.claude/SOUL.md: ${DOTFILES_PATH}/ai/SOUL.md | ~/.claude
-	ln -s ${DOTFILES_PATH}/ai/SOUL.md $@
-~/.claude/USER.md: ${DOTFILES_PATH}/ai/USER.md | ~/.claude
-	ln -s ${DOTFILES_PATH}/ai/USER.md $@
-~/.claude/hooks ~/.claude/skills: | ~/.claude
+~/.claude/SOUL.md: ${DOTFILES_PATH}/harness/SOUL.md | ~/.claude
+	${CREATE_SYMLINK}
+~/.claude/USER.md: ${DOTFILES_PATH}/harness/USER.md | ~/.claude
+	${CREATE_SYMLINK}
+~/.claude/commands ~/.claude/hooks ~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
-~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/scripts/agent_handoff | ~/.claude/hooks
-	ln -s ${DOTFILES_PATH}/scripts/agent_handoff $@
-~/.claude/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
-~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
+~/.claude/commands/pr-feedback.md: ${DOTFILES_PATH}/harness/commands/pr-feedback.md | ~/.claude/commands
+	${CREATE_SYMLINK}
+~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
+	${CREATE_SYMLINK}
+~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
+	${CREATE_SYMLINK}
+~/.claude/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.claude/skills
+	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
 # review, which is never this one.
-~/.claude/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.claude/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+~/.claude/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
+	${CREATE_SYMLINK}
 
 .PHONY: claude-handoff-hook
-claude-handoff-hook: ${BREW_BIN}/jq scripts/setup/claude_handoff_hook
-	@"${DOTFILES_PATH}/scripts/setup/claude_handoff_hook" "${DOTFILES_PATH}/scripts/agent_handoff"
+claude-handoff-hook: ${BREW_BIN}/jq tooling/claude-handoff-hook
+	@"${DOTFILES_PATH}/tooling/claude-handoff-hook" "${DOTFILES_PATH}/tooling/agent-handoff" "${DOTFILES_PATH}/scripts/agent_handoff"
+
+.PHONY: claude-code-measurement-hooks
+claude-code-measurement-hooks: arnes claude-handoff-hook
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent claude-code --command "${LOCAL_BIN}/arnes"
+
+.PHONY: hunspell
+hunspell: brew ${BREW_BIN}/hunspell hunspell-dictionaries
+${BREW_BIN}/hunspell:
+	brew install hunspell
+
+.PHONY: hunspell-dictionaries
+hunspell-dictionaries:
+	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.aff" "c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5" "$(HOME)/Library/Spelling/fr.aff"
+	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.dic" "b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c" "$(HOME)/Library/Spelling/fr.dic"
+	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.aff" "e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e" "$(HOME)/Library/Spelling/en_US.aff"
+	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/merge-verdict codex-handoff-hook
+codex: ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/linear-issue-spec ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager codex-measurement-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g @openai/codex
+	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
 	mkdir -p $@
-# Codex ignores AGENTS.md @import directives, so the three files are assembled
+# Codex ignores AGENTS.md @import directives, so the sources are assembled
 # here instead of symlinked. Written to a temporary path then moved, so an
 # existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/ai/AGENTS.md ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md | ~/.codex
-	grep -v '^@' $< | cat - ${DOTFILES_PATH}/ai/SOUL.md ${DOTFILES_PATH}/ai/USER.md > $@.tmp
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md ${DOTFILES_PATH}/Makefile | ~/.codex
+	grep -v '^@' $< | cat - ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md > $@.tmp
 	mv $@.tmp $@
-# Only the global link: inside this repository Codex reads .agents/skills directly.
 ~/.agents/skills:
 	mkdir -p $@
-~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/.agents/skills/enforcement-code | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/enforcement-code $@
-~/.agents/skills/handoff: ${DOTFILES_PATH}/.agents/skills/handoff | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/handoff $@
-~/.agents/skills/merge-verdict: ${DOTFILES_PATH}/.agents/skills/merge-verdict | ~/.agents/skills
-	ln -s ${DOTFILES_PATH}/.agents/skills/merge-verdict $@
+~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
+	${CREATE_SYMLINK}
 
 .PHONY: codex-handoff-hook
 codex-handoff-hook: | ~/.codex
-	@command='${DOTFILES_PATH}/scripts/agent_handoff'; \
-	tmp=~/.codex/hooks.json.tmp; \
-	if [ -f ~/.codex/hooks.json ]; then input=~/.codex/hooks.json; else input=/dev/null; fi; \
-	jq -n --arg command "$$command" --slurpfile current "$$input" '($$current[0] // {}) | .hooks.Stop //= [] | if any(.hooks.Stop[]?.hooks[]?; .command == $$command) then . else .hooks.Stop += [{hooks: [{type: "command", command: $$command}]}] end' > "$$tmp"; \
-	mv "$$tmp" ~/.codex/hooks.json
+	@set -eu; \
+	command='${DOTFILES_PATH}/tooling/agent-handoff'; \
+	old_command='${DOTFILES_PATH}/scripts/agent_handoff'; \
+	hooks="$$HOME/.codex/hooks.json"; \
+	if [ -L "$$hooks" ] || { [ -e "$$hooks" ] && [ ! -f "$$hooks" ]; }; then echo "Error: $$hooks is not a regular file" >&2; exit 1; fi; \
+	if [ -f "$$hooks" ]; then input="$$hooks"; had_current=true; else input=/dev/null; had_current=false; fi; \
+	tmp=$$(mktemp "$$HOME/.codex/hooks.json.tmp.XXXXXX"); \
+	trap 'rm -f "$$tmp"' 0; \
+	jq -n --arg command "$$command" --arg old_command "$$old_command" --argjson had_current "$$had_current" --slurpfile current "$$input" '$$current as $$documents | if $$had_current and ($$documents | length) != 1 then error("hooks.json must contain one JSON document") else (if $$had_current then $$documents[0] else {} end) as $$config | if ($$config | type) != "object" or ($$config | has("hooks") and ($$config.hooks | type) != "object") or (($$config.hooks // {}) | has("Stop") and ($$config.hooks.Stop | type) != "array") or any(($$config.hooks.Stop // [])[]; type != "object" or (has("hooks") | not) or (.hooks | type) != "array") or any(($$config.hooks.Stop // [])[]?.hooks[]?; type != "object") then error("invalid hooks.json structure") else $$config | .hooks //= {} | .hooks.Stop //= [] | ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)] | length) as $$new_count | ([.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)] | length) as $$old_count | if $$new_count == 1 and $$old_count == 0 then . else ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)][0] // [.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)][0] // {type: "command", command: $$command}) as $$candidate | ($$candidate | .command = $$command) as $$hook | .hooks.Stop |= (map(.hooks |= map(select(.command != $$old_command and .command != $$command))) | map(select((.hooks | length) > 0))) | .hooks.Stop += [{hooks: [$$hook]}] end end end' > "$$tmp"; \
+	mv "$$tmp" "$$hooks"; \
+	trap - 0
+
+.PHONY: codex-measurement-hooks
+codex-measurement-hooks: arnes codex-handoff-hook
+	"${LOCAL_BIN}/arnes" measure install-hooks --agent codex --command "${LOCAL_BIN}/arnes"
 
 .PHONY: codexbar
 codexbar: brew ${APP_BIN}/CodexBar.app
@@ -450,9 +491,38 @@ ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
 .PHONY: codegraph
-codegraph: ${VOLTA_BIN}/codegraph
+codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
+	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph-configure
+
+.PHONY: codegraph-test
+codegraph-test:
+	bash harness/skills/codegraph/scripts/skill_contract_test.sh
+	bash harness/skills/codegraph/scripts/measure_repository_test.sh
+	bash tooling/codegraph-configure-test
+	bash tooling/codegraph-mcp-test
+	bash tooling/codegraph-network-test
+
+.PHONY: codegraph-cli
+codegraph-cli: ${VOLTA_BIN}/codegraph
 ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @colbymchenry/codegraph
+
+.PHONY: codegraph-ignore
+codegraph-ignore:
+	@expected='${DOTFILES_PATH}/.config/git/ignore'; \
+	target='${CODEGRAPH_GLOBAL_IGNORE}'; \
+	if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$expected" ]; then \
+		exit 0; \
+	fi; \
+	if [ -e "$$target" ] || [ -L "$$target" ]; then \
+		echo "Error: $$target exists and is not the expected symbolic link" >&2; \
+		exit 1; \
+	fi; \
+	mkdir -p "$$(dirname "$$target")"; \
+	ln -s "$$expected" "$$target"
+
+${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/harness/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
+	${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli
 googleworkspace-cli: ${VOLTA_BIN}/gws
@@ -488,15 +558,15 @@ qovery-cli: /usr/local/bin/qovery
 
 .PHONY: firecrawl
 firecrawl: docker
-	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/ai/firecrawl/compose.yml up -d
+	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/harness/firecrawl/compose.yml up -d
 
 .PHONY: scrapling
 scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 	@$(DOCKER_OR_SKIP); docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
 
 # MCP command for agents: starts the shared container on demand instead of one per session.
-${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/scripts/scrapling_mcp | ${LOCAL_BIN}
-	ln -s ${DOTFILES_PATH}/scripts/scrapling_mcp $@
+${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/tooling/scrapling-mcp | ${LOCAL_BIN}
+	${CREATE_SYMLINK}
 ${LOCAL_BIN}:
 	mkdir -p $@
 
@@ -586,6 +656,7 @@ vibe-island: /Applications/Vibe\ Island.app
 personal: \
 	apple-notes-exporter \
 	calibre \
+	discord \
 	obsidian \
 	perplexity \
 	whatsapp
@@ -610,6 +681,11 @@ ${APP_BIN}/Apple\ Notes\ Exporter.app:
 calibre: brew ${APP_BIN}/Calibre.app
 ${APP_BIN}/Calibre.app:
 	brew install calibre
+
+.PHONY: discord
+discord: brew ${APP_BIN}/Discord.app
+${APP_BIN}/Discord.app:
+	brew install --cask discord
 
 .PHONY: obsidian
 obsidian: brew ${APP_BIN}/Obsidian.app
@@ -686,14 +762,18 @@ ${BREW_BIN}/cargo: | brew
 	brew install rust
 
 .PHONY: nvim
-nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json
+nvim: ripgrep brew ${BREW_BIN}/nvim ~/.config/nvim ~/cspell.json ~/.config/cspell/user.txt
 ${BREW_BIN}/nvim: | ${VOLTA_BIN}/node
 	brew install neovim
 	${VOLTA_BIN}/npm install -g neovim
-~/.config/nvim: ${DOTFILES_PATH}/nvim | ~/.config
-	ln -s ${DOTFILES_PATH}/nvim ~/.config/nvim
-~/cspell.json: ${DOTFILES_PATH}/cspell.json
-	ln -s ${DOTFILES_PATH}/cspell.json $@
+~/.config/nvim: ${DOTFILES_PATH}/home/.config/nvim | ~/.config
+	${CREATE_SYMLINK}
+~/cspell.json: ${DOTFILES_PATH}/home/cspell.json
+	${CREATE_SYMLINK}
+~/.config/cspell:
+	mkdir -p $@
+~/.config/cspell/user.txt: ${DOTFILES_PATH}/home/.config/cspell/user.txt | ~/.config/cspell
+	${CREATE_SYMLINK}
 
 .PHONY: font-jetbrains-mono
 font-jetbrains-mono: ~/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf
@@ -723,39 +803,37 @@ ${BREW_BIN}/zoxide:
 
 .PHONY: zsh
 zsh: ~/.zshrc
-~/.zshrc: ${DOTFILES_PATH}/.zshrc
-	ln -s ${DOTFILES_PATH}/.zshrc $@
+~/.zshrc: ${DOTFILES_PATH}/home/.zshrc
+	${CREATE_SYMLINK}
 
 .PHONY: git-delta
 git-delta: brew ${BREW_BIN}/delta ~/.gitconfig.delta
-${BREW_BIN}/delta:
-	brew install git-delta
-~/.gitconfig.delta: ${DOTFILES_PATH}/.gitconfig.delta
-	ln -s ${DOTFILES_PATH}/.gitconfig.delta ~/.gitconfig.delta
 	@if ! git config --global --get include.path | grep -q "\.gitconfig\.delta"; then \
 		git config --global include.path "~/.gitconfig.delta"; \
 		echo "Added include.path to ~/.gitconfig"; \
 	fi
+${BREW_BIN}/delta:
+	brew install git-delta
+~/.gitconfig.delta: ${DOTFILES_PATH}/home/.gitconfig.delta
+	${CREATE_SYMLINK}
 
 .PHONY: starship
 starship: brew ${BREW_BIN}/starship ~/.config/starship.toml
 ${BREW_BIN}/starship:
 	brew install starship
-~/.config/starship.toml: | ~/.config
-	@if [ -f ${DOTFILES_PATH}/.config/starship.toml ]; then \
-		ln -sf ${DOTFILES_PATH}/.config/starship.toml $@; \
-		echo "Created starship.toml symlink"; \
-	else \
-		echo "Skipping starship.toml symlink: source file ${DOTFILES_PATH}/.config/starship.toml not found"; \
-		touch $@; \
-	fi
+~/.config/starship.toml: ${DOTFILES_PATH}/home/.config/starship.toml | ~/.config
+	${CREATE_SYMLINK}
 
 .PHONY: tmux
-tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf
+tmux: brew ${BREW_BIN}/tmux ~/.tmux.conf ~/.tmux/plugins/tpm/tpm
 ${BREW_BIN}/tmux:
 	brew install tmux
-~/.tmux.conf: ${DOTFILES_PATH}/tmux/.tmux.conf
-	ln -s ${DOTFILES_PATH}/tmux/.tmux.conf ~/.tmux.conf
+~/.tmux.conf: ${DOTFILES_PATH}/home/.tmux.conf
+	${CREATE_SYMLINK}
+~/.tmux/plugins:
+	mkdir -p $@
+~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins
+	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 .PHONY: brew
 brew: ${BREW_BIN}/brew

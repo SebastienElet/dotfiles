@@ -1,0 +1,39 @@
+name: CodeGraph tests
+
+on:
+  push:
+    paths:
+      - harness/skills/codegraph/**
+      - .config/git/ignore
+      - tooling/codegraph/**
+      - tooling/codegraph-*
+      - Makefile
+      - .github/workflows/test-codegraph.yml
+  pull_request:
+    paths:
+      - harness/skills/codegraph/**
+      - .config/git/ignore
+      - tooling/codegraph/**
+      - tooling/codegraph-*
+      - Makefile
+      - .github/workflows/test-codegraph.yml
+
+jobs:
+  codegraph:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: make jq tokei ripgrep codegraph-cli "$HOME/.local/bin/claude" "$HOME/.volta/bin/codex"
+      - run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.volta/bin" >> "$GITHUB_PATH"
+      - run: |
+          claude --version
+          codex --version
+          codegraph --version
+      - run: bash harness/skills/codegraph/scripts/skill_contract_test.sh
+      - run: bash harness/skills/codegraph/scripts/measure_repository_test.sh
+      - run: bash tooling/codegraph-configure-test
+      - run: bash tooling/codegraph-mcp-test
+      - run: bash tooling/codegraph-network-test

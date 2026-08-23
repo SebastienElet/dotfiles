@@ -31,7 +31,7 @@ A race, not a fight: fire the handoff before auto-compaction rather than trying 
 Auto-compaction stays enabled as a backstop, so a missed handoff degrades to today's behaviour
 instead of a context-overflow error.
 
-**Trigger** — `scripts/claude_handoff_check`, wired as a user-level `Stop` hook:
+**Trigger** — `tooling/agent-handoff`, wired as a user-level `Stop` hook:
 
 1. Exit if `stop_hook_active` (the hook's own re-invocation).
 2. Exit if a sentinel exists at `${XDG_STATE_HOME}/dotfiles/handoff/<session_id>` — the context is
@@ -46,7 +46,7 @@ instead of a context-overflow error.
 Every other failure — no `jq`, unreadable transcript, no usage line, non-numeric total — exits 0 and
 falls through to auto-compaction. Failing open is right here, but the failure is invisible.
 
-**Content** — `.agents/skills/handoff/SKILL.md` emits one fenced block: Goal, Done, Next step,
+**Content** — `harness/skills/handoff/SKILL.md` emits one fenced block: Goal, Done, Next step,
 Files, under ~200 words, in the conversation's language, then ends the turn. No file on disk: the
 deliverable is text to paste.
 
@@ -61,12 +61,12 @@ plugins and runtime preferences unrelated to this repository.
   past. At 510k against a 567k compaction point the margin covers it.
 - Sentinels accumulate under `~/.local/state/dotfiles/handoff` and are never pruned.
 - A resumed session that already handed off cannot hand off again.
-- Two blocking Stop hooks now coexist in this repo (this one and the brain-distill prompt hook);
+- Two blocking Stop hooks now coexist in this repo (this one and the instruction-distillation hook);
   both reasons reach the model together.
 
 ## Verification
 
-`scripts/claude_handoff_check_test` asserts the decision logic: below threshold, above threshold,
+`tooling/agent-handoff-test` asserts the decision logic: below threshold, above threshold,
 `stop_hook_active`, sidechain-only usage, unreadable transcript, double block in one session, and no
 configured window. End-to-end behaviour was confirmed with a real `claude -p` run at
 `HANDOFF_TOKEN_THRESHOLD=1`: the block was honoured, the model emitted a handoff block, the sentinel

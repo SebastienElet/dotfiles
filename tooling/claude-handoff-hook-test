@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(CDPATH='' cd -- "$(dirname "$0")" && pwd)
+repository=$(cd "$tooling_dir/.." && pwd)
+setup=$tooling_dir/claude-handoff-hook
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/claude-handoff-hook.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+runtime=$test_root/agent-handoff
+legacy=$test_root/scripts/agent_handoff
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$runtime"
+chmod +x "$runtime"
+
+fail() {
+  printf 'FAIL: %s\n' "$1" >&2
+  exit 1
+}
+
+use_home() {
+  home=$test_root/$1
+  settings=$home/.claude/settings.json
+  mkdir -p "$home/.claude"
+}
+
+run_setup() {
+  HOME=$home "$setup" "$runtime" "$legacy"
+}
+
+assert_failure_preserves() {
+  before=$(cksum "$settings")
+  if run_setup >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'invalid settings were accepted'
+  fi
+  after=$(cksum "$settings")
+  [[ $before == "$after" ]] || fail 'invalid settings were replaced'
+}
+
+test_creates_settings() {
+  use_home creation
+  rmdir "$home/.claude"
+  run_setup
+  jq -e --arg command "$runtime" '
+    .hooks.Stop == [{hooks: [{type: "command", command: $command, args: []}]}]
+  ' "$settings" >/dev/null
+}
+
+test_preserves_unrelated_settings() {
+  use_home preservation
+  jq -n '{
+    keep: true,
+    hooks: {Stop: [{matcher: "existing", hooks: [{type: "future", options: {keep: true}}]}]}
+  }' >"$settings"
+  run_setup
+  jq -e --arg command "$runtime" '
+    .keep == true
+    and .hooks.Stop[0] == {
+      matcher: "existing",
+      hooks: [{type: "future", options: {keep: true}}]
+    }
+    and ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] | length) == 1
+  ' "$settings" >/dev/null
+}
+
+test_migrates_legacy_entry() {
+  use_home migration
+  jq -n --arg command "$legacy" '{
+    hooks: {Stop: [{hooks: [{type: "command", command: $command, timeout: 5}]}]}
+  }' >"$settings"
+  run_setup
+  jq -e --arg command "$runtime" --arg legacy "$legacy" '
+    ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $legacy)] | length) == 0
+    and ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)])
+      == [{type: "command", command: $command, timeout: 5, args: []}]
+  ' "$settings" >/dev/null
+}
+
+test_collapses_duplicates() {
+  use_home duplicates
+  jq -n --arg command "$runtime" --arg legacy "$legacy" '{
+    hooks: {Stop: [{hooks: [
+      {type: "command", command: $legacy},
+      {type: "command", command: $command, timeout: 7},
+      {type: "command", command: $command}
+    ]}]}
+  }' >"$settings"
+  run_setup
+  jq -e --arg command "$runtime" --arg legacy "$legacy" '
+    ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $legacy)] | length) == 0
+    and ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)])
+      == [{type: "command", command: $command, timeout: 7, args: []}]
+  ' "$settings" >/dev/null
+}
+
+test_is_idempotent() {
+  use_home idempotence
+  run_setup
+  cp "$settings" "$test_root/settings-once.json"
+  run_setup
+  cmp -s "$test_root/settings-once.json" "$settings" || fail 'second setup changed settings'
+}
+
+test_refuses_invalid_content() {
+  use_home invalid
+  for malformed in '{' '' 'null' 'false' '{"hooks":false}' '{"hooks":{"Stop":{}}}' '{"hooks":{"Stop":[{}]}}' '{"hooks":{"Stop":[{"hooks":[false]}]}}'; do
+    printf '%s\n' "$malformed" >"$settings"
+    assert_failure_preserves
+  done
+  printf '%s\n%s\n' '{"hooks":{"Stop":[]}}' '{"second":"document"}' >"$settings"
+  assert_failure_preserves
+
+  printf '%s\n' '{"keep":1,"keep":2,"hooks":{"Stop":[]}}' >"$settings"
+  assert_failure_preserves
+  printf '%s\n' '{"keep":{"first":1},"keep":{"second":2},"hooks":{"Stop":[]}}' >"$settings"
+  assert_failure_preserves
+
+  for invalid_field in args timeout statusMessage shell async asyncRewake once if url headers allowedEnvVars server tool input prompt model continueOnBlock; do
+    case $invalid_field in
+    args | timeout | if) invalid_value='"invalid"' ;;
+    shell) invalid_value='"zsh"' ;;
+    *) invalid_value=true ;;
+    esac
+    jq -n --arg command "$runtime" --arg field "$invalid_field" --argjson value "$invalid_value" '{
+      hooks: {Stop: [{hooks: [{type: "command", command: $command} | .[$field] = $value]}]}
+    }' >"$settings"
+    assert_failure_preserves
+  done
+
+  jq -n --arg command "$runtime" '{
+    hooks: {Stop: [{hooks: [
+      {type: "command", command: $command, args: "invalid"},
+      {type: "command", command: $command, args: []}
+    ]}]}
+  }' >"$settings"
+  assert_failure_preserves
+}
+
+test_refuses_non_regular_settings() {
+  use_home non_regular
+  victim=$test_root/victim
+  printf 'keep\n' >"$victim"
+  ln -s "$victim" "$settings"
+  if run_setup >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'settings symlink was accepted'
+  fi
+  [[ -L $settings && $(cat "$victim") == keep ]] || fail 'settings symlink target changed'
+
+  use_home parent_symlink
+  rmdir "$home/.claude"
+  settings_target=$test_root/settings-target
+  mkdir "$settings_target"
+  ln -s "$settings_target" "$home/.claude"
+  if run_setup >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'settings parent symlink was accepted'
+  fi
+  [[ ! -e $settings_target/settings.json ]] || fail 'settings parent symlink was followed'
+
+  relative_home=relative-home
+  if (cd "$test_root" && HOME=$relative_home "$setup" "$runtime" "$legacy") >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'relative HOME was accepted'
+  fi
+  [[ ! -e $test_root/$relative_home ]] || fail 'relative HOME was written'
+}
+
+test_refuses_missing_jq() {
+  use_home missing_jq
+  printf '{"hooks":{"Stop":[]}}\n' >"$settings"
+  before=$(cksum "$settings")
+  if HOME=$home PATH=$test_root/empty-path /bin/bash "$setup" "$runtime" "$legacy" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail 'setup succeeded without jq'
+  fi
+  after=$(cksum "$settings")
+  [[ $before == "$after" ]] || fail 'settings changed without jq'
+}
+
+test_make_orders_settings_writers() {
+  use_home make_order
+  trace=$test_root/claude-code-dry-run
+  HOME=$home make -n -j2 -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$test_root/bin" claude-code >"$trace"
+  handoff_line=$(grep -n -F -- 'tooling/claude-handoff-hook' "$trace" | tail -n 1 | cut -d: -f1)
+  measurement_line=$(grep -n -F -- 'measure install-hooks --agent claude-code' "$trace" | cut -d: -f1)
+  [[ -n $handoff_line && -n $measurement_line && $handoff_line -lt $measurement_line ]] \
+    || fail 'Claude handoff hook is not installed before measurement hooks'
+}
+
+test_creates_settings
+test_preserves_unrelated_settings
+test_migrates_legacy_entry
+test_collapses_duplicates
+test_is_idempotent
+test_refuses_invalid_content
+test_refuses_non_regular_settings
+test_refuses_missing_jq
+test_make_orders_settings_writers
+
+printf 'Claude handoff hook tests passed\n'

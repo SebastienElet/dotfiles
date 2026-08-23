@@ -14,7 +14,7 @@ eux.
 ## Décision
 
 Ce dépôt utilise `main`. L'abbreviation `grbm` passe par
-`scripts/git_main_branch`, qui interroge le dépôt courant et retombe sur
+`tooling/git-main-branch`, qui interroge le dépôt courant et retombe sur
 `master` le cas échéant.
 
 ## Conséquences

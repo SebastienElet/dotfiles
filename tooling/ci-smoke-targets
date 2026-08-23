@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+temporary_directory=
+
+fail() {
+  echo "ci-smoke-targets: $*" >&2
+  exit 1
+}
+
+cleanup() {
+  [[ -z $temporary_directory ]] || rm -rf "$temporary_directory"
+}
+
+target_at_line() {
+  local makefile=$1
+  local line=$2
+
+  awk -v last_line="$line" '
+    NR > last_line { exit }
+    /^\.PHONY: / { target = $2 }
+    END { print target }
+  ' "$makefile"
+}
+
+classified_target_at_line() {
+  local makefile=$1
+  local line=$2
+  local content target rule_target
+  local assignment_pattern='^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_.-]*[[:space:]]*[?:+!]?='
+  local directive_pattern='^[[:space:]]*(-?include|sinclude|ifeq|ifneq|ifdef|ifndef|else|endif|define|endef|override|undefine|vpath)([[:space:](]|$)'
+
+  content=$(awk -v requested_line="$line" 'NR == requested_line { print; exit }' "$makefile")
+  target=$(target_at_line "$makefile" "$line")
+
+  if [[ $content =~ $assignment_pattern ]] || [[ $content =~ $directive_pattern ]]; then
+    printf 'all\n'
+    return
+  fi
+
+  rule_target=$(printf '%s\n' "$content" | sed -n 's/^\([A-Za-z0-9][A-Za-z0-9._-]*\):.*/\1/p')
+  if [[ -n $rule_target && $rule_target != "$target" ]]; then
+    printf 'all\n'
+    return
+  fi
+
+  printf '%s\n' "${target:-all}"
+}
+
+collect_range() {
+  local makefile=$1
+  local range=$2
+  local output=$3
+  local start count line target
+
+  range=${range#?}
+  start=${range%%,*}
+  if [[ $range == *,* ]]; then
+    count=${range#*,}
+  else
+    count=1
+  fi
+  [[ $start =~ ^[0-9]+$ && $count =~ ^[0-9]+$ ]] || fail "invalid diff range: $range"
+  ((count == 0)) && return
+
+  for ((line = start; line < start + count; line++)); do
+    target=$(classified_target_at_line "$makefile" "$line")
+    printf '%s\n' "$target" >> "$output"
+  done
+}
+
+collect_makefile_targets() {
+  local base=$1
+  local head=$2
+  local directory=$3
+  local old_makefile=$directory/Makefile.old
+  local new_makefile=$directory/Makefile.new
+  local ranges=$directory/ranges
+  local candidates=$directory/candidates
+  local old_range new_range target
+
+  git show "$base:Makefile" > "$old_makefile" || printf 'all\n' > "$candidates"
+  git show "$head:Makefile" > "$new_makefile" || printf 'all\n' > "$candidates"
+  [[ -s $candidates ]] && return
+
+  if ! awk 'NF != 2 || $1 != ".PHONY:" { exit 1 }' < <(grep '^\.PHONY:' "$new_makefile"); then
+    printf 'all\n' > "$candidates"
+    return
+  fi
+
+  git diff --no-ext-diff --unified=0 "$base" "$head" -- Makefile \
+    | awk '/^@@ / { print $2, $3 }' > "$ranges"
+  [[ -s $ranges ]] || fail "Makefile changed without readable diff ranges"
+
+  while read -r old_range new_range; do
+    collect_range "$old_makefile" "$old_range" "$candidates"
+    collect_range "$new_makefile" "$new_range" "$candidates"
+  done < "$ranges"
+
+  while read -r target; do
+    [[ $target =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || {
+      printf 'all\n' > "$candidates"
+      return
+    }
+    grep -Fqx ".PHONY: $target" "$new_makefile" || {
+      printf 'all\n' > "$candidates"
+      return
+    }
+  done < "$candidates"
+}
+
+print_json() {
+  local candidates=$1
+  local targets=$2
+  local separator= target
+
+  if grep -qx all "$candidates"; then
+    printf '["all"]\n'
+    return
+  fi
+
+  sort -u "$candidates" > "$targets"
+  printf '['
+  while read -r target; do
+    printf '%s"%s"' "$separator" "$target"
+    separator=,
+  done < "$targets"
+  printf ']\n'
+}
+
+main() {
+  [[ $# == 2 ]] || fail "usage: ci-smoke-targets BASE HEAD"
+
+  local base=$1
+  local head=$2
+  local changed_paths candidates targets path
+  temporary_directory=$(mktemp -d)
+  changed_paths=$temporary_directory/changed-paths
+  candidates=$temporary_directory/candidates
+  targets=$temporary_directory/targets
+  trap cleanup EXIT
+
+  git rev-parse --verify "$base^{commit}" > /dev/null || fail "invalid base commit: $base"
+  git rev-parse --verify "$head^{commit}" > /dev/null || fail "invalid head commit: $head"
+  git diff --name-only --no-renames -z "$base...$head" > "$changed_paths"
+  [[ -s $changed_paths ]] || fail "the commit range contains no changes"
+
+  while IFS= read -r -d '' path; do
+    case $path in
+      Makefile)
+        collect_makefile_targets "$base" "$head" "$temporary_directory"
+        ;;
+      install.sh | .github/workflows/test.yml | tooling/ci-smoke-targets)
+        printf 'all\n' > "$candidates"
+        break
+        ;;
+    esac
+  done < "$changed_paths"
+
+  touch "$candidates"
+  print_json "$candidates" "$targets"
+}
+
+main "$@"

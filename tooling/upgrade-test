@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+upgrade=$tooling_dir/upgrade
+main_branch_helper=$tooling_dir/git-main-branch
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/upgrade-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_equal() {
+  [[ $1 == "$2" ]] || fail "$3: expected '$2', got '$1'"
+}
+
+real_git=$(command -v git)
+test_home=$test_root/home
+repository=$test_home/.dotfiles
+remote=$test_root/remote.git
+mock_bin=$test_root/bin
+git_log=$test_root/git.log
+command_log=$test_root/command.log
+mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin"
+cp "$upgrade" "$main_branch_helper" "$repository/tooling/"
+printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
+
+"$real_git" init --bare -q "$remote"
+"$real_git" init -q "$repository"
+"$real_git" -C "$repository" symbolic-ref HEAD refs/heads/main
+"$real_git" -C "$repository" config user.email upgrade-test@example.com
+"$real_git" -C "$repository" config user.name upgrade-test
+"$real_git" -C "$repository" add .
+"$real_git" -C "$repository" commit -qm base
+"$real_git" -C "$repository" remote add origin "$remote"
+"$real_git" -C "$repository" push -qu origin main
+"$real_git" --git-dir="$remote" symbolic-ref HEAD refs/heads/main
+remote_tip=$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)
+
+for command_name in brew make mas npm volta skills claude jq; do
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'printf "%s %s\n" "$(basename "$0")" "$*" >>"$COMMAND_LOG"' \
+    'exit 0' >"$mock_bin/$command_name"
+done
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s\n" "2026-08-13T00:00:00Z"' >"$mock_bin/date"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s\n" "$NVIM_LOCK_VALUE" >"$HOME/.dotfiles/home/.config/nvim/lazy-lock.json"' >"$mock_bin/nvim"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'for arg in "$@"; do' \
+  '  if [[ -n ${GIT_FAIL_PROBE-} && $arg == "$GIT_FAIL_PROBE" ]]; then' \
+  '    printf "fatal: simulated %s failure\n" "$arg" >&2' \
+  '    exit 128' \
+  '  fi' \
+  '  if [[ $arg == pull || $arg == commit || $arg == push ]]; then' \
+  '    printf "%s\n" "$arg" >>"$GIT_LOG"' \
+  '  fi' \
+  'done' \
+  'exec "$REAL_GIT" "$@"' >"$mock_bin/git"
+chmod +x "$mock_bin"/*
+
+run_upgrade() {
+  output=$test_root/$1.out
+  : >"$git_log"
+  : >"$command_log"
+  if env \
+      HOME="$test_home" \
+      PATH="$mock_bin:/usr/bin:/bin" \
+      COMMAND_LOG="$command_log" \
+      REAL_GIT="$real_git" \
+      GIT_LOG="$git_log" \
+      GIT_FAIL_PROBE="${4-}" \
+      NVIM_LOCK_VALUE="$2" \
+      "$repository/tooling/upgrade" >"$output" 2>&1; then
+    actual_status=0
+  else
+    actual_status=$?
+  fi
+  assert_equal "$actual_status" "$3" "$1 exit status"
+}
+
+printf 'unrelated\n' >"$repository/unrelated"
+"$real_git" -C "$repository" add unrelated
+"$real_git" -C "$repository" commit -qm unrelated
+run_upgrade main main-update 0
+assert_equal "$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)" "$remote_tip" "main remote tip changed"
+assert_equal "$("$real_git" -C "$repository" rev-list --count "$remote_tip..HEAD")" 2 "unexpected local commit count"
+assert_equal "$("$real_git" -C "$repository" log -1 --format=%s)" "chore(nvim): update plugins" "lockfile commit message"
+assert_equal "$("$real_git" -C "$repository" show --format= --name-only HEAD)" "home/.config/nvim/lazy-lock.json" "lockfile commit scope"
+assert_equal "$(cat "$git_log")" $'pull\ncommit' "unexpected main Git mutations"
+grep -Fxq 'npm update -g --before=2026-08-13T00:00:00Z --min-release-age-exclude=@openai/codex' "$command_log" ||
+  fail "npm quarantine does not exempt Codex"
+grep -Fxq 'claude update' "$command_log" || fail "Claude update is not independent from npm"
+
+"$real_git" -C "$repository" checkout -q -B feature-test origin/main
+printf 'feature\n' >"$repository/feature-change"
+"$real_git" -C "$repository" add feature-change
+"$real_git" -C "$repository" commit -qm feature
+updater=$test_root/updater
+"$real_git" clone -q "$remote" "$updater"
+"$real_git" -C "$updater" config user.email upgrade-test@example.com
+"$real_git" -C "$updater" config user.name upgrade-test
+printf 'remote\n' >"$updater/remote-change"
+"$real_git" -C "$updater" add remote-change
+"$real_git" -C "$updater" commit -qm remote
+"$real_git" -C "$updater" push -q origin main
+"$real_git" -C "$repository" config pull.rebase false
+feature_tip=$("$real_git" -C "$repository" rev-parse HEAD)
+feature_remote_tip=$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)
+run_upgrade feature feature-update 0
+assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$feature_tip" "feature branch was committed"
+assert_equal "$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)" "$feature_remote_tip" "feature run changed the remote"
+[[ -n $("$real_git" -C "$repository" status --porcelain -- home/.config/nvim/lazy-lock.json) ]] || fail "feature lockfile change disappeared"
+[[ ! -s $git_log ]] || fail "upgrade pushed from a feature branch"
+grep -Fq "Skipping lockfile commit: on branch feature-test" "$test_root/feature.out" || fail "feature skip was not reported"
+
+"$real_git" -C "$repository" restore home/.config/nvim/lazy-lock.json
+"$real_git" -C "$repository" fetch -q origin main
+"$real_git" -C "$repository" checkout -q --detach origin/main
+detached_tip=$("$real_git" -C "$repository" rev-parse HEAD)
+run_upgrade detached detached-update 0
+assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$detached_tip" "detached HEAD was committed"
+[[ -n $("$real_git" -C "$repository" status --porcelain -- home/.config/nvim/lazy-lock.json) ]] || fail "detached lockfile change disappeared"
+[[ ! -s $git_log ]] || fail "upgrade pushed from detached HEAD"
+grep -Fq "Skipping lockfile commit: detached HEAD" "$test_root/detached.out" || fail "detached skip was not reported"
+
+"$real_git" -C "$repository" restore home/.config/nvim/lazy-lock.json
+"$real_git" -C "$repository" checkout -q main
+probe_tip=$("$real_git" -C "$repository" rev-parse HEAD)
+run_upgrade probe-show-ref probe-update 1 show-ref
+assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$probe_tip" "failed branch probe allowed a commit"
+[[ ! -s $git_log ]] || fail "failed branch probe allowed a push"
+grep -Fq "fatal: simulated show-ref failure" "$test_root/probe-show-ref.out" || fail "show-ref error was suppressed"
+grep -Fq "unable to determine the main dotfiles branch" "$test_root/probe-show-ref.out" || fail "show-ref failure was not reported"
+
+"$real_git" -C "$repository" restore home/.config/nvim/lazy-lock.json
+run_upgrade probe-rev-parse probe-update 1 rev-parse
+assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$probe_tip" "failed repository probe allowed a commit"
+[[ ! -s $git_log ]] || fail "failed repository probe allowed a push"
+grep -Fq "fatal: simulated rev-parse failure" "$test_root/probe-rev-parse.out" || fail "rev-parse error was suppressed"
+grep -Fq "unable to determine the main dotfiles branch" "$test_root/probe-rev-parse.out" || fail "rev-parse failure was not reported"
+
+echo "upgrade tests passed"

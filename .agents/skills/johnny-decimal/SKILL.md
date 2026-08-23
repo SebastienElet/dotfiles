@@ -15,7 +15,7 @@ metadata:
 Organize personal files under `~/Documents` with a hybrid of
 [Johnny Decimal](https://johnnydecimal.com/) structure and
 [PARA](https://fortelabs.com/blog/para/). Use it when filing, naming, moving, or locating a numbered
-personal document. This skill governs only `~/Documents`; it does not govern `~/Brain`.
+personal document. This skill governs only `~/Documents`.
 
 ### Structure
 
@@ -55,8 +55,7 @@ Examples:
 
 ## Steps
 
-1. Confirm that the request concerns `~/Documents`. If it concerns `~/Brain`, do not apply these
-   filesystem rules.
+1. Confirm that the request concerns `~/Documents`; do not apply these filesystem rules elsewhere.
 2. Resolve the destination without inventing index data:
    - If the user provides an authoritative indexed folder or path, use it directly.
    - If lookup or validation is needed, consult the Johnny Decimal index in Apple Notes using an
@@ -73,7 +72,7 @@ Examples:
      Preserve the existing ID unless the index explicitly maps or renumbers it.
 4. Keep the hierarchy flat. File the item directly in its indexed category or ID folder; do not add
    a year folder or other unindexed nesting.
-5. Build the filename from folder labels exactly as `scripts/jdl` does:
+5. Build the filename from folder labels exactly as `tooling/jdl` does:
 
    ```text
    Category-only:  {Category} - [Date - ]{Description}.{ext}
@@ -111,8 +110,8 @@ Examples:
   Keep the file directly in the indexed category or ID folder.
 - **Renumbering an archived item automatically**: moving an item does not authorize a new ID. Use
   the indexed archive destination and preserve its ID unless the index explicitly says otherwise.
-- **Applying these paths to `~/Brain`**: the two roots have different governance. Restrict this
-  skill's filesystem decisions to `~/Documents`.
+- **Applying these paths outside `~/Documents`**: other roots can have different governance.
+  Restrict this skill's filesystem decisions to `~/Documents`.
 
 ## Constraints
 
@@ -122,7 +121,7 @@ Examples:
 - Consult the Apple Notes index only when lookup or validation is needed; if it is unavailable, ask
   the user or explicitly mark an ID-less proposal as provisional.
 - Keep `~/Documents` flat below the indexed category or ID folder; do not create year folders.
-- Use the exact ASCII ` - ` separator required by `scripts/jdl` in directory and file names.
+- Use the exact ASCII ` - ` separator required by `tooling/jdl` in directory and file names.
 - A filename must inherit the category label and, only when it is inside an ID/subcategory folder,
   the subcategory label.
 - Include a filename date only when the document's actual date is known.

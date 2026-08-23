@@ -1,0 +1,15 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [project]
+skills:
+  - slug: alpha
+    installations: [{ agent: claude, scope: project }]
+resources:
+  - id: claude-project-skills
+    kind: skills
+    agent: claude
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .claude/skills }

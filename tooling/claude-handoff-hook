@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+validate_requirements() {
+  [[ $# == 2 ]] || fail 'expected current and legacy runtime hook paths'
+  runtime_hook=$1
+  legacy_hook=$2
+  case $runtime_hook:$legacy_hook in
+  /*:/*) ;;
+  *) fail 'runtime hook paths must be absolute' ;;
+  esac
+  [[ -f $runtime_hook && -x $runtime_hook ]] || fail 'current runtime hook must be executable'
+  [[ -n ${HOME:-} ]] || fail 'HOME is required'
+  case $HOME in
+  /*) ;;
+  *) fail 'HOME must be absolute' ;;
+  esac
+  command -v jq >/dev/null || fail 'jq is required'
+}
+
+prepare_write() {
+  settings_dir=$HOME/.claude
+  settings=$settings_dir/settings.json
+  umask 077
+  if [[ -L $settings_dir || ( -e $settings_dir && ! -d $settings_dir ) ]]; then
+    fail "$settings_dir must be a regular directory"
+  fi
+  mkdir -p "$settings_dir"
+  if [[ -L $settings || ( -e $settings && ! -f $settings ) ]]; then
+    fail "$settings must be a regular file"
+  fi
+  if [[ -f $settings ]]; then
+    input=$settings
+    had_current=true
+  else
+    input=/dev/null
+    had_current=false
+  fi
+  temporary=$(mktemp "$settings.tmp.XXXXXX")
+  trap cleanup EXIT
+}
+
+validate_settings_encoding() {
+  [[ $had_current == false ]] && return
+  streamed=$(jq --stream -c 'select(length == 2)' "$input")
+  normalized=$(jq -c . "$input" | jq --stream -c 'select(length == 2)')
+  [[ $streamed == "$normalized" ]] || fail 'settings.json contains duplicate object keys'
+}
+
+add_hook() {
+  jq -n \
+    --arg command "$runtime_hook" \
+    --arg legacy "$legacy_hook" \
+    --argjson had_current "$had_current" \
+    --slurpfile current "$input" '
+      $current as $documents
+      | if $had_current and ($documents | length) != 1 then
+          error("settings.json must contain one JSON document")
+        else if $had_current then $documents[0] else {} end end
+      | . as $config
+      | if ($config | type) != "object"
+          or (($config | has("hooks")) and ($config.hooks | type) != "object")
+          or ((($config.hooks // {}) | has("Stop")) and ($config.hooks.Stop | type) != "array")
+          or any(($config.hooks.Stop // [])[]; type != "object" or (has("hooks") | not) or (.hooks | type) != "array")
+          or any(($config.hooks.Stop // [])[]?.hooks[]?; type != "object")
+          or any(
+            ($config.hooks.Stop // [])[]?.hooks[]?
+            | select(.type == "command" and (.command == $command or .command == $legacy));
+            . as $handler
+            | ((has("args") | not) or (.args | type) == "array")
+              and ((has("timeout") | not) or (.timeout | type) == "number")
+              and ((has("statusMessage") | not) or (.statusMessage | type) == "string")
+              and ((has("shell") | not) or .shell == "bash" or .shell == "powershell")
+              and ((has("async") | not) or .async == false)
+              and ((has("asyncRewake") | not) or .asyncRewake == false)
+              and ((has("once") | not) or .once == false)
+              and (has("if") | not)
+              and all(
+                ["url", "headers", "allowedEnvVars", "server", "tool", "input", "prompt", "model", "continueOnBlock"][];
+                . as $field | ($handler | has($field) | not)
+              )
+              | not
+          )
+        then error("invalid settings.json hook structure")
+        else $config end
+      | .hooks //= {}
+      | .hooks.Stop //= []
+      | ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)] | length) as $current_count
+      | ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $legacy)] | length) as $legacy_count
+      | if $current_count == 1 and $legacy_count == 0 then
+          (.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command) | .args) = []
+        else
+          (
+            ([.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $command)][0]
+              // [.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $legacy)][0]
+              // {type: "command", command: $command})
+            | .command = $command
+            | .args = []
+          ) as $hook
+          | .hooks.Stop |= (
+              map(.hooks |= map(select(
+                (.type == "command" and (.command == $command or .command == $legacy)) | not
+              )))
+              | map(select((.hooks | length) > 0))
+            )
+          | .hooks.Stop += [{hooks: [$hook]}]
+        end
+    ' >"$temporary"
+}
+
+write_settings() {
+  mv "$temporary" "$settings"
+  trap - EXIT
+}
+
+cleanup() {
+  rm -f "$temporary"
+}
+
+main() {
+  validate_requirements "$@"
+  prepare_write
+  validate_settings_encoding
+  add_hook
+  write_settings
+}
+
+main "$@"

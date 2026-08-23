@@ -1,0 +1,39 @@
+name: Deployment tests
+
+on:
+  push:
+    paths:
+      - home/**
+      - harness/**
+      - tooling/makefile-test
+      - tooling/fish-deployment-test
+      - tooling/install-hunspell-dictionary
+      - tooling/hunspell-dictionaries-test
+      - tooling/pr-feedback-command-test
+      - Makefile
+      - .github/workflows/test-deployment.yml
+  pull_request:
+    paths:
+      - home/**
+      - harness/**
+      - tooling/makefile-test
+      - tooling/fish-deployment-test
+      - tooling/install-hunspell-dictionary
+      - tooling/hunspell-dictionaries-test
+      - tooling/pr-feedback-command-test
+      - Makefile
+      - .github/workflows/test-deployment.yml
+
+jobs:
+  deployment:
+    name: Deployment (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: tooling/makefile-test
+      - run: tooling/fish-deployment-test
+      - run: tooling/hunspell-dictionaries-test
+      - run: tooling/pr-feedback-command-test

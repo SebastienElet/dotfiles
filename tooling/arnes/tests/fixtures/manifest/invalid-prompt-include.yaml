@@ -1,0 +1,9 @@
+version: 1
+agents: []
+prompts:
+  - id: review
+    source: { root: repository, path: harness/prompts/review.md }
+    includes: [../../../outside.md]
+    variables: []
+    projections: []
+resources: []

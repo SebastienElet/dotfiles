@@ -1,13 +1,14 @@
-nvim/.netrwhist
-nvim/bundle/
-nvim/pack/
-fish/fish_plugins
-fish/functions
-fish/completions
+home/.config/nvim/.netrwhist
+home/.config/nvim/bundle/
+home/.config/nvim/pack/
+home/.config/fish/fish_plugins
+home/.config/fish/functions
+home/.config/fish/completions
 
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
-daily-routine/target/
+tooling/daily-routine/target/
+tooling/arnes/target/
 
 # Claude Code
 .claude/*

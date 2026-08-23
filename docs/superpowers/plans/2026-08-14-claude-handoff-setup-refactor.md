@@ -9,7 +9,7 @@ qu'une façade phony.
 
 ### 1. Réduire le test aux garanties utiles
 
-Fichier : `scripts/setup/claude_handoff_hook_test`
+Fichier : `tooling/claude-handoff-hook-test`
 
 - Conserver création, préservation, migration, idempotence et JSON invalide.
 - Ajouter un handler de type inconnu à préserver pour obtenir un échec avec l'implémentation
@@ -19,7 +19,7 @@ Fichier : `scripts/setup/claude_handoff_hook_test`
 
 ### 2. Simplifier le setup
 
-Fichier : `scripts/setup/claude_handoff_hook`
+Fichier : `tooling/claude-handoff-hook`
 
 - Écrire de petites fonctions pour valider l'entrée, lire les réglages, ajouter ou migrer notre
   entrée et installer atomiquement le résultat.
@@ -29,10 +29,10 @@ Fichier : `scripts/setup/claude_handoff_hook`
 
 ### 3. Vérifier les barrières concernées
 
-Fichiers : les quatre scripts Bash, `Makefile` et `.github/workflows/test.yml`.
+Fichiers : les quatre scripts Bash, `Makefile` et `.github/workflows/lint.yml`.
 
 - Exécuter `bash -n` et le ShellCheck complet sur les quatre scripts.
-- Exécuter `scripts/agent_handoff_test` et `scripts/setup/claude_handoff_hook_test` sur macOS.
+- Exécuter `tooling/agent-handoff-test` et `tooling/claude-handoff-hook-test` sur macOS.
 - Vérifier que le lint CI découvre les scripts imbriqués, le dry-run Make, le YAML et
   `git diff --check`.
 - Auto-relire le diff, committer, pousser puis surveiller les checks de la PR.

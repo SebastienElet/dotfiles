@@ -1,1 +1,0 @@
-{"$schema":"https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json","version":"0.2","words":["yarnrc","rclone","Tlmc","prisma"],"language":"en","globRoot":".","dictionaries":["user-dictionary","fr-fr"],"ignorePaths":["node_modules","dist","build"],"dictionaryDefinitions":[{"name":"user-dictionary","addWords":true,"path":"~/.dotfiles/dict/user.txt"}]}

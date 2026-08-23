@@ -1,0 +1,15 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+prompts:
+  - id: review
+    source: { root: repository, path: harness/prompts/review.md }
+    includes: []
+    variables: []
+    projections:
+      - agent: claude
+        scope: project
+        representation: file
+        destination: { root: repository, path: .claude/commands/review.md }
+resources: []

@@ -23,7 +23,7 @@ already an isolated function that can be replaced by real code later. Reference:
 
 ```text
 $do-nothing-script turn the release checklist into a script
-$do-nothing-script automate step 3 of scripts/provision_user
+$do-nothing-script automate step 3 of tooling/provision-user
 ```
 
 ## Steps

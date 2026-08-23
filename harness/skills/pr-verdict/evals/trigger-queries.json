@@ -1,0 +1,66 @@
+{
+  "skill": "pr-verdict",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "/pr-verdict 1042",
+      "should_activate": true,
+      "reason": "Explicit invocation of the non-mutating pull request verdict"
+    },
+    {
+      "query": "Review this PR: https://github.com/acme/api/pull/1042",
+      "should_activate": true,
+      "reason": "Review of another author's pull request; a merge decision follows"
+    },
+    {
+      "query": "Est-ce que la PR 1042 est sûre à fusionner ?",
+      "should_activate": true,
+      "reason": "Safe to merge; the answer is a verdict"
+    },
+    {
+      "query": "Should I approve this PR?",
+      "should_activate": true,
+      "reason": "Approval decision on someone else's work"
+    },
+    {
+      "query": "Donne-moi un verdict sur la PR #17, elle touche la clôture comptable",
+      "should_activate": true,
+      "reason": "Verdict asked for explicitly"
+    },
+    {
+      "query": "The author pushed the fixes, re-review PR 1042",
+      "should_activate": true,
+      "reason": "Re-review after fixes; the marker and the new head SHA govern"
+    },
+    {
+      "query": "Jette un œil à cette PR avant que je l'approuve",
+      "should_activate": true,
+      "reason": "Merge decision at stake even though no review vocabulary is used"
+    },
+    {
+      "query": "Ma PR est ouverte, dis-moi si elle est fusionnable",
+      "should_activate": true,
+      "reason": "Own pull request, but open: the verdict is unchanged, only its enforcement differs"
+    },
+    {
+      "query": "/pr-fix 1042",
+      "should_activate": false,
+      "reason": "An explicit repair request belongs to pr-fix, which composes this skill internally"
+    },
+    {
+      "query": "Relis mon diff avant que je commite",
+      "should_activate": false,
+      "reason": "Own diff before committing; that is code-review, not a PR verdict"
+    },
+    {
+      "query": "Open a PR for this branch with a description",
+      "should_activate": false,
+      "reason": "Authoring a PR, no decision to judge"
+    },
+    {
+      "query": "Why is the pipeline red on develop?",
+      "should_activate": false,
+      "reason": "CI debugging; no pull request under judgement"
+    }
+  ]
+}

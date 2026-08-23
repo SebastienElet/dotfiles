@@ -1,0 +1,154 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user, project]
+    user_config:
+      model: opus[1m]
+      effort: high
+      auto_compact_window: 600000
+  - id: cursor
+    scopes: [user, project]
+    user_config:
+      model: grok-4.6
+      max_mode: false
+  - id: codex
+    scopes: [user, project]
+    user_config:
+      model: gpt-5.6-sol
+      effort: medium
+skills:
+  - slug: agent-instructions
+    installations:
+      - { agent: codex, scope: user }
+  - slug: claude-developer
+    installations:
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: handoff
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
+  - slug: enforcement-code
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: pr-verdict
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: pr-fix
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: codegraph
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: skill-manager
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: linear-issue-spec
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+external:
+  roots:
+    - agent: codex
+      scope: user
+      origin: system
+      location: { root: home, path: .codex/skills/.system }
+  skills:
+    - agent: codex
+      scope: user
+      origin: system
+      slug: openai-docs
+resources:
+  - id: claude-user-instructions
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .claude/CLAUDE.md }
+  - id: claude-user-soul
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/SOUL.md }
+    destination: { root: home, path: .claude/SOUL.md }
+  - id: claude-user-preferences
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/USER.md }
+    destination: { root: home, path: .claude/USER.md }
+  - id: claude-user-agent-instructions
+    kind: rules
+    agent: claude
+    scope: user
+    source:
+      {
+        root: repository,
+        path: harness/skills/agent-instructions/references/maintenance.md,
+      }
+    destination: { root: home, path: .claude/rules/agent-instructions.md }
+  - id: claude-project-instructions
+    kind: instructions
+    agent: claude
+    scope: project
+    source: { root: repository, path: AGENTS.md }
+    destination: { root: repository, path: CLAUDE.md }
+  - id: codex-user-instructions
+    kind: instructions
+    agent: codex
+    scope: user
+    source: { root: repository, path: harness/AGENTS.md }
+    destination: { root: home, path: .codex/AGENTS.md }
+  - id: claude-user-skills
+    kind: skills
+    agent: claude
+    scope: user
+    layout: leaves
+    source: { root: repository, path: harness/skills }
+    destination: { root: home, path: .claude/skills }
+  - id: cursor-user-skills
+    kind: skills
+    agent: cursor
+    scope: user
+    layout: leaves
+    source: { root: repository, path: harness/skills }
+    destination: { root: home, path: .cursor/skills }
+  - id: codex-user-skills
+    kind: skills
+    agent: codex
+    scope: user
+    layout: leaves
+    source: { root: repository, path: harness/skills }
+    destination: { root: home, path: .agents/skills }
+  - id: claude-project-skills
+    kind: skills
+    agent: claude
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .claude/skills }
+  - id: cursor-project-skills
+    kind: skills
+    agent: cursor
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .cursor/skills }
+  - id: codex-project-skills
+    kind: skills
+    agent: codex
+    scope: project
+    layout: root
+    source: { root: repository, path: .agents/skills }
+    destination: { root: repository, path: .codex/skills }

@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+repository=$(cd "$tooling_dir/.." && pwd)
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/makefile-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  echo "FAIL: $1" >&2
+  exit 1
+}
+
+assert_link() {
+  actual_source=$(readlink -n "$1" && printf .) || fail "$1 cannot be read"
+  actual_source=${actual_source%.}
+  [[ -L $1 ]] || fail "$1 is not a symbolic link"
+  [[ $actual_source == "$2" ]] || fail "$1 has an unexpected source"
+}
+
+assert_failure() {
+  if "$@" >"$test_root/stdout" 2>"$test_root/stderr"; then
+    fail "command unexpectedly succeeded: $*"
+  fi
+}
+
+assert_hooks_failure_preserves() {
+  before=$(cksum "$hooks_file")
+  assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+  after=$(cksum "$hooks_file")
+  [[ $before == "$after" ]] || fail "invalid Codex hooks file changed"
+}
+
+case_root=$test_root/existing_directory
+test_home=$case_root/home
+test_repository=$case_root/repository
+source=$test_repository/home/.config/fish
+destination=$test_home/.config/fish
+mkdir -p "$source" "$destination"
+touch -t 202001010000 "$destination"
+touch -t 202101010000 "$source"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" "$destination"
+[[ -z $(find "$destination" -mindepth 1 -print -quit) ]] || fail "Make linked inside an existing directory"
+
+case_root=$test_root/existing_directory_link
+test_home=$case_root/home
+test_repository=$case_root/repository
+source=$test_repository/home/.config/fish
+destination=$test_home/.config/fish
+actual_directory=$case_root/actual
+mkdir -p "$source" "$test_home/.config" "$actual_directory"
+ln -s "$actual_directory" "$destination"
+touch -t 202001010000 "$actual_directory"
+touch -t 202101010000 "$source"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$test_repository" "$destination"
+assert_link "$destination" "$actual_directory"
+[[ -z $(find "$actual_directory" -mindepth 1 -print -quit) ]] || fail "Make linked through a directory symlink"
+
+case_root=$test_root/make_starship_integration
+test_home=$case_root/home
+mkdir -p "$test_home"
+(
+  cd "$case_root"
+  env HOME="$test_home" make -f "$repository/Makefile" "$test_home/.tmux.conf"
+)
+assert_link "$test_home/.tmux.conf" "$repository/home/.tmux.conf"
+rm "$test_home/.tmux.conf"
+starship_destination=$test_home/.config/starship.toml
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+assert_link "$starship_destination" "$repository/home/.config/starship.toml"
+mkdir "$case_root/bin"
+printf '%s\n' '#!/usr/bin/env bash' ': >"$LN_MARKER"' '"$REAL_LN" "$@"' >"$case_root/bin/ln"
+chmod +x "$case_root/bin/ln"
+env HOME="$test_home" REAL_LN="$(command -v ln)" LN_MARKER="$case_root/ln-called" PATH="$case_root/bin:$PATH" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+[[ ! -e $case_root/ln-called ]] || fail "Make relinked the current Starship destination"
+assert_link "$starship_destination" "$repository/home/.config/starship.toml"
+rm "$starship_destination"
+unexpected_source=$case_root/unexpected
+mkdir "$unexpected_source"
+ln -s "$unexpected_source" "$starship_destination"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$starship_destination"
+assert_link "$starship_destination" "$unexpected_source"
+
+case_root=$test_root/agent_instructions
+test_home=$case_root/home
+claude_rule=$test_home/.claude/rules/agent-instructions.md
+codex_instructions=$test_home/.codex/AGENTS.md
+codex_skill=$test_home/.agents/skills/agent-instructions
+mkdir -p "$test_home"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions" "$codex_skill"
+assert_link "$repository/harness/rules/agent-instructions.md" "../skills/agent-instructions/references/maintenance.md"
+assert_link "$claude_rule" "$repository/harness/rules/agent-instructions.md"
+assert_link "$codex_skill" "$repository/harness/skills/agent-instructions"
+expected_instructions=$case_root/expected-agents.md
+grep -v '^@' "$repository/harness/AGENTS.md" | cat - "$repository/harness/SOUL.md" "$repository/harness/USER.md" >"$expected_instructions"
+cmp -s "$expected_instructions" "$codex_instructions" || fail "Codex instructions differ from shared sources"
+before=$(cksum "$codex_instructions")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule" "$codex_instructions"
+after=$(cksum "$codex_instructions")
+[[ $before == "$after" ]] || fail "Codex agent instruction deployment is not idempotent"
+rm "$claude_rule"
+printf 'keep\n' >"$claude_rule"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$claude_rule"
+[[ $(cat "$claude_rule") == keep ]] || fail "Claude rule destination changed"
+
+case_root=$test_root/user_skills
+test_home=$case_root/home
+mkdir -p "$test_home/.claude/skills" "$test_home/.cursor/skills" "$test_home/.agents/skills"
+for specification in \
+  ".agents/skills/agent-instructions agent-instructions" \
+  ".claude/skills/codegraph codegraph" \
+  ".claude/skills/enforcement-code enforcement-code" \
+  ".claude/skills/handoff handoff" \
+  ".claude/skills/pr-fix pr-fix" \
+  ".claude/skills/pr-verdict pr-verdict" \
+  ".claude/skills/skill-manager skill-manager" \
+  ".cursor/skills/claude-developer claude-developer" \
+  ".cursor/skills/codegraph codegraph" \
+  ".cursor/skills/enforcement-code enforcement-code" \
+  ".cursor/skills/pr-fix pr-fix" \
+  ".cursor/skills/pr-verdict pr-verdict" \
+  ".cursor/skills/skill-manager skill-manager" \
+  ".agents/skills/claude-developer claude-developer" \
+  ".agents/skills/codegraph codegraph" \
+  ".agents/skills/enforcement-code enforcement-code" \
+  ".agents/skills/handoff handoff" \
+  ".agents/skills/pr-fix pr-fix" \
+  ".agents/skills/pr-verdict pr-verdict" \
+  ".agents/skills/skill-manager skill-manager"; do
+  read -r relative_destination slug <<<"$specification"
+  destination=$test_home/$relative_destination
+  env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$destination"
+  assert_link "$destination" "$repository/harness/skills/$slug"
+  [[ ! -e $repository/.agents/skills/$slug ]] || fail "$slug remains in the project skill collection"
+done
+
+case_root=$test_root/daily_routine_config
+test_home=$case_root/home
+config_file=$test_home/.config/daily-routine/config.toml
+mkdir -p "$test_home"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+cmp -s "$repository/tooling/daily-routine/config.example.toml" "$config_file" || fail "daily-routine example was not copied"
+[[ $(LC_ALL=C ls -l "$config_file" | cut -c 1-10) == -rw------- ]] || fail "daily-routine configuration mode is not 0600"
+
+printf 'local configuration\n' >"$config_file"
+before=$(ls -di "$config_file" | awk '{print $1}')
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+after=$(ls -di "$config_file" | awk '{print $1}')
+[[ $before == "$after" ]] || fail "daily-routine configuration was replaced"
+[[ $(cat "$config_file") == "local configuration" ]] || fail "daily-routine configuration changed"
+
+rm "$config_file"
+ln -s "$case_root/missing" "$config_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" "$config_file"
+assert_link "$config_file" "$case_root/missing"
+
+case_root=$test_root/codex_hook
+test_home=$case_root/home
+hooks_file=$test_home/.codex/hooks.json
+old_command=$repository/scripts/agent_handoff
+new_command=$repository/tooling/agent-handoff
+mkdir -p "$test_home/.codex"
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"}]}]}}\n' "$old_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "old Codex hook was not migrated"
+[[ $(jq -r --arg command "$old_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 0 ]] || fail "old Codex hook remains"
+
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$new_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate Codex hook was not removed"
+before=$(cksum "$hooks_file")
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+after=$(cksum "$hooks_file")
+[[ $before == "$after" ]] || fail "Codex hook migration is not idempotent"
+
+printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"%s"},{"type":"command","command":"%s"}]}]}}\n' "$old_command" "$old_command" >"$hooks_file"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(jq -r --arg command "$new_command" '[.hooks.Stop[]?.hooks[]? | select(.command == $command)] | length' "$hooks_file") == 1 ]] || fail "duplicate old Codex hooks were not collapsed"
+
+printf 'invalid json\n' >"$hooks_file"
+assert_hooks_failure_preserves
+printf '{"hooks":{"Stop":{}}}\n' >"$hooks_file"
+assert_hooks_failure_preserves
+for malformed in null false '{"hooks":{"Stop":false}}'; do
+  printf '%s\n' "$malformed" >"$hooks_file"
+  assert_hooks_failure_preserves
+done
+printf '%s\n%s\n' '{"hooks":{"Stop":[]}}' '{"second":"document"}' >"$hooks_file"
+assert_hooks_failure_preserves
+: >"$hooks_file"
+assert_hooks_failure_preserves
+
+printf '{"hooks":{"Stop":[]}}\n' >"$hooks_file"
+before=$(cksum "$hooks_file")
+assert_failure env HOME="$test_home" PATH="$case_root/empty-path" /usr/bin/make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+after=$(cksum "$hooks_file")
+[[ $before == "$after" ]] || fail "Codex hooks file changed without jq"
+
+rm "$hooks_file"
+mkdir "$hooks_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ -d $hooks_file ]] || fail "Codex hooks directory changed"
+rmdir "$hooks_file"
+mkfifo "$hooks_file"
+assert_failure env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ -p $hooks_file ]] || fail "Codex hooks FIFO changed"
+rm "$hooks_file"
+
+victim=$case_root/victim
+printf 'keep\n' >"$victim"
+ln -s "$victim" "$hooks_file.tmp"
+env HOME="$test_home" make -f "$repository/Makefile" DOTFILES_PATH="$repository" codex-handoff-hook
+[[ $(cat "$victim") == keep ]] || fail "predictable Codex temporary path was followed"
+assert_link "$hooks_file.tmp" "$victim"
+
+case_root=$test_root/measurement_wiring
+test_home=$case_root/home
+mkdir -p "$test_home"
+for agent in codex claude-code cursor; do
+  target=$agent-measurement-hooks
+  trace=$case_root/$target
+  env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$target" >"$trace"
+  expected="measure install-hooks --agent $agent --command \"$test_home/.local/bin/arnes\""
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$target does not install its measurement hook exactly once"
+  grep -F -q -- 'cargo build --release' "$trace" || fail "$target does not depend on arnes"
+
+  trace=$case_root/$agent
+  env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" "$agent" >"$trace"
+  [[ $(grep -F -c -- "$expected" "$trace") == 1 ]] || fail "$agent does not wire its measurement target exactly once"
+  if [[ $agent == codex ]]; then
+    grep -F -q -- "$repository/harness/skills/agent-instructions" "$trace" || fail "codex does not install the agent-instructions skill"
+  fi
+done
+
+handoff_line=$(grep -n -F -- 'old_command=' "$case_root/codex" | cut -d: -f1)
+measurement_line=$(grep -n -F -- 'measure install-hooks --agent codex' "$case_root/codex" | cut -d: -f1)
+[[ -n $handoff_line && -n $measurement_line && $handoff_line -lt $measurement_line ]] || fail "Codex handoff hook is not installed before measurement hooks"
+
+case_root=$test_root/hunspell_wiring
+test_home=$case_root/home
+fake_bin=$case_root/bin
+mkdir -p "$test_home" "$fake_bin"
+hunspell_trace=$case_root/hunspell
+claude_trace=$case_root/claude-code
+revision=f2ff99058268502bdcf4cad25c1ca2935ad8aa7d
+base_url=https://raw.githubusercontent.com/LibreOffice/dictionaries/$revision
+env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" hunspell >"$hunspell_trace"
+[[ $(grep -F -c -- 'brew install hunspell' "$hunspell_trace") == 1 ]] || fail "hunspell does not install its Homebrew formula exactly once"
+for specification in \
+  "fr_FR/dictionaries/fr.aff c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5 fr.aff" \
+  "fr_FR/dictionaries/fr.dic b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c fr.dic" \
+  "en/en_US.aff e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e en_US.aff" \
+  "en/en_US.dic f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647 en_US.dic"; do
+  read -r source checksum destination_name <<<"$specification"
+  expected="\"$repository/tooling/install-hunspell-dictionary\" \"$base_url/$source\" \"$checksum\" \"$test_home/Library/Spelling/$destination_name\""
+  [[ $(grep -F -c -- "$expected" "$hunspell_trace") == 1 ]] || fail "hunspell does not deploy $destination_name exactly once"
+done
+env HOME="$test_home" make -n -f "$repository/Makefile" DOTFILES_PATH="$repository" BREW_BIN="$fake_bin" claude-code >"$claude_trace"
+grep -F -q -- 'brew install hunspell' "$claude_trace" || fail "claude-code does not depend on hunspell"
+
+echo "Makefile tests passed"

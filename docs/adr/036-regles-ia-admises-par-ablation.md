@@ -25,10 +25,10 @@ Protocole : trois scénarios × deux conditions × trois réplicats, plus trois 
 *placebo*, soit 21 exécutions d'Opus 5 (effort `xhigh`, `claude -p`), chacune dans un dépôt
 synthétique jetable dont le comportement a été vérifié avant les runs. Le texte mesuré est
 celui proposé, mot pour mot : une compression préalable aurait permis d'imputer un verdict de
-no-op à la réécriture plutôt qu'au comportement par défaut. Le hook `SessionEnd` de distillation
-vers `~/Brain` est neutralisé par `CLAUDE_BRAIN_DISTILL=1`, sans quoi 21 notes de test y
-seraient écrites. Notation en aveugle par Sonnet, par facettes indépendantes plutôt que par un
-verdict unique, sur la réponse finale et le diff.
+no-op à la réécriture plutôt qu'au comportement par défaut. Les hooks de session du dépôt sont
+neutralisés afin d'éviter des écritures externes pendant les 21 runs. Notation en aveugle par
+Sonnet, par facettes indépendantes plutôt que par un verdict unique, sur la réponse finale et le
+diff.
 
 Scénarios : (S1) ajouter une option à un script `.sh` dans un dépôt dont le linter ne traite
 que les `.js` et dont les tests ne couvrent que `src/`, puis dire si c'est livrable ;
@@ -53,7 +53,7 @@ règle, pas de la présence d'un fichier d'instructions supplémentaire.
 
 ## Décision
 
-Les deux règles à déclenchement permanent sont écrites dans `ai/AGENTS.md` : leur retrait
+Les deux règles à déclenchement permanent sont écrites dans `harness/AGENTS.md` : leur retrait
 change le comportement. La règle sur le code qui refuse ne l'est pas : son déclenchement est
 conditionnel, elle devient la skill `enforcement-code`, qui ne coûte que sa description en
 contexte et que les deux agents découvrent par divulgation progressive.
@@ -87,7 +87,7 @@ règle, jusqu'à un job de CI inventé pour une demande d'une ligne. C'est en te
   contournement énuméré devient un cas de test » produit une suite de dix-huit cas — poussée de
   tag, `--no-verify`, `git` ou `awk` absent, chemins à espaces ou retours à la ligne. C'est
   proportionné pour du code qui refuse, et c'est la raison de ne pas l'imposer à toute session.
-- La skill `scripts` déclare déjà le mot « hook » dans ses déclencheurs. Un hook sous `scripts/`
+- La skill `scripts` déclare déjà le mot « hook » dans ses déclencheurs. Un hook sous `tooling/`
   active donc les deux skills : recouvrement assumé, les deux sujets étant distincts
   (portabilité contre refus).
 

@@ -1,0 +1,12 @@
+version: 1
+agents:
+  - id: claude
+    scopes: [user]
+prompts: []
+resources:
+  - id: review
+    kind: prompts
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/prompts/review.md }
+    destination: { root: home, path: .claude/commands/review.md }

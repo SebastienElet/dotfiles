@@ -1,0 +1,22 @@
+[
+  {
+    "resource": "manifest",
+    "state": "healthy",
+    "message": "manifest is valid"
+  },
+  {
+    "resource": "rules",
+    "state": "unsupported",
+    "message": "cursor does not expose native user rules"
+  },
+  {
+    "resource": "skills",
+    "state": "drift",
+    "message": "destination is missing"
+  },
+  {
+    "resource": "config",
+    "state": "error",
+    "message": "settings.json could not be read"
+  }
+]

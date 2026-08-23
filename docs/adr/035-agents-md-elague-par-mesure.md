@@ -16,7 +16,7 @@ connaisse avant même d'ouvrir un fichier du répertoire ».
 Le *test du no-op* de Matt Pocock donne le critère : supprimer cette ligne
 change-t-il le comportement par rapport au comportement par défaut ? Il est
 comportemental et non esthétique, et il ne se tranche qu'en exécutant le
-document. Le protocole reprend celui appliqué au coffre `~/Brain` le
+document. Le protocole reprend celui d'une expérimentation antérieure menée le
 2026-08-07 : 36 exécutions Opus 5 via `claude -p`, un clone jetable par run,
 `AGENTS.md` et `CLAUDE.md` retirés du disque en condition *sans*, hook `Stop`
 du dépôt neutralisé dans les deux conditions, six scénarios × deux conditions ×
@@ -48,9 +48,8 @@ sont retirées ; le fichier passe de 32 à 26 lignes.
 
 Restent, faute de mesure les infirmant : la règle de conflit, les trois règles
 de portée, la définition de `docs/adr/`, l'interdiction de contredire une ADR
-en silence, la dispense pour les changements de routine, les deux règles
-`~/Brain` et l'interdiction de dupliquer une règle dans un répertoire propre à
-un agent.
+en silence, la dispense pour les changements de routine et l'interdiction de
+dupliquer une règle dans un répertoire propre à un agent.
 
 ## Conséquences
 

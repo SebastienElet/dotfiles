@@ -3,18 +3,18 @@ name: Fish tests
 on:
   push:
     paths:
-      - fish/**
-      - scripts/git_main_branch
+      - home/.config/fish/**
+      - tooling/git-main-branch
       - .github/workflows/test-fish.yml
   pull_request:
     paths:
-      - fish/**
-      - scripts/git_main_branch
+      - home/.config/fish/**
+      - tooling/git-main-branch
       - .github/workflows/test-fish.yml
 
 jobs:
-  git-cleanup:
-    name: Git cleanup (${{ matrix.os }})
+  fish:
+    name: Fish tests (${{ matrix.os }})
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
@@ -33,4 +33,7 @@ jobs:
           sudo apt-get install -y fish
 
       - name: Test Git cleanup
-        run: fish --no-config fish/tests/git_cleanup_test.fish
+        run: fish --no-config home/.config/fish/tests/git_cleanup_test.fish
+
+      - name: Test PATH idempotency
+        run: fish --no-config home/.config/fish/tests/path_test.fish
