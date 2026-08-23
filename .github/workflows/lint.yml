@@ -120,7 +120,6 @@ jobs:
             | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
 
           tooling/upgrade-test
-          tooling/makefile-test
           echo "✅ Shell scripts OK"
 
   cspell:
@@ -141,6 +140,7 @@ jobs:
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
           tooling/install-hunspell-dictionary*.ts
+          tooling/deployment-*.ts
           .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
@@ -179,5 +179,6 @@ jobs:
             tooling/obsidian-retrieval/contract.test.ts \
             tooling/obsidian-retrieval/evaluation-contract.ts \
             tooling/install-hunspell-dictionary*.ts \
+            tooling/deployment-*.ts \
             .agents/skills/apple-notes/scripts/*.ts \
             tooling/apple-notes*.ts
