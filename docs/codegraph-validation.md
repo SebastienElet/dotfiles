@@ -14,7 +14,7 @@
   `@colbymchenry/codegraph@1.5.0`, les trois configurations MCP et les liens de skill.
 - `make codegraph-test` réussit sur macOS et exécute la mesure de dépôt, la configuration réelle des
   trois agents, la matrice MCP de fraîcheur et l'audit réseau récursif.
-- `bash tooling/codegraph-network-test` prouve d'abord que le moniteur détecte un socket ouvert par
+- `tooling/codegraph-network-test` prouve d'abord que le moniteur détecte un socket ouvert par
   un petit-enfant, puis suit récursivement les processus d'initialisation, de synchronisation et du
   serveur MCP ainsi que le daemon. `lsof -nP -a -p PID -i` n'observe ensuite aucun socket réseau et
   le daemon est arrêté en fin de probe. L'échantillonnage toutes les 50 ms ne couvre pas une
