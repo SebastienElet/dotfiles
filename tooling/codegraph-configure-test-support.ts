@@ -79,6 +79,7 @@ export function run(fixture: Fixture) {
   const result = Bun.spawnSync([entryPoint], spawnOptions(fixture));
   return {
     exitCode: result.exitCode,
+    stdout: result.stdout.toString(),
     stderr: result.stderr.toString(),
   };
 }

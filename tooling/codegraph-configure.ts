@@ -17,7 +17,9 @@ export function main(): number {
     configureCodegraph();
     return 0;
   } catch (error) {
-    console.error(errorMessage(error));
+    if (!(error instanceof ReportedCommandError)) {
+      console.error(errorMessage(error));
+    }
     return error instanceof ConfigurationError
       ? error.exitCode
       : commandExitCode(error);
@@ -58,7 +60,7 @@ function configureCodegraph(): void {
     runTransaction(snapshots, () => {
       const claudeRegistration = probeClaude(claudeBinary);
       const codexRegistration = probeCodex(codexBinary);
-      requireSuccess(runCommand(codegraphBinary, ["telemetry", "off"]));
+      runMutationCommand(codegraphBinary, ["telemetry", "off"]);
       configureClaude(claudeBinary, codegraphBinary, claudeRegistration);
       configureCodex(codexBinary, codegraphBinary, codexRegistration);
       writeJsonAtomically(
@@ -86,7 +88,7 @@ function runTransaction(
 }
 
 function probeClaude(binary: string): Registration {
-  const result = runCommand(binary, ["mcp", "get", "codegraph"]);
+  const result = runCapturedCommand(binary, ["mcp", "get", "codegraph"]);
   if (result.exitCode === 0) {
     return "registered";
   }
@@ -101,7 +103,12 @@ function probeClaude(binary: string): Registration {
 }
 
 function probeCodex(binary: string): Registration {
-  const result = runCommand(binary, ["mcp", "get", "--json", "codegraph"]);
+  const result = runCapturedCommand(binary, [
+    "mcp",
+    "get",
+    "--json",
+    "codegraph",
+  ]);
   if (result.exitCode === 0) {
     return "registered";
   }
@@ -120,29 +127,31 @@ function configureClaude(
   registration: Registration,
 ): void {
   if (registration === "registered") {
-    requireSuccess(
-      runCommand(binary, ["mcp", "remove", "--scope", "user", "codegraph"]),
-    );
-  }
-  requireSuccess(
-    runCommand(binary, [
+    runMutationCommand(binary, [
       "mcp",
-      "add",
+      "remove",
       "--scope",
       "user",
       "codegraph",
-      "-e",
-      "CODEGRAPH_TELEMETRY=0",
-      "-e",
-      "CODEGRAPH_NO_UPDATE_CHECK=1",
-      "-e",
-      "CODEGRAPH_NO_DOWNLOAD=1",
-      "--",
-      codegraphBinary,
-      "serve",
-      "--mcp",
-    ]),
-  );
+    ]);
+  }
+  runMutationCommand(binary, [
+    "mcp",
+    "add",
+    "--scope",
+    "user",
+    "codegraph",
+    "-e",
+    "CODEGRAPH_TELEMETRY=0",
+    "-e",
+    "CODEGRAPH_NO_UPDATE_CHECK=1",
+    "-e",
+    "CODEGRAPH_NO_DOWNLOAD=1",
+    "--",
+    codegraphBinary,
+    "serve",
+    "--mcp",
+  ]);
 }
 
 function configureCodex(
@@ -151,28 +160,29 @@ function configureCodex(
   registration: Registration,
 ): void {
   if (registration === "registered") {
-    requireSuccess(runCommand(binary, ["mcp", "remove", "codegraph"]));
+    runMutationCommand(binary, ["mcp", "remove", "codegraph"]);
   }
-  requireSuccess(
-    runCommand(binary, [
-      "mcp",
-      "add",
-      "codegraph",
-      "--env",
-      "CODEGRAPH_TELEMETRY=0",
-      "--env",
-      "CODEGRAPH_NO_UPDATE_CHECK=1",
-      "--env",
-      "CODEGRAPH_NO_DOWNLOAD=1",
-      "--",
-      codegraphBinary,
-      "serve",
-      "--mcp",
-    ]),
-  );
+  runMutationCommand(binary, [
+    "mcp",
+    "add",
+    "codegraph",
+    "--env",
+    "CODEGRAPH_TELEMETRY=0",
+    "--env",
+    "CODEGRAPH_NO_UPDATE_CHECK=1",
+    "--env",
+    "CODEGRAPH_NO_DOWNLOAD=1",
+    "--",
+    codegraphBinary,
+    "serve",
+    "--mcp",
+  ]);
 }
 
-function runCommand(binary: string, arguments_: string[]): CommandResult {
+function runCapturedCommand(
+  binary: string,
+  arguments_: string[],
+): CommandResult {
   const result = Bun.spawnSync([binary, ...arguments_], {
     stdout: "pipe",
     stderr: "pipe",
@@ -183,9 +193,13 @@ function runCommand(binary: string, arguments_: string[]): CommandResult {
   };
 }
 
-function requireSuccess(result: CommandResult): void {
+function runMutationCommand(binary: string, arguments_: string[]): void {
+  const result = Bun.spawnSync([binary, ...arguments_], {
+    stdout: "inherit",
+    stderr: "inherit",
+  });
   if (result.exitCode !== 0) {
-    throw new CommandError(result.exitCode, result.output);
+    throw new ReportedCommandError(result.exitCode);
   }
 }
 
@@ -215,8 +229,16 @@ class CommandError extends Error {
   }
 }
 
+class ReportedCommandError extends Error {
+  constructor(readonly exitCode: number) {
+    super(`command failed with exit ${exitCode}`);
+  }
+}
+
 function commandExitCode(error: unknown): number {
-  return error instanceof CommandError ? error.exitCode : 1;
+  return error instanceof CommandError || error instanceof ReportedCommandError
+    ? error.exitCode
+    : 1;
 }
 
 function errorMessage(error: unknown): string {

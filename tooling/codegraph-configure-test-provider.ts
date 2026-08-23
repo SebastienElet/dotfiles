@@ -88,6 +88,10 @@ function finish(expectedOperation: string): never {
   if (process.env.CODEGRAPH_TEST_PAUSE === `${provider}:${expectedOperation}`) {
     Bun.sleepSync(400);
   }
+  if (process.env.CODEGRAPH_TEST_EMIT === "1") {
+    console.log(`out ${provider}:${expectedOperation}`);
+    console.error(`err ${provider}:${expectedOperation}`);
+  }
   if (process.env.CODEGRAPH_TEST_FAIL === `${provider}:${expectedOperation}`) {
     console.error(`failed ${provider}:${expectedOperation}`);
     process.exit(9);

@@ -62,6 +62,37 @@ describe("codegraph-configure entry point", () => {
     );
   });
 
+  test("preserves mutation output channels and order", () => {
+    const fixture = createFixture({ CODEGRAPH_TEST_EMIT: "1" });
+
+    const result = run(fixture);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe(
+      "out codegraph:telemetry off\nout claude:mcp add\nout codex:mcp add\n",
+    );
+    expect(result.stderr).toBe(
+      "err codegraph:telemetry off\nerr claude:mcp add\nerr codex:mcp add\n",
+    );
+  });
+
+  test("preserves a failed mutation status and output channels", () => {
+    const fixture = createFixture({
+      CODEGRAPH_TEST_EMIT: "1",
+      CODEGRAPH_TEST_FAIL: "claude:mcp add",
+    });
+
+    const result = run(fixture);
+
+    expect(result.exitCode).toBe(9);
+    expect(result.stdout).toBe(
+      "out codegraph:telemetry off\nout claude:mcp add\n",
+    );
+    expect(result.stderr).toBe(
+      "err codegraph:telemetry off\nerr claude:mcp add\nfailed claude:mcp add\n",
+    );
+  });
+
   test("rejects invalid Cursor JSON before invoking a provider", () => {
     const fixture = createFixture();
     writeFileSync(fixture.cursorConfig, "{invalid\n");
