@@ -162,6 +162,18 @@ describe("ci-smoke-targets entry point", () => {
     expectTargets(repository, ["all"]);
   });
 
+  test("selects all when an inline comment continues a logical line", () => {
+    const repository = newRepository("inline-comment-continuation");
+    const makefile = (suffix: string) =>
+      `SHARED=value\n.PHONY: all\nall: alpha beta\n.PHONY: alpha\nalpha:\n\t@echo alpha\nalpha: # shared${suffix}\ninclude shared.mk\n.PHONY: beta\nbeta:\n\t@echo beta\n`;
+    write(repository, "Makefile", makefile(""));
+    commit(repository, "add inline comment");
+    write(repository, "Makefile", makefile(" \\"));
+    commit(repository, "continue inline comment");
+
+    expectTargets(repository, ["all"]);
+  });
+
   test("selects all when a target is deleted", () => {
     const repository = newRepository("deleted-target");
     write(

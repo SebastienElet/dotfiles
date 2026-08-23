@@ -58,11 +58,14 @@ function classifyLine(makefile: readonly string[], line: number): string {
   if (content.startsWith("\t")) {
     return rule?.target === target ? (target ?? "all") : "all";
   }
+  if (endsWithUnescapedBackslash(content)) {
+    return "all";
+  }
   if (/^\s*$/.test(content) || content.startsWith(".PHONY: ")) {
     return target ?? "all";
   }
   if (/^\s*#/.test(content)) {
-    return endsWithUnescapedBackslash(content) ? "all" : (target ?? "all");
+    return target ?? "all";
   }
   const declaredRule = parseRule(content);
   if (declaredRule?.target === target) {
