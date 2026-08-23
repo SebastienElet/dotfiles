@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tooling_dir=$(cd "$(dirname "$0")" && pwd)
+helper=$tooling_dir/git-main-branch
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/git-main-branch-test.XXXXXX")
+trap 'rm -rf "$test_root"' EXIT
+
+fail() {
+  printf 'FAIL: %s\n' "$1" >&2
+  exit 1
+}
+
+assert_equal() {
+  [[ $1 == "$2" ]] || fail "$3: expected '$2', got '$1'"
+}
+
+assert_fails() {
+  local name=$1
+  shift
+  if "$@" >"$test_root/$name.out" 2>"$test_root/$name.err"; then
+    fail "$name succeeded"
+  fi
+  [[ ! -s $test_root/$name.out ]] || fail "$name returned a branch"
+}
+
+real_git=$(command -v git)
+mock_bin=$test_root/bin
+fixture_dir=$test_root/fixtures
+bkt_log=$test_root/bkt.log
+mkdir -p "$mock_bin" "$fixture_dir"
+
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'repository=' \
+  'previous=' \
+  'for argument in "$@"; do' \
+  '  if [[ $previous == -C ]]; then repository=$argument; fi' \
+  '  previous=$argument' \
+  'done' \
+  'if [[ $* == *"ls-remote --symref"* ]]; then' \
+  '  remote=${*: -2:1}' \
+  '  url=$("$REAL_GIT" -C "$repository" remote get-url "$remote")' \
+  '  case $url in' \
+  '    *bitbucket.org*)' \
+  '      identity=${url#*bitbucket.org[:/]}' \
+  '      identity=${identity%.git}' \
+  '      fixture=${identity//\//__}' \
+  '      [[ -f $BKT_FIXTURE_DIR/$fixture.head ]] || exit 1' \
+  '      branch=$(cat "$BKT_FIXTURE_DIR/$fixture.head")' \
+  '      printf "ref: refs/heads/%s\\tHEAD\\n%s\\tHEAD\\n" "$branch" 1111111111111111111111111111111111111111' \
+  '      exit 0' \
+  '      ;;' \
+  '  esac' \
+  'fi' \
+  'exec "$REAL_GIT" "$@"' >"$mock_bin/git"
+
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s\n" "$*" >>"$BKT_LOG"' \
+  'if [[ $* == *"context list"* ]]; then' \
+  '  printf '\''{"active_context":"wrong","contexts":[{"name":"wrong","host":"example.test"},{"name":"cloud","host":"api.bitbucket.org"}]}'\''' \
+  '  exit 0' \
+  'fi' \
+  'for argument in "$@"; do' \
+  '  case $argument in' \
+  '    /repositories/*)' \
+  '      fixture=${argument#/repositories/}' \
+  '      fixture=${fixture//\//__}' \
+  '      [[ -f $BKT_FIXTURE_DIR/$fixture.json ]] || exit 1' \
+  '      cat "$BKT_FIXTURE_DIR/$fixture.json"' \
+  '      exit 0' \
+  '      ;;' \
+  '  esac' \
+  'done' \
+  'exit 2' >"$mock_bin/bkt"
+chmod +x "$mock_bin/bkt" "$mock_bin/git"
+
+write_fixture() {
+  local identity=$1 uuid=$2 main_branch=$3 full_name=${4-$1}
+  jq -n \
+    --arg uuid "$uuid" \
+    --arg full_name "$full_name" \
+    --arg main_branch "$main_branch" \
+    '{uuid: $uuid, full_name: $full_name, mainbranch: {name: $main_branch}}' \
+    >"$fixture_dir/${identity//\//__}.json"
+}
+
+create_repository() {
+  local name=$1 remote_url=$2 remote_branch=$3
+  repository=$test_root/$name
+  remote=$test_root/$name.git
+  "$real_git" init -q --bare "$remote"
+  "$real_git" init -q -b main "$repository"
+  "$real_git" -C "$repository" config user.email test@example.com
+  "$real_git" -C "$repository" config user.name Test
+  printf 'base\n' >"$repository/file"
+  "$real_git" -C "$repository" add file
+  "$real_git" -C "$repository" commit -qm base
+  "$real_git" -C "$repository" branch "$remote_branch"
+  "$real_git" -C "$repository" push -q "$remote" "$remote_branch"
+  "$real_git" --git-dir="$remote" symbolic-ref HEAD "refs/heads/$remote_branch"
+  "$real_git" -C "$repository" remote add origin "$remote_url"
+  case $remote_url in
+    *bitbucket.org*)
+      identity=${remote_url#*bitbucket.org[:/]}
+      identity=${identity%.git}
+      printf '%s\n' "$remote_branch" >"$fixture_dir/${identity//\//__}.head"
+      ;;
+  esac
+}
+
+run_helper() {
+  env \
+    PATH="$mock_bin:$PATH" \
+    REAL_GIT="$real_git" \
+    BKT_FIXTURE_DIR="$fixture_dir" \
+    BKT_LOG="$bkt_log" \
+    "$helper" "$@"
+}
+
+create_repository generic "$test_root/generic.git" develop
+assert_equal "$(run_helper --strict -C "$repository")" main "generic compatibility"
+
+create_repository bitbucket git@bitbucket.org:acme/service.git develop
+"$real_git" -C "$repository" update-ref refs/remotes/origin/main HEAD
+"$real_git" -C "$repository" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+write_fixture acme/service '{11111111-1111-1111-1111-111111111111}' develop
+: >"$bkt_log"
+assert_equal "$(run_helper --strict --bitbucket-cloud -C "$repository")" develop "Bitbucket main branch"
+grep -Fq -- '--context cloud api /repositories/acme/service --json' "$bkt_log" ||
+  fail "Bitbucket lookup did not use the remote identity and Cloud context"
+
+"$real_git" -C "$repository" remote add mirror https://user@bitbucket.org/acme/service.git
+: >"$bkt_log"
+assert_equal "$(run_helper --strict --bitbucket-cloud -C "$repository")" develop "equivalent Bitbucket remotes"
+assert_equal "$(grep -Fc '/repositories/acme/service' "$bkt_log")" 1 "duplicate provider lookup"
+
+create_repository ambiguous git@bitbucket.org:acme/service.git develop
+"$real_git" -C "$repository" remote add other ssh://git@bitbucket.org/acme/other.git
+write_fixture acme/other '{22222222-2222-2222-2222-222222222222}' develop
+printf '%s\n' develop >"$fixture_dir/acme__other.head"
+assert_fails ambiguous run_helper --strict --bitbucket-cloud -C "$repository"
+
+create_repository missing-main git@bitbucket.org:acme/missing-main.git develop
+jq -n '{uuid: "{33333333-3333-3333-3333-333333333333}", full_name: "acme/missing-main", mainbranch: null}' \
+  >"$fixture_dir/acme__missing-main.json"
+assert_fails missing-main run_helper --strict --bitbucket-cloud -C "$repository"
+
+create_repository mismatched-name git@bitbucket.org:acme/mismatched-name.git develop
+write_fixture acme/mismatched-name '{44444444-4444-4444-4444-444444444444}' develop acme/elsewhere
+assert_fails mismatched-name run_helper --strict --bitbucket-cloud -C "$repository"
+
+create_repository mismatched-branch git@bitbucket.org:acme/mismatched-branch.git develop
+write_fixture acme/mismatched-branch '{55555555-5555-5555-5555-555555555555}' main
+assert_fails mismatched-branch run_helper --strict --bitbucket-cloud -C "$repository"
+
+create_repository invalid-branch git@bitbucket.org:acme/invalid-branch.git develop
+write_fixture acme/invalid-branch '{66666666-6666-6666-6666-666666666666}' '-invalid'
+assert_fails invalid-branch run_helper --strict --bitbucket-cloud -C "$repository"
+
+create_repository unavailable git@bitbucket.org:acme/unavailable.git develop
+assert_fails unavailable run_helper --strict --bitbucket-cloud -C "$repository"
+assert_fails unavailable-permissive run_helper --bitbucket-cloud -C "$repository"
+
+create_repository mixed git@bitbucket.org:acme/service.git develop
+"$real_git" -C "$repository" remote add github git@github.com:acme/service.git
+assert_fails mixed run_helper --strict --bitbucket-cloud -C "$repository"
+
+empty_repository=$test_root/empty
+"$real_git" init -q -b main "$empty_repository"
+assert_fails no-remote run_helper --strict -C "$empty_repository"
+assert_equal "$(run_helper -C "$empty_repository")" main "permissive repository fallback"
+
+assert_fails outside run_helper --strict -C "$test_root"
+assert_equal "$(run_helper -C "$test_root")" main "permissive outside fallback"
+
+printf 'git-main-branch tests passed\n'

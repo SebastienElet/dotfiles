@@ -1,32 +1,176 @@
 #!/usr/bin/env bash
 
 strict=
-if [[ ${1-} == "--strict" ]]; then
-  strict=1
-  shift
-fi
+provider=
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --strict)
+      strict=1
+      shift
+      ;;
+    --bitbucket-cloud)
+      provider=bitbucket-cloud
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+git_arguments=("$@")
+
+fail_or_default() {
+  if [[ -n $strict || -n $provider ]]; then
+    return 1
+  fi
+  printf '%s\n' main
+}
+
+remote_main_branch() {
+  local remote=$1 response branch
+  if ! response=$(command git "${git_arguments[@]}" ls-remote --symref "$remote" HEAD); then
+    return 1
+  fi
+  branch=$(printf '%s\n' "$response" | awk '$1 == "ref:" && $3 == "HEAD" {sub("refs/heads/", "", $2); print $2}')
+  if [[ -z $branch || $branch == *$'\n'* ]] ||
+    ! command git "${git_arguments[@]}" check-ref-format --branch "$branch" >/dev/null; then
+    return 1
+  fi
+  printf '%s\n' "$branch"
+}
+
+bitbucket_identity() {
+  local url=$1 path workspace repository
+  case $url in
+    git@bitbucket.org:*) path=${url#git@bitbucket.org:} ;;
+    ssh://git@bitbucket.org/*) path=${url#ssh://git@bitbucket.org/} ;;
+    https://bitbucket.org/*) path=${url#https://bitbucket.org/} ;;
+    https://*@bitbucket.org/*) path=${url#https://*@bitbucket.org/} ;;
+    *bitbucket.org*) return 2 ;;
+    *) return 1 ;;
+  esac
+  path=${path%.git}
+  workspace=${path%%/*}
+  repository=${path#*/}
+  if [[ -z $workspace || -z $repository || $repository == */* ||
+    ! $workspace =~ ^[A-Za-z0-9._-]+$ || ! $repository =~ ^[A-Za-z0-9._-]+$ ]]; then
+    return 2
+  fi
+  printf '%s/%s\n' "$workspace" "$repository"
+}
+
+cloud_context() {
+  local response
+  if ! response=$(command bkt context list --json); then
+    return 1
+  fi
+  printf '%s\n' "$response" | command jq -er '
+    [.contexts[]? | select(.host == "api.bitbucket.org") | .name
+      | select(type == "string" and length > 0)]
+    | unique | sort | .[0] // error("Bitbucket Cloud context unavailable")
+  '
+}
+
+provider_repository() {
+  local context=$1 identity=$2 response
+  if ! response=$(command bkt --context "$context" api "/repositories/$identity" --json); then
+    return 1
+  fi
+  printf '%s\n' "$response" | command jq -er --arg identity "$identity" '
+    if (.uuid | type == "string" and
+        test("^\\{[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}\\}$")) and
+      (.full_name | type == "string" and . == $identity) and
+      (.mainbranch.name | type == "string" and length > 0)
+    then [.uuid, .mainbranch.name] | @tsv
+    else error("Invalid Bitbucket repository response")
+    end
+  '
+}
 
 if [[ -n $strict ]]; then
-  if ! command git "$@" rev-parse --git-dir >/dev/null; then
+  if ! command git "${git_arguments[@]}" rev-parse --git-dir >/dev/null; then
     exit 1
   fi
-elif ! command git "$@" rev-parse --git-dir &>/dev/null; then
-  echo "main"
+elif ! command git "${git_arguments[@]}" rev-parse --git-dir >/dev/null 2>&1; then
+  printf '%s\n' main
   exit 0
 fi
 
-# Try common branch names that exist locally
-for branch in main master trunk; do
-  if git "$@" show-ref -q --verify "refs/heads/$branch"; then
-    echo "$branch"
-    exit 0
-  else
-    show_ref_status=$?
-    if [[ $show_ref_status -ne 1 && -n $strict ]]; then
-      exit "$show_ref_status"
+if [[ -z $provider ]]; then
+  for branch in main master trunk; do
+    if command git "${git_arguments[@]}" show-ref -q --verify "refs/heads/$branch"; then
+      printf '%s\n' "$branch"
+      exit 0
+    else
+      show_ref_status=$?
+      if [[ $show_ref_status -ne 1 && -n $strict ]]; then
+        exit "$show_ref_status"
+      fi
     fi
+  done
+  fail_or_default
+  exit $?
+fi
+
+if ! remotes=$(command git "${git_arguments[@]}" remote) || [[ -z $remotes ]]; then
+  fail_or_default
+  exit $?
+fi
+
+main_branch=
+identities=
+for remote in $remotes; do
+  if ! urls=$(command git "${git_arguments[@]}" remote get-url --all "$remote"); then
+    fail_or_default
+    exit $?
   fi
+  while IFS= read -r url; do
+    if identity=$(bitbucket_identity "$url"); then
+      identities+="$identity"$'\n'
+    else
+      fail_or_default
+      exit $?
+    fi
+  done <<<"$urls"
+
+  if ! detected_branch=$(remote_main_branch "$remote"); then
+    fail_or_default
+    exit $?
+  fi
+  if [[ -n $main_branch && $main_branch != "$detected_branch" ]]; then
+    fail_or_default
+    exit $?
+  fi
+  main_branch=$detected_branch
 done
 
-# Default to main
-echo "main"
+if [[ $provider == bitbucket-cloud ]]; then
+  if ! context=$(cloud_context); then
+    fail_or_default
+    exit $?
+  fi
+  provider_uuid=
+  provider_branch=
+  while IFS= read -r identity; do
+    [[ -n $identity ]] || continue
+    if ! repository=$(provider_repository "$context" "$identity"); then
+      fail_or_default
+      exit $?
+    fi
+    IFS=$'\t' read -r uuid branch <<<"$repository"
+    if ! command git "${git_arguments[@]}" check-ref-format --branch "$branch" >/dev/null ||
+      [[ -n $provider_uuid && $provider_uuid != "$uuid" ]] ||
+      [[ -n $provider_branch && $provider_branch != "$branch" ]]; then
+      fail_or_default
+      exit $?
+    fi
+    provider_uuid=$uuid
+    provider_branch=$branch
+  done < <(printf '%s' "$identities" | sort -u)
+  if [[ -z $provider_uuid || $provider_branch != "$main_branch" ]]; then
+    fail_or_default
+    exit $?
+  fi
+fi
+
+printf '%s\n' "$main_branch"
