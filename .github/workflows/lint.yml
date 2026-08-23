@@ -117,6 +117,7 @@ jobs:
           tooling/upgrade-test
           tooling/ci-smoke-targets-test
           tooling/makefile-test
+          make obsidian-retrieval-test
           echo "✅ Shell scripts OK"
 
   cspell:
@@ -138,4 +139,4 @@ jobs:
           trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
           printf '%s\n' "$trace"
           printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
-          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt harness/skills/agent-instructions/SKILL.md harness/skills/agent-instructions/references/maintenance.md
+          HOME="$test_home" cspell lint --config "$test_home/cspell.json" home/cspell.json home/.config/cspell/user.txt harness/skills/agent-instructions/SKILL.md harness/skills/agent-instructions/references/maintenance.md harness/skills/obsidian-retrieval/SKILL.md harness/skills/obsidian-retrieval/references/obsidian-cli.md harness/skills/obsidian-retrieval/evals/trigger-queries.json
