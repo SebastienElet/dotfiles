@@ -44,7 +44,7 @@ ici sont les dates d'auteur.
 | [005](005-elagage-des-cibles.md)                       | Élagage périodique des cibles inutilisées                        | 2025-12 |
 | [006](006-neovim-editeur-par-defaut.md)                | Neovim comme éditeur par défaut                                  | 2019-11 |
 | [007](007-lazyvim-comme-distribution.md)               | LazyVim comme distribution Neovim                                | 2023-12 |
-| [008](008-lockfile-plugins-versionne.md)               | `lazy-lock.json` versionné et Renovate                           | 2024-10 |
+| [008](008-lockfile-plugins-versionne.md)               | Lockfiles versionnés et Dependabot pour Bun                      | 2024-10 |
 | [009](009-lsp-natif-et-conform.md)                     | Lint et format par LSP natif et conform                          | 2026-07 |
 | [010](010-fish-shell-par-defaut.md)                    | Fish comme shell par défaut                                      | 2025-01 |
 | [011](011-starship-comme-prompt.md)                    | Starship comme prompt unique                                     | 2025-01 |
