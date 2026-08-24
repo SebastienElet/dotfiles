@@ -28,10 +28,10 @@ mutation.
 
 ## Existing pull request by branch
 
-`bkt pr list` has no source-branch filter. Query the Bitbucket Cloud endpoint with `bkt api` and a
-server-side source branch predicate, or list open and merged pull requests as structured JSON and
-select an exact source branch match. Exhaust pagination and treat zero, one, and multiple matches
-as distinct outcomes.
+`bkt pr list` has no source-branch filter. List open and merged pull requests with explicit
+repository identity using `bkt pr list --state <OPEN-or-MERGED> --limit 0 --workspace <workspace>
+--repo <repository> --json`, then select an exact source branch match locally. Treat zero, one, and
+multiple matches as distinct outcomes.
 
 ## Creation and attachment
 

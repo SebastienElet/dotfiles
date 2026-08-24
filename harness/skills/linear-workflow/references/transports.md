@@ -6,8 +6,8 @@ Select a transport at runtime. The business workflow remains in its composing sk
 ## Selection
 
 1. Prefer an authenticated Linear connector exposed by the current agent when its current schema
-   covers identity, issue details, hierarchy, blocking relations, links or attachments, workflow
-   state updates, and URL attachment.
+   covers identity, filtered issue listing with pagination, issue details, hierarchy, blocking
+   relations, links or attachments, workflow state updates, and URL attachment.
 2. Otherwise use the installed `linear` CLI only after its local help confirms the commands and
    `linear auth whoami` succeeds for the intended workspace.
 3. Otherwise use Linear GraphQL only when authentication and the current schema are already
@@ -29,6 +29,8 @@ Select a transport at runtime. The business workflow remains in its composing sk
 The locally verified `linear` 2.5.0 surface provides:
 
 - `linear auth whoami --workspace <workspace>` for identity and authentication;
+- `linear issue query --workspace <workspace> --assignee <username> --all-states --limit 0 --json`
+  for an exhaustive structured list of one user's issues;
 - `linear issue view <issue-id> --workspace <workspace> --json` for structured issue, hierarchy,
   inverse relations, and attachments;
 - `linear issue relation list <issue-id> --workspace <workspace>` to inspect relations;
