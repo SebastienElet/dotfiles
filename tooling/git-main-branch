@@ -1,32 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bun
 
-strict=
-if [[ ${1-} == "--strict" ]]; then
-  strict=1
-  shift
-fi
+import { main } from "./git-main-branch-cli.ts";
 
-if [[ -n $strict ]]; then
-  if ! command git "$@" rev-parse --git-dir >/dev/null; then
-    exit 1
-  fi
-elif ! command git "$@" rev-parse --git-dir &>/dev/null; then
-  echo "main"
-  exit 0
-fi
-
-# Try common branch names that exist locally
-for branch in main master trunk; do
-  if git "$@" show-ref -q --verify "refs/heads/$branch"; then
-    echo "$branch"
-    exit 0
-  else
-    show_ref_status=$?
-    if [[ $show_ref_status -ne 1 && -n $strict ]]; then
-      exit "$show_ref_status"
-    fi
-  fi
-done
-
-# Default to main
-echo "main"
+main(process.argv.slice(2));

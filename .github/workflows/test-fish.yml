@@ -5,11 +5,17 @@ on:
     paths:
       - home/.config/fish/**
       - tooling/git-main-branch
+      - tooling/git-main-branch-*.ts
+      - package.json
+      - bun.lock
       - .github/workflows/test-fish.yml
   pull_request:
     paths:
       - home/.config/fish/**
       - tooling/git-main-branch
+      - tooling/git-main-branch-*.ts
+      - package.json
+      - bun.lock
       - .github/workflows/test-fish.yml
 
 jobs:
@@ -21,6 +27,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
 
       - name: Install Fish on macOS
         if: runner.os == 'macOS'
@@ -34,6 +46,9 @@ jobs:
 
       - name: Test Git cleanup
         run: fish --no-config home/.config/fish/tests/git_cleanup_test.fish
+
+      - name: Test main branch rebase
+        run: fish --no-config home/.config/fish/tests/git_main_branch_test.fish
 
       - name: Test PATH idempotency
         run: fish --no-config home/.config/fish/tests/path_test.fish

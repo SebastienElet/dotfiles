@@ -20,9 +20,10 @@ and semantic retrieval are optional enhancements.
 
 ## Usage
 
-Use the active workspace when it is a trustworthy corpus, or accept an explicit corpus input from
-the user. Examples include “Find the note titled ADR-183 and summarize it,” “What themes connect my
-notes about bounded contexts?”, and “Which notes link to Architecture?”.
+Use an explicit corpus input from the user, the configured default Obsidian corpus from loaded user
+instructions, or the active workspace when it is trustworthy. Examples include “Find the note
+titled ADR-183 and summarize it,” “What themes connect my notes about bounded contexts?”, and
+“Which notes link to Architecture?”.
 
 This skill returns an answer grounded in read source notes, source citations, and a concise account
 of degraded or incomplete retrieval. It does not provide note-writing operations.
@@ -31,10 +32,14 @@ of degraded or incomplete retrieval. It does not provide note-writing operations
 
 1. Determine exactly one corpus root in this order:
    - a readable directory supplied as explicit corpus input;
+   - the configured default Obsidian corpus declared in loaded user instructions, requiring both a
+     readable directory and its `.obsidian/` child;
    - the nearest ancestor containing `.obsidian/` when the current directory is inside a vault;
    - the single current workspace root when it contains readable Markdown files.
-     Stop and request a root when none is trustworthy or multiple workspace roots remain ambiguous.
-     Never search parent directories, `$HOME`, or Obsidian's vault registry to guess a corpus.
+     When a configured default is present but invalid, stop and report its exact path and failed
+     check instead of selecting another corpus. Otherwise, stop and request a root when none is
+     trustworthy or multiple workspace roots remain ambiguous. Never search parent directories,
+     `$HOME`, or Obsidian's vault registry to guess a corpus.
 2. Resolve the selected root, verify that it is a readable directory, and keep every filesystem
    read and search inside it. Exclude `.obsidian/` configuration files from note retrieval unless
    the user explicitly asks about vault configuration; configuration remains read-only.
@@ -77,6 +82,8 @@ of degraded or incomplete retrieval. It does not provide note-writing operations
   and a semantic index may be stale. Verify the selected corpus and health before trusting results.
 - **Guessing a vault path** — scanning parent directories or the home directory can cross privacy
   boundaries. Use the closed root-selection order and stop on ambiguity.
+- **Masking an invalid default** — silently choosing a workspace or the Web hides configuration
+  drift. Report the configured path and failed check, then stop.
 - **Presenting no matches as absence** — lexical wording and incomplete indexes can cause false
   negatives. Report the query and coverage limits instead of claiming the vault lacks the fact.
 - **Emulating Obsidian relations with grep** — raw wikilinks and YAML do not reproduce link
@@ -88,6 +95,7 @@ of degraded or incomplete retrieval. It does not provide note-writing operations
 - Never write, create, append, prepend, move, rename, or delete vault content or configuration.
 - Never expose mutating or unrestricted Obsidian CLI operations.
 - Never install QMD, another semantic tool, a dependency, or an MCP server during retrieval.
+- Never replace a missing or inaccessible local corpus with Web retrieval.
 - Never use an MCP transport as evidence that retrieval quality or index coverage improved.
 - Never answer a factual question only from filenames, snippets, relation output, or scores.
 - Never claim exhaustive absence without a named healthy oracle whose complete coverage is known.

@@ -76,6 +76,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+
       - name: Install ShellCheck
         run: brew install actionlint jq shellcheck
 
@@ -113,9 +119,7 @@ jobs:
           printf '%s\n' "$output" \
             | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
 
-          tooling/agent-handoff-test
           tooling/upgrade-test
-          tooling/makefile-test
           echo "✅ Shell scripts OK"
 
   cspell:
@@ -129,8 +133,16 @@ jobs:
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
+          tooling/git-main-branch-core.ts tooling/git-main-branch-core.test.ts
+          tooling/git-main-branch-cli.ts tooling/git-main-branch-entry.test.ts
+          tooling/git-main-branch.test-support/fake-command.ts
+          tooling/git-main-branch.test-support/harness.ts
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
+          tooling/obsidian-retrieval/default-corpus-contract.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
+          tooling/install-hunspell-dictionary*.ts
+          tooling/deployment-*.ts
+          .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
@@ -142,6 +154,11 @@ jobs:
           harness/skills/issue-creation/references/forge-capabilities.md
           harness/skills/issue-creation/evals/trigger-queries.json
           harness/skills/linear-issue-spec/SKILL.md
+          harness/skills/linear-start/SKILL.md
+          harness/skills/linear-sync/SKILL.md
+          harness/skills/linear-workflow/SKILL.md
+          harness/skills/linear-workflow/references/bitbucket.md
+          harness/skills/linear-workflow/references/transports.md
 
       - name: Check configuration and user dictionary
         run: |
@@ -161,9 +178,19 @@ jobs:
             harness/skills/issue-creation/references/forge-capabilities.md \
             harness/skills/issue-creation/evals/trigger-queries.json \
             harness/skills/linear-issue-spec/SKILL.md \
+            harness/skills/linear-start/SKILL.md \
+            harness/skills/linear-sync/SKILL.md \
+            harness/skills/linear-workflow/SKILL.md \
+            harness/skills/linear-workflow/references/bitbucket.md \
+            harness/skills/linear-workflow/references/transports.md \
             harness/skills/obsidian-retrieval/SKILL.md \
             harness/skills/obsidian-retrieval/references/obsidian-cli.md \
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
-            tooling/obsidian-retrieval/evaluation-contract.ts
+            tooling/obsidian-retrieval/default-corpus-contract.ts \
+            tooling/obsidian-retrieval/evaluation-contract.ts \
+            tooling/install-hunspell-dictionary*.ts \
+            tooling/deployment-*.ts \
+            .agents/skills/apple-notes/scripts/*.ts \
+            tooling/apple-notes*.ts

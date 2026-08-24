@@ -3,8 +3,8 @@ name: linear-issue-spec
 description: >
   Prepare implementation-ready Linear development issues as functional specifications. Use when
   scoping, drafting, splitting, or refining product work before implementation. Make sure to use
-  this skill whenever an agent will receive a Linear issue, even if the user only asks to write or
-  clean up the ticket.
+  this skill whenever the user asks to shape or clean up a Linear ticket, even if they do not call
+  it a specification.
 compatibility: Requires access to the relevant Linear workspace and product or design sources.
 metadata:
   category: product
@@ -152,3 +152,5 @@ Provide the draft in the user's language. Preserve canonical product terms from 
 - Never claim inaccessible Linear, design, or specification evidence was inspected.
 - Never publish or modify a Linear issue from this procedure; route lifecycle writes through
   `issue-creation`, which evaluates the user's publication authority.
+- Never activate solely because implementation starts from an existing Linear issue;
+  `linear-start` owns that workflow and routes here only when shaping is explicitly requested.

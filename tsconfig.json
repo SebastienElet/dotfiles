@@ -18,5 +18,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["tooling/**/*.ts"]
+  "include": ["tooling/**/*.ts", ".agents/skills/apple-notes/scripts/**/*.ts"]
 }

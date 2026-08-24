@@ -13,7 +13,7 @@ const repositoryRoot = resolve(import.meta.dir, "../..");
 
 const mutate = (
   sources: ContractSources,
-  field: "skill" | "reference",
+  field: "skill" | "reference" | "userInstructions",
   transform: (value: string) => string,
 ): ContractSources => ({ ...sources, [field]: transform(sources[field]) });
 
@@ -30,6 +30,45 @@ describe("Obsidian retrieval contract", () => {
     const sources = await loadContractSources(repositoryRoot);
 
     expect(validateContract(sources)).toEqual([]);
+  });
+
+  test("requires the configured default Obsidian corpus", async () => {
+    const sources = await loadContractSources(repositoryRoot);
+
+    expect(
+      validateContract(
+        mutate(sources, "userInstructions", (value) =>
+          value.replace(/(- \*\*Default Obsidian corpus:\*\* )`[^`]+`/, "$1``"),
+        ),
+      ),
+    ).not.toEqual([]);
+  });
+
+  test("rejects a relative default Obsidian corpus", async () => {
+    const sources = await loadContractSources(repositoryRoot);
+
+    expect(
+      validateContract(
+        mutate(sources, "userInstructions", (value) =>
+          value.replace(
+            /(- \*\*Default Obsidian corpus:\*\* )`\/[^`]+`/,
+            "$1`relative/vault`",
+          ),
+        ),
+      ),
+    ).not.toEqual([]);
+  });
+
+  test("requires default-corpus fallback guidance", async () => {
+    const sources = await loadContractSources(repositoryRoot);
+
+    expect(
+      validateContract(
+        mutate(sources, "skill", (value) =>
+          value.replaceAll("configured default Obsidian corpus", ""),
+        ),
+      ),
+    ).not.toEqual([]);
   });
 
   test.each([

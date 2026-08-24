@@ -4,6 +4,8 @@ set -euo pipefail
 tooling_dir=$(cd "$(dirname "$0")" && pwd)
 upgrade=$tooling_dir/upgrade
 main_branch_helper=$tooling_dir/git-main-branch
+main_branch_cli=$tooling_dir/git-main-branch-cli.ts
+main_branch_core=$tooling_dir/git-main-branch-core.ts
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/upgrade-test.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT
 
@@ -17,6 +19,7 @@ assert_equal() {
 }
 
 real_git=$(command -v git)
+real_bun=$(command -v bun)
 test_home=$test_root/home
 repository=$test_home/.dotfiles
 remote=$test_root/remote.git
@@ -24,7 +27,7 @@ mock_bin=$test_root/bin
 git_log=$test_root/git.log
 command_log=$test_root/command.log
 mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin"
-cp "$upgrade" "$main_branch_helper" "$repository/tooling/"
+cp "$upgrade" "$main_branch_helper" "$main_branch_cli" "$main_branch_core" "$repository/tooling/"
 printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
 
 "$real_git" init --bare -q "$remote"
@@ -64,6 +67,7 @@ printf '%s\n' \
   'done' \
   'exec "$REAL_GIT" "$@"' >"$mock_bin/git"
 chmod +x "$mock_bin"/*
+ln -s "$real_bun" "$mock_bin/bun"
 
 run_upgrade() {
   output=$test_root/$1.out

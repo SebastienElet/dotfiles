@@ -120,7 +120,7 @@ ${BREW_BIN}/fd:
 	brew install fd
 
 .PHONY: fish
-fish: brew starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
+fish: brew bun starship ~/.config/fish ${BREW_BIN}/fish ~/.config/fish/functions/fzf_configure_bindings.fish
 ${BREW_BIN}/fish:
 	brew install fish fisher
 	@echo 'If you want to switch your shell to fish, please run the following command'
@@ -356,7 +356,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
@@ -372,6 +372,12 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 ~/.cursor/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync | ~/.cursor/skills
+	${CREATE_SYMLINK}
+~/.cursor/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.cursor/skills
 	${CREATE_SYMLINK}
@@ -389,7 +395,7 @@ cursor-hooks: arnes
 	"${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -420,6 +426,12 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.claude/skills
 	${CREATE_SYMLINK}
+~/.claude/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.claude/skills
+	${CREATE_SYMLINK}
 ~/.claude/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.claude/skills
 	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
@@ -438,19 +450,19 @@ claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
-hunspell: brew ${BREW_BIN}/hunspell hunspell-dictionaries
+hunspell: bun brew ${BREW_BIN}/hunspell hunspell-dictionaries
 ${BREW_BIN}/hunspell:
 	brew install hunspell
 
 .PHONY: hunspell-dictionaries
-hunspell-dictionaries:
+hunspell-dictionaries: bun
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.aff" "c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5" "$(HOME)/Library/Spelling/fr.aff"
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.dic" "b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c" "$(HOME)/Library/Spelling/fr.dic"
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.aff" "e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e" "$(HOME)/Library/Spelling/en_US.aff"
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -479,6 +491,12 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 ~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec | ~/.agents/skills
 	${CREATE_SYMLINK}
+~/.agents/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.agents/skills
+	${CREATE_SYMLINK}
 ~/.agents/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
@@ -500,16 +518,15 @@ ${APP_BIN}/CodexBar.app:
 	brew install --cask codexbar
 
 .PHONY: codegraph
-codegraph: codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
-	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph tooling/codegraph-configure
+codegraph: bun tokei codegraph-cli claude-code codex cursor codegraph-ignore ${LOCAL_BIN}/codegraph-repository-size ~/.claude/skills/codegraph ~/.agents/skills/codegraph ~/.cursor/skills/codegraph
+	CODEGRAPH_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_CODEX_BIN=${VOLTA_BIN}/codex CODEGRAPH_BIN=${VOLTA_BIN}/codegraph ${BREW_BIN}/bun tooling/codegraph-configure
 
 .PHONY: codegraph-test
-codegraph-test:
+codegraph-test: bun tokei
 	bash harness/skills/codegraph/scripts/skill_contract_test.sh
-	bash harness/skills/codegraph/scripts/measure_repository_test.sh
-	bash tooling/codegraph-configure-test
-	bash tooling/codegraph-mcp-test
-	bash tooling/codegraph-network-test
+	${BREW_BIN}/bun test tooling/codegraph-repository-*.test.ts
+	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex ${BREW_BIN}/bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
+	CODEGRAPH_INTEGRATION=1 ${BREW_BIN}/bun test tooling/codegraph-integration.test.ts
 
 .PHONY: obsidian-retrieval-test
 obsidian-retrieval-test: ${BREW_BIN}/bun
@@ -536,7 +553,7 @@ codegraph-ignore:
 	mkdir -p "$$(dirname "$$target")"; \
 	ln -s "$$expected" "$$target"
 
-${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/harness/skills/codegraph/scripts/measure_repository.sh | ${LOCAL_BIN}
+${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size | ${LOCAL_BIN}
 	${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli

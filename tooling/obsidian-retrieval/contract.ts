@@ -1,10 +1,12 @@
 import { resolve } from "node:path";
 import { z } from "zod";
+import { validateDefaultCorpus } from "./default-corpus-contract.ts";
 import { validateEvaluations } from "./evaluation-contract.ts";
 
 export type ContractSources = Readonly<{
   skill: string;
   reference: string;
+  userInstructions: string;
   evaluations: unknown;
 }>;
 
@@ -76,6 +78,7 @@ const unsafeCommandPattern = [...unsafeCommands]
 
 const requiredSkillPhrases = [
   "explicit corpus input",
+  "configured default Obsidian corpus",
   "nearest ancestor containing `.obsidian/`",
   "single current workspace root",
   "Never search parent directories, `$HOME`, or Obsidian",
@@ -87,6 +90,7 @@ const requiredSkillPhrases = [
   "not prove that the information is absent",
   "Report unavailable tools, inaccessible roots, and incomplete indexes",
   "Do not install QMD",
+  "Never replace a missing or inaccessible local corpus with Web retrieval",
   "Never write, create, append, prepend, move, rename, or delete vault content",
   "references/obsidian-cli.md",
 ];
@@ -159,11 +163,14 @@ const positiveDangerousGuidance = (skill: string): string[] => {
 export const validateContract = ({
   skill,
   reference,
+  userInstructions,
   evaluations,
 }: ContractSources): string[] => {
   const errors: string[] = [];
+  const normalizedSkill = skill.replace(/\s+/g, " ");
   for (const phrase of requiredSkillPhrases) {
-    if (!skill.includes(phrase)) errors.push(`SKILL.md is missing: ${phrase}`);
+    if (!normalizedSkill.includes(phrase.replace(/\s+/g, " ")))
+      errors.push(`SKILL.md is missing: ${phrase}`);
   }
   const section = allowlistSection(reference);
   if (section === undefined) {
@@ -190,6 +197,7 @@ export const validateContract = ({
   const dangerous = positiveDangerousGuidance(`${skill}\n${reference}`);
   if (dangerous.length > 0)
     errors.push(`positive dangerous guidance: ${dangerous.join(", ")}`);
+  errors.push(...validateDefaultCorpus(userInstructions));
   errors.push(...validateEvaluations(evaluations));
   return errors;
 };
@@ -202,14 +210,17 @@ export const loadContractSources = async (
     "harness/skills/obsidian-retrieval",
   );
   try {
-    const [skill, reference, evaluationsText] = await Promise.all([
-      Bun.file(resolve(skillRoot, "SKILL.md")).text(),
-      Bun.file(resolve(skillRoot, "references/obsidian-cli.md")).text(),
-      Bun.file(resolve(skillRoot, "evals/trigger-queries.json")).text(),
-    ]);
+    const [skill, reference, userInstructions, evaluationsText] =
+      await Promise.all([
+        Bun.file(resolve(skillRoot, "SKILL.md")).text(),
+        Bun.file(resolve(skillRoot, "references/obsidian-cli.md")).text(),
+        Bun.file(resolve(repositoryRoot, "harness/USER.md")).text(),
+        Bun.file(resolve(skillRoot, "evals/trigger-queries.json")).text(),
+      ]);
     return {
       skill,
       reference,
+      userInstructions,
       evaluations: JSON.parse(evaluationsText) as unknown,
     };
   } catch (error) {

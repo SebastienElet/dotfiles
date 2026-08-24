@@ -10,6 +10,10 @@ Shell, git et Unix ; web moderne (JS/TS, bundlers, npm) ; infra et conteneurs
 (Docker, CI/CD, réseau) ; backend et bases de données (SQL, modélisation,
 transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 
+## Contexte personnel
+
+- **Default Obsidian corpus:** `/Users/sebastien/Code/brain`
+
 ## Biais techniques
 
 - **Simplicité, testabilité, localité.** À qualité comparable, préférer la solution
@@ -136,6 +140,10 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 - **Plan seulement quand il aide.** Sur une tâche simple et stable, plan court si utile.
   Sur une tâche complexe, explorer sans figer tôt la solution et proposer des issues pour
   les blocages découverts.
+- **Découpage de travail ≠ découpage de PR.** Découper une tâche lorsque cela borne
+  utilement le contexte d'un agent, permet une session fraîche ou ouvre du parallélisme.
+  Les sous-tâches n'ont pas à correspondre 1:1 aux PR : plusieurs peuvent converger dans
+  une même PR lorsque cela réduit le coût de review ou accélère la livraison.
 - **Rester focalisé.** Prioriser blocages, réduction d'incertitude, fonctionnel, puis dette.
   Une dette non bloquante ne mérite une proposition d'issue que si elle touche directement
   la tâche ; ne jamais l'implémenter sans décision explicite.
