@@ -136,9 +136,10 @@ describe("deployment area: Bun and measurement wiring", () => {
     }
   });
 
-  test("agent entry points install one measurement hook after Codex handoff", () => {
-    const fixture = createDeploymentFixture("measurement-wiring");
-    for (const agent of ["codex", "claude-code", "cursor"]) {
+  test.each(["codex", "claude-code", "cursor"])(
+    "%s entry point installs one measurement hook",
+    (agent) => {
+      const fixture = createDeploymentFixture(`measurement-wiring-${agent}`);
       const expected = `measure install-hooks --agent ${agent} --command \"${fixture.home}/.local/bin/arnes\"`;
       const hook = runMake(fixture, [`${agent}-measurement-hooks`], {
         repository: project,
@@ -161,8 +162,8 @@ describe("deployment area: Bun and measurement wiring", () => {
           entry.stdout.indexOf(expected),
         );
       }
-    }
-  });
+    },
+  );
 });
 
 describe("deployment area: Hunspell wiring", () => {
