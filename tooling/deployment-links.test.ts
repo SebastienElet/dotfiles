@@ -195,9 +195,12 @@ describe("deployment area: agent instructions and skills", () => {
         "workflow-automation",
       ].map((slug) => [".agents", slug]),
     ] as const;
+    const destinationPaths = destinations.map(([owner, slug]) =>
+      join(fixture.home, owner, "skills", slug),
+    );
+    expectSuccess(runMake(fixture, destinationPaths, { repository: project }));
     for (const [owner, slug] of destinations) {
       const destination = join(fixture.home, owner, "skills", slug);
-      expectSuccess(runMake(fixture, [destination], { repository: project }));
       expect(linkTarget(destination)).toBe(
         join(project, "harness", "skills", slug),
       );
