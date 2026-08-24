@@ -20,11 +20,12 @@ commit précis, et les mises à jour produisent un commit dédié
 
 Dependabot propose chaque semaine les mises à jour des dépendances directes du
 projet Bun racine. Sa configuration ne porte aucune liste de paquets : les
-dépendances directes présentes et futures restent éligibles. Les propositions
-restent des pull requests sans fusion automatique et déclenchent
-l'installation gelée, les tests Bun et la vérification TypeScript communes
-aux autres pull requests. Cette décision ne couvre aucun autre écosystème ni
-les mises à jour du runtime Bun.
+dépendances directes présentes et futures restent éligibles après une fenêtre
+de refroidissement explicite d'au moins trois jours suivant la publication
+d'une version. Les propositions restent des pull requests sans fusion
+automatique et déclenchent l'installation gelée, les tests Bun et la
+vérification TypeScript communes aux autres pull requests. Cette décision ne
+couvre aucun autre écosystème ni les mises à jour du runtime Bun.
 
 ## Conséquences
 
@@ -33,6 +34,9 @@ les mises à jour du runtime Bun.
   trois cents sur douze ans — ce qui nuit à sa lisibilité.
 - Un poste neuf installe exactement les versions validées sur le poste
   courant.
+- Une nouvelle version attend au moins trois jours avant de devenir éligible à
+  une proposition, ce qui laisse apparaître les compromissions détectées
+  rapidement au lieu de suivre immédiatement la publication.
 - Le service Dependabot ne devient observable qu'après intégration de sa
   configuration dans la branche par défaut ; une validation YAML locale ne
   prouve ni son exécution ni la production conjointe du manifeste et du
