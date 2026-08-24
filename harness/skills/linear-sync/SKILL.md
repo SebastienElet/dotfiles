@@ -21,9 +21,10 @@ or issue-shaping pass.
 
 `/linear-sync`
 
-Run from the Bitbucket repository whose assigned Linear issues should be reconciled. Report only
-applied transitions, repaired pull-request attachments, unresolved inconsistencies, and relevant
-issues that were already synchronized.
+Run from the Bitbucket repository whose assigned Linear issues should be reconciled. The current
+repository scopes branch-based discovery; an attached canonical pull-request URL may identify a
+different repository explicitly. Report only applied transitions, repaired pull-request
+attachments, unresolved inconsistencies, and relevant issues that were already synchronized.
 
 ## Workflow
 
@@ -35,7 +36,9 @@ issues that were already synchronized.
 2. **Establish identity and repository scope.** Retrieve the current Linear identity. Resolve the
    current Bitbucket repository from Git remotes and verify its workspace and repository slug with
    `bkt`; never trust the active `bkt` context alone. Consider only Linear issues assigned to that
-   identity as synchronization candidates.
+   identity as synchronization candidates. Treat the resolved repository as the only scope for
+   branch-based discovery; when a canonical attachment identifies another repository, verify that
+   repository independently before reading its pull request.
 
 3. **Read structured Linear facts.** Exhaust result pages while retrieving assigned candidates with
    their identifiers, workflow states, parents, direct sub-issues, blocking relations, and links or
@@ -64,17 +67,22 @@ issues that were already synchronized.
    leaves may transition from the same merged pull request only when each association is explicit
    and certain.
 
-7. **Complete assigned parents from child state.** After leaf transitions are verified, re-read
-   each assigned parent with direct sub-issues. Move it to `Done` only when every direct sub-issue is
-   already `Done`, then verify the parent state independently. Do not infer completion from the
-   parent description, pull-request title, or partial child set, and do not review the work again.
+7. **Complete assigned parents from child state.** After leaf transitions are verified, repeatedly
+   process assigned parents bottom-up until a pass applies no transition. Before each transition,
+   re-read the parent and every direct sub-issue; move the parent to `Done` only when every direct
+   sub-issue is `Done`. Then re-read the parent and every direct sub-issue independently. If a child
+   is no longer `Done`, report a partial synchronization failure and do not apply a compensating
+   status change automatically. Do not infer completion from the parent description, pull-request
+   title, or partial child set, and do not review the work again.
 
-8. **Surface inconsistent active work.** For an assigned `In Progress` issue, search exact
-   attachments, exact issue-prefixed pull-request source branches, and exact issue-prefixed remote
-   branches in the resolved repository. When none identifies Bitbucket work, report the observed
-   branch, pull-request, attachment, and blocking-relation facts and leave the state unchanged so
-   the user can choose resumption, `Todo`, or `Done`. When evidence is ambiguous, report every
-   conflicting fact and make no lifecycle or attachment write.
+8. **Surface inconsistent active work.** For an assigned `In Progress` issue explicitly associated
+   with the resolved repository, search exact attachments, exact issue-prefixed pull-request source
+   branches, and exact issue-prefixed remote branches there. When none identifies Bitbucket work,
+   report the observed repository, branch, pull-request, attachment, and blocking-relation facts and
+   leave the state unchanged so the user can choose resumption, `Todo`, or `Done`. A missing match in
+   the current repository says nothing about an issue with no explicit repository association;
+   omit it unless conflicting explicit signals make it a relevant ambiguity. When evidence is
+   ambiguous, report every conflicting fact and make no lifecycle or attachment write.
 
 9. **Return a concise reconciliation.** Include only transitions applied, attachments repaired,
    inconsistencies or ambiguities requiring a human decision, and relevant issues already in the
@@ -91,8 +99,12 @@ issues that were already synchronized.
 - **Closing a parent from assigned children only** — an unassigned open child is missed and the
   parent closes early; inspect every direct child's structured state while mutating only assigned
   issues.
+- **Closing nested parents in query order** — a grandparent can remain open after its parent closes;
+  process parents bottom-up until no further transition applies.
 - **Treating a missing attachment as missing work** — an exact issue-prefixed branch can prove an
   existing pull request; query Bitbucket before reporting an `In Progress` inconsistency.
+- **Searching only the current repository for a global issue** — unrelated work appears missing;
+  require explicit repository scope before reporting the inconsistency.
 - **Retrying the whole synchronization after a partial write** — verified transitions or links are
   repeated unnecessarily; re-read both systems and retry only the failed idempotent operation.
 
