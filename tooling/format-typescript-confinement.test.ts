@@ -69,7 +69,7 @@ describe("format-typescript confinement", () => {
     expect(dangling.status).toBe(1);
   });
 
-  test("writes through the validated descriptor when a directory path is replaced", async () => {
+  test("refuses publication when a directory path is replaced after formatting starts", async () => {
     const repository = await createRepository();
     const trackedDirectory = join(repository, "tracked");
     const movedDirectory = join(repository, "moved");
@@ -78,6 +78,7 @@ describe("format-typescript confinement", () => {
     );
     temporaryDirectories.push(externalDirectory);
     await mkdir(trackedDirectory);
+    await writeFile(join(repository, "first.ts"), "export const first=1\n");
     await writeFile(
       join(trackedDirectory, "victim.ts"),
       "export const victim=1\n",
@@ -87,23 +88,30 @@ describe("format-typescript confinement", () => {
       "export const outside=1\n",
     );
 
-    const different = await formatTypeScriptPaths(
-      ["tracked/victim.ts"],
-      false,
-      async () => {
-        await rename(trackedDirectory, movedDirectory);
-        await symlink(externalDirectory, trackedDirectory, "dir");
-        return { code: "export const victim = 1;\n", errors: [] };
-      },
-      repository,
-    );
+    await expect(
+      formatTypeScriptPaths(
+        ["first.ts", "tracked/victim.ts"],
+        false,
+        async (path) => {
+          if (path === "tracked/victim.ts") {
+            await rename(trackedDirectory, movedDirectory);
+            await symlink(externalDirectory, trackedDirectory, "dir");
+          }
+          const name = path === "first.ts" ? "first" : "victim";
+          return { code: `export const ${name} = 1;\n`, errors: [] };
+        },
+        repository,
+      ),
+    ).rejects.toThrow("Git could not publish the TypeScript formatting patch");
 
-    expect(different).toEqual(["tracked/victim.ts"]);
     expect(await Bun.file(join(externalDirectory, "victim.ts")).text()).toBe(
       "export const outside=1\n",
     );
+    expect(await Bun.file(join(repository, "first.ts")).text()).toBe(
+      "export const first=1\n",
+    );
     expect(await Bun.file(join(movedDirectory, "victim.ts")).text()).toBe(
-      "export const victim = 1;\n",
+      "export const victim=1\n",
     );
   });
 });

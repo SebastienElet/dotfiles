@@ -1,6 +1,14 @@
-import { constants } from "node:fs";
-import { lstat, open, realpath, type FileHandle } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { format, type FormatConfig } from "oxfmt";
 import { z } from "zod";
 import formatConfig from "../oxfmt.config.ts";
@@ -26,6 +34,12 @@ type FormatSource = (
   sourceText: string,
   options?: FormatConfig,
 ) => ReturnType<typeof format>;
+
+type FormattingChange = {
+  path: string;
+  source: string;
+  formatted: string;
+};
 
 function isOutside(root: string, path: string) {
   const pathFromRoot = relative(root, path);
@@ -66,7 +80,7 @@ async function findTrackedTypeScriptPaths() {
   return { status, paths };
 }
 
-async function openOwnedFile(root: string, path: string) {
+async function readOwnedFile(root: string, path: string) {
   const absolutePath = resolve(root, path);
   if (
     isOutside(root, absolutePath) ||
@@ -76,45 +90,79 @@ async function openOwnedFile(root: string, path: string) {
       `${path}: tracked TypeScript path is not confined to the repository.`,
     );
   }
-  const beforeOpen = await lstat(absolutePath);
-  if (!beforeOpen.isFile() || beforeOpen.nlink !== 1) {
+  const file = await lstat(absolutePath);
+  if (!file.isFile() || file.nlink !== 1) {
     throw new Error(
       `${path}: tracked TypeScript path is not an owned regular file.`,
     );
   }
-  const file = await open(
-    absolutePath,
-    constants.O_RDWR | constants.O_NOFOLLOW,
-  );
-  const opened = await file.stat();
-  if (
-    !opened.isFile() ||
-    opened.nlink !== 1 ||
-    opened.dev !== beforeOpen.dev ||
-    opened.ino !== beforeOpen.ino
-  ) {
-    await file.close();
-    throw new Error(
-      `${path}: tracked TypeScript file changed while opening it.`,
-    );
-  }
-  return file;
-}
-
-async function readUtf8(file: FileHandle, path: string) {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(
-      await file.readFile(),
+      await readFile(absolutePath),
     );
   } catch {
     throw new Error(`${path}: tracked TypeScript file is not valid UTF-8.`);
   }
 }
 
-async function writeFile(file: FileHandle, code: string) {
-  const output = Buffer.from(code);
-  await file.write(output, 0, output.length, 0);
-  await file.truncate(output.length);
+async function createPatch(changes: FormattingChange[]) {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "dotfiles-oxfmt-"));
+  try {
+    for (const change of changes) {
+      const beforePath = join(temporaryRoot, "before", change.path);
+      const afterPath = join(temporaryRoot, "after", change.path);
+      await Promise.all([
+        mkdir(dirname(beforePath), { recursive: true }),
+        mkdir(dirname(afterPath), { recursive: true }),
+      ]);
+      await Promise.all([
+        writeFile(beforePath, change.source),
+        writeFile(afterPath, change.formatted),
+      ]);
+    }
+    const diff = Bun.spawn(
+      [
+        "git",
+        "diff",
+        "--no-index",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-renames",
+        "--",
+        "before",
+        "after",
+      ],
+      { cwd: temporaryRoot, stdout: "pipe", stderr: "inherit" },
+    );
+    const [status, patch] = await Promise.all([
+      diff.exited,
+      new Response(diff.stdout).arrayBuffer(),
+    ]);
+    if (status !== 1) {
+      throw new Error(
+        `Git could not build the TypeScript formatting patch (status ${status}).`,
+      );
+    }
+    return new Uint8Array(patch);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+}
+
+async function applyPatch(root: string, patch: Uint8Array) {
+  const apply = Bun.spawn(["git", "apply", "-p2", "--whitespace=nowarn"], {
+    cwd: root,
+    stdin: new Blob([patch]),
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const status = await apply.exited;
+  if (status !== 0) {
+    throw new Error(
+      `Git could not publish the TypeScript formatting patch (status ${status}).`,
+    );
+  }
 }
 
 export async function formatTypeScriptPaths(
@@ -124,28 +172,23 @@ export async function formatTypeScriptPaths(
   repositoryRoot: string = process.cwd(),
 ) {
   const root = await realpath(repositoryRoot);
-  const different: string[] = [];
+  const changes: FormattingChange[] = [];
   for (const path of paths) {
-    const file = await openOwnedFile(root, path);
-    try {
-      const source = await readUtf8(file, path);
-      const result = await formatSource(path, source, formatConfig);
-      if (result.errors.length > 0) {
-        throw new Error(
-          `${path}: ${result.errors.map((error) => error.message).join("; ")}`,
-        );
-      }
-      if (result.code !== source) {
-        different.push(path);
-        if (!check) {
-          await writeFile(file, result.code);
-        }
-      }
-    } finally {
-      await file.close();
+    const source = await readOwnedFile(root, path);
+    const result = await formatSource(path, source, formatConfig);
+    if (result.errors.length > 0) {
+      throw new Error(
+        `${path}: ${result.errors.map((error) => error.message).join("; ")}`,
+      );
+    }
+    if (result.code !== source) {
+      changes.push({ path, source, formatted: result.code });
     }
   }
-  return different;
+  if (!check && changes.length > 0) {
+    await applyPatch(root, await createPatch(changes));
+  }
+  return changes.map((change) => change.path);
 }
 
 async function main() {
