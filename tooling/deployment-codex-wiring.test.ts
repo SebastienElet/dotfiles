@@ -23,34 +23,42 @@ import {
 afterEach(cleanupDeploymentFixtures);
 
 describe("deployment area: Codex handoff hook", () => {
-  test("migrates old hooks, collapses duplicates, and replays idempotently", () => {
-    const fixture = createDeploymentFixture("codex-hook");
+  test.each([
+    ["migrates an old hook", ["old"]],
+    ["collapses old and current hooks", ["old", "new"]],
+    ["collapses duplicate old hooks", ["old", "old"]],
+  ] as const)("%s", (_, initialCommands) => {
+    const fixture = createDeploymentFixture("codex-hook-migration");
     const hooks = join(fixture.home, ".codex", "hooks.json");
     const oldCommand = join(project, "scripts", "agent_handoff");
     const newCommand = join(project, "tooling", "agent-handoff");
     mkdirSync(join(fixture.home, ".codex"), { recursive: true });
-    writeHooks(hooks, [oldCommand]);
+    writeHooks(
+      hooks,
+      initialCommands.map((command) =>
+        command === "old" ? oldCommand : newCommand,
+      ),
+    );
     expectSuccess(
       runMake(fixture, ["codex-handoff-hook"], { repository: project }),
     );
     expect(commands(hooks)).toEqual([newCommand]);
+  });
 
-    writeHooks(hooks, [oldCommand, newCommand]);
+  test("replays idempotently", () => {
+    const fixture = createDeploymentFixture("codex-hook-replay");
+    const hooks = join(fixture.home, ".codex", "hooks.json");
+    const newCommand = join(project, "tooling", "agent-handoff");
+    mkdirSync(join(fixture.home, ".codex"), { recursive: true });
+    writeHooks(hooks, [newCommand]);
     expectSuccess(
       runMake(fixture, ["codex-handoff-hook"], { repository: project }),
     );
-    expect(commands(hooks)).toEqual([newCommand]);
     const before = readFileSync(hooks, "utf8");
     expectSuccess(
       runMake(fixture, ["codex-handoff-hook"], { repository: project }),
     );
     expect(readFileSync(hooks, "utf8")).toBe(before);
-
-    writeHooks(hooks, [oldCommand, oldCommand]);
-    expectSuccess(
-      runMake(fixture, ["codex-handoff-hook"], { repository: project }),
-    );
-    expect(commands(hooks)).toEqual([newCommand]);
   });
 
   test.each([
