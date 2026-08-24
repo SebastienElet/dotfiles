@@ -10,6 +10,10 @@ Shell, git et Unix ; web moderne (JS/TS, bundlers, npm) ; infra et conteneurs
 (Docker, CI/CD, réseau) ; backend et bases de données (SQL, modélisation,
 transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 
+## Contexte personnel
+
+- **Default Obsidian corpus:** `/Users/sebastien/Code/brain`
+
 ## Biais techniques
 
 - **Simplicité, testabilité, localité.** À qualité comparable, préférer la solution

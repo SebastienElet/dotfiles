@@ -1,6 +1,6 @@
 {
   "skill": "obsidian-retrieval",
-  "version": "1.0",
+  "version": "1.1",
   "queries": [
     {
       "query": "Find the note titled Architecture Decision 183 and summarize the exact source.",
@@ -31,6 +31,11 @@
       "query": "Find themes in this vault even though no semantic search tool is installed.",
       "should_activate": true,
       "reason": "Missing optional tools require an explicit lexical fallback"
+    },
+    {
+      "query": "Search my notes for event sourcing and summarize the sources.",
+      "should_activate": true,
+      "reason": "A notes request without an explicit root uses the configured default Obsidian corpus"
     },
     {
       "query": "Search this vault for Project Chimera and tell me what an empty result establishes.",

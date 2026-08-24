@@ -138,6 +138,7 @@ jobs:
           tooling/git-main-branch.test-support/fake-command.ts
           tooling/git-main-branch.test-support/harness.ts
           tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
+          tooling/obsidian-retrieval/default-corpus-contract.ts
           tooling/obsidian-retrieval/evaluation-contract.ts
           tooling/install-hunspell-dictionary*.ts
           tooling/deployment-*.ts
@@ -177,6 +178,7 @@ jobs:
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
+            tooling/obsidian-retrieval/default-corpus-contract.ts \
             tooling/obsidian-retrieval/evaluation-contract.ts \
             tooling/install-hunspell-dictionary*.ts \
             tooling/deployment-*.ts \
