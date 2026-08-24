@@ -141,7 +141,8 @@ jobs:
 
       - name: Check text syntax and formatting
         run: >-
-          prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
+          prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
+          package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
