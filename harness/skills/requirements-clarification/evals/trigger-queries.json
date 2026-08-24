@@ -1,0 +1,36 @@
+{
+  "skill": "requirements-clarification",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Add authentication to tooling/arnes. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": true,
+      "reason": "Actors, trust boundaries, and failure behavior can materially change the implementation."
+    },
+    {
+      "query": "Migrate home/.arnes.yaml from version 1 to version 2 and keep existing installations working. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": true,
+      "reason": "Compatibility and data-loss policies are costly material decisions that must be resolved first."
+    },
+    {
+      "query": "Add a deployment test for the newly declared user skill and run the right tests. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": false,
+      "reason": "The component, framework, and test command are discoverable facts that must be researched without questioning the user."
+    },
+    {
+      "query": "Rename the local destinations variable in tooling/deployment-links.test.ts to skillDestinations. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": false,
+      "reason": "This is an obvious, local, reversible rename governed by an explicit nearby convention."
+    },
+    {
+      "query": "Apply the neighboring test's existing timeout to the new deployment-link test. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": false,
+      "reason": "The unspecified local detail has a safe canonical default that can be verified in the repository."
+    },
+    {
+      "query": "Use whichever existing import order fits tooling/deployment-links.test.ts better. Do not modify files; assess the request and next action in at most 250 words.",
+      "should_activate": false,
+      "reason": "The choice is a non-material style preference with no effect on the acceptance criteria."
+    }
+  ]
+}

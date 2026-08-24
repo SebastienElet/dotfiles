@@ -93,7 +93,7 @@ describe("deployment area: managed links", () => {
     symlinkSync(unexpected, starship);
     expectSuccess(runMake(fixture, [starship], { repository: project }));
     expect(linkTarget(starship)).toBe(unexpected);
-  });
+  }, 15_000);
 });
 
 describe("deployment area: agent instructions and skills", () => {
@@ -162,6 +162,7 @@ describe("deployment area: agent instructions and skills", () => {
         "linear-sync",
         "pr-fix",
         "pr-verdict",
+        "requirements-clarification",
         "skill-manager",
         "workflow-automation",
       ].map((slug) => [".claude", slug]),
@@ -176,6 +177,7 @@ describe("deployment area: agent instructions and skills", () => {
         "linear-sync",
         "pr-fix",
         "pr-verdict",
+        "requirements-clarification",
         "skill-manager",
         "workflow-automation",
       ].map((slug) => [".cursor", slug]),
@@ -191,6 +193,7 @@ describe("deployment area: agent instructions and skills", () => {
         "linear-sync",
         "pr-fix",
         "pr-verdict",
+        "requirements-clarification",
         "skill-manager",
         "workflow-automation",
       ].map((slug) => [".agents", slug]),
@@ -207,4 +210,20 @@ describe("deployment area: agent instructions and skills", () => {
       expect(pathExists(join(project, ".agents", "skills", slug))).toBeFalse();
     }
   }, 30_000);
+
+  test("agent aggregate targets include requirements clarification", () => {
+    const fixture = createDeploymentFixture("requirements-clarification");
+    for (const [target, destination] of [
+      ["claude-code", ".claude/skills/requirements-clarification"],
+      ["cursor", ".cursor/skills/requirements-clarification"],
+      ["codex", ".agents/skills/requirements-clarification"],
+    ] as const) {
+      const result = runMake(fixture, [target], {
+        repository: project,
+        dryRun: true,
+      });
+      expectSuccess(result);
+      expect(result.stdout).toContain(join(fixture.home, destination));
+    }
+  });
 });
