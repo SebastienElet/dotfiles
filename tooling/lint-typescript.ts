@@ -21,6 +21,8 @@ const typescriptPathSchema = z
   );
 const typescriptPathsSchema = z.array(typescriptPathSchema).min(FAILURE);
 
+type TypeScriptSource = Readonly<{ contents: string; path: string }>;
+
 const isOutside = (root: string, path: string): boolean => {
   const pathFromRoot = relative(root, path);
   return (
@@ -53,13 +55,13 @@ const assertOwnedTrackedFile = async (
   return absolutePath;
 };
 
-const rejectSuppressionDirectives = async (
+const readTrackedSources = (
   repositoryRoot: string,
   paths: readonly string[],
-): Promise<void> => {
+): Promise<readonly TypeScriptSource[]> => {
   const suppressionDirective =
     /(?:\/\/|\/\*)\s*(?:eslint|oxlint)-disable(?:-next-line|-line)?\b/u;
-  await Promise.all(
+  return Promise.all(
     paths.map(async (candidate) => {
       const ownedPath = await assertOwnedTrackedFile(repositoryRoot, candidate);
       const contents = new TextDecoder("utf-8", { fatal: true }).decode(
@@ -68,6 +70,7 @@ const rejectSuppressionDirectives = async (
       if (suppressionDirective.test(contents)) {
         throw new Error(`${candidate} contains a lint suppression directive.`);
       }
+      return { contents, path: candidate };
     }),
   );
 };
@@ -98,17 +101,39 @@ const findTrackedTypeScriptPaths = async (
   );
 };
 
+const assertSourcesUnchanged = async (
+  repositoryRoot: string,
+  sources: readonly TypeScriptSource[],
+): Promise<void> => {
+  const currentPaths = await findTrackedTypeScriptPaths(repositoryRoot);
+  if (
+    currentPaths.length !== sources.length ||
+    currentPaths.some((path, index) => path !== sources[index]?.path)
+  ) {
+    throw new Error("Tracked TypeScript paths changed while lint ran.");
+  }
+  const currentSources = await readTrackedSources(repositoryRoot, currentPaths);
+  if (
+    currentSources.some(
+      (source, index) => source.contents !== sources[index]?.contents,
+    )
+  ) {
+    throw new Error("Tracked TypeScript contents changed while lint ran.");
+  }
+};
+
 const lintTrackedTypeScript = async (
   repositoryRoot: string,
   oxlint: string,
+  commandPrefix: readonly string[] = [oxlint],
 ): Promise<Readonly<{ status: number; stderr: string; stdout: string }>> => {
   await access(oxlint);
   const paths = await findTrackedTypeScriptPaths(repositoryRoot);
-  await rejectSuppressionDirectives(repositoryRoot, paths);
+  const sources = await readTrackedSources(repositoryRoot, paths);
   const configuration = resolve(repositoryRoot, ".oxlintrc.json");
   const lint = Bun.spawn(
     [
-      oxlint,
+      ...commandPrefix,
       "--config",
       configuration,
       "--disable-nested-config",
@@ -128,6 +153,7 @@ const lintTrackedTypeScript = async (
     new Response(lint.stderr).text(),
     new Response(lint.stdout).text(),
   ]);
+  await assertSourcesUnchanged(repositoryRoot, sources);
   return { status, stderr, stdout };
 };
 

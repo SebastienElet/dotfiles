@@ -12,6 +12,10 @@ const EXPECTED_MASKED_DIAGNOSTICS = 2;
 const SUCCESS = 0;
 const oxlint = resolve(import.meta.dir, "../node_modules/.bin/oxlint");
 const repositoryRoot = resolve(import.meta.dir, "..");
+const mutatingLinter = resolve(
+  import.meta.dir,
+  "lint-typescript-mutating-test-provider.ts",
+);
 const temporaryDirectories: string[] = [];
 
 type LinkFile = (existingPath: string, newPath: string) => Promise<void>;
@@ -223,4 +227,19 @@ test("refuses tracked TypeScript files not owned by the repository", async (): P
   ]);
   expect(symbolicLinkMessage).toContain("not confined to the repository");
   expect(hardLinkMessage).toContain("not an owned regular file");
+});
+
+test("fails when a tracked source changes while lint runs", async (): Promise<void> => {
+  const repository = await createRepository();
+  const source = join(repository, "source.ts");
+  await writeFile(source, 'export const value = "valid";\n');
+  expect(await run(["git", "add", "source.ts"], repository)).toBe(SUCCESS);
+
+  const message = await rejectionMessage(
+    lintTrackedTypeScript(repository, process.execPath, [
+      process.execPath,
+      mutatingLinter,
+    ]),
+  );
+  expect(message).toContain("contains a lint suppression directive");
 });
