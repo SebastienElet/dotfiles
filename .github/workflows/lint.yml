@@ -128,21 +128,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+
       - run: npm install --global cspell prettier
+
+      - name: Check TypeScript formatting
+        run: bun run format:typescript:check
 
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml package.json tsconfig.json
-          tooling/git-main-branch-core.ts tooling/git-main-branch-core.test.ts
-          tooling/git-main-branch-cli.ts tooling/git-main-branch-entry.test.ts
-          tooling/git-main-branch.test-support/fake-command.ts
-          tooling/git-main-branch.test-support/harness.ts
-          tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts
-          tooling/obsidian-retrieval/default-corpus-contract.ts
-          tooling/obsidian-retrieval/evaluation-contract.ts
-          tooling/install-hunspell-dictionary*.ts
-          tooling/deployment-*.ts
-          .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
