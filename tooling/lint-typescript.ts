@@ -1,11 +1,12 @@
-import { access, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { access, lstat, readFile, realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 
 const EXPECTED_ARGUMENT_COUNT = 2;
 const FAILURE = 1;
 const FIRST_CHARACTER = 0;
 const LAST_CHARACTER = -1;
+const OWNED_LINK_COUNT = 1;
 const SUCCESS = 0;
 const USAGE_ERROR = 2;
 const typescriptPathSchema = z
@@ -20,6 +21,38 @@ const typescriptPathSchema = z
   );
 const typescriptPathsSchema = z.array(typescriptPathSchema).min(FAILURE);
 
+const isOutside = (root: string, path: string): boolean => {
+  const pathFromRoot = relative(root, path);
+  return (
+    pathFromRoot === ".." ||
+    pathFromRoot.startsWith(`..${sep}`) ||
+    isAbsolute(pathFromRoot)
+  );
+};
+
+const assertOwnedTrackedFile = async (
+  repositoryRoot: string,
+  candidate: string,
+): Promise<string> => {
+  const canonicalRoot = await realpath(repositoryRoot);
+  const absolutePath = resolve(canonicalRoot, candidate);
+  if (
+    isOutside(canonicalRoot, absolutePath) ||
+    (await realpath(absolutePath)) !== absolutePath
+  ) {
+    throw new Error(
+      `${candidate}: tracked TypeScript path is not confined to the repository.`,
+    );
+  }
+  const metadata = await lstat(absolutePath);
+  if (!metadata.isFile() || metadata.nlink !== OWNED_LINK_COUNT) {
+    throw new Error(
+      `${candidate}: tracked TypeScript path is not an owned regular file.`,
+    );
+  }
+  return absolutePath;
+};
+
 const rejectSuppressionDirectives = async (
   repositoryRoot: string,
   paths: readonly string[],
@@ -28,8 +61,9 @@ const rejectSuppressionDirectives = async (
     /(?:\/\/|\/\*)\s*(?:eslint|oxlint)-disable(?:-next-line|-line)?\b/u;
   await Promise.all(
     paths.map(async (candidate) => {
+      const ownedPath = await assertOwnedTrackedFile(repositoryRoot, candidate);
       const contents = new TextDecoder("utf-8", { fatal: true }).decode(
-        await readFile(resolve(repositoryRoot, candidate)),
+        await readFile(ownedPath),
       );
       if (suppressionDirective.test(contents)) {
         throw new Error(`${candidate} contains a lint suppression directive.`);

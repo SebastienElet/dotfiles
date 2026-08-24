@@ -98,6 +98,19 @@ test("uses the configured threshold at its exact boundary", async () => {
   );
 });
 
+test("uses the HOME fallback when XDG_STATE_HOME is empty", async () => {
+  const transcript = writeTranscript("empty-xdg-state.jsonl", [
+    claudeUsage(highUsage),
+  ]);
+  const result = await runHook(claudeEvent(transcript, "empty-xdg-state"), {
+    XDG_STATE_HOME: "",
+  });
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(result.stdout).not.toBe("");
+});
+
 test("ignores sidechains and uses the latest main-chain usage", async () => {
   const transcript = writeTranscript("sidechain.jsonl", [
     claudeUsage(lowUsage),

@@ -161,6 +161,19 @@ function handoffOutput(usage: Usage, threshold: number): string {
   );
 }
 
+function stateRootFromEnvironment(
+  environment: Readonly<NodeJS.ProcessEnv>,
+): string | undefined {
+  const xdgStateHome = environment.XDG_STATE_HOME;
+  if (xdgStateHome !== undefined && xdgStateHome !== "") {
+    return xdgStateHome;
+  }
+  if (environment.HOME === undefined) {
+    return undefined;
+  }
+  return join(environment.HOME, ".local", "state");
+}
+
 export async function runAgentHandoff(
   input: string,
   environment: Readonly<NodeJS.ProcessEnv>,
@@ -170,11 +183,7 @@ export async function runAgentHandoff(
     if (event.stopHookActive) {
       return 0;
     }
-    const stateRoot =
-      environment.XDG_STATE_HOME ??
-      (environment.HOME === undefined
-        ? undefined
-        : join(environment.HOME, ".local", "state"));
+    const stateRoot = stateRootFromEnvironment(environment);
     if (stateRoot === undefined || stateRoot === "") {
       throw new HandoffError("missing HOME and XDG_STATE_HOME", 1);
     }

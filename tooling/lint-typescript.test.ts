@@ -4,7 +4,7 @@ import {
   findTrackedTypeScriptPaths,
   lintTrackedTypeScript,
 } from "./lint-typescript.ts";
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 
 const FAILURE = 1;
@@ -13,6 +13,8 @@ const SUCCESS = 0;
 const oxlint = resolve(import.meta.dir, "../node_modules/.bin/oxlint");
 const repositoryRoot = resolve(import.meta.dir, "..");
 const temporaryDirectories: string[] = [];
+
+type LinkFile = (existingPath: string, newPath: string) => Promise<void>;
 
 afterEach(async (): Promise<void> => {
   await Promise.all(
@@ -64,6 +66,18 @@ async function rejectionMessage(
   } catch (error) {
     return error instanceof Error ? error.message : "Unknown rejection.";
   }
+}
+
+async function rejectionForTrackedLink(createLink: LinkFile): Promise<string> {
+  const repository = await createRepository();
+  const externalDirectory = await mkdtemp(join(tmpdir(), "oxlint-external-"));
+  temporaryDirectories.push(externalDirectory);
+  const externalSource = join(externalDirectory, "external.ts");
+  const linkedSource = join(repository, "linked.ts");
+  await writeFile(externalSource, 'export const value = "external";\n');
+  await createLink(externalSource, linkedSource);
+  expect(await run(["git", "add", "linked.ts"], repository)).toBe(SUCCESS);
+  return rejectionMessage(lintTrackedTypeScript(repository, oxlint));
 }
 
 function assertLintSuccess(
@@ -200,4 +214,13 @@ test("rejects inline lint suppression directives", async (): Promise<void> => {
     lintTrackedTypeScript(repository, oxlint),
   );
   expect(message).toContain("lint suppression directive");
+});
+
+test("refuses tracked TypeScript files not owned by the repository", async (): Promise<void> => {
+  const [symbolicLinkMessage, hardLinkMessage] = await Promise.all([
+    rejectionForTrackedLink(symlink),
+    rejectionForTrackedLink(link),
+  ]);
+  expect(symbolicLinkMessage).toContain("not confined to the repository");
+  expect(hardLinkMessage).toContain("not an owned regular file");
 });
