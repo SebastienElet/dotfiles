@@ -67,13 +67,15 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    leaves may transition from the same merged pull request only when each association is explicit
    and certain.
 
-7. **Complete assigned parents from child state.** After leaf transitions are verified, repeatedly
-   process assigned parents bottom-up until a pass applies no transition. Before each transition,
-   re-read the parent and every direct sub-issue; move the parent to `Done` only when every direct
-   sub-issue is `Done`. Then re-read the parent and every direct sub-issue independently. If a child
-   is no longer `Done`, report a partial synchronization failure and do not apply a compensating
-   status change automatically. Do not infer completion from the parent description, pull-request
-   title, or partial child set, and do not review the work again.
+7. **Evaluate assigned parents from child state.** After leaf transitions are verified, process
+   assigned parents bottom-up and re-read each parent with every direct sub-issue. A parent whose
+   direct sub-issues are all `Done` is eligible for completion. Transition it automatically only
+   when the selected Linear transport documents one atomic conditional mutation that writes `Done`
+   if every direct sub-issue remains `Done` at commit time. A separate read followed by an ordinary
+   state update does not qualify. The shared connector, CLI, and GraphQL adapters currently expose
+   no such guarantee, so report the eligible parent and leave it unchanged for human decision. Do
+   not infer completion from the parent description, pull-request title, or partial child set, and
+   do not review the work again.
 
 8. **Surface inconsistent active work.** For an assigned `In Progress` issue explicitly associated
    with the resolved repository, search exact attachments, exact issue-prefixed pull-request source
@@ -99,8 +101,8 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
 - **Closing a parent from assigned children only** — an unassigned open child is missed and the
   parent closes early; inspect every direct child's structured state while mutating only assigned
   issues.
-- **Closing nested parents in query order** — a grandparent can remain open after its parent closes;
-  process parents bottom-up until no further transition applies.
+- **Treating a post-write read as atomicity** — a child can change between the decision and the
+  parent update; require a documented conditional mutation or leave the parent unchanged.
 - **Treating a missing attachment as missing work** — an exact issue-prefixed branch can prove an
   existing pull request; query Bitbucket before reporting an `In Progress` inconsistency.
 - **Searching only the current repository for a global issue** — unrelated work appears missing;
@@ -114,6 +116,7 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
 - Never inspect implementation, review a diff, rerun functional checks, or invoke a review skill.
 - Never transition an issue from title similarity, prose, an ambiguous link, or an unverified
   repository context.
+- Never auto-transition a parent through a separate read followed by an unconditional state update.
 - Never move an inconsistent `In Progress` issue automatically to `Todo` or `Done` without merged
   pull-request proof or complete child-state proof.
 - Never add a hook, cron job, scheduled task, or implicit trigger; v0 remains manually invoked.
