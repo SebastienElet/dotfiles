@@ -155,9 +155,10 @@ jobs:
           harness/skills/issue-creation/evals/trigger-queries.json
           harness/skills/linear-issue-spec/SKILL.md
           harness/skills/linear-start/SKILL.md
-          harness/skills/linear-start/references/bitbucket.md
-          harness/skills/linear-start/references/transports.md
+          harness/skills/linear-sync/SKILL.md
           harness/skills/linear-workflow/SKILL.md
+          harness/skills/linear-workflow/references/bitbucket.md
+          harness/skills/linear-workflow/references/transports.md
 
       - name: Check configuration and user dictionary
         run: |
@@ -178,9 +179,10 @@ jobs:
             harness/skills/issue-creation/evals/trigger-queries.json \
             harness/skills/linear-issue-spec/SKILL.md \
             harness/skills/linear-start/SKILL.md \
-            harness/skills/linear-start/references/bitbucket.md \
-            harness/skills/linear-start/references/transports.md \
+            harness/skills/linear-sync/SKILL.md \
             harness/skills/linear-workflow/SKILL.md \
+            harness/skills/linear-workflow/references/bitbucket.md \
+            harness/skills/linear-workflow/references/transports.md \
             harness/skills/obsidian-retrieval/SKILL.md \
             harness/skills/obsidian-retrieval/references/obsidian-cli.md \
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \

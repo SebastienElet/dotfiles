@@ -27,10 +27,9 @@ planning without an actual request to begin implementation.
 
 ## Workflow
 
-1. **Load the shared policy.** Activate `linear-workflow` and apply all of its constraints. Read
-   [transport adapters](references/transports.md) before accessing Linear and
-   [Bitbucket operations](references/bitbucket.md) before accessing pull requests. Stop before any
-   lifecycle write when no authenticated transport covers the required operation.
+1. **Load the shared policy.** Activate `linear-workflow`, including its shared Linear and
+   Bitbucket adapters, and apply all of its constraints. Stop before any lifecycle write when no
+   authenticated transport covers the required operation.
 
 2. **Establish executable Linear state.** Retrieve the current Linear identity, then retrieve the
    issue's identifier, title, assignee, workflow state, parent, sub-issues, blocking relations, and

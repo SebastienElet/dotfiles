@@ -1,6 +1,7 @@
 # Linear Transport Adapters
 
-Select a transport at runtime. The business workflow remains in `SKILL.md` and `linear-workflow`.
+Select a transport at runtime. The business workflow remains in its composing skill and
+`linear-workflow`.
 
 ## Selection
 
@@ -31,8 +32,8 @@ The locally verified `linear` 2.5.0 surface provides:
 - `linear issue view <issue-id> --workspace <workspace> --json` for structured issue, hierarchy,
   inverse relations, and attachments;
 - `linear issue relation list <issue-id> --workspace <workspace>` to inspect relations;
-- `linear issue update <issue-id> --workspace <workspace> --state "In Progress"` for the lifecycle
-  transition;
+- `linear issue update <issue-id> --workspace <workspace> --state <state>` for lifecycle
+  transitions;
 - `linear issue link <issue-id> <pull-request-url> --workspace <workspace>` for URL attachment.
 
 Run current local help again before use. This binary is a third-party Linear CLI, not an official
@@ -42,5 +43,5 @@ so it cannot create the required Bitbucket pull request.
 ## Fallback limits
 
 - An unauthenticated CLI is unavailable even when it has stored workspace names.
-- A read-only connector cannot start an issue or attach a pull request.
+- A read-only connector cannot update an issue or attach a pull request.
 - Do not install a plugin, add a connector, log in, or create test data merely to complete probing.

@@ -23,9 +23,11 @@ alone to shape, implement, review, or finish an issue.
 
 ## Steps
 
-1. Read ownership, hierarchy, relations, and work state from structured Linear fields.
-2. Read branch and pull-request state from Git and Bitbucket.
-3. Apply every constraint below, then return control to the composing workflow.
+1. Read [transport adapters](references/transports.md) before accessing Linear and
+   [Bitbucket operations](references/bitbucket.md) before accessing pull requests.
+2. Read ownership, hierarchy, relations, and work state from structured Linear fields.
+3. Read branch and pull-request state from Git and Bitbucket.
+4. Apply every constraint below, then return control to the composing workflow.
 
 ## Gotchas
 
