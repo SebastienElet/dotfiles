@@ -70,8 +70,6 @@ async function createFakeCommand(
 describe("format-typescript entry point", () => {
   test("passes every tracked TypeScript path to Oxfmt without including untracked files", async () => {
     const repository = await createRepository();
-    const binaryDirectory = join(repository, "bin");
-    const argumentsPath = join(repository, "oxfmt-arguments");
     const trackedFiles = [
       "-leading.ts",
       ".hidden/future.ts",
@@ -115,29 +113,18 @@ describe("format-typescript entry point", () => {
       (await run(["git", "add", "-f", "--", "ignored/forced.tsx"], repository))
         .status,
     ).toBe(0);
-    await createFakeCommand(
-      binaryDirectory,
-      "oxfmt",
-      'printf "%s\\0" "$@" > "$OXFMT_ARGUMENTS"',
+
+    expect((await runEntrypoint(["--check"], repository)).status).toBe(1);
+    expect((await runEntrypoint([], repository)).status).toBe(0);
+    expect((await runEntrypoint(["--check"], repository)).status).toBe(0);
+    for (const file of trackedFiles) {
+      expect(await Bun.file(join(repository, file)).text()).not.toContain(
+        "value=1",
+      );
+    }
+    expect(await Bun.file(join(repository, "untracked.ts")).text()).toBe(
+      "export const value=1\n",
     );
-    const environment = {
-      OXFMT_ARGUMENTS: argumentsPath,
-      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
-    };
-
-    expect(
-      (await runEntrypoint(["--check"], repository, environment)).status,
-    ).toBe(0);
-    const checkArguments = (await Bun.file(argumentsPath).text())
-      .split("\0")
-      .filter(Boolean);
-    expect(checkArguments).toEqual(["--check", "--", ...trackedFiles]);
-
-    expect((await runEntrypoint([], repository, environment)).status).toBe(0);
-    const writeArguments = (await Bun.file(argumentsPath).text())
-      .split("\0")
-      .filter(Boolean);
-    expect(writeArguments).toEqual(["--", ...trackedFiles]);
   });
 
   test("fails closed when discovery is empty or unavailable", async () => {
@@ -171,16 +158,8 @@ describe("format-typescript entry point", () => {
     await writeFile(externalTarget, "export const outside=1\n");
     await symlink(externalTarget, join(repository, "linked.ts"));
     expect((await run(["git", "add", "linked.ts"], repository)).status).toBe(0);
-    const binaryDirectory = join(repository, "bin");
-    await createFakeCommand(
-      binaryDirectory,
-      "oxfmt",
-      'for argument in "$@"; do [[ "$argument" = --* ]] || printf "changed\\n" > "$argument"; done',
-    );
 
-    const result = await runEntrypoint([], repository, {
-      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
-    });
+    const result = await runEntrypoint([], repository);
     expect(result.status).not.toBe(0);
     expect(await Bun.file(externalTarget).text()).toBe(
       "export const outside=1\n",
@@ -197,16 +176,8 @@ describe("format-typescript entry point", () => {
     await writeFile(externalTarget, "export const outside=1\n");
     await link(externalTarget, join(repository, "linked.ts"));
     expect((await run(["git", "add", "linked.ts"], repository)).status).toBe(0);
-    const binaryDirectory = join(repository, "bin");
-    await createFakeCommand(
-      binaryDirectory,
-      "oxfmt",
-      'for argument in "$@"; do [[ "$argument" = --* ]] || printf "changed\\n" > "$argument"; done',
-    );
 
-    const result = await runEntrypoint([], repository, {
-      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
-    });
+    const result = await runEntrypoint([], repository);
     expect(result.status).not.toBe(0);
     expect(await Bun.file(externalTarget).text()).toBe(
       "export const outside=1\n",
@@ -225,18 +196,14 @@ describe("format-typescript entry point", () => {
     expect(result.stderr).not.toBe("");
   });
 
-  test("rejects unknown arguments and propagates Oxfmt failure", async () => {
+  test("rejects unknown arguments and invalid TypeScript", async () => {
     const repository = await createRepository();
     const invalid = await runEntrypoint(["--write"], repository);
     expect(invalid.status).toBe(2);
 
-    await writeFile(join(repository, "future.ts"), "export const value = 1;\n");
+    await writeFile(join(repository, "future.ts"), "export const = 1;\n");
     expect((await run(["git", "add", "future.ts"], repository)).status).toBe(0);
-    const binaryDirectory = join(repository, "bin");
-    await createFakeCommand(binaryDirectory, "oxfmt", "exit 7");
-    const failed = await runEntrypoint(["--check"], repository, {
-      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
-    });
+    const failed = await runEntrypoint(["--check"], repository);
     expect(failed.status).not.toBe(0);
   });
 });

@@ -1,6 +1,9 @@
-import { lstat, realpath } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, open, realpath, type FileHandle } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { format, type FormatConfig } from "oxfmt";
 import { z } from "zod";
+import formatConfig from "../oxfmt.config.ts";
 
 const invocationSchema = z.union([
   z.tuple([]),
@@ -17,6 +20,12 @@ const typescriptPathSchema = z
     "unsupported TypeScript path",
   );
 const typescriptPathsSchema = z.array(typescriptPathSchema).min(1);
+
+type FormatSource = (
+  fileName: string,
+  sourceText: string,
+  options?: FormatConfig,
+) => ReturnType<typeof format>;
 
 function isOutside(root: string, path: string) {
   const pathFromRoot = relative(root, path);
@@ -57,45 +66,86 @@ async function findTrackedTypeScriptPaths() {
   return { status, paths };
 }
 
-async function requireConfinedRegularFiles(paths: string[]) {
-  const root = await realpath(process.cwd());
-  for (const path of paths) {
-    const absolutePath = resolve(root, path);
-    if (isOutside(root, absolutePath)) {
-      throw new Error(
-        `${path}: tracked TypeScript path escapes the repository.`,
-      );
-    }
-    const file = await lstat(absolutePath);
-    if (!file.isFile() || file.nlink !== 1) {
-      throw new Error(
-        `${path}: tracked TypeScript path is not an owned regular file.`,
-      );
-    }
-    if (isOutside(root, await realpath(absolutePath))) {
-      throw new Error(
-        `${path}: tracked TypeScript path resolves outside the repository.`,
-      );
-    }
+async function openOwnedFile(root: string, path: string) {
+  const absolutePath = resolve(root, path);
+  if (
+    isOutside(root, absolutePath) ||
+    (await realpath(absolutePath)) !== absolutePath
+  ) {
+    throw new Error(
+      `${path}: tracked TypeScript path is not confined to the repository.`,
+    );
+  }
+  const beforeOpen = await lstat(absolutePath);
+  if (!beforeOpen.isFile() || beforeOpen.nlink !== 1) {
+    throw new Error(
+      `${path}: tracked TypeScript path is not an owned regular file.`,
+    );
+  }
+  const file = await open(
+    absolutePath,
+    constants.O_RDWR | constants.O_NOFOLLOW,
+  );
+  const opened = await file.stat();
+  if (
+    !opened.isFile() ||
+    opened.nlink !== 1 ||
+    opened.dev !== beforeOpen.dev ||
+    opened.ino !== beforeOpen.ino
+  ) {
+    await file.close();
+    throw new Error(
+      `${path}: tracked TypeScript file changed while opening it.`,
+    );
+  }
+  return file;
+}
+
+async function readUtf8(file: FileHandle, path: string) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+      await file.readFile(),
+    );
+  } catch {
+    throw new Error(`${path}: tracked TypeScript file is not valid UTF-8.`);
   }
 }
 
-async function formatTypeScript(paths: string[], check: boolean) {
-  const options = check ? ["--check"] : [];
-  for (let index = 0; index < paths.length; index += 500) {
-    const formatter = Bun.spawn(
-      ["oxfmt", ...options, "--", ...paths.slice(index, index + 500)],
-      {
-        stdout: "inherit",
-        stderr: "inherit",
-      },
-    );
-    const status = await formatter.exited;
-    if (status !== 0) {
-      return status;
+async function writeFile(file: FileHandle, code: string) {
+  const output = Buffer.from(code);
+  await file.write(output, 0, output.length, 0);
+  await file.truncate(output.length);
+}
+
+export async function formatTypeScriptPaths(
+  paths: string[],
+  check: boolean,
+  formatSource: FormatSource = format,
+  repositoryRoot: string = process.cwd(),
+) {
+  const root = await realpath(repositoryRoot);
+  const different: string[] = [];
+  for (const path of paths) {
+    const file = await openOwnedFile(root, path);
+    try {
+      const source = await readUtf8(file, path);
+      const result = await formatSource(path, source, formatConfig);
+      if (result.errors.length > 0) {
+        throw new Error(
+          `${path}: ${result.errors.map((error) => error.message).join("; ")}`,
+        );
+      }
+      if (result.code !== source) {
+        different.push(path);
+        if (!check) {
+          await writeFile(file, result.code);
+        }
+      }
+    } finally {
+      await file.close();
     }
   }
-  return 0;
+  return different;
 }
 
 async function main() {
@@ -108,13 +158,23 @@ async function main() {
   if (!discovery.paths) {
     return discovery.status;
   }
-  await requireConfinedRegularFiles(discovery.paths);
-  return formatTypeScript(discovery.paths, invocation.data.length === 1);
+  const check = invocation.data.length === 1;
+  const different = await formatTypeScriptPaths(discovery.paths, check);
+  if (check && different.length > 0) {
+    console.error(`TypeScript formatting differs: ${different.join(", ")}`);
+    return 1;
+  }
+  console.log(
+    `${check ? "Checked" : "Formatted"} ${discovery.paths.length} TypeScript files.`,
+  );
+  return 0;
 }
 
-try {
-  process.exitCode = await main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+if (import.meta.main) {
+  try {
+    process.exitCode = await main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
 }
