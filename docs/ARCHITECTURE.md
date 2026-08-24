@@ -16,7 +16,6 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 | `.claude/`, `.codex/`, `.cursor/` | Adaptateurs placés aux chemins de découverte imposés par chaque agent.               |
 | `.github/workflows/`              | Barrières de lint, de test et d'installation.                                        |
 | `docs/adr/`                       | Décisions d'architecture encore en vigueur.                                          |
-| `docs/superpowers/`               | Plans et spécifications conservés comme historique d'implémentation.                 |
 
 Les points d'entrée restent à la racine :
 

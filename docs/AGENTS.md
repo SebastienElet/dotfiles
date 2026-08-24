@@ -11,9 +11,7 @@ narrows the documentation language.
   repository.
 - The exception covers prose only. Identifiers, commands, file paths, API names, commit hashes and
   quoted commit bodies stay verbatim.
-- Do not translate an existing document to satisfy this rule. `superpowers/specs/` predates it and
-  is left in English on purpose: retranslating a design note loses the wording its conclusions were
-  reached in, for no reader.
+- Do not translate an existing document to satisfy this rule.
 - This file and any other agent-instruction file stay in English, being an interface rather than
   reasoning.
 

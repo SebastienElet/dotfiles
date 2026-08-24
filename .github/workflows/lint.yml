@@ -143,6 +143,7 @@ jobs:
           tooling/install-hunspell-dictionary*.ts
           tooling/deployment-*.ts
           .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
+          docs/AGENTS.md docs/ARCHITECTURE.md
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
