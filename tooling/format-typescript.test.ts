@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  link,
+  mkdir,
+  mkdtemp,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const entrypoint = resolve(import.meta.dir, "format-typescript");
+const entrypoint = resolve(import.meta.dir, "format-typescript.ts");
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
@@ -31,6 +39,14 @@ async function run(
     new Response(process.stderr).text(),
   ]);
   return { status, stdout, stderr };
+}
+
+function runEntrypoint(
+  arguments_: string[],
+  cwd: string,
+  environment: Record<string, string | undefined> = {},
+) {
+  return run([process.execPath, entrypoint, ...arguments_], cwd, environment);
 }
 
 async function createRepository() {
@@ -110,14 +126,14 @@ describe("format-typescript entry point", () => {
     };
 
     expect(
-      (await run([entrypoint, "--check"], repository, environment)).status,
+      (await runEntrypoint(["--check"], repository, environment)).status,
     ).toBe(0);
     const checkArguments = (await Bun.file(argumentsPath).text())
       .split("\0")
       .filter(Boolean);
     expect(checkArguments).toEqual(["--check", "--", ...trackedFiles]);
 
-    expect((await run([entrypoint], repository, environment)).status).toBe(0);
+    expect((await runEntrypoint([], repository, environment)).status).toBe(0);
     const writeArguments = (await Bun.file(argumentsPath).text())
       .split("\0")
       .filter(Boolean);
@@ -133,28 +149,92 @@ describe("format-typescript entry point", () => {
     expect(
       (await run(["git", "add", "not-typescript.js"], repository)).status,
     ).toBe(0);
-    const empty = await run([entrypoint, "--check"], repository);
+    const empty = await runEntrypoint(["--check"], repository);
     expect(empty.status).toBe(1);
     expect(empty.stderr).toContain("No tracked TypeScript files found");
 
     const binaryDirectory = join(repository, "bin");
     await createFakeCommand(binaryDirectory, "git", "exit 42");
-    const unavailable = await run([entrypoint, "--check"], repository, {
+    const unavailable = await runEntrypoint(["--check"], repository, {
       PATH: `${binaryDirectory}:${Bun.env.PATH}`,
     });
     expect(unavailable.status).toBe(42);
   });
 
+  test("refuses a tracked symlink before formatting its external target", async () => {
+    const repository = await createRepository();
+    const externalDirectory = await mkdtemp(
+      join(tmpdir(), "format-typescript-external-"),
+    );
+    temporaryDirectories.push(externalDirectory);
+    const externalTarget = join(externalDirectory, "outside.ts");
+    await writeFile(externalTarget, "export const outside=1\n");
+    await symlink(externalTarget, join(repository, "linked.ts"));
+    expect((await run(["git", "add", "linked.ts"], repository)).status).toBe(0);
+    const binaryDirectory = join(repository, "bin");
+    await createFakeCommand(
+      binaryDirectory,
+      "oxfmt",
+      'for argument in "$@"; do [[ "$argument" = --* ]] || printf "changed\\n" > "$argument"; done',
+    );
+
+    const result = await runEntrypoint([], repository, {
+      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
+    });
+    expect(result.status).not.toBe(0);
+    expect(await Bun.file(externalTarget).text()).toBe(
+      "export const outside=1\n",
+    );
+  });
+
+  test("refuses a tracked hard link before formatting its external inode", async () => {
+    const repository = await createRepository();
+    const externalDirectory = await mkdtemp(
+      join(tmpdir(), "format-typescript-external-"),
+    );
+    temporaryDirectories.push(externalDirectory);
+    const externalTarget = join(externalDirectory, "outside.ts");
+    await writeFile(externalTarget, "export const outside=1\n");
+    await link(externalTarget, join(repository, "linked.ts"));
+    expect((await run(["git", "add", "linked.ts"], repository)).status).toBe(0);
+    const binaryDirectory = join(repository, "bin");
+    await createFakeCommand(
+      binaryDirectory,
+      "oxfmt",
+      'for argument in "$@"; do [[ "$argument" = --* ]] || printf "changed\\n" > "$argument"; done',
+    );
+
+    const result = await runEntrypoint([], repository, {
+      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
+    });
+    expect(result.status).not.toBe(0);
+    expect(await Bun.file(externalTarget).text()).toBe(
+      "export const outside=1\n",
+    );
+  });
+
+  test("rejects malformed Git path evidence", async () => {
+    const repository = await createRepository();
+    const binaryDirectory = join(repository, "bin");
+    await createFakeCommand(binaryDirectory, "git", "printf '\\377\\0'");
+
+    const result = await runEntrypoint(["--check"], repository, {
+      PATH: `${binaryDirectory}:${Bun.env.PATH}`,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).not.toBe("");
+  });
+
   test("rejects unknown arguments and propagates Oxfmt failure", async () => {
     const repository = await createRepository();
-    const invalid = await run([entrypoint, "--write"], repository);
+    const invalid = await runEntrypoint(["--write"], repository);
     expect(invalid.status).toBe(2);
 
     await writeFile(join(repository, "future.ts"), "export const value = 1;\n");
     expect((await run(["git", "add", "future.ts"], repository)).status).toBe(0);
     const binaryDirectory = join(repository, "bin");
     await createFakeCommand(binaryDirectory, "oxfmt", "exit 7");
-    const failed = await run([entrypoint, "--check"], repository, {
+    const failed = await runEntrypoint(["--check"], repository, {
       PATH: `${binaryDirectory}:${Bun.env.PATH}`,
     });
     expect(failed.status).not.toBe(0);
