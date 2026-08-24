@@ -21,10 +21,10 @@ commit précis, et les mises à jour produisent un commit dédié
 Dependabot propose chaque semaine les mises à jour des dépendances directes du
 projet Bun racine. Sa configuration ne porte aucune liste de paquets : les
 dépendances directes présentes et futures restent éligibles. Les propositions
-restent des pull requests sans fusion automatique et passent l'installation
-gelée, les tests Bun et la vérification TypeScript communes aux autres pull
-requests. Cette décision ne couvre aucun autre écosystème ni les mises à jour
-du runtime Bun.
+restent des pull requests sans fusion automatique et déclenchent
+l'installation gelée, les tests Bun et la vérification TypeScript communes
+aux autres pull requests. Cette décision ne couvre aucun autre écosystème ni
+les mises à jour du runtime Bun.
 
 ## Conséquences
 
@@ -44,5 +44,6 @@ du runtime Bun.
   arrière.
 - Mises à jour manuelles plugin par plugin : coût sans bénéfice, puisque le
   lockfile permet déjà l'annulation.
-- Renovate pour les dépendances Bun : aucun service ni configuration Renovate
-  n'est actif dans le dépôt ; Dependabot fournit l'intégration GitHub retenue.
+- Renovate pour les dépendances Bun : cette intégration n'est pas retenue ; la
+  cible d'installation du CLI local n'en fait pas le gestionnaire de mises à
+  jour du dépôt.
