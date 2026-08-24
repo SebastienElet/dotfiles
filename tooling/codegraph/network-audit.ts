@@ -40,7 +40,8 @@ export async function auditProcessNetwork(
   const sockets: string[] = [];
   const started = performance.now();
   let outcome:
-    { status: number | null; signal: NodeJS.Signals | null } | undefined;
+    | { status: number | null; signal: NodeJS.Signals | null }
+    | undefined;
   try {
     while (outcome === undefined) {
       sampleSockets(child.pid, repository, sockets);
