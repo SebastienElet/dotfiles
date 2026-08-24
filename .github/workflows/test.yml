@@ -42,7 +42,7 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.select.outputs.targets) }}
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 

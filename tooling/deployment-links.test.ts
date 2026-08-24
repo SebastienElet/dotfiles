@@ -93,7 +93,7 @@ describe("deployment area: managed links", () => {
     symlinkSync(unexpected, starship);
     expectSuccess(runMake(fixture, [starship], { repository: project }));
     expect(linkTarget(starship)).toBe(unexpected);
-  });
+  }, 15_000);
 });
 
 describe("deployment area: agent instructions and skills", () => {

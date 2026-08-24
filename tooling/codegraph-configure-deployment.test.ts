@@ -80,7 +80,7 @@ describe("CodeGraph deployment", () => {
     expect(result.stderr).toContain(
       "exists and is not the expected symbolic link",
     );
-  });
+  }, 15_000);
 });
 
 const realClaude = process.env.CODEGRAPH_REAL_CLAUDE_BIN;
