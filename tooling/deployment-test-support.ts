@@ -8,17 +8,17 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-export type DeploymentFixture = Readonly<{
+type DeploymentFixture = Readonly<{
   root: string;
   home: string;
   repository: string;
   bin: string;
 }>;
 
-export type CommandResult = Readonly<{
+type CommandResult = Readonly<{
   exitCode: number;
   stdout: string;
   stderr: string;
@@ -28,14 +28,15 @@ const project = join(import.meta.dir, "..");
 const makefile = join(project, "Makefile");
 const provider = join(import.meta.dir, "deployment-test-provider.ts");
 const fixtures: string[] = [];
+const executableFileMode = 0o755;
 
-export function createDeploymentFixture(name: string): DeploymentFixture {
+function createDeploymentFixture(name: string): DeploymentFixture {
   const root = mkdtempSync(join(tmpdir(), `deployment-${name}-`));
   const fixture = {
-    root,
+    bin: join(root, "bin"),
     home: join(root, "home"),
     repository: join(root, "repository"),
-    bin: join(root, "bin"),
+    root,
   };
   fixtures.push(root);
   mkdirSync(fixture.home, { recursive: true });
@@ -44,18 +45,18 @@ export function createDeploymentFixture(name: string): DeploymentFixture {
   return fixture;
 }
 
-export function cleanupDeploymentFixtures(): void {
+function cleanupDeploymentFixtures(): void {
   for (const root of fixtures.splice(0)) {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, { force: true, recursive: true });
   }
 }
 
-export function runMake(
+function runMake(
   fixture: DeploymentFixture,
   targets: readonly string[],
   options: Readonly<{
     repository?: string;
-    environment?: NodeJS.ProcessEnv;
+    environment?: Readonly<NodeJS.ProcessEnv>;
     variables?: Readonly<Record<string, string>>;
     dryRun?: boolean;
     cwd?: string;
@@ -71,7 +72,7 @@ export function runMake(
       makefile,
       `DOTFILES_PATH=${repository}`,
       ...Object.entries(options.variables ?? {}).map(
-        ([name, value]) => `${name}=${value}`,
+        ([name, value]: readonly [string, string]) => `${name}=${value}`,
       ),
       ...targets,
     ],
@@ -82,31 +83,28 @@ export function runMake(
         HOME: fixture.home,
         ...options.environment,
       },
-      stdout: "pipe",
       stderr: "pipe",
+      stdout: "pipe",
     },
   );
   return {
     exitCode: result.exitCode,
-    stdout: decode(result.stdout),
     stderr: decode(result.stderr),
+    stdout: decode(result.stdout),
   };
 }
 
-export function installProvider(
-  fixture: DeploymentFixture,
-  command: string,
-): string {
+function installProvider(fixture: DeploymentFixture, command: string): string {
   const executable = join(fixture.bin, command);
   writeFileSync(
     executable,
     `#!/usr/bin/env bun\nimport ${JSON.stringify(provider)};\n`,
   );
-  chmodSync(executable, 0o755);
+  chmodSync(executable, executableFileMode);
   return executable;
 }
 
-export function expectSuccess(result: CommandResult): void {
+function expectSuccess(result: CommandResult): void {
   if (result.exitCode !== 0) {
     throw new Error(
       `command failed (${result.exitCode})\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
@@ -114,38 +112,58 @@ export function expectSuccess(result: CommandResult): void {
   }
 }
 
-export function linkTarget(path: string): string {
+function linkTarget(path: string): string {
   const metadata = lstatSync(path);
-  if (!metadata.isSymbolicLink()) throw new Error(`${path} is not a symlink`);
+  if (!metadata.isSymbolicLink()) {
+    throw new Error(`${path} is not a symlink`);
+  }
   return readlinkSync(path);
 }
 
-export function pathExists(path: string): boolean {
+function pathExists(path: string): boolean {
   try {
     lstatSync(path);
     return true;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return false;
+    }
     throw error;
   }
 }
 
-export function fileIdentity(path: string): Readonly<{
+function fileIdentity(path: string): Readonly<{
   inode: number;
   content: string;
 }> {
   const metadata = lstatSync(path);
-  return { inode: metadata.ino, content: readFileSync(path, "utf8") };
+  return { content: readFileSync(path, "utf8"), inode: metadata.ino };
 }
 
-export function requireCommand(command: string): string {
+function requireCommand(command: string): string {
   const resolved = Bun.which(command);
-  if (resolved === null) throw new Error(`${command} is required`);
+  if (resolved === null) {
+    throw new Error(`${command} is required`);
+  }
   return resolved;
 }
 
-function decode(bytes: Uint8Array): string {
-  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+function decode(bytes: Readonly<ArrayLike<number>>): string {
+  return new TextDecoder("utf-8", { fatal: true }).decode(
+    Uint8Array.from(bytes),
+  );
 }
 
-export { project };
+export {
+  cleanupDeploymentFixtures,
+  createDeploymentFixture,
+  expectSuccess,
+  fileIdentity,
+  installProvider,
+  linkTarget,
+  pathExists,
+  project,
+  requireCommand,
+  runMake,
+};
+export type { CommandResult, DeploymentFixture };

@@ -1,37 +1,42 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 
+const cooldownDays = 3;
+const dependabotVersion = 2;
+const firstUpdateIndex = 0;
+const shorterCooldownDays = 2;
+
 const rootBunUpdate = {
-  "package-ecosystem": "bun",
+  cooldown: {
+    "default-days": cooldownDays,
+  },
   directory: "/",
+  "package-ecosystem": "bun",
   schedule: {
-    interval: "weekly",
     day: "monday",
+    interval: "weekly",
     time: "05:00",
     timezone: "Europe/Paris",
-  },
-  cooldown: {
-    "default-days": 3,
   },
 } as const;
 
 const rootBunUpdateSchema = z
   .object({
-    "package-ecosystem": z.literal("bun"),
-    directory: z.literal("/"),
-    schedule: z
-      .object({
-        interval: z.literal("weekly"),
-        day: z.literal("monday"),
-        time: z.literal("05:00"),
-        timezone: z.literal("Europe/Paris"),
-      })
-      .strict(),
     cooldown: z
       .object({
-        "default-days": z.number().int().min(3),
+        "default-days": z.number().int().min(cooldownDays),
+      })
+      .strict(),
+    directory: z.literal("/"),
+    "package-ecosystem": z.literal("bun"),
+    schedule: z
+      .object({
+        day: z.literal("monday"),
+        interval: z.literal("weekly"),
+        time: z.literal("05:00"),
+        timezone: z.literal("Europe/Paris"),
       })
       .strict(),
   })
@@ -39,8 +44,8 @@ const rootBunUpdateSchema = z
 
 const dependabotConfigSchema = z
   .object({
-    version: z.literal(2),
-    updates: z.array(rootBunUpdateSchema).length(1),
+    updates: z.array(rootBunUpdateSchema).length(firstUpdateIndex + 1),
+    version: z.literal(dependabotVersion),
   })
   .strict();
 
@@ -50,17 +55,30 @@ test("keeps every root Bun dependency eligible for weekly updates", () => {
     "utf8",
   );
   const config = dependabotConfigSchema.parse(Bun.YAML.parse(contents));
+  const firstUpdate = config.updates.at(firstUpdateIndex);
 
-  expect(config.updates[0]?.cooldown["default-days"]).toBeGreaterThanOrEqual(3);
+  if (firstUpdate === undefined) {
+    throw new Error("Dependabot root update is missing");
+  }
+  expect(firstUpdate.cooldown["default-days"]).toBeGreaterThanOrEqual(
+    cooldownDays,
+  );
 });
 
 test.each([
   ["a disabled pull request queue", { "open-pull-requests-limit": 0 }],
   ["an allow filter", { allow: [] }],
   ["an ignore filter", { ignore: [] }],
-  ["a cooldown shorter than three days", { cooldown: { "default-days": 2 } }],
-  ["a cooldown exclusion", { cooldown: { "default-days": 3, exclude: ["*"] } }],
-])("rejects %s", (_, contractOverride) => {
+  [
+    "a cooldown shorter than three days",
+    { cooldown: { "default-days": shorterCooldownDays } },
+  ],
+  [
+    "a cooldown exclusion",
+    { cooldown: { "default-days": cooldownDays, exclude: ["*"] } },
+  ],
+] as const)("rejects %s", (caseName, contractOverride) => {
+  expect(caseName).not.toBeEmpty();
   expect(() =>
     rootBunUpdateSchema.parse({ ...rootBunUpdate, ...contractOverride }),
   ).toThrow();

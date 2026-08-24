@@ -1,28 +1,34 @@
-export type JsonObject = Record<string, unknown>;
+type JsonObject = Readonly<Record<string, unknown>>;
 
 const codegraphEnvironment = {
-  CODEGRAPH_TELEMETRY: "0",
-  CODEGRAPH_NO_UPDATE_CHECK: "1",
   CODEGRAPH_NO_DOWNLOAD: "1",
+  CODEGRAPH_NO_UPDATE_CHECK: "1",
+  CODEGRAPH_TELEMETRY: "0",
 } as const;
+const configurationErrorExitCode = 2;
 
-export function parseJsonObject(content: string, label: string): JsonObject {
-  let value: unknown;
-  try {
-    value = JSON.parse(content);
-  } catch {
-    throw new ConfigurationError(`invalid ${label} JSON`);
-  }
+class ConfigurationError extends Error {
+  public override readonly name = "ConfigurationError";
+  public readonly exitCode = configurationErrorExitCode;
+}
+
+function parseJsonObject(content: string, label: string): JsonObject {
+  const value = parseJson(content, label);
   if (!isJsonObject(value)) {
     throw new ConfigurationError(`invalid ${label} JSON`);
   }
   return value;
 }
 
-export function configureCursor(
-  current: JsonObject,
-  command: string,
-): JsonObject {
+function parseJson(content: string, label: string): unknown {
+  try {
+    return JSON.parse(content);
+  } catch {
+    throw new ConfigurationError(`invalid ${label} JSON`);
+  }
+}
+
+function configureCursor(current: JsonObject, command: string): JsonObject {
   const currentServers = current.mcpServers;
   if (
     currentServers !== undefined &&
@@ -34,21 +40,24 @@ export function configureCursor(
   return {
     ...current,
     mcpServers: {
-      ...(currentServers ?? {}),
+      ...currentServers,
       codegraph: {
-        type: "stdio",
+        args: ["serve", "--mcp", "--path", String.raw`\${workspaceFolder}`],
         command,
-        args: ["serve", "--mcp", "--path", "${workspaceFolder}"],
         env: codegraphEnvironment,
+        type: "stdio",
       },
     },
   };
 }
 
-export class ConfigurationError extends Error {
-  readonly exitCode = 2;
-}
-
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+export {
+  ConfigurationError,
+  configureCursor,
+  type JsonObject,
+  parseJsonObject,
+};

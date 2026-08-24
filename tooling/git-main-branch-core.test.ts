@@ -16,8 +16,8 @@ describe("parseBitbucketIdentity", () => {
   ])("parses %s", (url, identity) => {
     expect(parseBitbucketIdentity(url)).toEqual({
       identity,
-      workspace: "acme",
       slug: "service",
+      workspace: "acme",
     });
   });
 
@@ -27,9 +27,9 @@ describe("parseBitbucketIdentity", () => {
     "https://bitbucket.org/acme/service/extra",
     "https://bitbucket.org/acme/%2Fservice",
     "ssh://someone@bitbucket.org/acme/service.git",
-  ])("rejects %s", (url) =>
-    expect(() => parseBitbucketIdentity(url)).toThrow(),
-  );
+  ])("rejects %s", (url) => {
+    expect(() => parseBitbucketIdentity(url)).toThrow();
+  });
 
   test("does not expose URL credentials in diagnostics", () => {
     const secret = "example-secret";
@@ -70,8 +70,8 @@ test("provider repositories require validated identity, UUID and branch", () => 
       "acme/service",
     ),
   ).toEqual({
-    uuid: "{11111111-1111-1111-1111-111111111111}",
     branch: "develop",
+    uuid: "{11111111-1111-1111-1111-111111111111}",
   });
   expect(() => parseProviderRepository("{}", "acme/service")).toThrow(
     "repository response",
@@ -104,15 +104,15 @@ test("reconciliation accepts equivalent evidence and refuses conflicts", () => {
     reconcileProviderEvidence([
       {
         identity: "acme/service",
+        providerBranch: "develop",
         remoteBranch: "develop",
         uuid: "{same}",
-        providerBranch: "develop",
       },
       {
         identity: "acme/service",
+        providerBranch: "develop",
         remoteBranch: "develop",
         uuid: "{same}",
-        providerBranch: "develop",
       },
     ]),
   ).toBe("develop");
@@ -120,15 +120,15 @@ test("reconciliation accepts equivalent evidence and refuses conflicts", () => {
     reconcileProviderEvidence([
       {
         identity: "acme/service",
+        providerBranch: "develop",
         remoteBranch: "develop",
         uuid: "{a}",
-        providerBranch: "develop",
       },
       {
         identity: "acme/other",
+        providerBranch: "develop",
         remoteBranch: "develop",
         uuid: "{b}",
-        providerBranch: "develop",
       },
     ]),
   ).toThrow("same repository");
@@ -136,9 +136,9 @@ test("reconciliation accepts equivalent evidence and refuses conflicts", () => {
     reconcileProviderEvidence([
       {
         identity: "acme/service",
+        providerBranch: "main",
         remoteBranch: "develop",
         uuid: "{a}",
-        providerBranch: "main",
       },
     ]),
   ).toThrow("disagrees");

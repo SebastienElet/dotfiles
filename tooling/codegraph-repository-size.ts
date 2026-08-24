@@ -1,4 +1,11 @@
 import {
+  MeasurementError,
+  type RepositoryMeasurement,
+  type SourceMeasurement,
+  aggregateMeasurements,
+  parseTokeiOutput,
+} from "./codegraph-repository-measurement.ts";
+import {
   accessSync,
   constants,
   lstatSync,
@@ -7,18 +14,12 @@ import {
   rmSync,
   symlinkSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   gitOpenTofuFiles,
   nonGitOpenTofuFiles,
 } from "./codegraph-repository-files.ts";
-import {
-  aggregateMeasurements,
-  MeasurementError,
-  parseTokeiOutput,
-  type SourceMeasurement,
-} from "./codegraph-repository-measurement.ts";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const types =
   "Ark TypeScript,Astro,C,C Header,C#,COBOL,ColdFusion,ColdFusion CFScript,C++,C++ Header,C++ Module,CUDA,Dart,Erlang,Go,HCL,Java,JavaScript,JSX,Kotlin,Liquid,Lua,Metal Shading Language,Nix,Objective-C,Objective-C++,Pascal,PHP,Python,R,Razor,Ruby,Rust,Scala,Solidity,Svelte,Swift,TSX,TypeScript,Visual Basic,Vue";
@@ -39,19 +40,30 @@ const exclusions = [
   "*.lock",
   "*.min.js",
 ];
+const commandArgumentOffset = 2;
+const gitNotRepositoryExitCode = 128;
+const tokeiBatchSize = 200;
 
-export function main(arguments_: string[] = process.argv.slice(2)): number {
+interface CommandResult {
+  readonly exitCode: number;
+  readonly stderr: string;
+  readonly stdout: string;
+}
+
+function main(
+  arguments_: readonly string[] = process.argv.slice(commandArgumentOffset),
+): number {
   try {
     const measurement = measureRepository(arguments_[0] ?? ".");
     process.stdout.write(`${JSON.stringify(measurement)}\n`);
     return 0;
   } catch (error) {
-    console.error(message(error));
+    process.stderr.write(`${message(error)}\n`);
     return error instanceof MeasurementError ? error.exitCode : 1;
   }
 }
 
-function measureRepository(input: string) {
+function measureRepository(input: string): RepositoryMeasurement {
   const tokei = requireExecutable(
     process.env.CODEGRAPH_TOKEI_BIN ?? "tokei",
     "Tokei",
@@ -70,14 +82,7 @@ function measureRepository(input: string) {
 }
 
 function resolveRepository(input: string): string {
-  let repository: string;
-  try {
-    repository = realpathSync.native(input);
-  } catch (error) {
-    throw new MeasurementError(
-      `repository is not accessible: ${message(error)}`,
-    );
-  }
+  const repository = resolveAccessiblePath(input);
   if (!lstatSync(repository).isDirectory()) {
     throw new MeasurementError(`repository is not a directory: ${repository}`);
   }
@@ -87,6 +92,16 @@ function resolveRepository(input: string): string {
     throw new MeasurementError(`repository is not readable: ${repository}`);
   }
   return repository;
+}
+
+function resolveAccessiblePath(input: string): string {
+  try {
+    return realpathSync.native(input);
+  } catch (error) {
+    throw new MeasurementError(
+      `repository is not accessible: ${message(error)}`,
+    );
+  }
 }
 
 function isGitRepository(git: string, repository: string): boolean {
@@ -105,7 +120,7 @@ function isGitRepository(git: string, repository: string): boolean {
     return true;
   }
   if (
-    result.exitCode === 128 &&
+    result.exitCode === gitNotRepositoryExitCode &&
     result.stderr.startsWith("fatal: not a git repository")
   ) {
     return false;
@@ -129,7 +144,10 @@ function listGitFiles(git: string, repository: string): string {
   return result.stdout;
 }
 
-function measureOpenTofu(tokei: string, files: string[]): SourceMeasurement[] {
+function measureOpenTofu(
+  tokei: string,
+  files: readonly string[],
+): SourceMeasurement[] {
   if (files.length === 0) {
     return [];
   }
@@ -140,7 +158,7 @@ function measureOpenTofu(tokei: string, files: string[]): SourceMeasurement[] {
       symlinkSync(file, link);
       return link;
     });
-    return chunk(links, 200).flatMap((batch) =>
+    return chunk(links, tokeiBatchSize).flatMap((batch: readonly string[]) =>
       runTokei(tokei, [...batch, "--streaming", "json", "--types", "HCL"]),
     );
   } finally {
@@ -159,7 +177,10 @@ function tokeiArguments(): string[] {
   ];
 }
 
-function runTokei(tokei: string, arguments_: string[]): SourceMeasurement[] {
+function runTokei(
+  tokei: string,
+  arguments_: readonly string[],
+): SourceMeasurement[] {
   const result = runCommand(tokei, arguments_);
   if (result.exitCode !== 0) {
     throw commandError(result);
@@ -172,24 +193,27 @@ function runTokei(tokei: string, arguments_: string[]): SourceMeasurement[] {
 
 function runCommand(
   binary: string,
-  arguments_: string[],
-  environment: Record<string, string | undefined> = process.env,
-) {
+  arguments_: readonly string[],
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): CommandResult {
   const result = Bun.spawnSync([binary, ...arguments_], {
     env: environment,
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   return {
     exitCode: result.exitCode,
-    stdout: result.exitCode === 0 ? decodeStandardOutput(result.stdout) : "",
     stderr: result.stderr.toString(),
+    stdout:
+      result.exitCode === 0 ? decodeStandardOutput([...result.stdout]) : "",
   };
 }
 
-function decodeStandardOutput(output: Uint8Array): string {
+function decodeStandardOutput(output: readonly number[]): string {
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(output);
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+      Uint8Array.from(output),
+    );
   } catch {
     throw new MeasurementError("command stdout contains invalid UTF-8");
   }
@@ -212,12 +236,15 @@ function requireExecutable(binary: string, name: string): string {
   return found ?? binary;
 }
 
-function chunk<T>(values: T[], size: number): T[][] {
-  return Array.from({ length: Math.ceil(values.length / size) }, (_, index) =>
-    values.slice(index * size, (index + 1) * size),
+function chunk<Value>(values: readonly Value[], size: number): Value[][] {
+  return Array.from(
+    { length: Math.ceil(values.length / size) },
+    (_unusedValue, index) => values.slice(index * size, (index + 1) * size),
   );
 }
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export { main };

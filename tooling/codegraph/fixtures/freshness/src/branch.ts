@@ -1,2 +1,4 @@
-export const branchMainValue = 3;
-export const branchSentinel = "FIXTURE_BRANCH_MAIN";
+const branchMainValue = 3;
+const branchSentinel = "FIXTURE_BRANCH_MAIN";
+
+export { branchMainValue, branchSentinel };

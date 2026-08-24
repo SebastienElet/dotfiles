@@ -9,16 +9,31 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { z } from "zod";
 
-const arguments_ = process.argv.slice(2);
-const provider = identifyProvider(arguments_);
-const operation = process.argv.slice(2, 4).join(" ");
+const jsonObjectSchema = z.record(z.string(), z.unknown());
+const commandArgumentOffset = 2;
+const operationArgumentEnd = 4;
+const pauseAttemptLimit = 1000;
+const pausePollMilliseconds = 5;
+const pauseTimeoutExitCode = 8;
+const providerFailureExitCode = 9;
+const unsupportedOperationExitCode = 3;
+
+const providerArguments = process.argv.slice(commandArgumentOffset);
+const provider = identifyProvider(providerArguments);
+const operation = process.argv
+  .slice(commandArgumentOffset, operationArgumentEnd)
+  .join(" ");
 const stateDirectory = requiredEnvironment("CODEGRAPH_TEST_STATE");
 const logPath = requiredEnvironment("CODEGRAPH_TEST_LOG");
 const markerPath = join(stateDirectory, provider);
 
 mkdirSync(stateDirectory, { recursive: true });
-appendFileSync(logPath, `${provider} ${process.argv.slice(2).join(" ")}\n`);
+appendFileSync(
+  logPath,
+  `${provider} ${process.argv.slice(commandArgumentOffset).join(" ")}\n`,
+);
 
 if (provider === "codegraph") {
   finish("telemetry off");
@@ -26,16 +41,16 @@ if (provider === "codegraph") {
 
 if (operation === "mcp get") {
   if (process.env.CODEGRAPH_TEST_UNEXPECTED_GET === provider) {
-    console.error("unexpected provider response");
+    process.stderr.write("unexpected provider response\n");
     process.exit(1);
   }
   if (existsSync(markerPath)) {
     process.exit(0);
   }
-  console.error(
+  process.stderr.write(
     provider === "claude"
-      ? 'No MCP server named "codegraph".'
-      : "Error: No MCP server named 'codegraph' found.",
+      ? 'No MCP server named "codegraph".\n'
+      : "Error: No MCP server named 'codegraph' found.\n",
   );
   process.exit(1);
 }
@@ -52,7 +67,7 @@ if (operation === "mcp add") {
   finish("mcp add");
 }
 
-process.exit(3);
+process.exit(unsupportedOperationExitCode);
 
 function mutateConfiguration(value: string): void {
   const path =
@@ -62,12 +77,15 @@ function mutateConfiguration(value: string): void {
   mkdirSync(dirname(path), { recursive: true });
   const current = existsSync(path) ? readFileSync(path, "utf8") : "";
   if (provider === "claude") {
-    const configuration = current === "" ? {} : JSON.parse(current);
-    const servers = configuration.mcpServers ?? {};
+    const configuration =
+      current === "" ? {} : jsonObjectSchema.parse(JSON.parse(current));
+    const serversValue = configuration.mcpServers;
+    const servers =
+      serversValue === undefined ? {} : jsonObjectSchema.parse(serversValue);
     if (value === "removed") {
       delete servers.codegraph;
     } else {
-      servers.codegraph = { command: "codegraph", args: ["serve", "--mcp"] };
+      servers.codegraph = { args: ["serve", "--mcp"], command: "codegraph" };
     }
     configuration.mcpServers = servers;
     writeFileSync(path, `${JSON.stringify(configuration)}\n`);
@@ -76,7 +94,10 @@ function mutateConfiguration(value: string): void {
   const unrelated = current
     .split("\n")
     .filter((line) => !line.startsWith(`${provider}:`))
-    .filter((line, index, lines) => line !== "" || index < lines.length - 1)
+    .filter(
+      (line, index, lines: readonly string[]) =>
+        line !== "" || index < lines.length - 1,
+    )
     .join("\n");
   writeFileSync(
     path,
@@ -89,20 +110,24 @@ function finish(expectedOperation: string): never {
     const ready = requiredEnvironment("CODEGRAPH_TEST_PAUSE_READY");
     const release = requiredEnvironment("CODEGRAPH_TEST_PAUSE_RELEASE");
     writeFileSync(ready, "ready\n");
-    for (let attempt = 0; attempt < 1_000 && !existsSync(release); attempt++) {
-      Bun.sleepSync(5);
+    for (
+      let attempt = 0;
+      attempt < pauseAttemptLimit && !existsSync(release);
+      attempt += 1
+    ) {
+      Bun.sleepSync(pausePollMilliseconds);
     }
     if (!existsSync(release)) {
-      process.exit(8);
+      process.exit(pauseTimeoutExitCode);
     }
   }
   if (process.env.CODEGRAPH_TEST_EMIT === "1") {
-    console.log(`out ${provider}:${expectedOperation}`);
-    console.error(`err ${provider}:${expectedOperation}`);
+    process.stdout.write(`out ${provider}:${expectedOperation}\n`);
+    process.stderr.write(`err ${provider}:${expectedOperation}\n`);
   }
   if (process.env.CODEGRAPH_TEST_FAIL === `${provider}:${expectedOperation}`) {
-    console.error(`failed ${provider}:${expectedOperation}`);
-    process.exit(9);
+    process.stderr.write(`failed ${provider}:${expectedOperation}\n`);
+    process.exit(providerFailureExitCode);
   }
   process.exit(0);
 }
@@ -116,17 +141,17 @@ function requiredEnvironment(name: string): string {
 }
 
 function identifyProvider(
-  arguments_: string[],
+  commandArguments: readonly string[],
 ): "claude" | "codex" | "codegraph" {
-  if (arguments_[0] === "telemetry") {
+  if (commandArguments[0] === "telemetry") {
     return "codegraph";
   }
   if (
-    arguments_.includes("--json") ||
-    arguments_.includes("--env") ||
-    (arguments_[0] === "mcp" &&
-      arguments_[1] === "remove" &&
-      !arguments_.includes("--scope"))
+    commandArguments.includes("--json") ||
+    commandArguments.includes("--env") ||
+    (commandArguments[0] === "mcp" &&
+      commandArguments[1] === "remove" &&
+      !commandArguments.includes("--scope"))
   ) {
     return "codex";
   }

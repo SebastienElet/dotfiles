@@ -1,12 +1,12 @@
-import { createHash } from "node:crypto";
-import { dirname, join } from "node:path";
-import { DictionaryInstallationError } from "./install-hunspell-dictionary-error.ts";
 import {
   assertDirectories,
   existingDictionaryMatches,
   prepareSpellingDirectory,
   publishDictionary,
 } from "./install-hunspell-dictionary-files.ts";
+import { dirname, join } from "node:path";
+import { DictionaryInstallationError } from "./install-hunspell-dictionary-error.ts";
+import { createHash } from "node:crypto";
 
 type Installation = Readonly<{
   destination: string;
@@ -15,13 +15,14 @@ type Installation = Readonly<{
   url: string;
 }>;
 
+const sha256HexLength = 64;
+const usageFailureExitCode = 64;
+
 function parseInstallation(
-  arguments_: readonly string[],
-  environment: NodeJS.ProcessEnv,
+  commandArguments: readonly string[],
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Installation {
-  const url = arguments_[0];
-  const expectedChecksum = arguments_[1];
-  const destination = arguments_[2];
+  const [url, expectedChecksum, destination] = commandArguments;
   if (url === undefined || url === "") {
     throw new DictionaryInstallationError("missing source URL");
   }
@@ -31,10 +32,13 @@ function parseInstallation(
   if (destination === undefined || destination === "") {
     throw new DictionaryInstallationError("missing destination path");
   }
-  if (!/^[0-9a-f]{64}$/.test(expectedChecksum)) {
+  if (
+    expectedChecksum.length !== sha256HexLength ||
+    !/^[0-9a-f]+$/u.test(expectedChecksum)
+  ) {
     throw new DictionaryInstallationError(
       `Invalid SHA-256 checksum: ${expectedChecksum}`,
-      64,
+      usageFailureExitCode,
     );
   }
   const home = environment.HOME;
@@ -51,12 +55,7 @@ function parseInstallation(
 }
 
 async function download(url: string): Promise<Uint8Array> {
-  let response: Response;
-  try {
-    response = await fetch(url);
-  } catch {
-    throw new DictionaryInstallationError(`Dictionary download failed: ${url}`);
-  }
+  const response = await requestDictionary(url);
   if (!response.ok) {
     throw new DictionaryInstallationError(
       `Dictionary download failed with HTTP ${response.status}: ${url}`,
@@ -69,12 +68,22 @@ async function download(url: string): Promise<Uint8Array> {
   }
 }
 
+async function requestDictionary(url: string): Promise<Response> {
+  try {
+    return await fetch(url);
+  } catch {
+    throw new DictionaryInstallationError(`Dictionary download failed: ${url}`);
+  }
+}
+
 function verifyChecksum(
-  content: Uint8Array,
+  content: Readonly<ArrayLike<number>>,
   expectedChecksum: string,
   url: string,
 ): void {
-  const actualChecksum = createHash("sha256").update(content).digest("hex");
+  const actualChecksum = createHash("sha256")
+    .update(Uint8Array.from(content))
+    .digest("hex");
   if (actualChecksum !== expectedChecksum) {
     throw new DictionaryInstallationError(`SHA-256 mismatch for ${url}`);
   }
@@ -87,7 +96,9 @@ async function install(installation: Installation): Promise<void> {
     installation.expectedChecksum,
   );
   await assertDirectories(directories);
-  if (existingMatch === true) return;
+  if (existingMatch === true) {
+    return;
+  }
   if (existingMatch === false) {
     throw new DictionaryInstallationError(
       `Refusing to replace existing dictionary: ${installation.destination}`,
@@ -96,19 +107,21 @@ async function install(installation: Installation): Promise<void> {
   const content = await download(installation.url);
   verifyChecksum(content, installation.expectedChecksum, installation.url);
   await publishDictionary(
-    installation.destination,
-    content,
-    installation.expectedChecksum,
+    {
+      content,
+      destination: installation.destination,
+      expectedChecksum: installation.expectedChecksum,
+    },
     directories,
   );
 }
 
 export async function runDictionaryInstallation(
-  arguments_: readonly string[],
-  environment: NodeJS.ProcessEnv,
+  commandArguments: readonly string[],
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Promise<number> {
   try {
-    await install(parseInstallation(arguments_, environment));
+    await install(parseInstallation(commandArguments, environment));
     return 0;
   } catch (error) {
     const failure =

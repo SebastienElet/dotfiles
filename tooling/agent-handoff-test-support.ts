@@ -1,47 +1,50 @@
 import { join } from "node:path";
 
 const entryPoint = join(import.meta.dir, "agent-handoff");
+const assistantMessageTokenCount = 2;
+const defaultContextWindow = 100_000;
 const inheritedEnvironment = Object.fromEntries(
   Object.entries(process.env).filter(
-    (entry): entry is [string, string] => entry[1] !== undefined,
+    (entry: readonly [string, string | undefined]): entry is [string, string] =>
+      entry[1] !== undefined,
   ),
 );
 
-export type HookResult = Readonly<{
+type HookResult = Readonly<{
   exitCode: number;
   stderr: string;
   stdout: string;
 }>;
 
-export function claudeUsage(used: number, sidechain = false): string {
+function claudeUsage(used: number, sidechain = false): string {
   return JSON.stringify({
-    type: "assistant",
     isSidechain: sidechain,
     message: {
       usage: {
-        input_tokens: 2,
-        cache_read_input_tokens: used - 2,
         cache_creation_input_tokens: 0,
+        cache_read_input_tokens: used - assistantMessageTokenCount,
+        input_tokens: assistantMessageTokenCount,
       },
     },
+    type: "assistant",
   });
 }
 
-export function codexUsage(used: number, window = 100_000): string {
+function codexUsage(used: number, window = defaultContextWindow): string {
   return JSON.stringify({
-    type: "event_msg",
     payload: {
-      type: "token_count",
       info: {
         last_token_usage: { input_tokens: used },
         model_context_window: window,
         total_token_usage: { input_tokens: 999_999 },
       },
+      type: "token_count",
     },
+    type: "event_msg",
   });
 }
 
-export function claudeEvent(
+function claudeEvent(
   transcriptPath: string,
   sessionId: string,
   stopHookActive = false,
@@ -54,7 +57,7 @@ export function claudeEvent(
   });
 }
 
-export function codexEvent(transcriptPath: string, sessionId: string): string {
+function codexEvent(transcriptPath: string, sessionId: string): string {
   return JSON.stringify({
     event: "Stop",
     session_id: sessionId,
@@ -62,7 +65,7 @@ export function codexEvent(transcriptPath: string, sessionId: string): string {
   });
 }
 
-export async function runEntryPoint(
+async function runEntryPoint(
   testRoot: string,
   input: string,
   environment: Readonly<Record<string, string>> = {},
@@ -91,3 +94,6 @@ export async function runEntryPoint(
 
   return { exitCode, stderr, stdout };
 }
+
+export { claudeEvent, claudeUsage, codexEvent, codexUsage, runEntryPoint };
+export type { HookResult };

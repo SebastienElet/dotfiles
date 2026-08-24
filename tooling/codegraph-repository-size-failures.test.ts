@@ -1,53 +1,68 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   cleanupFixtures,
   createFixture,
   readArguments,
   runEntryPoint,
 } from "./codegraph-repository-size-test-support.ts";
+import { join } from "node:path";
+
+const measurementErrorExitCode = 2;
+const operationalFailureExitCode = 7;
+const expectedGitCommandCount = 2;
+const restoredDirectoryMode = 0o700;
 
 afterEach(cleanupFixtures);
 
 describe("codegraph-repository-size failures", () => {
+  registerGitFailureTests();
+  registerInvalidPathTests();
+  registerInvalidOutputTests();
+  registerDependencyTests();
+  registerRepositoryTests();
+});
+
+function registerGitFailureTests(): void {
   for (const operation of ["rev-parse", "ls-files"]) {
     test(`fails closed without publishing a measurement when Git ${operation} fails`, () => {
       const fixture = createFixture();
       const result = runEntryPoint(fixture.repository, {
         ...fixture.environment,
         CODEGRAPH_GIT_BIN: fixture.fakeGit,
-        CODEGRAPH_TEST_GIT_REPOSITORY: "1",
         CODEGRAPH_TEST_GIT_FAILURE: operation,
+        CODEGRAPH_TEST_GIT_REPOSITORY: "1",
       });
 
-      expect(result.exitCode).toBe(7);
+      expect(result.exitCode).toBe(operationalFailureExitCode);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain(`${operation} operational failure`);
       expect(readArguments(fixture.argumentsLog)).toHaveLength(
-        operation === "rev-parse" ? 1 : 2,
+        operation === "rev-parse" ? 1 : expectedGitCommandCount,
       );
     });
   }
+}
 
+function registerInvalidPathTests(): void {
   for (const invalidPath of [
     {
-      label: "truncated",
-      environment: { CODEGRAPH_TEST_GIT_FILES: "truncated.tofu" },
       diagnostic: "NUL-terminated",
+      environment: { CODEGRAPH_TEST_GIT_FILES: "truncated.tofu" },
+      label: "truncated",
     },
     {
-      label: "escaping",
+      diagnostic: "outside repository",
       environment: {
         CODEGRAPH_TEST_GIT_FILES_JSON: '["../escaping.tofu"]',
       },
-      diagnostic: "outside repository",
+      label: "escaping",
     },
-  ] satisfies Array<{
+  ] satisfies {
     label: string;
     environment: Record<string, string>;
     diagnostic: string;
-  }>) {
+  }[]) {
     test(`rejects ${invalidPath.label} Git paths before Tokei runs`, () => {
       const fixture = createFixture();
       const result = runEntryPoint(fixture.repository, {
@@ -57,13 +72,17 @@ describe("codegraph-repository-size failures", () => {
         ...invalidPath.environment,
       });
 
-      expect(result.exitCode).toBe(2);
+      expect(result.exitCode).toBe(measurementErrorExitCode);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain(invalidPath.diagnostic);
-      expect(readArguments(fixture.argumentsLog)).toHaveLength(2);
+      expect(readArguments(fixture.argumentsLog)).toHaveLength(
+        expectedGitCommandCount,
+      );
     });
   }
+}
 
+function registerInvalidOutputTests(): void {
   test("fails closed when Tokei emits partial output and fails", () => {
     const fixture = createFixture();
     const result = runEntryPoint(fixture.repository, {
@@ -71,7 +90,7 @@ describe("codegraph-repository-size failures", () => {
       CODEGRAPH_TEST_TOKEI_FAILURE: "7",
     });
 
-    expect(result.exitCode).toBe(7);
+    expect(result.exitCode).toBe(operationalFailureExitCode);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("tokei operational failure");
   });
@@ -81,16 +100,20 @@ describe("codegraph-repository-size failures", () => {
     const result = runEntryPoint(fixture.repository, {
       ...fixture.environment,
       CODEGRAPH_GIT_BIN: fixture.fakeGit,
-      CODEGRAPH_TEST_GIT_REPOSITORY: "1",
       CODEGRAPH_TEST_GIT_INVALID_UTF8: "1",
+      CODEGRAPH_TEST_GIT_REPOSITORY: "1",
     });
 
-    expect(result.exitCode).toBe(2);
+    expect(result.exitCode).toBe(measurementErrorExitCode);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("invalid UTF-8");
-    expect(readArguments(fixture.argumentsLog)).toHaveLength(2);
+    expect(readArguments(fixture.argumentsLog)).toHaveLength(
+      expectedGitCommandCount,
+    );
   });
+}
 
+function registerDependencyTests(): void {
   test("rejects invalid UTF-8 from Tokei without publishing a measurement", () => {
     const fixture = createFixture();
     const result = runEntryPoint(fixture.repository, {
@@ -98,7 +121,7 @@ describe("codegraph-repository-size failures", () => {
       CODEGRAPH_TEST_TOKEI_INVALID_UTF8: "1",
     });
 
-    expect(result.exitCode).toBe(2);
+    expect(result.exitCode).toBe(measurementErrorExitCode);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("invalid UTF-8");
   });
@@ -116,12 +139,14 @@ describe("codegraph-repository-size failures", () => {
         ...fixture.environment,
         ...environment,
       });
-      expect(result.exitCode).toBe(2);
+      expect(result.exitCode).toBe(measurementErrorExitCode);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain(`${name} is required`);
     }
   });
+}
 
+function registerRepositoryTests(): void {
   test("rejects missing, non-directory, and unreadable repositories", () => {
     const fixture = createFixture();
     const file = join(fixture.directory, "file");
@@ -136,12 +161,12 @@ describe("codegraph-repository-size failures", () => {
         unreadable,
       ]) {
         const result = runEntryPoint(path, fixture.environment);
-        expect(result.exitCode).toBe(2);
+        expect(result.exitCode).toBe(measurementErrorExitCode);
         expect(result.stdout).toBe("");
         expect(result.stderr).toContain("repository");
       }
     } finally {
-      chmodSync(unreadable, 0o700);
+      chmodSync(unreadable, restoredDirectoryMode);
     }
   });
 
@@ -152,9 +177,9 @@ describe("codegraph-repository-size failures", () => {
         ...fixture.environment,
         CODEGRAPH_TEST_TOKEI_OUTPUT: output,
       });
-      expect(result.exitCode).toBe(2);
+      expect(result.exitCode).toBe(measurementErrorExitCode);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain("invalid Tokei");
     }
   });
-});
+}

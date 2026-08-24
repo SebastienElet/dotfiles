@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
 const repository = dirname(import.meta.dir);
+const deploymentPlatformCount = 2;
 
 describe("Hunspell dictionary gates", () => {
   test("runs dictionary behavior on both deployment platforms", () => {
@@ -12,8 +13,8 @@ describe("Hunspell dictionary gates", () => {
     );
 
     expect(
-      workflow.match(/      - tooling\/install-hunspell-dictionary\*/g),
-    ).toHaveLength(2);
+      workflow.match(/ {6}- tooling\/install-hunspell-dictionary\*/gu),
+    ).toHaveLength(deploymentPlatformCount);
     expect(workflow).toContain("os: [macos-latest, ubuntu-latest]");
     expect(workflow).toContain(
       "bun test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts",

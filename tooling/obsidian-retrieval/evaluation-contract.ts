@@ -2,8 +2,6 @@ import { z } from "zod";
 
 const evaluationDocumentSchema = z
   .object({
-    skill: z.literal("obsidian-retrieval"),
-    version: z.string().min(1),
     queries: z
       .array(
         z
@@ -15,25 +13,29 @@ const evaluationDocumentSchema = z
           .strict(),
       )
       .min(1),
+    skill: z.literal("obsidian-retrieval"),
+    version: z.string().min(1),
   })
   .strict();
 
 export const validateEvaluations = (value: unknown): string[] => {
   const result = evaluationDocumentSchema.safeParse(value);
-  if (!result.success) return [z.prettifyError(result.error)];
-  const queries = result.data.queries;
-  const texts = queries.map((query) => String(query.query));
-  const reasons = queries.map((query) => String(query.reason));
-  const activations = queries.map((query) => Boolean(query.should_activate));
+  if (!result.success) {
+    return [z.prettifyError(result.error)];
+  }
+  const { queries } = result.data;
+  const texts = queries.map((query) => query.query);
+  const reasons = queries.map((query) => query.reason);
+  const activations = new Set(queries.map((query) => query.should_activate));
   const coverage = [
-    activations.includes(true) && activations.includes(false),
-    texts.some((text) => /exact|title|identifier|tag/i.test(text)),
-    texts.some((text) => /concept|idea|theme/i.test(text)),
-    texts.some((text) => /backlink|property|properties|task|base/i.test(text)),
-    texts.some((text) => /web|weather/i.test(text)),
-    texts.some((text) => /write|create|edit/i.test(text)),
-    reasons.some((reason) => /missing|unavailable/i.test(reason)),
-    reasons.some((reason) => /empty|no match/i.test(reason)),
+    activations.has(true) && activations.has(false),
+    texts.some((text) => /exact|title|identifier|tag/iu.test(text)),
+    texts.some((text) => /concept|idea|theme/iu.test(text)),
+    texts.some((text) => /backlink|property|properties|task|base/iu.test(text)),
+    texts.some((text) => /web|weather/iu.test(text)),
+    texts.some((text) => /write|create|edit/iu.test(text)),
+    reasons.some((reason) => /missing|unavailable/iu.test(reason)),
+    reasons.some((reason) => /empty|no match/iu.test(reason)),
   ];
   return coverage.every(Boolean)
     ? []

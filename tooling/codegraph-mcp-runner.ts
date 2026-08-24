@@ -1,61 +1,100 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { z } from "zod";
 import {
+  type Command,
+  type FreshnessFixture,
+  captureOperation,
   cleanupFreshnessFixture,
   createFreshnessFixture,
   privacyEnvironment,
   runCommand,
-  type Command,
 } from "./codegraph/integration-fixture.ts";
-import { runFreshnessProbe } from "./codegraph/mcp-probe.ts";
+import { type ProbeReport, runFreshnessProbe } from "./codegraph/mcp-probe.ts";
+import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { z } from "zod";
 
 const statusSchema = z.record(z.string(), z.unknown());
+const millisecondsPerSecond = 1000;
+const jsonIndentSpaces = 2;
+const userMetricIndex = 2;
+const systemMetricIndex = 4;
 
-export async function runCodeGraphMcpTest() {
+interface InitialIndexMeasurement {
+  cpuSystemSeconds: number;
+  cpuUserSeconds: number;
+  maxRssBytes: number;
+  seconds: number;
+}
+
+interface McpTestReport {
+  environment: { linuxExercised: false; os: "macOS" };
+  indexDiskKiB: number;
+  initialIndexCpuSystemSeconds: number;
+  initialIndexCpuUserSeconds: number;
+  initialIndexMaxRssBytes: number;
+  initialIndexSeconds: number;
+  mcp: ProbeReport;
+}
+
+async function runCodeGraphMcpTest(): Promise<McpTestReport> {
   requirePlatform();
   const codegraph = resolveCommand("CODEGRAPH_BIN", "codegraph");
   const fixture = createFreshnessFixture(
     join(import.meta.dir, "codegraph", "fixtures", "freshness"),
   );
-  let operationError: unknown;
+  const outcome = await captureOperation(() =>
+    collectMcpTestReport(fixture, codegraph),
+  );
+  const operationError = outcome.ok ? undefined : outcome.error;
+  await cleanupMcpFixture(fixture, codegraph, operationError);
+  if (!outcome.ok) {
+    throw new Error(message(outcome.error), { cause: outcome.error });
+  }
+  return outcome.value;
+}
+
+async function collectMcpTestReport(
+  fixture: FreshnessFixture,
+  codegraph: Command,
+): Promise<McpTestReport> {
+  const initial = measureInitialIndex(
+    codegraph,
+    fixture.repository,
+    fixture.root,
+  );
+  statusSchema.parse(
+    JSON.parse(
+      runCommand(codegraph, ["status", "--json", fixture.repository], {
+        cwd: fixture.repository,
+      }),
+    ),
+  );
+  const mcp = await runFreshnessProbe(fixture.repository, codegraph);
+  return {
+    environment: { linuxExercised: false, os: "macOS" },
+    indexDiskKiB: diskKiB(fixture.repository),
+    initialIndexCpuSystemSeconds: initial.cpuSystemSeconds,
+    initialIndexCpuUserSeconds: initial.cpuUserSeconds,
+    initialIndexMaxRssBytes: initial.maxRssBytes,
+    initialIndexSeconds: initial.seconds,
+    mcp,
+  };
+}
+
+async function cleanupMcpFixture(
+  fixture: FreshnessFixture,
+  codegraph: Command,
+  operationError: unknown,
+): Promise<void> {
   try {
-    const initial = measureInitialIndex(
-      codegraph,
-      fixture.repository,
-      fixture.root,
-    );
-    statusSchema.parse(
-      JSON.parse(
-        runCommand(
-          codegraph,
-          ["status", "--json", fixture.repository],
-          fixture.repository,
-        ),
-      ),
-    );
-    const mcp = await runFreshnessProbe(fixture.repository, codegraph);
-    return {
-      environment: { os: "macOS", linuxExercised: false },
-      initialIndexSeconds: initial.seconds,
-      initialIndexMaxRssBytes: initial.maxRssBytes,
-      initialIndexCpuUserSeconds: initial.cpuUserSeconds,
-      initialIndexCpuSystemSeconds: initial.cpuSystemSeconds,
-      indexDiskKiB: diskKiB(fixture.repository),
-      mcp,
-    };
-  } catch (error) {
-    operationError = error;
-    throw error;
-  } finally {
-    try {
-      await cleanupFreshnessFixture(fixture, codegraph);
-    } catch (cleanupError) {
-      if (operationError === undefined) throw cleanupError;
-      throw new Error(
-        `CodeGraph test failed: ${message(operationError)}; cleanup failed: ${message(cleanupError)}`,
-      );
+    await cleanupFreshnessFixture(fixture, codegraph);
+  } catch (cleanupError) {
+    if (operationError === undefined) {
+      throw cleanupError;
     }
+    throw new Error(
+      `CodeGraph test failed: ${message(operationError)}; cleanup failed: ${message(cleanupError)}`,
+      { cause: cleanupError },
+    );
   }
 }
 
@@ -63,7 +102,7 @@ function measureInitialIndex(
   codegraph: Command,
   repository: string,
   root: string,
-) {
+): InitialIndexMeasurement {
   const timeLog = join(root, "index-time");
   const started = performance.now();
   runCommand(
@@ -78,16 +117,15 @@ function measureInitialIndex(
       "init",
       repository,
     ],
-    repository,
-    process.env,
+    { cwd: repository, environment: process.env },
   );
   const report = readFileSync(timeLog, "utf8");
-  const firstLine = report.split("\n")[0]?.trim().split(/\s+/) ?? [];
-  const maximumRss = report.match(
-    /^\s*(\d+)\s+maximum resident set size/m,
-  )?.[1];
-  const userSeconds = firstLine[2];
-  const systemSeconds = firstLine[4];
+  const firstLine = report.split("\n")[0]?.trim().split(/\s+/u) ?? [];
+  const maximumRss =
+    /^\s*(?<maximumRss>\d+)\s+maximum resident set size/mu.exec(report)?.groups
+      ?.maximumRss;
+  const userSeconds = firstLine.at(userMetricIndex);
+  const systemSeconds = firstLine.at(systemMetricIndex);
   if (
     maximumRss === undefined ||
     userSeconds === undefined ||
@@ -96,26 +134,25 @@ function measureInitialIndex(
     throw new Error(`invalid /usr/bin/time report: ${report}`);
   }
   return {
-    seconds: Math.floor((performance.now() - started) / 1_000),
-    maxRssBytes: parseMetric(maximumRss, "maximum RSS"),
-    cpuUserSeconds: parseMetric(userSeconds, "user CPU"),
     cpuSystemSeconds: parseMetric(systemSeconds, "system CPU"),
+    cpuUserSeconds: parseMetric(userSeconds, "user CPU"),
+    maxRssBytes: parseMetric(maximumRss, "maximum RSS"),
+    seconds: Math.floor((performance.now() - started) / millisecondsPerSecond),
   };
 }
 
 function diskKiB(repository: string): number {
-  const output = runCommand(
-    ["du"],
-    ["-sk", join(repository, ".codegraph")],
-    repository,
-  );
-  return parseMetric(output.trim().split(/\s+/)[0] ?? "", "index disk KiB");
+  const output = runCommand(["du"], ["-sk", join(repository, ".codegraph")], {
+    cwd: repository,
+  });
+  return parseMetric(output.trim().split(/\s+/u)[0] ?? "", "index disk KiB");
 }
 
 function parseMetric(value: string, name: string): number {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0)
+  if (!Number.isFinite(parsed) || parsed < 0) {
     throw new Error(`invalid ${name}: ${value}`);
+  }
   return parsed;
 }
 
@@ -137,12 +174,18 @@ function resolveCommand(variable: string, fallback: string): Command {
 }
 
 function requirePlatform(): void {
-  if (process.platform !== "darwin")
+  if (process.platform !== "darwin") {
     throw new Error("CodeGraph MCP test requires macOS");
-  if (Bun.which("git") === null) throw new Error("git is required");
-  if (Bun.which("du") === null) throw new Error("du is required");
-  if (!Bun.file("/usr/bin/time").size)
+  }
+  if (Bun.which("git") === null) {
+    throw new Error("git is required");
+  }
+  if (Bun.which("du") === null) {
+    throw new Error("du is required");
+  }
+  if (Bun.file("/usr/bin/time").size === 0) {
     throw new Error("/usr/bin/time is required");
+  }
 }
 
 function message(error: unknown): string {
@@ -152,7 +195,7 @@ function message(error: unknown): string {
 if (import.meta.main) {
   try {
     process.stdout.write(
-      `${JSON.stringify(await runCodeGraphMcpTest(), null, 2)}\n`,
+      `${JSON.stringify(await runCodeGraphMcpTest(), undefined, jsonIndentSpaces)}\n`,
     );
   } catch (error) {
     process.stderr.write(
@@ -161,3 +204,5 @@ if (import.meta.main) {
     process.exit(1);
   }
 }
+
+export { runCodeGraphMcpTest };

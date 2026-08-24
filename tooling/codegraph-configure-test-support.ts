@@ -6,60 +6,69 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 
 const root = dirname(import.meta.dir);
 const entryPoint = join(import.meta.dir, "codegraph-configure");
 const provider = join(import.meta.dir, "codegraph-configure-test-provider.ts");
 const temporaryDirectories: string[] = [];
+const executableFileMode = 0o755;
 
-export type Fixture = ReturnType<typeof createFixture>;
+interface Fixture {
+  claudeConfig: string;
+  codegraphBinary: string;
+  codexConfig: string;
+  cursorConfig: string;
+  directory: string;
+  environment: Record<string, string> & { CODEGRAPH_TEST_LOG: string };
+}
 
-export function createFixture(
-  overrides: Record<string, string> = {},
+type FixtureView = Omit<Readonly<Fixture>, "environment"> & {
+  readonly environment: Readonly<Fixture["environment"]>;
+};
+
+interface CommandResult {
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}
+interface ConfigurationSnapshot {
+  claude: string;
+  codex: string;
+  cursor: string;
+}
+interface SpawnOptions {
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  stderr: "pipe";
+  stdout: "pipe";
+}
+type FixtureValueOptions = Readonly<{
+  binaries: string;
+  directory: string;
+  links: Readonly<Record<"claude" | "codegraph" | "codex", string>>;
+  overrides: Readonly<Record<string, string>>;
+  state: string;
+}>;
+
+function createFixture(
+  overrides: Readonly<Record<string, string>> = {},
   registered = false,
-) {
+): Fixture {
   const directory = join(
     tmpdir(),
     `codegraph-configure-${crypto.randomUUID()}`,
   );
   temporaryDirectories.push(directory);
-  const binaries = join(directory, "bin");
-  const state = join(directory, "state");
-  mkdirSync(binaries, { recursive: true });
-  mkdirSync(state, { recursive: true });
-  mkdirSync(join(directory, "cursor"), { recursive: true });
-  symlinkSync(process.execPath, join(binaries, "bun"));
-  const links = Object.fromEntries(
-    ["claude", "codex", "codegraph"].map((name) => {
-      const path = join(binaries, name);
-      symlinkSync(provider, path);
-      return [name, path];
-    }),
-  ) as Record<"claude" | "codex" | "codegraph", string>;
-  chmodSync(provider, 0o755);
-  const fixture = {
+  const { binaries, links, state } = createFixtureDirectories(directory);
+  const fixture = createFixtureValues({
+    binaries,
     directory,
-    claudeConfig: join(directory, "claude.json"),
-    codexConfig: join(directory, "codex.toml"),
-    cursorConfig: join(directory, "cursor", "mcp.json"),
-    codegraphBinary: links.codegraph,
-    environment: {
-      HOME: join(directory, "home"),
-      CODEX_HOME: join(directory, "codex-home"),
-      CODEGRAPH_CLAUDE_BIN: links.claude,
-      CODEGRAPH_CODEX_BIN: links.codex,
-      CODEGRAPH_BIN: links.codegraph,
-      CODEGRAPH_CLAUDE_CONFIG: join(directory, "claude.json"),
-      CODEGRAPH_CODEX_CONFIG: join(directory, "codex.toml"),
-      CODEGRAPH_CURSOR_CONFIG: join(directory, "cursor", "mcp.json"),
-      CODEGRAPH_TEST_LOG: join(directory, "calls.log"),
-      CODEGRAPH_TEST_STATE: state,
-      PATH: `${binaries}:${process.env.PATH ?? ""}`,
-      ...overrides,
-    },
-  };
+    links,
+    overrides,
+    state,
+  });
   writeFileSync(fixture.claudeConfig, '{"unrelated":"claude"}\n');
   writeFileSync(fixture.codexConfig, 'unrelated = "codex"\n');
   if (registered) {
@@ -69,35 +78,90 @@ export function createFixture(
   return fixture;
 }
 
-export function cleanupFixtures(): void {
+function createFixtureDirectories(directory: string): Readonly<{
+  binaries: string;
+  links: Readonly<Record<"claude" | "codegraph" | "codex", string>>;
+  state: string;
+}> {
+  const binaries = join(directory, "bin");
+  const state = join(directory, "state");
+  mkdirSync(binaries, { recursive: true });
+  mkdirSync(state, { recursive: true });
+  mkdirSync(join(directory, "cursor"), { recursive: true });
+  symlinkSync(process.execPath, join(binaries, "bun"));
+  const linkProvider = (name: string): string => {
+    const path = join(binaries, name);
+    symlinkSync(provider, path);
+    return path;
+  };
+  const links = {
+    claude: linkProvider("claude"),
+    codegraph: linkProvider("codegraph"),
+    codex: linkProvider("codex"),
+  };
+  chmodSync(provider, executableFileMode);
+  return { binaries, links, state };
+}
+
+function createFixtureValues({
+  binaries,
+  directory,
+  links,
+  overrides,
+  state,
+}: FixtureValueOptions): Fixture {
+  return {
+    claudeConfig: join(directory, "claude.json"),
+    codegraphBinary: links.codegraph,
+    codexConfig: join(directory, "codex.toml"),
+    cursorConfig: join(directory, "cursor", "mcp.json"),
+    directory,
+    environment: {
+      CODEGRAPH_BIN: links.codegraph,
+      CODEGRAPH_CLAUDE_BIN: links.claude,
+      CODEGRAPH_CLAUDE_CONFIG: join(directory, "claude.json"),
+      CODEGRAPH_CODEX_BIN: links.codex,
+      CODEGRAPH_CODEX_CONFIG: join(directory, "codex.toml"),
+      CODEGRAPH_CURSOR_CONFIG: join(directory, "cursor", "mcp.json"),
+      CODEGRAPH_TEST_LOG: join(directory, "calls.log"),
+      CODEGRAPH_TEST_STATE: state,
+      CODEX_HOME: join(directory, "codex-home"),
+      HOME: join(directory, "home"),
+      PATH: `${binaries}:${process.env.PATH ?? ""}`,
+      ...overrides,
+    },
+  };
+}
+
+function cleanupFixtures(): void {
   for (const path of temporaryDirectories.splice(0)) {
     rmSync(path, { force: true, recursive: true });
   }
 }
 
-export function run(fixture: Fixture) {
+function run(fixture: FixtureView): CommandResult {
   const result = Bun.spawnSync([entryPoint], spawnOptions(fixture));
   return {
     exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
     stderr: result.stderr.toString(),
+    stdout: result.stdout.toString(),
   };
 }
 
-export function start(fixture: Fixture) {
+function start(fixture: FixtureView): ReturnType<typeof Bun.spawn> {
   return Bun.spawn([entryPoint], spawnOptions(fixture));
 }
 
-function spawnOptions(fixture: Fixture) {
+function spawnOptions(fixture: FixtureView): SpawnOptions {
   return {
     cwd: root,
     env: { ...process.env, ...fixture.environment },
-    stdout: "pipe" as const,
     stderr: "pipe" as const,
+    stdout: "pipe" as const,
   };
 }
 
-export function snapshot(fixture: Fixture) {
+function snapshot(fixture: FixtureView): ConfigurationSnapshot {
   return {
     claude: readOrAbsent(fixture.claudeConfig),
     codex: readOrAbsent(fixture.codexConfig),
@@ -105,7 +169,7 @@ export function snapshot(fixture: Fixture) {
   };
 }
 
-export function readLog(fixture: Fixture): string {
+function readLog(fixture: FixtureView): string {
   return readOrAbsent(fixture.environment.CODEGRAPH_TEST_LOG).replace(
     "<absent>",
     "",
@@ -119,3 +183,13 @@ function readOrAbsent(path: string): string {
     return "<absent>";
   }
 }
+
+export {
+  cleanupFixtures,
+  createFixture,
+  type Fixture,
+  readLog,
+  run,
+  snapshot,
+  start,
+};
