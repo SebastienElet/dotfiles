@@ -1,6 +1,7 @@
 use arnes::diagnostic::ColorMode;
+use arnes::hooks::SetupHooksArgs;
 use arnes::manifest::{Agent, Scope};
-use arnes::measure::{FeedbackArgs, FinishArgs, HookAgent, InstallHooksArgs, ListArgs};
+use arnes::measure::{FeedbackArgs, FinishArgs, HookAgent, ListArgs};
 use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
@@ -30,6 +31,10 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: MeasureCommand,
     },
+    Setup {
+        #[command(subcommand)]
+        command: SetupCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -41,7 +46,11 @@ pub(crate) enum MeasureCommand {
     List(ListArgs),
     Finish(FinishArgs),
     Feedback(FeedbackArgs),
-    InstallHooks(InstallHooksArgs),
+}
+
+#[derive(Subcommand)]
+pub(crate) enum SetupCommand {
+    Hooks(SetupHooksArgs),
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, ValueEnum)]

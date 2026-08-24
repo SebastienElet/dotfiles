@@ -1,4 +1,4 @@
-use super::HookAgent;
+use crate::manifest::Agent;
 
 const CODEX: &[&str] = &[
     "SessionStart",
@@ -50,30 +50,38 @@ pub struct Policy {
     pub events: &'static [&'static str],
     pub nested: bool,
     pub excluded: &'static [&'static str],
+    pub handoff_args: bool,
+    pub handoff_execution_fields: &'static [&'static str],
 }
 
-pub fn policy(agent: HookAgent) -> Policy {
+pub fn policy(agent: Agent) -> Policy {
     match agent {
-        HookAgent::Codex => Policy {
+        Agent::Codex => Policy {
             directory: ".codex",
             filename: "hooks.json",
             events: CODEX,
             nested: true,
             excluded: &[],
+            handoff_args: false,
+            handoff_execution_fields: &["async"],
         },
-        HookAgent::ClaudeCode => Policy {
+        Agent::Claude => Policy {
             directory: ".claude",
             filename: "settings.json",
             events: CLAUDE,
             nested: true,
             excluded: &[],
+            handoff_args: true,
+            handoff_execution_fields: &["async", "asyncRewake", "once", "if"],
         },
-        HookAgent::Cursor => Policy {
+        Agent::Cursor => Policy {
             directory: ".cursor",
             filename: "hooks.json",
             events: CURSOR,
             nested: false,
             excluded: &["afterAgentThought"],
+            handoff_args: false,
+            handoff_execution_fields: &[],
         },
     }
 }

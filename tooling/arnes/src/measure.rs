@@ -2,7 +2,6 @@ mod events;
 mod fingerprint;
 mod hook;
 mod input;
-mod install;
 mod json;
 mod model;
 mod redaction;
@@ -14,7 +13,6 @@ mod store;
 use std::fmt::{self, Display};
 
 pub use hook::capture;
-pub use install::{InstallHooksArgs, install_hooks};
 pub use model::HookAgent;
 pub use result::{
     Adjudication, FailureCategory, FeedbackArgs, FeedbackSource, FinishArgs, ListArgs, ListFormat,

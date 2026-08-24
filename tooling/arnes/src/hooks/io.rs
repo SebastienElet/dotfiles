@@ -1,4 +1,4 @@
-use super::super::MeasureError;
+use super::HooksError;
 use rustix::fs::{AtFlags, Mode, OFlags, RenameFlags};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -33,7 +33,7 @@ pub struct ConfigFile {
 }
 
 impl ConfigFile {
-    pub fn open(home: &Path, agent_directory: &str, name: &str) -> Result<Self, MeasureError> {
+    pub fn open(home: &Path, agent_directory: &str, name: &str) -> Result<Self, HooksError> {
         let home = open_directory(home)?;
         create_directory(&home, agent_directory)?;
         let directory = open_directory_at(&home, agent_directory)?;
@@ -54,7 +54,7 @@ impl ConfigFile {
             .map(|snapshot| snapshot.bytes.as_slice())
     }
 
-    pub fn replace(self, bytes: &[u8]) -> Result<(), MeasureError> {
+    pub fn replace(self, bytes: &[u8]) -> Result<(), HooksError> {
         if self
             .original
             .as_ref()
@@ -63,12 +63,12 @@ impl ConfigFile {
             if read_at(&self.directory, &self.name)?.as_ref() == self.original.as_ref() {
                 return Ok(());
             }
-            return Err(MeasureError::new(
+            return Err(HooksError::new(
                 "hook configuration changed during installation",
             ));
         }
         if bytes.len() > MAX_CONFIG_BYTES {
-            return Err(MeasureError::new("hook configuration is oversized"));
+            return Err(HooksError::new("hook configuration is oversized"));
         }
         let temporary = temporary_name(&self.name);
         let mode = self.original.as_ref().map_or(0o600, |value| value.mode);
@@ -86,7 +86,7 @@ impl ConfigFile {
         result
     }
 
-    fn commit(&self, temporary: &str, expected: &Snapshot) -> Result<(), MeasureError> {
+    fn commit(&self, temporary: &str, expected: &Snapshot) -> Result<(), HooksError> {
         match &self.original {
             None => rename_new(&self.directory, temporary, &self.name)?,
             Some(original) => replace_existing(&self.directory, temporary, &self.name, original)?,
@@ -103,13 +103,13 @@ impl ConfigFile {
     }
 }
 
-fn open_directory(path: &Path) -> Result<File, MeasureError> {
+fn open_directory(path: &Path) -> Result<File, HooksError> {
     let flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file = rustix::fs::open(path, flags, Mode::empty()).map_err(errno)?;
     Ok(File::from(file))
 }
 
-fn create_directory(home: &File, name: &str) -> Result<(), MeasureError> {
+fn create_directory(home: &File, name: &str) -> Result<(), HooksError> {
     match rustix::fs::mkdirat(home, name, Mode::from_raw_mode(0o700)) {
         Ok(()) => Ok(()),
         Err(error) if error == rustix::io::Errno::EXIST => Ok(()),
@@ -117,13 +117,13 @@ fn create_directory(home: &File, name: &str) -> Result<(), MeasureError> {
     }
 }
 
-fn open_directory_at(home: &File, name: &str) -> Result<File, MeasureError> {
+fn open_directory_at(home: &File, name: &str) -> Result<File, HooksError> {
     let flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file = rustix::fs::openat(home, name, flags, Mode::empty()).map_err(errno)?;
     Ok(File::from(file))
 }
 
-fn open_lock(directory: &File, name: &str) -> Result<File, MeasureError> {
+fn open_lock(directory: &File, name: &str) -> Result<File, HooksError> {
     let flags = OFlags::RDWR | OFlags::CREATE | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file =
         rustix::fs::openat(directory, name, flags, Mode::from_raw_mode(0o600)).map_err(errno)?;
@@ -133,7 +133,7 @@ fn open_lock(directory: &File, name: &str) -> Result<File, MeasureError> {
     Ok(file)
 }
 
-fn read_at(directory: &File, name: &str) -> Result<Option<Snapshot>, MeasureError> {
+fn read_at(directory: &File, name: &str) -> Result<Option<Snapshot>, HooksError> {
     let flags = OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
     let file = match rustix::fs::openat(directory, name, flags, Mode::empty()) {
         Ok(file) => file,
@@ -147,15 +147,15 @@ fn read_at(directory: &File, name: &str) -> Result<Option<Snapshot>, MeasureErro
         .take((MAX_CONFIG_BYTES + 1) as u64)
         .read_to_end(&mut bytes)?;
     if bytes.len() > MAX_CONFIG_BYTES {
-        return Err(MeasureError::new("hook configuration is oversized"));
+        return Err(HooksError::new("hook configuration is oversized"));
     }
     Ok(Some(snapshot(bytes, &metadata)))
 }
 
-fn validate_regular(file: &File) -> Result<std::fs::Metadata, MeasureError> {
+fn validate_regular(file: &File) -> Result<std::fs::Metadata, HooksError> {
     let metadata = file.metadata()?;
     if !metadata.is_file() || metadata.nlink() != 1 {
-        return Err(MeasureError::new(
+        return Err(HooksError::new(
             "hook configuration path must be a single-link regular file",
         ));
     }
@@ -167,7 +167,7 @@ fn write_temporary(
     name: &str,
     bytes: &[u8],
     mode: u16,
-) -> Result<Snapshot, MeasureError> {
+) -> Result<Snapshot, HooksError> {
     let flags = OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file =
         rustix::fs::openat(directory, name, flags, Mode::from_raw_mode(0o600)).map_err(errno)?;
@@ -188,7 +188,7 @@ fn snapshot(bytes: Vec<u8>, metadata: &std::fs::Metadata) -> Snapshot {
     }
 }
 
-fn rename_new(directory: &File, temporary: &str, name: &str) -> Result<(), MeasureError> {
+fn rename_new(directory: &File, temporary: &str, name: &str) -> Result<(), HooksError> {
     rustix::fs::renameat_with(
         directory,
         temporary,
@@ -204,7 +204,7 @@ fn replace_existing(
     temporary: &str,
     name: &str,
     original: &Snapshot,
-) -> Result<(), MeasureError> {
+) -> Result<(), HooksError> {
     rustix::fs::renameat_with(directory, temporary, directory, name, RenameFlags::EXCHANGE)
         .map_err(errno)?;
     let current = read_at(directory, temporary);
@@ -220,8 +220,8 @@ fn replace_existing(
 #[cfg(not(test))]
 fn run_after_publish_hook() {}
 
-fn changed() -> MeasureError {
-    MeasureError::new("hook configuration changed during installation")
+fn changed() -> HooksError {
+    HooksError::new("hook configuration changed during installation")
 }
 
 fn temporary_name(name: &str) -> String {
@@ -233,6 +233,6 @@ fn temporary_name(name: &str) -> String {
     format!(".{name}.tmp-{}-{timestamp}-{sequence}", std::process::id())
 }
 
-fn errno(error: rustix::io::Errno) -> MeasureError {
+fn errno(error: rustix::io::Errno) -> HooksError {
     io::Error::from(error).into()
 }

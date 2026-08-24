@@ -8,23 +8,23 @@ use tempfile::TempDir;
 struct Harness {
     _root: TempDir,
     home: PathBuf,
-    executable: PathBuf,
 }
 
 impl Harness {
     fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join("home");
-        let executable = root.path().join("bin/arnes");
+        let executable = home.join(".local/bin/arnes");
         fs::create_dir(&home).unwrap();
-        fs::create_dir(executable.parent().unwrap()).unwrap();
+        fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::write(&executable, b"binary").unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
-        Self {
-            _root: root,
-            home,
-            executable,
-        }
+        fs::write(
+            home.join(".arnes.yaml"),
+            "version: 1\nagents:\n  - id: claude\n    scopes: [user]\n  - id: cursor\n    scopes: [user]\n  - id: codex\n    scopes: [user]\nhooks:\n  - id: measurement\n    installations:\n      - { agent: claude, scope: user }\n      - { agent: cursor, scope: user }\n      - { agent: codex, scope: user }\nresources: []\n",
+        )
+        .unwrap();
+        Self { _root: root, home }
     }
 
     fn config(&self, agent: &str) -> PathBuf {
@@ -37,9 +37,13 @@ impl Harness {
     }
 
     fn install(&self, agent: &str) -> Output {
+        let agent = if agent == "claude-code" {
+            "claude"
+        } else {
+            agent
+        };
         Command::new(env!("CARGO_BIN_EXE_arnes"))
-            .args(["measure", "install-hooks", "--agent", agent, "--command"])
-            .arg(&self.executable)
+            .args(["setup", "hooks", "--agent", agent])
             .env_clear()
             .env("HOME", &self.home)
             .output()
@@ -81,11 +85,11 @@ fn assert_success(output: &Output, label: &str) {
     );
 }
 
-#[path = "measure_install_validation/claude.rs"]
+#[path = "hooks_validation/claude.rs"]
 mod claude;
-#[path = "measure_install_validation/codex.rs"]
+#[path = "hooks_validation/codex.rs"]
 mod codex;
-#[path = "measure_install_validation/compatibility.rs"]
+#[path = "hooks_validation/compatibility.rs"]
 mod compatibility;
-#[path = "measure_install_validation/cursor.rs"]
+#[path = "hooks_validation/cursor.rs"]
 mod cursor;

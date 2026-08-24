@@ -228,6 +228,9 @@ arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
 	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
+${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ${LOCAL_BIN}
+	${CREATE_SYMLINK}
+
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
 ${APP_BIN}/Arc.app:
@@ -353,7 +356,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-measurement-hooks
+cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ~/.local/bin/cursor-agent:
 	curl https://cursor.com/install -fsS | bash
 ~/.cursor/skills:
@@ -387,12 +390,12 @@ cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/sk
 ~/.cursor/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.cursor/skills
 	${CREATE_SYMLINK}
 
-.PHONY: cursor-measurement-hooks
-cursor-measurement-hooks: arnes
-	"${LOCAL_BIN}/arnes" measure install-hooks --agent cursor --command "${LOCAL_BIN}/arnes"
+.PHONY: cursor-hooks
+cursor-hooks: arnes
+	"${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/hooks/agent_handoff ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-measurement-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -405,11 +408,9 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/USER.md: ${DOTFILES_PATH}/harness/USER.md | ~/.claude
 	${CREATE_SYMLINK}
-~/.claude/commands ~/.claude/hooks ~/.claude/rules ~/.claude/skills: | ~/.claude
+~/.claude/commands ~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
 ~/.claude/commands/pr-feedback.md: ${DOTFILES_PATH}/harness/commands/pr-feedback.md | ~/.claude/commands
-	${CREATE_SYMLINK}
-~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ~/.claude/hooks
 	${CREATE_SYMLINK}
 ~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
 	${CREATE_SYMLINK}
@@ -444,9 +445,9 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.claude/skills
 	${CREATE_SYMLINK}
 
-.PHONY: claude-code-measurement-hooks
-claude-code-measurement-hooks: arnes
-	"${LOCAL_BIN}/arnes" measure install-hooks --agent claude-code --command "${LOCAL_BIN}/arnes"
+.PHONY: claude-code-hooks
+claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
+	"${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
 hunspell: bun brew ${BREW_BIN}/hunspell hunspell-dictionaries
@@ -461,7 +462,7 @@ hunspell-dictionaries: bun
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: bun ${VOLTA_BIN}/codex ${BREW_BIN}/jq ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-measurement-hooks
+codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -507,23 +508,9 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.agents/skills
 	${CREATE_SYMLINK}
 
-.PHONY: codex-handoff-hook
-codex-handoff-hook: | ~/.codex
-	@set -eu; \
-	command='${DOTFILES_PATH}/tooling/agent-handoff'; \
-	old_command='${DOTFILES_PATH}/scripts/agent_handoff'; \
-	hooks="$$HOME/.codex/hooks.json"; \
-	if [ -L "$$hooks" ] || { [ -e "$$hooks" ] && [ ! -f "$$hooks" ]; }; then echo "Error: $$hooks is not a regular file" >&2; exit 1; fi; \
-	if [ -f "$$hooks" ]; then input="$$hooks"; had_current=true; else input=/dev/null; had_current=false; fi; \
-	tmp=$$(mktemp "$$HOME/.codex/hooks.json.tmp.XXXXXX"); \
-	trap 'rm -f "$$tmp"' 0; \
-	jq -n --arg command "$$command" --arg old_command "$$old_command" --argjson had_current "$$had_current" --slurpfile current "$$input" '$$current as $$documents | if $$had_current and ($$documents | length) != 1 then error("hooks.json must contain one JSON document") else (if $$had_current then $$documents[0] else {} end) as $$config | if ($$config | type) != "object" or ($$config | has("hooks") and ($$config.hooks | type) != "object") or (($$config.hooks // {}) | has("Stop") and ($$config.hooks.Stop | type) != "array") or any(($$config.hooks.Stop // [])[]; type != "object" or (has("hooks") | not) or (.hooks | type) != "array") or any(($$config.hooks.Stop // [])[]?.hooks[]?; type != "object") then error("invalid hooks.json structure") else $$config | .hooks //= {} | .hooks.Stop //= [] | ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)] | length) as $$new_count | ([.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)] | length) as $$old_count | if $$new_count == 1 and $$old_count == 0 then . else ([.hooks.Stop[]?.hooks[]? | select(.command == $$command)][0] // [.hooks.Stop[]?.hooks[]? | select(.command == $$old_command)][0] // {type: "command", command: $$command}) as $$candidate | ($$candidate | .command = $$command) as $$hook | .hooks.Stop |= (map(.hooks |= map(select(.command != $$old_command and .command != $$command))) | map(select((.hooks | length) > 0))) | .hooks.Stop += [{hooks: [$$hook]}] end end end' > "$$tmp"; \
-	mv "$$tmp" "$$hooks"; \
-	trap - 0
-
-.PHONY: codex-measurement-hooks
-codex-measurement-hooks: arnes codex-handoff-hook
-	"${LOCAL_BIN}/arnes" measure install-hooks --agent codex --command "${LOCAL_BIN}/arnes"
+.PHONY: codex-hooks
+codex-hooks: arnes ${LOCAL_BIN}/agent-handoff
+	"${LOCAL_BIN}/arnes" setup hooks --agent codex
 
 .PHONY: codexbar
 codexbar: brew ${APP_BIN}/CodexBar.app

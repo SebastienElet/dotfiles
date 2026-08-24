@@ -18,31 +18,59 @@ impl Harness {
 
     fn with_command_name(name: &str) -> Self {
         let root = tempfile::tempdir().unwrap();
-        let home = root.path().join("home");
-        let executable = root.path().join("bin").join(name);
+        let home = root.path().join(name);
+        let executable = home.join(".local/bin/arnes");
         fs::create_dir(&home).unwrap();
-        fs::create_dir(executable.parent().unwrap()).unwrap();
+        fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::write(&executable, b"binary").unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
-        Self {
+        let harness = Self {
             _root: root,
             home,
             executable,
-        }
+        };
+        harness.write_manifest(false);
+        harness
     }
 
     fn install(&self, agent: &str) -> Output {
-        self.install_with(agent, &self.executable)
+        self.setup(agent)
     }
 
     fn install_with(&self, agent: &str, command_path: &Path) -> Output {
+        fs::remove_file(&self.executable).unwrap();
+        symlink(command_path, &self.executable).unwrap();
+        self.setup(agent)
+    }
+
+    fn setup(&self, agent: &str) -> Output {
+        let agent = if agent == "claude-code" {
+            "claude"
+        } else {
+            agent
+        };
         Command::new(env!("CARGO_BIN_EXE_arnes"))
-            .args(["measure", "install-hooks", "--agent", agent, "--command"])
-            .arg(command_path)
+            .args(["setup", "hooks", "--agent", agent])
             .env_clear()
             .env("HOME", &self.home)
             .output()
             .unwrap()
+    }
+
+    fn install_claude_with_handoff(&self, current: &Path, legacy: &Path) -> Output {
+        assert_eq!(
+            legacy,
+            current
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .join("scripts/agent_handoff")
+        );
+        let deployed = self.home.join(".local/bin/agent-handoff");
+        symlink(current, deployed).unwrap();
+        self.write_manifest(true);
+        self.setup("claude-code")
     }
 
     fn config(&self, agent: &str) -> PathBuf {
@@ -58,6 +86,21 @@ impl Harness {
     fn command(&self, agent: &str) -> String {
         let path = self.executable.to_str().unwrap().replace('\'', "'\\''");
         format!("'{path}' measure hook --agent {agent}")
+    }
+
+    fn write_manifest(&self, handoff: bool) {
+        let handoff = if handoff {
+            "  - id: handoff\n    installations:\n      - { agent: claude, scope: user }\n"
+        } else {
+            ""
+        };
+        fs::write(
+            self.home.join(".arnes.yaml"),
+            format!(
+                "version: 1\nagents:\n  - id: claude\n    scopes: [user]\n  - id: cursor\n    scopes: [user]\n  - id: codex\n    scopes: [user]\nhooks:\n  - id: measurement\n    installations:\n      - {{ agent: claude, scope: user }}\n      - {{ agent: cursor, scope: user }}\n      - {{ agent: codex, scope: user }}\n{handoff}resources: []\n"
+            ),
+        )
+        .unwrap();
     }
 
     fn write_config(&self, agent: &str, value: &Value) {
@@ -88,11 +131,13 @@ fn assert_failure(output: &Output) {
     assert!(!output.stderr.is_empty());
 }
 
-#[path = "measure_install/filesystem.rs"]
+#[path = "hooks_reconciliation/filesystem.rs"]
 mod filesystem;
-#[path = "measure_install/installation.rs"]
+#[path = "hooks_reconciliation/handoff.rs"]
+mod handoff;
+#[path = "hooks_reconciliation/installation.rs"]
 mod installation;
-#[path = "measure_install/ownership.rs"]
+#[path = "hooks_reconciliation/ownership.rs"]
 mod ownership;
-#[path = "measure_install/validation.rs"]
+#[path = "hooks_reconciliation/validation.rs"]
 mod validation;

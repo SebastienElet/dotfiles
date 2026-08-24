@@ -10,12 +10,13 @@ use arnes::Roots;
 use arnes::commands;
 use arnes::config;
 use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
+use arnes::hooks;
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
 use arnes::rules;
 use arnes::skills;
-use cli::{Cli, Color, Command, Format, Resource, validate_render_options};
+use cli::{Cli, Color, Command, Format, Resource, SetupCommand, validate_render_options};
 use cli_output::write_output;
 use measure_cli::run_measure;
 
@@ -32,6 +33,20 @@ fn main() -> ExitCode {
             verbose,
         } => run_doctor(resource, agent, scope, format, color, verbose),
         Command::Measure { command } => run_measure(command),
+        Command::Setup { command } => run_setup(command),
+    }
+}
+
+fn run_setup(command: SetupCommand) -> ExitCode {
+    let result = match command {
+        SetupCommand::Hooks(args) => hooks::setup(args),
+    };
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("setup: {error}");
+            ExitCode::from(2)
+        }
     }
 }
 
