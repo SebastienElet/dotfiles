@@ -15,8 +15,8 @@ command git show-ref --verify --quiet refs/heads/feature
 or fail "fetch preserves a branch when its previous upstream tip is unavailable"
 not test -e "$worktree_path"
 or fail "fetch removes its clean worktree when the previous upstream tip is unavailable"
-string match --quiet -- '*commits are not integrated into main*' $fetch_output
-or fail "fetch reports unique work when the previous upstream tip is unavailable"
+string match --quiet -- '*keeping its detached local branch*' $fetch_output
+or fail "fetch reports the detached branch when the previous upstream tip is unavailable"
 
 echo "ok - unavailable upstream tip preserves the branch"
 
@@ -37,7 +37,7 @@ or fail "fetch failed in unavailable-integrated-upstream"
 
 not test -e "$worktree_path"
 or fail "fetch removes a clean worktree whose patches are integrated"
-not command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch removes a branch whose patches are integrated"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the detached branch whose patches are integrated"
 
-echo "ok - integrated branch is cleaned when its upstream tip was already pruned"
+echo "ok - integrated branch is detached when its upstream tip was already pruned"

@@ -50,4 +50,12 @@ function git_cleanup_worktree --argument-names command_name branch
     end
 
     command git $git_context worktree remove "$worktree"
+    or return 1
+    command git $git_context config --remove-section "branch.$branch"
+    or begin
+        echo "git: removed worktree for $branch but could not detach its stale upstream" >&2
+        return 1
+    end
+    echo "git: removed worktree for $branch; keeping its detached local branch" >&2
+    return 2
 end

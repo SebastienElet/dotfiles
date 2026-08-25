@@ -6,7 +6,13 @@ function git_cleanup_branch --argument-names command_name branch upstream_oid
     end
 
     git_cleanup_worktree "$command_name" "$branch" $git_context
-    or return 1
+    set -l worktree_cleanup_status $status
+    if test $worktree_cleanup_status -eq 2
+        return 0
+    end
+    if test $worktree_cleanup_status -ne 0
+        return 1
+    end
 
     set -l local_oid (command git $git_context rev-parse --verify --quiet "refs/heads/$branch^{commit}")
     if test $status -ne 0

@@ -33,8 +33,10 @@ or fail "second fetch failed in dirty-worktree"
 
 not test -e "$worktree_path"
 or fail "a later fetch removes the cleaned worktree"
-not command git show-ref --verify --quiet refs/heads/feature
-or fail "a later fetch removes the branch using its recorded upstream tip"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "a later fetch preserves the detached local branch"
+not command git config --get-regexp '^branch\.feature\.' >/dev/null
+or fail "a later fetch removes stale tracking configuration"
 
 echo "ok - fetch retries cleanup after a worktree becomes clean"
 
@@ -59,8 +61,10 @@ or fail "fetch failed in ignored-worktree"
 
 not test -e "$worktree_path"
 or fail "fetch removes a worktree containing only ignored files"
-not command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch removes the branch of a worktree containing only ignored files"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the branch of a removed ignored worktree"
+not command git config --get-regexp '^branch\.feature\.' >/dev/null
+or fail "fetch detaches the branch of a removed ignored worktree"
 
 echo "ok - fetch removes a worktree containing only ignored files"
 
@@ -84,8 +88,10 @@ or fail "fetch failed in external-ignored-worktree"
 
 not test -e "$worktree_path"
 or fail "fetch removes an external worktree containing only ignored files"
-not command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch removes the branch of an external worktree containing only ignored files"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the branch of a removed external worktree"
+not command git config --get-regexp '^branch\.feature\.' >/dev/null
+or fail "fetch detaches the branch of a removed external worktree"
 
 echo "ok - fetch removes an external worktree containing only ignored files"
 

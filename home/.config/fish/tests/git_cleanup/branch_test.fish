@@ -17,7 +17,7 @@ command git show-ref --verify --quiet refs/heads/feature
 or fail "fetch preserves a branch with local commits"
 not test -e "$worktree_path"
 or fail "fetch removes the clean worktree of a branch with local commits"
-string match --quiet -- '*keeping branch feature: local tip differs*' $fetch_output
+string match --quiet -- '*keeping its detached local branch*' $fetch_output
 or fail "fetch distinguishes a preserved branch from its removed worktree"
 
 echo "ok - fetch removes its clean worktree but preserves a branch with local commits"
@@ -35,9 +35,9 @@ or fail "fetch failed in clean-worktree"
 
 not test -e "$worktree_path"
 or fail "fetch removes a clean worktree without local commits"
-not command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch removes a branch without local commits"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the detached branch without local commits"
 not command git config --get-regexp '^branch\.feature\.'
 or fail "fetch removes configuration for a deleted branch"
 
-echo "ok - fetch removes a clean worktree and branch without local commits"
+echo "ok - fetch removes a clean worktree and detaches its local branch"
