@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { main } from "./git-clean-linked-worktree-artifacts.ts";
-
-process.exitCode = await main(process.argv.slice(2));

@@ -53,7 +53,7 @@ test("runs the static CI barriers from an exact temporary worktree", () => {
   expect(status).toBe(0);
   expect(fake.calls[0]).toBe("git rev-parse --verify HEAD");
   expect(fake.calls[1]).toStartWith("git worktree add --detach --quiet ");
-  expect(fake.calls.at(-1)).toStartWith("git worktree remove --force ");
+  expect(fake.calls.at(-1)).toStartWith("git worktree remove --force --force ");
   expect(fake.directories[2]).toBeDefined();
   expect(fake.directories[3]).toBe(fake.directories[2]);
 });

@@ -125,6 +125,7 @@ function runStaticChecksAtCommit(head: string, runner: CommandRunner): number {
     "worktree",
     "remove",
     "--force",
+    "--force",
     validationWorktree,
   ]);
   if (removal.status !== 0) {

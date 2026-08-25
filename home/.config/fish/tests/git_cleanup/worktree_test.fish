@@ -116,6 +116,34 @@ or fail "fetch reports why its invoking worktree is preserved"
 
 echo "ok - fetch preserves its invoking linked worktree"
 
+create_repository locked-ignored-worktree
+create_tracked_branch feature
+must git -C "$repository_path" switch --quiet feature
+echo ignored >"$repository_path/.gitignore"
+must git -C "$repository_path" add .gitignore
+must git -C "$repository_path" commit --quiet --message ignore
+must git -C "$repository_path" push --quiet
+must git -C "$repository_path" switch --quiet main
+set worktree_path "$test_root/locked-ignored-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
+echo local >"$worktree_path/ignored"
+must git -C "$repository_path" worktree lock "$worktree_path"
+must git --git-dir="$remote_path" update-ref -d refs/heads/feature
+
+cd "$repository_path"
+or fail "could not enter locked-ignored-worktree"
+set fetch_output (git fetch 2>&1)
+or fail "fetch failed in locked-ignored-worktree"
+
+test -e "$worktree_path/ignored"
+or fail "fetch preserves ignored files in a locked worktree"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the branch of a locked worktree"
+string match --quiet -- '*locked*' $fetch_output
+or fail "fetch reports why a locked worktree is preserved"
+
+echo "ok - fetch preserves a locked linked worktree"
+
 create_repository assume-unchanged-worktree
 create_tracked_branch feature
 set worktree_path "$test_root/assume-unchanged-feature"
