@@ -466,9 +466,12 @@ hunspell-dictionaries: bun
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: bun ${VOLTA_BIN}/codex claude-developer-link-cleanup ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
+.PHONY: claude-developer-link-cleanup
+claude-developer-link-cleanup: bun
+	"${BREW_BIN}/bun" "${DOTFILES_PATH}/tooling/retire-command-link" "${DOTFILES_PATH}/tooling/claude-developer" "${LOCAL_BIN}/claude-developer"
 ~/.codex:
 	mkdir -p $@
 # Codex ignores AGENTS.md @import directives, so the sources are assembled
@@ -559,8 +562,8 @@ codegraph-ignore:
 	mkdir -p "$$(dirname "$$target")"; \
 	ln -s "$$expected" "$$target"
 
-${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size | ${LOCAL_BIN}
-	${CREATE_SYMLINK}
+${LOCAL_BIN}/codegraph-repository-size: FORCE ${DOTFILES_PATH}/tooling/codegraph-repository-size | ${BREW_BIN}/bun ${LOCAL_BIN}
+	"${BREW_BIN}/bun" "${DOTFILES_PATH}/tooling/retire-command-link" "${DOTFILES_PATH}/harness/skills/codegraph/scripts/measure_repository.sh" "${DOTFILES_PATH}/tooling/codegraph-repository-size" "$@"
 
 .PHONY: googleworkspace-cli
 googleworkspace-cli: ${VOLTA_BIN}/gws

@@ -1,0 +1,5 @@
+#!/usr/bin/env bun
+
+import { main } from "./retire-command-link.ts";
+
+main(process.argv.slice(2));
