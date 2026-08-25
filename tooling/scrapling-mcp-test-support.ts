@@ -7,10 +7,12 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { z } from "zod";
 
 const entryPoint = join(import.meta.dir, "scrapling-mcp");
+const executableFileMode = 0o755;
 const provider = join(import.meta.dir, "scrapling-mcp-test-provider.ts");
 const fixtures: Fixture[] = [];
 
@@ -32,16 +34,24 @@ type Scenario = Readonly<{
   hang?: string;
 }>;
 
-export type Fixture = Readonly<{
+type RunResult = Readonly<{
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}>;
+
+const callsSchema = z.array(z.array(z.string()));
+
+type Fixture = Readonly<{
   root: string;
   entryPoint: string;
-  environment: NodeJS.ProcessEnv;
+  environment: Readonly<NodeJS.ProcessEnv>;
   state: string;
 }>;
 
-export function createFixture(
+function createFixture(
   scenario: Scenario = {},
-  environment: Record<string, string> = {},
+  environment: Readonly<Record<string, string>> = {},
 ): Fixture {
   const root = mkdtempSync(join(tmpdir(), "scrapling-mcp-"));
   const binaries = join(root, "bin");
@@ -52,72 +62,81 @@ export function createFixture(
   symlinkSync(provider, join(binaries, "docker"));
   const installedEntryPoint = join(binaries, "scrapling_mcp");
   symlinkSync(entryPoint, installedEntryPoint);
-  chmodSync(provider, 0o755);
+  chmodSync(provider, executableFileMode);
   writeFileSync(join(state, "scenario.json"), JSON.stringify(scenario));
-  if (scenario.present) mkdirSync(join(state, "container"));
-  if (scenario.running) writeFileSync(join(state, "running"), "");
+  if (scenario.present === true) {
+    mkdirSync(join(state, "container"));
+  }
+  if (scenario.running === true) {
+    writeFileSync(join(state, "running"), "");
+  }
   const fixture = {
-    root,
     entryPoint: installedEntryPoint,
-    state,
     environment: {
       ...process.env,
       PATH: `${binaries}:${process.env.PATH ?? ""}`,
-      SCRAPLING_TEST_STATE: state,
       SCRAPLING_DOCKER_TIMEOUT_MS: "5000",
+      SCRAPLING_TEST_STATE: state,
       ...environment,
     },
+    root,
+    state,
   };
   fixtures.push(fixture);
   return fixture;
 }
 
-export function run(fixture: Fixture) {
-  const result = Bun.spawnSync([fixture.entryPoint], {
+function run(fixture: Fixture): RunResult {
+  const commandResult = Bun.spawnSync([fixture.entryPoint], {
     env: fixture.environment,
+    stderr: "pipe",
     stdin: "ignore",
     stdout: "pipe",
-    stderr: "pipe",
   });
   return {
-    exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
-    stderr: result.stderr.toString(),
+    exitCode: commandResult.exitCode,
+    stderr: commandResult.stderr.toString(),
+    stdout: commandResult.stdout.toString(),
   };
 }
 
-export function start(fixture: Fixture) {
+function start(fixture: Fixture): Bun.Subprocess<"ignore", "pipe", "pipe"> {
   return Bun.spawn([fixture.entryPoint], {
     env: fixture.environment,
+    stderr: "pipe",
     stdin: "ignore",
     stdout: "pipe",
-    stderr: "pipe",
   });
 }
 
-export async function result(process: ReturnType<typeof start>) {
+async function result(fixture: Fixture): Promise<RunResult> {
+  const process = start(fixture);
   const [exitCode, stdout, stderr] = await Promise.all([
     process.exited,
     new Response(process.stdout).text(),
     new Response(process.stderr).text(),
   ]);
-  return { exitCode, stdout, stderr };
+  return { exitCode, stderr, stdout };
 }
 
-export function calls(fixture: Fixture): string[][] {
+function calls(fixture: Fixture): readonly (readonly string[])[] {
   try {
-    return readFileSync(join(fixture.state, "calls"), "utf8")
+    const parsedCalls = readFileSync(join(fixture.state, "calls"), "utf8")
       .trim()
       .split("\n")
       .filter(Boolean)
-      .map((line) => JSON.parse(line) as string[]);
+      .map((line): unknown => JSON.parse(line));
+    return callsSchema.parse(parsedCalls);
   } catch {
     return [];
   }
 }
 
-export function cleanupFixtures(): void {
+function cleanupFixtures(): void {
   for (const fixture of fixtures.splice(0)) {
-    rmSync(fixture.root, { recursive: true, force: true });
+    rmSync(fixture.root, { force: true, recursive: true });
   }
 }
+
+export { calls, cleanupFixtures, createFixture, result, run };
+export type { Fixture, Scenario };

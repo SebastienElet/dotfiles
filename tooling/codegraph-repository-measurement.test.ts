@@ -1,18 +1,36 @@
-import { describe, expect, test } from "bun:test";
 import {
+  type SourceMeasurement,
   aggregateMeasurements,
   parseTokeiOutput,
 } from "./codegraph-repository-measurement.ts";
+import { describe, expect, test } from "bun:test";
+
+const belowLineThreshold = 49_999;
+const belowFileThreshold = 499;
+const lineThreshold = 50_000;
+const fileThreshold = 500;
+const cjsLines = 2;
+const tofuLines = 3;
+const ignoredHclLines = 5;
+const ignoredYamlLines = 7;
+const expectedKeptFileCount = 2;
+const expectedKeptSourceLines = cjsLines + tofuLines;
 
 describe("repository measurement", () => {
   test("aggregates source records at both initialization boundaries", () => {
-    expect(aggregateMeasurements(records(49_999, 499))).toEqual({
-      loc: 49_999,
-      files: 499,
+    expect(
+      aggregateMeasurements(records(belowLineThreshold, belowFileThreshold)),
+    ).toEqual({
+      files: belowFileThreshold,
       initialize: false,
+      loc: belowLineThreshold,
     });
-    expect(aggregateMeasurements(records(50_000, 1)).initialize).toBe(true);
-    expect(aggregateMeasurements(records(1, 500)).initialize).toBe(true);
+    expect(aggregateMeasurements(records(lineThreshold, 1)).initialize).toBe(
+      true,
+    );
+    expect(aggregateMeasurements(records(1, fileThreshold)).initialize).toBe(
+      true,
+    );
   });
 
   test("accepts supported extensions case-insensitively and rejects other records", () => {
@@ -20,14 +38,18 @@ describe("repository measurement", () => {
       aggregateMeasurements(
         parseTokeiOutput(
           [
-            record("kept.CJS", 2),
-            record("kept.tofu.tf", 3),
-            record("ignored.hcl", 5),
-            record("ignored.yaml", 7),
+            record("kept.CJS", cjsLines),
+            record("kept.tofu.tf", tofuLines),
+            record("ignored.hcl", ignoredHclLines),
+            record("ignored.yaml", ignoredYamlLines),
           ].join(""),
         ),
       ),
-    ).toEqual({ loc: 5, files: 2, initialize: false });
+    ).toEqual({
+      files: expectedKeptFileCount,
+      initialize: false,
+      loc: expectedKeptSourceLines,
+    });
   });
 
   test("rejects malformed or unsafe Tokei records", () => {
@@ -38,19 +60,17 @@ describe("repository measurement", () => {
     expect(() =>
       aggregateMeasurements(
         parseTokeiOutput(
-          record("fixture.ts", Number.MAX_SAFE_INTEGER).concat(
-            record("second.ts", 1),
-          ),
+          `${record("fixture.ts", Number.MAX_SAFE_INTEGER)}${record("second.ts", 1)}`,
         ),
       ),
     ).toThrow("safe integer");
   });
 });
 
-function records(loc: number, files: number) {
-  return Array.from({ length: files }, (_, index) => ({
-    name: `fixture-${index}.ts`,
+function records(loc: number, files: number): SourceMeasurement[] {
+  return Array.from({ length: files }, (_unusedValue, index) => ({
     code: index === 0 ? loc : 0,
+    name: `fixture-${index}.ts`,
   }));
 }
 

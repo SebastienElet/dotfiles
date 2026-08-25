@@ -1,31 +1,45 @@
-export class CommandFailure extends Error {
-  constructor(readonly status: number) {
+const successfulExitCode = 0;
+
+class CommandFailureError extends Error {
+  public readonly status: number;
+
+  public constructor(status: number) {
     super("");
+    this.name = "CommandFailureError";
+    this.status = status;
   }
 }
 
-const decoder = new TextDecoder("utf-8", { fatal: true });
-
-function decode(bytes: Uint8Array): string {
+function decodeOutput(output: readonly number[]): string {
   try {
-    return decoder.decode(bytes);
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+      new Uint8Array(output),
+    );
   } catch {
     throw new Error(`AppleScript returned invalid UTF-8`);
   }
 }
 
-export function runAppleScript(script: string): string {
+const runAppleScript = (script: string): string => {
   const result = Bun.spawnSync(["osascript"], {
+    stderr: "pipe",
     stdin: Buffer.from(script),
     stdout: "pipe",
-    stderr: "pipe",
   });
-  if (result.exitCode !== 0) {
-    if (result.stdout.length > 0) process.stdout.write(result.stdout);
-    if (result.stderr.length > 0) process.stderr.write(result.stderr);
-    throw new CommandFailure(result.exitCode);
+  if (result.exitCode !== successfulExitCode) {
+    if (result.stdout.length > successfulExitCode) {
+      process.stdout.write(result.stdout);
+    }
+    if (result.stderr.length > successfulExitCode) {
+      process.stderr.write(result.stderr);
+    }
+    throw new CommandFailureError(result.exitCode);
   }
-  const stdout = decode(result.stdout);
-  if (result.stderr.length > 0) process.stderr.write(result.stderr);
+  const stdout = decodeOutput([...result.stdout]);
+  if (result.stderr.length > successfulExitCode) {
+    process.stderr.write(result.stderr);
+  }
   return stdout.trimEnd();
-}
+};
+
+export { CommandFailureError, runAppleScript };

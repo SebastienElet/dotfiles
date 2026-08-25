@@ -1,31 +1,48 @@
 import { chmod, mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 
-export type Response = Readonly<{
+type Response = Readonly<{
   status?: number;
   stdout?: string;
-  stdoutBytes?: number[];
+  stdoutBytes?: readonly number[];
   stderr?: string;
   exportFile?: string;
   appearDirectory?: string;
 }>;
+type RunNotesResult = Readonly<{
+  calls: readonly string[];
+  exitCode: number;
+  root: string;
+  stderr: string;
+  stdout: string;
+  stdoutBytes: readonly number[];
+}>;
+type RunNotesOptions = Readonly<{
+  prepare?: (root: string) => void;
+  stdin?: string;
+}>;
+const executableMode = 0o755;
+const entrypoint = join(
+  import.meta.dir,
+  "..",
+  ".agents",
+  "skills",
+  "apple-notes",
+  "scripts",
+  "notes.sh",
+);
 const roots: string[] = [];
 
-export async function cleanupNotesFixtures(): Promise<void> {
+async function cleanupNotesFixtures(): Promise<void> {
   await Promise.all(
-    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+    roots.splice(0).map(async (root) => {
+      await rm(root, { force: true, recursive: true });
+    }),
   );
 }
 
-export async function runNotes(
-  arguments_: readonly string[],
-  responses: readonly Response[],
-  stdin = "",
-  prepare?: (root: string) => void,
-) {
-  const root = await mkdtemp(join(tmpdir(), "apple-notes-test-"));
-  roots.push(root);
+async function prepareOsaScript(root: string): Promise<string> {
   const bin = join(root, "bin");
   await Bun.$`mkdir -p ${bin}`.quiet();
   const fake = join(root, "osascript.ts");
@@ -60,39 +77,54 @@ process.exit(response.status ?? 0);
     osascript,
     `#!/bin/sh\nexec "${process.execPath}" "${fake}"\n`,
   );
-  await chmod(osascript, 0o755);
-  const entrypoint = join(
-    import.meta.dir,
-    "..",
-    ".agents",
-    "skills",
-    "apple-notes",
-    "scripts",
-    "notes.sh",
-  );
-  prepare?.(root);
+  await chmod(osascript, executableMode);
+  return bin;
+}
+
+async function readCalls(root: string): Promise<readonly string[]> {
+  const logPath = join(root, "log");
+  const log = (await Bun.file(logPath).exists())
+    ? await readFile(logPath, "utf8")
+    : "";
+  return log.split("\0").filter(Boolean);
+}
+
+async function runNotes(
+  arguments_: readonly string[],
+  responses: readonly Response[],
+  options: RunNotesOptions = {},
+): Promise<RunNotesResult> {
+  const root = await mkdtemp(join(tmpdir(), "apple-notes-test-"));
+  roots.push(root);
+  const bin = await prepareOsaScript(root);
+  options.prepare?.(root);
   const result = Bun.spawnSync([entrypoint, ...arguments_], {
     cwd: root,
-    stdin: Buffer.from(stdin),
-    stdout: "pipe",
-    stderr: "pipe",
     env: {
       ...process.env,
-      PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      NOTES_LOG: join(root, "log"),
       NOTES_RESPONSES: JSON.stringify(responses),
       NOTES_STATE: join(root, "state"),
-      NOTES_LOG: join(root, "log"),
+      PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
     },
+    stderr: "pipe",
+    stdin: Buffer.from(options.stdin ?? ""),
+    stdout: "pipe",
   });
-  const log = (await Bun.file(join(root, "log")).exists())
-    ? await readFile(join(root, "log"), "utf8")
-    : "";
   return {
+    calls: await readCalls(root),
     exitCode: result.exitCode,
+    root,
+    stderr: result.stderr.toString(),
     stdout: result.stdout.toString(),
     stdoutBytes: [...result.stdout],
-    stderr: result.stderr.toString(),
-    calls: log.split("\0").filter(Boolean),
-    root,
   };
 }
+
+export {
+  cleanupNotesFixtures,
+  runNotes,
+  type Response,
+  type RunNotesOptions,
+  type RunNotesResult,
+};

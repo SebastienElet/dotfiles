@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { dirname, join } from "node:path";
 import {
   existsSync,
   mkdirSync,
@@ -8,13 +9,41 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
+import { z } from "zod";
+
+const providerConfigurationSchema = z
+  .object({
+    mcpServers: z.object({ codegraph: z.object({ command: z.string() }) }),
+    unrelated: z.string().optional(),
+  })
+  .loose();
 
 const root = dirname(import.meta.dir);
 const entryPoint = join(import.meta.dir, "codegraph-configure");
 const provider = join(import.meta.dir, "codegraph-configure-test-provider.ts");
 const temporaryDirectories: string[] = [];
+const configurationErrorExitCode = 2;
+const deploymentTestTimeoutMilliseconds = 15_000;
+
+interface CommandResult {
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}
+interface ConfigurationSnapshot {
+  claude: string;
+  codex: string;
+  cursor: string;
+}
+interface RealCliFixture {
+  claudeConfig: string;
+  codegraphBinary: string;
+  codexConfig: string;
+  cursorConfig: string;
+  environment: Readonly<Record<string, string | undefined>>;
+  log: string;
+}
 
 afterEach(() => {
   for (const path of temporaryDirectories.splice(0)) {
@@ -23,6 +52,12 @@ afterEach(() => {
 });
 
 describe("CodeGraph deployment", () => {
+  registerConfiguratorDeploymentTest();
+  registerVoltaDeploymentTest();
+  registerIgnoreDeploymentTest();
+});
+
+function registerConfiguratorDeploymentTest(): void {
   test("the supported Make entry point deploys the shipped configurator", () => {
     const directory = createTemporaryDirectory();
     const result = makeDryRun(directory, "codegraph");
@@ -37,7 +72,9 @@ describe("CodeGraph deployment", () => {
     );
     expect(result.stdout).toContain("brew install bun");
   });
+}
 
+function registerVoltaDeploymentTest(): void {
   test("CodeGraph installation remains delegated to unpinned Volta commands", () => {
     const directory = createTemporaryDirectory();
     const codex = makeDryRun(
@@ -53,35 +90,41 @@ describe("CodeGraph deployment", () => {
     expect(codegraph.stdout).toContain("volta install @colbymchenry/codegraph");
     expect(codegraph.stdout).not.toContain("@colbymchenry/codegraph@");
   });
+}
 
-  test("CodeGraph ignore deployment is idempotent and refuses a foreign target", () => {
-    const directory = createTemporaryDirectory();
-    const ignorePath = join(directory, "git", "ignore");
-    expect(
-      runMake(["codegraph-ignore", `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`])
-        .exitCode,
-    ).toBe(0);
-    expect(readlinkSync(ignorePath)).toBe(
-      join(root, ".config", "git", "ignore"),
-    );
-    expect(
-      runMake(["codegraph-ignore", `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`])
-        .exitCode,
-    ).toBe(0);
+function registerIgnoreDeploymentTest(): void {
+  test(
+    "CodeGraph ignore deployment is idempotent and refuses a foreign target",
+    () => {
+      const directory = createTemporaryDirectory();
+      const ignorePath = join(directory, "git", "ignore");
+      expect(
+        runMake(["codegraph-ignore", `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`])
+          .exitCode,
+      ).toBe(0);
+      expect(readlinkSync(ignorePath)).toBe(
+        join(root, ".config", "git", "ignore"),
+      );
+      expect(
+        runMake(["codegraph-ignore", `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`])
+          .exitCode,
+      ).toBe(0);
 
-    rmSync(ignorePath);
-    writeFileSync(ignorePath, "foreign\n");
-    const result = runMake([
-      "codegraph-ignore",
-      `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`,
-    ]);
+      rmSync(ignorePath);
+      writeFileSync(ignorePath, "foreign\n");
+      const result = runMake([
+        "codegraph-ignore",
+        `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`,
+      ]);
 
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain(
-      "exists and is not the expected symbolic link",
-    );
-  }, 15_000);
-});
+      expect(result.exitCode).toBe(configurationErrorExitCode);
+      expect(result.stderr).toContain(
+        "exists and is not the expected symbolic link",
+      );
+    },
+    deploymentTestTimeoutMilliseconds,
+  );
+}
 
 const realClaude = process.env.CODEGRAPH_REAL_CLAUDE_BIN;
 const realCodex = process.env.CODEGRAPH_REAL_CODEX_BIN;
@@ -96,39 +139,17 @@ test.skipIf(
 )(
   "the real Claude and Codex CLIs preserve unrelated configuration",
   () => {
-    const directory = createTemporaryDirectory();
-    const home = join(directory, "home");
-    const codexHome = join(directory, "codex-home");
-    const binaries = join(directory, "bin");
-    const state = join(directory, "state");
-    const claudeConfig = join(home, ".claude.json");
-    const codexConfig = join(codexHome, "config.toml");
-    const cursorConfig = join(directory, "cursor", "mcp.json");
-    const log = join(directory, "calls.log");
-    mkdirSync(home, { recursive: true });
-    mkdirSync(codexHome, { recursive: true });
-    mkdirSync(binaries, { recursive: true });
-    symlinkSync(provider, join(binaries, "codegraph"));
-    symlinkSync(process.execPath, join(binaries, "bun"));
-    writeFileSync(claudeConfig, '{"unrelated":"claude"}\n');
-    writeFileSync(codexConfig, 'unrelated = "codex"\n');
-
-    const environment = {
-      ...process.env,
-      HOME: home,
-      VOLTA_HOME: realVoltaHome,
-      CODEX_HOME: codexHome,
-      CODEGRAPH_CLAUDE_BIN: realClaude,
-      CODEGRAPH_CODEX_BIN: realCodex,
-      CODEGRAPH_BIN: join(binaries, "codegraph"),
-      CODEGRAPH_CLAUDE_CONFIG: claudeConfig,
-      CODEGRAPH_CODEX_CONFIG: codexConfig,
-      CODEGRAPH_CURSOR_CONFIG: cursorConfig,
-      CODEGRAPH_TEST_LOG: log,
-      CODEGRAPH_TEST_STATE: state,
-      PATH: `${binaries}:${process.env.PATH ?? ""}`,
-    };
-
+    const realCliPaths = z
+      .tuple([z.string(), z.string(), z.string()])
+      .parse([realClaude, realCodex, realVoltaHome]);
+    const {
+      claudeConfig,
+      codegraphBinary,
+      codexConfig,
+      cursorConfig,
+      environment,
+      log,
+    } = createRealCliFixture(...realCliPaths);
     const first = runEntryPoint(environment);
     expect(first.exitCode).toBe(0);
     expect(first.stdout).toContain("codegraph");
@@ -143,21 +164,66 @@ test.skipIf(
       firstConfigurations,
     );
 
-    const claude = JSON.parse(firstConfigurations.claude);
-    const cursor = JSON.parse(firstConfigurations.cursor);
-    expect(claude.unrelated).toBe("claude");
-    expect(claude.mcpServers.codegraph.command).toBe(
-      join(binaries, "codegraph"),
+    const claude = providerConfigurationSchema.parse(
+      JSON.parse(firstConfigurations.claude),
     );
+    const cursor = providerConfigurationSchema.parse(
+      JSON.parse(firstConfigurations.cursor),
+    );
+    expect(claude.unrelated).toBe("claude");
+    expect(claude.mcpServers.codegraph.command).toBe(codegraphBinary);
     expect(firstConfigurations.codex).toContain('unrelated = "codex"');
     expect(firstConfigurations.codex).toContain("[mcp_servers.codegraph]");
-    expect(cursor.mcpServers.codegraph.command).toBe(
-      join(binaries, "codegraph"),
-    );
+    expect(cursor.mcpServers.codegraph.command).toBe(codegraphBinary);
     expect(existsSync(log)).toBe(true);
   },
-  15_000,
+  deploymentTestTimeoutMilliseconds,
 );
+
+function createRealCliFixture(
+  claudeBinary: string,
+  codexBinary: string,
+  voltaHome: string,
+): Readonly<RealCliFixture> {
+  const directory = createTemporaryDirectory();
+  const home = join(directory, "home");
+  const codexHome = join(directory, "codex-home");
+  const binaries = join(directory, "bin");
+  const claudeConfig = join(home, ".claude.json");
+  const codexConfig = join(codexHome, "config.toml");
+  const cursorConfig = join(directory, "cursor", "mcp.json");
+  const log = join(directory, "calls.log");
+  const codegraphBinary = join(binaries, "codegraph");
+  mkdirSync(home, { recursive: true });
+  mkdirSync(codexHome, { recursive: true });
+  mkdirSync(binaries, { recursive: true });
+  symlinkSync(provider, codegraphBinary);
+  symlinkSync(process.execPath, join(binaries, "bun"));
+  writeFileSync(claudeConfig, '{"unrelated":"claude"}\n');
+  writeFileSync(codexConfig, 'unrelated = "codex"\n');
+  return {
+    claudeConfig,
+    codegraphBinary,
+    codexConfig,
+    cursorConfig,
+    environment: {
+      ...process.env,
+      CODEGRAPH_BIN: codegraphBinary,
+      CODEGRAPH_CLAUDE_BIN: claudeBinary,
+      CODEGRAPH_CLAUDE_CONFIG: claudeConfig,
+      CODEGRAPH_CODEX_BIN: codexBinary,
+      CODEGRAPH_CODEX_CONFIG: codexConfig,
+      CODEGRAPH_CURSOR_CONFIG: cursorConfig,
+      CODEGRAPH_TEST_LOG: log,
+      CODEGRAPH_TEST_STATE: join(directory, "state"),
+      CODEX_HOME: codexHome,
+      HOME: home,
+      PATH: `${binaries}:${process.env.PATH ?? ""}`,
+      VOLTA_HOME: voltaHome,
+    },
+    log,
+  };
+}
 
 function createTemporaryDirectory(): string {
   const directory = join(
@@ -169,7 +235,7 @@ function createTemporaryDirectory(): string {
   return directory;
 }
 
-function makeDryRun(home: string, target: string) {
+function makeDryRun(home: string, target: string): CommandResult {
   return runMake([
     "-Bn",
     `HOME=${home}`,
@@ -180,31 +246,37 @@ function makeDryRun(home: string, target: string) {
   ]);
 }
 
-function runMake(arguments_: string[]) {
+function runMake(arguments_: readonly string[]): CommandResult {
   return run(["make", "-s", "-C", root, ...arguments_], process.env);
 }
 
-function runEntryPoint(environment: Record<string, string | undefined>) {
+function runEntryPoint(
+  environment: Readonly<Record<string, string | undefined>>,
+): CommandResult {
   return run([entryPoint], environment);
 }
 
 function run(
-  command: string[],
-  environment: Record<string, string | undefined>,
-) {
-  const result = Bun.spawnSync(command, {
+  command: readonly string[],
+  environment: Readonly<Record<string, string | undefined>>,
+): CommandResult {
+  const result = Bun.spawnSync([...command], {
     env: environment,
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   return {
     exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
     stderr: result.stderr.toString(),
+    stdout: result.stdout.toString(),
   };
 }
 
-function readConfigurations(claude: string, codex: string, cursor: string) {
+function readConfigurations(
+  claude: string,
+  codex: string,
+  cursor: string,
+): ConfigurationSnapshot {
   return {
     claude: readFileSync(claude, "utf8"),
     codex: readFileSync(codex, "utf8"),

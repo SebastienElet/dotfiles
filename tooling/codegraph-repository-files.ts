@@ -1,4 +1,4 @@
-import { lstatSync, readdirSync, realpathSync, type Dirent } from "node:fs";
+import { type Dirent, lstatSync, readdirSync, realpathSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { MeasurementError } from "./codegraph-repository-measurement.ts";
 
@@ -18,7 +18,7 @@ const excludedDirectories = new Set([
   "fixtures",
 ]);
 
-export function gitOpenTofuFiles(
+function gitOpenTofuFiles(
   repository: string,
   nulSeparatedFiles: string,
 ): string[] {
@@ -35,16 +35,29 @@ export function gitOpenTofuFiles(
   return files.flatMap((file) => eligibleFile(repository, file));
 }
 
-export function nonGitOpenTofuFiles(repository: string): string[] {
-  const files: string[] = [];
-  visit(repository, "", files);
-  return files;
+function nonGitOpenTofuFiles(repository: string): string[] {
+  return filesBelow(repository, "");
 }
 
-function visit(repository: string, directory: string, files: string[]): void {
-  let entries: Dirent[];
+function filesBelow(repository: string, directory: string): string[] {
+  const entries = readDirectory(repository, directory);
+  return entries.flatMap((entry: Readonly<Dirent>) => {
+    const path = directory === "" ? entry.name : `${directory}/${entry.name}`;
+    if (entry.isDirectory()) {
+      return excludedDirectories.has(entry.name)
+        ? []
+        : filesBelow(repository, path);
+    }
+    if (entry.isFile() && /\.tofu$/iu.test(entry.name)) {
+      return [realpathSync.native(resolve(repository, path))];
+    }
+    return [];
+  });
+}
+
+function readDirectory(repository: string, directory: string): Dirent[] {
   try {
-    entries = readdirSync(resolve(repository, directory), {
+    return readdirSync(resolve(repository, directory), {
       withFileTypes: true,
     });
   } catch (error) {
@@ -52,22 +65,10 @@ function visit(repository: string, directory: string, files: string[]): void {
       `repository traversal failed: ${message(error)}`,
     );
   }
-  for (const entry of entries) {
-    const path = directory === "" ? entry.name : `${directory}/${entry.name}`;
-    if (entry.isDirectory()) {
-      if (!excludedDirectories.has(entry.name)) {
-        visit(repository, path, files);
-      }
-      continue;
-    }
-    if (entry.isFile() && /\.tofu$/i.test(entry.name)) {
-      files.push(realpathSync.native(resolve(repository, path)));
-    }
-  }
 }
 
 function eligibleFile(repository: string, file: string): string[] {
-  if (!/\.tofu$/i.test(file) || hasExcludedSegment(file)) {
+  if (!/\.tofu$/iu.test(file) || hasExcludedSegment(file)) {
     return [];
   }
   const path = resolve(repository, file);
@@ -97,3 +98,5 @@ function hasExcludedSegment(path: string): boolean {
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export { gitOpenTofuFiles, nonGitOpenTofuFiles };

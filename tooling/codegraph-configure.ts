@@ -1,24 +1,39 @@
-import { accessSync, constants } from "node:fs";
-import { join } from "node:path";
-import { configureCursor, ConfigurationError } from "./codegraph-config.ts";
+import { ConfigurationError, configureCursor } from "./codegraph-config.ts";
 import {
+  type ConfigurationSnapshot,
   inspectConfiguration,
   restoreConfigurations,
   withConfigurationLocks,
   writeJsonAtomically,
-  type ConfigurationSnapshot,
 } from "./codegraph-config-files.ts";
+import { accessSync, constants } from "node:fs";
+import { ReportedCommandError } from "./codegraph-configure-reported-error.ts";
+import { join } from "node:path";
 
-type CommandResult = { exitCode: number; output: string };
+interface CommandResult {
+  exitCode: number;
+  output: string;
+}
 type Registration = "absent" | "registered";
 
-export function main(): number {
+class CommandError extends Error {
+  public override readonly name = "CommandError";
+
+  public constructor(
+    public readonly exitCode: number,
+    message: string,
+  ) {
+    super(message || `command failed with exit ${exitCode}`);
+  }
+}
+
+function main(): number {
   try {
     configureCodegraph();
     return 0;
   } catch (error) {
     if (!(error instanceof ReportedCommandError)) {
-      console.error(errorMessage(error));
+      process.stderr.write(`${errorMessage(error)}\n`);
     }
     return error instanceof ConfigurationError
       ? error.exitCode
@@ -72,7 +87,7 @@ function configureCodegraph(): void {
 }
 
 function runTransaction(
-  snapshots: ConfigurationSnapshot[],
+  snapshots: readonly ConfigurationSnapshot[],
   mutation: () => void,
 ): void {
   try {
@@ -81,7 +96,10 @@ function runTransaction(
     try {
       restoreConfigurations(snapshots);
     } catch (rollbackError) {
-      throw new Error(`${errorMessage(error)}\n${errorMessage(rollbackError)}`);
+      throw new Error(
+        `${errorMessage(error)}\n${errorMessage(rollbackError)}`,
+        { cause: rollbackError },
+      );
     }
     throw error;
   }
@@ -181,11 +199,11 @@ function configureCodex(
 
 function runCapturedCommand(
   binary: string,
-  arguments_: string[],
+  arguments_: readonly string[],
 ): CommandResult {
   const result = Bun.spawnSync([binary, ...arguments_], {
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   return {
     exitCode: result.exitCode,
@@ -193,10 +211,13 @@ function runCapturedCommand(
   };
 }
 
-function runMutationCommand(binary: string, arguments_: string[]): void {
+function runMutationCommand(
+  binary: string,
+  arguments_: readonly string[],
+): void {
   const result = Bun.spawnSync([binary, ...arguments_], {
-    stdout: "inherit",
     stderr: "inherit",
+    stdout: "inherit",
   });
   if (result.exitCode !== 0) {
     throw new ReportedCommandError(result.exitCode);
@@ -220,21 +241,6 @@ function requiredEnvironment(name: string): string {
   return value;
 }
 
-class CommandError extends Error {
-  constructor(
-    readonly exitCode: number,
-    message: string,
-  ) {
-    super(message || `command failed with exit ${exitCode}`);
-  }
-}
-
-class ReportedCommandError extends Error {
-  constructor(readonly exitCode: number) {
-    super(`command failed with exit ${exitCode}`);
-  }
-}
-
 function commandExitCode(error: unknown): number {
   return error instanceof CommandError || error instanceof ReportedCommandError
     ? error.exitCode
@@ -244,3 +250,5 @@ function commandExitCode(error: unknown): number {
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export { main };

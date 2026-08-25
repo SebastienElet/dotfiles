@@ -1,8 +1,9 @@
-const targetPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const assignmentPattern =
-  /^\s*(?:export\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*[?:+!]?=/;
+  /^\s*(?:export\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*[?:+!]?=/u;
 const directivePattern =
-  /^\s*(?:-?include|sinclude|ifeq|ifneq|ifdef|ifndef|else|endif|define|endef|override|undefine|vpath)(?:[\s(]|$)/;
+  /^\s*(?:-?include|sinclude|ifeq|ifneq|ifdef|ifndef|else|endif|define|endef|override|undefine|vpath)(?:[\s(]|$)/u;
+const targetPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
+const escapedBackslashPairLength = 2;
 
 type Range = Readonly<{ count: number; start: number }>;
 type Rule = Readonly<{ target: string | null }>;
@@ -14,14 +15,15 @@ function targetAtLine(
   return makefile
     .slice(0, line)
     .findLast((content) => content.startsWith(".PHONY: "))
-    ?.split(/\s+/)[1];
+    ?.split(/\s+/u)[1];
 }
 
 function parseRule(content: string): Rule | undefined {
-  if (/^\s|^#|^\.PHONY:/.test(content) || !content.includes(":")) {
+  if (/^\s|^#|^\.PHONY:/u.test(content) || !content.includes(":")) {
     return undefined;
   }
-  const target = /^([A-Za-z0-9][A-Za-z0-9._-]*):(?!:)/.exec(content)?.[1];
+  const target = /^(?<target>[A-Za-z0-9][A-Za-z0-9._-]*):(?!:)/u.exec(content)
+    ?.groups?.target;
   return { target: target ?? null };
 }
 
@@ -35,13 +37,13 @@ function ruleAtLine(
   );
   return throughLine
     .slice(declaration + 1)
-    .map(parseRule)
+    .map((content) => parseRule(content))
     .findLast((rule) => rule !== undefined);
 }
 
 function endsWithUnescapedBackslash(content: string): boolean {
-  const backslashes = /\\+$/.exec(content.trimEnd())?.[0].length ?? 0;
-  return backslashes % 2 === 1;
+  const backslashes = /\\+$/u.exec(content.trimEnd())?.[0].length ?? 0;
+  return backslashes % escapedBackslashPairLength === 1;
 }
 
 function logicalLineStart(makefile: readonly string[], line: number): number {
@@ -57,7 +59,7 @@ function isGlobalContinuation(
   line: number,
 ): boolean {
   const start = logicalLineStart(makefile, line);
-  return start < line - 1 && !makefile[start]?.startsWith("\t");
+  return start < line - 1 && makefile[start]?.startsWith("\t") !== true;
 }
 
 function isInsideDefine(makefile: readonly string[], line: number): boolean {
@@ -68,11 +70,11 @@ function isInsideDefine(makefile: readonly string[], line: number): boolean {
       if (!startsLogicalLine) {
         return depth;
       }
-      if (/^[ ]*endef[ ]*$/.test(content)) {
+      if (/^[ ]*endef[ ]*$/u.test(content)) {
         return Math.max(0, depth - 1);
       }
       if (
-        /^[ ]*(?:(?:export|override|private)\s+)*define(?:\s|$)/.test(content)
+        /^[ ]*(?:(?:export|override|private)\s+)*define(?:\s|$)/u.test(content)
       ) {
         return depth + 1;
       }
@@ -101,11 +103,9 @@ function classifyLine(makefile: readonly string[], line: number): string {
   if (endsWithUnescapedBackslash(content)) {
     return "all";
   }
-  if (/^\s*$/.test(content) || content.startsWith(".PHONY: ")) {
-    return target ?? "all";
-  }
-  if (/^\s*#/.test(content)) {
-    return target ?? "all";
+  const nonRuleTarget = targetForNonRuleLine(content, target);
+  if (nonRuleTarget !== undefined) {
+    return nonRuleTarget;
   }
   const declaredRule = parseRule(content);
   if (declaredRule?.target === target) {
@@ -114,8 +114,22 @@ function classifyLine(makefile: readonly string[], line: number): string {
   return "all";
 }
 
+function targetForNonRuleLine(
+  content: string,
+  target: string | undefined,
+): string | undefined {
+  if (
+    /^\s*$/u.test(content) ||
+    content.startsWith(".PHONY: ") ||
+    /^\s*#/u.test(content)
+  ) {
+    return target ?? "all";
+  }
+  return undefined;
+}
+
 function parseRange(start: string, count: string | undefined): Range {
-  if (!/^\d+$/.test(start) || (count !== undefined && !/^\d+$/.test(count))) {
+  if (!/^\d+$/u.test(start) || (count !== undefined && !/^\d+$/u.test(count))) {
     throw new Error(`invalid diff range: ${start},${count ?? "1"}`);
   }
   return { count: Number(count ?? "1"), start: Number(start) };
@@ -126,13 +140,22 @@ function parseRanges(
 ): readonly Readonly<{ newRange: Range; oldRange: Range }>[] {
   const hunkLines = diff.split("\n").filter((line) => line.startsWith("@@"));
   const ranges = hunkLines.map((line) => {
-    const match = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(line);
-    if (!match?.[1] || !match[3]) {
+    const match =
+      /^@@ -(?<oldStart>\d+)(?:,(?<oldCount>\d+))? \+(?<newStart>\d+)(?:,(?<newCount>\d+))? @@/u.exec(
+        line,
+      );
+    const groups = match?.groups;
+    if (
+      groups?.oldStart === undefined ||
+      groups.oldStart === "" ||
+      groups.newStart === undefined ||
+      groups.newStart === ""
+    ) {
       throw new Error(`invalid diff hunk: ${line}`);
     }
     return {
-      oldRange: parseRange(match[1], match[2]),
-      newRange: parseRange(match[3], match[4]),
+      newRange: parseRange(groups.newStart, groups.newCount),
+      oldRange: parseRange(groups.oldStart, groups.oldCount),
     };
   });
   if (ranges.length === 0) {
@@ -145,7 +168,7 @@ function targetsInRange(
   makefile: readonly string[],
   range: Range,
 ): readonly string[] {
-  return Array.from({ length: range.count }, (_, index) =>
+  return Array.from({ length: range.count }, (_unused, index) =>
     classifyLine(makefile, range.start + index),
   );
 }
@@ -160,14 +183,17 @@ export function targetsFromMakefileDiff(
   const phonyDeclarations = newMakefile.filter((line) =>
     line.startsWith(".PHONY:"),
   );
-  if (!phonyDeclarations.every((line) => /^\.PHONY: \S+$/.test(line))) {
+  if (!phonyDeclarations.every((line) => /^\.PHONY: \S+$/u.test(line))) {
     return ["all"];
   }
 
-  const candidates = parseRanges(diff).flatMap(({ oldRange, newRange }) => [
-    ...targetsInRange(oldMakefile, oldRange),
-    ...targetsInRange(newMakefile, newRange),
-  ]);
+  const candidates: string[] = [];
+  for (const { oldRange, newRange } of parseRanges(diff)) {
+    candidates.push(
+      ...targetsInRange(oldMakefile, oldRange),
+      ...targetsInRange(newMakefile, newRange),
+    );
+  }
   const valid = candidates.every(
     (target) =>
       targetPattern.test(target) && newMakefile.includes(`.PHONY: ${target}`),

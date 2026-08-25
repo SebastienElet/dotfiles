@@ -1,21 +1,30 @@
-import { createHash, randomUUID } from "node:crypto";
-import { constants, type BigIntStats } from "node:fs";
+import { type BigIntStats, constants } from "node:fs";
 import {
+  type FileHandle,
   link,
   lstat,
   mkdir,
   open,
   unlink,
-  type FileHandle,
 } from "node:fs/promises";
-import { join } from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 import { DictionaryInstallationError } from "./install-hunspell-dictionary-error.ts";
+import { join } from "node:path";
 
 type DirectoryIdentity = Readonly<{
   device: bigint;
   inode: bigint;
   path: string;
 }>;
+
+type DictionaryPublication = Readonly<{
+  content: Readonly<ArrayLike<number>>;
+  destination: string;
+  expectedChecksum: string;
+}>;
+
+const privateFileMode = 0o600;
+const publicFileMode = 0o644;
 
 function hasCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
@@ -25,15 +34,15 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function sha256(content: Uint8Array): string {
-  return createHash("sha256").update(content).digest("hex");
+function sha256(content: Readonly<ArrayLike<number>>): string {
+  return createHash("sha256").update(Uint8Array.from(content)).digest("hex");
 }
 
 async function inspectDirectory(
   path: string,
   label: "home" | "dictionary",
 ): Promise<DirectoryIdentity> {
-  let status: BigIntStats | undefined;
+  let status: BigIntStats | undefined = undefined;
   try {
     status = await lstat(path, { bigint: true });
   } catch (error) {
@@ -62,7 +71,9 @@ async function ensureDirectory(path: string): Promise<DirectoryIdentity> {
   try {
     await mkdir(path);
   } catch (error) {
-    if (!hasCode(error, "EEXIST")) throw error;
+    if (!hasCode(error, "EEXIST")) {
+      throw error;
+    }
   }
   return inspectDirectory(path, "dictionary");
 }
@@ -79,14 +90,21 @@ async function assertDirectoryIdentity(
 }
 
 async function readRegularFile(path: string): Promise<Uint8Array | undefined> {
-  let file: FileHandle;
+  let file: FileHandle | undefined = undefined;
   try {
     file = await open(
       path,
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
   } catch (error) {
-    if (hasCode(error, "ENOENT")) return undefined;
+    if (hasCode(error, "ENOENT")) {
+      return undefined;
+    }
+    throw new DictionaryInstallationError(
+      `Refusing non-regular dictionary destination: ${path}`,
+    );
+  }
+  if (file === undefined) {
     throw new DictionaryInstallationError(
       `Refusing non-regular dictionary destination: ${path}`,
     );
@@ -99,34 +117,42 @@ async function readRegularFile(path: string): Promise<Uint8Array | undefined> {
       );
     }
     const content = await file.readFile();
-    let after: BigIntStats | undefined;
-    try {
-      after = await lstat(path, { bigint: true });
-    } catch (error) {
-      if (!hasCode(error, "ENOENT")) {
-        throw new DictionaryInstallationError(
-          `Cannot inspect dictionary destination ${path}: ${errorMessage(error)}`,
-        );
-      }
-    }
-    if (
-      after === undefined ||
-      after.isSymbolicLink() ||
-      !after.isFile() ||
-      after.dev !== before.dev ||
-      after.ino !== before.ino
-    ) {
-      throw new DictionaryInstallationError(
-        `Refusing replaced dictionary destination: ${path}`,
-      );
-    }
+    await assertFileIdentity(path, before.dev, before.ino);
     return content;
   } finally {
     await file.close();
   }
 }
 
-export async function prepareSpellingDirectory(
+async function assertFileIdentity(
+  path: string,
+  expectedDevice: bigint,
+  expectedInode: bigint,
+): Promise<void> {
+  let after: BigIntStats | undefined = undefined;
+  try {
+    after = await lstat(path, { bigint: true });
+  } catch (error) {
+    if (!hasCode(error, "ENOENT")) {
+      throw new DictionaryInstallationError(
+        `Cannot inspect dictionary destination ${path}: ${errorMessage(error)}`,
+      );
+    }
+  }
+  if (
+    after === undefined ||
+    after.isSymbolicLink() ||
+    !after.isFile() ||
+    after.dev !== expectedDevice ||
+    after.ino !== expectedInode
+  ) {
+    throw new DictionaryInstallationError(
+      `Refusing replaced dictionary destination: ${path}`,
+    );
+  }
+}
+
+async function prepareSpellingDirectory(
   home: string,
 ): Promise<readonly DirectoryIdentity[]> {
   const homeIdentity = await inspectDirectory(home, "home");
@@ -137,13 +163,15 @@ export async function prepareSpellingDirectory(
   return [homeIdentity, libraryIdentity, spellingIdentity];
 }
 
-export async function assertDirectories(
+async function assertDirectories(
   identities: readonly DirectoryIdentity[],
 ): Promise<void> {
-  for (const identity of identities) await assertDirectoryIdentity(identity);
+  for (const identity of identities) {
+    await assertDirectoryIdentity(identity);
+  }
 }
 
-export async function existingDictionaryMatches(
+async function existingDictionaryMatches(
   destination: string,
   expectedChecksum: string,
 ): Promise<boolean | undefined> {
@@ -155,13 +183,13 @@ export async function existingDictionaryMatches(
 
 async function writeTemporary(
   temporary: string,
-  content: Uint8Array,
+  content: Readonly<ArrayLike<number>>,
 ): Promise<void> {
-  const file = await open(temporary, "wx", 0o600);
+  const file = await open(temporary, "wx", privateFileMode);
   try {
-    await file.writeFile(content);
+    await file.writeFile(Uint8Array.from(content));
     await file.sync();
-    await file.chmod(0o644);
+    await file.chmod(publicFileMode);
   } finally {
     await file.close();
   }
@@ -169,10 +197,10 @@ async function writeTemporary(
 
 async function linkVerifiedTemporary(
   temporary: string,
-  destination: string,
-  expectedChecksum: string,
+  publication: DictionaryPublication,
   directories: readonly DirectoryIdentity[],
 ): Promise<void> {
+  const { destination, expectedChecksum } = publication;
   await assertDirectories(directories);
   try {
     await link(temporary, destination);
@@ -182,7 +210,7 @@ async function linkVerifiedTemporary(
         `Dictionary publication failed: ${destination}: ${errorMessage(error)}`,
       );
     }
-    let concurrentMatch: boolean | undefined;
+    let concurrentMatch: boolean | undefined = undefined;
     try {
       concurrentMatch = await existingDictionaryMatches(
         destination,
@@ -193,7 +221,9 @@ async function linkVerifiedTemporary(
         `Refusing to replace concurrent dictionary destination: ${destination}: ${errorMessage(inspectionError)}`,
       );
     }
-    if (concurrentMatch === true) return;
+    if (concurrentMatch === true) {
+      return;
+    }
     throw new DictionaryInstallationError(
       `Refusing to replace concurrent dictionary destination: ${destination}`,
     );
@@ -219,12 +249,11 @@ async function removeTemporary(temporary: string): Promise<void> {
   }
 }
 
-export async function publishDictionary(
-  destination: string,
-  content: Uint8Array,
-  expectedChecksum: string,
+async function publishDictionary(
+  publication: DictionaryPublication,
   directories: readonly DirectoryIdentity[],
 ): Promise<void> {
+  const { content } = publication;
   const spellingDirectory = directories.at(-1);
   if (spellingDirectory === undefined) {
     throw new DictionaryInstallationError("Missing spelling directory");
@@ -235,13 +264,15 @@ export async function publishDictionary(
   );
   try {
     await writeTemporary(temporary, content);
-    await linkVerifiedTemporary(
-      temporary,
-      destination,
-      expectedChecksum,
-      directories,
-    );
+    await linkVerifiedTemporary(temporary, publication, directories);
   } finally {
     await removeTemporary(temporary);
   }
 }
+
+export {
+  assertDirectories,
+  existingDictionaryMatches,
+  prepareSpellingDirectory,
+  publishDictionary,
+};

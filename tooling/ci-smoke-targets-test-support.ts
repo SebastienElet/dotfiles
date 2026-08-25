@@ -1,7 +1,7 @@
-import { expect } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { expect } from "bun:test";
+import { tmpdir } from "node:os";
 
 const testRoot = mkdtempSync(join(tmpdir(), "ci-smoke-targets-"));
 const selector = join(import.meta.dir, "ci-smoke-targets");
@@ -29,30 +29,29 @@ function run(command: readonly string[], cwd: string): Result {
   };
 }
 
-export function git(repository: string, ...arguments_: string[]): string {
-  const result = run(["git", ...arguments_], repository);
+function git(
+  repository: string,
+  ...commandArguments: readonly string[]
+): string {
+  const result = run(["git", ...commandArguments], repository);
   expect(result.stderr).toBe("");
   expect(result.exitCode).toBe(0);
   return result.stdout.trim();
 }
 
-export function write(
-  repository: string,
-  path: string,
-  contents: string,
-): void {
+function write(repository: string, path: string, contents: string): void {
   const destination = join(repository, path);
   mkdirSync(dirname(destination), { recursive: true });
   writeFileSync(destination, contents);
 }
 
-export function commit(repository: string, message: string): string {
+function commit(repository: string, message: string): string {
   git(repository, "add", "-A");
   git(repository, "commit", "-q", "-m", message);
   return git(repository, "rev-parse", "HEAD");
 }
 
-export function newRepository(name: string): string {
+function newRepository(name: string): string {
   const repository = join(testRoot, name);
   mkdirSync(repository);
   git(repository, "init", "-q");
@@ -79,14 +78,14 @@ export function newRepository(name: string): string {
   return repository;
 }
 
-export function select(repository: string, ...arguments_: string[]): Result {
-  return run([selector, ...arguments_], repository);
+function select(
+  repository: string,
+  ...commandArguments: readonly string[]
+): Result {
+  return run([selector, ...commandArguments], repository);
 }
 
-export function expectTargets(
-  repository: string,
-  expected: readonly string[],
-): void {
+function expectTargets(repository: string, expected: readonly string[]): void {
   const result = select(repository, "HEAD^", "HEAD");
   expect(result).toEqual({
     exitCode: 0,
@@ -95,10 +94,7 @@ export function expectTargets(
   });
 }
 
-export function makefileWithAmbiguousRule(
-  rule: string,
-  recipe: string,
-): string {
+function makefileWithAmbiguousRule(rule: string, recipe: string): string {
   return [
     "SHARED=value",
     ".PHONY: all",
@@ -115,6 +111,17 @@ export function makefileWithAmbiguousRule(
   ].join("\n");
 }
 
-export function cleanup(): void {
+function cleanup(): void {
   rmSync(testRoot, { force: true, recursive: true });
 }
+
+export {
+  cleanup,
+  commit,
+  expectTargets,
+  git,
+  makefileWithAmbiguousRule,
+  newRepository,
+  select,
+  write,
+};

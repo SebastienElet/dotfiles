@@ -1,11 +1,11 @@
 import {
+  type Configuration,
   LifecycleError,
   prepareScraplingContainer,
-  type Configuration,
 } from "./scrapling-container.ts";
 
-export async function runScraplingMcp(
-  environment: NodeJS.ProcessEnv,
+async function runScraplingMcp(
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Promise<number> {
   try {
     return await runMcp(await prepareScraplingContainer(environment));
@@ -29,10 +29,14 @@ async function runMcp(configuration: Configuration): Promise<number> {
       "scrapling",
       "mcp",
     ],
-    { stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+    { stderr: "inherit", stdin: "inherit", stdout: "inherit" },
   );
-  const forwardInterrupt = () => child.kill("SIGINT");
-  const forwardTermination = () => child.kill("SIGTERM");
+  const forwardInterrupt = (): void => {
+    child.kill("SIGINT");
+  };
+  const forwardTermination = (): void => {
+    child.kill("SIGTERM");
+  };
   process.on("SIGINT", forwardInterrupt);
   process.on("SIGTERM", forwardTermination);
   try {
@@ -42,3 +46,5 @@ async function runMcp(configuration: Configuration): Promise<number> {
     process.off("SIGTERM", forwardTermination);
   }
 }
+
+export { runScraplingMcp };

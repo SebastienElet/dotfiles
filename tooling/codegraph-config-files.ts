@@ -1,48 +1,42 @@
 import {
+  ConfigurationError,
+  type JsonObject,
+  parseJsonObject,
+} from "./codegraph-config.ts";
+import {
+  type Stats,
   chmodSync,
   closeSync,
   lstatSync,
   mkdirSync,
   openSync,
   readFileSync,
-  renameSync,
   realpathSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { randomUUID } from "node:crypto";
 import { basename, dirname, join } from "node:path";
-import {
-  ConfigurationError,
-  parseJsonObject,
-  type JsonObject,
-} from "./codegraph-config.ts";
+import { randomUUID } from "node:crypto";
 
-export type ConfigurationSnapshot = {
-  path: string;
-  content?: Buffer;
-  mode?: number;
-};
+interface ConfigurationSnapshot {
+  readonly path: string;
+  readonly content?: readonly number[];
+  readonly mode?: number;
+}
 
-export function withConfigurationLocks(
-  paths: string[],
+const configurationFileMode = 0o600;
+const jsonIndentSpaces = 2;
+
+function withConfigurationLocks(
+  paths: readonly string[],
   action: () => void,
 ): void {
   const lockPaths: string[] = [];
   try {
     for (const path of canonicalPaths(paths)) {
       const lockPath = `${path}.codegraph-configure.lock`;
-      let descriptor: number;
-      try {
-        descriptor = openSync(lockPath, "wx", 0o600);
-      } catch (error) {
-        if (isExistingFile(error)) {
-          throw new ConfigurationError(
-            `configuration update already in progress: ${lockPath}`,
-          );
-        }
-        throw error;
-      }
+      const descriptor = openConfigurationLock(lockPath);
       lockPaths.push(lockPath);
       closeSync(descriptor);
     }
@@ -54,21 +48,29 @@ export function withConfigurationLocks(
   }
 }
 
-export function inspectConfiguration(
+function openConfigurationLock(lockPath: string): number {
+  try {
+    return openSync(lockPath, "wx", configurationFileMode);
+  } catch (error) {
+    if (isExistingFile(error)) {
+      throw new ConfigurationError(
+        `configuration update already in progress: ${lockPath}`,
+      );
+    }
+    throw error;
+  }
+}
+
+function inspectConfiguration(
   path: string,
   fileLabel: string,
   jsonLabel?: string,
 ): { snapshot: ConfigurationSnapshot; parsed?: JsonObject } {
-  let status: ReturnType<typeof lstatSync>;
-  try {
-    status = lstatSync(path);
-  } catch (error) {
-    if (isMissingFile(error)) {
-      return jsonLabel === undefined
-        ? { snapshot: { path } }
-        : { snapshot: { path }, parsed: {} };
-    }
-    throw error;
+  const status = configurationStatus(path);
+  if (status === undefined) {
+    return jsonLabel === undefined
+      ? { snapshot: { path } }
+      : { parsed: {}, snapshot: { path } };
   }
   if (status.isSymbolicLink()) {
     throw new ConfigurationError(`${fileLabel} must not be a symlink: ${path}`);
@@ -81,26 +83,40 @@ export function inspectConfiguration(
       `${fileLabel} must not have multiple hard links: ${path}`,
     );
   }
-  const content = readFileSync(path);
-  const snapshot = { path, content, mode: status.mode };
+  const content = [...readFileSync(path)];
+  const snapshot = { content, mode: status.mode, path };
   return jsonLabel === undefined
     ? { snapshot }
     : {
+        parsed: parseJsonObject(
+          Buffer.from(content).toString("utf8"),
+          jsonLabel,
+        ),
         snapshot,
-        parsed: parseJsonObject(content.toString("utf8"), jsonLabel),
       };
 }
 
-export function writeJsonAtomically(path: string, value: JsonObject): void {
+function configurationStatus(path: string): Stats | undefined {
+  try {
+    return lstatSync(path);
+  } catch (error) {
+    if (isMissingFile(error)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function writeJsonAtomically(path: string, value: JsonObject): void {
   writeAtomically(
     path,
-    Buffer.from(`${JSON.stringify(value, null, 2)}\n`),
-    0o600,
+    [...Buffer.from(`${JSON.stringify(value, undefined, jsonIndentSpaces)}\n`)],
+    configurationFileMode,
   );
 }
 
-export function restoreConfigurations(
-  snapshots: ConfigurationSnapshot[],
+function restoreConfigurations(
+  snapshots: readonly ConfigurationSnapshot[],
 ): void {
   const failures: string[] = [];
   for (const snapshot of snapshots.toReversed()) {
@@ -123,11 +139,18 @@ function restoreConfiguration(snapshot: ConfigurationSnapshot): void {
   writeAtomically(snapshot.path, snapshot.content, snapshot.mode);
 }
 
-function writeAtomically(path: string, content: Buffer, mode?: number): void {
+function writeAtomically(
+  path: string,
+  content: readonly number[],
+  mode?: number,
+): void {
   mkdirSync(dirname(path), { recursive: true });
   const temporaryPath = `${path}.codegraph-configure.${randomUUID()}`;
   try {
-    writeFileSync(temporaryPath, content, { flag: "wx", mode });
+    writeFileSync(temporaryPath, Uint8Array.from(content), {
+      flag: "wx",
+      mode,
+    });
     if (mode !== undefined) {
       chmodSync(temporaryPath, mode);
     }
@@ -145,7 +168,7 @@ function isExistingFile(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "EEXIST";
 }
 
-function canonicalPaths(paths: string[]): string[] {
+function canonicalPaths(paths: readonly string[]): string[] {
   return [
     ...new Set(
       paths.map((path) => {
@@ -153,9 +176,17 @@ function canonicalPaths(paths: string[]): string[] {
         return join(realpathSync.native(dirname(path)), basename(path));
       }),
     ),
-  ].sort();
+  ].toSorted();
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export {
+  type ConfigurationSnapshot,
+  inspectConfiguration,
+  restoreConfigurations,
+  withConfigurationLocks,
+  writeJsonAtomically,
+};

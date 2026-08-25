@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { join } from "node:path";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
@@ -7,6 +6,7 @@ import {
   project,
   runMake,
 } from "./deployment-test-support.ts";
+import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
 
@@ -16,8 +16,8 @@ describe("deployment area: Bun and hook wiring", () => {
     const brewBin = join(fixture.home, "homebrew", "bin");
     for (const target of ["claude-code", "codex", "obsidian-retrieval-test"]) {
       const result = runMake(fixture, [target], {
-        repository: project,
         dryRun: true,
+        repository: project,
         variables: { BREW_BIN: brewBin },
       });
       expectSuccess(result);
@@ -33,10 +33,10 @@ describe("deployment area: Bun and hook wiring", () => {
     "%s entry point reconciles hooks once",
     (target, agent, deploysHandoff) => {
       const fixture = createDeploymentFixture(`hook-wiring-${target}`);
-      const expected = `\"${fixture.home}/.local/bin/arnes\" setup hooks --agent ${agent}`;
+      const expected = `"${fixture.home}/.local/bin/arnes" setup hooks --agent ${agent}`;
       const hook = runMake(fixture, [`${target}-hooks`], {
-        repository: project,
         dryRun: true,
+        repository: project,
       });
       expectSuccess(hook);
       expect(count(hook.stdout, expected)).toBe(1);
@@ -47,8 +47,8 @@ describe("deployment area: Bun and hook wiring", () => {
         );
       }
       const entry = runMake(fixture, [target], {
-        repository: project,
         dryRun: true,
+        repository: project,
       });
       expectSuccess(entry);
       expect(count(entry.stdout, expected)).toBe(1);
@@ -67,8 +67,8 @@ describe("deployment area: Hunspell wiring", () => {
     const revision = "f2ff99058268502bdcf4cad25c1ca2935ad8aa7d";
     const base = `https://raw.githubusercontent.com/LibreOffice/dictionaries/${revision}`;
     const result = runMake(fixture, ["hunspell"], {
-      repository: project,
       dryRun: true,
+      repository: project,
       variables: { BREW_BIN: fixture.bin },
     });
     expectSuccess(result);
@@ -96,12 +96,12 @@ describe("deployment area: Hunspell wiring", () => {
         "en_US.dic",
       ],
     ] as const) {
-      const expected = `\"${join(project, "tooling", "install-hunspell-dictionary")}\" \"${base}/${source}\" \"${checksum}\" \"${join(fixture.home, "Library", "Spelling", destination)}\"`;
+      const expected = `"${join(project, "tooling", "install-hunspell-dictionary")}" "${base}/${source}" "${checksum}" "${join(fixture.home, "Library", "Spelling", destination)}"`;
       expect(count(result.stdout, expected)).toBe(1);
     }
     const claude = runMake(fixture, ["claude-code"], {
-      repository: project,
       dryRun: true,
+      repository: project,
       variables: { BREW_BIN: fixture.bin },
     });
     expectSuccess(claude);

@@ -1,2 +1,4 @@
-export const removableValue = 2;
-export const removableSentinel = "FIXTURE_REMOVABLE";
+const removableSentinel = "FIXTURE_REMOVABLE";
+const removableValue = 2;
+
+export { removableSentinel, removableValue };

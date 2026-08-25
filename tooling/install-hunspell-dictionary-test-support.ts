@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { dirname, join } from "node:path";
 import {
   mkdirSync,
   mkdtempSync,
@@ -6,21 +6,27 @@ import {
   rmSync,
   symlinkSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 
 const entryPoint = join(import.meta.dir, "install-hunspell-dictionary");
 const fixtures: Fixture[] = [];
 
-export type Fixture = Readonly<{
+type Fixture = Readonly<{
   root: string;
   home: string;
   spelling: string;
   destination: string;
-  environment: NodeJS.ProcessEnv;
+  environment: Readonly<NodeJS.ProcessEnv>;
 }>;
 
-export function createFixture(): Fixture {
+type RunResult = Readonly<{
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}>;
+
+function createFixture(): Fixture {
   const root = mkdtempSync(join(tmpdir(), "hunspell-dictionary-"));
   const home = join(root, "home");
   const binaries = join(root, "bin");
@@ -28,62 +34,69 @@ export function createFixture(): Fixture {
   mkdirSync(binaries);
   symlinkSync(process.execPath, join(binaries, "bun"));
   const fixture = {
-    root,
-    home,
-    spelling: join(home, "Library", "Spelling"),
     destination: join(home, "Library", "Spelling", "fr.aff"),
     environment: {
       ...process.env,
       HOME: home,
       PATH: `${binaries}:${process.env.PATH ?? ""}`,
     },
+    home,
+    root,
+    spelling: join(home, "Library", "Spelling"),
   };
   fixtures.push(fixture);
   return fixture;
 }
 
-export async function runInstaller(
+function runInstaller(
   fixture: Fixture,
-  url: string,
+  sourceUrl: string,
   checksum: string,
-  destination = fixture.destination,
-) {
-  return runArguments(fixture, [url, checksum, destination]);
+): Promise<RunResult> {
+  return runArguments(fixture, [sourceUrl, checksum, fixture.destination]);
 }
 
-export async function runArguments(
+async function runArguments(
   fixture: Fixture,
   arguments_: readonly string[],
-) {
+): Promise<RunResult> {
   const process = Bun.spawn([entryPoint, ...arguments_], {
     cwd: dirname(import.meta.dir),
     env: fixture.environment,
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   const [exitCode, stdout, stderr] = await Promise.all([
     process.exited,
     new Response(process.stdout).text(),
     new Response(process.stderr).text(),
   ]);
-  return { exitCode, stdout, stderr };
+  return { exitCode, stderr, stdout };
 }
 
-export function serve(
-  fetch: (request: Request) => Response | Promise<Response>,
-) {
-  return Bun.serve({ hostname: "127.0.0.1", port: 0, fetch });
+function serve(
+  fetch: (request: Readonly<{ url: string }>) => Response | Promise<Response>,
+): ReturnType<typeof Bun.serve> {
+  return Bun.serve({ fetch, hostname: "127.0.0.1", port: 0 });
 }
 
-export function url(server: ReturnType<typeof Bun.serve>, path = "/file") {
+function url(
+  server: Readonly<{ port: number | undefined }>,
+  path = "/file",
+): string {
+  if (server.port === undefined) {
+    throw new Error("test server has no assigned port");
+  }
   return `http://127.0.0.1:${server.port}${path}`;
 }
 
-export function sha256(content: string | Uint8Array): string {
-  return createHash("sha256").update(content).digest("hex");
+function sha256(content: string | Readonly<ArrayLike<number>>): string {
+  const hashContent =
+    typeof content === "string" ? content : Uint8Array.from(content);
+  return createHash("sha256").update(hashContent).digest("hex");
 }
 
-export function temporaryFiles(fixture: Fixture): string[] {
+function temporaryFiles(fixture: Fixture): string[] {
   try {
     return readdirSync(fixture.spelling).filter((name) =>
       name.startsWith(".hunspell-dictionary."),
@@ -93,8 +106,20 @@ export function temporaryFiles(fixture: Fixture): string[] {
   }
 }
 
-export function cleanupFixtures(): void {
+function cleanupFixtures(): void {
   for (const fixture of fixtures.splice(0)) {
     rmSync(fixture.root, { force: true, recursive: true });
   }
 }
+
+export {
+  cleanupFixtures,
+  createFixture,
+  runArguments,
+  runInstaller,
+  serve,
+  sha256,
+  temporaryFiles,
+  url,
+};
+export type { Fixture, RunResult };

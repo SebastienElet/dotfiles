@@ -1,3 +1,5 @@
+import { GitError } from "./ci-smoke-git-error.ts";
+import { SelectorError } from "./ci-smoke-selector-error.ts";
 import { targetsFromMakefileDiff } from "./ci-smoke-targets-makefile.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -14,21 +16,6 @@ type GitResult = Readonly<{
   stderr: string;
   stdout: Uint8Array;
 }>;
-
-class SelectorError extends Error {
-  constructor(
-    message: string,
-    readonly details = "",
-  ) {
-    super(message);
-  }
-}
-
-class GitError extends Error {
-  constructor(readonly details: string) {
-    super("Git command failed");
-  }
-}
 
 function runGit(arguments_: readonly string[]): GitResult {
   const result = Bun.spawnSync({
@@ -62,9 +49,9 @@ function verifyCommit(reference: string, role: "base" | "head"): void {
   }
 }
 
-function decodeGitEvidence(bytes: Uint8Array): string {
+function decodeGitEvidence(bytes: Readonly<ArrayLike<number>>): string {
   try {
-    return decoder.decode(bytes);
+    return decoder.decode(Uint8Array.from(bytes));
   } catch {
     throw new SelectorError("Git returned non-UTF-8 evidence");
   }
@@ -121,10 +108,7 @@ function changedPaths(base: string, head: string): readonly string[] {
   return decodeGitEvidence(output).split("\0").filter(Boolean);
 }
 
-export function selectSmokeTargets(
-  base: string,
-  head: string,
-): readonly string[] {
+function selectSmokeTargets(base: string, head: string): readonly string[] {
   verifyCommit(base, "base");
   verifyCommit(head, "head");
 
@@ -138,7 +122,7 @@ export function selectSmokeTargets(
   if (candidates.includes("all")) {
     return ["all"];
   }
-  return [...new Set(candidates)].sort();
+  return [...new Set(candidates)].toSorted();
 }
 
 function report(error: unknown): void {
@@ -154,17 +138,22 @@ function report(error: unknown): void {
   process.stderr.write(`ci-smoke-targets: ${String(error)}\n`);
 }
 
-export function main(arguments_: readonly string[]): number {
+function main(commandArguments: readonly string[]): number {
   try {
-    if (arguments_.length !== 2) {
+    const expectedArgumentCount = 2;
+    if (commandArguments.length !== expectedArgumentCount) {
       throw new SelectorError("usage: ci-smoke-targets BASE HEAD");
     }
-    process.stdout.write(
-      `${JSON.stringify(selectSmokeTargets(arguments_[0]!, arguments_[1]!))}\n`,
-    );
+    const [base, head] = commandArguments;
+    if (base === undefined || head === undefined) {
+      throw new SelectorError("usage: ci-smoke-targets BASE HEAD");
+    }
+    process.stdout.write(`${JSON.stringify(selectSmokeTargets(base, head))}\n`);
     return 0;
   } catch (error) {
     report(error);
     return 1;
   }
 }
+
+export { main, selectSmokeTargets };

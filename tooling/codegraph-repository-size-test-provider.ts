@@ -1,20 +1,28 @@
 #!/usr/bin/env bun
 
 import { appendFileSync, lstatSync } from "node:fs";
+import { z } from "zod";
 
-const arguments_ = process.argv.slice(2);
+const filesSchema = z.array(z.string());
+const commandArgumentOffset = 2;
+const invalidByte = 0xff;
+const lineFeedByte = 0x0a;
+const gitFailureExitCode = 7;
+const gitNotRepositoryExitCode = 128;
+
+const providerArguments = process.argv.slice(commandArgumentOffset);
 const logPath = process.env.CODEGRAPH_TEST_ARGUMENTS_LOG;
 if (logPath !== undefined) {
-  appendFileSync(logPath, `${JSON.stringify(arguments_)}\n`);
+  appendFileSync(logPath, `${JSON.stringify(providerArguments)}\n`);
 }
 
-if (arguments_.includes("rev-parse")) {
+if (providerArguments.includes("rev-parse")) {
   finishGit("rev-parse", "true\n");
 }
 
-if (arguments_.includes("ls-files")) {
+if (providerArguments.includes("ls-files")) {
   if (process.env.CODEGRAPH_TEST_GIT_INVALID_UTF8 === "1") {
-    process.stdout.write(new Uint8Array([0xff, 0]));
+    process.stdout.write(new Uint8Array([invalidByte, 0]));
     process.exit(0);
   }
   const files = process.env.CODEGRAPH_TEST_GIT_FILES_JSON;
@@ -22,22 +30,26 @@ if (arguments_.includes("ls-files")) {
     "ls-files",
     files === undefined
       ? (process.env.CODEGRAPH_TEST_GIT_FILES ?? "")
-      : `${(JSON.parse(files) as string[]).join("\0")}\0`,
+      : `${filesSchema.parse(JSON.parse(files)).join("\0")}\0`,
   );
 }
 
 const failure = process.env.CODEGRAPH_TEST_TOKEI_FAILURE;
 if (failure !== undefined) {
   process.stdout.write('{"partial":true}\n');
-  console.error("tokei operational failure");
+  process.stderr.write("tokei operational failure\n");
   process.exit(Number(failure));
 }
 
-const streamingIndex = arguments_.indexOf("--streaming");
-const inputs = streamingIndex === -1 ? [] : arguments_.slice(0, streamingIndex);
-if (arguments_[0] !== undefined && lstatSync(arguments_[0]).isDirectory()) {
+const streamingIndex = providerArguments.indexOf("--streaming");
+const inputs =
+  streamingIndex === -1 ? [] : providerArguments.slice(0, streamingIndex);
+if (
+  providerArguments[0] !== undefined &&
+  lstatSync(providerArguments[0]).isDirectory()
+) {
   if (process.env.CODEGRAPH_TEST_TOKEI_INVALID_UTF8 === "1") {
-    process.stdout.write(new Uint8Array([0xff, 0x0a]));
+    process.stdout.write(new Uint8Array([invalidByte, lineFeedByte]));
     process.exit(0);
   }
   process.stdout.write(process.env.CODEGRAPH_TEST_TOKEI_OUTPUT ?? "");
@@ -51,15 +63,15 @@ for (const input of inputs) {
 function finishGit(operation: string, output: string): never {
   if (process.env.CODEGRAPH_TEST_GIT_FAILURE === operation) {
     process.stdout.write(operation === "ls-files" ? "partial.tofu\0" : "");
-    console.error(`${operation} operational failure`);
-    process.exit(7);
+    process.stderr.write(`${operation} operational failure\n`);
+    process.exit(gitFailureExitCode);
   }
   if (
     operation === "rev-parse" &&
     process.env.CODEGRAPH_TEST_GIT_REPOSITORY !== "1"
   ) {
-    console.error("fatal: not a git repository (or any parent): .git");
-    process.exit(128);
+    process.stderr.write("fatal: not a git repository (or any parent): .git\n");
+    process.exit(gitNotRepositoryExitCode);
   }
   process.stdout.write(output);
   process.exit(0);

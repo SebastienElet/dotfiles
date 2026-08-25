@@ -1,3 +1,4 @@
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
   lstat,
   mkdir,
@@ -7,11 +8,10 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { format, type FormatConfig } from "oxfmt";
-import { z } from "zod";
+import { format } from "oxfmt";
 import formatConfig from "../oxfmt.config.ts";
+import { tmpdir } from "node:os";
+import { z } from "zod";
 
 const invocationSchema = z.union([
   z.tuple([]),
@@ -32,16 +32,24 @@ const typescriptPathsSchema = z.array(typescriptPathSchema).min(1);
 type FormatSource = (
   fileName: string,
   sourceText: string,
-  options?: FormatConfig,
 ) => ReturnType<typeof format>;
 
-type FormattingChange = {
+type FormattingChange = Readonly<{
   path: string;
   source: string;
   formatted: string;
-};
+}>;
 
-function isOutside(root: string, path: string) {
+type FormatTypeScriptOptions = Readonly<{
+  check: boolean;
+  formatSource?: FormatSource;
+  repositoryRoot?: string;
+}>;
+
+const invalidInvocationExitCode = 2;
+const argumentOffset = 2;
+
+function isOutside(root: string, path: string): boolean {
   const pathFromRoot = relative(root, path);
   return (
     pathFromRoot === ".." ||
@@ -50,12 +58,14 @@ function isOutside(root: string, path: string) {
   );
 }
 
-async function findTrackedTypeScriptPaths() {
+async function findTrackedTypeScriptPaths(): Promise<
+  Readonly<{ paths: readonly string[] | undefined; status: number }>
+> {
   const git = Bun.spawn(
     ["git", "ls-files", "-z", "--", "*.ts", "*.tsx", "*.mts", "*.cts"],
     {
-      stdout: "pipe",
       stderr: "inherit",
+      stdout: "pipe",
     },
   );
   const [status, output] = await Promise.all([
@@ -63,7 +73,7 @@ async function findTrackedTypeScriptPaths() {
     new Response(git.stdout).arrayBuffer(),
   ]);
   if (status !== 0) {
-    return { status, paths: undefined };
+    return { paths: undefined, status };
   }
   const serializedPaths = new TextDecoder("utf-8", { fatal: true }).decode(
     output,
@@ -77,10 +87,10 @@ async function findTrackedTypeScriptPaths() {
   const paths = typescriptPathsSchema.parse(
     serializedPaths.slice(0, -1).split("\0"),
   );
-  return { status, paths };
+  return { paths, status };
 }
 
-async function readOwnedFile(root: string, path: string) {
+async function readOwnedFile(root: string, path: string): Promise<string> {
   const absolutePath = resolve(root, path);
   if (
     isOutside(root, absolutePath) ||
@@ -105,7 +115,9 @@ async function readOwnedFile(root: string, path: string) {
   }
 }
 
-async function createPatch(changes: FormattingChange[]) {
+async function createPatch(
+  changes: readonly FormattingChange[],
+): Promise<readonly number[]> {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "dotfiles-oxfmt-"));
   try {
     for (const change of changes) {
@@ -133,7 +145,7 @@ async function createPatch(changes: FormattingChange[]) {
         "before",
         "after",
       ],
-      { cwd: temporaryRoot, stdout: "pipe", stderr: "inherit" },
+      { cwd: temporaryRoot, stderr: "inherit", stdout: "pipe" },
     );
     const [status, patch] = await Promise.all([
       diff.exited,
@@ -144,18 +156,21 @@ async function createPatch(changes: FormattingChange[]) {
         `Git could not build the TypeScript formatting patch (status ${status}).`,
       );
     }
-    return new Uint8Array(patch);
+    return [...new Uint8Array(patch)];
   } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
+    await rm(temporaryRoot, { force: true, recursive: true });
   }
 }
 
-async function applyPatch(root: string, patch: Uint8Array) {
+async function applyPatch(
+  root: string,
+  patch: readonly number[],
+): Promise<void> {
   const apply = Bun.spawn(["git", "apply", "-p2", "--whitespace=nowarn"], {
     cwd: root,
-    stdin: new Blob([patch]),
-    stdout: "inherit",
     stderr: "inherit",
+    stdin: new Blob([Uint8Array.from(patch)]),
+    stdout: "inherit",
   });
   const status = await apply.exited;
   if (status !== 0) {
@@ -165,24 +180,32 @@ async function applyPatch(root: string, patch: Uint8Array) {
   }
 }
 
-export async function formatTypeScriptPaths(
-  paths: string[],
-  check: boolean,
-  formatSource: FormatSource = format,
-  repositoryRoot: string = process.cwd(),
-) {
+async function formatTypeScriptPaths(
+  paths: readonly string[],
+  options: FormatTypeScriptOptions,
+): Promise<string[]> {
+  const {
+    check,
+    formatSource = (
+      fileName: string,
+      sourceText: string,
+    ): ReturnType<typeof format> => format(fileName, sourceText, formatConfig),
+    repositoryRoot = process.cwd(),
+  } = options;
   const root = await realpath(repositoryRoot);
   const changes: FormattingChange[] = [];
   for (const path of paths) {
     const source = await readOwnedFile(root, path);
-    const result = await formatSource(path, source, formatConfig);
+    const result = await formatSource(path, source);
     if (result.errors.length > 0) {
-      throw new Error(
-        `${path}: ${result.errors.map((error) => error.message).join("; ")}`,
-      );
+      const messages: string[] = [];
+      for (const error of result.errors) {
+        messages.push(error.message);
+      }
+      throw new Error(`${path}: ${messages.join("; ")}`);
     }
     if (result.code !== source) {
-      changes.push({ path, source, formatted: result.code });
+      changes.push({ formatted: result.code, path, source });
     }
   }
   if (!check && changes.length > 0) {
@@ -191,24 +214,26 @@ export async function formatTypeScriptPaths(
   return changes.map((change) => change.path);
 }
 
-async function main() {
-  const invocation = invocationSchema.safeParse(Bun.argv.slice(2));
+async function main(): Promise<number> {
+  const invocation = invocationSchema.safeParse(Bun.argv.slice(argumentOffset));
   if (!invocation.success) {
-    console.error("Usage: format-typescript [--check]");
-    return 2;
+    process.stderr.write("Usage: format-typescript [--check]\n");
+    return invalidInvocationExitCode;
   }
   const discovery = await findTrackedTypeScriptPaths();
   if (!discovery.paths) {
     return discovery.status;
   }
   const check = invocation.data.length === 1;
-  const different = await formatTypeScriptPaths(discovery.paths, check);
+  const different = await formatTypeScriptPaths(discovery.paths, { check });
   if (check && different.length > 0) {
-    console.error(`TypeScript formatting differs: ${different.join(", ")}`);
+    process.stderr.write(
+      `TypeScript formatting differs: ${different.join(", ")}\n`,
+    );
     return 1;
   }
-  console.log(
-    `${check ? "Checked" : "Formatted"} ${discovery.paths.length} TypeScript files.`,
+  process.stdout.write(
+    `${check ? "Checked" : "Formatted"} ${discovery.paths.length} TypeScript files.\n`,
   );
   return 0;
 }
@@ -217,7 +242,11 @@ if (import.meta.main) {
   try {
     process.exitCode = await main();
   } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
+    process.stderr.write(
+      `${error instanceof Error ? error.message : String(error)}\n`,
+    );
     process.exitCode = 1;
   }
 }
+
+export { formatTypeScriptPaths };

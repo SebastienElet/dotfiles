@@ -5,8 +5,11 @@ import {
   rmSync,
   symlinkSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
+import { z } from "zod";
+
+const argumentsSchema = z.array(z.string());
 
 const root = dirname(import.meta.dir);
 const entryPoint = join(import.meta.dir, "codegraph-repository-size");
@@ -15,8 +18,23 @@ const provider = join(
   "codegraph-repository-size-test-provider.ts",
 );
 const temporaryDirectories: string[] = [];
+const executableFileMode = 0o755;
 
-export function createFixture() {
+interface CommandResult {
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}
+interface Fixture {
+  argumentsLog: string;
+  directory: string;
+  environment: NodeJS.ProcessEnv;
+  fakeGit: string;
+  fakeTokei: string;
+  repository: string;
+}
+
+function createFixture(): Fixture {
   const directory = join(
     tmpdir(),
     `codegraph-repository-size-${crypto.randomUUID()}`,
@@ -27,72 +45,74 @@ export function createFixture() {
   temporaryDirectories.push(directory);
   mkdirSync(repository, { recursive: true });
   mkdirSync(binaries, { recursive: true });
-  chmodSync(provider, 0o755);
+  chmodSync(provider, executableFileMode);
   symlinkSync(process.execPath, join(binaries, "bun"));
   symlinkSync(provider, join(binaries, "tokei"));
   symlinkSync(provider, join(binaries, "git"));
   return {
-    directory,
-    repository,
     argumentsLog,
-    fakeGit: join(binaries, "git"),
-    fakeTokei: join(binaries, "tokei"),
+    directory,
     environment: {
       ...process.env,
-      CODEGRAPH_TOKEI_BIN: join(binaries, "tokei"),
       CODEGRAPH_GIT_BIN: Bun.which("git") ?? "git",
       CODEGRAPH_TEST_ARGUMENTS_LOG: argumentsLog,
+      CODEGRAPH_TOKEI_BIN: join(binaries, "tokei"),
       PATH: `${binaries}:${process.env.PATH ?? ""}`,
     },
+    fakeGit: join(binaries, "git"),
+    fakeTokei: join(binaries, "tokei"),
+    repository,
   };
 }
 
-export function runEntryPoint(
+function runEntryPoint(
   repository: string,
-  environment: Record<string, string | undefined>,
-) {
+  environment: Readonly<Record<string, string | undefined>>,
+): CommandResult {
   const result = Bun.spawnSync([entryPoint, repository], {
     cwd: root,
     env: environment,
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   return {
     exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
     stderr: result.stderr.toString(),
+    stdout: result.stdout.toString(),
   };
 }
 
-export function run(command: string[], cwd?: string) {
+function run(command: readonly string[], cwd?: string): CommandResult {
   const options = {
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   } as const;
   const result = Bun.spawnSync(
-    command,
+    [...command],
     cwd === undefined ? options : { ...options, cwd },
   );
   return {
     exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
     stderr: result.stderr.toString(),
+    stdout: result.stdout.toString(),
   };
 }
 
-export function readArguments(path: string): string[][] {
+function readArguments(path: string): string[][] {
   try {
     return readFileSync(path, "utf8")
       .trimEnd()
       .split("\n")
-      .map((line) => JSON.parse(line) as string[]);
+      .map((line) => argumentsSchema.parse(JSON.parse(line)));
   } catch {
     return [];
   }
 }
 
-export function cleanupFixtures(): void {
+function cleanupFixtures(): void {
   for (const path of temporaryDirectories.splice(0)) {
     rmSync(path, { force: true, recursive: true });
   }
 }
+
+export { cleanupFixtures, createFixture, readArguments, run, runEntryPoint };

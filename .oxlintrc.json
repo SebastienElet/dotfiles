@@ -1,0 +1,105 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "import",
+    "node",
+    "promise",
+    "typescript",
+    "unicorn",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "error",
+    "restriction": "error"
+  },
+  "options": {
+    "typeAware": true,
+    "maxWarnings": 0
+  },
+  "rules": {
+    "eslint/func-style": [
+      "error",
+      "declaration",
+      { "allowArrowFunctions": true }
+    ],
+    "eslint/max-statements": ["error", 20],
+    "eslint/no-await-in-loop": "off",
+    "eslint/no-bitwise": "off",
+    "eslint/no-magic-numbers": [
+      "error",
+      {
+        "enforceConst": true,
+        "ignore": [-1, 0, 1],
+        "ignoreArrayIndexes": true,
+        "ignoreNumericLiteralTypes": true,
+        "ignoreTypeIndexes": true
+      }
+    ],
+    "eslint/no-duplicate-imports": [
+      "error",
+      { "allowSeparateTypeImports": true }
+    ],
+    "eslint/no-ternary": "off",
+    "eslint/no-undefined": "off",
+    "eslint/no-use-before-define": [
+      "error",
+      { "classes": true, "functions": false, "variables": true }
+    ],
+    "eslint/one-var": ["error", "never"],
+    "eslint/sort-keys": "off",
+    "import/consistent-type-specifier-style": [
+      "error",
+      "prefer-top-level-if-only-type-imports"
+    ],
+    "import/no-named-export": "off",
+    "import/no-nodejs-modules": "off",
+    "import/no-relative-parent-imports": "off",
+    "import/prefer-default-export": "off",
+    "node/no-process-env": "off",
+    "node/no-sync": "off",
+    "node/no-top-level-await": "off",
+    "oxc/no-async-await": "off",
+    "oxc/no-optional-chaining": "off",
+    "oxc/no-rest-spread-properties": "off",
+    "typescript/parameter-properties": [
+      "error",
+      { "prefer": "parameter-property" }
+    ],
+    "typescript/promise-function-async": "off",
+    "promise/avoid-new": "off",
+    "unicorn/consistent-function-scoping": [
+      "error",
+      { "checkArrowFunctions": false }
+    ],
+    "unicorn/import-style": [
+      "error",
+      {
+        "styles": { "node:path": { "default": false, "named": true } }
+      }
+    ],
+    "unicorn/max-nested-calls": ["error", { "max": 5 }],
+    "unicorn/no-array-reduce": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-process-exit": "off",
+    "unicorn/number-literal-case": "off"
+  },
+  "overrides": [
+    {
+      "files": ["tooling/scrapling-container.ts"],
+      "rules": {
+        "eslint/no-control-regex": "off"
+      }
+    },
+    {
+      "files": ["oxfmt.config.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    }
+  ]
+}

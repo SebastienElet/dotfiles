@@ -1,21 +1,21 @@
 import { z } from "zod";
 
 const containerSchema = z.object({
-  Name: z.string(),
   Config: z.object({
-    Image: z.string(),
-    Entrypoint: z.array(z.string()).nullable(),
     Cmd: z.array(z.string()).nullable(),
+    Entrypoint: z.array(z.string()).nullable(),
+    Image: z.string(),
   }),
   HostConfig: z.object({ ExtraHosts: z.array(z.string()).nullable() }),
   Mounts: z.array(
     z.object({
-      Type: z.string(),
-      Name: z.string().optional(),
       Destination: z.string(),
+      Name: z.string().optional(),
       RW: z.boolean(),
+      Type: z.string(),
     }),
   ),
+  Name: z.string(),
   State: z.object({ Running: z.boolean() }),
 });
 
@@ -26,7 +26,24 @@ type CommandResult = Readonly<{
   timedOut: boolean;
 }>;
 
-export type Configuration = Readonly<{
+type Container = Readonly<{
+  Config: Readonly<{
+    Cmd: readonly string[] | null;
+    Entrypoint: readonly string[] | null;
+    Image: string;
+  }>;
+  HostConfig: Readonly<{ ExtraHosts: readonly string[] | null }>;
+  Mounts: readonly Readonly<{
+    Destination: string;
+    Name?: string | undefined;
+    RW: boolean;
+    Type: string;
+  }>[];
+  Name: string;
+  State: Readonly<{ Running: boolean }>;
+}>;
+
+type Configuration = Readonly<{
   container: string;
   image: string;
   timeoutMilliseconds: number;
@@ -34,52 +51,89 @@ export type Configuration = Readonly<{
 
 const profileVolume = "scrapling-profiles";
 const decoder = new TextDecoder("utf-8", { fatal: true });
+const usageFailureExitCode = 64;
+const unavailableFailureExitCode = 69;
+const configurationFailureExitCode = 78;
+const dataFailureExitCode = 65;
+const timeoutFailureExitCode = 75;
+const maximumTimeoutMilliseconds = 300_000;
 
-export async function prepareScraplingContainer(
-  environment: NodeJS.ProcessEnv,
+class LifecycleError extends Error {
+  public readonly exitCode: number;
+
+  public constructor(exitCode: number, message: string) {
+    super(message);
+    this.exitCode = exitCode;
+    this.name = "LifecycleError";
+  }
+}
+
+async function prepareScraplingContainer(
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Promise<Configuration> {
   const configuration = readConfiguration(environment);
   await requireDocker(configuration.timeoutMilliseconds);
   const existing = await findContainer(configuration);
-  if (existing) await reuseContainer(existing, configuration);
-  else await createContainer(configuration);
+  await (existing === undefined
+    ? createContainer(configuration)
+    : reuseContainer(existing, configuration));
   return configuration;
 }
 
-function readConfiguration(environment: NodeJS.ProcessEnv): Configuration {
+function readConfiguration(
+  environment: Readonly<NodeJS.ProcessEnv>,
+): Configuration {
   const container = environment.SCRAPLING_CONTAINER ?? "scrapling-mcp";
   const image = environment.SCRAPLING_IMAGE ?? "pyd4vinci/scrapling";
   const timeout = environment.SCRAPLING_DOCKER_TIMEOUT_MS ?? "10000";
-  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(container)) {
-    throw new LifecycleError(64, `invalid container name: ${container}`);
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/u.test(container)) {
+    throw new LifecycleError(
+      usageFailureExitCode,
+      `invalid container name: ${container}`,
+    );
   }
-  if (!image || image.startsWith("-") || /[\x00-\x20\x7f]/.test(image)) {
-    throw new LifecycleError(64, `invalid image reference: ${image}`);
+  if (!image || image.startsWith("-") || /[\u0000-\u0020\u007F]/u.test(image)) {
+    throw new LifecycleError(
+      usageFailureExitCode,
+      `invalid image reference: ${image}`,
+    );
   }
   if (
-    !/^[1-9]\d*$/.test(timeout) ||
+    !/^[1-9]\d*$/u.test(timeout) ||
     !Number.isSafeInteger(Number(timeout)) ||
-    Number(timeout) > 300_000
+    Number(timeout) > maximumTimeoutMilliseconds
   ) {
-    throw new LifecycleError(64, `invalid Docker timeout: ${timeout}`);
+    throw new LifecycleError(
+      usageFailureExitCode,
+      `invalid Docker timeout: ${timeout}`,
+    );
   }
   return { container, image, timeoutMilliseconds: Number(timeout) };
 }
 
 async function requireDocker(timeoutMilliseconds: number): Promise<void> {
   const result = await runDocker(["info"], timeoutMilliseconds);
-  if (result.exitCode !== 0)
-    throw commandError(69, "Docker daemon unavailable", result);
+  if (result.exitCode !== 0) {
+    throw commandError(
+      unavailableFailureExitCode,
+      "Docker daemon unavailable",
+      result,
+    );
+  }
 }
 
-async function findContainer(configuration: Configuration) {
+async function findContainer(
+  configuration: Configuration,
+): Promise<Container | undefined> {
   const listed = await runDocker(
     ["container", "ls", "--all", "--format", "{{.Names}}"],
     configuration.timeoutMilliseconds,
   );
   requireSuccess(listed, "cannot list Docker containers");
   const names = listed.stdout.split("\n").filter(Boolean);
-  if (!names.includes(configuration.container)) return undefined;
+  if (!names.includes(configuration.container)) {
+    return undefined;
+  }
   const inspected = await runDocker(
     ["container", "inspect", "--format", "{{json .}}", configuration.container],
     configuration.timeoutMilliseconds,
@@ -92,23 +146,25 @@ async function findContainer(configuration: Configuration) {
     return containerSchema.parse(JSON.parse(inspected.stdout));
   } catch {
     throw new LifecycleError(
-      78,
+      configurationFailureExitCode,
       `container ${configuration.container} returned invalid inspection data`,
     );
   }
 }
 
 async function reuseContainer(
-  container: z.infer<typeof containerSchema>,
+  container: Container,
   configuration: Configuration,
 ): Promise<void> {
   if (!isCompatible(container, configuration)) {
     throw new LifecycleError(
-      78,
+      configurationFailureExitCode,
       `container ${configuration.container} is incompatible with the required Scrapling configuration`,
     );
   }
-  if (container.State.Running) return;
+  if (container.State.Running) {
+    return;
+  }
   const started = await runDocker(
     ["start", configuration.container],
     configuration.timeoutMilliseconds,
@@ -117,7 +173,7 @@ async function reuseContainer(
 }
 
 function isCompatible(
-  container: z.infer<typeof containerSchema>,
+  container: Container,
   configuration: Configuration,
 ): boolean {
   const profile = container.Mounts.find(
@@ -154,14 +210,17 @@ async function createContainer(configuration: Configuration): Promise<void> {
     ],
     configuration.timeoutMilliseconds,
   );
-  if (created.exitCode === 0) return;
+  if (created.exitCode === 0) {
+    return;
+  }
   const racedContainer = await findContainer(configuration);
-  if (!racedContainer)
+  if (!racedContainer) {
     throw commandError(
       1,
       `cannot create container ${configuration.container}`,
       created,
     );
+  }
   await reuseContainer(racedContainer, configuration);
 }
 
@@ -170,8 +229,8 @@ async function runDocker(
   timeoutMilliseconds: number,
 ): Promise<CommandResult> {
   const child = Bun.spawn(["docker", ...arguments_], {
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   let timedOut = false;
   const timeout = setTimeout(() => {
@@ -187,20 +246,22 @@ async function runDocker(
   try {
     return {
       exitCode,
-      stdout: decoder.decode(stdoutBytes),
       stderr: decoder.decode(stderrBytes),
+      stdout: decoder.decode(stdoutBytes),
       timedOut,
     };
   } catch {
     throw new LifecycleError(
-      65,
+      dataFailureExitCode,
       `Docker ${arguments_[0] ?? "command"} returned invalid UTF-8`,
     );
   }
 }
 
 function requireSuccess(result: CommandResult, action: string): void {
-  if (result.exitCode !== 0) throw commandError(1, action, result);
+  if (result.exitCode !== 0) {
+    throw commandError(1, action, result);
+  }
 }
 
 function commandError(
@@ -208,7 +269,9 @@ function commandError(
   action: string,
   result: CommandResult,
 ): LifecycleError {
-  if (result.timedOut) return new LifecycleError(75, `${action} timed out`);
+  if (result.timedOut) {
+    return new LifecycleError(timeoutFailureExitCode, `${action} timed out`);
+  }
   const detail = result.stderr.trim();
   return new LifecycleError(
     exitCode,
@@ -226,11 +289,5 @@ function arraysEqual(
   );
 }
 
-export class LifecycleError extends Error {
-  constructor(
-    readonly exitCode: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export { LifecycleError, prepareScraplingContainer };
+export type { Configuration };

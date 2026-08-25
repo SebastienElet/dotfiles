@@ -7,7 +7,6 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
@@ -17,8 +16,12 @@ import {
   project,
   runMake,
 } from "./deployment-test-support.ts";
+import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
+
+const fileModeMask = 0o777;
+const privateFileMode = 0o600;
 
 describe("deployment area: daily routine", () => {
   test("copies a private default once and preserves a local configuration", () => {
@@ -36,9 +39,9 @@ describe("deployment area: daily routine", () => {
         "utf8",
       ),
     );
-    expect(statSync(config).mode & 0o777).toBe(0o600);
+    expect(statSync(config).mode & fileModeMask).toBe(privateFileMode);
     writeFileSync(config, "local configuration\n");
-    chmodSync(config, 0o600);
+    chmodSync(config, privateFileMode);
     const before = fileIdentity(config);
     expectSuccess(runMake(fixture, [config], { repository: project }));
     expect(fileIdentity(config)).toEqual(before);
