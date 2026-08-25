@@ -3,6 +3,7 @@ import { z } from "zod";
 const hookArgumentsSchema = z.tuple([z.string().min(1), z.string().min(1)]);
 const lineFeed = "\n";
 const objectIdSchema = z.string().regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u);
+const zeroObjectIdSchema = z.string().regex(/^(?:0{40}|0{64})$/u);
 const refSchema = z.string().min(1).regex(/^\S+$/u);
 const updateSchema = z
   .tuple([refSchema, objectIdSchema, refSchema, objectIdSchema])
@@ -47,6 +48,9 @@ function fail(message: string, detail = ""): number {
 }
 
 function parseUpdates(input: string): readonly z.output<typeof updateSchema>[] {
+  if (input === "") {
+    return [];
+  }
   const parsedInput = z.string().min(1).endsWith(lineFeed).parse(input);
   return parsedInput
     .slice(0, -lineFeed.length)
@@ -94,8 +98,10 @@ function main(
 ): number {
   try {
     hookArgumentsSchema.parse(arguments_);
-    const branchUpdates = parseUpdates(input).filter(([localRef]) =>
-      localRef.startsWith("refs/heads/"),
+    const branchUpdates = parseUpdates(input).filter(
+      ([, localObjectId, remoteRef]) =>
+        remoteRef.startsWith("refs/heads/") &&
+        !zeroObjectIdSchema.safeParse(localObjectId).success,
     );
     if (branchUpdates.length === 0) {
       return 0;

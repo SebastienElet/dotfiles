@@ -859,7 +859,7 @@ ${BREW_BIN}/delta:
 	brew install git-delta
 .PHONY: git-hooks
 git-hooks: ${DOTFILES_PATH}/.git/hooks/pre-push
-${DOTFILES_PATH}/.git/hooks/pre-push: ${DOTFILES_PATH}/.githooks/pre-push
+${DOTFILES_PATH}/.git/hooks/pre-push: ${DOTFILES_PATH}/tooling/pre-push
 	${CREATE_SYMLINK}
 ~/.config/git:
 	mkdir -p $@

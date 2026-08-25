@@ -15,12 +15,11 @@ afterEach(async () => {
 test("installs the repository pre-push hook idempotently", async () => {
   const fixture = await mkdtemp("/tmp/git-hooks-deployment-");
   temporaryDirectories.push(fixture);
-  const source = join(fixture, ".githooks", "pre-push");
+  const source = join(fixture, "tooling", "pre-push");
   const destinationDirectory = join(fixture, ".git", "hooks");
   await mkdir(destinationDirectory, { recursive: true });
-  await mkdir(join(fixture, ".githooks"));
   await mkdir(join(fixture, "tooling"));
-  await Bun.write(source, Bun.file(join(projectRoot, ".githooks", "pre-push")));
+  await Bun.write(source, Bun.file(join(projectRoot, "tooling", "pre-push")));
   await chmod(source, executableFileMode);
   await symlink(
     join(projectRoot, "tooling", "pre-push.ts"),

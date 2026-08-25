@@ -53,6 +53,28 @@ test("runs the static CI barriers for the checked-out branch", () => {
 });
 
 test.each([
+  [
+    "a raw object ID",
+    `HEAD ${objectId} refs/heads/feature ${previousObjectId}\n`,
+  ],
+  [
+    "an ancestor expression",
+    `HEAD~ ${objectId} refs/heads/feature ${previousObjectId}\n`,
+  ],
+  [
+    "a tag",
+    `refs/tags/v1 ${objectId} refs/heads/feature ${previousObjectId}\n`,
+  ],
+])("validates %s pushed to a remote branch", (_name, updates) => {
+  const fake = runner();
+
+  expect(main(["origin", "url"], updates, fake.run)).toBe(0);
+  expect(fake.calls).toContain(
+    "bun --config=/dev/null --no-env-file tooling/lint-typescript.ts",
+  );
+});
+
+test.each([
   ["malformed input", "invalid\n"],
   [
     "another local head",
@@ -90,10 +112,19 @@ test("propagates static validation failure", () => {
   );
 });
 
-test("ignores pushes containing only tags", () => {
-  const tagInput = `refs/tags/v1 ${objectId} refs/tags/v1 ${previousObjectId}\n`;
+test.each([
+  ["no updates", ""],
+  [
+    "a branch pushed to a tag",
+    `refs/heads/feature ${objectId} refs/tags/v1 ${previousObjectId}\n`,
+  ],
+  [
+    "a deleted remote branch",
+    `(delete) ${"0".repeat(objectIdLength)} refs/heads/feature ${objectId}\n`,
+  ],
+])("skips %s", (_name, updates) => {
   const fake = runner();
 
-  expect(main(["origin", "url"], tagInput, fake.run)).toBe(0);
+  expect(main(["origin", "url"], updates, fake.run)).toBe(0);
   expect(fake.calls).toEqual([]);
 });
