@@ -10,6 +10,7 @@ use arnes::Roots;
 use arnes::commands;
 use arnes::config;
 use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
+use arnes::export;
 use arnes::hooks;
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
@@ -24,6 +25,7 @@ fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
     match command {
+        Command::Export { check } => run_export(check),
         Command::Doctor {
             resource,
             agent,
@@ -34,6 +36,19 @@ fn main() -> ExitCode {
         } => run_doctor(resource, agent, scope, format, color, verbose),
         Command::Measure { command } => run_measure(command),
         Command::Setup { command } => run_setup(command),
+    }
+}
+
+fn run_export(check: bool) -> ExitCode {
+    let result = Roots::from_environment()
+        .map_err(|error| error.to_string())
+        .and_then(|roots| export::run(&roots, check).map_err(|error| error.to_string()));
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("export: {error}");
+            ExitCode::from(2)
+        }
     }
 }
 

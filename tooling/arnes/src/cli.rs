@@ -13,6 +13,10 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand)]
 pub(crate) enum Command {
+    Export {
+        #[arg(long)]
+        check: bool,
+    },
     Doctor {
         #[arg(value_enum)]
         resource: Option<Resource>,

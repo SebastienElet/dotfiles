@@ -42,3 +42,22 @@ deployment flow, and placement rules.
 - `harness/` contains instructions and capabilities shared across agent harnesses.
 - `tooling/` contains maintained local applications and extensionless kebab-case executables.
 - Tool-mandated integration paths and repository entry points remain at the root.
+
+## Harness project export
+
+Generate the portable user-harness Markdown snapshot used by ChatGPT Projects, Claude Projects,
+Gemini, or notebook tools:
+
+```bash
+arnes export
+arnes export --check
+```
+
+Upload every Markdown file from `.harness-export/`, including `00-MANIFEST.md`. The directory is a
+temporary ignored build artifact: never edit or commit it. The check command performs no writes and
+fails when local sources, bundles, or the manifest drift, or when an obsolete artifact remains.
+
+The export contains every non-ignored source under `harness/`, except the generated skills index and
+operating-system metadata, plus the canonical hook declarations in `home/.arnes.yaml`. Source
+categories are defined once in `tooling/arnes/src/export/sources.rs`; extend that selector
+and its tests to add a category, then regenerate the snapshot.
