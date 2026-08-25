@@ -1,0 +1,5 @@
+#!/usr/bin/env bun
+
+import { main } from "./pre-push.ts";
+
+process.exitCode = main(process.argv.slice(2), await Bun.stdin.text());

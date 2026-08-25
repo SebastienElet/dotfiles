@@ -41,9 +41,17 @@ function git
         set -l fields (string split \t -- "$candidate")
         if test "$fields[1]" = unavailable
             set -l branch "$fields[2]"
+            git_cleanup_worktree "$command_name" "$branch" $git_context
+            set -l worktree_cleanup_status $status
+            if test $worktree_cleanup_status -eq 2
+                continue
+            end
+            if test $worktree_cleanup_status -ne 0
+                continue
+            end
             set -l recovered (git_cleanup_recover "$command_name" "$main_branch" "$branch" $git_context)
             if test $status -ne 0
-                echo "git: keeping $branch: $recovered" >&2
+                echo "git: keeping branch $branch: $recovered" >&2
                 continue
             end
             set fields (string split \t -- "$recovered")

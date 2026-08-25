@@ -5,24 +5,30 @@ function git_cleanup_branch --argument-names command_name branch upstream_oid
         return 0
     end
 
-    set -l local_oid (command git $git_context rev-parse --verify --quiet "refs/heads/$branch^{commit}")
-    if test $status -ne 0
-        echo "git: keeping $branch: local tip unavailable after $command_name" >&2
-        return 1
+    git_cleanup_worktree "$command_name" "$branch" $git_context
+    set -l worktree_cleanup_status $status
+    if test $worktree_cleanup_status -eq 2
+        return 0
     end
-    if test "$local_oid" != "$upstream_oid"
-        echo "git: keeping $branch: local tip differs from its last upstream" >&2
+    if test $worktree_cleanup_status -ne 0
         return 1
     end
 
-    git_cleanup_worktree "$command_name" "$branch" $git_context
-    or return 1
+    set -l local_oid (command git $git_context rev-parse --verify --quiet "refs/heads/$branch^{commit}")
+    if test $status -ne 0
+        echo "git: keeping branch $branch: local tip unavailable after $command_name" >&2
+        return 1
+    end
+    if test "$local_oid" != "$upstream_oid"
+        echo "git: keeping branch $branch: local tip differs from its last upstream" >&2
+        return 1
+    end
 
     if command git $git_context update-ref -d "refs/heads/$branch" "$upstream_oid"
         command git $git_context config --remove-section "branch.$branch"
         or echo "git: removed $branch but failed to remove its configuration" >&2
     else
-        echo "git: keeping $branch: local tip changed during cleanup" >&2
+        echo "git: keeping branch $branch: local tip changed during cleanup" >&2
         return 1
     end
 end
