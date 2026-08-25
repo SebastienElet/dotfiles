@@ -46,7 +46,8 @@ must git -C "$repository_path" add .gitignore
 must git -C "$repository_path" commit --quiet --message ignore
 must git -C "$repository_path" push --quiet
 must git -C "$repository_path" switch --quiet main
-set worktree_path "$test_root/ignored-feature"
+must mkdir "$repository_path/.worktrees"
+set worktree_path "$repository_path/.worktrees/ignored-feature"
 must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
 echo local >"$worktree_path/ignored"
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
@@ -56,12 +57,37 @@ or fail "could not enter $repository_path"
 set fetch_output (git fetch 2>&1)
 or fail "fetch failed in ignored-worktree"
 
-test -e "$worktree_path/ignored"
-or fail "fetch preserves ignored worktree files"
-command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch preserves the branch of a worktree with ignored files"
+not test -e "$worktree_path"
+or fail "fetch removes a worktree containing only ignored files"
+not command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch removes the branch of a worktree containing only ignored files"
 
-echo "ok - fetch preserves a worktree with ignored files"
+echo "ok - fetch removes a worktree containing only ignored files"
+
+create_repository external-ignored-worktree
+create_tracked_branch feature
+must git -C "$repository_path" switch --quiet feature
+echo ignored >"$repository_path/.gitignore"
+must git -C "$repository_path" add .gitignore
+must git -C "$repository_path" commit --quiet --message ignore
+must git -C "$repository_path" push --quiet
+must git -C "$repository_path" switch --quiet main
+set worktree_path "$test_root/external-ignored-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
+echo local >"$worktree_path/ignored"
+must git --git-dir="$remote_path" update-ref -d refs/heads/feature
+
+cd "$repository_path"
+or fail "could not enter $repository_path"
+git fetch
+or fail "fetch failed in external-ignored-worktree"
+
+not test -e "$worktree_path"
+or fail "fetch removes an external worktree containing only ignored files"
+not command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch removes the branch of an external worktree containing only ignored files"
+
+echo "ok - fetch removes an external worktree containing only ignored files"
 
 create_repository assume-unchanged-worktree
 create_tracked_branch feature

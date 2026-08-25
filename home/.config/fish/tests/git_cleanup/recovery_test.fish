@@ -1,6 +1,8 @@
 create_repository unavailable-upstream
 create_tracked_branch feature
 must git -C "$repository_path" replace (command git -C "$repository_path" rev-parse feature) (command git -C "$repository_path" rev-parse main)
+set -l worktree_path "$test_root/unavailable-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
 must git -C "$repository_path" update-ref -d refs/remotes/origin/feature
 
@@ -11,6 +13,8 @@ or fail "fetch failed in unavailable-upstream"
 
 command git show-ref --verify --quiet refs/heads/feature
 or fail "fetch preserves a branch when its previous upstream tip is unavailable"
+not test -e "$worktree_path"
+or fail "fetch removes its clean worktree when the previous upstream tip is unavailable"
 string match --quiet -- '*commits are not integrated into main*' $fetch_output
 or fail "fetch reports unique work when the previous upstream tip is unavailable"
 

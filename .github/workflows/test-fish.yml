@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - home/.config/fish/**
+      - tooling/git-clean-linked-worktree-artifacts
+      - tooling/git-clean-linked-worktree-artifacts.ts
       - tooling/git-main-branch
       - tooling/git-main-branch-*.ts
       - package.json
@@ -12,6 +14,8 @@ on:
   pull_request:
     paths:
       - home/.config/fish/**
+      - tooling/git-clean-linked-worktree-artifacts
+      - tooling/git-clean-linked-worktree-artifacts.ts
       - tooling/git-main-branch
       - tooling/git-main-branch-*.ts
       - package.json

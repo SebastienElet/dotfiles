@@ -4,17 +4,23 @@ must git -C "$repository_path" switch --quiet feature
 echo local >>"$repository_path/file"
 must git -C "$repository_path" commit --quiet --all --message local
 must git -C "$repository_path" switch --quiet main
+set -l worktree_path "$test_root/divergent-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
 
 cd "$repository_path"
 or fail "could not enter $repository_path"
-git fetch
+set -l fetch_output (git fetch 2>&1)
 or fail "fetch failed in divergent-branch"
 
 command git show-ref --verify --quiet refs/heads/feature
 or fail "fetch preserves a branch with local commits"
+not test -e "$worktree_path"
+or fail "fetch removes the clean worktree of a branch with local commits"
+string match --quiet -- '*keeping branch feature: local tip differs*' $fetch_output
+or fail "fetch distinguishes a preserved branch from its removed worktree"
 
-echo "ok - fetch preserves a branch with local commits"
+echo "ok - fetch removes its clean worktree but preserves a branch with local commits"
 
 create_repository clean-worktree
 create_tracked_branch feature
