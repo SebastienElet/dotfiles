@@ -103,7 +103,7 @@ function registerIgnoreDeploymentTest(): void {
           .exitCode,
       ).toBe(0);
       expect(readlinkSync(ignorePath)).toBe(
-        join(root, ".config", "git", "ignore"),
+        join(root, "home", ".config", "git", "ignore"),
       );
       expect(
         runMake(["codegraph-ignore", `CODEGRAPH_GLOBAL_IGNORE=${ignorePath}`])

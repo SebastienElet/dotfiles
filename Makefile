@@ -548,7 +548,7 @@ ${VOLTA_BIN}/codegraph: ${VOLTA_BIN}/node
 
 .PHONY: codegraph-ignore
 codegraph-ignore:
-	@expected='${DOTFILES_PATH}/.config/git/ignore'; \
+	@expected='${DOTFILES_PATH}/home/.config/git/ignore'; \
 	target='${CODEGRAPH_GLOBAL_IGNORE}'; \
 	if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$expected" ]; then \
 		exit 0; \

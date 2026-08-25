@@ -35,6 +35,7 @@ Les points d'entrée restent à la racine :
 | ---------------------------------- | ------------------------------- |
 | `home/.config/fish/`               | `~/.config/fish/`               |
 | `home/.config/git/config.delta`    | `~/.config/git/config.delta`    |
+| `home/.config/git/ignore`          | `~/.config/git/ignore`          |
 | `home/.config/nvim/`               | `~/.config/nvim/`               |
 | `home/.config/starship.toml`       | `~/.config/starship.toml`       |
 | `home/.config/tmux/tmux.conf`      | `~/.config/tmux/tmux.conf`      |
