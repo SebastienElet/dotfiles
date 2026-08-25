@@ -66,6 +66,7 @@ terminal: \
 	fish \
 	fzf \
 	git-delta \
+	git-hooks \
 	gnu-sed \
 	htop \
 	jq \
@@ -856,6 +857,10 @@ git-delta: brew ${BREW_BIN}/delta ~/.config/git/config.delta
 	fi
 ${BREW_BIN}/delta:
 	brew install git-delta
+.PHONY: git-hooks
+git-hooks: ${DOTFILES_PATH}/.git/hooks/pre-push
+${DOTFILES_PATH}/.git/hooks/pre-push: ${DOTFILES_PATH}/.githooks/pre-push
+	${CREATE_SYMLINK}
 ~/.config/git:
 	mkdir -p $@
 ~/.config/git/config.delta: ${DOTFILES_PATH}/home/.config/git/config.delta | ~/.config/git

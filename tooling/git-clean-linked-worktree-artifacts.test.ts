@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { tmpdir } from "node:os";
+import { mkdtemp, rm } from "node:fs/promises";
 
 const entrypoint = join(import.meta.dir, "git-clean-linked-worktree-artifacts");
 const temporaryDirectories: string[] = [];
@@ -13,7 +12,7 @@ afterEach(async () => {
 });
 
 async function createRepository(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "linked-worktree-"));
+  const root = await mkdtemp("/tmp/linked-worktree-");
   temporaryDirectories.push(root);
   const repository = join(root, "repository");
   await Bun.$`git init --quiet --initial-branch=main ${repository}`;
@@ -44,7 +43,7 @@ test("removes ignored artifacts from a linked worktree under the repository", as
   const worktree = join(repository, ".worktrees", "feature");
   await createWorktree(repository, worktree, "feature");
 
-  const result = await run(worktree);
+  const result = run(worktree);
 
   expect(result.exitCode).toBe(0);
   expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(false);
@@ -55,7 +54,7 @@ test("removes ignored artifacts from a linked worktree outside the repository", 
   const worktree = join(dirname(repository), "external-feature");
   await createWorktree(repository, worktree, "feature");
 
-  const result = await run(worktree);
+  const result = run(worktree);
 
   expect(result.exitCode).toBe(0);
   expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(false);
@@ -65,7 +64,7 @@ test("refuses the primary worktree", async () => {
   const repository = await createRepository();
   await Bun.write(join(repository, "ignored"), "artifact\n");
 
-  const result = await run(repository);
+  const result = run(repository);
 
   expect(result.exitCode).toBe(1);
   expect(result.stderr?.toString()).toContain("refusing to clean the primary");

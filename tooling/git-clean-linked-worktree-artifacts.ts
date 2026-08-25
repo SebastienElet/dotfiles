@@ -2,6 +2,8 @@ import { realpath } from "node:fs/promises";
 import { z } from "zod";
 
 const argumentsSchema = z.tuple([z.string().min(1)]);
+const recordSeparator = "\0\0";
+const minimumRecordFieldCount = 2;
 const worktreeFieldSchema = z
   .string()
   .startsWith("worktree ")
@@ -42,16 +44,16 @@ function fail(message: string, detail = ""): number {
   return 1;
 }
 
-function parseWorktreePaths(output: Uint8Array): readonly string[] {
-  const worktreeOutput = z
-    .string()
-    .endsWith("\0\0")
-    .parse(new TextDecoder("utf-8", { fatal: true }).decode(output));
+function parseWorktreePaths(output: string): readonly string[] {
+  const worktreeOutput = z.string().endsWith(recordSeparator).parse(output);
   return worktreeOutput
-    .slice(0, -2)
-    .split("\0\0")
+    .slice(0, -recordSeparator.length)
+    .split(recordSeparator)
     .map((record) => {
-      const fields = z.array(z.string()).min(2).parse(record.split("\0"));
+      const fields = z
+        .array(z.string())
+        .min(minimumRecordFieldCount)
+        .parse(record.split("\0"));
       return worktreeFieldSchema.parse(fields[0]);
     });
 }
@@ -68,7 +70,9 @@ async function isLinkedWorktree(worktree: string): Promise<boolean> {
   if (worktreeList.status !== 0) {
     throw new Error(worktreeList.stderr.trim() || "Git worktree lookup failed");
   }
-  const worktreePaths = parseWorktreePaths(worktreeList.stdout);
+  const worktreePaths = parseWorktreePaths(
+    new TextDecoder("utf-8", { fatal: true }).decode(worktreeList.stdout),
+  );
   const [resolvedWorktreePaths, resolvedWorktree] = await Promise.all([
     Promise.all(worktreePaths.map((candidate) => realpath(candidate))),
     realpath(worktree),
@@ -82,20 +86,19 @@ async function main(arguments_: readonly string[]): Promise<number> {
     return fail("expected exactly one worktree path");
   }
   const [worktree] = parsedArguments.data;
-  let linkedWorktree: boolean;
   try {
-    linkedWorktree = await isLinkedWorktree(worktree);
+    const linkedWorktree = await isLinkedWorktree(worktree);
+    if (!linkedWorktree) {
+      return fail("refusing to clean the primary or an unregistered worktree");
+    }
+    const cleanup = run(["-C", worktree, "clean", "-dfXq"]);
+    if (cleanup.status !== 0) {
+      return fail("ignored file cleanup failed", cleanup.stderr);
+    }
+    return 0;
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
   }
-  if (!linkedWorktree) {
-    return fail("refusing to clean the primary or an unregistered worktree");
-  }
-  const cleanup = run(["-C", worktree, "clean", "-dfXq"]);
-  if (cleanup.status !== 0) {
-    return fail("ignored file cleanup failed", cleanup.stderr);
-  }
-  return 0;
 }
 
 export { main };
