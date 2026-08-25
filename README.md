@@ -9,6 +9,10 @@ curl -fsSL \
   https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash
 ```
 
+If Git is unavailable, the installer exits without starting the Command Line
+Tools installation. Run `xcode-select --install`, complete the macOS system
+dialog, then rerun the command above after the installation finishes.
+
 ## Manual install
 
 ```bash

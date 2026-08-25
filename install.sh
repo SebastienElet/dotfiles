@@ -6,19 +6,20 @@ then
   exit 1
 fi
 
-if [[ "$(which git)" == "" ]]
+git_path="$(command -v git)"
+if [[ "$git_path" == "/usr/bin/git" ]] && ! xcode-select --print-path >/dev/null
 then
-  echo "This installer need git"
-  echo "Do you want to install xcode ?"
-  read answer
-  if [[ $answer != [yY] ]]
-  then
-    exit 0
-  fi
+  git_path=""
+fi
 
-  echo "Install install xcode"
-  xcode-select --install
-  exit 0
+if [[ "$git_path" == "" ]] || ! git --version >/dev/null
+then
+  echo "Git is required but unavailable." >&2
+  echo "Install Apple's Command Line Tools and complete the system dialog:" >&2
+  echo "xcode-select --install" >&2
+  echo "After installation finishes, rerun:" >&2
+  echo "curl -fsSL https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash" >&2
+  exit 1
 fi
 
 cd 
