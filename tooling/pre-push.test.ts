@@ -46,7 +46,7 @@ test("runs the static CI barriers for the checked-out branch", () => {
   expect(status).toBe(0);
   expect(fake.calls).toEqual([
     "git rev-parse --verify HEAD",
-    "git status --porcelain=v1 --untracked-files=no",
+    "git status --porcelain=v1 --untracked-files=all",
     "bun --config=/dev/null --no-env-file tooling/lint-typescript.ts",
     "bun --config=/dev/null --no-env-file run typecheck",
   ]);
@@ -84,10 +84,13 @@ test.each([
   expect(main(["origin", "url"], updates, runner().run)).toBe(1);
 });
 
-test("refuses tracked changes before validation", () => {
+test.each([
+  ["tracked", " M file\n"],
+  ["untracked", "?? tooling/missing.ts\n"],
+])("refuses %s changes before validation", (_name, output) => {
   const fake = runner({
-    "git status --porcelain=v1 --untracked-files=no": {
-      stdout: " M file\n",
+    "git status --porcelain=v1 --untracked-files=all": {
+      stdout: output,
       status: 0,
     },
   });

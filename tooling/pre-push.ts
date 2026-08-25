@@ -120,11 +120,11 @@ function main(
     const status = requireOutput({
       runner,
       command: "git",
-      arguments: ["status", "--porcelain=v1", "--untracked-files=no"],
+      arguments: ["status", "--porcelain=v1", "--untracked-files=all"],
       failure: "worktree status failed",
     });
     if (status !== "") {
-      return fail("commit or restore tracked worktree changes before pushing");
+      return fail("commit or remove worktree changes before pushing");
     }
     return runStaticChecks(runner);
   } catch (error) {
