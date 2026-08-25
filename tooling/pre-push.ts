@@ -130,6 +130,7 @@ function runStaticChecksAtCommit(head: string, runner: CommandRunner): number {
   if (removal.status !== 0) {
     return fail("validation worktree cleanup failed", removal.stderr);
   }
+  rmSync(validationWorktree, { force: true, recursive: true });
   return status;
 }
 

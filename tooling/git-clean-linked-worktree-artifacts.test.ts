@@ -34,8 +34,14 @@ async function createWorktree(
   await Bun.write(join(path, "ignored"), "artifact\n");
 }
 
-function run(path: string): ReturnType<typeof Bun.spawnSync> {
-  return Bun.spawnSync([entrypoint, path], { stderr: "pipe", stdout: "pipe" });
+function run(
+  path: string,
+  invocationWorktree: string,
+): ReturnType<typeof Bun.spawnSync> {
+  return Bun.spawnSync([entrypoint, path, invocationWorktree], {
+    stderr: "pipe",
+    stdout: "pipe",
+  });
 }
 
 test("removes ignored artifacts from a linked worktree under the repository", async () => {
@@ -43,7 +49,7 @@ test("removes ignored artifacts from a linked worktree under the repository", as
   const worktree = join(repository, ".worktrees", "feature");
   await createWorktree(repository, worktree, "feature");
 
-  const result = run(worktree);
+  const result = run(worktree, repository);
 
   expect(result.exitCode).toBe(0);
   expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(false);
@@ -54,7 +60,7 @@ test("removes ignored artifacts from a linked worktree outside the repository", 
   const worktree = join(dirname(repository), "external-feature");
   await createWorktree(repository, worktree, "feature");
 
-  const result = run(worktree);
+  const result = run(worktree, repository);
 
   expect(result.exitCode).toBe(0);
   expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(false);
@@ -62,9 +68,11 @@ test("removes ignored artifacts from a linked worktree outside the repository", 
 
 test("refuses the primary worktree", async () => {
   const repository = await createRepository();
+  const invocationWorktree = join(dirname(repository), "invocation-feature");
+  await createWorktree(repository, invocationWorktree, "feature");
   await Bun.write(join(repository, "ignored"), "artifact\n");
 
-  const result = run(repository);
+  const result = run(repository, invocationWorktree);
 
   expect(result.exitCode).toBe(1);
   expect(result.stderr?.toString()).toContain("refusing to clean the primary");
@@ -77,9 +85,21 @@ test("preserves ignored artifacts in a locked linked worktree", async () => {
   await createWorktree(repository, worktree, "feature");
   await Bun.$`git -C ${repository} worktree lock ${worktree}`;
 
-  const result = run(worktree);
+  const result = run(worktree, repository);
 
   expect(result.exitCode).toBe(1);
   expect(result.stderr?.toString()).toContain("locked");
+  expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(true);
+});
+
+test("preserves the linked worktree that invoked cleanup", async () => {
+  const repository = await createRepository();
+  const worktree = join(dirname(repository), "active-feature");
+  await createWorktree(repository, worktree, "feature");
+
+  const result = run(worktree, worktree);
+
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr?.toString()).toContain("invoking worktree");
   expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(true);
 });

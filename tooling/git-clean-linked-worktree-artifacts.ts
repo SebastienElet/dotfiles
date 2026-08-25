@@ -1,7 +1,7 @@
 import { realpath } from "node:fs/promises";
 import { z } from "zod";
 
-const argumentsSchema = z.tuple([z.string().min(1)]);
+const argumentsSchema = z.tuple([z.string().min(1), z.string().min(1)]);
 const recordSeparator = "\0\0";
 const minimumRecordFieldCount = 2;
 const worktreeFieldSchema = z
@@ -96,10 +96,17 @@ async function linkedWorktreeState(
 async function main(arguments_: readonly string[]): Promise<number> {
   const parsedArguments = argumentsSchema.safeParse(arguments_);
   if (!parsedArguments.success) {
-    return fail("expected exactly one worktree path");
+    return fail("expected worktree and invoking worktree paths");
   }
-  const [worktree] = parsedArguments.data;
+  const [worktree, invocationWorktree] = parsedArguments.data;
   try {
+    const [resolvedWorktree, resolvedInvocationWorktree] = await Promise.all([
+      realpath(worktree),
+      realpath(invocationWorktree),
+    ]);
+    if (resolvedWorktree === resolvedInvocationWorktree) {
+      return fail("refusing to clean the invoking worktree");
+    }
     const state = await linkedWorktreeState(worktree);
     if (state === "refused") {
       return fail("refusing to clean the primary or an unregistered worktree");

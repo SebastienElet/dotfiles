@@ -44,7 +44,12 @@ function git_cleanup_worktree --argument-names command_name branch
         echo "git: keeping worktree for $branch: linked cleanup is unavailable after $command_name" >&2
         return 1
     end
-    command "$artifact_cleanup_script" "$worktree"
+    set -l invocation_worktree (command git $git_context rev-parse --show-toplevel | string collect)
+    if test $pipestatus[1] -ne 0; or test -z "$invocation_worktree"
+        echo "git: keeping worktree for $branch: invoking worktree lookup failed after $command_name" >&2
+        return 1
+    end
+    command "$artifact_cleanup_script" "$worktree" "$invocation_worktree"
     or return 1
 
     command git $git_context worktree remove "$worktree"

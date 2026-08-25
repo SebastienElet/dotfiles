@@ -89,6 +89,33 @@ or fail "fetch removes the branch of an external worktree containing only ignore
 
 echo "ok - fetch removes an external worktree containing only ignored files"
 
+create_repository active-ignored-worktree
+create_tracked_branch feature
+must git -C "$repository_path" switch --quiet feature
+echo ignored >"$repository_path/.gitignore"
+must git -C "$repository_path" add .gitignore
+must git -C "$repository_path" commit --quiet --message ignore
+must git -C "$repository_path" push --quiet
+must git -C "$repository_path" switch --quiet main
+set worktree_path "$test_root/active-ignored-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
+echo local >"$worktree_path/ignored"
+must git --git-dir="$remote_path" update-ref -d refs/heads/feature
+
+cd "$test_root"
+or fail "could not leave active-ignored-worktree"
+set fetch_output (git -C "$worktree_path" fetch 2>&1)
+or fail "fetch failed in active-ignored-worktree"
+
+test -e "$worktree_path/ignored"
+or fail "fetch preserves ignored files in its invoking worktree"
+command git -C "$worktree_path" show-ref --verify --quiet refs/heads/feature
+or fail "fetch preserves the branch of its invoking worktree"
+string match --quiet -- '*invoking worktree*' $fetch_output
+or fail "fetch reports why its invoking worktree is preserved"
+
+echo "ok - fetch preserves its invoking linked worktree"
+
 create_repository assume-unchanged-worktree
 create_tracked_branch feature
 set worktree_path "$test_root/assume-unchanged-feature"
