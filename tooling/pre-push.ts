@@ -1,3 +1,6 @@
+import { join, resolve } from "node:path";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { z } from "zod";
 
 const hookArgumentsSchema = z.tuple([z.string().min(1), z.string().min(1)]);
@@ -17,13 +20,15 @@ type CommandResult = Readonly<{
 type CommandRunner = (
   command: string,
   arguments_: readonly string[],
+  directory?: string,
 ) => CommandResult;
 
-const run: CommandRunner = (command, arguments_) => {
+const run: CommandRunner = (command, arguments_, directory) => {
   try {
     const result = Bun.spawnSync([command, ...arguments_], {
       stderr: "pipe",
       stdout: "pipe",
+      ...(directory === undefined ? {} : { cwd: directory }),
     });
     return {
       status: result.exitCode,
@@ -74,7 +79,7 @@ function requireOutput(
   return result.stdout;
 }
 
-function runStaticChecks(runner: CommandRunner): number {
+function runStaticChecks(runner: CommandRunner, directory: string): number {
   for (const command of [
     [
       "bun",
@@ -83,12 +88,49 @@ function runStaticChecks(runner: CommandRunner): number {
     ["bun", ["--config=/dev/null", "--no-env-file", "run", "typecheck"]],
   ] as const) {
     const [commandName, commandArguments] = command;
-    const result = runner(commandName, commandArguments);
+    const result = runner(commandName, commandArguments, directory);
     if (result.status !== 0) {
       return fail("static validation failed", result.stderr);
     }
   }
   return 0;
+}
+
+function runStaticChecksAtCommit(head: string, runner: CommandRunner): number {
+  const validationWorktree = mkdtempSync(join(tmpdir(), "dotfiles-pre-push-"));
+  const addition = runner("git", [
+    "worktree",
+    "add",
+    "--detach",
+    "--quiet",
+    validationWorktree,
+    head,
+  ]);
+  if (addition.status !== 0) {
+    rmSync(validationWorktree, { force: true, recursive: true });
+    return fail("validation worktree creation failed", addition.stderr);
+  }
+  let status = 1;
+  try {
+    symlinkSync(
+      resolve("node_modules"),
+      join(validationWorktree, "node_modules"),
+      "dir",
+    );
+    status = runStaticChecks(runner, validationWorktree);
+  } catch (error) {
+    status = fail(error instanceof Error ? error.message : String(error));
+  }
+  const removal = runner("git", [
+    "worktree",
+    "remove",
+    "--force",
+    validationWorktree,
+  ]);
+  if (removal.status !== 0) {
+    return fail("validation worktree cleanup failed", removal.stderr);
+  }
+  return status;
 }
 
 function main(
@@ -117,16 +159,7 @@ function main(
     if (branchUpdates.some(([, localObjectId]) => localObjectId !== head)) {
       return fail("checkout every branch being pushed before validation");
     }
-    const status = requireOutput({
-      runner,
-      command: "git",
-      arguments: ["status", "--porcelain=v1", "--untracked-files=all"],
-      failure: "worktree status failed",
-    });
-    if (status !== "") {
-      return fail("commit or remove worktree changes before pushing");
-    }
-    return runStaticChecks(runner);
+    return runStaticChecksAtCommit(head, runner);
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
   }

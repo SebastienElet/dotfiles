@@ -70,3 +70,16 @@ test("refuses the primary worktree", async () => {
   expect(result.stderr?.toString()).toContain("refusing to clean the primary");
   expect(await Bun.file(join(repository, "ignored")).exists()).toBe(true);
 });
+
+test("preserves ignored artifacts in a locked linked worktree", async () => {
+  const repository = await createRepository();
+  const worktree = join(dirname(repository), "locked-feature");
+  await createWorktree(repository, worktree, "feature");
+  await Bun.$`git -C ${repository} worktree lock ${worktree}`;
+
+  const result = run(worktree);
+
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr?.toString()).toContain("locked");
+  expect(await Bun.file(join(worktree, "ignored")).exists()).toBe(true);
+});

@@ -44,7 +44,9 @@ function fail(message: string, detail = ""): number {
   return 1;
 }
 
-function parseWorktreePaths(output: string): readonly string[] {
+function parseWorktrees(
+  output: string,
+): readonly Readonly<{ locked: boolean; path: string }>[] {
   const worktreeOutput = z.string().endsWith(recordSeparator).parse(output);
   return worktreeOutput
     .slice(0, -recordSeparator.length)
@@ -54,11 +56,18 @@ function parseWorktreePaths(output: string): readonly string[] {
         .array(z.string())
         .min(minimumRecordFieldCount)
         .parse(record.split("\0"));
-      return worktreeFieldSchema.parse(fields[0]);
+      return {
+        locked: fields.some(
+          (field) => field === "locked" || field.startsWith("locked "),
+        ),
+        path: worktreeFieldSchema.parse(fields[0]),
+      };
     });
 }
 
-async function isLinkedWorktree(worktree: string): Promise<boolean> {
+async function linkedWorktreeState(
+  worktree: string,
+): Promise<"linked" | "locked" | "refused"> {
   const worktreeList = run([
     "-C",
     worktree,
@@ -70,14 +79,18 @@ async function isLinkedWorktree(worktree: string): Promise<boolean> {
   if (worktreeList.status !== 0) {
     throw new Error(worktreeList.stderr.trim() || "Git worktree lookup failed");
   }
-  const worktreePaths = parseWorktreePaths(
+  const worktrees = parseWorktrees(
     new TextDecoder("utf-8", { fatal: true }).decode(worktreeList.stdout),
   );
   const [resolvedWorktreePaths, resolvedWorktree] = await Promise.all([
-    Promise.all(worktreePaths.map((candidate) => realpath(candidate))),
+    Promise.all(worktrees.map(({ path }) => realpath(path))),
     realpath(worktree),
   ]);
-  return resolvedWorktreePaths.indexOf(resolvedWorktree) > 0;
+  const index = resolvedWorktreePaths.indexOf(resolvedWorktree);
+  if (index < 1) {
+    return "refused";
+  }
+  return worktrees[index]?.locked === true ? "locked" : "linked";
 }
 
 async function main(arguments_: readonly string[]): Promise<number> {
@@ -87,9 +100,12 @@ async function main(arguments_: readonly string[]): Promise<number> {
   }
   const [worktree] = parsedArguments.data;
   try {
-    const linkedWorktree = await isLinkedWorktree(worktree);
-    if (!linkedWorktree) {
+    const state = await linkedWorktreeState(worktree);
+    if (state === "refused") {
       return fail("refusing to clean the primary or an unregistered worktree");
+    }
+    if (state === "locked") {
+      return fail("refusing to clean a locked worktree");
     }
     const cleanup = run(["-C", worktree, "clean", "-dfXq"]);
     if (cleanup.status !== 0) {

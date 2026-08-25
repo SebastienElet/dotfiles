@@ -20,13 +20,20 @@ function runner(
       Readonly<{ status: number; stderr?: string; stdout?: string }>
     >
   > = {},
-): Readonly<{ calls: string[]; run: CommandRunner }> {
+): Readonly<{
+  calls: string[];
+  directories: (string | undefined)[];
+  run: CommandRunner;
+}> {
   const calls: string[] = [];
+  const directories: (string | undefined)[] = [];
   return {
     calls,
-    run(command, arguments_) {
+    directories,
+    run(command, arguments_, directory) {
       const rendered = [command, ...arguments_].join(" ");
       calls.push(rendered);
+      directories.push(directory);
       return resultSchema.parse({
         status: 0,
         stderr: "",
@@ -38,18 +45,17 @@ function runner(
   };
 }
 
-test("runs the static CI barriers for the checked-out branch", () => {
+test("runs the static CI barriers from an exact temporary worktree", () => {
   const fake = runner();
 
   const status = main(["origin", "git@example.test:repo.git"], input, fake.run);
 
   expect(status).toBe(0);
-  expect(fake.calls).toEqual([
-    "git rev-parse --verify HEAD",
-    "git status --porcelain=v1 --untracked-files=all",
-    "bun --config=/dev/null --no-env-file tooling/lint-typescript.ts",
-    "bun --config=/dev/null --no-env-file run typecheck",
-  ]);
+  expect(fake.calls[0]).toBe("git rev-parse --verify HEAD");
+  expect(fake.calls[1]).toStartWith("git worktree add --detach --quiet ");
+  expect(fake.calls.at(-1)).toStartWith("git worktree remove --force ");
+  expect(fake.directories[2]).toBeDefined();
+  expect(fake.directories[3]).toBe(fake.directories[2]);
 });
 
 test.each([
@@ -82,23 +88,6 @@ test.each([
   ],
 ])("refuses %s", (_name, updates) => {
   expect(main(["origin", "url"], updates, runner().run)).toBe(1);
-});
-
-test.each([
-  ["tracked", " M file\n"],
-  ["untracked", "?? tooling/missing.ts\n"],
-])("refuses %s changes before validation", (_name, output) => {
-  const fake = runner({
-    "git status --porcelain=v1 --untracked-files=all": {
-      stdout: output,
-      status: 0,
-    },
-  });
-
-  expect(main(["origin", "url"], input, fake.run)).toBe(1);
-  expect(fake.calls).not.toContain(
-    "bun --config=/dev/null --no-env-file tooling/lint-typescript.ts",
-  );
 });
 
 test("propagates static validation failure", () => {
