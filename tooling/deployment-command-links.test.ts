@@ -6,6 +6,7 @@ import {
   linkTarget,
   pathExists,
   project,
+  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
 import { dirname, join } from "node:path";
@@ -14,6 +15,7 @@ import { mkdirSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 afterEach(cleanupDeploymentFixtures);
 
 const FUTURE_MTIME_OFFSET_MILLISECONDS = 60_000;
+const bunDirectory = dirname(requireCommand("bun"));
 
 test("migrates the former CodeGraph measurement command link", () => {
   const fixture = createDeploymentFixture("codegraph-command-migration");
@@ -44,10 +46,20 @@ test("migrates the former CodeGraph measurement command link", () => {
   utimesSync(retiredTarget, future, future);
   symlinkSync(retiredTarget, destination);
 
-  expectSuccess(runMake(fixture, [destination], { repository }));
+  expectSuccess(
+    runMake(fixture, [destination], {
+      repository,
+      variables: { BREW_BIN: bunDirectory },
+    }),
+  );
 
   expect(linkTarget(destination)).toBe(currentTarget);
-  expectSuccess(runMake(fixture, [destination], { repository }));
+  expectSuccess(
+    runMake(fixture, [destination], {
+      repository,
+      variables: { BREW_BIN: bunDirectory },
+    }),
+  );
 });
 
 test("refuses a newline-suffixed CodeGraph command link", () => {
@@ -65,7 +77,10 @@ test("refuses a newline-suffixed CodeGraph command link", () => {
   mkdirSync(localBin, { recursive: true });
   symlinkSync(unexpected, destination);
 
-  const result = runMake(fixture, [destination], { repository: project });
+  const result = runMake(fixture, [destination], {
+    repository: project,
+    variables: { BREW_BIN: bunDirectory },
+  });
 
   expect(result.exitCode).not.toBe(0);
   expect(linkTarget(destination)).toBe(unexpected);
@@ -81,6 +96,7 @@ test("removes only the retired Claude developer command link", () => {
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
+      variables: { BREW_BIN: bunDirectory },
     }),
   );
 
@@ -88,6 +104,7 @@ test("removes only the retired Claude developer command link", () => {
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
+      variables: { BREW_BIN: bunDirectory },
     }),
   );
 });
@@ -102,7 +119,7 @@ test("removes the retired link from a destination containing an apostrophe", () 
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
-      variables: { LOCAL_BIN: localBin },
+      variables: { BREW_BIN: bunDirectory, LOCAL_BIN: localBin },
     }),
   );
 
@@ -120,6 +137,7 @@ test("preserves a newline-suffixed link during retired command cleanup", () => {
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
+      variables: { BREW_BIN: bunDirectory },
     }),
   );
   expect(linkTarget(destination)).toBe(unexpected);
@@ -135,6 +153,7 @@ test("preserves a regular file during retired command cleanup", () => {
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
+      variables: { BREW_BIN: bunDirectory },
     }),
   );
 
@@ -149,6 +168,7 @@ test("preserves a directory during retired command cleanup", () => {
   expectSuccess(
     runMake(fixture, ["claude-developer-link-cleanup"], {
       repository: project,
+      variables: { BREW_BIN: bunDirectory },
     }),
   );
 
@@ -160,6 +180,7 @@ test("runs retired command cleanup from the Codex aggregate", () => {
   const result = runMake(fixture, ["codex"], {
     dryRun: true,
     repository: project,
+    variables: { BREW_BIN: bunDirectory },
   });
 
   expectSuccess(result);
