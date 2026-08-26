@@ -41,10 +41,11 @@ They are two axes, and converging them destroys the only record of what is still
 3. When a transition leaves boxes unchecked, record the residue explicitly in the same exchange:
    name each unchecked line and why it is unproven — measurement never taken, environment out of
    scope, deliberately accepted. The response always carries it. Add an issue comment only for a
-   transition that closes the issue, where the gap would otherwise disappear with it, and reconcile
-   against the existing comments first: a routing that leaves the issue open needs no comment, since
-   the unchecked lines are still there to read, and a workflow re-run would otherwise stack one
-   identical comment per run.
+   transition that closes the issue, where the gap would otherwise disappear with it, and only when
+   the transport covers reading and writing comments; report the limitation instead when it does
+   not. Reconcile against the existing comments first: a routing that leaves the issue open needs no
+   comment, since the unchecked lines are still there to read, and a workflow re-run would otherwise
+   stack one identical comment per run.
 4. Never uncheck a box that evidence still supports in order to justify reopening or delaying an
    issue, and never uncheck one merely because its proof is not in front of you: absence of evidence
    in this session is not evidence that the run never happened. Re-audit a checked box only when
@@ -160,3 +161,43 @@ writing.
    construction.
 8. Treat an aborted save the same way. A failing anchor means the description moved under you, so
    read, decide, and write again — never replay the decision you already made.
+
+## Guarding a state write with the boxes it rests on
+
+A workflow state decided from checkboxes must not be written from a classification that has since
+gone stale, and re-reading before the write only narrows that window. The anchor requirement closes
+it, because an anchor that no longer matches exactly once aborts the whole save.
+
+1. Send the state change and the guard in one save. On the Linear connector, `save_issue` accepts
+   `state` alongside `patch`, and one failing anchor aborts the entire save, so no state is written
+   when a guarded line moved:
+
+   ```json
+   {
+     "id": "ENG-482",
+     "state": "Done",
+     "patch": [
+       {
+         "op": "replace",
+         "old_string": "- [X] Scenario 2: import rejects a malformed row",
+         "new_string": "- [X] Scenario 2: import rejects a malformed row"
+       }
+     ]
+   }
+   ```
+
+2. Anchor every line the classification relied on, unchanged, so the guard asserts the state of the
+   evidence rather than editing it. This is a guard, not a description edit: it needs no
+   authorization to write a box, because it writes none.
+3. An abort is the guard working. Re-read, classify again, and write again — never retry the save
+   with the anchors from the stale read.
+4. A transport that rejects an unchanged `old_string`/`new_string` pair fails the save and therefore
+   writes no state either, which is the safe direction. Treat the rejection as an uncovered guard,
+   not as a reason to write unguarded.
+5. This guard asserts facts inside the issue's own description. It cannot assert another issue's
+   state, so it does not make a parent completion conditional on its sub-issues; that still needs a
+   documented conditional mutation over those issues.
+6. When no transport carries the guard and the state in one save, re-read immediately before the
+   write, abandon the write when the description changed, and report the remaining window as
+   unguarded rather than describing the outcome as reversible: an issue completed over a box that
+   moved reports as an ordinary success, and nothing downstream surfaces it.
