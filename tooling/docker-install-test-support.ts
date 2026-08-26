@@ -67,7 +67,7 @@ function runDockerInstallTarget(
       DOCKER_INSTALL_TEST_SCENARIO: scenario,
       DOCKER_INSTALL_TEST_STATE: fixture.trace,
       DOCKER_INSTALL_TEST_TARGET: target,
-      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}`,
     },
     stderr: "pipe",
     stdout: "pipe",
