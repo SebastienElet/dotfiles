@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -31,28 +31,6 @@ if (mode === "ln") {
   writeFileSync(join(functions, "fzf_configure_bindings.fish"), "");
 } else if (mode === "fish-empty") {
   process.exit(0);
-} else if (mode === "bun-install") {
-  const installArguments = process.argv.slice(argumentOffset);
-  const expectedArguments = [
-    "--config=/dev/null",
-    "--no-env-file",
-    "install",
-    "--frozen-lockfile",
-    "--ignore-scripts",
-  ];
-  if (JSON.stringify(installArguments) !== JSON.stringify(expectedArguments)) {
-    process.exit(commandFailureExitCode);
-  }
-  appendFileSync(
-    required("DEPLOYMENT_MARKER"),
-    `${installArguments.join(" ")}\n`,
-  );
-  const dependency = join(process.cwd(), "node_modules", "zod");
-  mkdirSync(dependency, { recursive: true });
-  const manifest = join(dependency, "package.json");
-  if (!existsSync(manifest)) {
-    writeFileSync(manifest, "{}\n");
-  }
 } else {
   process.stderr.write(
     `unknown deployment provider mode: ${mode ?? "missing"}\n`,

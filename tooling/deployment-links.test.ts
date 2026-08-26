@@ -205,22 +205,10 @@ test(
   () => {
     const fixture = createDeploymentFixture("user-skills");
     const destinationPaths: string[] = [];
-    const marker = join(fixture.root, "bun-called");
-    installProvider(fixture, "brew");
-    installProvider(fixture, "bun");
     for (const [owner, slug] of userSkillDestinations) {
       destinationPaths.push(join(fixture.home, owner, "skills", slug));
     }
-    expectSuccess(
-      runMake(fixture, destinationPaths, {
-        environment: {
-          DEPLOYMENT_MARKER: marker,
-          DEPLOYMENT_PROVIDER_MODE: "bun-install",
-        },
-        repository: project,
-        variables: { BREW_BIN: fixture.bin },
-      }),
-    );
+    expectSuccess(runMake(fixture, destinationPaths, { repository: project }));
     for (const [owner, slug] of userSkillDestinations) {
       const destination = join(fixture.home, owner, "skills", slug);
       expect(linkTarget(destination)).toBe(

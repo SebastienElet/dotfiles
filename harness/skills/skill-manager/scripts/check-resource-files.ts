@@ -2,42 +2,13 @@ import {
   type PhysicalEntry,
   listSkillEntries,
 } from "./physical-entry-audit.ts";
+import {
+  type ResourceFilePolicy,
+  parseResourceFilePolicy,
+} from "./resource-file-policy.ts";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { z } from "zod";
 
-const fileNameSchema = z
-  .string()
-  .min(1)
-  .refine((value) => !value.includes("/") && !value.includes("\\"));
-const closedDirectoryPolicySchema = z
-  .object({
-    files: z.array(fileNameSchema).min(1).readonly(),
-    mode: z.literal("closed"),
-  })
-  .strict()
-  .readonly();
-const openDirectoryPolicySchema = z
-  .object({ mode: z.literal("open") })
-  .strict()
-  .readonly();
-const resourceFilePolicySchema = z
-  .object({
-    resourceDirectories: z
-      .record(
-        fileNameSchema,
-        z.discriminatedUnion("mode", [
-          closedDirectoryPolicySchema,
-          openDirectoryPolicySchema,
-        ]),
-      )
-      .readonly(),
-    rootFiles: z.array(fileNameSchema).min(1).readonly(),
-    version: z.literal(1),
-  })
-  .strict()
-  .readonly();
-type ResourceFilePolicy = z.infer<typeof resourceFilePolicySchema>;
 type UnexpectedResourceFile = Readonly<{
   convention: string;
   path: string;
@@ -46,10 +17,6 @@ const failureExitCode = 1;
 const invalidInvocationExitCode = 2;
 const successExitCode = 0;
 const argumentOffset = 2;
-
-function parseResourceFilePolicy(input: unknown): ResourceFilePolicy {
-  return resourceFilePolicySchema.parse(input);
-}
 
 function joinAllowedNames(names: readonly string[]): string {
   if (names.length === 1) {
@@ -86,7 +53,9 @@ function findUnexpectedResourceFile(
   if (nestedEntries.length === 0) {
     return { convention: rootConvention(policy), path };
   }
-  const directoryPolicy = policy.resourceDirectories[rootEntry];
+  const directoryPolicy = Object.hasOwn(policy.resourceDirectories, rootEntry)
+    ? policy.resourceDirectories[rootEntry]
+    : undefined;
   if (directoryPolicy === undefined) {
     return { convention: rootConvention(policy), path };
   }
@@ -120,7 +89,10 @@ function findUnexpectedDirectory(
   policy: ResourceFilePolicy,
 ): UnexpectedResourceFile | undefined {
   const [rootEntry, ...nestedEntries] = path.slice(0, -1).split("/");
-  const directoryPolicy = policy.resourceDirectories[rootEntry ?? ""];
+  const directory = rootEntry ?? "";
+  const directoryPolicy = Object.hasOwn(policy.resourceDirectories, directory)
+    ? policy.resourceDirectories[directory]
+    : undefined;
   if (directoryPolicy === undefined) {
     return { convention: rootConvention(policy), path };
   }
@@ -177,14 +149,13 @@ async function loadPolicy(): Promise<ResourceFilePolicy> {
 }
 
 async function main(): Promise<number> {
-  const invocation = z
-    .tuple([z.string().min(1)])
-    .safeParse(Bun.argv.slice(argumentOffset));
-  if (!invocation.success) {
+  const invocation = Bun.argv.slice(argumentOffset);
+  const [skillRoot] = invocation;
+  if (invocation.length !== 1 || skillRoot === undefined || skillRoot === "") {
     process.stderr.write("Usage: check-resource-files <skill-root>\n");
     return invalidInvocationExitCode;
   }
-  const entries = await listSkillEntries(invocation.data[0]);
+  const entries = await listSkillEntries(skillRoot);
   const findings = findUnexpectedEntries(entries, await loadPolicy());
   if (findings.length > 0) {
     for (const finding of findings) {
@@ -208,4 +179,4 @@ if (import.meta.main) {
   }
 }
 
-export { findUnexpectedResourceFiles, parseResourceFilePolicy };
+export { findUnexpectedResourceFiles };

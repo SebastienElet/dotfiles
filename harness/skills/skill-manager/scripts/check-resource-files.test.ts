@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
-import {
-  findUnexpectedResourceFiles,
-  parseResourceFilePolicy,
-} from "./check-resource-files.ts";
+import { findUnexpectedResourceFiles } from "./check-resource-files.ts";
+import { parseResourceFilePolicy } from "./resource-file-policy.ts";
 
 const policy = parseResourceFilePolicy({
   resourceDirectories: {
@@ -29,6 +27,23 @@ test("rejects a malformed policy instead of choosing a permissive default", () =
       },
     }),
   ).toThrow();
+});
+
+test.each([
+  { ...policy, extra: true },
+  { ...policy, rootFiles: [] },
+  {
+    ...policy,
+    resourceDirectories: { assets: { files: [], mode: "open" } },
+  },
+  {
+    ...policy,
+    resourceDirectories: { "invalid/name": { mode: "open" } },
+  },
+])("rejects a policy outside the closed schema", (invalidPolicy: unknown) => {
+  expect(() => parseResourceFilePolicy(invalidPolicy)).toThrow(
+    "Invalid resource file policy",
+  );
 });
 
 test("rejects every file outside a closed directory policy", () => {

@@ -389,7 +389,7 @@ ${BREW_BIN}/cursor-agent:
 	${CREATE_SYMLINK}
 ~/.cursor/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification | ~/.cursor/skills
 	${CREATE_SYMLINK}
-~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills ${DOTFILES_PATH}/node_modules/zod/package.json
+~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.cursor/skills
 	${CREATE_SYMLINK}
@@ -446,7 +446,7 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification | ~/.claude/skills
 	${CREATE_SYMLINK}
-~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills ${DOTFILES_PATH}/node_modules/zod/package.json
+~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.claude/skills
 	${CREATE_SYMLINK}
 ~/.claude/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.claude/skills
 	${CREATE_SYMLINK}
@@ -511,7 +511,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 ~/.agents/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification | ~/.agents/skills
 	${CREATE_SYMLINK}
-~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills ${DOTFILES_PATH}/node_modules/zod/package.json
+~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation | ~/.agents/skills
 	${CREATE_SYMLINK}
@@ -935,8 +935,6 @@ ${VOLTA_BIN}/node: ${BREW_BIN}/volta
 bun: ${BREW_BIN}/bun
 ${BREW_BIN}/bun: | brew
 	brew install bun
-${DOTFILES_PATH}/node_modules/zod/package.json: ${DOTFILES_PATH}/package.json ${DOTFILES_PATH}/bun.lock | ${BREW_BIN}/bun
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
 
 .PHONY: pnpm
 pnpm: ${VOLTA_BIN}/pnpm
