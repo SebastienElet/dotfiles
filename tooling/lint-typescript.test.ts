@@ -61,6 +61,13 @@ async function createRepository(): Promise<string> {
   return repository;
 }
 
+async function createTrackedSource(contents: string): Promise<string> {
+  const repository = await createRepository();
+  await writeFile(join(repository, "source.ts"), contents);
+  expect(await run(["git", "add", "source.ts"], repository)).toBe(SUCCESS);
+  return repository;
+}
+
 async function rejectionMessage(
   promise: Readonly<Promise<unknown>>,
 ): Promise<string> {
@@ -82,14 +89,6 @@ async function rejectionForTrackedLink(createLink: LinkFile): Promise<string> {
   await createLink(externalSource, linkedSource);
   expect(await run(["git", "add", "linked.ts"], repository)).toBe(SUCCESS);
   return rejectionMessage(lintTrackedTypeScript(repository, oxlint));
-}
-
-function assertLintSuccess(
-  result: Readonly<{ status: number; stderr: string; stdout: string }>,
-): void {
-  if (result.status !== SUCCESS) {
-    throw new Error(`${result.stdout}\n${result.stderr}`);
-  }
 }
 
 test("discovers every tracked TypeScript extension", async (): Promise<void> => {
@@ -145,20 +144,22 @@ test("fails closed when tracked TypeScript discovery is empty or unavailable", a
   expect(unavailableError).toContain("Git could not list");
 });
 
-test("rejects syntax-only and type-aware defects", async (): Promise<void> => {
-  const repository = await createRepository();
-  const source = join(repository, "source.ts");
-  await writeFile(source, 'export const value = "valid";\n');
-  expect(await run(["git", "add", "source.ts"], repository)).toBe(SUCCESS);
+test("accepts a valid tracked source", async (): Promise<void> => {
+  const repository = await createTrackedSource(
+    'export const value = "valid";\n',
+  );
   const validResult = await lintTrackedTypeScript(repository, oxlint);
-  assertLintSuccess(validResult);
+  expect(validResult.status).toBe(SUCCESS);
+});
 
-  await writeFile(source, "export const = FAILURE;\n");
+test("rejects a syntax defect", async (): Promise<void> => {
+  const repository = await createTrackedSource("export const = FAILURE;\n");
   const syntaxFailure = await lintTrackedTypeScript(repository, oxlint);
   expect(syntaxFailure.status).toBe(FAILURE);
+});
 
-  await writeFile(
-    source,
+test("rejects a type-aware defect", async (): Promise<void> => {
+  const repository = await createTrackedSource(
     'Promise.resolve();\nexport const value = "invalid";\n',
   );
   const typeAwareFailure = await lintTrackedTypeScript(repository, oxlint);
