@@ -1,5 +1,6 @@
 BREW_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/bin"; else echo "/usr/local/bin"; fi)
 BREW_GNU_BIN:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/opt"; else echo "/usr/local/opt"; fi)
+BREW_CASKROOM:=$(shell if [ "$(shell uname -p)" = "arm" ]; then echo "/opt/homebrew/Caskroom"; else echo "/usr/local/Caskroom"; fi)
 VOLTA_BIN:=$(HOME)/.volta/bin
 CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
@@ -357,9 +358,9 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: ~/.local/bin/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
-~/.local/bin/cursor-agent:
-	curl https://cursor.com/install -fsS | bash
+cursor: brew ${BREW_BIN}/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+${BREW_BIN}/cursor-agent:
+	brew install --cask cursor-cli
 ~/.cursor/skills:
 	mkdir -p $@
 ~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.cursor/skills
@@ -675,13 +676,10 @@ specsmd:
 	npx specsmd@latest install
 
 .PHONY: vibe-island
-vibe-island: /Applications/Vibe\ Island.app
-/Applications/Vibe\ Island.app:
-	curl -L https://dl.vibeisland.app/VibeIsland.dmg -o /tmp/VibeIsland.dmg
-	hdiutil attach /tmp/VibeIsland.dmg -nobrowse -quiet -mountpoint /tmp/VibeIsland-mount
-	cp -R /tmp/VibeIsland-mount/Vibe\ Island.app /Applications/
-	hdiutil detach /tmp/VibeIsland-mount -quiet
-	rm -f /tmp/VibeIsland.dmg
+vibe-island: brew ${BREW_CASKROOM}/vibe-island
+${BREW_CASKROOM}/vibe-island:
+	brew update
+	brew install --cask --adopt vibe-island
 
 ################################################################################
 # End of work section
@@ -825,10 +823,9 @@ font-iosevka-nerd-font: ~/Library/Fonts/IosevkaNerdFont-Regular.ttf
 	brew install font-iosevka-nerd-font
 
 .PHONY: fzf
-fzf: ~/.fzf
-~/.fzf:
-	git clone https://github.com/junegunn/fzf.git ~/.fzf
-	~/.fzf/install --no-update-rc --no-fish
+fzf: brew ${BREW_BIN}/fzf
+${BREW_BIN}/fzf:
+	brew install fzf
 
 .PHONY: ripgrep
 ripgrep: brew ${BREW_BIN}/rg

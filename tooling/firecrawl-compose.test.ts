@@ -59,7 +59,9 @@ test("the unauthenticated Firecrawl API is published only on host loopback", () 
   );
 
   expect(publishedApiPorts).toHaveLength(1);
-  expect(loopbackFirecrawlPortSchema.safeParse(publishedApiPorts[0]).success).toBeTrue();
+  expect(
+    loopbackFirecrawlPortSchema.safeParse(publishedApiPorts[0]).success,
+  ).toBeTrue();
 });
 
 test.each([
@@ -78,7 +80,9 @@ test.each([
       target: firecrawlPort,
     };
 
-    expect(loopbackFirecrawlPortSchema.safeParse(renderedPort).success).toBeFalse();
+    expect(
+      loopbackFirecrawlPortSchema.safeParse(renderedPort).success,
+    ).toBeFalse();
   },
 );
 
@@ -91,5 +95,7 @@ test("rejects host networking that bypasses published port confinement", () => {
     },
   };
 
-  expect(renderedComposeSchema.safeParse(hostNetworkConfiguration).success).toBeFalse();
+  expect(
+    renderedComposeSchema.safeParse(hostNetworkConfiguration).success,
+  ).toBeFalse();
 });

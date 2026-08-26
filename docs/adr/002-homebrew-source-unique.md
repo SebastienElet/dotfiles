@@ -12,12 +12,15 @@ impossible à automatiser et l'installation impossible à rejouer en CI.
 
 ## Décision
 
-Tout paquet passe par Homebrew (formule ou cask), et par `mas` pour ce que
-seul l'App Store distribue. Les services sont pilotés par `brew services`. Les
-applications payantes de l'App Store sont exclues par défaut via
-`SKIP_PAID_APPS`, ce qui permet à la CI d'exécuter l'installation complète.
-`HOMEBREW_NO_ASK` supprime les invites interactives, et les taps sont
-approuvés (`brew trust`) avant toute mise à jour.
+Tout paquet passe par Homebrew (formule ou cask), et par `mas` pour ce que seul
+l'App Store distribue. Une autre source exige une exception explicite et un
+contrat de version, d'intégrité, de mise à jour et de rejeu. L'inventaire de ces
+exceptions est un document opérationnel distinct.
+
+Le graphe `make all` est contrôlé automatiquement : toute source absente de
+l'inventaire est refusée. Les services sont pilotés par `brew services` et les
+applications payantes de l'App Store restent exclues par défaut via
+`SKIP_PAID_APPS` afin que la CI puisse rejouer l'installation complète.
 
 ## Conséquences
 
@@ -25,8 +28,8 @@ approuvés (`brew trust`) avant toute mise à jour.
   ([ADR-004](004-script-upgrade-unique.md)).
 - Dépendance forte aux dépréciations Homebrew : plusieurs commits ne font que
   suivre des taps ou des formules retirés en amont.
-- Quelques outils échappent à la règle (installateur natif de Claude Code,
-  images Docker des MCP) et constituent des exceptions assumées.
+- Les exceptions ne bénéficient pas du contrat de version et de mise à jour
+  Homebrew ; leur contrat plus faible est explicite et contrôlé séparément.
 
 ## Alternatives écartées
 
