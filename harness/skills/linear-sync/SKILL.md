@@ -31,9 +31,9 @@ were already synchronized.
 
 1. **Load shared policy and adapters.** Activate `linear-workflow`, including its shared Linear and
    Bitbucket adapters and its `references/completion-evidence.md` rule, and apply all of its
-   constraints. Use those transports rather than creating
-   another integration. Verify current command schemas and authentication before reads or writes,
-   and stop before any operation that the available transports do not cover.
+   constraints. Use those transports rather than creating another integration. Verify current
+   command schemas and authentication before reads or writes, and stop before any operation that
+   the available transports do not cover.
 
 2. **Establish identity and repository scope.** Retrieve the current Linear identity. Resolve the
    current Bitbucket repository from Git remotes and verify its workspace and repository slug with
@@ -45,9 +45,8 @@ were already synchronized.
 3. **Read structured Linear facts.** Exhaust result pages while retrieving assigned candidates with
    their identifiers, workflow states, parents, direct sub-issues, blocking relations, and links or
    attachments, plus the description of any candidate a merged pull request could complete. Read
-   only the assignee and workflow state of an unassigned direct sub-issue when
-   needed to decide whether an assigned parent is complete; never mutate or report that sub-issue
-   as a candidate.
+   only the assignee and workflow state of an unassigned direct sub-issue when needed to decide
+   whether an assigned parent is complete; never mutate or report that sub-issue as a candidate.
 
 4. **Resolve exact issue-to-work associations.** Prefer a canonical Bitbucket pull-request URL in
    Linear's structured links or attachments. Otherwise accept an exact issue identifier at the
@@ -70,8 +69,11 @@ were already synchronized.
    line, or an evidence section that holds no state, moves it to its team's review state instead,
    with the unproven lines named as residue. Re-read the description immediately before the state
    write and leave that issue untouched when it changed since the classification: a post-write read
-   confirms the state, never that the boxes still say what they said. Verify either transition by an
-   independent Linear read. Do not inspect the diff, rerun tests, invoke
+   confirms the state, never that the boxes still say what they said. That re-read narrows the
+   window without closing it — no transport verified here exposes a conditional write, so a box
+   unchecked between the re-read and the write still lands as `Done`. The exposure is one issue per
+   occurrence and a human can reverse it; report the transition so it stays visible. Verify either
+   transition by an independent Linear read. Do not inspect the diff, rerun tests, invoke
    `pr-verdict`, or perform a functional review; this workflow routes work by the evidence that
    already exists and never produces any. Several assigned leaves may transition from the same
    merged pull request only when each association is explicit and certain.

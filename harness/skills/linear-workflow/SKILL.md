@@ -33,8 +33,11 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
 3. Read branch and pull-request state from Git and Bitbucket.
 4. Before checking or restructuring a checkbox or evidence section, and before completing an issue
    from merged work, read [completion evidence](references/completion-evidence.md). Reading it is
-   mandatory; running its verification pass requires an explicit request to verify.
-5. Apply every constraint below, then return control to the composing workflow.
+   mandatory for every workflow; running its verification pass is not.
+5. On an explicit request to verify merged work, run that reference's verification pass over the
+   issues waiting in the review state, and report the queue it defines. This is the one procedure to
+   execute here rather than hand back.
+6. Apply every constraint below, then return control to the composing workflow when there is one.
 
 ## Gotchas
 

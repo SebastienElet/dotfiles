@@ -40,8 +40,11 @@ They are two axes, and converging them destroys the only record of what is still
    accept unproven residue. An agent routing lifecycle state never takes it alone.
 3. When a transition leaves boxes unchecked, record the residue explicitly in the same exchange:
    name each unchecked line and why it is unproven — measurement never taken, environment out of
-   scope, deliberately accepted. Put it in the response, and in an issue comment when the transport
-   supports one, so the gap survives the issue being closed.
+   scope, deliberately accepted. The response always carries it. Add an issue comment only for a
+   transition that closes the issue, where the gap would otherwise disappear with it, and reconcile
+   against the existing comments first: a routing that leaves the issue open needs no comment, since
+   the unchecked lines are still there to read, and a workflow re-run would otherwise stack one
+   identical comment per run.
 4. Never uncheck a box that evidence still supports in order to justify reopening or delaying an
    issue, and never uncheck one merely because its proof is not in front of you: absence of evidence
    in this session is not evidence that the run never happened. Re-audit a checked box only when
