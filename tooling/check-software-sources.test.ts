@@ -42,6 +42,14 @@ test("the reconciled tools use their supported Homebrew artifacts", () => {
 
   expect(graph).toContain("brew install fzf");
   expect(graph).toContain("brew install --cask cursor-cli");
+  expect(graph).toContain("brew trust --cask wezterm/wezterm/wezterm-nightly");
+  expect(graph).toContain(
+    "brew install --cask wezterm/wezterm/wezterm-nightly",
+  );
+  expect(graph).toContain("brew trust --cask dopplerhq/doppler/doppler");
+  expect(graph).toContain("brew install --cask dopplerhq/doppler/doppler");
+  expect(graph).not.toContain("wez/wezterm");
+  expect(graph).not.toContain("dopplerhq/cli");
   expect(graph).toContain(
     "brew update\nbrew install --cask --adopt vibe-island",
   );
