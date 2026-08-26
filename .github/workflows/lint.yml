@@ -142,6 +142,7 @@ jobs:
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
+          .github/workflows/lint.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/skills/obsidian-retrieval/SKILL.md
@@ -162,6 +163,7 @@ jobs:
           harness/skills/linear-sync/SKILL.md
           harness/skills/linear-workflow/SKILL.md
           harness/skills/linear-workflow/references/bitbucket.md
+          harness/skills/linear-workflow/references/completion-evidence.md
           harness/skills/linear-workflow/references/transports.md
 
       - name: Check configuration and user dictionary
@@ -186,6 +188,7 @@ jobs:
             harness/skills/linear-sync/SKILL.md \
             harness/skills/linear-workflow/SKILL.md \
             harness/skills/linear-workflow/references/bitbucket.md \
+            harness/skills/linear-workflow/references/completion-evidence.md \
             harness/skills/linear-workflow/references/transports.md \
             harness/skills/obsidian-retrieval/SKILL.md \
             harness/skills/obsidian-retrieval/references/obsidian-cli.md \
