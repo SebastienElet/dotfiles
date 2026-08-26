@@ -113,7 +113,7 @@ that are not ignored, reports every unexpected path, and fails closed when Git c
 them. Gitignored runtime artifacts remain outside the repository audit.
 
 Do not create a local `rules/` directory. Add only tracked resource directories the skill actually
-needs; ignore untracked or gitignored runtime artifacts during repository audits.
+needs; ignore gitignored runtime artifacts during repository audits.
 
 Project skills are exposed through relative repository adapters:
 
