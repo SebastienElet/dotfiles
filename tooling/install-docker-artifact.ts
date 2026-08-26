@@ -26,6 +26,7 @@ const invocationSchema = z.union([
 ]);
 const serviceNameSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u);
 const serviceListSchema = z.array(serviceNameSchema).min(1);
+const imageIdentifierSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/u);
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 type DockerCommandResult = Readonly<{
@@ -77,6 +78,9 @@ function installOrVerifyDockerArtifact(
 
 function installDockerArtifact(invocation: Readonly<Invocation>): void {
   const [, target, , artifact] = invocation;
+  if (target !== "firecrawl" && localImageExists(artifact)) {
+    return;
+  }
   const command =
     target === "firecrawl"
       ? ["compose", "-f", artifact, "up", "--wait", "--wait-timeout", "120"]
@@ -86,6 +90,24 @@ function installDockerArtifact(invocation: Readonly<Invocation>): void {
     forwardOutput(result);
   }
   requireSuccessfulCommand(result, command);
+}
+
+function localImageExists(image: string): boolean {
+  const command = [
+    "image",
+    "ls",
+    "--quiet",
+    "--no-trunc",
+    "--filter",
+    `reference=${image}`,
+  ];
+  const result = runDocker(command);
+  requireSuccessfulCommand(result, command);
+  const identifiers = result.stdout
+    .split("\n")
+    .map((identifier) => identifier.trim())
+    .filter((identifier) => identifier.length > 0);
+  return z.array(imageIdentifierSchema).parse(identifiers).length > 0;
 }
 
 function verifyDockerArtifact(invocation: Readonly<Invocation>): void {

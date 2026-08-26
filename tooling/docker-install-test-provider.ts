@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync } from "node:fs";
 import { z } from "zod";
 
 const environmentSchema = z.object({
@@ -20,6 +20,7 @@ const environmentSchema = z.object({
 });
 const environment = environmentSchema.parse(process.env);
 const cliArgumentStart = 2;
+const sha256HexadecimalLength = 64;
 const usageExitCode = 64;
 const command = process.argv.slice(cliArgumentStart);
 const renderedCommand = command.join(" ");
@@ -31,17 +32,23 @@ function finish(exitCode: number, stdout = "", stderr = ""): never {
   process.exit(exitCode);
 }
 
-function imageInspectionCount(): number {
-  const trace = readFileSync(environment.DOCKER_INSTALL_TEST_STATE, "utf8");
-  return trace.split("\n").filter((line) => line.startsWith("image inspect "))
-    .length;
-}
-
 if (renderedCommand === "info") {
   if (environment.DOCKER_INSTALL_TEST_SCENARIO === "daemon-unavailable") {
     finish(1, "", "daemon unavailable\n");
   }
   finish(0, "test daemon\n");
+}
+
+if (command[0] === "image" && command[1] === "ls") {
+  const identifier = `sha256:${"a".repeat(sha256HexadecimalLength)}`;
+  if (environment.DOCKER_INSTALL_TEST_SCENARIO === "invalid-evidence") {
+    finish(0, "invalid image identifier\n");
+  }
+  const output =
+    environment.DOCKER_INSTALL_TEST_SCENARIO === "artifact-present"
+      ? `${identifier}\n`
+      : "";
+  finish(0, output);
 }
 
 if (command.includes("--help")) {
@@ -71,12 +78,9 @@ if (command[0] === "compose") {
 }
 
 if (command[0] === "image" && command[1] === "inspect") {
-  const presentInitially =
-    environment.DOCKER_INSTALL_TEST_SCENARIO === "artifact-present";
-  const presentAfterInstall =
-    environment.DOCKER_INSTALL_TEST_SCENARIO !== "artifact-absent" &&
-    imageInspectionCount() > 1;
-  finish(presentInitially || presentAfterInstall ? 0 : 1);
+  finish(
+    environment.DOCKER_INSTALL_TEST_SCENARIO === "artifact-present" ? 0 : 1,
+  );
 }
 
 if (command[0] === "pull") {

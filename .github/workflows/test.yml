@@ -50,6 +50,7 @@ jobs:
         env:
           DOCKER_UNAVAILABLE_POLICY: allow-skip
         run: |
+          export PATH="/Applications/OrbStack.app/Contents/MacOS/xbin:$PATH"
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
 

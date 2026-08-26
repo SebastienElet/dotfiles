@@ -44,6 +44,9 @@ describe.each(targets)("%s Docker installation target", (target) => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain(resultMarker(target, "verified"));
     expect(result.trace).toContain(oracleCommand(target));
+    if (target !== "firecrawl") {
+      expect(result.trace).not.toContain("pull ");
+    }
   });
 });
 
@@ -53,6 +56,16 @@ test("Firecrawl rejects malformed Docker service evidence", () => {
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).not.toContain(resultMarker("firecrawl", "verified"));
 });
+
+test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
+  "%s rejects malformed local image evidence",
+  (target) => {
+    const result = runDockerInstallTarget(target, "invalid-evidence");
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+  },
+);
 
 test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
   "%s rejects an image value that Docker would interpret as an option",
