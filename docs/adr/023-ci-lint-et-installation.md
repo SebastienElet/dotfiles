@@ -24,8 +24,9 @@ l'installation par défaut sur un runner macOS. Sur une pull request,
 `ci-smoke-targets` repère les blocs `.PHONY` modifiés et les exécute sur des
 runners macOS isolés et parallèles. Une sélection ambiguë ou un changement de
 l'infrastructure d'installation retombe sur `all`. Les apps payantes sont
-exclues (`SKIP_PAID_APPS`) et les cibles Docker ignorées en l'absence de daemon
-(`DOCKER_OR_SKIP`).
+exclues (`SKIP_PAID_APPS`). Le job d'installation autorise explicitement un
+résultat Docker `skipped` en l'absence de daemon ; lorsque Docker est disponible,
+chaque cible vérifie l'artefact qu'elle promet avant de réussir.
 
 ## Conséquences
 

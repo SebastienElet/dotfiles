@@ -27,7 +27,9 @@ automatique.
 
 - Un conteneur oublié coûte au plus un conteneur, non un par session.
 - Les dépendances lourdes restent isolées du poste.
-- Les cibles Docker doivent tolérer l'absence de daemon
+- Les cibles Docker doivent tolérer l'absence de daemon avec un résultat
+  `skipped` explicite, décidé par la politique de l'appelant, et ne rapporter
+  `verified` qu'après leur oracle Docker
   ([ADR-018](018-orbstack-runtime-conteneurs.md),
   [ADR-023](023-ci-lint-et-installation.md)).
 

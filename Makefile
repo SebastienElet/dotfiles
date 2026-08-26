@@ -9,6 +9,7 @@ APP_BIN:=/Applications
 MAS?=mas
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
+DOCKER_UNAVAILABLE_POLICY?=allow-skip
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
@@ -17,8 +18,6 @@ SKIP_PAID_APPS?=0
 export HOMEBREW_NO_ASK:=1
 # HAS_BREW_TRUST: check if brew trust command is available (Homebrew >= 5.1.15)
 HAS_BREW_TRUST:=$(shell brew trust --help >/dev/null 2>&1 && echo yes || echo no)
-# Recipe guard: no Docker daemon in CI, and none right after a fresh Orbstack install.
-DOCKER_OR_SKIP=docker info >/dev/null 2>&1 || { echo "Docker unavailable, skipping $@"; exit 0; }
 
 .PHONY: usage
 usage:
@@ -598,12 +597,20 @@ qovery-cli: /usr/local/bin/qovery
 	curl -s https://get.qovery.com | bash
 
 .PHONY: firecrawl
-firecrawl: docker
-	@$(DOCKER_OR_SKIP); docker compose -f ${DOTFILES_PATH}/harness/firecrawl/compose.yml up -d
+firecrawl: docker bun
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
+
+.PHONY: verify-firecrawl-docker
+verify-firecrawl-docker: bun
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
 
 .PHONY: scrapling
-scrapling: docker ${LOCAL_BIN}/scrapling_mcp
-	@$(DOCKER_OR_SKIP); docker image inspect ${SCRAPLING_IMAGE} >/dev/null 2>&1 || docker pull ${SCRAPLING_IMAGE}
+scrapling: docker bun ${LOCAL_BIN}/scrapling_mcp
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY}" "${SCRAPLING_IMAGE}"
+
+.PHONY: verify-scrapling-docker
+verify-scrapling-docker: bun
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify scrapling "${DOCKER_UNAVAILABLE_POLICY}" "${SCRAPLING_IMAGE}"
 
 # MCP command for agents: starts the shared container on demand instead of one per session.
 ${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/tooling/scrapling-mcp | ${LOCAL_BIN}
@@ -612,8 +619,12 @@ ${LOCAL_BIN}:
 	mkdir -p $@
 
 .PHONY: cloakbrowser
-cloakbrowser: docker
-	@$(DOCKER_OR_SKIP); docker image inspect ${CLOAKBROWSER_IMAGE} >/dev/null 2>&1 || docker pull ${CLOAKBROWSER_IMAGE}
+cloakbrowser: docker bun
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install cloakbrowser "${DOCKER_UNAVAILABLE_POLICY}" "${CLOAKBROWSER_IMAGE}"
+
+.PHONY: verify-cloakbrowser-docker
+verify-cloakbrowser-docker: bun
+	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify cloakbrowser "${DOCKER_UNAVAILABLE_POLICY}" "${CLOAKBROWSER_IMAGE}"
 
 .PHONY: skills
 skills: ${VOLTA_BIN}/skills
