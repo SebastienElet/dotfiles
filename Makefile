@@ -6,6 +6,7 @@ CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
+MAS?=mas
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
@@ -630,14 +631,13 @@ ${APP_BIN}/Claude.app:
 	brew install --cask claude
 
 .PHONY: flow
-flow: mas /Applications/Flow.app
-/Applications/Flow.app:
+flow: mas ${APP_BIN}/Flow.app
+${APP_BIN}/Flow.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
-		echo "Skipping Flow installation (SKIP_PAID_APPS=1)"; \
-		mkdir -p "$@"; \
+		echo "Flow installation skipped (SKIP_PAID_APPS=1)"; \
 	else \
 		echo "Installing Flow"; \
-		mas install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
+		${MAS} install 1423210932 || echo "Warning: Failed to install Flow (may not be purchased on this Apple account)"; \
 	fi
 
 .PHONY: frontcli
@@ -763,14 +763,13 @@ ${APP_BIN}/Handy.app:
 	brew install --cask handy
 
 .PHONY: things-3
-things-3: mas /Applications/Things3.app things3-cli-wrapper
-/Applications/Things3.app:
+things-3: mas ${APP_BIN}/Things3.app things3-cli-wrapper
+${APP_BIN}/Things3.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
-		echo "Skipping Things 3 installation (SKIP_PAID_APPS=1)"; \
-		mkdir -p "$@"; \
+		echo "Things 3 installation skipped (SKIP_PAID_APPS=1)"; \
 	else \
 		echo "Installing Things 3"; \
-		mas install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
+		${MAS} install 904280696 || echo "Warning: Failed to install Things 3 (may not be purchased on this Apple account)"; \
 	fi
 
 .PHONY: things3-cli-wrapper
@@ -893,14 +892,13 @@ ${BREW_BIN}/brew:
 	@if [ "$(HAS_BREW_TRUST)" = "yes" ]; then brew trust --tap gapple/services; fi
 
 .PHONY: daisydisk
-daisydisk: mas /Applications/DaisyDisk.app
-/Applications/DaisyDisk.app:
+daisydisk: mas ${APP_BIN}/DaisyDisk.app
+${APP_BIN}/DaisyDisk.app:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then \
-		echo "Skipping DaisyDisk installation (SKIP_PAID_APPS=1)"; \
-		mkdir -p "$@"; \
+		echo "DaisyDisk installation skipped (SKIP_PAID_APPS=1)"; \
 	else \
 		echo "Installing DaisyDisk"; \
-		mas install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"; \
+		${MAS} install 411643860 || echo "Warning: Failed to install DaisyDisk (may not be purchased on this Apple account)"; \
 	fi
 
 ${BREW_BIN}/pinentry-mac:
