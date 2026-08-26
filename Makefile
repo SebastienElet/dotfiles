@@ -918,12 +918,10 @@ ${BREW_BIN}/mas:
 
 .PHONY: node
 node: ${VOLTA_BIN}/node
-${VOLTA_BIN}/node: ${BREW_BIN}/volta ${DOTFILES_PATH}/package.json ${DOTFILES_PATH}/tooling/node-version-contract.ts | ${BREW_BIN}/bun ${DOTFILES_PATH}/node_modules/zod/package.json
+${VOLTA_BIN}/node: ${BREW_BIN}/volta ${DOTFILES_PATH}/package.json ${DOTFILES_PATH}/tooling/node-version-contract.ts | ${BREW_BIN}/bun
 	node_install_spec=$$(${BREW_BIN}/bun --no-install ${DOTFILES_PATH}/tooling/node-version-contract.ts install-spec) && \
 		${BREW_BIN}/volta install "$$node_install_spec"
 	touch $@
-${DOTFILES_PATH}/node_modules/zod/package.json: ${DOTFILES_PATH}/package.json ${DOTFILES_PATH}/bun.lock | ${BREW_BIN}/bun
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
 
 .PHONY: bun
 bun: ${BREW_BIN}/bun

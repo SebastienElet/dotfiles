@@ -15,6 +15,13 @@ describe("Makefile Node installation", () => {
     expect(result.calls).toBe("install node@24.18.1\n");
   });
 
+  test("does not bootstrap repository dependencies to read the pin", async () => {
+    const result = await runMakeNode({ volta: { node: "24.18.1" } }, false);
+
+    expect(result.status).toBe(0);
+    expect(result.calls).toBe("install node@24.18.1\n");
+  });
+
   test("fails closed when the project pin is absent", async () => {
     const result = await runMakeNode({});
 
@@ -32,6 +39,7 @@ describe("Node upgrade", () => {
 
     expect(result.status).toBe(0);
     expect(result.calls).toBe("pin node@lts\ninstall node@24.19.0\n");
+    expect(result.finalPackageJson).toEqual({ volta: { node: "24.19.0" } });
   });
 
   test("fails closed when Volta produces an invalid pin", async () => {
@@ -42,6 +50,7 @@ describe("Node upgrade", () => {
     expect(result.status).toBe(1);
     expect(result.calls).toBe("pin node@lts\n");
     expect(result.output).toContain("invalid Node.js project pin");
+    expect(result.finalPackageJson).toEqual({ volta: { node: "24.18.1" } });
   });
 
   test("fails closed when the pin validator cannot run", async () => {
@@ -57,17 +66,14 @@ describe("Node upgrade", () => {
     );
   });
 
-  test("fails closed when the pin validator dependencies are missing", async () => {
+  test("does not require repository dependencies to validate the pin", async () => {
     const result = await runUpgrade({
       includeDependencies: false,
       pinnedPackage: { volta: { node: "24.19.0" } },
     });
 
-    expect(result.status).toBe(1);
-    expect(result.calls).toBe("");
-    expect(result.output).toContain(
-      "Node.js pin validator dependencies missing",
-    );
+    expect(result.status).toBe(0);
+    expect(result.calls).toBe("pin node@lts\ninstall node@24.19.0\n");
   });
 });
 
@@ -94,6 +100,7 @@ describe("Node upgrade command failures", () => {
     expect(result.output).toContain(
       "unable to install the pinned Node.js version",
     );
+    expect(result.finalPackageJson).toEqual({ volta: { node: "24.18.1" } });
   });
 
   test("fails closed when Volta is missing", async () => {

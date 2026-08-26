@@ -1,19 +1,10 @@
 import { fileURLToPath } from "node:url";
-import { z } from "zod";
 
-const exactNodeVersionSchema = z
-  .string()
-  .regex(/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u);
-const packageJsonSchema = z.object({
-  volta: z.object({
-    node: exactNodeVersionSchema,
-  }),
-});
+const exactNodeVersionPattern =
+  /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
 const maximumArgumentCount = 2;
 const runtimeArgumentStart = 2;
-const argumentsSchema = z.array(z.string()).min(1).max(maximumArgumentCount);
-const commandSchema = z.enum(["install-spec", "verify-runtime"]);
-const runtimeVersionSchema = z.string().regex(/^v\d+\.\d+\.\d+$/u);
+const runtimeVersionPattern = /^v\d+\.\d+\.\d+$/u;
 
 const defaultPackageJsonPath = fileURLToPath(
   new URL("../package.json", import.meta.url),
@@ -22,7 +13,18 @@ const defaultPackageJsonPath = fileURLToPath(
 async function readNodeVersion(packageJsonPath: string): Promise<string> {
   try {
     const packageJson: unknown = await Bun.file(packageJsonPath).json();
-    return packageJsonSchema.parse(packageJson).volta.node;
+    if (
+      typeof packageJson !== "object" ||
+      packageJson === null ||
+      !("volta" in packageJson) ||
+      typeof packageJson.volta !== "object" ||
+      packageJson.volta === null ||
+      !("node" in packageJson.volta)
+    ) {
+      throw new Error("missing volta.node");
+    }
+
+    return parseExactNodeVersion(packageJson.volta.node);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(
@@ -32,8 +34,16 @@ async function readNodeVersion(packageJsonPath: string): Promise<string> {
   }
 }
 
+function parseExactNodeVersion(value: unknown): string {
+  if (typeof value !== "string" || !exactNodeVersionPattern.test(value)) {
+    throw new Error("Node version must be an exact major.minor.patch value");
+  }
+
+  return value;
+}
+
 function nodeInstallSpec(nodeVersion: string): string {
-  return `node@${exactNodeVersionSchema.parse(nodeVersion)}`;
+  return `node@${parseExactNodeVersion(nodeVersion)}`;
 }
 
 async function verifyNodeRuntime(
@@ -56,7 +66,14 @@ async function verifyNodeRuntime(
     );
   }
 
-  const runtimeVersion = runtimeVersionSchema.parse(stdout.trim()).slice(1);
+  const rawRuntimeVersion = stdout.trim();
+  if (!runtimeVersionPattern.test(rawRuntimeVersion)) {
+    throw new Error(
+      `node --version returned an invalid value: ${rawRuntimeVersion}`,
+    );
+  }
+
+  const runtimeVersion = rawRuntimeVersion.slice(1);
   if (runtimeVersion !== nodeVersion) {
     throw new Error(
       `Node runtime ${runtimeVersion} does not match project pin ${nodeVersion}`,
@@ -67,9 +84,15 @@ async function verifyNodeRuntime(
 async function runNodeVersionContract(
   args: readonly string[],
 ): Promise<string> {
-  const [rawCommand, packageJsonPath = defaultPackageJsonPath] =
-    argumentsSchema.parse(args);
-  const command = commandSchema.parse(rawCommand);
+  if (args.length === 0 || args.length > maximumArgumentCount) {
+    throw new Error("Expected a command and an optional package.json path");
+  }
+
+  const [command, packageJsonPath = defaultPackageJsonPath] = args;
+  if (command !== "install-spec" && command !== "verify-runtime") {
+    throw new Error(`Unknown command: ${command}`);
+  }
+
   const nodeVersion = await readNodeVersion(packageJsonPath);
 
   if (command === "install-spec") {

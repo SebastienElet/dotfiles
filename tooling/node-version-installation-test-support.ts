@@ -8,6 +8,7 @@ const temporaryDirectories: string[] = [];
 
 interface CommandResult {
   readonly calls: string;
+  readonly finalPackageJson?: unknown;
   readonly output: string;
   readonly status: number;
 }
@@ -71,13 +72,19 @@ async function run(
   return { status, output: `${stdout}${stderr}` };
 }
 
-async function runMakeNode(packageJson: unknown): Promise<CommandResult> {
+async function runMakeNode(
+  packageJson: unknown,
+  includeDependencies = true,
+): Promise<CommandResult> {
   const root = await createTemporaryDirectory("node-make-");
   const fixture = await createContractFixture(root, packageJson);
   const bin = join(root, "bin");
   const home = join(root, "home");
   const voltaBin = join(home, ".volta/bin");
   const commandLog = join(root, "volta.log");
+  if (!includeDependencies) {
+    await rm(join(fixture, "node_modules"));
+  }
   await mkdir(bin, { recursive: true });
   await mkdir(voltaBin, { recursive: true });
   await writeExecutable(join(bin, "brew"), "exit 0");
@@ -132,7 +139,7 @@ async function createUpgradeFakes(
       join(bin, "volta"),
       String.raw`printf "%s\n" "$*" >>"$VOLTA_LOG"
 if [ "$FAIL_VOLTA_COMMAND" = "$1" ]; then printf "%s\n" "simulated $1 failure" >&2; exit 23; fi
-if [ "$1" = pin ]; then cp "$PINNED_PACKAGE" "$HOME/.dotfiles/package.json"; fi`,
+if [ "$1" = pin ]; then cp "$PINNED_PACKAGE" package.json; fi`,
     );
   }
   if (scenario.includeBun !== false) {
@@ -168,6 +175,7 @@ async function runUpgrade(scenario: UpgradeScenario): Promise<CommandResult> {
     calls: await Bun.file(voltaLog)
       .text()
       .catch(() => ""),
+    finalPackageJson: await Bun.file(join(fixture, "package.json")).json(),
   };
 }
 

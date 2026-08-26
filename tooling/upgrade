@@ -47,6 +47,7 @@ mas outdated
 mas upgrade
 
 echo "ℹ️  Volta Node.js upgrade"
+node_pin_stage=
 if ! command -v volta &> /dev/null; then
   echo "  Warning: volta not found, unable to upgrade Node.js"
   upgrade_status=1
@@ -56,20 +57,29 @@ elif ! command -v bun &> /dev/null; then
 elif [[ ! -f $dotfiles_repo/tooling/node-version-contract.ts ]]; then
   echo "  Warning: Node.js pin validator not found, unable to upgrade Node.js"
   upgrade_status=1
-elif [[ ! -f $dotfiles_repo/node_modules/zod/package.json ]]; then
-  echo "  Warning: Node.js pin validator dependencies missing, unable to upgrade Node.js"
+elif ! node_pin_stage=$(mktemp -d "$dotfiles_repo/.node-pin.XXXXXX"); then
+  echo "  Warning: unable to stage the Node.js project pin"
   upgrade_status=1
-elif ! (cd "$dotfiles_repo" && volta pin node@lts); then
+elif ! cp "$dotfiles_repo/package.json" "$node_pin_stage/package.json"; then
+  echo "  Warning: unable to stage the Node.js project metadata"
+  upgrade_status=1
+elif ! (cd "$node_pin_stage" && volta pin node@lts); then
   echo "  Warning: unable to update the Node.js project pin"
   upgrade_status=1
-elif node_install_spec=$(bun --no-install "$dotfiles_repo/tooling/node-version-contract.ts" install-spec); then
+elif node_install_spec=$(bun --no-install "$dotfiles_repo/tooling/node-version-contract.ts" install-spec "$node_pin_stage/package.json"); then
   if ! volta install "$node_install_spec"; then
     echo "  Warning: unable to install the pinned Node.js version"
+    upgrade_status=1
+  elif ! mv "$node_pin_stage/package.json" "$dotfiles_repo/package.json"; then
+    echo "  Warning: unable to save the Node.js project pin"
     upgrade_status=1
   fi
 else
   echo "  Warning: invalid Node.js project pin, unable to install Node.js"
   upgrade_status=1
+fi
+if [[ -n $node_pin_stage ]]; then
+  rm -rf "$node_pin_stage"
 fi
 
 echo "ℹ️  npm global packages upgrade"
