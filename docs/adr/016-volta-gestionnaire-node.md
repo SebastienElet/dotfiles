@@ -14,7 +14,9 @@ signifie exécuter un projet sur la mauvaise version de Node.
 
 Adopter Volta : la version est déclarée dans le `package.json` du projet et
 appliquée automatiquement par des shims, sans hook de shell. Le `Makefile`
-installe Volta puis le Node LTS, et le script d'upgrade fait suivre le LTS.
+installe Volta puis la version Node exacte déclarée. Le script d'upgrade résout
+la LTS courante dans le pin projet avant d'installer cette même version comme
+défaut utilisateur.
 
 ## Conséquences
 

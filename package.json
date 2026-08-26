@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.0",
+  "volta": {
+    "node": "24.19.0"
+  },
   "scripts": {
     "format:typescript": "bun tooling/format-typescript.ts",
     "format:typescript:check": "bun tooling/format-typescript.ts --check",
