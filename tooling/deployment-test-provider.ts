@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -49,7 +49,10 @@ if (mode === "ln") {
   );
   const dependency = join(process.cwd(), "node_modules", "zod");
   mkdirSync(dependency, { recursive: true });
-  writeFileSync(join(dependency, "package.json"), "{}\n");
+  const manifest = join(dependency, "package.json");
+  if (!existsSync(manifest)) {
+    writeFileSync(manifest, "{}\n");
+  }
 } else {
   process.stderr.write(
     `unknown deployment provider mode: ${mode ?? "missing"}\n`,
