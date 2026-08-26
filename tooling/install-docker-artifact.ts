@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const successExitCode = 0;
 const failureExitCode = 1;
+const dockerDaemonProbeTimeoutMilliseconds = 10_000;
 const dockerCommandTimeoutMilliseconds = 600_000;
 const policySchema = z.enum(["allow-skip", "require-docker"]);
 const targetSchema = z.enum(["cloakbrowser", "firecrawl", "scrapling"]);
@@ -61,7 +62,7 @@ function installOrVerifyDockerArtifact(
   if (Bun.which("docker") === null) {
     throw new Error("Docker CLI unavailable");
   }
-  const daemon = runDocker(["info"]);
+  const daemon = runDocker(["info"], dockerDaemonProbeTimeoutMilliseconds);
   if (daemon.timedOut || daemon.exitCode !== successExitCode) {
     forwardOutput(daemon);
     if (policy === "allow-skip") {
@@ -161,11 +162,14 @@ function parseServiceList(output: string): readonly string[] {
   );
 }
 
-function runDocker(arguments_: readonly string[]): DockerCommandResult {
+function runDocker(
+  arguments_: readonly string[],
+  timeout = dockerCommandTimeoutMilliseconds,
+): DockerCommandResult {
   const result = Bun.spawnSync(["docker", ...arguments_], {
     stderr: "pipe",
     stdout: "pipe",
-    timeout: dockerCommandTimeoutMilliseconds,
+    timeout,
   });
   return {
     exitCode: result.exitCode,
