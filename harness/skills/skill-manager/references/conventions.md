@@ -94,12 +94,12 @@ Every skill physically lives at:
   evals/        optional activation scenarios
 ```
 
-The local repository-visible file allowlist is defined by
+The local physical file allowlist is defined by
 [`assets/resource-file-policy.json`](../assets/resource-file-policy.json). The standard permits
 additional resources, but this repository deliberately keeps the skill root and machine-structured
 directories closed:
 
-| Location      | Repository-visible files admitted locally                     |
+| Location      | Physical entries admitted locally                             |
 | ------------- | ------------------------------------------------------------- |
 | root          | `SKILL.md` and the five optional resource directories above   |
 | `agents/`     | `openai.yaml`                                                 |
@@ -108,12 +108,12 @@ directories closed:
 | `scripts/`    | any executable or source needed by the skill                  |
 | `references/` | any focused reference needed by the skill                     |
 
-Doctor runs the bundled checker against this policy. It inspects tracked files and untracked files
-that are not ignored, reports every unexpected path, and fails closed when Git cannot enumerate
-them. Gitignored runtime artifacts remain outside the repository audit.
+Doctor runs the bundled checker against this policy on a quiescent skill tree. It recursively
+inspects every physical entry regardless of its Git status, rejects unsupported entry types,
+reports every unexpected path, and fails closed when the skill tree cannot be inspected.
 
-Do not create a local `rules/` directory. Add only tracked resource directories the skill actually
-needs; ignore gitignored runtime artifacts during repository audits.
+Do not create a local `rules/` directory or generate runtime artifacts anywhere inside a skill.
+Tools that need working data must own a directory outside both canonical skill collections.
 
 Project skills are exposed through relative repository adapters:
 

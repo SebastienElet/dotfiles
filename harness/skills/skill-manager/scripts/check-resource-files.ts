@@ -1,5 +1,5 @@
-import { isAbsolute, relative, resolve, sep } from "node:path";
-import { readFile, realpath } from "node:fs/promises";
+import { readFile, readdir, realpath } from "node:fs/promises";
+import { relative, resolve, sep } from "node:path";
 import { z } from "zod";
 
 const fileNameSchema = z
@@ -33,12 +33,13 @@ const resourceFilePolicySchema = z
   })
   .strict()
   .readonly();
-const repositoryPathsSchema = z.array(z.string().min(1)).min(1);
-const repositoryRootSchema = z.string().min(1);
-
 type ResourceFilePolicy = z.infer<typeof resourceFilePolicySchema>;
 type UnexpectedResourceFile = Readonly<{
   convention: string;
+  path: string;
+}>;
+type PhysicalEntry = Readonly<{
+  kind: "directory" | "file" | "unsupported";
   path: string;
 }>;
 
@@ -112,94 +113,88 @@ function findUnexpectedResourceFiles(
   });
 }
 
-async function runGit(
-  arguments_: readonly string[],
-  failureMessage: string,
-): Promise<readonly number[]> {
-  const git = Bun.spawn(["git", ...arguments_], {
-    stderr: "inherit",
-    stdout: "pipe",
-  });
-  const [status, output] = await Promise.all([
-    git.exited,
-    new Response(git.stdout).bytes(),
-  ]);
-  if (status !== successExitCode) {
-    throw new Error(`${failureMessage} (${status}).`);
+function findUnexpectedDirectory(
+  path: string,
+  policy: ResourceFilePolicy,
+): UnexpectedResourceFile | undefined {
+  const [rootEntry, ...nestedEntries] = path.slice(0, -1).split("/");
+  const directoryPolicy = policy.resourceDirectories[rootEntry ?? ""];
+  if (directoryPolicy === undefined) {
+    return { convention: rootConvention(policy), path };
   }
-  return [...output];
-}
-
-function decodeUtf8(output: readonly number[], description: string): string {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(
-      Uint8Array.from(output),
-    );
-  } catch {
-    throw new Error(`Git returned invalid UTF-8 for ${description}.`);
+  if (nestedEntries.length === 0 || directoryPolicy.mode === "open") {
+    return undefined;
   }
-}
-
-function parseRepositoryPaths(output: readonly number[]): readonly string[] {
-  const serializedPaths = decodeUtf8(output, "skill files");
-  if (!serializedPaths.endsWith("\0")) {
-    throw new Error("Git returned an empty or malformed skill file list.");
-  }
-  return repositoryPathsSchema.parse(serializedPaths.slice(0, -1).split("\0"));
-}
-
-function isOutside(root: string, path: string): boolean {
-  const pathFromRoot = relative(root, path);
-  return (
-    pathFromRoot === ".." ||
-    pathFromRoot.startsWith(`..${sep}`) ||
-    isAbsolute(pathFromRoot)
-  );
-}
-
-async function listSkillPaths(
-  requestedSkillRoot: string,
-): Promise<readonly string[]> {
-  const skillRoot = await realpath(requestedSkillRoot);
-  const rootOutput = await runGit(
-    ["-C", skillRoot, "rev-parse", "--show-toplevel"],
-    "Git could not resolve the skill repository",
-  );
-  const repositoryRoot = await realpath(
-    repositoryRootSchema.parse(
-      decodeUtf8(rootOutput, "the repository root").replace(/\n$/u, ""),
+  return {
+    convention: closedDirectoryConvention(
+      rootEntry ?? "",
+      directoryPolicy.files,
     ),
+    path,
+  };
+}
+
+function findUnexpectedEntries(
+  entries: readonly PhysicalEntry[],
+  policy: ResourceFilePolicy,
+): readonly UnexpectedResourceFile[] {
+  return entries.flatMap((entry) => {
+    if (entry.kind === "unsupported") {
+      return [
+        {
+          convention: "skills admit only regular files and directories",
+          path: entry.path,
+        },
+      ];
+    }
+    const finding =
+      entry.kind === "directory"
+        ? findUnexpectedDirectory(entry.path, policy)
+        : findUnexpectedResourceFile(entry.path, policy);
+    return finding === undefined ? [] : [finding];
+  });
+}
+
+async function listPhysicalEntries(
+  skillRoot: string,
+  directory: string,
+): Promise<readonly PhysicalEntry[]> {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const paths = await Promise.all(
+    entries.map(async (entry: Readonly<(typeof entries)[number]>) => {
+      const absolutePath = resolve(directory, entry.name);
+      const path = relative(skillRoot, absolutePath).split(sep).join("/");
+      if (entry.isDirectory()) {
+        const nestedPaths = await listPhysicalEntries(skillRoot, absolutePath);
+        const directoryEntry: PhysicalEntry = {
+          kind: "directory",
+          path: `${path}/`,
+        };
+        return nestedPaths.toSpliced(0, 0, directoryEntry);
+      }
+      return [{ kind: entry.isFile() ? "file" : "unsupported", path } as const];
+    }),
   );
-  if (isOutside(repositoryRoot, skillRoot)) {
-    throw new Error("The skill root is outside its Git repository.");
+  return paths
+    .flat()
+    .toSorted((left, right) => left.path.localeCompare(right.path));
+}
+
+async function listSkillEntries(
+  requestedSkillRoot: string,
+): Promise<readonly PhysicalEntry[]> {
+  const skillRoot = await realpath(requestedSkillRoot).catch(() => {
+    throw new Error("The skill root could not be resolved.");
+  });
+  const skillEntries = await listPhysicalEntries(skillRoot, skillRoot);
+  if (
+    !skillEntries.some(
+      (entry) => entry.kind === "file" && entry.path === "SKILL.md",
+    )
+  ) {
+    throw new Error("The skill root has no regular SKILL.md.");
   }
-  const skillPath = relative(repositoryRoot, skillRoot);
-  const repositoryOutput = await runGit(
-    [
-      "-C",
-      repositoryRoot,
-      "ls-files",
-      "-z",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      "--deduplicate",
-      "--",
-      skillPath,
-    ],
-    "Git could not enumerate skill files",
-  );
-  const repositoryPaths = parseRepositoryPaths(repositoryOutput);
-  const skillPaths = repositoryPaths.map((path) =>
-    relative(skillRoot, resolve(repositoryRoot, path)).split(sep).join("/"),
-  );
-  if (skillPaths.some((path) => isOutside(".", path))) {
-    throw new Error("Git returned a tracked path outside the skill root.");
-  }
-  if (!skillPaths.includes("SKILL.md")) {
-    throw new Error("The skill root has no tracked SKILL.md.");
-  }
-  return skillPaths;
+  return skillEntries;
 }
 
 async function loadPolicy(): Promise<ResourceFilePolicy> {
@@ -221,12 +216,12 @@ async function main(): Promise<number> {
     process.stderr.write("Usage: check-resource-files <skill-root>\n");
     return invalidInvocationExitCode;
   }
-  const paths = await listSkillPaths(invocation.data[0]);
-  const findings = findUnexpectedResourceFiles(paths, await loadPolicy());
+  const entries = await listSkillEntries(invocation.data[0]);
+  const findings = findUnexpectedEntries(entries, await loadPolicy());
   if (findings.length > 0) {
     for (const finding of findings) {
       process.stderr.write(
-        `${finding.path}: unexpected file; ${finding.convention}.\n`,
+        `${finding.path}: unexpected entry; ${finding.convention}.\n`,
       );
     }
     return failureExitCode;

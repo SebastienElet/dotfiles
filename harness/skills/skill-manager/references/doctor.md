@@ -20,8 +20,9 @@ Doctor is read-only. It reports findings for a later `fix` operation.
 1. Read `conventions.md` completely.
 2. Enumerate the requested skill directories.
 3. Detect `skills-ref` once for the whole run.
-4. For each skill, run `bun <skill-manager-root>/scripts/check-resource-files.ts
-<skills-root>/<slug>` and preserve every finding or execution failure.
+4. Ensure no tool is mutating the skill tree, then run
+   `bun <skill-manager-root>/scripts/check-resource-files.ts <skills-root>/<slug>` for each skill and
+   preserve every finding or execution failure.
 5. Apply every standard and remaining local check below to each skill.
 6. Produce one report per skill and a global summary.
 7. Propose exact fixes, but modify nothing.
@@ -62,10 +63,11 @@ these checks manually:
 
 ### Resources and routing
 
-- the bundled checker accepts every tracked or non-ignored untracked path against the canonical
+- the bundled checker accepts every physical entry against the canonical
   `assets/resource-file-policy.json` allowlist and reports each unexpected path as FAIL;
+- symbolic links, FIFOs, sockets, and other non-regular entries are FAIL;
 - a checker execution failure is FAIL, never a skipped resource check;
-- gitignored runtime artifacts remain outside the repository audit;
+- Git ignore rules do not alter the audit, and runtime artifacts never belong inside a skill;
 - `agents/openai.yaml`, when present, is valid YAML and its interface metadata still matches the
   skill;
 - same-topic scoped sibling references have explicit conditional routing in `SKILL.md`;
