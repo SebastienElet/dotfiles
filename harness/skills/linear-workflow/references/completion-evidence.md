@@ -42,9 +42,14 @@ They are two axes, and converging them destroys the only record of what is still
    scope, deliberately accepted. Put it in the response, and in an issue comment when the transport
    supports one, so the gap survives the issue being closed.
 4. Never uncheck a box that evidence still supports in order to justify reopening or delaying an
-   issue.
+   issue, and never uncheck one merely because its proof is not in front of you: absence of evidence
+   in this session is not evidence that the run never happened. Re-audit a checked box only when
+   current evidence disproves it, or when the user asks for a fresh audit and its proof cannot be
+   recovered.
 5. Box state may gate a transition, and never the reverse: refusing `Done` over an unchecked line is
    sound, checking a line because a transition is wanted is fabrication.
+6. Never hide residue by deleting an item, softening its wording, moving it out of the task list, or
+   replacing the section with a completion summary. The unchecked line is the record.
 
 ## Merged work whose verification boxes are unchecked
 
@@ -97,6 +102,10 @@ one, so a reader assumes the whole section is proven. Treat it as untracked pros
 
 ## Editing boxes without breaking the issue
 
+Writing a box requires either an explicit request to reconcile the description or the verification
+pass above. Reconciling lifecycle state on its own authorizes inspecting and reporting, never
+writing.
+
 1. Read the current description first. The stored Markdown is not what the Linear UI renders: issue
    mentions are serialized as `<issue id="…" href="…">ENG-482</issue>`, and retyping a description
    by hand mangles them.
@@ -119,7 +128,8 @@ one, so a reader assumes the whole section is proven. Treat it as untracked pros
 
 3. Anchor on the whole line, marker included, with enough of its text to match the current content
    exactly once. Operations apply in order and atomically, so one failing anchor aborts the entire
-   save.
+   save. Never set `replace_all` for a checkbox edit: two scenarios can share a prefix, and one
+   anchor must identify one line.
 4. Batch every box of one decision into a single call, up to the transport's operation limit, so the
    description is never left half-updated.
 5. Linear normalizes a checked marker to uppercase `- [X]`. Never require lowercase `- [x]`, never
