@@ -1,10 +1,13 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import { chmod, mkdir, mkdtemp, readlink, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 
 const projectRoot = join(import.meta.dir, "..");
 const temporaryDirectories: string[] = [];
+const deploymentTimeoutMilliseconds = 15_000;
 const executableFileMode = 0o755;
+
+setDefaultTimeout(deploymentTimeoutMilliseconds);
 
 afterEach(async () => {
   await Promise.all(

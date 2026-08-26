@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
@@ -9,6 +9,9 @@ import {
 import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
+
+const deploymentTimeoutMilliseconds = 15_000;
+setDefaultTimeout(deploymentTimeoutMilliseconds);
 
 describe("deployment area: Bun and hook wiring", () => {
   test("Bun consumers reuse the shared Homebrew target exactly once", () => {

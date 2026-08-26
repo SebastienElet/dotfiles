@@ -1,10 +1,12 @@
-import { expect, test } from "bun:test";
+import { expect, setDefaultTimeout, test } from "bun:test";
 import { resolve } from "node:path";
 import { z } from "zod";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 const composePath = resolve(repositoryRoot, "harness/firecrawl/compose.yml");
+const composeTimeoutMilliseconds = 15_000;
 const firecrawlPort = 3002;
+setDefaultTimeout(composeTimeoutMilliseconds);
 const renderedPortSchema = z
   .object({
     host_ip: z.string().optional(),

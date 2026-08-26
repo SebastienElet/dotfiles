@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import {
   chmodSync,
   mkdirSync,
@@ -20,8 +20,10 @@ import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
 
+const deploymentTimeoutMilliseconds = 15_000;
 const fileModeMask = 0o777;
 const privateFileMode = 0o600;
+setDefaultTimeout(deploymentTimeoutMilliseconds);
 
 describe("deployment area: daily routine", () => {
   test("copies a private default once and preserves a local configuration", () => {

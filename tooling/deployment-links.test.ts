@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
@@ -26,6 +26,7 @@ afterEach(cleanupDeploymentFixtures);
 
 const deploymentTimeoutMilliseconds = 15_000;
 const extendedDeploymentTimeoutMilliseconds = 30_000;
+setDefaultTimeout(deploymentTimeoutMilliseconds);
 const userSkillDestinations = [
   [".agents", "agent-instructions"],
   ...[
