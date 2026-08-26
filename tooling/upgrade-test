@@ -6,6 +6,8 @@ upgrade=$tooling_dir/upgrade
 main_branch_helper=$tooling_dir/git-main-branch
 main_branch_cli=$tooling_dir/git-main-branch-cli.ts
 main_branch_core=$tooling_dir/git-main-branch-core.ts
+node_version_contract=$tooling_dir/node-version-contract.ts
+package_json=$tooling_dir/../package.json
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/upgrade-test.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT
 
@@ -28,6 +30,9 @@ git_log=$test_root/git.log
 command_log=$test_root/command.log
 mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin"
 cp "$upgrade" "$main_branch_helper" "$main_branch_cli" "$main_branch_core" "$repository/tooling/"
+cp "$node_version_contract" "$repository/tooling/"
+cp "$package_json" "$repository/"
+ln -s "$tooling_dir/../node_modules" "$repository/node_modules"
 printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
 
 "$real_git" init --bare -q "$remote"
@@ -100,6 +105,8 @@ assert_equal "$("$real_git" -C "$repository" show --format= --name-only HEAD)" "
 assert_equal "$(cat "$git_log")" $'pull\ncommit' "unexpected main Git mutations"
 grep -Fxq 'npm update -g --before=2026-08-13T00:00:00Z --min-release-age-exclude=@openai/codex' "$command_log" ||
   fail "npm quarantine does not exempt Codex"
+grep -Fxq 'volta pin node@lts' "$command_log" || fail "Volta does not refresh the project Node pin"
+grep -Fxq 'volta install node@24.19.0' "$command_log" || fail "Volta does not install the exact project Node pin"
 grep -Fxq 'claude update' "$command_log" || fail "Claude update is not independent from npm"
 
 "$real_git" -C "$repository" checkout -q -B feature-test origin/main

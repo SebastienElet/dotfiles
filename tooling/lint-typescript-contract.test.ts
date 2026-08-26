@@ -136,6 +136,9 @@ const configSchema = z
 const checkoutStepSchema = z
   .object({ uses: z.literal("actions/checkout@v5") })
   .strict();
+const setupVoltaStepSchema = z
+  .object({ uses: z.literal("volta-cli/action@v4") })
+  .strict();
 const setupBunStepSchema = z
   .object({
     uses: z.literal("oven-sh/setup-bun@v2"),
@@ -168,8 +171,16 @@ const testJobSchema = z
     "runs-on": z.literal("ubuntu-latest"),
     steps: z.tuple([
       checkoutStepSchema,
+      setupVoltaStepSchema,
       setupBunStepSchema,
       installStepSchema,
+      z
+        .object({
+          run: z.literal(
+            "bun --config=/dev/null --no-env-file tooling/node-version-contract.ts verify-runtime",
+          ),
+        })
+        .strict(),
       z
         .object({
           run: z.literal(
