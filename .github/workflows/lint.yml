@@ -162,6 +162,7 @@ jobs:
           harness/skills/linear-sync/SKILL.md
           harness/skills/linear-workflow/SKILL.md
           harness/skills/linear-workflow/references/bitbucket.md
+          harness/skills/linear-workflow/references/completion-evidence.md
           harness/skills/linear-workflow/references/transports.md
 
       - name: Check configuration and user dictionary
@@ -186,6 +187,7 @@ jobs:
             harness/skills/linear-sync/SKILL.md \
             harness/skills/linear-workflow/SKILL.md \
             harness/skills/linear-workflow/references/bitbucket.md \
+            harness/skills/linear-workflow/references/completion-evidence.md \
             harness/skills/linear-workflow/references/transports.md \
             harness/skills/obsidian-retrieval/SKILL.md \
             harness/skills/obsidian-retrieval/references/obsidian-cli.md \
