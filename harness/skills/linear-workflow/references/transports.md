@@ -10,8 +10,10 @@ Select a transport at runtime. The business workflow remains in its composing sk
    relations, links or attachments, workflow state updates, and URL attachment. Routing an issue by
    its completion evidence additionally requires listing a team's workflow states, an anchored
    partial edit of a description, and applying such an edit in the same save as a state change;
-   check each before relying on it. Recording accepted residue on a closing transition also needs
-   reading and writing issue comments.
+   check each before relying on it. Missing the anchored guard does not disqualify the transport for
+   reading and classifying — it removes the authority to write the state, which then goes to a
+   human. Recording accepted residue on a closing transition also needs reading and writing issue
+   comments.
 2. Otherwise use the installed `linear` CLI only after its local help confirms the commands and
    `linear auth whoami` succeeds for the intended workspace.
 3. Otherwise use Linear GraphQL only when authentication and the current schema are already

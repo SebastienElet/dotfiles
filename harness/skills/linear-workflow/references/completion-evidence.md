@@ -169,8 +169,10 @@ gone stale, and re-reading before the write only narrows that window. The anchor
 it, because an anchor that no longer matches exactly once aborts the whole save.
 
 1. Send the state change and the guard in one save. On the Linear connector, `save_issue` accepts
-   `state` alongside `patch`, and one failing anchor aborts the entire save, so no state is written
-   when a guarded line moved:
+   `state` alongside `patch`, and the connector documents that one failing operation aborts the
+   whole save — the save, not merely the patch — so no state is written when the guarded text moved.
+   `Done` below is a state name, not a state type; the field accepts either, and passing a type is
+   what the rule above forbids.
 
    ```json
    {
@@ -186,18 +188,30 @@ it, because an anchor that no longer matches exactly once aborts the whole save.
    }
    ```
 
-2. Anchor every line the classification relied on, unchanged, so the guard asserts the state of the
-   evidence rather than editing it. This is a guard, not a description edit: it needs no
-   authorization to write a box, because it writes none.
-3. An abort is the guard working. Re-read, classify again, and write again — never retry the save
-   with the anchors from the stale read.
-4. A transport that rejects an unchanged `old_string`/`new_string` pair fails the save and therefore
+2. Use one contiguous anchor covering the region the classification relied on, sent back unchanged,
+   rather than one anchor per line. One operation stays inside the transport's limit whatever the
+   section's length, and it survives byte-identical checkbox lines, which a per-line anchor cannot:
+   an anchor must match exactly once, and two identical lines can never be told apart at line
+   granularity. The anchor is a single string, so it carries the newlines between those lines —
+   widen the region, up to the whole description, until it matches once.
+3. This is a guard, not a description edit: what it sends back is what it read, so it writes no box
+   and needs no authorization to write one. It does travel the description-mutation path, so accept
+   that the issue's updated timestamp and activity feed may move.
+4. When the classification rests on absence — no acceptance or evidence section at all — there is no
+   region to anchor, so anchor the whole current description instead. An empty description leaves
+   nothing to guard: treat that as an uncovered guard and follow the last item.
+5. An abort is the guard working. Read the issue again — the description and the workflow state —
+   confirm the state did not move, then classify and write again. Never retry the save with the
+   anchors from the stale read. An anchor that still cannot match exactly once is an uncovered
+   guard, not a retry.
+6. A transport that rejects an unchanged `old_string`/`new_string` pair fails the save and therefore
    writes no state either, which is the safe direction. Treat the rejection as an uncovered guard,
    not as a reason to write unguarded.
-5. This guard asserts facts inside the issue's own description. It cannot assert another issue's
+7. This guard asserts facts inside the issue's own description. It cannot assert another issue's
    state, so it does not make a parent completion conditional on its sub-issues; that still needs a
    documented conditional mutation over those issues.
-6. When no transport carries the guard and the state in one save, re-read immediately before the
-   write, abandon the write when the description changed, and report the remaining window as
-   unguarded rather than describing the outcome as reversible: an issue completed over a box that
-   moved reports as an ordinary success, and nothing downstream surfaces it.
+8. Where the guard is uncovered, do not write the state at all. Classify, report the classification
+   and the missing capability, and leave the transition to a human. Do not fall back to an
+   unguarded write behind a pre-write re-read: an issue completed over a box that moved reports as
+   an ordinary success, so nothing downstream surfaces it, and this harness states in three places
+   that such a gap never resurfaces.

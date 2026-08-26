@@ -68,11 +68,10 @@ were already synchronized.
    all checked, or no evidence section at all, moves the issue to `Done`; at least one unchecked
    line, or an evidence section that holds no state, moves it to its team's review state instead,
    with the unproven lines named as residue. Guard the state write with the classification it rests
-   on, following the anchored guard in `completion-evidence.md`: a box that moved must abort the
-   save before any state is written, because a post-write read confirms the state and never that the
-   boxes still say what they said. Where a transport cannot carry the guard and the state in one
-   save, re-read the description immediately before the write, leave the issue untouched when it
-   changed, and report the window between that read and the write as unguarded. Verify either
+   on, following the anchored guard in `completion-evidence.md`: text that moved must abort the save
+   before any state is written, because a post-write read confirms the state and never that the
+   boxes still say what they said. Where that guard is uncovered, write no state — report the
+   classification and the missing capability, and leave the transition to a human. Verify either
    transition by an independent Linear read. Do not inspect the diff, rerun tests, invoke
    `pr-verdict`, or perform a functional review; this workflow routes work by the evidence that
    already exists and never produces any. Several assigned leaves may transition from the same
