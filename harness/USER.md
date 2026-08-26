@@ -185,8 +185,5 @@ Signaler systématiquement les cas limites et conséquences non voulues du chang
 
 ## Expériences en cours
 
-- Sur le code existant, ~500 lignes modifiées/supprimées = alerte de dérive ; ~800 = forte
-  réévaluation : justifier la suite ou proposer un découpage. Exclure code généré, snapshots,
-  lockfiles, fixtures et nouveaux tests ; compter les modifications de tests existants.
 - Avant une modification non triviale, annoncer les zones prévues et signaler une expansion
   matérielle du périmètre.
