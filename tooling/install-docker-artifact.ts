@@ -10,7 +10,7 @@ const actionSchema = z.enum(["install", "verify"]);
 const imageReferenceSchema = z
   .string()
   .min(1)
-  .regex(/^(?!-)\S+$/u, "invalid Docker image reference");
+  .regex(/^(?!-)(?!.*@)\S+$/u, "unsupported Docker image reference");
 const invocationSchema = z.union([
   z.tuple([
     actionSchema,

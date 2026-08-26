@@ -10,6 +10,7 @@ const targets: DockerInstallTarget[] = [
   "scrapling",
   "cloakbrowser",
 ];
+const sha256HexadecimalLength = 64;
 
 afterAll(cleanupDockerInstallFixtures);
 
@@ -76,6 +77,20 @@ test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+  },
+);
+
+test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
+  "%s rejects an unsupported image digest before Docker runs",
+  (target) => {
+    const digest = `registry.example/image@sha256:${"a".repeat(sha256HexadecimalLength)}`;
+    const result = runDockerInstallTarget(target, "artifact-present", {
+      imageOverride: digest,
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+    expect(result.trace).toBe("");
   },
 );
 
