@@ -5,7 +5,9 @@ description: >
   user asks to synchronize lifecycle state, check proven items, or repair missing pull-request
   links. Make sure to use this skill whenever merged work should close an issue or its checkboxes
   must reflect evidence.
-compatibility: Requires Git, bkt, and an authenticated Linear transport with read and write access.
+compatibility: >
+  Requires an authenticated Linear transport with read and write access; Git and bkt are required
+  for lifecycle or pull-request link reconciliation.
 metadata:
   category: dev
 ---
@@ -22,10 +24,12 @@ manual reconciliation workflow, not a code review, implementation audit, or issu
 
 `/linear-sync`
 
-Run from the Bitbucket repository whose assigned Linear issues should be reconciled. The current
-repository scopes branch-based discovery; an attached canonical pull-request URL may identify a
-different repository explicitly. Report only applied transitions, repaired pull-request
-attachments, unresolved inconsistencies, and relevant issues that were already synchronized.
+Run lifecycle or link reconciliation from the Bitbucket repository whose assigned Linear issues
+should be reconciled. A request limited to an explicitly identified issue's checklist does not
+require repository discovery. The current repository scopes branch-based discovery; an attached
+canonical pull-request URL may identify a different repository explicitly. Report only applied
+transitions, checklist edits, repaired pull-request attachments, unresolved inconsistencies, and
+relevant issues that were already synchronized.
 
 ## Workflow
 
@@ -34,12 +38,13 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    another integration. Verify current command schemas and authentication before reads or writes,
    and stop before any operation that the available transports do not cover.
 
-2. **Establish identity and repository scope.** Retrieve the current Linear identity. Resolve the
-   current Bitbucket repository from Git remotes and verify its workspace and repository slug with
-   `bkt`; never trust the active `bkt` context alone. Consider only Linear issues assigned to that
-   identity as synchronization candidates. Treat the resolved repository as the only scope for
-   branch-based discovery; when a canonical attachment identifies another repository, verify that
-   repository independently before reading its pull request.
+2. **Establish identity and required scope.** Retrieve the current Linear identity and consider only
+   issues assigned to it. For a request limited to checkbox evidence on an explicitly identified
+   issue, skip Git and Bitbucket discovery. Otherwise resolve the current Bitbucket repository from
+   Git remotes and verify its workspace and repository slug with `bkt`; never trust the active `bkt`
+   context alone. Treat the resolved repository as the only scope for branch-based discovery; when
+   a canonical attachment identifies another repository, verify that repository independently
+   before reading its pull request.
 
 3. **Read structured Linear facts.** Exhaust result pages while retrieving assigned candidates with
    their identifiers, workflow states, parents, direct sub-issues, blocking relations, links or
@@ -48,11 +53,11 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    sub-issue when needed to decide whether an assigned parent is complete; never mutate or report
    that sub-issue as a candidate.
 
-4. **Reconcile evidence conditionally.** When the user asks to update checkboxes, or an issue being
-   completed contains a task list or a section that claims to track completion evidence, read and
-   apply [checkbox evidence](references/checkbox-evidence.md). Each checkbox has its own evidence
-   oracle. Reconcile it independently from workflow state, and do not inspect implementation or
-   run a new functional review to manufacture missing proof.
+4. **Reconcile explicitly requested evidence.** Only when the user explicitly asks to update
+   checkboxes or an entire evidence section, read and apply
+   [checkbox evidence](references/checkbox-evidence.md). Each checkbox has its own evidence oracle.
+   Reconcile it independently from workflow state, and do not inspect implementation or run a new
+   functional review to manufacture missing proof.
 
 5. **Resolve exact issue-to-work associations.** Prefer a canonical Bitbucket pull-request URL in
    Linear's structured links or attachments. Otherwise accept an exact issue identifier at the
@@ -70,11 +75,12 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
 
 7. **Complete assigned leaf issues from merged work.** For each assigned leaf with a certain linked
    Bitbucket pull request, read its state from Bitbucket. A merged state proves only the lifecycle
-   transition: move the issue to `Done` and verify the state by an independent Linear read even when
-   evidence checkboxes legitimately remain open. Preserve and name every unchecked residue in the
-   reconciliation result. Do not inspect the diff, rerun tests, invoke `pr-verdict`, or perform a
-   functional review. Several assigned leaves may transition from the same merged pull request only
-   when each association is explicit and certain.
+   transition. Before the state write, when the description contains a task list or evidence
+   section, read [checkbox evidence](references/checkbox-evidence.md), inspect it without mutating
+   it, and record every unchecked or untracked residue. Move the issue to `Done` and verify the
+   state by an independent Linear read even when that residue remains. Do not inspect the diff,
+   rerun tests, invoke `pr-verdict`, or perform a functional review. Several assigned leaves may
+   transition from the same merged pull request only when each association is explicit and certain.
 
 8. **Evaluate assigned parents from child state.** After leaf transitions are verified, process
    assigned parents bottom-up and re-read each parent with every direct sub-issue. A parent whose
@@ -128,6 +134,8 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
 - Never inspect implementation, review a diff, rerun functional checks, or invoke a review skill.
 - Never check an item from issue status, pull-request state, a generic green pipeline, or a desire
   to make the issue look complete; require item-specific evidence.
+- Never mutate a checkbox or evidence section unless the user explicitly requested that description
+  reconciliation; lifecycle synchronization alone authorizes only inspection and reporting.
 - Never rewrite a complete Linear description to change checklist markers when a verified targeted
   patch transport is available.
 - Never transition an issue from title similarity, prose, an ambiguous link, or an unverified

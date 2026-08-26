@@ -3,6 +3,10 @@
 Load this procedure only when an issue description contains a task list or a section intended to
 track completion evidence, or when the user explicitly asks to reconcile checkboxes.
 
+Without an explicit request to reconcile checkboxes or the whole evidence section, use only the
+evidence and status-independence rules to inspect and report residue. Do not enter the conversion or
+safe-edit procedures.
+
 ## Evidence oracle
 
 1. Treat each checked item as a claim that the exact statement on that line is established.
