@@ -678,6 +678,7 @@ specsmd:
 .PHONY: vibe-island
 vibe-island: brew ${BREW_CASKROOM}/vibe-island
 ${BREW_CASKROOM}/vibe-island:
+	brew update
 	brew install --cask --adopt vibe-island
 
 ################################################################################

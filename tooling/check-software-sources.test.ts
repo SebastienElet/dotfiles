@@ -42,7 +42,9 @@ test("the reconciled tools use their supported Homebrew artifacts", () => {
 
   expect(graph).toContain("brew install fzf");
   expect(graph).toContain("brew install --cask cursor-cli");
-  expect(graph).toContain("brew install --cask --adopt vibe-island");
+  expect(graph).toContain(
+    "brew update\nbrew install --cask --adopt vibe-island",
+  );
 });
 
 test.each([
