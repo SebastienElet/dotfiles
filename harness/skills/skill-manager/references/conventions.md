@@ -94,6 +94,24 @@ Every skill physically lives at:
   evals/        optional activation scenarios
 ```
 
+The local tracked-file allowlist is defined by
+[`assets/resource-file-policy.json`](../assets/resource-file-policy.json). The standard permits
+additional resources, but this repository deliberately keeps the skill root and machine-structured
+directories closed:
+
+| Location      | Tracked files admitted locally                                |
+| ------------- | ------------------------------------------------------------- |
+| root          | `SKILL.md` and the five optional resource directories above   |
+| `agents/`     | `openai.yaml`                                                 |
+| `evals/`      | `trigger-queries.json` and the optional standard `evals.json` |
+| `assets/`     | any resource needed by the skill                              |
+| `scripts/`    | any executable or source needed by the skill                  |
+| `references/` | any focused reference needed by the skill                     |
+
+Doctor runs the bundled tracked-file checker against this policy. It reports every unexpected path
+and fails closed when Git cannot enumerate the tracked skill files. Untracked and gitignored runtime
+artifacts remain outside the repository audit.
+
 Do not create a local `rules/` directory. Add only tracked resource directories the skill actually
 needs; ignore untracked or gitignored runtime artifacts during repository audits.
 
@@ -246,6 +264,7 @@ Before declaring a skill clean, verify:
 - at least three gotchas and constraints;
 - fewer than 500 `SKILL.md` lines or appropriate progressive disclosure;
 - no executable positional placeholders in the body;
+- no tracked file outside the allowlist in `assets/resource-file-policy.json`;
 - valid eval JSON when present;
 - README membership and deterministic regeneration;
 - a slug does not exist in both canonical collections;
