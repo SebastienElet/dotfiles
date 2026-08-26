@@ -7,7 +7,9 @@ Select a transport at runtime. The business workflow remains in its composing sk
 
 1. Prefer an authenticated Linear connector exposed by the current agent when its current schema
    covers identity, filtered issue listing with pagination, issue details, hierarchy, blocking
-   relations, links or attachments, workflow state updates, and URL attachment.
+   relations, links or attachments, workflow state updates, and URL attachment. Routing an issue by
+   its completion evidence additionally requires listing a team's workflow states and an anchored
+   partial edit of a description; check both before relying on them.
 2. Otherwise use the installed `linear` CLI only after its local help confirms the commands and
    `linear auth whoami` succeeds for the intended workspace.
 3. Otherwise use Linear GraphQL only when authentication and the current schema are already
@@ -37,6 +39,9 @@ The locally verified `linear` 2.5.0 surface provides:
 - `linear issue update <issue-id> --workspace <workspace> --state <state>` for lifecycle
   transitions;
 - `linear issue link <issue-id> <pull-request-url> --workspace <workspace>` for URL attachment.
+
+This surface covers neither listing a team's workflow states nor editing a description, so evidence
+routing is uncovered on the CLI: stop there rather than approximating either one.
 
 Run current local help again before use. This binary is a third-party Linear CLI, not an official
 Linear CLI. Do not use `linear issue pr`: its installed documentation delegates to GitHub's `gh`,

@@ -30,7 +30,8 @@ were already synchronized.
 ## Workflow
 
 1. **Load shared policy and adapters.** Activate `linear-workflow`, including its shared Linear and
-   Bitbucket adapters, and apply all of its constraints. Use those transports rather than creating
+   Bitbucket adapters and its `references/completion-evidence.md` rule, and apply all of its
+   constraints. Use those transports rather than creating
    another integration. Verify current command schemas and authentication before reads or writes,
    and stop before any operation that the available transports do not cover.
 
@@ -43,7 +44,8 @@ were already synchronized.
 
 3. **Read structured Linear facts.** Exhaust result pages while retrieving assigned candidates with
    their identifiers, workflow states, parents, direct sub-issues, blocking relations, and links or
-   attachments. Read only the assignee and workflow state of an unassigned direct sub-issue when
+   attachments, plus the description of any candidate a merged pull request could complete. Read
+   only the assignee and workflow state of an unassigned direct sub-issue when
    needed to decide whether an assigned parent is complete; never mutate or report that sub-issue
    as a candidate.
 
@@ -64,9 +66,12 @@ were already synchronized.
 6. **Route assigned leaf issues by their verification boxes.** For each assigned leaf with a certain
    linked Bitbucket pull request, read its state from Bitbucket. A merged state proves the code
    landed, not that the issue's verification boxes hold. Read those boxes without ever writing one:
-   all checked, or none present, moves the issue to `Done`; at least one unchecked moves it to its
-   team's review state instead, with the unchecked lines named as unproven residue. Verify either
-   transition by an independent Linear read. Do not inspect the diff, rerun tests, invoke
+   all checked, or no evidence section at all, moves the issue to `Done`; at least one unchecked
+   line, or an evidence section that holds no state, moves it to its team's review state instead,
+   with the unproven lines named as residue. Re-read the description immediately before the state
+   write and leave that issue untouched when it changed since the classification: a post-write read
+   confirms the state, never that the boxes still say what they said. Verify either transition by an
+   independent Linear read. Do not inspect the diff, rerun tests, invoke
    `pr-verdict`, or perform a functional review; this workflow routes work by the evidence that
    already exists and never produces any. Several assigned leaves may transition from the same
    merged pull request only when each association is explicit and certain.
@@ -89,9 +94,7 @@ were already synchronized.
    leave the state unchanged so the user can choose resumption, `Todo`, or `Done`. A missing match in
    the current repository says nothing about an issue with no explicit repository association;
    omit it unless conflicting explicit signals make it a relevant ambiguity. When evidence is
-   ambiguous, report every conflicting fact and make no lifecycle or attachment write. An assigned
-   issue sitting in the review state with a merged pull request is the expected outcome of step 6,
-   not an inconsistency: list it as awaiting verification rather than as unresolved work.
+   ambiguous, report every conflicting fact and make no lifecycle or attachment write.
 
 9. **Return a concise reconciliation.** Include only transitions applied, attachments repaired, the
    queue now awaiting verification with the unchecked line behind each issue, inconsistencies or

@@ -33,8 +33,9 @@ looks. Report it as unproven instead.
 
 They are two axes, and converging them destroys the only record of what is still unproven.
 
-1. Never check a box because the issue is being completed, and never keep an issue open only because
-   a box is unchecked.
+1. Never check a box because the issue is being completed, and never hold an issue open merely to
+   drive a list to 100%. Routing merged work by its boxes, below, is a separate rule with its own
+   destination.
 2. `Done` with unchecked boxes is a legitimate outcome, but it is an explicit human decision to
    accept unproven residue. An agent routing lifecycle state never takes it alone.
 3. When a transition leaves boxes unchecked, record the residue explicitly in the same exchange:
@@ -56,23 +57,36 @@ They are two axes, and converging them destroys the only record of what is still
 A merge proves the code landed. It proves nothing about a line the merge did not run.
 
 1. Identify the issue's verification boxes: the checkboxes carrying acceptance criteria or
-   validation scenarios. Sub-task and implementation to-do boxes are not verification boxes. When a
-   box's nature is genuinely ambiguous, list it and ask rather than deciding the lifecycle on a
-   guess.
+   validation scenarios. A checkbox is a task-list line — `- [ ]`, `- [x]`, or `- [X]` — outside any
+   fenced code block; one inside a fenced block is a Markdown sample and claims nothing. Sub-task
+   and implementation to-do boxes are not verification boxes. When a box's nature is genuinely
+   ambiguous, list it and ask rather than deciding the lifecycle on a guess; in a queue that leaves
+   this one issue untouched and does not stop the others.
 2. Every verification box checked completes the issue: the merge is then the last missing fact.
 3. At least one unchecked box sends the issue to its team's review state instead of `Done`, with the
    unchecked lines named. The work is not undone; it is unverified.
-4. No verification box at all leaves nothing to gate the transition, so the merge remains the
-   completion oracle. An evidence section written as plain bullets gates nothing either: report it
-   as untracked instead of treating it as a gate.
-5. Resolve the review state inside the issue's own team — the `started` workflow state reserved for
-   review, observed as `In Review` across this workspace's teams. Never carry one team's name over
-   to another, and stop rather than inventing a state when a team exposes none.
+4. A section carrying acceptance criteria, completion evidence, or validation scenarios gates the
+   transition whatever its syntax. Written as plain bullets it holds no state, so no line in it is
+   proven: route the issue to the review state and report that the section tracks nothing. Only an
+   issue with no such section at all leaves the merge as the completion oracle. The skills in this
+   harness draft acceptance criteria as prose, so the bulleted case is the common one — never the
+   permissive branch.
+5. Resolve the review state by enumerating the issue's own team's workflow states and matching the
+   one reserved for review by name, observed as `In Review` across this workspace's teams. Never
+   pass a state _type_: several states share `started`, so the type lands the issue in an arbitrary
+   one — typically `In Progress` — while the post-write read still reports a successful transition.
+   Never carry one team's name over to another. When the transport cannot enumerate a team's states,
+   or that team exposes no review state, stop and report it: the routing rule is not executable
+   there.
 
 ## Verifying issues that wait in the review state
 
 This is the pass that turns unverified merged work into a defensible `Done`, and it is the only one
 allowed to produce the missing evidence.
+
+Enter it only on an explicit request to verify. A workflow reconciling lifecycle state never enters
+it: routing an issue into the review state ends that workflow's authority, and the boxes wait for a
+later pass. Establish the current Linear identity first and mutate only issues assigned to it.
 
 1. Select the assigned issues in the review state whose pull request is merged. That set is the
    queue. An issue whose pull request is still open belongs to code review, not here.
@@ -137,6 +151,9 @@ writing.
    that case.
 6. Re-read the issue after the save and compare the marker of every line you touched. A matched
    anchor proves the operation was accepted, not that the stored description says what you intended.
-7. When no anchored edit exists, build the full description write from the description you just
-   read, byte for byte, changing only the markers. Never reconstruct it from the rendered view or
-   from memory.
+7. When the transport exposes no anchored edit, stop and report the limitation. Never fall back to
+   writing the whole description: a full write silently discards whatever a human changed since your
+   read, and step 6 inspects only the lines you meant to touch, so the loss is invisible to it by
+   construction.
+8. Treat an aborted save the same way. A failing anchor means the description moved under you, so
+   read, decide, and write again — never replay the decision you already made.

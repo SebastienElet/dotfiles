@@ -32,7 +32,8 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
 2. Read ownership, hierarchy, relations, and work state from structured Linear fields.
 3. Read branch and pull-request state from Git and Bitbucket.
 4. Before checking or restructuring a checkbox or evidence section, and before completing an issue
-   from merged work, read [completion evidence](references/completion-evidence.md).
+   from merged work, read [completion evidence](references/completion-evidence.md). Reading it is
+   mandatory; running its verification pass requires an explicit request to verify.
 5. Apply every constraint below, then return control to the composing workflow.
 
 ## Gotchas
@@ -66,6 +67,9 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
 - Treat a checked box as an assertion of proof, not a progress marker: check a line only from a run,
   CI result, or observation you can name, never from a merge, a closure, or a tidier list.
 - Never derive box state from workflow state: no merge, closure, or transition ever checks a box.
-- A merge completes an issue only when every verification box holds; otherwise the issue goes to its
-  team's review state with the unchecked lines named, and `Done` stays an explicit human decision.
-- Resolve the review state within the issue's own team and stop when that team exposes none.
+- A merge completes an issue only when every verification box holds, or when the issue carries no
+  acceptance or evidence section at all; a section that holds no state proves nothing, so the issue
+  goes to its team's review state with the unproven lines named, and `Done` stays an explicit human
+  decision.
+- Resolve the review state by enumerating the issue's own team's states and matching by name, never
+  by state type; stop when the transport cannot enumerate them or the team exposes none.
