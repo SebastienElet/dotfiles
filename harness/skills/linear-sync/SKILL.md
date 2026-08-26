@@ -1,9 +1,10 @@
 ---
 name: linear-sync
 description: >
-  Reconcile assigned Linear issues with Bitbucket pull-request reality without reviewing code. Use
-  when the user manually asks to synchronize Linear lifecycle state or repair missing pull-request
-  links. Make sure to use this skill whenever merged Bitbucket work should close Linear issues.
+  Reconcile assigned Linear issues with Bitbucket pull-request and checklist evidence. Use when the
+  user asks to synchronize lifecycle state, check proven items, or repair missing pull-request
+  links. Make sure to use this skill whenever merged work should close an issue or its checkboxes
+  must reflect evidence.
 compatibility: Requires Git, bkt, and an authenticated Linear transport with read and write access.
 metadata:
   category: dev
@@ -13,9 +14,9 @@ metadata:
 
 ## Overview
 
-Synchronize lifecycle facts for the current user's Linear issues from authoritative Linear and
-Bitbucket state. This is a manual reconciliation workflow, not a code review, implementation audit,
-or issue-shaping pass.
+Synchronize lifecycle facts and explicitly requested checklist evidence for the current user's
+Linear issues from authoritative Linear, Bitbucket, and supplied verification state. This is a
+manual reconciliation workflow, not a code review, implementation audit, or issue-shaping pass.
 
 ## Usage
 
@@ -41,12 +42,19 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    repository independently before reading its pull request.
 
 3. **Read structured Linear facts.** Exhaust result pages while retrieving assigned candidates with
-   their identifiers, workflow states, parents, direct sub-issues, blocking relations, and links or
-   attachments. Read only the assignee and workflow state of an unassigned direct sub-issue when
-   needed to decide whether an assigned parent is complete; never mutate or report that sub-issue
-   as a candidate.
+   their identifiers, workflow states, parents, direct sub-issues, blocking relations, links or
+   attachments. Read the description when checklist reconciliation was requested or before a
+   transition to `Done`. Read only the assignee and workflow state of an unassigned direct
+   sub-issue when needed to decide whether an assigned parent is complete; never mutate or report
+   that sub-issue as a candidate.
 
-4. **Resolve exact issue-to-work associations.** Prefer a canonical Bitbucket pull-request URL in
+4. **Reconcile evidence conditionally.** When the user asks to update checkboxes, or an issue being
+   completed contains a task list or a section that claims to track completion evidence, read and
+   apply [checkbox evidence](references/checkbox-evidence.md). Each checkbox has its own evidence
+   oracle. Reconcile it independently from workflow state, and do not inspect implementation or
+   run a new functional review to manufacture missing proof.
+
+5. **Resolve exact issue-to-work associations.** Prefer a canonical Bitbucket pull-request URL in
    Linear's structured links or attachments. Otherwise accept an exact issue identifier at the
    start of a source branch shaped `<ISSUE-ID>-<slug>`, after verifying the branch or pull request
    belongs to the resolved repository. Accept another signal only when structured metadata
@@ -54,20 +62,21 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    for reporting, but never proves an association or authorizes a write. Record zero, one, and
    multiple exact matches as distinct outcomes.
 
-5. **Repair certain attachments.** When an exact branch or explicit metadata proves a single
+6. **Repair certain attachments.** When an exact branch or explicit metadata proves a single
    issue-to-pull-request association and Linear lacks its canonical URL, attach that URL once.
    Independently read the issue back and verify the stored link. A failed attachment is a partial
    synchronization failure; preserve the Bitbucket state and retry only the idempotent Linear link
    operation.
 
-6. **Complete assigned leaf issues from merged work.** For each assigned leaf with a certain linked
-   Bitbucket pull request, read its state from Bitbucket. A merged state is sufficient completion
-   proof: move the issue to `Done` and verify the state by an independent Linear read. Do not inspect
-   the diff, rerun tests, invoke `pr-verdict`, or perform a functional review. Several assigned
-   leaves may transition from the same merged pull request only when each association is explicit
-   and certain.
+7. **Complete assigned leaf issues from merged work.** For each assigned leaf with a certain linked
+   Bitbucket pull request, read its state from Bitbucket. A merged state proves only the lifecycle
+   transition: move the issue to `Done` and verify the state by an independent Linear read even when
+   evidence checkboxes legitimately remain open. Preserve and name every unchecked residue in the
+   reconciliation result. Do not inspect the diff, rerun tests, invoke `pr-verdict`, or perform a
+   functional review. Several assigned leaves may transition from the same merged pull request only
+   when each association is explicit and certain.
 
-7. **Evaluate assigned parents from child state.** After leaf transitions are verified, process
+8. **Evaluate assigned parents from child state.** After leaf transitions are verified, process
    assigned parents bottom-up and re-read each parent with every direct sub-issue. A parent whose
    direct sub-issues are all `Done` is eligible for completion. Transition it automatically only
    when the selected Linear transport documents one atomic conditional mutation that writes `Done`
@@ -77,7 +86,7 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    not infer completion from the parent description, pull-request title, or partial child set, and
    do not review the work again.
 
-8. **Surface inconsistent active work.** For an assigned `In Progress` issue explicitly associated
+9. **Surface inconsistent active work.** For an assigned `In Progress` issue explicitly associated
    with the resolved repository, search exact attachments, exact issue-prefixed pull-request source
    branches, and exact issue-prefixed remote branches there. When none identifies Bitbucket work,
    report the observed repository, branch, pull-request, attachment, and blocking-relation facts and
@@ -86,11 +95,12 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
    omit it unless conflicting explicit signals make it a relevant ambiguity. When evidence is
    ambiguous, report every conflicting fact and make no lifecycle or attachment write.
 
-9. **Return a concise reconciliation.** Include only transitions applied, attachments repaired,
-   inconsistencies or ambiguities requiring a human decision, and relevant issues already in the
-   state proven by the same oracle. Name partial failures. End with an automation assessment based
-   on observed repeated usage; absent evidence of a stable reliable trigger, state that automation
-   is not yet justified.
+10. **Return a concise reconciliation.** Include only transitions applied, checklist edits with
+    their evidence, unchecked or untracked evidence residue, attachments repaired, inconsistencies
+    or ambiguities requiring a human decision, and relevant issues already in the state proven by
+    the same oracle. Name partial failures. End with an automation assessment based on observed
+    repeated usage; absent evidence of a stable reliable trigger, state that automation is not yet
+    justified.
 
 ## Gotchas
 
@@ -109,11 +119,17 @@ attachments, unresolved inconsistencies, and relevant issues that were already s
   require explicit repository scope before reporting the inconsistency.
 - **Retrying the whole synchronization after a partial write** — verified transitions or links are
   repeated unnecessarily; re-read both systems and retry only the failed idempotent operation.
+- **Cleaning the checklist when closing the issue** — unchecked claims become false assertions;
+  keep workflow state and checkbox evidence independent and report the remaining items.
 
 ## Constraints
 
 - Never mutate or report as a candidate an issue not assigned to the current Linear identity.
 - Never inspect implementation, review a diff, rerun functional checks, or invoke a review skill.
+- Never check an item from issue status, pull-request state, a generic green pipeline, or a desire
+  to make the issue look complete; require item-specific evidence.
+- Never rewrite a complete Linear description to change checklist markers when a verified targeted
+  patch transport is available.
 - Never transition an issue from title similarity, prose, an ambiguous link, or an unverified
   repository context.
 - Never auto-transition a parent through a separate read followed by an unconditional state update.
