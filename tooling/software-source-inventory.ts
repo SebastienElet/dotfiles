@@ -7,6 +7,18 @@ const composeSchema = z
     services: z.record(z.string(), z.looseObject({ image: z.string().min(1) })),
   })
   .loose();
+const dockerInstallerInvocationSchema = z
+  .object({
+    action: z.enum(["install", "verify"]),
+    artifact: z.string().min(1),
+    policy: z.enum(["allow-skip", "require-docker"]),
+    target: z.enum(["cloakbrowser", "firecrawl", "scrapling"]),
+  })
+  .strict();
+const dockerInstallerPattern =
+  /^"?(?:[^"\s]*\/)?tooling\/install-docker-artifact"? (?<action>install|verify) (?<target>cloakbrowser|firecrawl|scrapling) "(?<policy>allow-skip|require-docker)" "(?<artifact>[^"\n]+)"$/u;
+
+// Make -n exposes shell text, not expanded argv; this source inventory is advisory.
 const channelPatterns = [
   ["channel:homebrew", /\bbrew install\b/u],
   ["channel:mas", /\bmas install\b/u],
@@ -58,12 +70,44 @@ function extractDockerReferences(output: string): readonly string[] {
   return references;
 }
 
+function parseDockerInstallerInvocations(output: string): Readonly<{
+  invocations: readonly z.infer<typeof dockerInstallerInvocationSchema>[];
+  unsupported: boolean;
+}> {
+  const installerLines = output
+    .split("\n")
+    .filter((line) => line.includes("install-docker-artifact"));
+  const invocations: z.infer<typeof dockerInstallerInvocationSchema>[] = [];
+  let unsupported = false;
+  for (const line of installerLines) {
+    const match = dockerInstallerPattern.exec(line);
+    if (match?.groups === undefined) {
+      unsupported = true;
+    } else {
+      invocations.push(dockerInstallerInvocationSchema.parse(match.groups));
+    }
+  }
+  return { invocations, unsupported };
+}
+
 function inventorySources(output: string): readonly string[] {
+  const dockerInstaller = parseDockerInstallerInvocations(output);
+  const installedDockerArtifacts = dockerInstaller.invocations
+    .filter(({ action }) => action === "install")
+    .flatMap(({ artifact, target }) =>
+      target === "firecrawl"
+        ? ["channel:docker"]
+        : ["channel:docker", `docker:${artifact}`],
+    );
   return [
     ...new Set([
       ...extractChannels(output),
       ...extractDockerReferences(output),
+      ...installedDockerArtifacts,
       ...extractRemoteReferences(output),
+      ...(dockerInstaller.unsupported
+        ? ["docker-installer:unsupported-syntax"]
+        : []),
     ]),
   ].toSorted();
 }
@@ -78,6 +122,13 @@ function extractComposePaths(output: string): readonly string[] {
       paths.push(path);
     }
   }
+  for (const { action, artifact, target } of parseDockerInstallerInvocations(
+    output,
+  ).invocations) {
+    if (action === "install" && target === "firecrawl") {
+      paths.push(artifact);
+    }
+  }
   return paths;
 }
 
@@ -85,6 +136,7 @@ function usesUnsupportedComposeSyntax(output: string): boolean {
   return output
     .split("\n")
     .flatMap((line) => line.split(/&&|\|\||[;&|]/u))
+    .filter((command) => !command.includes("install-docker-artifact"))
     .filter((command) =>
       /\bdocker(?:-compose|\b[^\n]*\bcompose)\b/u.test(command),
     )

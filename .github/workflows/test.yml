@@ -47,6 +47,8 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Execute install twice
+        env:
+          DOCKER_UNAVAILABLE_POLICY: allow-skip
         run: |
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
           make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
