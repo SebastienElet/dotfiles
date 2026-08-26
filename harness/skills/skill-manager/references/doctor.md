@@ -62,10 +62,10 @@ these checks manually:
 
 ### Resources and routing
 
-- the bundled checker accepts every tracked path against the canonical
+- the bundled checker accepts every tracked or non-ignored untracked path against the canonical
   `assets/resource-file-policy.json` allowlist and reports each unexpected path as FAIL;
 - a checker execution failure is FAIL, never a skipped resource check;
-- untracked or gitignored runtime artifacts remain outside the repository audit;
+- gitignored runtime artifacts remain outside the repository audit;
 - `agents/openai.yaml`, when present, is valid YAML and its interface metadata still matches the
   skill;
 - same-topic scoped sibling references have explicit conditional routing in `SKILL.md`;
@@ -132,7 +132,7 @@ List environment limitations after the table once, rather than repeating them as
 | Missing `Gotchas`                     | Add three repository-specific cause/consequence/correction entries                           |
 | Missing `Constraints`                 | Add three hard must or must-not rules                                                        |
 | Positional shell placeholder          | Move executable shell to `scripts/`; escape literal prose once                               |
-| Unexpected tracked resource file      | Remove it or change the canonical policy in a separately approved convention update          |
+| Unexpected resource file              | Remove it or change the canonical policy in a separately approved convention update          |
 | Missing conditional reference routing | Route each same-topic scoped sibling from `Steps`                                            |
 | Missing README entry                  | Run deterministic `sync-index` after the skill itself passes                                 |
 
@@ -140,7 +140,7 @@ List environment limitations after the table once, rather than repeating them as
 
 - Never modify a file during doctor.
 - Never install `skills-ref` or another validator.
-- Never skip or manually reinterpret a failed tracked-file check.
+- Never skip or manually reinterpret a failed resource-file check.
 - Never report unavailable tooling as PASS.
 - Never fail a skill solely because it lacks an activation router or eval file.
 - Never convert a qualitative judgment into a mandatory finding without a local rule.

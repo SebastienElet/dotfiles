@@ -8,41 +8,35 @@ const fileNameSchema = z
   .refine((value) => !value.includes("/") && !value.includes("\\"));
 const closedDirectoryPolicySchema = z
   .object({
-    files: z.array(fileNameSchema).min(1),
+    files: z.array(fileNameSchema).min(1).readonly(),
     mode: z.literal("closed"),
   })
-  .strict();
+  .strict()
+  .readonly();
 const openDirectoryPolicySchema = z
   .object({ mode: z.literal("open") })
-  .strict();
+  .strict()
+  .readonly();
 const resourceFilePolicySchema = z
   .object({
-    resourceDirectories: z.record(
-      fileNameSchema,
-      z.discriminatedUnion("mode", [
-        closedDirectoryPolicySchema,
-        openDirectoryPolicySchema,
-      ]),
-    ),
-    rootFiles: z.array(fileNameSchema).min(1),
+    resourceDirectories: z
+      .record(
+        fileNameSchema,
+        z.discriminatedUnion("mode", [
+          closedDirectoryPolicySchema,
+          openDirectoryPolicySchema,
+        ]),
+      )
+      .readonly(),
+    rootFiles: z.array(fileNameSchema).min(1).readonly(),
     version: z.literal(1),
   })
-  .strict();
-const trackedPathsSchema = z.array(z.string().min(1)).min(1);
+  .strict()
+  .readonly();
+const repositoryPathsSchema = z.array(z.string().min(1)).min(1);
 const repositoryRootSchema = z.string().min(1);
 
-type ClosedDirectoryPolicy = Readonly<{
-  files: readonly string[];
-  mode: "closed";
-}>;
-type ResourceDirectoryPolicy =
-  | ClosedDirectoryPolicy
-  | Readonly<{ mode: "open" }>;
-type ResourceFilePolicy = Readonly<{
-  resourceDirectories: Readonly<Record<string, ResourceDirectoryPolicy>>;
-  rootFiles: readonly string[];
-  version: 1;
-}>;
+type ResourceFilePolicy = z.infer<typeof resourceFilePolicySchema>;
 type UnexpectedResourceFile = Readonly<{
   convention: string;
   path: string;
@@ -146,14 +140,12 @@ function decodeUtf8(output: readonly number[], description: string): string {
   }
 }
 
-function parseTrackedPaths(output: readonly number[]): readonly string[] {
-  const serializedPaths = decodeUtf8(output, "tracked skill files");
+function parseRepositoryPaths(output: readonly number[]): readonly string[] {
+  const serializedPaths = decodeUtf8(output, "skill files");
   if (!serializedPaths.endsWith("\0")) {
-    throw new Error(
-      "Git returned an empty or malformed tracked skill file list.",
-    );
+    throw new Error("Git returned an empty or malformed skill file list.");
   }
-  return trackedPathsSchema.parse(serializedPaths.slice(0, -1).split("\0"));
+  return repositoryPathsSchema.parse(serializedPaths.slice(0, -1).split("\0"));
 }
 
 function isOutside(root: string, path: string): boolean {
@@ -165,7 +157,7 @@ function isOutside(root: string, path: string): boolean {
   );
 }
 
-async function listTrackedSkillPaths(
+async function listSkillPaths(
   requestedSkillRoot: string,
 ): Promise<readonly string[]> {
   const skillRoot = await realpath(requestedSkillRoot);
@@ -182,11 +174,22 @@ async function listTrackedSkillPaths(
     throw new Error("The skill root is outside its Git repository.");
   }
   const skillPath = relative(repositoryRoot, skillRoot);
-  const trackedOutput = await runGit(
-    ["-C", repositoryRoot, "ls-files", "-z", "--", skillPath],
-    "Git could not enumerate tracked skill files",
+  const repositoryOutput = await runGit(
+    [
+      "-C",
+      repositoryRoot,
+      "ls-files",
+      "-z",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      "--deduplicate",
+      "--",
+      skillPath,
+    ],
+    "Git could not enumerate skill files",
   );
-  const repositoryPaths = parseTrackedPaths(trackedOutput);
+  const repositoryPaths = parseRepositoryPaths(repositoryOutput);
   const skillPaths = repositoryPaths.map((path) =>
     relative(skillRoot, resolve(repositoryRoot, path)).split(sep).join("/"),
   );
@@ -218,12 +221,12 @@ async function main(): Promise<number> {
     process.stderr.write("Usage: check-resource-files <skill-root>\n");
     return invalidInvocationExitCode;
   }
-  const paths = await listTrackedSkillPaths(invocation.data[0]);
+  const paths = await listSkillPaths(invocation.data[0]);
   const findings = findUnexpectedResourceFiles(paths, await loadPolicy());
   if (findings.length > 0) {
     for (const finding of findings) {
       process.stderr.write(
-        `${finding.path}: unexpected tracked file; ${finding.convention}.\n`,
+        `${finding.path}: unexpected file; ${finding.convention}.\n`,
       );
     }
     return failureExitCode;
