@@ -172,7 +172,9 @@ const testJobSchema = z
       installStepSchema,
       z
         .object({
-          run: z.literal("bun --config=/dev/null --no-env-file test"),
+          run: z.literal(
+            "bun --config=/dev/null --no-env-file test --timeout 15000",
+          ),
           env: z.object({ SCRAPLING_DOCKER_SMOKE: z.literal("1") }).strict(),
         })
         .strict(),
