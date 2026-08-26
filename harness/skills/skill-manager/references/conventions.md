@@ -110,7 +110,10 @@ directories closed:
 
 Doctor runs the bundled checker against this policy on a quiescent skill tree. It recursively
 inspects every physical entry regardless of its Git status, rejects unsupported entry types,
-reports every unexpected path, and fails closed when the skill tree cannot be inspected.
+reports every unexpected path, and fails closed when the canonical skill root is not a regular
+directory or the skill tree cannot be inspected.
+An entry matched by a Git ignore rule is never an admitted resource, including below an open
+resource directory.
 
 Do not create a local `rules/` directory or generate runtime artifacts anywhere inside a skill.
 Tools that need working data must own a directory outside both canonical skill collections.
@@ -264,8 +267,9 @@ Before declaring a skill clean, verify:
 - at least three gotchas and constraints;
 - fewer than 500 `SKILL.md` lines or appropriate progressive disclosure;
 - no executable positional placeholders in the body;
-- no tracked or non-ignored untracked file outside the allowlist in
-  `assets/resource-file-policy.json`;
+- no physical entry outside the allowlist in `assets/resource-file-policy.json`, regardless of its
+  Git status;
+- no physical entry matched by a Git ignore rule;
 - valid eval JSON when present;
 - README membership and deterministic regeneration;
 - a slug does not exist in both canonical collections;

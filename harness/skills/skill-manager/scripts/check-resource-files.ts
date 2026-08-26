@@ -1,5 +1,9 @@
-import { readFile, readdir, realpath } from "node:fs/promises";
-import { relative, resolve, sep } from "node:path";
+import {
+  type PhysicalEntry,
+  listSkillEntries,
+} from "./physical-entry-audit.ts";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { z } from "zod";
 
 const fileNameSchema = z
@@ -38,11 +42,6 @@ type UnexpectedResourceFile = Readonly<{
   convention: string;
   path: string;
 }>;
-type PhysicalEntry = Readonly<{
-  kind: "directory" | "file" | "unsupported";
-  path: string;
-}>;
-
 const failureExitCode = 1;
 const invalidInvocationExitCode = 2;
 const successExitCode = 0;
@@ -82,6 +81,9 @@ function findUnexpectedResourceFile(
     return undefined;
   }
   if (rootEntry === undefined || rootEntry.length === 0) {
+    return { convention: rootConvention(policy), path };
+  }
+  if (nestedEntries.length === 0) {
     return { convention: rootConvention(policy), path };
   }
   const directoryPolicy = policy.resourceDirectories[rootEntry];
@@ -139,6 +141,14 @@ function findUnexpectedEntries(
   policy: ResourceFilePolicy,
 ): readonly UnexpectedResourceFile[] {
   return entries.flatMap((entry) => {
+    if (entry.kind === "ignored") {
+      return [
+        {
+          convention: "Git-ignored entries are forbidden inside skills",
+          path: entry.path,
+        },
+      ];
+    }
     if (entry.kind === "unsupported") {
       return [
         {
@@ -153,48 +163,6 @@ function findUnexpectedEntries(
         : findUnexpectedResourceFile(entry.path, policy);
     return finding === undefined ? [] : [finding];
   });
-}
-
-async function listPhysicalEntries(
-  skillRoot: string,
-  directory: string,
-): Promise<readonly PhysicalEntry[]> {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const paths = await Promise.all(
-    entries.map(async (entry: Readonly<(typeof entries)[number]>) => {
-      const absolutePath = resolve(directory, entry.name);
-      const path = relative(skillRoot, absolutePath).split(sep).join("/");
-      if (entry.isDirectory()) {
-        const nestedPaths = await listPhysicalEntries(skillRoot, absolutePath);
-        const directoryEntry: PhysicalEntry = {
-          kind: "directory",
-          path: `${path}/`,
-        };
-        return nestedPaths.toSpliced(0, 0, directoryEntry);
-      }
-      return [{ kind: entry.isFile() ? "file" : "unsupported", path } as const];
-    }),
-  );
-  return paths
-    .flat()
-    .toSorted((left, right) => left.path.localeCompare(right.path));
-}
-
-async function listSkillEntries(
-  requestedSkillRoot: string,
-): Promise<readonly PhysicalEntry[]> {
-  const skillRoot = await realpath(requestedSkillRoot).catch(() => {
-    throw new Error("The skill root could not be resolved.");
-  });
-  const skillEntries = await listPhysicalEntries(skillRoot, skillRoot);
-  if (
-    !skillEntries.some(
-      (entry) => entry.kind === "file" && entry.path === "SKILL.md",
-    )
-  ) {
-    throw new Error("The skill root has no regular SKILL.md.");
-  }
-  return skillEntries;
 }
 
 async function loadPolicy(): Promise<ResourceFilePolicy> {

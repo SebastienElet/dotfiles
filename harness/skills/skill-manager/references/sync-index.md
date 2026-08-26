@@ -7,9 +7,9 @@ index, never an independent source of metadata.
 
 ## Procedure
 
-1. Enumerate every immediate directory under `<skills-root>/` that contains a `SKILL.md`, including
-   a newly created untracked skill. Ignore untracked or gitignored runtime directories without one;
-   report a tracked skill directory whose `SKILL.md` is missing.
+1. Enumerate every immediate directory under `<skills-root>/`, including newly created and ignored
+   entries. Report every directory without a `SKILL.md`; Git status never removes an entry from the
+   collection audit.
 2. Read `name`, the complete folded `description`, and `metadata.category`.
 3. Normalize folded-description whitespace to one ASCII space.
 4. Use the first sentence, ending at the first period followed by whitespace or end-of-string.
