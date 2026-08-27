@@ -125,7 +125,8 @@ for memory_query_index in 2 3 4 8 9 10; do
   memory_query=$(jq -r ".queries[${memory_query_index}].query" \
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
-    codex exec --ephemeral --ignore-user-config --json --sandbox read-only \
+    codex exec --ephemeral --ignore-user-config --disable multi_agent \
+      --disable multi_agent_v2 --json --sandbox read-only \
       -C "${memory_eval_root}/fixture" \
       "${memory_query}
 
@@ -237,7 +238,8 @@ for memory_query_index in 2 3 4 8 9 10; do
   memory_query=$(jq -r ".queries[${memory_query_index}].query" \
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
-    codex exec --ephemeral --ignore-user-config --json --sandbox read-only \
+    codex exec --ephemeral --ignore-user-config --disable multi_agent \
+      --disable multi_agent_v2 --json --sandbox read-only \
       -C "${memory_eval_root}/fixture" \
       "${memory_query}
 

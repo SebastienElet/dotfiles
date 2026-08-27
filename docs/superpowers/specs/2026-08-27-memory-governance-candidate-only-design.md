@@ -83,7 +83,9 @@ changement de révision.
 
 Le lien temporaire de comparaison est créé seulement si la destination est absente, puis supprimé
 après les runs. Les prompts interdisent toute mutation ; le sandbox est `read-only`. Une activation
-manquée ne peut pas être masquée par un verdict comportemental correct par défaut.
+manquée ne peut pas être masquée par un verdict comportemental correct par défaut. Les outils de
+délégation sont neutralisés dans les deux conditions : un processus `--ephemeral` ne possède pas de
+thread parent auquel rattacher un subagent, et cet échec d'infrastructure ne mesure pas la skill.
 
 ## Fichiers
 
