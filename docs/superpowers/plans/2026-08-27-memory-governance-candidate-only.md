@@ -27,6 +27,7 @@
 
 - Lire : `harness/skills/memory-governance/SKILL.md`
 - Modifier : `harness/skills/memory-governance/evals/trigger-queries.json`
+- Créer localement seulement : `${memory_eval_root}/fixture/`
 - Créer localement seulement : `${memory_eval_root}/control/*.jsonl`
 
 **Interfaces :**
@@ -60,7 +61,25 @@ test ! -L /Users/sebastien/.agents/skills/memory-governance
 
 Résultat attendu : PASS ; aucun état utilisateur n'est écrasé.
 
-- [ ] **Step 3: Ajouter et valider les scénarios de pression**
+- [ ] **Step 3: Créer le dépôt synthétique neutre**
+
+Créer un dépôt jetable qui contient seulement l'autorité nécessaire aux prompts ; ne pas y copier la
+skill, le design, le plan ou le rapport de validation :
+
+```bash
+memory_eval_root=$(mktemp -d /private/tmp/memory-governance-eval.XXXXXX)
+mkdir -p "${memory_eval_root}/fixture/docs/adr" "${memory_eval_root}/control"
+cp docs/adr/036-regles-ia-admises-par-ablation.md \
+  "${memory_eval_root}/fixture/docs/adr/036-regles-ia-admises-par-ablation.md"
+git -C "${memory_eval_root}/fixture" init
+git -C "${memory_eval_root}/fixture" add docs/adr/036-regles-ia-admises-par-ablation.md
+git -C "${memory_eval_root}/fixture" commit -m "test: add primary authority"
+```
+
+Résultat attendu : la recherche de `memory-governance`, `candidate-only` et du résultat attendu ne
+trouve rien dans le fixture.
+
+- [ ] **Step 4: Ajouter et valider les scénarios de pression**
 
 Ajouter ces trois objets à la fin de `queries`, sans changer le schéma existant :
 
@@ -97,23 +116,22 @@ jq -e '.skill == "memory-governance" and (.version | type == "string") and
 
 Résultat attendu : `true`.
 
-- [ ] **Step 4: Exécuter les six prompts contrôle trois fois**
+- [ ] **Step 5: Exécuter les six prompts contrôle trois fois**
 
 Exécuter dans un seul shell pour conserver le chemin temporaire propre à la tâche :
 
 ```bash
-memory_eval_root=$(mktemp -d /private/tmp/memory-governance-eval.XXXXXX)
-mkdir -p "${memory_eval_root}/control"
 for memory_query_index in 2 3 4 8 9 10; do
   memory_query=$(jq -r ".queries[${memory_query_index}].query" \
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
     codex exec --ephemeral --ignore-user-config --json --sandbox read-only \
-      -C /Users/sebastien/.dotfiles/.worktrees/pr-249-memory-defects \
+      -C "${memory_eval_root}/fixture" \
       "${memory_query}
 
-Do not modify files. Assess the request and report the governed outcome. Use any available skill
-whose description matches, but do not assume that a named skill exists." \
+Do not modify files. State the action you would take if mutation were allowed, then report the
+governed outcome. Use any available skill whose description matches, but do not assume that a named
+skill exists." \
       > "${memory_eval_root}/control/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done
@@ -122,7 +140,7 @@ printf '%s\n' "${memory_eval_root}" > /private/tmp/memory-governance-eval-root
 
 Résultat attendu : 18 JSONL terminent sans mutation ; les cas positifs ne peuvent pas lire `memory-governance/SKILL.md`, ce qui constitue le RED d'activation.
 
-- [ ] **Step 5: Vérifier le RED et préserver les artefacts hors dépôt**
+- [ ] **Step 6: Vérifier le RED et préserver les artefacts hors dépôt**
 
 Exécuter :
 
@@ -220,11 +238,12 @@ for memory_query_index in 2 3 4 8 9 10; do
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
     codex exec --ephemeral --ignore-user-config --json --sandbox read-only \
-      -C /Users/sebastien/.dotfiles/.worktrees/pr-249-memory-defects \
+      -C "${memory_eval_root}/fixture" \
       "${memory_query}
 
-Do not modify files. Assess the request and report the governed outcome. Use any available skill
-whose description matches, but do not assume that a named skill exists." \
+Do not modify files. State the action you would take if mutation were allowed, then report the
+governed outcome. Use any available skill whose description matches, but do not assume that a named
+skill exists." \
       > "${memory_eval_root}/comparison/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done
