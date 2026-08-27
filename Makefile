@@ -468,7 +468,7 @@ hunspell-dictionaries: bun
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -502,6 +502,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.agents/skills
 	${CREATE_SYMLINK}

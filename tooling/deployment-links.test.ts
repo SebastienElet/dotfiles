@@ -69,6 +69,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-verdict",
     "requirements-clarification",
@@ -233,5 +234,38 @@ test("agent aggregate targets include requirements clarification", () => {
     });
     expectSuccess(result);
     expect(result.stdout).toContain(join(fixture.home, destination));
+  }
+});
+
+test("agent aggregate targets preserve Codex-only memory governance", () => {
+  const fixture = createDeploymentFixture("memory-governance");
+  const codexDestination = join(
+    fixture.home,
+    ".agents/skills/memory-governance",
+  );
+  const claudeDestination = join(
+    fixture.home,
+    ".claude/skills/memory-governance",
+  );
+  const cursorDestination = join(
+    fixture.home,
+    ".cursor/skills/memory-governance",
+  );
+  for (const [target, included, excluded] of [
+    ["codex", codexDestination, [claudeDestination, cursorDestination]],
+    ["claude-code", "", [claudeDestination, codexDestination]],
+    ["cursor", "", [cursorDestination, codexDestination]],
+  ] as const) {
+    const result = runMake(fixture, [target], {
+      dryRun: true,
+      repository: project,
+    });
+    expectSuccess(result);
+    if (included !== "") {
+      expect(result.stdout).toContain(included);
+    }
+    for (const destination of excluded) {
+      expect(result.stdout).not.toContain(destination);
+    }
   }
 });

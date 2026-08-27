@@ -33,6 +33,9 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: memory-governance
+    installations:
+      - { agent: codex, scope: user }
   - slug: enforcement-code
     installations:
       - { agent: claude, scope: user }
