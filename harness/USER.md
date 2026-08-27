@@ -156,8 +156,7 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   préférer une issue et un prompt concis pour une nouvelle session. ~60 % de contexte visible
   est un signal d'alerte, pas une limite absolue.
 - **Barre de vérification.** Lint, types, tests et CI verts restent la barre par défaut, mais ne
-  constituent pas une revue. Avant de demander une revue sur une PR que vous ouvrez, passez
-  `pr-verdict` sur votre propre PR et corrigez ses constats bloquants avant de solliciter quiconque.
+  constituent pas une revue.
 
 ## Review
 

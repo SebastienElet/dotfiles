@@ -1,46 +1,51 @@
 {
   "skill": "pr-verdict",
-  "version": "1.0",
+  "version": "2.0",
   "queries": [
+    {
+      "query": "$pr-verdict 1042",
+      "should_activate": true,
+      "reason": "Explicit Codex invocation of the pull request verdict"
+    },
     {
       "query": "/pr-verdict 1042",
       "should_activate": true,
-      "reason": "Explicit invocation of the non-mutating pull request verdict"
+      "reason": "Explicit Claude Code or Cursor invocation of the pull request verdict"
     },
     {
       "query": "Review this PR: https://github.com/acme/api/pull/1042",
-      "should_activate": true,
-      "reason": "Review of another author's pull request; a merge decision follows"
+      "should_activate": false,
+      "reason": "Natural-language review requests do not activate this manual-only skill"
     },
     {
       "query": "Est-ce que la PR 1042 est sûre à fusionner ?",
-      "should_activate": true,
-      "reason": "Safe to merge; the answer is a verdict"
+      "should_activate": false,
+      "reason": "A merge decision does not replace the required manual invocation"
     },
     {
       "query": "Should I approve this PR?",
-      "should_activate": true,
-      "reason": "Approval decision on someone else's work"
+      "should_activate": false,
+      "reason": "An approval decision does not replace the required manual invocation"
     },
     {
       "query": "Donne-moi un verdict sur la PR #17, elle touche la clôture comptable",
-      "should_activate": true,
-      "reason": "Verdict asked for explicitly"
+      "should_activate": false,
+      "reason": "Naming the desired output in prose is not a manual skill invocation"
     },
     {
       "query": "The author pushed the fixes, re-review PR 1042",
-      "should_activate": true,
-      "reason": "Re-review after fixes; the marker and the new head SHA govern"
+      "should_activate": false,
+      "reason": "A re-review does not replace the required manual invocation"
     },
     {
       "query": "Jette un œil à cette PR avant que je l'approuve",
-      "should_activate": true,
-      "reason": "Merge decision at stake even though no review vocabulary is used"
+      "should_activate": false,
+      "reason": "An implicit merge decision must not select this skill"
     },
     {
       "query": "Ma PR est ouverte, dis-moi si elle est fusionnable",
-      "should_activate": true,
-      "reason": "Own pull request, but open: the verdict is unchanged, only its enforcement differs"
+      "should_activate": false,
+      "reason": "Opening or judging one's own PR does not replace manual invocation"
     },
     {
       "query": "/pr-fix 1042",
