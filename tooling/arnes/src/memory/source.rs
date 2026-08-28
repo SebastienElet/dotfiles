@@ -90,6 +90,16 @@ pub fn resolve_sources(
     draft: ValidatedDraft,
     context: &SourceContext<'_>,
 ) -> Result<ResolvedDraft, MemoryError> {
+    let proof_sources = draft.proof().sources();
+    let has_official_url = proof_sources
+        .iter()
+        .any(|source| source.kind() == SourceKind::OfficialUrl);
+    let has_user_decision = proof_sources
+        .iter()
+        .any(|source| source.kind() == SourceKind::UserDecision);
+    if has_official_url && !has_user_decision {
+        return Err(source_unavailable());
+    }
     let sources = draft
         .proof()
         .sources()
@@ -217,7 +227,7 @@ fn resolve_official_url(
     locator: &str,
     context: &SourceContext<'_>,
 ) -> Result<Vec<u8>, MemoryError> {
-    let url = validated_https_url(locator).map_err(|_| source_invalid())?;
+    let url = validated_https_url(locator).map_err(|_| source_unavailable())?;
     let temporary = create_private_temporary(context)?;
     let arguments = curl_arguments(temporary.path(), url.as_str());
     let output = context

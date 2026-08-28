@@ -15,20 +15,42 @@ const BODY: &[u8] = b"authoritative body";
 const SUCCESS_METADATA: &str = "200\nhttps://docs.example.test/final\n203.0.113.10\n";
 
 fn draft(kind: &str, locator: &str) -> arnes::memory::ValidatedDraft {
-    let automated = if kind == "user-decision" {
+    draft_with_sources(&[(kind, locator)])
+}
+
+fn draft_with_sources(sources: &[(&str, &str)]) -> arnes::memory::ValidatedDraft {
+    let automated = if sources.iter().all(|(kind, _)| *kind == "user-decision") {
         ""
     } else {
         "  automated:\n    kind: source-fingerprint\n    expected: all-proof-sources-unchanged\n"
     };
+    let proof_sources = sources
+        .iter()
+        .map(|(kind, locator)| {
+            format!(
+                "    - kind: {kind}\n      locator: {}\n",
+                serde_json::to_string(locator).unwrap()
+            )
+        })
+        .collect::<String>();
     let yaml = format!(
-        "schema_version: 1\nkind: invariant\nstatement: A durable invariant remains independently useful.\nscope: project\nretrieval_terms:\n  - durable invariant\nproof:\n  summary: The source establishes the invariant.\n  sources:\n    - kind: {kind}\n      locator: {}\noracle:\n{automated}  human_fallback:\n    question: Does the evidence still establish the invariant?\n    valid_when: The evidence remains observable.\n  outcomes:\n    valid: The evidence is unchanged.\n    invalidated: The evidence no longer establishes the invariant.\n",
-        serde_json::to_string(locator).unwrap()
+        "schema_version: 1\nkind: invariant\nstatement: A durable invariant remains independently useful.\nscope: project\nretrieval_terms:\n  - durable invariant\nproof:\n  summary: The source establishes the invariant.\n  sources:\n{proof_sources}oracle:\n{automated}  human_fallback:\n    question: Does the evidence still establish the invariant?\n    valid_when: The evidence remains observable.\n  outcomes:\n    valid: The evidence is unchanged.\n    invalidated: The evidence no longer establishes the invariant.\n"
     );
     validate_draft(
         parse_draft(yaml.as_bytes()).unwrap(),
         AdmissionAuthorization::ExplicitRequest,
     )
     .unwrap()
+}
+
+fn official_url_draft(locator: &str) -> arnes::memory::ValidatedDraft {
+    draft_with_sources(&[
+        ("official-url", locator),
+        (
+            "user-decision",
+            "The user designated this proof as official.",
+        ),
+    ])
 }
 
 fn verdict(result: Result<ResolvedDraft, MemoryError>) -> &'static str {
@@ -214,10 +236,11 @@ fn fingerprints_an_absolute_regular_local_file() {
 }
 
 #[test]
-fn refuses_every_named_initial_url_bypass_without_invoking_curl() {
+fn reports_unavailable_for_every_named_initial_url_bypass_without_invoking_curl() {
     let repository = tempfile::tempdir().unwrap();
     let cases = [
         ("HTTP scheme", "http://sensitive.example.test/proof"),
+        ("missing host", "https://"),
         ("IPv4 literal", "https://192.0.2.10/proof"),
         ("IPv6 literal", "https://[2001:db8::1]/proof"),
         ("fragment", "https://sensitive.example.test/proof#private"),
@@ -227,12 +250,58 @@ fn refuses_every_named_initial_url_bypass_without_invoking_curl() {
         let git_runner = FakeProcessRunner::default();
         let curl = FakeProcessRunner::default();
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
-        let result = resolve_sources(draft("official-url", locator), &context);
+        let result = resolve_sources(official_url_draft(locator), &context);
         let diagnostic = result.as_ref().unwrap_err().to_string();
-        assert_eq!(verdict(result), "invalid", "{bypass}");
+        assert_eq!(verdict(result), "unavailable", "{bypass}");
         assert!(!diagnostic.contains(locator), "{bypass}");
         assert!(curl.calls().is_empty(), "{bypass}");
     }
+}
+
+#[test]
+fn refuses_an_official_url_without_a_user_decision_before_any_side_effect() {
+    let repository = tempfile::tempdir().unwrap();
+    let temporary = tempfile::tempdir().unwrap();
+    let locator = "https://sensitive.example.test/proof";
+    let git_runner = FakeProcessRunner::default();
+    let curl =
+        FakeProcessRunner::with_responses(
+            [FakeResponse::success(SUCCESS_METADATA).with_body(BODY)],
+        );
+    let context = SourceContext::new(repository.path(), &git_runner, &curl)
+        .with_temporary_directory(temporary.path());
+
+    let result = resolve_sources(draft("official-url", locator), &context);
+    let diagnostic = result.as_ref().unwrap_err().to_string();
+
+    assert_eq!(verdict(result), "unavailable");
+    assert!(!diagnostic.contains(locator));
+    assert!(curl.calls().is_empty());
+    assert!(fs::read_dir(temporary.path()).unwrap().next().is_none());
+}
+
+#[test]
+fn resolves_an_official_url_when_the_proof_contains_a_user_decision() {
+    let repository = tempfile::tempdir().unwrap();
+    let locator = "https://docs.example.test/start";
+    let git_runner = FakeProcessRunner::default();
+    let curl =
+        FakeProcessRunner::with_responses(
+            [FakeResponse::success(SUCCESS_METADATA).with_body(BODY)],
+        );
+    let context = SourceContext::new(repository.path(), &git_runner, &curl);
+
+    let resolved = resolve_sources(official_url_draft(locator), &context).unwrap();
+
+    assert_eq!(resolved.sources().len(), 2);
+    assert_eq!(
+        resolved.sources()[0].kind(),
+        arnes::memory::SourceKind::OfficialUrl
+    );
+    assert_eq!(
+        resolved.sources()[1].kind(),
+        arnes::memory::SourceKind::UserDecision
+    );
 }
 
 #[test]
@@ -269,7 +338,7 @@ fn invokes_curl_with_the_closed_https_redirect_time_and_size_policy() {
     let context = SourceContext::new(repository.path(), &git_runner, &curl)
         .with_temporary_directory(temporary.path());
 
-    let resolved = resolve_sources(draft("official-url", locator), &context).unwrap();
+    let resolved = resolve_sources(official_url_draft(locator), &context).unwrap();
 
     assert_eq!(
         resolved.sources()[0].fingerprint().as_str(),
@@ -320,7 +389,7 @@ fn accepts_an_https_redirect_and_refuses_an_http_redirect() {
             FakeProcessRunner::with_responses([FakeResponse::success(metadata).with_body(BODY)]);
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
         let result = resolve_sources(
-            draft("official-url", "https://docs.example.test/start"),
+            official_url_draft("https://docs.example.test/start"),
             &context,
         );
         assert_eq!(verdict(result), expected);
@@ -394,7 +463,7 @@ fn maps_http_and_transport_failures_without_disclosing_the_locator() {
         let curl = FakeProcessRunner::with_responses([response]);
         let context = SourceContext::new(repository.path(), &git_runner, &curl)
             .with_temporary_directory(temporary.path());
-        let result = resolve_sources(draft("official-url", locator), &context);
+        let result = resolve_sources(official_url_draft(locator), &context);
         let diagnostic = result.as_ref().unwrap_err().to_string();
         assert_eq!(verdict(result), expected, "{failure}");
         assert!(!diagnostic.contains(locator), "{failure}");
@@ -427,7 +496,7 @@ fn fails_closed_on_malformed_curl_metadata_or_oversized_written_body() {
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
         assert_eq!(
             verdict(resolve_sources(
-                draft("official-url", "https://docs.example.test/start"),
+                official_url_draft("https://docs.example.test/start"),
                 &context
             )),
             "unavailable"
