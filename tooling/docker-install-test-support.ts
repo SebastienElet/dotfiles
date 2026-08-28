@@ -67,7 +67,7 @@ function runDockerInstallTarget(
       DOCKER_INSTALL_TEST_SCENARIO: scenario,
       DOCKER_INSTALL_TEST_STATE: fixture.trace,
       DOCKER_INSTALL_TEST_TARGET: target,
-      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}`,
     },
     stderr: "pipe",
     stdout: "pipe",
@@ -93,6 +93,8 @@ function createDockerInstallFixture(
   mkdirSync(localBinaryDirectory);
   writeFileSync(trace, "");
   chmodSync(provider, executableMode);
+  symlinkRequiredCommand("readlink", binaryDirectory);
+  symlinkRequiredCommand("uname", binaryDirectory);
   if (dockerProviderAvailable) {
     symlinkSync(provider, join(binaryDirectory, "docker"));
   }
@@ -101,6 +103,14 @@ function createDockerInstallFixture(
     join(localBinaryDirectory, "scrapling_mcp"),
   );
   return { binaryDirectory, localBinaryDirectory, makeCommand, trace };
+}
+
+function symlinkRequiredCommand(command: string, destination: string): void {
+  const executable = Bun.which(command);
+  if (executable === null) {
+    throw new Error(`${command} is unavailable`);
+  }
+  symlinkSync(executable, join(destination, command));
 }
 
 function makeArguments(

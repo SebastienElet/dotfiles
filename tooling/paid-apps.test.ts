@@ -64,19 +64,24 @@ test.each(paidApps)(
 
 function createFixture(): Readonly<{
   apps: string;
+  brewBin: string;
   root: string;
   voltaBin: string;
 }> {
   const root = mkdtempSync(join(tmpdir(), "dotfiles-paid-apps-"));
   const apps = join(root, "Applications");
+  const brewBin = join(root, "homebrew", "bin");
   const voltaBin = join(root, "volta", "bin");
   fixtures.push(root);
   mkdirSync(apps);
+  mkdirSync(brewBin, { recursive: true });
   mkdirSync(voltaBin, { recursive: true });
+  writeFileSync(join(brewBin, "bun"), "");
+  writeFileSync(join(brewBin, "volta"), "");
   writeFileSync(join(voltaBin, "node"), "");
   writeFileSync(join(voltaBin, "npm"), "");
   writeFileSync(join(voltaBin, "thangs"), "");
-  return { apps, root, voltaBin };
+  return { apps, brewBin, root, voltaBin };
 }
 
 function runTarget(
@@ -92,6 +97,7 @@ function runTarget(
       makefile,
       target,
       `APP_BIN=${fixture.apps}`,
+      `BREW_BIN=${fixture.brewBin}`,
       `VOLTA_BIN=${fixture.voltaBin}`,
       `SKIP_PAID_APPS=${skipPaidApps ? "1" : "0"}`,
     ],
