@@ -132,7 +132,8 @@ for memory_query_index in 2 3 4 8 9 10; do
 
 Do not modify files. State the action you would take if mutation were allowed, then report the
 governed outcome. Use any available skill whose description matches, but do not assume that a named
-skill exists." \
+skill exists. Read applicable SKILL.md files and the local ADR only when needed; do not delegate,
+search notes or the web, or execute the resulting workflow. Finish in at most 200 words." \
       > "${memory_eval_root}/control/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done
@@ -245,7 +246,8 @@ for memory_query_index in 2 3 4 8 9 10; do
 
 Do not modify files. State the action you would take if mutation were allowed, then report the
 governed outcome. Use any available skill whose description matches, but do not assume that a named
-skill exists." \
+skill exists. Read applicable SKILL.md files and the local ADR only when needed; do not delegate,
+search notes or the web, or execute the resulting workflow. Finish in at most 200 words." \
       > "${memory_eval_root}/comparison/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done
