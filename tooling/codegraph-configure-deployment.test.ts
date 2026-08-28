@@ -34,7 +34,6 @@ interface CommandResult {
 interface ConfigurationSnapshot {
   claude: string;
   codex: string;
-  cursor: string;
 }
 interface RealCliFixture {
   claudeConfig: string;
@@ -100,7 +99,7 @@ test.skipIf(
     realCodex === undefined ||
     realVoltaHome === undefined,
 )(
-  "the real Claude and Codex CLIs preserve unrelated configuration",
+  "the real Claude and Codex CLIs preserve unrelated configuration without creating Cursor configuration",
   () => {
     const realCliPaths = z
       .tuple([z.string(), z.string(), z.string()])
@@ -117,27 +116,20 @@ test.skipIf(
     expect(first.exitCode).toBe(0);
     expect(first.stdout).toContain("codegraph");
     expect(first.stderr).toBe("");
-    const firstConfigurations = readConfigurations(
-      claudeConfig,
-      codexConfig,
-      cursorConfig,
-    );
+    const firstConfigurations = readConfigurations(claudeConfig, codexConfig);
     expect(runEntryPoint(environment).exitCode).toBe(0);
-    expect(readConfigurations(claudeConfig, codexConfig, cursorConfig)).toEqual(
+    expect(readConfigurations(claudeConfig, codexConfig)).toEqual(
       firstConfigurations,
     );
 
     const claude = providerConfigurationSchema.parse(
       JSON.parse(firstConfigurations.claude),
     );
-    const cursor = providerConfigurationSchema.parse(
-      JSON.parse(firstConfigurations.cursor),
-    );
     expect(claude.unrelated).toBe("claude");
     expect(claude.mcpServers.codegraph.command).toBe(codegraphBinary);
     expect(firstConfigurations.codex).toContain('unrelated = "codex"');
     expect(firstConfigurations.codex).toContain("[mcp_servers.codegraph]");
-    expect(cursor.mcpServers.codegraph.command).toBe(codegraphBinary);
+    expect(existsSync(cursorConfig)).toBe(false);
     expect(existsSync(log)).toBe(true);
   },
   deploymentTestTimeoutMilliseconds,
@@ -227,11 +219,9 @@ function run(
 function readConfigurations(
   claude: string,
   codex: string,
-  cursor: string,
 ): ConfigurationSnapshot {
   return {
     claude: readFileSync(claude, "utf8"),
     codex: readFileSync(codex, "utf8"),
-    cursor: readFileSync(cursor, "utf8"),
   };
 }
