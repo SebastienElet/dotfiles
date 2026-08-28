@@ -22,6 +22,9 @@ assert_equal() {
 
 real_git=$(command -v git)
 real_bun=$(command -v bun)
+expected_node_install_spec=$(
+  "$real_bun" --no-install "$node_version_contract" install-spec "$package_json"
+)
 test_home=$test_root/home
 repository=$test_home/.dotfiles
 remote=$test_root/remote.git
@@ -106,7 +109,7 @@ assert_equal "$(cat "$git_log")" $'pull\ncommit' "unexpected main Git mutations"
 grep -Fxq 'npm update -g --before=2026-08-13T00:00:00Z --min-release-age-exclude=@openai/codex' "$command_log" ||
   fail "npm quarantine does not exempt Codex"
 grep -Fxq 'volta pin node@lts' "$command_log" || fail "Volta does not refresh the project Node pin"
-grep -Fxq 'volta install node@24.19.0' "$command_log" || fail "Volta does not install the exact project Node pin"
+grep -Fxq "volta install $expected_node_install_spec" "$command_log" || fail "Volta does not install the exact project Node pin"
 grep -Fxq 'claude update' "$command_log" || fail "Claude update is not independent from npm"
 
 "$real_git" -C "$repository" checkout -q -B feature-test origin/main
