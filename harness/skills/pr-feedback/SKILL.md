@@ -1,7 +1,7 @@
 ---
 name: pr-feedback
 description: >
-  Collect evidence-backed review feedback and reviewer-pushed fixes from merged pull requests. Use
+  Collect evidence-backed review feedback and reviewer-authored fixes from merged pull requests. Use
   when analyzing recurring PR review findings or preparing factual harness-improvement evidence.
   Make sure to use this skill whenever retrospective review feedback is requested, even if no
   forge or skill is named.
@@ -14,7 +14,7 @@ metadata:
 
 ## Overview
 
-Produce a concise, traceable record of problems found during review and fixes pushed by reviewers.
+Produce a concise, traceable record of problems found during review and fixes attributable to reviewers.
 Establish observed behavior and evidence without recommending a harness change. This workflow is
 read-only and never edits repository or forge state.
 
@@ -34,13 +34,13 @@ merged pull requests authored by the user.
 2. Resolve the requested scope. These examples list the default sample:
 
    ```bash
-   bkt pr list --mine --state MERGED --limit 10 --json --jq '.pull_requests[] | "\(.id) | \(.title)"'
+   bkt pr list --mine --state MERGED --workspace <workspace> --repo <repo> --limit 10 --json --jq '.pull_requests[] | "\(.id) | \(.title)"'
    gh pr list --author @me --state merged --limit 10 --json number,title
    ```
 
-   Without a repository argument, `bkt pr list --mine` spans every repository in the workspace,
-   while `gh pr list` is repository-local. On Bitbucket, exclude other repositories before counting
-   occurrences.
+   Without a repository argument, `bkt pr list --mine` spans every repository in the workspace and
+   applies the limit to that wider result, while `gh pr list` is repository-local. Scope Bitbucket
+   to the derived repository before applying the requested count.
 
 3. For each pull request, collect the push sequence. A squash merge erases reviewer-fix commits
    from the destination history and may assign them to the pull request author, so the forge remains
@@ -51,7 +51,10 @@ merged pull requests authored by the user.
    gh pr view <id> --json commits --jq '.commits[] | "\(.committedDate) | \(.authors[0] | if (.login // "") == "" then .name else .login end) | \(.oid[0:12]) | \(.messageHeadline)"'
    ```
 
-   Treat a push by someone other than the author only as a potential reviewer fix. Verify its delta;
+   Bitbucket activity identifies the actor who updated the branch. GitHub's commit `authors` field
+   identifies Git authorship and `Co-authored-by` trailers, not the actor who pushed the commit.
+   Record push attribution as uncertain unless separate forge evidence identifies that actor. Treat
+   third-party authorship or a third-party push only as a potential reviewer fix. Verify its delta;
    merges, rebases, and automated branch updates are not fixes. Do not limit collection to pushes
    after the author's last push.
 
@@ -81,16 +84,16 @@ merged pull requests authored by the user.
 5. Collect comments, reviews, and tasks:
 
    ```bash
-   bkt pr comments <id> --json --jq '.comments[] | "\(.user.display_name) | \(.inline.path // "general"):\(.inline.to // "") | \(.content.raw)"'
+   bkt pr comments <id> --json --jq '.comments[] | "\(.user.display_name) | \(.inline.path // "general"):\(.inline.to // "") | \(.links.html.href // .id) | \(.content.raw)"'
    bkt pr task list <id> --json
-   gh pr view <id> --json comments,reviews --jq '(.comments[], (.reviews[] | select(.body != ""))) | "\(.author.login) | \(.body)"'
-   gh api "repos/<slug>/pulls/<id>/comments" --jq '.[] | "\(.user.login) | \(.path):\(.line) | \(.body)"'
+   gh pr view <id> --json comments,reviews --jq '(.comments[], (.reviews[] | select(.body != ""))) | "\(.author.login) | \(.url // .id) | \(.body)"'
+   gh api "repos/<slug>/pulls/<id>/comments" --jq '.[] | "\(.user.login) | \(.path):\(.line) | \(.html_url) | \(.body)"'
    ```
 
    Distinguish human reviewers, AI reviews posted by CI, and the pull request author's own notes.
    Exclude the author's notes.
 
-6. Turn every retained comment or reviewer-fix hunk into a behavioral finding containing only:
+6. Turn every retained comment or reviewer-authored fix hunk into a behavioral finding containing only:
    what was found or corrected, the comment URL or commit/file evidence, the observable outcome,
    and an observed impact when explicitly established. Otherwise write `not established`.
 
@@ -118,8 +121,8 @@ merged pull requests authored by the user.
    - Occurrences: <pull requests>
    - Evidence:
      - <linked PR> · <human comment or AI review> · <author> · <file:line> — <faithful paraphrase>
-     - <linked PR> · reviewer fix · <author> · <SHA> · <file> — <before → after>
-   - Observable outcome: <status and fixer without assumed causality>
+     - <linked PR> · reviewer-authored fix · <author> · <SHA> · <file> — <before → after>
+   - Observable outcome: <status and evidenced author or push actor without assumed causality>
    - Observed impact: <established fact or not established>
    - Uncertainty: <precise limit or none>
 
