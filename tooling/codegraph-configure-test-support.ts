@@ -123,6 +123,7 @@ function createFixtureValues({
       CODEGRAPH_CODEX_BIN: links.codex,
       CODEGRAPH_CODEX_CONFIG: join(directory, "codex.toml"),
       CODEGRAPH_CURSOR_CONFIG: join(directory, "cursor", "mcp.json"),
+      CODEGRAPH_INCLUDE_CURSOR: "1",
       CODEGRAPH_TEST_LOG: join(directory, "calls.log"),
       CODEGRAPH_TEST_STATE: state,
       CODEX_HOME: join(directory, "codex-home"),

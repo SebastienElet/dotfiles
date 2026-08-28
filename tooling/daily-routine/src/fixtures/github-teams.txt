@@ -1,3 +1,0 @@
-ExampleOrg/reviewers
-exampleorg/platform
-OtherOrg/unrelated

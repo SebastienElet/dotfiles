@@ -171,6 +171,6 @@ test("clones and runs make through the shipped entry point when Git works", asyn
 
   expect(result).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   expect(readTrace(fixture)).toBe(
-    "git --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake all\n",
+    "git --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake brew\nmake minimal\n",
   );
 });

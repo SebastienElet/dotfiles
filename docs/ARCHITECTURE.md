@@ -19,9 +19,10 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 
 Les points d'entrée restent à la racine :
 
-- `Makefile` est l'installateur canonique et décrit les destinations déployées ;
+- `Makefile` orchestre les profils `minimal` et `optional` et décrit les destinations déployées ;
+- `Brewfile` et `Brewfile.optional` sont les inventaires canoniques des paquets de leurs profils ;
 - `install.sh` amorce une nouvelle machine en clonant le dépôt puis en lançant
-  `make all` ;
+  `make minimal` ;
 - `AGENTS.md` porte les instructions de contribution communes, avec
   `CLAUDE.md` comme adaptateur ;
 - `.mcp.json` déclare les serveurs MCP découverts depuis la racine ;
@@ -42,10 +43,9 @@ Les points d'entrée restent à la racine :
 | `home/.config/wezterm/wezterm.lua` | `~/.config/wezterm/wezterm.lua` |
 | `home/cspell.json`                 | `~/cspell.json`                 |
 
-Le `Makefile` déploie les artefacts statiques comme cibles fichier ordinaires
-et lie les exécutables générés après leur build. Chaque recette vérifie que la
-destination est absente avant `ln -s`. La réparation explicite d'un lien erroné
-est suivie par l'issue #152.
+Le `Makefile` déploie les artefacts statiques et lie les exécutables générés après leur build. À
+chaque passage du profil, il conserve silencieusement un lien exact, crée une destination absente et
+refuse toute divergence sans la modifier.
 
 ## Intégrations d'agents
 
@@ -73,12 +73,11 @@ deux occurrences.
 
 - les exécutables directs, sans extension et nommés en kebab-case, comme
   `upgrade`, `agent-handoff` et `git-main-branch` ;
-- les applications structurées dans leur propre répertoire, comme le projet
-  Rust `daily-routine/`.
+- les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
 Les exécutables destinés au `PATH` sont liés depuis le `Makefile`, généralement
 sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
-`make all`, ce qui déploie les nouveaux chemins.
+`make minimal`, ce qui déploie les nouveaux chemins du socle.
 
 ## Flux de changement
 

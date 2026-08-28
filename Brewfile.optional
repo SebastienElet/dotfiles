@@ -1,0 +1,31 @@
+tap "AlexsJones/llmfit"
+tap "avivsinai/tap"
+tap "jesseduffield/lazydocker"
+tap "schpet/tap"
+
+brew "awscli"
+brew "avivsinai/tap/bitbucket-cli", trusted: true
+brew "gh"
+brew "gnupg"
+brew "jesseduffield/lazydocker/lazydocker", trusted: true
+brew "k9s"
+brew "AlexsJones/llmfit/llmfit", trusted: true
+brew "mas"
+brew "mosh"
+brew "postgresql@16"
+brew "schpet/tap/linear", trusted: true
+brew "uv"
+brew "vale"
+cask "chatgpt"
+cask "claude"
+cask "cleanshot"
+cask "codexbar"
+cask "cursor-cli"
+cask "doppler-app"
+cask "google-chrome"
+cask "handy"
+cask "languagetool-desktop"
+cask "rectangle-pro"
+cask "vibe-island"
+mas "DaisyDisk", id: 411643860
+mas "Things 3", id: 904280696

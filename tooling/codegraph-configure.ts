@@ -1,4 +1,9 @@
-import { ConfigurationError, configureCursor } from "./codegraph-config.ts";
+import {
+  ConfigurationError,
+  type JsonObject,
+  configureCursor,
+  isCurrentClaudeConfiguration,
+} from "./codegraph-config.ts";
 import {
   type ConfigurationSnapshot,
   inspectConfiguration,
@@ -6,25 +11,31 @@ import {
   withConfigurationLocks,
   writeJsonAtomically,
 } from "./codegraph-config-files.ts";
-import { accessSync, constants } from "node:fs";
+import {
+  commandExitCode,
+  configureClaude,
+  configureCodex,
+  probeClaude,
+  probeCodex,
+  requireExecutable,
+  runMutationCommand,
+} from "./codegraph-configure-command.ts";
 import { ReportedCommandError } from "./codegraph-configure-reported-error.ts";
 import { join } from "node:path";
 
-interface CommandResult {
-  exitCode: number;
-  output: string;
+interface RequestedConfiguration {
+  readonly claudeBinary: string;
+  readonly claudePath: string;
+  readonly codexBinary: string;
+  readonly codexPath: string;
+  readonly codegraphBinary: string;
+  readonly cursorPath: string;
+  readonly includeCursor: boolean;
 }
-type Registration = "absent" | "registered";
-
-class CommandError extends Error {
-  public override readonly name = "CommandError";
-
-  public constructor(
-    public readonly exitCode: number,
-    message: string,
-  ) {
-    super(message || `command failed with exit ${exitCode}`);
-  }
+interface CurrentConfiguration {
+  readonly claude: JsonObject;
+  readonly codex: JsonObject;
+  readonly cursor: JsonObject | undefined;
 }
 
 function main(): number {
@@ -43,47 +54,109 @@ function main(): number {
 
 function configureCodegraph(): void {
   const home = requiredEnvironment("HOME");
-  const claudeBinary = process.env.CODEGRAPH_CLAUDE_BIN ?? "claude";
-  const codexBinary = process.env.CODEGRAPH_CODEX_BIN ?? "codex";
-  const codegraphBinary = process.env.CODEGRAPH_BIN ?? "codegraph";
-  const cursorPath =
-    process.env.CODEGRAPH_CURSOR_CONFIG ?? join(home, ".cursor", "mcp.json");
-  const claudePath =
-    process.env.CODEGRAPH_CLAUDE_CONFIG ?? join(home, ".claude.json");
-  const codexPath =
-    process.env.CODEGRAPH_CODEX_CONFIG ??
-    join(process.env.CODEX_HOME ?? join(home, ".codex"), "config.toml");
-
-  for (const binary of [claudeBinary, codexBinary, codegraphBinary]) {
+  const requested: RequestedConfiguration = {
+    claudeBinary: process.env.CODEGRAPH_CLAUDE_BIN ?? "claude",
+    claudePath:
+      process.env.CODEGRAPH_CLAUDE_CONFIG ?? join(home, ".claude.json"),
+    codexBinary: process.env.CODEGRAPH_CODEX_BIN ?? "codex",
+    codexPath:
+      process.env.CODEGRAPH_CODEX_CONFIG ??
+      join(process.env.CODEX_HOME ?? join(home, ".codex"), "config.toml"),
+    codegraphBinary: process.env.CODEGRAPH_BIN ?? "codegraph",
+    cursorPath:
+      process.env.CODEGRAPH_CURSOR_CONFIG ?? join(home, ".cursor", "mcp.json"),
+    includeCursor: process.env.CODEGRAPH_INCLUDE_CURSOR === "1",
+  };
+  for (const binary of [
+    requested.claudeBinary,
+    requested.codexBinary,
+    requested.codegraphBinary,
+  ]) {
     requireExecutable(binary);
   }
+  const paths = requested.includeCursor
+    ? [requested.claudePath, requested.codexPath, requested.cursorPath]
+    : [requested.claudePath, requested.codexPath];
+  withConfigurationLocks(paths, () => {
+    reconcileConfiguration(requested);
+  });
+}
 
-  withConfigurationLocks([claudePath, codexPath, cursorPath], () => {
-    const claude = inspectConfiguration(
-      claudePath,
-      "agent config",
-      "Claude configuration",
-    );
-    const codex = inspectConfiguration(codexPath, "agent config");
-    const cursor = inspectConfiguration(
-      cursorPath,
-      "Cursor MCP config",
-      "Cursor MCP",
-    );
-    const snapshots = [claude.snapshot, codex.snapshot, cursor.snapshot];
+function reconcileConfiguration(requested: RequestedConfiguration): void {
+  const claude = inspectConfiguration(
+    requested.claudePath,
+    "agent config",
+    "Claude configuration",
+  );
+  const codex = inspectConfiguration(requested.codexPath, "agent config");
+  const cursor = requested.includeCursor
+    ? inspectConfiguration(
+        requested.cursorPath,
+        "Cursor MCP config",
+        "Cursor MCP",
+      )
+    : undefined;
+  const snapshots = [
+    claude.snapshot,
+    codex.snapshot,
+    ...(cursor === undefined ? [] : [cursor.snapshot]),
+  ];
 
-    runTransaction(snapshots, () => {
-      const claudeRegistration = probeClaude(claudeBinary);
-      const codexRegistration = probeCodex(codexBinary);
-      runMutationCommand(codegraphBinary, ["telemetry", "off"]);
-      configureClaude(claudeBinary, codegraphBinary, claudeRegistration);
-      configureCodex(codexBinary, codegraphBinary, codexRegistration);
-      writeJsonAtomically(
-        cursorPath,
-        configureCursor(cursor.parsed ?? {}, codegraphBinary),
-      );
+  runTransaction(snapshots, () => {
+    applyConfiguration(requested, {
+      claude: claude.parsed ?? {},
+      codex: codex.parsed ?? {},
+      cursor: cursor?.parsed,
     });
   });
+}
+
+function applyConfiguration(
+  requested: RequestedConfiguration,
+  current: CurrentConfiguration,
+): void {
+  const claudeRegistration = isCurrentClaudeConfiguration(
+    current.claude,
+    requested.codegraphBinary,
+  )
+    ? "current"
+    : probeClaude(requested.claudeBinary);
+  const codexRegistration = probeCodex(
+    requested.codexBinary,
+    requested.codegraphBinary,
+  );
+  const desiredCursor =
+    current.cursor === undefined
+      ? undefined
+      : configureCursor(current.cursor, requested.codegraphBinary);
+  const cursorCurrent =
+    desiredCursor === undefined ||
+    Bun.deepEquals(current.cursor, desiredCursor);
+  if (
+    claudeRegistration === "current" &&
+    codexRegistration === "current" &&
+    cursorCurrent
+  ) {
+    return;
+  }
+  runMutationCommand(requested.codegraphBinary, ["telemetry", "off"]);
+  if (claudeRegistration !== "current") {
+    configureClaude(
+      requested.claudeBinary,
+      requested.codegraphBinary,
+      claudeRegistration,
+    );
+  }
+  if (codexRegistration !== "current") {
+    configureCodex(
+      requested.codexBinary,
+      requested.codegraphBinary,
+      codexRegistration,
+    );
+  }
+  if (!cursorCurrent && desiredCursor !== undefined) {
+    writeJsonAtomically(requested.cursorPath, desiredCursor);
+  }
 }
 
 function runTransaction(
@@ -105,146 +178,12 @@ function runTransaction(
   }
 }
 
-function probeClaude(binary: string): Registration {
-  const result = runCapturedCommand(binary, ["mcp", "get", "codegraph"]);
-  if (result.exitCode === 0) {
-    return "registered";
-  }
-  const absentMessages = [
-    'No MCP server named "codegraph".',
-    'No MCP server named "codegraph". .mcp.json servers are awaiting approval — run `claude` in this directory to review them.',
-  ];
-  if (result.exitCode === 1 && absentMessages.includes(result.output)) {
-    return "absent";
-  }
-  throw new CommandError(result.exitCode, result.output);
-}
-
-function probeCodex(binary: string): Registration {
-  const result = runCapturedCommand(binary, [
-    "mcp",
-    "get",
-    "--json",
-    "codegraph",
-  ]);
-  if (result.exitCode === 0) {
-    return "registered";
-  }
-  if (
-    result.exitCode === 1 &&
-    result.output === "Error: No MCP server named 'codegraph' found."
-  ) {
-    return "absent";
-  }
-  throw new CommandError(result.exitCode, result.output);
-}
-
-function configureClaude(
-  binary: string,
-  codegraphBinary: string,
-  registration: Registration,
-): void {
-  if (registration === "registered") {
-    runMutationCommand(binary, [
-      "mcp",
-      "remove",
-      "--scope",
-      "user",
-      "codegraph",
-    ]);
-  }
-  runMutationCommand(binary, [
-    "mcp",
-    "add",
-    "--scope",
-    "user",
-    "codegraph",
-    "-e",
-    "CODEGRAPH_TELEMETRY=0",
-    "-e",
-    "CODEGRAPH_NO_UPDATE_CHECK=1",
-    "-e",
-    "CODEGRAPH_NO_DOWNLOAD=1",
-    "--",
-    codegraphBinary,
-    "serve",
-    "--mcp",
-  ]);
-}
-
-function configureCodex(
-  binary: string,
-  codegraphBinary: string,
-  registration: Registration,
-): void {
-  if (registration === "registered") {
-    runMutationCommand(binary, ["mcp", "remove", "codegraph"]);
-  }
-  runMutationCommand(binary, [
-    "mcp",
-    "add",
-    "codegraph",
-    "--env",
-    "CODEGRAPH_TELEMETRY=0",
-    "--env",
-    "CODEGRAPH_NO_UPDATE_CHECK=1",
-    "--env",
-    "CODEGRAPH_NO_DOWNLOAD=1",
-    "--",
-    codegraphBinary,
-    "serve",
-    "--mcp",
-  ]);
-}
-
-function runCapturedCommand(
-  binary: string,
-  arguments_: readonly string[],
-): CommandResult {
-  const result = Bun.spawnSync([binary, ...arguments_], {
-    stderr: "pipe",
-    stdout: "pipe",
-  });
-  return {
-    exitCode: result.exitCode,
-    output: `${result.stdout.toString()}${result.stderr.toString()}`.trimEnd(),
-  };
-}
-
-function runMutationCommand(
-  binary: string,
-  arguments_: readonly string[],
-): void {
-  const result = Bun.spawnSync([binary, ...arguments_], {
-    stderr: "inherit",
-    stdout: "inherit",
-  });
-  if (result.exitCode !== 0) {
-    throw new ReportedCommandError(result.exitCode);
-  }
-}
-
-function requireExecutable(binary: string): void {
-  const found = binary.includes("/") ? binary : Bun.which(binary);
-  try {
-    accessSync(found ?? binary, constants.X_OK);
-  } catch {
-    throw new ConfigurationError(`missing executable: ${binary}`);
-  }
-}
-
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
   if (value === undefined || value === "") {
     throw new ConfigurationError(`missing environment: ${name}`);
   }
   return value;
-}
-
-function commandExitCode(error: unknown): number {
-  return error instanceof CommandError || error instanceof ReportedCommandError
-    ? error.exitCode
-    : 1;
 }
 
 function errorMessage(error: unknown): string {

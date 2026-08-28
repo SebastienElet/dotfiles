@@ -25,4 +25,5 @@ fi
 cd 
 git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
-make all
+make brew
+make minimal </dev/null

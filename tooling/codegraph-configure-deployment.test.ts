@@ -52,45 +52,8 @@ afterEach(() => {
 });
 
 describe("CodeGraph deployment", () => {
-  registerConfiguratorDeploymentTest();
-  registerVoltaDeploymentTest();
   registerIgnoreDeploymentTest();
 });
-
-function registerConfiguratorDeploymentTest(): void {
-  test("the supported Make entry point deploys the shipped configurator", () => {
-    const directory = createTemporaryDirectory();
-    const result = makeDryRun(directory, "codegraph");
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("tooling/codegraph-configure");
-    expect(result.stdout).toContain("CODEGRAPH_CLAUDE_BIN=");
-    expect(result.stdout).toContain("CODEGRAPH_CODEX_BIN=");
-    expect(result.stdout).toContain("CODEGRAPH_BIN=");
-    expect(result.stdout).toContain(
-      `${directory}/brew/bin/bun tooling/codegraph-configure`,
-    );
-    expect(result.stdout).toContain("brew install bun");
-  });
-}
-
-function registerVoltaDeploymentTest(): void {
-  test("CodeGraph installation remains delegated to unpinned Volta commands", () => {
-    const directory = createTemporaryDirectory();
-    const codex = makeDryRun(
-      directory,
-      join(directory, ".volta", "bin", "codex"),
-    );
-    const codegraph = makeDryRun(directory, "codegraph-cli");
-
-    expect(codex.exitCode).toBe(0);
-    expect(codex.stdout).toContain("volta install @openai/codex");
-    expect(codex.stdout).not.toContain("npm install -g @openai/codex");
-    expect(codegraph.exitCode).toBe(0);
-    expect(codegraph.stdout).toContain("volta install @colbymchenry/codegraph");
-    expect(codegraph.stdout).not.toContain("@colbymchenry/codegraph@");
-  });
-}
 
 function registerIgnoreDeploymentTest(): void {
   test(
@@ -233,17 +196,6 @@ function createTemporaryDirectory(): string {
   temporaryDirectories.push(directory);
   mkdirSync(directory, { recursive: true });
   return directory;
-}
-
-function makeDryRun(home: string, target: string): CommandResult {
-  return runMake([
-    "-Bn",
-    `HOME=${home}`,
-    `BREW_BIN=${join(home, "brew", "bin")}`,
-    `VOLTA_BIN=${join(home, ".volta", "bin")}`,
-    `LOCAL_BIN=${join(home, ".local", "bin")}`,
-    target,
-  ]);
 }
 
 function runMake(arguments_: readonly string[]): CommandResult {

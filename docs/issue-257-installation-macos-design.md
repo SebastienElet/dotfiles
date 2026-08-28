@@ -1,7 +1,7 @@
 # Design — Socle macOS et contrat du smoke
 
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
-- **Statut** : décisions utilisateur approuvées le 28 août 2026, architecture cible non implémentée
+- **Statut** : décisions utilisateur approuvées le 28 août 2026, implémentées par #257
 
 ## Constat vérifié
 

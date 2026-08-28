@@ -19,10 +19,9 @@ Fish reste utilisable sans lui.
 ## Conséquences
 
 - Démarrage rapide et empreinte réduite au repos ; CLI `docker` inchangée.
-- Les cibles Docker doivent tolérer l'absence de daemon — en CI, ou juste
-  après une installation neuve — en rapportant un résultat `skipped` distinct
-  d'une installation vérifiée selon la politique explicite de l'appelant
-  ([ADR-023](023-ci-lint-et-installation.md)).
+- Les installations optionnelles dépendant de Docker échouent si le daemon est absent. Un appelant
+  peut demander explicitement `DOCKER_UNAVAILABLE_POLICY=allow-skip`, qui rapporte un résultat
+  `skipped` distinct d'une installation vérifiée.
 - Dépendance à un produit tiers propriétaire.
 
 ## Alternatives écartées

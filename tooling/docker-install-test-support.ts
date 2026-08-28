@@ -67,7 +67,7 @@ function runDockerInstallTarget(
       DOCKER_INSTALL_TEST_SCENARIO: scenario,
       DOCKER_INSTALL_TEST_STATE: fixture.trace,
       DOCKER_INSTALL_TEST_TARGET: target,
-      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}`,
+      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}:/usr/bin:/bin`,
     },
     stderr: "pipe",
     stdout: "pipe",
@@ -96,7 +96,10 @@ function createDockerInstallFixture(
   if (dockerProviderAvailable) {
     symlinkSync(provider, join(binaryDirectory, "docker"));
   }
-  writeFileSync(join(localBinaryDirectory, "scrapling_mcp"), "installed\n");
+  symlinkSync(
+    join(repositoryRoot, "tooling", "scrapling-mcp"),
+    join(localBinaryDirectory, "scrapling_mcp"),
+  );
   return { binaryDirectory, localBinaryDirectory, makeCommand, trace };
 }
 
