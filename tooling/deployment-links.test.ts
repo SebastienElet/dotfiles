@@ -65,6 +65,7 @@ const userSkillDestinations = [
     "claude-developer",
     "obsidian-retrieval",
     "codegraph",
+    "design-claim-audit",
     "enforcement-code",
     "harness-reflection",
     "handoff",
