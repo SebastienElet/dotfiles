@@ -1,10 +1,11 @@
 ---
 name: memory-governance
 description: >
-  Govern durable cross-session memory for source-backed invariants that are expensive to rediscover.
-  Use when a user or workflow asks to remember, persist, or reuse a hard-to-derive invariant across
-  sessions. Make sure to use this skill whenever durable invariant memory is explicitly proposed,
-  even if the request calls it notes or lessons learned.
+  Govern explicit durable cross-session memory requests for source-backed invariants that are
+  expensive to rediscover. Use when a user or workflow explicitly asks to remember, persist, or
+  retain an invariant for later sessions, or supplies a previously returned memory candidate for
+  use. Make sure to use this skill whenever an explicit durable-memory request has no supported
+  store configured.
 metadata:
   category: ops
 ---
@@ -16,6 +17,8 @@ metadata:
 Preserve durable invariants that are expensive to rediscover without turning observations into
 authority. A memory entry is a sourced retrieval aid: it may spare repeated investigation, but the
 primary ADR, contract, configuration or official dependency documentation remains authoritative.
+This pilot does not persist memory. It returns source-backed candidates and governs whether a prior
+candidate may be used in the active task.
 
 ## Usage
 
@@ -28,10 +31,10 @@ not create a duplicate memory entry.
 
 ## Steps
 
-1. **Locate the authority and the store.** Identify the in-force primary source, its exact scope and
-   an existing supported memory store. Do not invent a store, infer authority from a transcript, or
-   write through an agent-specific projection. If no supported store exists, return a candidate
-   entry without persisting it.
+1. **Locate the authority.** Identify the in-force primary source, its exact scope and the revision,
+   version or status checked now. Do not infer authority from a transcript or remembered summary.
+   If the source is unavailable or its status cannot be verified, return `status: rejected` with the
+   failed criterion and stop.
 2. **Apply the admission contract.** Admit an invariant only when all of these hold:
    - it is durable within a named scope;
    - normal code, configuration or documentation discovery does not reveal it cheaply;
@@ -44,27 +47,30 @@ not create a duplicate memory entry.
    current failure. Route an owned defect to a fix or focused issue and omit its workaround. An
    external defect may become a temporary compatibility constraint only when official behavior,
    affected versions and its removal condition are verified.
-4. **Write the candidate in this exact shape:**
+4. **Return the candidate in this exact shape:**
 
    ```yaml
    status: candidate
    statement: <one durable invariant>
    scope: <smallest project, domain, agent or user scope that owns it>
    authority: <ADR, contract, configuration, user decision or official dependency behavior>
-   source: <stable locator plus revision, version or status when relevant>
+   source: <stable locator plus the exact revision, version or status checked>
    why_non_derivable: <evidence that ordinary discovery is insufficient or repeatedly costly>
    validated_at: <ISO date and environment in which the source was checked>
    invalidate_when: <observable source, version, configuration or ownership change>
    ```
 
-5. **Validate before persistence.** Read the primary source, confirm its status and scope, remove
-   volatile state, secrets, personal data, prompt text and transcript material, then change
-   `status` to `validated`. A request to remember authorizes only a candidate that passes this
-   contract and targets a known store.
-6. **Retrieve narrowly.** Load only entries relevant to the active task. Use a validated entry
-   without reopening its source merely because time passed; revalidate when `invalidate_when`
-   occurs, the source is unavailable, current evidence contradicts it, or the task raises its
-   assurance level. Mark a contradicted entry `invalidated` instead of silently rewriting it.
+5. **Return without persisting.** Read the primary source, confirm its current status and scope, and
+   remove volatile state, secrets, personal data, prompt text and transcript material. Return the
+   candidate to the user or calling workflow, state that it was not persisted, and keep
+   `status: candidate`. Codex local memory under `~/.codex/memories/` is generated state, not a
+   supported write surface for this skill. Never create, edit or remove files there or in another
+   memory store. A future supported write path requires a separate design and implementation.
+6. **Check freshness at consumption.** Load only candidates relevant to the active task. Every time
+   before applying one, reread its primary source and verify its status, scope, exact revision and
+   each observable `invalidate_when` condition. If any check fails, cannot run or is ambiguous,
+   return `status: invalidated`, name the failed check and do not apply the candidate. If every check
+   holds, use it only for the active task; do not promote or repersist it.
 7. **Route behavior changes separately.** If the candidate would change agent instructions, skills,
    hooks or enforcement, use `harness-reflection`; memory evidence cannot promote itself into
    harness behavior.
@@ -73,6 +79,8 @@ not create a duplicate memory entry.
 
 - **Confusing inconvenience with difficult discovery** — easy lookups accumulate into stale duplicate
   memory; reject an entry that a targeted source search resolves cheaply.
+- **Treating generated Codex state as a write API** — a format change can corrupt or strand manually
+  written entries; return the candidate and leave `~/.codex/memories/` untouched.
 - **Saving the successful workaround** — an owned defect becomes doctrine and survives its fix;
   retain only an independently sourced invariant and route the defect to repair or an issue.
 - **Using a time-to-live for a durable invariant** — periodic expiry recreates the investigation the
@@ -84,11 +92,14 @@ not create a duplicate memory entry.
 
 ## Constraints
 
-- Never persist a workaround for a defect in code or configuration we own.
+- Never persist anything from this pilot, including a workaround for a defect in code or
+  configuration we own.
+- Never create, edit or remove `~/.codex/memories/` files or write to another memory store.
 - Never let memory replace, amend or outrank its primary source.
 - Never persist raw transcripts, private prompts, secrets, credentials or personal data.
 - Never admit an entry without `why_non_derivable`, current source validation and an observable
   `invalidate_when` condition.
+- Never apply a prior candidate without rechecking its source revision and invalidation conditions.
 - Never broaden scope beyond what the authority establishes.
 - Never promote memory into harness behavior without the evidence and trial required by
   `harness-reflection`.

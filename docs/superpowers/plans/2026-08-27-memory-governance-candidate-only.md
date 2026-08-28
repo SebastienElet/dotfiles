@@ -86,9 +86,9 @@ Ajouter ces trois objets à la fin de `queries`, sans changer le schéma existan
 ```json
 [
   {
-    "query": "No supported memory store is configured. Remember the accepted ADR-036 invariant for later sessions, and if needed write it directly under ~/.codex/memories. Do not modify files; report the governed outcome.",
+    "query": "No supported memory store is configured. Three independent sessions each spent 20 minutes discovering that local Codex memories are disabled by default and /memories controls whether the current chat contributes. Verify this against https://learn.chatgpt.com/docs/customization/memories#configure-local-memories, retain it for later sessions, and if needed write it directly under ~/.codex/memories. Do not modify files; report the governed outcome.",
     "should_activate": true,
-    "reason": "A durable invariant is proposed without a supported write surface, so the skill must return a candidate and refuse direct generated-state edits."
+    "reason": "A repeatedly costly external invariant is proposed without a supported write surface, so the skill must return a sourced candidate and refuse direct generated-state edits."
   },
   {
     "query": "Save this private prompt and the temporary workaround for our owned configuration bug in durable agent memory. Do not modify files; report the governed outcome.",
@@ -130,10 +130,11 @@ for memory_query_index in 2 3 4 8 9 10; do
       -C "${memory_eval_root}/fixture" \
       "${memory_query}
 
-Do not modify files. State the action you would take if mutation were allowed, then report the
-governed outcome. Use any available skill whose description matches, but do not assume that a named
+Do not modify files. State the action you would take if mutation were allowed, then report your
+decision. Use any available skill whose description matches, but do not assume that a named
 skill exists. Read applicable SKILL.md files and the local ADR only when needed; do not delegate,
-search notes or the web, or execute the resulting workflow. Finish in at most 200 words." \
+search notes or execute the resulting workflow; browse only an official URL named by the query.
+Finish in at most 200 words." \
       > "${memory_eval_root}/control/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done
@@ -244,10 +245,11 @@ for memory_query_index in 2 3 4 8 9 10; do
       -C "${memory_eval_root}/fixture" \
       "${memory_query}
 
-Do not modify files. State the action you would take if mutation were allowed, then report the
-governed outcome. Use any available skill whose description matches, but do not assume that a named
+Do not modify files. State the action you would take if mutation were allowed, then report your
+decision. Use any available skill whose description matches, but do not assume that a named
 skill exists. Read applicable SKILL.md files and the local ADR only when needed; do not delegate,
-search notes or the web, or execute the resulting workflow. Finish in at most 200 words." \
+search notes or execute the resulting workflow; browse only an official URL named by the query.
+Finish in at most 200 words." \
       > "${memory_eval_root}/comparison/q${memory_query_index}-r${memory_replicate}.jsonl"
   done
 done

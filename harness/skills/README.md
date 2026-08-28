@@ -34,10 +34,10 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Ops
 
-| Skill                 | Description                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| `handoff`             | Hand the current work to a fresh session instead of letting the context compact.                   |
-| `memory-governance`   | Govern durable cross-session memory for source-backed invariants that are expensive to rediscover. |
-| `obsidian-retrieval`  | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                       |
-| `skill-manager`       | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes.   |
-| `workflow-automation` | Turn evidenced repeated human or agent workflows into supported automation.                        |
+| Skill                 | Description                                                                                                          |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `handoff`             | Hand the current work to a fresh session instead of letting the context compact.                                     |
+| `memory-governance`   | Govern explicit durable cross-session memory requests for source-backed invariants that are expensive to rediscover. |
+| `obsidian-retrieval`  | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                                         |
+| `skill-manager`       | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes.                     |
+| `workflow-automation` | Turn evidenced repeated human or agent workflows into supported automation.                                          |
