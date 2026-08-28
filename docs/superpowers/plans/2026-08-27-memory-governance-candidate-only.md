@@ -15,7 +15,10 @@
 - Ne créer aucun store, adapter, router externe ou runner d'eval permanent.
 - Ne jamais écrire dans `~/.codex/memories/`.
 - Exécuter chaque prompt dans un nouveau processus `codex exec --ephemeral` avec sandbox `read-only`.
-- Comparer les mêmes prompts au moins trois fois sans puis avec la skill.
+- Exécuter q8 trois fois sans puis trois fois avec la skill ; q3 et q4 sont des contrôles négatifs
+  de routage adjacents dans la seule condition avec skill, trois fois chacun.
+- Ne pas présenter q9, q10, les chemins de rejet ni la consommation avec révision périmée comme
+  exercés : ce run ne prouve que q8 et le routage négatif q3/q4.
 - Conserver les sorties JSONL brutes hors du dépôt et versionner seulement la preuve normalisée.
 - Ne pas ajouter de commentaire de code.
 
@@ -116,12 +119,12 @@ jq -e '.skill == "memory-governance" and (.version | type == "string") and
 
 Résultat attendu : `true`.
 
-- [ ] **Step 5: Exécuter les six prompts contrôle trois fois**
+- [ ] **Step 5: Exécuter q8 contrôle trois fois**
 
 Exécuter dans un seul shell pour conserver le chemin temporaire propre à la tâche :
 
 ```bash
-for memory_query_index in 2 3 4 8 9 10; do
+for memory_query_index in 8; do
   memory_query=$(jq -r ".queries[${memory_query_index}].query" \
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
@@ -141,7 +144,8 @@ done
 printf '%s\n' "${memory_eval_root}" > /private/tmp/memory-governance-eval-root
 ```
 
-Résultat attendu : 18 JSONL terminent sans mutation ; les cas positifs ne peuvent pas lire `memory-governance/SKILL.md`, ce qui constitue le RED d'activation.
+Résultat attendu : trois JSONL terminent sans mutation et ne lisent pas
+`memory-governance/SKILL.md` : le RED d'activation de q8 est établi.
 
 - [ ] **Step 6: Vérifier le RED et préserver les artefacts hors dépôt**
 
@@ -149,7 +153,7 @@ Exécuter :
 
 ```bash
 memory_eval_root=$(</private/tmp/memory-governance-eval-root)
-test "$(find "${memory_eval_root}/control" -name '*.jsonl' -type f | wc -l | tr -d ' ')" = 18
+test "$(find "${memory_eval_root}/control" -name '*.jsonl' -type f | wc -l | tr -d ' ')" = 3
 test -z "$(rg -l 'memory-governance/SKILL.md' "${memory_eval_root}/control" || true)"
 git status --short
 ```
@@ -166,7 +170,8 @@ Résultat attendu : aucune lecture du skill dans le contrôle ; le seul diff fon
 **Interfaces :**
 
 - Consomme : le contrat de la spec et le RED de la tâche 1.
-- Produit : une politique sans persistance et six scénarios stables couvrant routing et refus.
+- Produit : une politique sans persistance et des scénarios versionnés ; le run final n'exerce que
+  q8, q3 et q4.
 
 - [ ] **Step 1: Remplacer la publication implicite par le flux candidate-only**
 
@@ -213,8 +218,8 @@ git commit -m "fix(memory): make governance candidate-only"
 
 **Interfaces :**
 
-- Consomme : mêmes prompts et trois réplicats de la tâche 1, skill candidate-only de la tâche 2.
-- Produit : matrice d'activation et de comportement vérifiable par scénario.
+- Consomme : q8 contrôle et trois réplicats, puis la skill candidate-only de la tâche 2.
+- Produit : la paire RED/GREEN q8 et les contrôles négatifs de routage q3/q4.
 
 - [ ] **Step 1: Installer temporairement le lien supporté**
 
@@ -229,14 +234,14 @@ readlink /Users/sebastien/.agents/skills/memory-governance
 
 Résultat attendu : le lien cible le skill du worktree exact.
 
-- [ ] **Step 2: Exécuter les six prompts comparaison trois fois**
+- [ ] **Step 2: Exécuter q3, q4 et q8 comparaison trois fois**
 
-Exécuter avec les mêmes index de requête et le même suffixe que le contrôle :
+Exécuter q8 avec le même suffixe que le contrôle, et q3/q4 comme contrôles négatifs de routage :
 
 ```bash
 memory_eval_root=$(</private/tmp/memory-governance-eval-root)
 mkdir -p "${memory_eval_root}/comparison"
-for memory_query_index in 2 3 4 8 9 10; do
+for memory_query_index in 3 4 8; do
   memory_query=$(jq -r ".queries[${memory_query_index}].query" \
     harness/skills/memory-governance/evals/trigger-queries.json)
   for memory_replicate in 1 2 3; do
@@ -255,7 +260,8 @@ Finish in at most 200 words." \
 done
 ```
 
-Résultat attendu : 18 nouveaux processus, 18 JSONL et aucune mutation.
+Résultat attendu : neuf nouveaux processus, neuf JSONL et aucune mutation : q3/q4 sont négatifs
+pour l'activation, q8 est le GREEN attendu.
 
 - [ ] **Step 3: Retirer le seul état utilisateur temporaire**
 
@@ -271,15 +277,14 @@ Résultat attendu : destination absente ; les autres skills utilisateur sont int
 
 - [ ] **Step 4: Noter routing et comportement séparément**
 
-Pour chaque JSONL, exiger une lecture du fichier de skill pour les cas positifs de comparaison et aucune lecture pour les négatifs adjacents. Noter le comportement avec ces résultats exacts :
+Pour q8 de comparaison, exiger une lecture du fichier de skill et noter le comportement
+candidate-only. Pour q3/q4, exiger l'absence de lecture : ce sont des contrôles négatifs de
+routage, non des verdicts candidate-only. Noter les résultats exacts :
 
 ```text
-no store + current authority -> candidate, no persistence
-private prompt + owned workaround -> rejected, defect routed to repair
-stale or unverifiable revision -> invalidated, candidate not applied
-versioned external quirk -> candidate only after current official verification
-AGENTS.md change -> agent-instructions, not memory-governance
-Obsidian lookup -> obsidian-retrieval, not memory-governance
+q8 comparaison -> status: candidate, aucune persistance
+q3/q4 comparaison -> aucune lecture de memory-governance/SKILL.md
+q9/q10, chemins de rejet, révision périmée/fraîcheur -> non exercés dans ce run
 ```
 
 - [ ] **Step 5: Écrire le rapport versionné**

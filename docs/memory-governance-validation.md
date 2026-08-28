@@ -56,7 +56,7 @@ lecture ne vaut pas une activation.
 
 Observations finales d'activation : contrôle q8 `0/3`, comparaison q3 `0/3`, comparaison q4
 `0/3`, comparaison q8 `3/3`. Les trois q8 de comparaison rendent le YAML littéral
-`status: candidate`, déclarent l'absence de persistance faute de store supporté et ne modifient
+`status: candidate`, déclarent l'absence de persistance faute de store supporté et ne persistent
 aucun candidat ; aucune écriture sous `~/.codex/memories/` n'a été observée : comportement q8
 final `3/3`. Cette preuve ne porte que sur la lecture de
 `memory-governance/SKILL.md`, pas sur un mécanisme de chargement plus général.
@@ -84,3 +84,7 @@ Les sorties brutes ne sont pas une preuve transférable au-delà de cet environn
 affirmation n'est faite pour d'autres agents, plateformes ou versions de Codex ; seule la lecture
 de la skill est prouvée, et non une garantie universelle de découverte, de comportement ou de
 persistance.
+
+q9, q10, les chemins de rejet et le comportement de révision périmée/fraîcheur n'ont pas été
+exercés dans ce run. Le contrat de consommation et de fraîcheur est présent statiquement dans la
+skill, mais il n'est pas prouvé comportementalement ici.

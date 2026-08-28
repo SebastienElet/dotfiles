@@ -68,18 +68,19 @@ Les prompts canoniques restent dans
 `harness/skills/memory-governance/evals/trigger-queries.json`. Chaque run utilise un nouveau
 processus `codex exec --ephemeral`, un dépôt temporaire propre et un mode non mutant. Les réponses
 brutes restent des artefacts locaux ; un rapport versionné conserve l'environnement, le protocole,
-les prompts, l'activation observée et le verdict comportemental.
+l'activation observée et le verdict comportemental.
 
-Deux conditions exécutent les mêmes prompts au moins trois fois :
-
-1. contrôle sans installation de `memory-governance` ;
-2. comparaison avec la skill installée par son lien utilisateur Codex supporté.
+Le périmètre exécuté est asymétrique : q8 est la paire d'ablation RED/GREEN, exécutée trois fois
+sans installation puis trois fois avec le lien utilisateur Codex supporté. q3 et q4 sont des
+contrôles négatifs de routage adjacents, exécutés seulement dans la condition comparaison, trois
+fois chacun. Ils ne constituent ni une paire contrôle/comparaison ni une preuve comportementale
+candidate-only.
 
 L'activation Codex est prouvée uniquement par une lecture de
-`~/.agents/skills/memory-governance/SKILL.md` dans le JSONL. Le verdict comportemental est noté
-indépendamment et couvre : source absente, contournement d'un défaut possédé, données privées,
-contrainte externe versionnée, demande de modification d'`AGENTS.md`, et réutilisation après
-changement de révision.
+`~/.agents/skills/memory-governance/SKILL.md` dans le JSONL. Le verdict comportemental q8 est noté
+indépendamment. q9, q10, les chemins de rejet et le comportement de révision périmée/fraîcheur
+n'ont pas été exercés dans ce run. Le contrat de consommation et de fraîcheur est présent
+statiquement dans la skill, mais il n'est pas prouvé comportementalement ici.
 
 Le lien temporaire de comparaison est créé seulement si la destination est absente, puis supprimé
 après les runs. Les prompts interdisent toute mutation ; le sandbox est `read-only`. Une activation
