@@ -14,5 +14,9 @@ mod index_format;
 mod layout;
 #[path = "memory_store/locking.rs"]
 mod locking;
+#[path = "memory_store/path_races.rs"]
+mod path_races;
+#[path = "memory_store/permissions.rs"]
+mod permissions;
 #[path = "memory_store/support.rs"]
 mod support;

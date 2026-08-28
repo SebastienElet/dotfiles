@@ -32,6 +32,13 @@ pub(super) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, Memory
     Ok(paths)
 }
 
+pub(super) fn repair_entry_modes(root: &ManagedPath) -> Result<(), MemoryError> {
+    for path in entry_paths(root)? {
+        path.open_read()?;
+    }
+    Ok(())
+}
+
 pub(super) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
     let bytes = read_bounded(path)?;
     let entry = parse_entry(&bytes)?;

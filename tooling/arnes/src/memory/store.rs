@@ -7,8 +7,9 @@ mod types;
 
 use self::document::{StoredEntry, StoredScope, yaml_bytes};
 use self::index_writer::{empty_index_bytes, index_rebuild_required, prepared_index_bytes};
-use self::inventory::{entry_paths, read_entry, valid_memory_id};
+use self::inventory::{entry_paths, read_entry, repair_entry_modes, valid_memory_id};
 use self::publication::{AtomicPublication, CommitFailure};
+use self::types::StorePhase;
 pub use self::types::{StoreCommit, StoreFailpoint, StoreListing};
 use super::lock::GlobalLock;
 use super::path::{ManagedPath, MemoryRoot, open_root};
@@ -39,11 +40,12 @@ impl Store {
         root: MemoryRoot,
         failpoint: Option<StoreFailpoint>,
     ) -> Result<Self, MemoryError> {
-        let fail_mode_repair = failpoint == Some(StoreFailpoint::BeforeModeRepair);
+        let fail_mode_repair = matches!(failpoint.as_ref(), Some(StoreFailpoint::BeforeModeRepair));
         let root = ManagedPath::root(open_root(&root, fail_mode_repair)?);
         for relative in ["entries", "entries/user", "entries/project"] {
             root.join(relative)?.ensure_directory(fail_mode_repair)?;
         }
+        repair_entry_modes(&root)?;
         root.join(".lock")?.ensure_file(fail_mode_repair)?;
         let store = Self { root, failpoint };
         let publication = store.publication();
@@ -197,11 +199,15 @@ impl Store {
     }
 
     fn acquire_lock(&self) -> Result<GlobalLock, MemoryError> {
-        GlobalLock::acquire(&self.root.join(".lock")?)
+        let path = self.root.join(".lock")?;
+        let lock = GlobalLock::acquire(&self.root, &path)?;
+        self.hit(StorePhase::AfterLockAcquire)?;
+        lock.ensure_anchored(&path)?;
+        Ok(lock)
     }
 
     fn publication(&self) -> AtomicPublication<'_> {
-        AtomicPublication::new(&self.root, self.failpoint)
+        AtomicPublication::new(&self.root, self.failpoint.as_ref())
     }
 
     fn entry_path(&self, entry: &StoredEntry) -> Result<ManagedPath, MemoryError> {
@@ -215,10 +221,17 @@ impl Store {
 
     fn ensure_entry_parent(&self, entry: &StoredEntry) -> Result<(), MemoryError> {
         if let StoredScope::Project { key } = &entry.scope {
-            self.root
-                .join(format!("entries/project/{key}"))?
-                .ensure_directory(false)?;
+            let directory = self.root.join(format!("entries/project/{key}"))?;
+            directory.ensure_directory(false)?;
+            directory.sync_parent_directory()?;
+            self.hit(StorePhase::AfterProjectDirectoryFsync)?;
         }
         Ok(())
+    }
+
+    fn hit(&self, phase: StorePhase) -> Result<(), MemoryError> {
+        self.failpoint
+            .as_ref()
+            .map_or(Ok(()), |failpoint| failpoint.reach(phase))
     }
 }

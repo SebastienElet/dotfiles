@@ -3,8 +3,10 @@ use std::env;
 use std::path::{Component, Path, PathBuf};
 
 mod access;
+mod component;
 
-pub(crate) use access::{ManagedPath, open_root};
+pub(crate) use access::ManagedPath;
+pub(crate) use component::open_root;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MemoryRoot(PathBuf);

@@ -1,12 +1,15 @@
 use super::document::{StoredEntry, StoredScope};
-use super::inventory::{read_bounded, read_entry};
+use super::inventory::read_entry;
 use crate::memory::MemoryError;
 use crate::memory::path::ManagedPath;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::Metadata;
+use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
+
+const MAX_INDEX_READ_BYTES: u64 = 1024 * 1024;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct IndexDocument {
@@ -101,12 +104,31 @@ pub(super) fn index_rebuild_required(
     paths: &[ManagedPath],
 ) -> Result<bool, MemoryError> {
     let digest = inventory_digest(&inventory(paths)?)?;
-    let bytes = read_bounded(&root.join("index.json")?)?;
+    let Some(bytes) = read_index(root)? else {
+        return Ok(true);
+    };
     let index = serde_json::from_slice::<IndexDocument>(&bytes);
     Ok(match index {
         Ok(index) => index.inventory_digest != digest,
         Err(_) => true,
     })
+}
+
+fn read_index(root: &ManagedPath) -> Result<Option<Vec<u8>>, MemoryError> {
+    let mut file = root.join("index.json")?.open_read()?;
+    let metadata = file.metadata().map_err(store_io)?;
+    if metadata.len() > MAX_INDEX_READ_BYTES {
+        return Ok(None);
+    }
+    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    Read::by_ref(&mut file)
+        .take(MAX_INDEX_READ_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(store_io)?;
+    if bytes.len() as u64 > MAX_INDEX_READ_BYTES {
+        return Ok(None);
+    }
+    Ok(Some(bytes))
 }
 
 fn inventory(paths: &[ManagedPath]) -> Result<Vec<InventoryItem>, MemoryError> {

@@ -1,13 +1,14 @@
 pub(crate) use crate::memory_support::{FakeProcessRunner, FakeResponse};
 pub(crate) use arnes::memory::{
     AdmissionAuthorization, AdmissionResult, MemoryRoot, SourceContext, Status, Store,
-    StoreFailpoint, parse_draft, parse_entry, parse_utc_timestamp, resolve_project,
-    resolve_sources, validate_draft,
+    StoreFailpoint, SystemProcessRunner, parse_draft, parse_entry, parse_utc_timestamp,
+    resolve_project, resolve_sources, validate_draft,
 };
 pub(crate) use std::fs;
 pub(crate) use std::os::unix::fs::{PermissionsExt, symlink};
 pub(crate) use std::path::Path;
 pub(crate) use std::process::Command;
+pub(crate) use std::sync::{Arc, Barrier};
 pub(crate) use std::time::{Duration, Instant};
 
 pub(crate) const ROOT_WORKER_OUTPUT: &str = "ARNES_MEMORY_ROOT_WORKER_OUTPUT";

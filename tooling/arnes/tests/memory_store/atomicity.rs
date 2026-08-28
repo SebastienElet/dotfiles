@@ -1,6 +1,49 @@
 use super::support::*;
 
 #[test]
+fn creating_a_project_scope_syncs_its_parent_before_publication() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().join("agent-memory");
+    let store = Store::open_with_failpoint(
+        memory_root(&root),
+        StoreFailpoint::AfterProjectDirectoryFsync,
+    )
+    .unwrap();
+    let common = fixture.path().join("common.git");
+    fs::create_dir(&common).unwrap();
+    let scope_runner = FakeProcessRunner::with_responses([FakeResponse::success(format!(
+        "{}\n",
+        common.display()
+    ))]);
+    let project = resolve_project(fixture.path(), &scope_runner).unwrap();
+    let git = FakeProcessRunner::default();
+    let curl = FakeProcessRunner::default();
+    let context = SourceContext::new(fixture.path(), &git, &curl);
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let draft = draft_yaml(
+        "project",
+        "Project directory durability.",
+        "project durability",
+        "Established.",
+        "user-decision",
+        "decision:project-directory-durability",
+    );
+
+    let result = store.admit(
+        resolved(&draft, &context),
+        Some(&project),
+        &timestamp,
+        &context,
+    );
+
+    assert_rejected(result, "store_unavailable");
+    let project_directory = root.join(format!("entries/project/{}", project.key().as_str()));
+    assert!(project_directory.is_dir());
+    assert_eq!(fs::read_dir(project_directory).unwrap().count(), 0);
+    assert!(store.list().unwrap().entries().is_empty());
+}
+
+#[test]
 fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
     let pre_yaml = [
         StoreFailpoint::BeforeYamlTemporaryCreate,
@@ -30,7 +73,8 @@ fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
 fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");
-    let store = Store::open_with_failpoint(memory_root(&root), failpoint).unwrap();
+    let assert_temporary = matches!(failpoint, StoreFailpoint::BeforeYamlRename);
+    let store = Store::open_with_failpoint(memory_root(&root), failpoint.clone()).unwrap();
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
@@ -78,7 +122,7 @@ fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
             assert!(parse_entry(&bytes).is_ok(), "{failpoint:?}");
         }
     }
-    if failpoint == StoreFailpoint::BeforeYamlRename {
+    if assert_temporary {
         assert!(temporary_count > 0);
     }
 }

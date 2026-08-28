@@ -1,6 +1,36 @@
 use super::support::*;
 
 #[test]
+fn lists_yaml_authority_when_the_index_is_corrupt_or_larger_than_one_mibibyte() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().join("agent-memory");
+    let store = Store::open(memory_root(&root)).unwrap();
+    let runner = FakeProcessRunner::default();
+    let context = SourceContext::new(fixture.path(), &runner, &runner);
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let draft = user_draft("YAML remains authority.", "yaml authority", "Established.");
+    stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
+    let index = root.join("index.json");
+    let oversized = serde_json::to_vec(&serde_json::json!({
+        "schema_version": 1,
+        "inventory_digest": format!("sha256:{}", "0".repeat(64)),
+        "entries": [],
+        "padding": "x".repeat(1024 * 1024),
+    }))
+    .unwrap();
+    assert!(oversized.len() > 1024 * 1024);
+
+    for bytes in [b"{corrupt".to_vec(), oversized] {
+        fs::write(&index, bytes).unwrap();
+
+        let listing = store.list().unwrap();
+
+        assert_eq!(listing.entries().len(), 1);
+        assert!(listing.index_rebuild_required());
+    }
+}
+
+#[test]
 fn writes_private_user_and_project_entries_and_an_exact_minimal_index_row() {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");

@@ -1,16 +1,16 @@
-use super::StoreFailpoint;
+use super::types::{StoreFailpoint, StorePhase};
 use crate::memory::MemoryError;
 use crate::memory::path::ManagedPath;
-use std::fs::Metadata;
+use std::fs::{File, Metadata};
 use std::io::{BufWriter, Write};
 
 pub(super) struct AtomicPublication<'a> {
     root: &'a ManagedPath,
-    failpoint: Option<StoreFailpoint>,
+    failpoint: Option<&'a StoreFailpoint>,
 }
 
 impl<'a> AtomicPublication<'a> {
-    pub(super) fn new(root: &'a ManagedPath, failpoint: Option<StoreFailpoint>) -> Self {
+    pub(super) fn new(root: &'a ManagedPath, failpoint: Option<&'a StoreFailpoint>) -> Self {
         Self { root, failpoint }
     }
 
@@ -33,57 +33,60 @@ impl<'a> AtomicPublication<'a> {
         &self,
         destination: &ManagedPath,
         bytes: &[u8],
-    ) -> Result<StagedYaml, MemoryError> {
-        let (path, metadata) = self.write_temporary(
+    ) -> Result<StagedFile, MemoryError> {
+        self.write_temporary(
             destination,
             bytes,
-            StoreFailpoint::BeforeYamlTemporaryCreate,
-            StoreFailpoint::BeforeYamlWrite,
-            StoreFailpoint::BeforeYamlFlush,
-            StoreFailpoint::BeforeYamlFsync,
-        )?;
-        Ok(StagedYaml { path, metadata })
+            StorePhase::BeforeYamlTemporaryCreate,
+            StorePhase::BeforeYamlWrite,
+            StorePhase::BeforeYamlFlush,
+            StorePhase::BeforeYamlFsync,
+        )
     }
 
-    pub(super) fn stage_index(&self, bytes: &[u8]) -> Result<ManagedPath, MemoryError> {
+    pub(super) fn stage_index(&self, bytes: &[u8]) -> Result<StagedFile, MemoryError> {
         let destination = self.root.join("index.json")?;
         destination.open_read()?;
         self.write_temporary(
             &destination,
             bytes,
-            StoreFailpoint::BeforeIndexTemporaryCreate,
-            StoreFailpoint::BeforeIndexWrite,
-            StoreFailpoint::BeforeIndexFlush,
-            StoreFailpoint::BeforeIndexFsync,
+            StorePhase::BeforeIndexTemporaryCreate,
+            StorePhase::BeforeIndexWrite,
+            StorePhase::BeforeIndexFlush,
+            StorePhase::BeforeIndexFsync,
         )
-        .map(|(path, _)| path)
     }
 
     pub(super) fn publish(
         &self,
-        yaml: StagedYaml,
+        yaml: StagedFile,
         destination: &ManagedPath,
-        index: ManagedPath,
+        index: StagedFile,
         replace: bool,
     ) -> Result<(), CommitFailure> {
-        self.hit(StoreFailpoint::BeforeYamlRename)
+        self.hit(StorePhase::BeforeYamlRename)
             .map_err(CommitFailure::BeforeYaml)?;
+        yaml.ensure_anchored().map_err(CommitFailure::BeforeYaml)?;
         if replace {
             yaml.path.rename_to(destination)
         } else {
             yaml.path.rename_new_to(destination)
         }
         .map_err(CommitFailure::BeforeYaml)?;
-        self.hit(StoreFailpoint::AfterYamlRename)
+        self.hit(StorePhase::AfterYamlRename)
             .map_err(|_| CommitFailure::AfterYaml)?;
-        self.hit(StoreFailpoint::BeforeYamlDirectoryFsync)
+        self.hit(StorePhase::BeforeYamlDirectoryFsync)
             .map_err(|_| CommitFailure::AfterYaml)?;
         destination
             .sync_parent_directory()
             .map_err(|_| CommitFailure::AfterYaml)?;
-        self.hit(StoreFailpoint::BeforeIndexRename)
+        self.hit(StorePhase::BeforeIndexRename)
             .map_err(|_| CommitFailure::AfterYaml)?;
         index
+            .ensure_anchored()
+            .map_err(|_| CommitFailure::AfterYaml)?;
+        index
+            .path
             .rename_to(
                 &self
                     .root
@@ -101,14 +104,14 @@ impl<'a> AtomicPublication<'a> {
         &self,
         destination: &ManagedPath,
         bytes: &[u8],
-        create: StoreFailpoint,
-        write: StoreFailpoint,
-        flush: StoreFailpoint,
-        fsync: StoreFailpoint,
-    ) -> Result<(ManagedPath, Metadata), MemoryError> {
+        create: StorePhase,
+        write: StorePhase,
+        flush: StorePhase,
+        fsync: StorePhase,
+    ) -> Result<StagedFile, MemoryError> {
         self.hit(create)?;
-        let temporary = self.temporary_path(destination)?;
-        let file = temporary.open_new()?;
+        let path = self.temporary_path(destination)?;
+        let file = path.open_new()?;
         let mut writer = BufWriter::new(file);
         self.hit(write)?;
         writer.write_all(bytes).map_err(store_io)?;
@@ -117,7 +120,12 @@ impl<'a> AtomicPublication<'a> {
         self.hit(fsync)?;
         writer.get_ref().sync_all().map_err(store_io)?;
         let metadata = writer.get_ref().metadata().map_err(store_io)?;
-        Ok((temporary, metadata))
+        let file = writer.into_inner().map_err(|_| store_error())?;
+        Ok(StagedFile {
+            path,
+            file,
+            metadata,
+        })
     }
 
     fn temporary_path(&self, destination: &ManagedPath) -> Result<ManagedPath, MemoryError> {
@@ -136,23 +144,25 @@ impl<'a> AtomicPublication<'a> {
         self.root.join(parent.join(format!(".{name}.tmp-{suffix}")))
     }
 
-    fn hit(&self, failpoint: StoreFailpoint) -> Result<(), MemoryError> {
-        if self.failpoint == Some(failpoint) {
-            Err(store_error())
-        } else {
-            Ok(())
-        }
+    fn hit(&self, phase: StorePhase) -> Result<(), MemoryError> {
+        self.failpoint
+            .map_or(Ok(()), |failpoint| failpoint.reach(phase))
     }
 }
 
-pub(super) struct StagedYaml {
+pub(super) struct StagedFile {
     path: ManagedPath,
+    file: File,
     metadata: Metadata,
 }
 
-impl StagedYaml {
+impl StagedFile {
     pub(super) fn metadata(&self) -> &Metadata {
         &self.metadata
+    }
+
+    fn ensure_anchored(&self) -> Result<(), MemoryError> {
+        self.path.ensure_same_file(&self.file)
     }
 }
 
