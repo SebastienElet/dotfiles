@@ -33,6 +33,8 @@ assert_contains '## Collection limits'
 assert_contains 'never infer the original development cause or propose a'
 assert_contains 'Do not inspect the harness, recommend changes, assign priorities, or draft rules to paste.'
 assert_contains 'Remain read-only: never edit repository files or mutate forge state.'
+assert_contains '/pr-feedback --count <count>'
+assert_contains 'prefixed numbers as pull request identifiers.'
 assert_contains '--workspace <workspace> --repo <repo> --limit 10'
 assert_contains "GitHub's commit \`authors\` field"
 assert_contains 'Record push attribution as uncertain unless separate forge evidence identifies that actor.'

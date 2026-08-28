@@ -20,10 +20,10 @@ read-only and never edits repository or forge state.
 
 ## Usage
 
-`/pr-feedback <PR numbers or count>`
+`/pr-feedback <PR number...>` or `/pr-feedback --count <count>`
 
-Accept an explicit list of pull request numbers or a count. By default, inspect the latest ten
-merged pull requests authored by the user.
+Treat bare numbers and `#`-prefixed numbers as pull request identifiers. Accept a sample size only
+through `--count`. By default, inspect the latest ten merged pull requests authored by the user.
 
 ## Steps
 
