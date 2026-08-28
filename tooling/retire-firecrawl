@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { runFirecrawlRetirement } from "./firecrawl-retirement.ts";
-
-process.exitCode = runFirecrawlRetirement();

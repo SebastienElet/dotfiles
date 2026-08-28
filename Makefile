@@ -10,7 +10,6 @@ MAS?=mas
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=allow-skip
-FIRECRAWL_RETIREMENT_DOCKER_POLICY?=require-docker
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
@@ -221,7 +220,6 @@ ai: \
 	openspec \
 	scrapling \
 	skills
-	@DOCKER_UNAVAILABLE_POLICY="${FIRECRAWL_RETIREMENT_DOCKER_POLICY}" "${DOTFILES_PATH}/tooling/retire-firecrawl"
 
 ~/.arnes.yaml: ${DOTFILES_PATH}/home/.arnes.yaml
 	${CREATE_SYMLINK}

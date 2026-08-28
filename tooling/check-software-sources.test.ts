@@ -40,7 +40,7 @@ test("the supported installation graph has no undeclared source", () => {
   expect(result.exitCode).toBe(0);
 });
 
-test("the supported installation graph retains web retrieval without Firecrawl", () => {
+test("the supported installation graph retains web retrieval", () => {
   const makefile = resolve(repositoryRoot, "Makefile");
   const graph = dryRunInstallationGraph(makefile);
   const sources = [
@@ -50,10 +50,6 @@ test("the supported installation graph retains web retrieval without Firecrawl",
 
   expect(sources).toContain("docker:pyd4vinci/scrapling");
   expect(sources).toContain("docker:cloakhq/cloakbrowser:0.5.3");
-  expect(sources.some((source) => source.includes("firecrawl"))).toBe(false);
-  expect(graph).toContain(
-    `DOCKER_UNAVAILABLE_POLICY="require-docker" "${repositoryRoot}/tooling/retire-firecrawl"`,
-  );
 });
 
 test("the reconciled tools use their supported Homebrew artifacts", () => {
