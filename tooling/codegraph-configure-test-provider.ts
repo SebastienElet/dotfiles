@@ -45,6 +45,30 @@ if (operation === "mcp get") {
     process.exit(1);
   }
   if (existsSync(markerPath)) {
+    if (provider === "codex") {
+      const codexConfiguration = readFileSync(
+        requiredEnvironment("CODEGRAPH_CODEX_CONFIG"),
+        "utf8",
+      );
+      process.stdout.write(
+        `${JSON.stringify({
+          enabled: true,
+          name: "codegraph",
+          transport: {
+            args: ["serve", "--mcp"],
+            command: codexConfiguration.includes("codex:added")
+              ? requiredEnvironment("CODEGRAPH_BIN")
+              : "stale-codegraph",
+            env: {
+              CODEGRAPH_NO_DOWNLOAD: "1",
+              CODEGRAPH_NO_UPDATE_CHECK: "1",
+              CODEGRAPH_TELEMETRY: "0",
+            },
+            type: "stdio",
+          },
+        })}\n`,
+      );
+    }
     process.exit(0);
   }
   process.stderr.write(
@@ -85,7 +109,16 @@ function mutateConfiguration(value: string): void {
     if (value === "removed") {
       delete servers.codegraph;
     } else {
-      servers.codegraph = { args: ["serve", "--mcp"], command: "codegraph" };
+      servers.codegraph = {
+        args: ["serve", "--mcp"],
+        command: requiredEnvironment("CODEGRAPH_BIN"),
+        env: {
+          CODEGRAPH_NO_DOWNLOAD: "1",
+          CODEGRAPH_NO_UPDATE_CHECK: "1",
+          CODEGRAPH_TELEMETRY: "0",
+        },
+        type: "stdio",
+      };
     }
     configuration.mcpServers = servers;
     writeFileSync(path, `${JSON.stringify(configuration)}\n`);

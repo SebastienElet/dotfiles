@@ -34,7 +34,6 @@ interface CommandResult {
 interface ConfigurationSnapshot {
   claude: string;
   codex: string;
-  cursor: string;
 }
 interface RealCliFixture {
   claudeConfig: string;
@@ -52,45 +51,8 @@ afterEach(() => {
 });
 
 describe("CodeGraph deployment", () => {
-  registerConfiguratorDeploymentTest();
-  registerVoltaDeploymentTest();
   registerIgnoreDeploymentTest();
 });
-
-function registerConfiguratorDeploymentTest(): void {
-  test("the supported Make entry point deploys the shipped configurator", () => {
-    const directory = createTemporaryDirectory();
-    const result = makeDryRun(directory, "codegraph");
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("tooling/codegraph-configure");
-    expect(result.stdout).toContain("CODEGRAPH_CLAUDE_BIN=");
-    expect(result.stdout).toContain("CODEGRAPH_CODEX_BIN=");
-    expect(result.stdout).toContain("CODEGRAPH_BIN=");
-    expect(result.stdout).toContain(
-      `${directory}/brew/bin/bun tooling/codegraph-configure`,
-    );
-    expect(result.stdout).toContain("brew install bun");
-  });
-}
-
-function registerVoltaDeploymentTest(): void {
-  test("CodeGraph installation remains delegated to unpinned Volta commands", () => {
-    const directory = createTemporaryDirectory();
-    const codex = makeDryRun(
-      directory,
-      join(directory, ".volta", "bin", "codex"),
-    );
-    const codegraph = makeDryRun(directory, "codegraph-cli");
-
-    expect(codex.exitCode).toBe(0);
-    expect(codex.stdout).toContain("volta install @openai/codex");
-    expect(codex.stdout).not.toContain("npm install -g @openai/codex");
-    expect(codegraph.exitCode).toBe(0);
-    expect(codegraph.stdout).toContain("volta install @colbymchenry/codegraph");
-    expect(codegraph.stdout).not.toContain("@colbymchenry/codegraph@");
-  });
-}
 
 function registerIgnoreDeploymentTest(): void {
   test(
@@ -137,7 +99,7 @@ test.skipIf(
     realCodex === undefined ||
     realVoltaHome === undefined,
 )(
-  "the real Claude and Codex CLIs preserve unrelated configuration",
+  "the real Claude and Codex CLIs preserve unrelated configuration without creating Cursor configuration",
   () => {
     const realCliPaths = z
       .tuple([z.string(), z.string(), z.string()])
@@ -154,27 +116,20 @@ test.skipIf(
     expect(first.exitCode).toBe(0);
     expect(first.stdout).toContain("codegraph");
     expect(first.stderr).toBe("");
-    const firstConfigurations = readConfigurations(
-      claudeConfig,
-      codexConfig,
-      cursorConfig,
-    );
+    const firstConfigurations = readConfigurations(claudeConfig, codexConfig);
     expect(runEntryPoint(environment).exitCode).toBe(0);
-    expect(readConfigurations(claudeConfig, codexConfig, cursorConfig)).toEqual(
+    expect(readConfigurations(claudeConfig, codexConfig)).toEqual(
       firstConfigurations,
     );
 
     const claude = providerConfigurationSchema.parse(
       JSON.parse(firstConfigurations.claude),
     );
-    const cursor = providerConfigurationSchema.parse(
-      JSON.parse(firstConfigurations.cursor),
-    );
     expect(claude.unrelated).toBe("claude");
     expect(claude.mcpServers.codegraph.command).toBe(codegraphBinary);
     expect(firstConfigurations.codex).toContain('unrelated = "codex"');
     expect(firstConfigurations.codex).toContain("[mcp_servers.codegraph]");
-    expect(cursor.mcpServers.codegraph.command).toBe(codegraphBinary);
+    expect(existsSync(cursorConfig)).toBe(false);
     expect(existsSync(log)).toBe(true);
   },
   deploymentTestTimeoutMilliseconds,
@@ -235,17 +190,6 @@ function createTemporaryDirectory(): string {
   return directory;
 }
 
-function makeDryRun(home: string, target: string): CommandResult {
-  return runMake([
-    "-Bn",
-    `HOME=${home}`,
-    `BREW_BIN=${join(home, "brew", "bin")}`,
-    `VOLTA_BIN=${join(home, ".volta", "bin")}`,
-    `LOCAL_BIN=${join(home, ".local", "bin")}`,
-    target,
-  ]);
-}
-
 function runMake(arguments_: readonly string[]): CommandResult {
   return run(["make", "-s", "-C", root, ...arguments_], process.env);
 }
@@ -275,11 +219,9 @@ function run(
 function readConfigurations(
   claude: string,
   codex: string,
-  cursor: string,
 ): ConfigurationSnapshot {
   return {
     claude: readFileSync(claude, "utf8"),
     codex: readFileSync(codex, "utf8"),
-    cursor: readFileSync(cursor, "utf8"),
   };
 }

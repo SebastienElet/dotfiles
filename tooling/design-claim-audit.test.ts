@@ -3,6 +3,7 @@ import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
   expectSuccess,
+  installProvider,
   project,
   runMake,
 } from "./deployment-test-support.ts";
@@ -14,9 +15,12 @@ afterEach(cleanupDeploymentFixtures);
 
 test("Codex aggregate target includes design claim audit", () => {
   const fixture = createDeploymentFixture("design-claim-audit");
+  installProvider(fixture, "bun");
+  installProvider(fixture, "volta");
   const result = runMake(fixture, ["codex"], {
     dryRun: true,
     repository: project,
+    variables: { BREW_BIN: fixture.bin },
   });
   expectSuccess(result);
   expect(result.stdout).toContain(

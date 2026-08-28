@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { main } from "./ci-smoke-targets.ts";
-
-process.exitCode = main(process.argv.slice(2));

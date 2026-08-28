@@ -1,37 +1,35 @@
-# ADR-002 — Homebrew et `mas` comme unique source de paquets
+# ADR-002 — Brewfiles comme source unique des paquets
 
 - **Statut** : accepté
-- **Date** : 2015-02
-- **Commits** : `5c64955`, `ab9771e`
+- **Date** : 2026-08
+- **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
 
-Les outils proviennent de canaux hétérogènes : formules Homebrew, casks,
-App Store, installateurs éditeur. Multiplier les canaux rend la mise à jour
-impossible à automatiser et l'installation impossible à rejouer en CI.
+Les recettes Homebrew unitaires du `Makefile` dispersaient l’inventaire et obligeaient un gate à
+parser leur structure. Les profils macOS ont besoin d’une source déclarative directement comprise
+par le gestionnaire de paquets.
 
 ## Décision
 
-Tout paquet passe par Homebrew (formule ou cask), et par `mas` pour ce que seul
-l'App Store distribue. Une autre source exige une exception explicite et un
-contrat de version, d'intégrité, de mise à jour et de rejeu. L'inventaire de ces
-exceptions est un document opérationnel distinct.
+`Brewfile` porte les formules et casks du profil minimal. `Brewfile.optional` porte ceux du profil
+optionnel, ses taps approuvés et les applications Mac App Store. Homebrew Bundle installe et vérifie
+ces deux inventaires.
 
-Le graphe `make all` est contrôlé automatiquement : toute source absente de
-l'inventaire est refusée. Les services sont pilotés par `brew services` et les
-applications payantes de l'App Store restent exclues par défaut via
-`SKIP_PAID_APPS` afin que la CI puisse rejouer l'installation complète.
+Une source non prise en charge par Bundle reste dans le `Makefile` seulement lorsqu’elle possède
+une logique distincte : Volta/npm, installateur éditeur, build Rust, image Docker, téléchargement
+avec intégrité ou symlink. Ces exceptions sont décrites dans
+[`docs/software-source-exceptions.md`](../software-source-exceptions.md) sans gate miroir.
 
 ## Conséquences
 
-- Une seule commande de mise à jour pour l'ensemble du poste
-  ([ADR-004](004-script-upgrade-unique.md)).
-- Dépendance forte aux dépréciations Homebrew : plusieurs commits ne font que
-  suivre des taps ou des formules retirés en amont.
-- Les exceptions ne bénéficient pas du contrat de version et de mise à jour
-  Homebrew ; leur contrat plus faible est explicite et contrôlé séparément.
+- Un paquet Homebrew apparaît dans un seul Brewfile.
+- `brew bundle check --quiet --no-upgrade` est le probe de convergence.
+- Les taps tiers sont qualifiés dans le manifeste au niveau de la formule concernée.
+- L’inventaire déclaratif n’est ni parsé ni recopié par un test du dépôt.
 
 ## Alternatives écartées
 
-- Installateurs éditeur ou téléchargements manuels : non rejouables.
-- Nix : rupture d'outillage disproportionnée au regard du besoin.
+- Recettes `brew install` unitaires dans Make : double source de vérité.
+- Inventaire TypeScript dérivé du Makefile : test miroir sans comportement propre.
+- Lockfile Homebrew : Bundle ne fournit pas ce contrat de versions figées.

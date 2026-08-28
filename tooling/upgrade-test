@@ -50,7 +50,7 @@ printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
 "$real_git" --git-dir="$remote" symbolic-ref HEAD refs/heads/main
 remote_tip=$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)
 
-for command_name in brew make mas npm volta skills claude jq; do
+for command_name in brew make mas npm volta claude jq; do
   printf '%s\n' \
     '#!/usr/bin/env bash' \
     'printf "%s %s\n" "$(basename "$0")" "$*" >>"$COMMAND_LOG"' \

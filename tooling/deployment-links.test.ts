@@ -145,16 +145,28 @@ test(
     );
     expect(pathExists(marker)).toBeFalse();
 
-    unlinkSync(starship);
-    const unexpected = join(fixture.root, "unexpected");
-    mkdirSync(unexpected);
-    symlinkSync(unexpected, starship);
-    expectSuccess(runMake(fixture, [starship], { repository: project }));
-    expect(linkTarget(starship)).toBe(unexpected);
+    expectDivergentSymlinkRejected(fixture, starship);
   },
   deploymentTimeoutMilliseconds,
 );
-test("deploys shared instructions and skills, preserves local rules, and replays idempotently", () => {
+
+function expectDivergentSymlinkRejected(
+  fixture: ReturnType<typeof createDeploymentFixture>,
+  destination: string,
+): void {
+  unlinkSync(destination);
+  const unexpected = join(fixture.root, "unexpected");
+  mkdirSync(unexpected);
+  symlinkSync(unexpected, destination);
+  const result = runMake(fixture, [destination], { repository: project });
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    `exists and is not the expected symbolic link`,
+  );
+  expect(linkTarget(destination)).toBe(unexpected);
+}
+
+test("deploys shared instructions and skills, rejects divergent rules, and replays idempotently", () => {
   const fixture = createDeploymentFixture("agent-instructions");
   const claudeRule = join(
     fixture.home,
@@ -183,14 +195,9 @@ test("deploys shared instructions and skills, preserves local rules, and replays
   expect(linkTarget(codexSkill)).toBe(
     join(project, "harness", "skills", "agent-instructions"),
   );
-  const expected =
-    readFileSync(join(project, "harness", "AGENTS.md"), "utf8").replaceAll(
-      /^@.*\n/gmu,
-      "",
-    ) +
-    readFileSync(join(project, "harness", "SOUL.md"), "utf8") +
-    readFileSync(join(project, "harness", "USER.md"), "utf8");
-  expect(readFileSync(codexInstructions, "utf8")).toBe(expected);
+  expect(readFileSync(codexInstructions, "utf8")).toBe(
+    expectedCodexInstructions(),
+  );
   const before = fileIdentity(codexInstructions);
   expectSuccess(
     runMake(fixture, [claudeRule, codexInstructions], {
@@ -200,9 +207,24 @@ test("deploys shared instructions and skills, preserves local rules, and replays
   expect(fileIdentity(codexInstructions)).toEqual(before);
   unlinkSync(claudeRule);
   writeFileSync(claudeRule, "keep\n");
-  expectSuccess(runMake(fixture, [claudeRule], { repository: project }));
+  const divergent = runMake(fixture, [claudeRule], { repository: project });
+  expect(divergent.exitCode).not.toBe(0);
+  expect(divergent.stderr).toContain(
+    "exists and is not the expected symbolic link",
+  );
   expect(readFileSync(claudeRule, "utf8")).toBe("keep\n");
 });
+
+function expectedCodexInstructions(): string {
+  return (
+    readFileSync(join(project, "harness", "AGENTS.md"), "utf8").replaceAll(
+      /^@.*\n/gmu,
+      "",
+    ) +
+    readFileSync(join(project, "harness", "SOUL.md"), "utf8") +
+    readFileSync(join(project, "harness", "USER.md"), "utf8")
+  );
+}
 
 test(
   "deploys every public user skill from the shared collection",
@@ -223,35 +245,3 @@ test(
   },
   extendedDeploymentTimeoutMilliseconds,
 );
-
-test("agent aggregate targets include requirements clarification", () => {
-  const fixture = createDeploymentFixture("requirements-clarification");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/requirements-clarification"],
-    ["cursor", ".cursor/skills/requirements-clarification"],
-    ["codex", ".agents/skills/requirements-clarification"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
-  }
-});
-
-test("agent aggregate targets include PR feedback", () => {
-  const fixture = createDeploymentFixture("pr-feedback");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/pr-feedback"],
-    ["cursor", ".cursor/skills/pr-feedback"],
-    ["codex", ".agents/skills/pr-feedback"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
-  }
-});

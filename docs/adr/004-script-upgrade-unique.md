@@ -13,7 +13,7 @@ runtime Node. Les lancer séparément conduit à en oublier.
 ## Décision
 
 `tooling/upgrade` orchestre l'ensemble en une commande : `git pull` du dépôt,
-redéploiement par `make all`, `brew upgrade` (avec `--greedy` pour les casks),
+redéploiement du socle par `make minimal`, `brew upgrade` (avec `--greedy` pour les casks),
 mise à jour des paquets npm globaux, des plugins Neovim — dont le lockfile
 résultant est committé —, des plugins d'agents et du Node LTS géré par Volta.
 

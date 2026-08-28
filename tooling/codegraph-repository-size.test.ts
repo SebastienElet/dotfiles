@@ -6,8 +6,8 @@ import {
   run,
   runEntryPoint,
 } from "./codegraph-repository-size-test-support.ts";
-import { dirname, join } from "node:path";
 import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
 
 const measurementSchema = z.object({ files: z.number() });
@@ -21,7 +21,6 @@ describe("codegraph-repository-size entry point", () => {
   registerFilesystemSelectionTest();
   registerNonGitSelectionTest();
   registerRealTokeiTest();
-  registerDeploymentTest();
 });
 
 function registerMeasurementTests(): void {
@@ -175,29 +174,6 @@ function populateRealTokeiFixture(repository: string): void {
     join(repository, "ignored", "excluded.ts"),
     "const ignored = 1;\n",
   );
-}
-
-function registerDeploymentTest(): void {
-  test("the Make deployment preserves the command name and provisions dependencies", () => {
-    const fixture = createFixture();
-    const root = dirname(import.meta.dir);
-    const result = run([
-      "make",
-      "-sBn",
-      "-C",
-      root,
-      "codegraph",
-      `HOME=${fixture.directory}`,
-      `LOCAL_BIN=${join(fixture.directory, ".local", "bin")}`,
-      `BREW_BIN=${join(fixture.directory, "brew", "bin")}`,
-      `VOLTA_BIN=${join(fixture.directory, ".volta", "bin")}`,
-    ]);
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("brew install tokei");
-    expect(result.stdout).toContain("tooling/codegraph-repository-size");
-    expect(result.stdout).toContain("codegraph-repository-size");
-  });
 }
 
 function record(name: string, code: number): string {

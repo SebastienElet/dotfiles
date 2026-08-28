@@ -37,9 +37,9 @@ ici sont les dates d'auteur.
 
 | #                                                      | Titre                                                            | Date    |
 | ------------------------------------------------------ | ---------------------------------------------------------------- | ------- |
-| [001](001-makefile-installateur.md)                    | Makefile idempotent comme installateur de poste                  | 2014-08 |
-| [002](002-homebrew-source-unique.md)                   | Homebrew et `mas` comme unique source de paquets                 | 2015-02 |
-| [003](003-deploiement-par-symlinks.md)                 | Déploiement de la configuration par symlinks                     | 2014-10 |
+| [001](001-makefile-installateur.md)                    | Profils hybrides comme installateur de poste                     | 2026-08 |
+| [002](002-homebrew-source-unique.md)                   | Brewfiles comme source unique des paquets                        | 2026-08 |
+| [003](003-deploiement-par-symlinks.md)                 | Déploiement revalidé de la configuration                         | 2026-08 |
 | [004](004-script-upgrade-unique.md)                    | Script `upgrade` unique pour toutes les mises à jour             | 2017-09 |
 | [005](005-elagage-des-cibles.md)                       | Élagage périodique des cibles inutilisées                        | 2025-12 |
 | [006](006-neovim-editeur-par-defaut.md)                | Neovim comme éditeur par défaut                                  | 2019-11 |
@@ -58,7 +58,7 @@ ici sont les dates d'auteur.
 | [019](019-pas-de-tiling-window-manager.md)             | Aucun gestionnaire de fenêtres en tuiles                         | 2025-12 |
 | [021](021-branche-main-detectee.md)                    | `main` détectée dynamiquement                                    | 2023-12 |
 | [022](022-conventional-commits.md)                     | Conventional Commits imposés                                     | 2025-12 |
-| [023](023-ci-lint-et-installation.md)                  | CI de lint et test d'installation                                | 2026-01 |
+| [023](023-ci-lint-et-installation.md)                  | CI de lint et smoke minimal macOS                                | 2026-08 |
 | [024](024-instructions-ia-versionnees.md)              | Instructions IA versionnées dans le dépôt                        | 2026-01 |
 | [025](025-agents-md-source-unique.md)                  | `AGENTS.md` comme source unique agent-agnostique                 | 2026-02 |
 | [026](026-agents-cli-plutot-que-copilot.md)            | Agents CLI plutôt que Copilot                                    | 2025-10 |

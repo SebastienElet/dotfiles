@@ -14,7 +14,8 @@ supériorité.
 ## Décision
 
 Installer CodeGraph globalement, le mettre à jour avec les autres paquets npm globaux et exposer son
-serveur MCP stdio upstream à Codex, Claude Code et Cursor. Utiliser `codegraph_explore` pour
+serveur MCP stdio upstream à Codex et Claude Code dans le profil minimal. L'installation optionnelle
+de Cursor ajoute son intégration sans être une dépendance de CodeGraph. Utiliser `codegraph_explore` pour
 l'exploration structurelle ; conserver `rg` et `fd` pour les littéraux, expressions régulières,
 chemins connus et vérifications ciblées.
 

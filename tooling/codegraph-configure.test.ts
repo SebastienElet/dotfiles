@@ -30,6 +30,7 @@ afterEach(cleanupFixtures);
 
 describe("codegraph-configure entry point", () => {
   registerConfigurationTest();
+  registerMinimalConfigurationTests();
   registerOutputTests();
   registerValidationTests();
   registerProviderValidationTests();
@@ -81,6 +82,27 @@ function registerConfigurationTest(): void {
     expect(calls).toContain(
       `codex mcp add codegraph --env CODEGRAPH_TELEMETRY=0 --env CODEGRAPH_NO_UPDATE_CHECK=1 --env CODEGRAPH_NO_DOWNLOAD=1 -- ${fixture.codegraphBinary} serve --mcp`,
     );
+  });
+}
+
+function registerMinimalConfigurationTests(): void {
+  test("configures Claude and Codex without creating Cursor configuration", () => {
+    const fixture = createFixture({ CODEGRAPH_INCLUDE_CURSOR: "0" });
+
+    expect(run(fixture).exitCode).toBe(0);
+
+    expect(snapshot(fixture).cursor).toBe("<absent>");
+    expect(snapshot(fixture).claude).not.toBe("<absent>");
+    expect(snapshot(fixture).codex).not.toBe("<absent>");
+  });
+
+  test("a converged configuration produces no mutation output", () => {
+    const fixture = createFixture({ CODEGRAPH_TEST_EMIT: "1" });
+    expect(run(fixture).exitCode).toBe(0);
+
+    const converged = run(fixture);
+
+    expect(converged).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   });
 }
 

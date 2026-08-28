@@ -26,7 +26,7 @@ on_dotfiles_main_branch() {
 echo "ℹ️  Dotfiles"
 if [[ -d $dotfiles_repo && -d $dotfiles_repo/.git ]]; then
   if on_dotfiles_main_branch "repository update"; then
-    (cd "$dotfiles_repo" && git pull) && make -C "$dotfiles_repo" all
+    (cd "$dotfiles_repo" && git pull) && make -C "$dotfiles_repo" minimal
   fi
 else
   echo "  Warning: ~/.dotfiles not a git repo, skipping"
@@ -89,13 +89,6 @@ if command -v npm &> /dev/null; then
     --min-release-age-exclude=@openai/codex
 else
   echo "  Warning: npm not found, skipping npm global package updates"
-fi
-
-echo "ℹ️  Skills update"
-if command -v skills &> /dev/null; then
-  skills update -g
-else
-  echo "  Warning: skills not found, skipping skills updates"
 fi
 
 echo "ℹ️  Claude Code CLI update"
