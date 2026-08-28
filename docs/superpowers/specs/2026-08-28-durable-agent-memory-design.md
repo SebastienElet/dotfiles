@@ -70,17 +70,17 @@ retrieval_terms:
 proof:
   summary: <ce qui établit ou justifie l'énoncé>
   sources:
-    - kind: git-file
-      locator: <localisateur canonique>
-      fingerprint: <empreinte observée>
+    - kind: git-file | local-file | official-url | user-decision
+      locator: <forme propre au kind>
+      fingerprint: sha256:<64 hex>
   established_at: <date ISO et environnement>
 oracle:
   automated:
     kind: source-fingerprint
-    expected: <résultat qui maintient la preuve>
+    expected: all-proof-sources-unchanged
   human_fallback:
-    question: <question précise>
-    valid_when: <réponse qui maintient la preuve>
+    question: <question>
+    valid_when: <réponse observable>
   outcomes:
     valid: <condition observable>
     invalidated: <condition observable contraire>
@@ -88,15 +88,25 @@ created_at: <date ISO>
 ```
 
 Les valeurs de `kind` sont fermées : `goal`, `decision`, `evidence`, `invariant`, `unknown` et
-`assumption`. `proof` contient au moins une source ou une décision utilisateur explicite.
-`oracle` décrit un contrôle automatisé déclaratif lorsque le système en supporte un, ainsi qu'un
-fallback humain précis lorsque l'automatisation ne peut pas conclure. Aucun champ ne peut contenir
-une commande shell arbitraire.
+`assumption`. `proof` contient au moins une source. Chaque source emploie l'une des unions fermées
+`git-file`, `local-file`, `official-url` ou `user-decision`, avec un `locator` propre à son type et
+une empreinte `sha256:<64 hex>`. `oracle.automated` est obligatoire, sauf si toutes les sources de
+preuve sont `user-decision`; `human_fallback` reste obligatoire dans tous les cas. Aucun champ ne
+peut contenir une commande shell arbitraire.
 
 Une entrée terminale ajoute obligatoirement un objet `transition` contenant le statut précédent,
 le nouveau statut, la date, le verdict d'oracle et une raison concise. Cet objet est absent tant que
 l'entrée reste `active`. Une transition ne détruit ni la preuve initiale ni l'historique nécessaire
 pour comprendre pourquoi l'entrée a cessé d'être consommable.
+
+```yaml
+transition:
+  from: active
+  to: <statut terminal autorisé par kind>
+  at: <RFC 3339 UTC>
+  verdict: valid | invalid
+  reason: <texte concis>
+```
 
 Les premières sources supportées sont les fichiers suivis par Git, les fichiers locaux, les pages
 officielles accessibles par URL et les décisions explicites de l'utilisateur. Une source non
@@ -130,9 +140,10 @@ La preuve et l'oracle ont une signification propre à chaque type :
 
 Les verdicts d'oracle `valid`, `invalid`, `unavailable` et `needs_confirmation` ne sont pas des
 statuts persistés. Un résultat métier certain entraîne la transition terminale autorisée par le
-type : par exemple `achieved`, `superseded`, `resolved` ou `confirmed`. Une contradiction de la
-preuve produit `invalidated`. Une indisponibilité ou une ambiguïté n'altère pas le fichier et
-interdit seulement son injection pour la consommation courante.
+type : par exemple `achieved`, `superseded`, `resolved` ou `confirmed`, et exige un verdict
+`valid`. Une contradiction de la preuve avec verdict `invalid` produit `invalidated`. Une
+indisponibilité ou une ambiguïté n'altère pas le fichier et interdit seulement son injection pour la
+consommation courante.
 
 L'admission retourne séparément `stored`, `duplicate`, `rejected` ou `conflict`. Le statut
 `candidate` disparaît du flux persistant : une proposition implicite reste dans la conversation et
