@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repository=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+skill_file=${1:-"$repository/harness/skills/pr-feedback/SKILL.md"}
+
+fail() {
+  printf 'PR feedback skill contract failed: %s\n' "$1" >&2
+  exit 1
+}
+
+assert_contains() {
+  local expected=$1
+
+  grep -F -q -- "$expected" "$skill_file" || fail "missing '$expected'"
+}
+
+assert_excludes() {
+  local forbidden=$1
+
+  if grep -F -q -- "$forbidden" "$skill_file"; then
+    fail "forbidden '$forbidden'"
+  fi
+}
+
+[[ -f $skill_file ]] || fail "missing file '$skill_file'"
+[[ -r $skill_file ]] || fail "unreadable file '$skill_file'"
+
+assert_contains '## Consolidated findings'
+assert_contains '## Excluded signals'
+assert_contains '## Collection limits'
+assert_contains 'never infer the original development cause or propose a'
+assert_contains 'Do not inspect the harness, recommend changes, assign priorities, or draft rules to paste.'
+assert_contains 'Remain read-only: never edit repository files or mutate forge state.'
+assert_contains '/pr-feedback --count <count>'
+assert_contains 'prefixed numbers as pull request identifiers.'
+assert_contains '--workspace <workspace> --repo <repo> --limit 10'
+assert_contains "GitHub's commit \`authors\` field"
+assert_contains 'Record push attribution as uncertain unless separate forge evidence identifies that actor.'
+assert_contains '\(.html_url)'
+
+assert_excludes '## Harness fixes'
+assert_excludes '## Recurrence threshold'
+assert_excludes '## Proposals'
+assert_excludes 'Why was this absent from the original development'
+assert_excludes 'exact text to paste'
+
+printf 'PR feedback static contract passed (advisory)\n'

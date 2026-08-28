@@ -5,28 +5,18 @@ const failureExitCode = 1;
 const dockerDaemonProbeTimeoutMilliseconds = 10_000;
 const dockerCommandTimeoutMilliseconds = 600_000;
 const policySchema = z.enum(["allow-skip", "require-docker"]);
-const targetSchema = z.enum(["cloakbrowser", "firecrawl", "scrapling"]);
+const targetSchema = z.enum(["cloakbrowser", "scrapling"]);
 const actionSchema = z.enum(["install", "verify"]);
 const imageReferenceSchema = z
   .string()
   .min(1)
   .regex(/^(?!-)(?!.*@)\S+$/u, "unsupported Docker image reference");
-const invocationSchema = z.union([
-  z.tuple([
-    actionSchema,
-    z.literal("firecrawl"),
-    policySchema,
-    z.string().min(1),
-  ]),
-  z.tuple([
-    actionSchema,
-    z.enum(["cloakbrowser", "scrapling"]),
-    policySchema,
-    imageReferenceSchema,
-  ]),
+const invocationSchema = z.tuple([
+  actionSchema,
+  targetSchema,
+  policySchema,
+  imageReferenceSchema,
 ]);
-const serviceNameSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u);
-const serviceListSchema = z.array(serviceNameSchema).min(1);
 const imageIdentifierSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/u);
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
@@ -78,14 +68,11 @@ function installOrVerifyDockerArtifact(
 }
 
 function installDockerArtifact(invocation: Readonly<Invocation>): void {
-  const [, target, , artifact] = invocation;
-  if (target !== "firecrawl" && localImageExists(artifact)) {
+  const [_action, _target, _policy, artifact] = invocation;
+  if (localImageExists(artifact)) {
     return;
   }
-  const command =
-    target === "firecrawl"
-      ? ["compose", "-f", artifact, "up", "--wait", "--wait-timeout", "120"]
-      : ["pull", "--", artifact];
+  const command = ["pull", "--", artifact];
   const result = runDocker(command);
   if (result.exitCode === successExitCode && !result.timedOut) {
     forwardOutput(result);
@@ -112,54 +99,13 @@ function localImageExists(image: string): boolean {
 }
 
 function verifyDockerArtifact(invocation: Readonly<Invocation>): void {
-  const [, target, , artifact] = invocation;
-  if (target !== "firecrawl") {
-    requireSuccessfulCommand(runDocker(["image", "inspect", "--", artifact]), [
-      "image",
-      "inspect",
-      "--",
-      artifact,
-    ]);
-    return;
-  }
-  verifyComposeServices(artifact);
-}
-
-function verifyComposeServices(composePath: string): void {
-  const prefix = ["compose", "-f", composePath];
-  const configured = runDocker([...prefix, "config", "--services"]);
-  requireSuccessfulCommand(configured, [...prefix, "config", "--services"]);
-  const running = runDocker([
-    ...prefix,
-    "ps",
-    "--services",
-    "--status",
-    "running",
+  const [_action, _target, _policy, artifact] = invocation;
+  requireSuccessfulCommand(runDocker(["image", "inspect", "--", artifact]), [
+    "image",
+    "inspect",
+    "--",
+    artifact,
   ]);
-  requireSuccessfulCommand(running, [
-    ...prefix,
-    "ps",
-    "--services",
-    "--status",
-    "running",
-  ]);
-  const configuredServices = parseServiceList(configured.stdout);
-  const runningServices = new Set(parseServiceList(running.stdout));
-  const missingServices = configuredServices.filter(
-    (service) => !runningServices.has(service),
-  );
-  if (missingServices.length > 0) {
-    throw new Error(`Docker services absent: ${missingServices.join(", ")}`);
-  }
-}
-
-function parseServiceList(output: string): readonly string[] {
-  return serviceListSchema.parse(
-    output
-      .split("\n")
-      .map((service) => service.trim())
-      .filter((service) => service.length > 0),
-  );
 }
 
 function runDocker(

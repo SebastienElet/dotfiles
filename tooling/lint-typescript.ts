@@ -1,26 +1,12 @@
 import { access, lstat, readFile, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { z } from "zod";
+import { discoverTrackedTypeScriptPaths } from "./tracked-typescript-paths.ts";
 
 const EXPECTED_ARGUMENT_COUNT = 2;
 const FAILURE = 1;
-const FIRST_CHARACTER = 0;
-const LAST_CHARACTER = -1;
 const OWNED_LINK_COUNT = 1;
 const SUCCESS = 0;
 const USAGE_ERROR = 2;
-const typescriptPathSchema = z
-  .string()
-  .min(FAILURE)
-  .refine(
-    (candidate) =>
-      [".ts", ".tsx", ".mts", ".cts"].some((extension) =>
-        candidate.endsWith(extension),
-      ),
-    "unsupported TypeScript path",
-  );
-const typescriptPathsSchema = z.array(typescriptPathSchema).min(FAILURE);
-
 type TypeScriptSource = Readonly<{ contents: string; path: string }>;
 
 const isOutside = (root: string, path: string): boolean => {
@@ -78,27 +64,16 @@ const readTrackedSources = (
 const findTrackedTypeScriptPaths = async (
   repositoryRoot: string,
 ): Promise<readonly string[]> => {
-  const git = Bun.spawn(
-    ["git", "ls-files", "-z", "--", "*.ts", "*.tsx", "*.mts", "*.cts"],
-    { cwd: repositoryRoot, stderr: "inherit", stdout: "pipe" },
-  );
-  const [status, output] = await Promise.all([
-    git.exited,
-    new Response(git.stdout).arrayBuffer(),
-  ]);
-  if (status !== SUCCESS) {
-    throw new Error(`Git could not list tracked TypeScript files (${status}).`);
+  const result = await discoverTrackedTypeScriptPaths(repositoryRoot);
+  if (result.status !== SUCCESS) {
+    throw new Error(
+      `Git could not list tracked TypeScript files (${result.status}).`,
+    );
   }
-
-  const serializedPaths = new TextDecoder("utf-8", { fatal: true }).decode(
-    output,
-  );
-  if (!serializedPaths.endsWith("\0")) {
+  if (result.trackedCount === 0) {
     throw new Error("Git returned an empty or malformed TypeScript path list.");
   }
-  return typescriptPathsSchema.parse(
-    serializedPaths.slice(FIRST_CHARACTER, LAST_CHARACTER).split("\0"),
-  );
+  return result.paths;
 };
 
 const assertSourcesUnchanged = async (

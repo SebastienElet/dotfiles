@@ -68,8 +68,8 @@ planning without an actual request to begin implementation.
 8. **Limit lifecycle maintenance.** Verify each Linear write by reading the changed issue field or
    link back. Do not perform extra review, functional analysis, issue rewriting, or status ceremony
    solely to keep Linear synchronized. A request to check off completed items in the description is
-   an evidence decision, not lifecycle maintenance: follow `linear-workflow`'s
-   `references/completion-evidence.md` and check only lines a named run proves.
+   an evidence decision, not lifecycle maintenance: follow the completion-evidence reference owned
+   by `linear-workflow` and check only lines a named run proves.
 
 ## Gotchas
 

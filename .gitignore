@@ -4,6 +4,7 @@ home/.config/nvim/pack/
 home/.config/fish/fish_plugins
 home/.config/fish/functions
 home/.config/fish/completions
+.DS_Store
 
 # Temporary working files
 PRODUCTIVITY_REVIEW.md

@@ -22,7 +22,7 @@ type DockerInstallScenario =
   | "command-failure"
   | "daemon-unavailable"
   | "invalid-evidence";
-type DockerInstallTarget = "cloakbrowser" | "firecrawl" | "scrapling";
+type DockerInstallTarget = "cloakbrowser" | "scrapling";
 type DockerInstallOptions = Readonly<{
   dockerProviderAvailable?: boolean;
   imageOverride?: string;

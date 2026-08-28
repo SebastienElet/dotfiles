@@ -22,6 +22,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `linear-start`               | Start or resume implementation of an assigned Linear issue in a Bitbucket repository.                |
 | `linear-sync`                | Reconcile assigned Linear issues with Bitbucket pull-request reality without reviewing code.         |
 | `linear-workflow`            | Apply the shared Linear and Bitbucket work invariants.                                               |
+| `pr-feedback`                | Collect evidence-backed review feedback and reviewer-authored fixes from merged pull requests.       |
 | `pr-fix`                     | Repair an open pull request after an independent merge review.                                       |
 | `pr-verdict`                 | Deliver a PR verdict on an open pull request, yours or another author's.                             |
 | `requirements-clarification` | Clarify requirements before implementation.                                                          |

@@ -5,11 +5,7 @@ import {
 } from "./docker-install-test-support.ts";
 import { afterAll, describe, expect, test } from "bun:test";
 
-const targets: DockerInstallTarget[] = [
-  "firecrawl",
-  "scrapling",
-  "cloakbrowser",
-];
+const targets: DockerInstallTarget[] = ["scrapling", "cloakbrowser"];
 const sha256HexadecimalLength = 64;
 
 afterAll(cleanupDockerInstallFixtures);
@@ -45,17 +41,8 @@ describe.each(targets)("%s Docker installation target", (target) => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain(resultMarker(target, "verified"));
     expect(result.trace).toContain(oracleCommand(target));
-    if (target !== "firecrawl") {
-      expect(result.trace).not.toContain("pull ");
-    }
+    expect(result.trace).not.toContain("pull ");
   });
-});
-
-test("Firecrawl rejects malformed Docker service evidence", () => {
-  const result = runDockerInstallTarget("firecrawl", "invalid-evidence");
-
-  expect(result.exitCode).not.toBe(0);
-  expect(result.stdout).not.toContain(resultMarker("firecrawl", "verified"));
 });
 
 test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
@@ -135,8 +122,6 @@ function resultMarker(
   return `docker-install target=${target} result=${result}`;
 }
 
-function oracleCommand(target: DockerInstallTarget): string {
-  return target === "firecrawl"
-    ? "ps --services --status running"
-    : "image inspect";
+function oracleCommand(_target: DockerInstallTarget): string {
+  return "image inspect";
 }

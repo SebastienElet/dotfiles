@@ -39,6 +39,7 @@ const userSkillDestinations = [
     "linear-issue-spec",
     "linear-sync",
     "pr-fix",
+    "pr-feedback",
     "pr-verdict",
     "requirements-clarification",
     "skill-manager",
@@ -54,6 +55,7 @@ const userSkillDestinations = [
     "linear-issue-spec",
     "linear-sync",
     "pr-fix",
+    "pr-feedback",
     "pr-verdict",
     "requirements-clarification",
     "skill-manager",
@@ -71,6 +73,7 @@ const userSkillDestinations = [
     "linear-sync",
     "memory-governance",
     "pr-fix",
+    "pr-feedback",
     "pr-verdict",
     "requirements-clarification",
     "skill-manager",
@@ -267,5 +270,21 @@ test("agent aggregate targets preserve Codex-only memory governance", () => {
     for (const destination of excluded) {
       expect(result.stdout).not.toContain(destination);
     }
+  }
+});
+
+test("agent aggregate targets include PR feedback", () => {
+  const fixture = createDeploymentFixture("pr-feedback");
+  for (const [target, destination] of [
+    ["claude-code", ".claude/skills/pr-feedback"],
+    ["cursor", ".cursor/skills/pr-feedback"],
+    ["codex", ".agents/skills/pr-feedback"],
+  ] as const) {
+    const result = runMake(fixture, [target], {
+      dryRun: true,
+      repository: project,
+    });
+    expectSuccess(result);
+    expect(result.stdout).toContain(join(fixture.home, destination));
   }
 });

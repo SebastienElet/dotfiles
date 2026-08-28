@@ -56,6 +56,16 @@ local convention.
 Do not move an unknown field under `metadata` automatically. Preserve it there only when its meaning
 is scalar metadata, its value is a string, and the user approves the semantic change.
 
+### Manual-only invocation exception
+
+`disable-model-invocation: true` is the sole approved top-level host extension. Use it only after
+the user explicitly chooses manual activation for a skill, and pair it with an
+`agents/openai.yaml` file setting `policy.allow_implicit_invocation: false`. Claude Code and Cursor
+consume the frontmatter field; Codex consumes the paired product metadata. The skill description
+must permit only explicit `$<slug>` or `/<slug>` invocation, and every true activation eval must
+use one of those two forms. This exception intentionally targets the three supported hosts rather
+than arbitrary Agent Skills implementations; no other non-standard top-level field is allowed.
+
 ### Description format
 
 Descriptions determine discovery. Put the distinguishing case first and use this local pattern:
@@ -68,6 +78,13 @@ cases>, even if <the user does not name the domain>.
 Aim below 400 characters because host skill lists truncate descriptions or omit entries before the
 standard's 1024-character ceiling. Avoid generic descriptions, passive labels, and appended trigger
 keyword dumps.
+
+For a manual-only skill, replace the implicit-trigger pattern with:
+
+```text
+<What it handles>. Use only when the user explicitly invokes `$<slug>` or `/<slug>`; never select
+it implicitly from <natural-language cases>.
+```
 
 ## 3. Canonical collections and adapters
 

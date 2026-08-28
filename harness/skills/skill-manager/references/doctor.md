@@ -13,6 +13,8 @@ Doctor is read-only. It reports findings for a later `fix` operation.
 - **FAIL**: a standard rule or mandatory local convention fails.
 - **WARN**: only a qualitative, non-blocking weakness exists.
 - **PASS**: no FAIL or WARN exists.
+- **Approved extension**: a declared local host extension replaces one standard portability rule;
+  report it explicitly, but do not downgrade an otherwise conforming skill.
 - Missing optional tooling is an environment limitation, not a status downgrade.
 
 ## Procedure
@@ -38,7 +40,12 @@ these checks manually:
 - `allowed-tools`, if present, is a space-separated string and is reported as experimental;
 - `metadata`, if present, is a map whose keys and values are strings;
 - no top-level field exists outside `name`, `description`, `license`, `compatibility`,
-  `allowed-tools`, and `metadata`.
+  `allowed-tools`, and `metadata`, except the approved manual-only extension below.
+
+When `disable-model-invocation: true` is the only extra top-level field and every paired local check
+passes, report `approved extension: disable-model-invocation` instead of a standard failure. If
+`skills-ref` rejects only that field, preserve its diagnostic beside the approved-extension status.
+Any other validator failure remains FAIL.
 
 ## Local checks
 
@@ -46,9 +53,17 @@ these checks manually:
 
 - `metadata.category` exists and is `dev`, `support`, `product`, or `ops`;
 - the skill appears exactly once under the matching README section;
-- description starts with the distinguishing case, contains concrete `Use when` conditions, and
-  stays below the local 400-character target;
+- description starts with the distinguishing case, contains concrete `Use when` conditions or the
+  approved manual-only `Use only when` form, and stays below the local 400-character target;
 - a weak but valid description is WARN, not FAIL.
+
+For the manual-only invocation exception, require all of these or report FAIL:
+
+- `disable-model-invocation` is exactly `true`;
+- `agents/openai.yaml` sets `policy.allow_implicit_invocation` to exactly `false`;
+- the description requires explicit `$<slug>` or `/<slug>` invocation and rejects implicit use;
+- true eval queries use only `$<slug>` or `/<slug>`; both forms are represented;
+- no always-loaded shared instruction mandates invoking the skill.
 
 ### Body structure
 
@@ -97,7 +112,7 @@ An absent eval file is not a finding unless an approved requirement explicitly d
 ```text
 ### <slug> [PASS | WARN | FAIL]
 
-Standard validation: PASS | FAIL: <finding> | unavailable (skills-ref not installed)
+Standard validation: PASS | approved extension: <field> | FAIL: <finding> | unavailable (skills-ref not installed)
 Local conventions: PASS | WARN: <finding> | FAIL: <finding>
 Frontmatter: PASS | <exact finding>
 Body: PASS | <exact finding>
@@ -113,7 +128,7 @@ Global summary:
 ```text
 | Skill | Status | Standard | Local | Action |
 | --- | --- | --- | --- | --- |
-| <slug> | PASS | unavailable | PASS | none |
+| <slug> | PASS | unavailable or approved extension | PASS | none |
 ```
 
 List environment limitations after the table once, rather than repeating them as failures.
@@ -122,7 +137,8 @@ List environment limitations after the table once, rather than repeating them as
 
 | Finding                               | Exact correction                                                                             |
 | ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Non-standard field                    | Remove it; preserve approved scalar metadata under `metadata` only when semantically correct |
+| Unsupported non-standard field        | Remove it; preserve approved scalar metadata under `metadata` only when semantically correct |
+| Incomplete manual-only extension      | Restore every paired field, explicit eval and shared-instruction check                       |
 | Invalid `allowed-tools` type          | Replace it with a space-separated string or remove it                                        |
 | Description above local target        | Keep the specific first clause and concrete triggers; move process detail to the body        |
 | Missing `Gotchas`                     | Add three repository-specific cause/consequence/correction entries                           |

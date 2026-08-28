@@ -4,7 +4,10 @@ import {
 } from "./check-software-sources.ts";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { expect, test } from "bun:test";
-import { inventorySources } from "./software-source-inventory.ts";
+import {
+  inventoryComposeSources,
+  inventorySources,
+} from "./software-source-inventory.ts";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -35,6 +38,18 @@ test("the supported installation graph has no undeclared source", () => {
 
   expect(result.stderr).toBe("");
   expect(result.exitCode).toBe(0);
+});
+
+test("the supported installation graph retains web retrieval", () => {
+  const makefile = resolve(repositoryRoot, "Makefile");
+  const graph = dryRunInstallationGraph(makefile);
+  const sources = [
+    ...inventorySources(graph),
+    ...inventoryComposeSources(graph, makefile),
+  ];
+
+  expect(sources).toContain("docker:pyd4vinci/scrapling");
+  expect(sources).toContain("docker:cloakhq/cloakbrowser:0.5.3");
 });
 
 test("the reconciled tools use their supported Homebrew artifacts", () => {

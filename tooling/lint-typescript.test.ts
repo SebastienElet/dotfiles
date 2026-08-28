@@ -130,6 +130,25 @@ test("discovers every tracked TypeScript extension", async (): Promise<void> => 
   );
 });
 
+test("lints surviving tracked files while a tracked TypeScript file is deleted", async (): Promise<void> => {
+  const repository = await createRepository();
+  await writeFile(
+    join(repository, "kept.ts"),
+    'export const kept = "valid";\n',
+  );
+  await writeFile(
+    join(repository, "removed.ts"),
+    'export const removed = "valid";\n',
+  );
+  expect(await run(["git", "add", "kept.ts", "removed.ts"], repository)).toBe(
+    SUCCESS,
+  );
+  await rm(join(repository, "removed.ts"));
+
+  expect(await findTrackedTypeScriptPaths(repository)).toEqual(["kept.ts"]);
+  assertLintSuccess(await lintTrackedTypeScript(repository, oxlint));
+});
+
 test("fails closed when tracked TypeScript discovery is empty or unavailable", async (): Promise<void> => {
   const emptyRepository = await createRepository();
   const nonRepository = await mkdtemp(join(tmpdir(), "oxlint-no-git-"));

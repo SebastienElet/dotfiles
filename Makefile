@@ -216,7 +216,6 @@ ai: \
 	codex \
 	codexbar \
 	cursor \
-	firecrawl \
 	llmfit \
 	openspec \
 	scrapling \
@@ -358,7 +357,7 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: brew ${BREW_BIN}/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+cursor: brew ${BREW_BIN}/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ${BREW_BIN}/cursor-agent:
 	brew install --cask cursor-cli
 ~/.cursor/skills:
@@ -385,6 +384,8 @@ ${BREW_BIN}/cursor-agent:
 	${CREATE_SYMLINK}
 ~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
 	${CREATE_SYMLINK}
+~/.cursor/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification | ~/.cursor/skills
@@ -399,7 +400,7 @@ cursor-hooks: arnes
 	"${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/commands/pr-feedback.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -412,10 +413,8 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/USER.md: ${DOTFILES_PATH}/harness/USER.md | ~/.claude
 	${CREATE_SYMLINK}
-~/.claude/commands ~/.claude/rules ~/.claude/skills: | ~/.claude
+~/.claude/rules ~/.claude/skills: | ~/.claude
 	mkdir -p $@
-~/.claude/commands/pr-feedback.md: ${DOTFILES_PATH}/harness/commands/pr-feedback.md | ~/.claude/commands
-	${CREATE_SYMLINK}
 ~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md | ~/.claude/rules
 	${CREATE_SYMLINK}
 ~/.claude/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.claude/skills
@@ -441,6 +440,8 @@ ${LOCAL_BIN}/claude:
 # Linked globally because a pull request is reviewed from the repository under
 # review, which is never this one.
 ~/.claude/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.claude/skills
+	${CREATE_SYMLINK}
+~/.claude/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback | ~/.claude/skills
 	${CREATE_SYMLINK}
 ~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills
 	${CREATE_SYMLINK}
@@ -468,7 +469,7 @@ hunspell-dictionaries: bun
 	"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: bun ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/codegraph ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -508,6 +509,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.agents/skills
+	${CREATE_SYMLINK}
+~/.agents/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback | ~/.agents/skills
 	${CREATE_SYMLINK}
 ~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.agents/skills
 	${CREATE_SYMLINK}
@@ -597,14 +600,6 @@ qovery-cli: /usr/local/bin/qovery
 /usr/local/bin/qovery:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
-
-.PHONY: firecrawl
-firecrawl: docker bun
-	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
-
-.PHONY: verify-firecrawl-docker
-verify-firecrawl-docker: bun
-	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
 
 .PHONY: scrapling
 scrapling: docker bun ${LOCAL_BIN}/scrapling_mcp

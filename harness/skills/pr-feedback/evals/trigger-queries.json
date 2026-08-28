@@ -1,0 +1,36 @@
+{
+  "skill": "pr-feedback",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Analyze the review comments and reviewer-pushed fixes from my last ten merged PRs",
+      "should_activate": true,
+      "reason": "Retrospective collection of review feedback is the skill's primary workflow"
+    },
+    {
+      "query": "What recurring defects did reviewers identify across PRs 42, 47, and 51?",
+      "should_activate": true,
+      "reason": "Cross-PR evidence gathering requires the feedback attribution workflow"
+    },
+    {
+      "query": "Prepare factual evidence from merged PR reviews for a later harness improvement session",
+      "should_activate": true,
+      "reason": "Harness-improvement evidence must remain separate from recommendations"
+    },
+    {
+      "query": "Review open PR 73 and tell me whether it is safe to merge",
+      "should_activate": false,
+      "reason": "A merge decision belongs to pr-verdict"
+    },
+    {
+      "query": "Fix the blocking findings already reported on PR 73",
+      "should_activate": false,
+      "reason": "Repairing an open pull request belongs to pr-fix"
+    },
+    {
+      "query": "Improve the harness rules based on this review report",
+      "should_activate": false,
+      "reason": "Changing the harness is outside this read-only evidence collection workflow"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ were already synchronized.
 ## Workflow
 
 1. **Load shared policy and adapters.** Activate `linear-workflow`, including its shared Linear and
-   Bitbucket adapters and its `references/completion-evidence.md` rule, and apply all of its
+   Bitbucket adapters and its completion-evidence rule, and apply all of its
    constraints. Use those transports rather than creating another integration. Verify current
    command schemas and authentication before reads or writes, and stop before any operation that
    the available transports do not cover.
@@ -68,7 +68,7 @@ were already synchronized.
    all checked, or no evidence section at all, moves the issue to `Done`; at least one unchecked
    line, or an evidence section that holds no state, moves it to its team's review state instead,
    with the unproven lines named as residue. Guard the state write with the classification it rests
-   on, following the anchored guard in `completion-evidence.md`: text that moved must abort the save
+   on, following `linear-workflow`'s completion-evidence rule: text that moved must abort the save
    before any state is written, because a post-write read confirms the state and never that the
    boxes still say what they said. Where that guard is uncovered, write no state — report the
    classification and the missing capability, and leave the transition to a human. Verify either

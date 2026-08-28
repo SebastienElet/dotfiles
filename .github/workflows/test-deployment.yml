@@ -9,7 +9,7 @@ on:
       - tooling/deployment-*.ts
       - tooling/install-hunspell-dictionary*
       - tooling/apple-notes*.ts
-      - tooling/pr-feedback-command-test
+      - tooling/pr-feedback-skill-test
       - package.json
       - bun.lock
       - tsconfig.json
@@ -23,7 +23,7 @@ on:
       - tooling/deployment-*.ts
       - tooling/install-hunspell-dictionary*
       - tooling/apple-notes*.ts
-      - tooling/pr-feedback-command-test
+      - tooling/pr-feedback-skill-test
       - package.json
       - bun.lock
       - tsconfig.json
@@ -46,5 +46,5 @@ jobs:
       - run: bun test tooling/deployment-*.test.ts
       - run: bun test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
       - run: bun test tooling/apple-notes*.test.ts
-      - run: tooling/pr-feedback-command-test
+      - run: tooling/pr-feedback-skill-test
       - run: bun run typecheck
