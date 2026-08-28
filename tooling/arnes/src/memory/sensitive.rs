@@ -51,7 +51,8 @@ fn has_secret_assignment(value: &str) -> bool {
 
 fn has_assignment(line: &str, key: &str) -> bool {
     line.match_indices(key).any(|(index, _)| {
-        has_word_boundary(line, index, key.len())
+        has_assignment_left_boundary(line, index)
+            && has_right_boundary(&line[index..], key.len())
             && line[index + key.len()..]
                 .trim_start()
                 .starts_with(['=', ':'])
@@ -60,7 +61,7 @@ fn has_assignment(line: &str, key: &str) -> bool {
 
 fn has_api_key_assignment(line: &str) -> bool {
     line.match_indices("api").any(|(index, _)| {
-        if !has_left_boundary(line, index) {
+        if !has_assignment_left_boundary(line, index) {
             return false;
         }
         let separator = &line[index + 3..];
@@ -81,8 +82,12 @@ fn has_api_key_assignment(line: &str) -> bool {
     })
 }
 
-fn has_word_boundary(value: &str, index: usize, length: usize) -> bool {
-    has_left_boundary(value, index) && has_right_boundary(&value[index..], length)
+fn has_assignment_left_boundary(value: &str, index: usize) -> bool {
+    index == 0
+        || value[..index]
+            .chars()
+            .next_back()
+            .is_some_and(|character| !character.is_ascii_alphanumeric())
 }
 
 fn has_left_boundary(value: &str, index: usize) -> bool {

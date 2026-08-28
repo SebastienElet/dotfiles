@@ -1,4 +1,4 @@
-use arnes::memory::{AdmissionAuthorization, parse_draft, validate_draft};
+use arnes::memory::{AdmissionAuthorization, parse_draft, parse_entry, validate_draft};
 
 fn draft_with(statement: &str, summary: &str, terms: &[String], sources: &[String]) -> Vec<u8> {
     let retrieval_terms = terms
@@ -28,6 +28,26 @@ fn valid_draft() -> Vec<u8> {
         "The tracked contract establishes the invariant.",
         &["lookup alias".to_owned()],
         &["docs/contract.md".to_owned()],
+    )
+}
+
+fn terminal_entry(statement: &str, summary: &str, locator: &str, reason: &str) -> Vec<u8> {
+    format!(
+        "schema_version: 1\nid: mem_0123456789abcdef01234567\nkind: goal\nstatus: achieved\nstatement: {}\nscope:\n  type: project\n  key: project_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\nretrieval_terms:\n  - \"durable goal\"\nproof:\n  summary: {}\n  sources:\n    - kind: git-file\n      locator: {}\n      fingerprint: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n  established_at: 2026-08-28T09:00:00Z\noracle:\n  automated:\n    kind: source-fingerprint\n    expected: all-proof-sources-unchanged\n  human_fallback:\n    question: \"Was the goal achieved?\"\n    valid_when: \"The observable outcome is complete.\"\n  outcomes:\n    valid: \"The goal is complete.\"\n    invalidated: \"The proof no longer establishes the goal.\"\ncreated_at: 2026-08-28T09:00:00Z\ntransition:\n  from: active\n  to: achieved\n  at: 2026-08-28T10:00:00Z\n  verdict: valid\n  reason: {}\n",
+        serde_json::to_string(statement).unwrap(),
+        serde_json::to_string(summary).unwrap(),
+        serde_json::to_string(locator).unwrap(),
+        serde_json::to_string(reason).unwrap(),
+    )
+    .into_bytes()
+}
+
+fn valid_terminal_entry(reason: &str) -> Vec<u8> {
+    terminal_entry(
+        "The durable goal has been achieved.",
+        "The tracked source records the outcome.",
+        "docs/outcome.md",
+        reason,
     )
 }
 
@@ -63,6 +83,10 @@ fn refuses_every_named_sensitive_bypass() {
         ("token-spaced-equals", "token = value"),
         ("api-key-hyphen-colon", "api-key: value"),
         ("api-key-dot-equals", "API.KEY = value"),
+        ("prefixed-password", "DB_PASSWORD=value"),
+        ("prefixed-secret", "CLIENT_SECRET=value"),
+        ("prefixed-token", "ACCESS_TOKEN=value"),
+        ("prefixed-api-key", "OPENAI_API_KEY=value"),
         ("openai-prefix", "sk-value"),
         ("github-prefix-case", "GHP_value"),
         ("github-pat-prefix", "github_pat_value"),
@@ -149,6 +173,63 @@ fn scans_every_narrative_sink() {
             "{sink}"
         );
     }
+}
+
+#[test]
+fn parse_entry_refuses_sensitive_content_in_entry_only_sinks() {
+    let sensitive = "Authorization: Bearer value";
+    let cases = [
+        (
+            "proof summary",
+            terminal_entry(
+                "The durable goal has been achieved.",
+                sensitive,
+                "docs/outcome.md",
+                "The goal was demonstrably achieved.",
+            ),
+        ),
+        (
+            "source locator",
+            terminal_entry(
+                "The durable goal has been achieved.",
+                "The tracked source records the outcome.",
+                sensitive,
+                "The goal was demonstrably achieved.",
+            ),
+        ),
+        (
+            "transition reason",
+            terminal_entry(
+                "The durable goal has been achieved.",
+                "The tracked source records the outcome.",
+                "docs/outcome.md",
+                sensitive,
+            ),
+        ),
+    ];
+
+    for (sink, yaml) in cases {
+        assert_eq!(
+            parse_entry(&yaml).unwrap_err().code(),
+            "sensitive_content",
+            "{sink}"
+        );
+    }
+}
+
+#[test]
+fn enforces_transition_reason_boundaries() {
+    assert_eq!(
+        parse_entry(&valid_terminal_entry("")).unwrap_err().code(),
+        "invalid_field"
+    );
+    assert!(parse_entry(&valid_terminal_entry(&"r".repeat(500))).is_ok());
+    assert_eq!(
+        parse_entry(&valid_terminal_entry(&"r".repeat(501)))
+            .unwrap_err()
+            .code(),
+        "invalid_field"
+    );
 }
 
 #[test]
