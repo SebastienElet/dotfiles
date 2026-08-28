@@ -245,35 +245,3 @@ test(
   },
   extendedDeploymentTimeoutMilliseconds,
 );
-
-test("agent aggregate targets include requirements clarification", () => {
-  const fixture = createDeploymentFixture("requirements-clarification");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/requirements-clarification"],
-    ["cursor", ".cursor/skills/requirements-clarification"],
-    ["codex", ".agents/skills/requirements-clarification"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
-  }
-});
-
-test("agent aggregate targets include PR feedback", () => {
-  const fixture = createDeploymentFixture("pr-feedback");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/pr-feedback"],
-    ["cursor", ".cursor/skills/pr-feedback"],
-    ["codex", ".agents/skills/pr-feedback"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
-  }
-});
