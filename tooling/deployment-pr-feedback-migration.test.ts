@@ -1,6 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
@@ -9,6 +7,8 @@ import {
   pathExists,
   runMake,
 } from "./deployment-test-support.ts";
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
 
