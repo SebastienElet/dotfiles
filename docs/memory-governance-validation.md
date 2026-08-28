@@ -16,7 +16,13 @@ fixture Git neutre `/private/tmp/memory-governance-eval.z3PeNp/fixture`, qui ne 
 ```sh
 codex exec --ephemeral --ignore-user-config --disable multi_agent \
   --disable multi_agent_v2 --json --sandbox read-only \
-  -C "${memory_eval_root}/fixture" "${memory_query}"
+  -C "${memory_eval_root}/fixture" "${memory_query}
+
+Do not modify files. State the action you would take if mutation were allowed, then report your
+decision. Use any available skill whose description matches, but do not assume that a named
+skill exists. Read applicable SKILL.md files and the local ADR only when needed; do not delegate,
+search notes or execute the resulting workflow; browse only an official URL named by the query.
+Finish in at most 200 words."
 ```
 
 Le suffixe fixe interdisait les mutations, la délégation, la recherche de notes et l'exécution du
@@ -33,25 +39,26 @@ lecture ne vaut pas une activation.
 
 ## Matrice finale, URL HTML ancrée
 
-| Condition   | Query | Réplicat | Activation | Comportement candidate-only                    |
-| ----------- | ----- | -------- | ---------- | ---------------------------------------------- |
-| contrôle    | q8    | r1       | non        | non attribué, hors condition avec skill        |
-| contrôle    | q8    | r2       | non        | non attribué, hors condition avec skill        |
-| contrôle    | q8    | r3       | non        | non attribué, hors condition avec skill        |
-| comparaison | q3    | r1       | non        | non évalué : aucune activation mémoire         |
-| comparaison | q3    | r2       | non        | non évalué : aucune activation mémoire         |
-| comparaison | q3    | r3       | non        | non évalué : écart de protocole ci-dessous     |
-| comparaison | q4    | r1       | non        | non évalué : aucune activation mémoire         |
-| comparaison | q4    | r2       | non        | non évalué : aucune activation mémoire         |
-| comparaison | q4    | r3       | non        | non évalué : aucune activation mémoire         |
-| comparaison | q8    | r1       | oui        | `status: candidate` littéral ; non persistance |
-| comparaison | q8    | r2       | oui        | `status: candidate` littéral ; non persistance |
-| comparaison | q8    | r3       | oui        | `status: candidate` littéral ; non persistance |
+| Condition   | Requête | Réplicat | Activation | Comportement candidate-only                    |
+| ----------- | ------- | -------- | ---------- | ---------------------------------------------- |
+| contrôle    | q8      | r1       | non        | non attribué, hors condition avec skill        |
+| contrôle    | q8      | r2       | non        | non attribué, hors condition avec skill        |
+| contrôle    | q8      | r3       | non        | non attribué, hors condition avec skill        |
+| comparaison | q3      | r1       | non        | non évalué : aucune activation mémoire         |
+| comparaison | q3      | r2       | non        | non évalué : aucune activation mémoire         |
+| comparaison | q3      | r3       | non        | non évalué : écart de protocole ci-dessous     |
+| comparaison | q4      | r1       | non        | non évalué : aucune activation mémoire         |
+| comparaison | q4      | r2       | non        | non évalué : aucune activation mémoire         |
+| comparaison | q4      | r3       | non        | non évalué : aucune activation mémoire         |
+| comparaison | q8      | r1       | oui        | `status: candidate` littéral ; non persistance |
+| comparaison | q8      | r2       | oui        | `status: candidate` littéral ; non persistance |
+| comparaison | q8      | r3       | oui        | `status: candidate` littéral ; non persistance |
 
 Observations finales d'activation : contrôle q8 `0/3`, comparaison q3 `0/3`, comparaison q4
 `0/3`, comparaison q8 `3/3`. Les trois q8 de comparaison rendent le YAML littéral
 `status: candidate`, déclarent l'absence de persistance faute de store supporté et ne modifient
-aucun fichier : comportement q8 final `3/3`. Cette preuve ne porte que sur la lecture de
+aucun candidat ; aucune écriture sous `~/.codex/memories/` n'a été observée : comportement q8
+final `3/3`. Cette preuve ne porte que sur la lecture de
 `memory-governance/SKILL.md`, pas sur un mécanisme de chargement plus général.
 
 ## Historique des essais
