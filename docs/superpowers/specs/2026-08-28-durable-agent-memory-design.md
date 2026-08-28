@@ -92,7 +92,7 @@ Les valeurs de `kind` sont fermées : `goal`, `decision`, `evidence`, `invariant
 `git-file`, `local-file`, `official-url` ou `user-decision`, avec un `locator` propre à son type et
 une empreinte `sha256:<64 hex>`. `oracle.automated` est obligatoire, sauf si toutes les sources de
 preuve sont `user-decision`; `human_fallback` reste obligatoire dans tous les cas. Aucun champ ne
-peut contenir une commande shell arbitraire.
+peut contenir une commande shell. Aucune commande shell n'est persistée ou exécutée depuis un YAML.
 
 Une entrée terminale ajoute obligatoirement un objet `transition` contenant le statut précédent,
 le nouveau statut, la date, le verdict d'oracle et une raison concise. Cet objet est absent tant que
