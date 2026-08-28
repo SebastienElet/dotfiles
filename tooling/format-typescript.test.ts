@@ -136,6 +136,25 @@ test("passes every tracked TypeScript path to Oxfmt without including untracked 
   );
 });
 
+test("formats surviving tracked files while a tracked TypeScript file is deleted", async () => {
+  const repository = await createRepository();
+  await writeFile(join(repository, "kept.ts"), "export const kept=1\n");
+  await writeFile(join(repository, "removed.ts"), "export const removed=1\n");
+  const addition = await run(
+    ["git", "add", "kept.ts", "removed.ts"],
+    repository,
+  );
+  expect(addition.status).toBe(0);
+  await rm(join(repository, "removed.ts"));
+
+  const result = await runEntrypoint([], repository);
+
+  expect(result.status).toBe(0);
+  expect(await Bun.file(join(repository, "kept.ts")).text()).toBe(
+    "export const kept = 1;\n",
+  );
+});
+
 test("fails closed when discovery is empty or unavailable", async () => {
   const repository = await createRepository();
   await writeFile(

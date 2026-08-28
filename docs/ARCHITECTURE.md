@@ -50,10 +50,9 @@ est suivie par l'issue #152.
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-les skills et leurs adaptateurs sous `harness/rules/`, ainsi que les services
-associés comme `harness/firecrawl/`. Le `Makefile` les adapte aux contraintes de chaque agent :
-Claude reçoit des liens symboliques, tandis que Codex reçoit un
-`~/.codex/AGENTS.md` assemblé.
+les skills et leurs adaptateurs sous `harness/rules/`. Le `Makefile` les adapte
+aux contraintes de chaque agent : Claude reçoit des liens symboliques, tandis
+que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
 
 La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
 issues de la même source canonique sous `harness/skills/`.

@@ -10,6 +10,7 @@ MAS?=mas
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=allow-skip
+FIRECRAWL_RETIREMENT_DOCKER_POLICY?=require-docker
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=test ! -e "$@" && test ! -L "$@" && ln -s "$<" "$@"
 # SKIP_PAID_APPS: set to 1 to skip paid Mac App Store apps (useful for CI)
@@ -216,11 +217,11 @@ ai: \
 	codex \
 	codexbar \
 	cursor \
-	firecrawl \
 	llmfit \
 	openspec \
 	scrapling \
 	skills
+	@DOCKER_UNAVAILABLE_POLICY="${FIRECRAWL_RETIREMENT_DOCKER_POLICY}" "${DOTFILES_PATH}/tooling/retire-firecrawl"
 
 ~/.arnes.yaml: ${DOTFILES_PATH}/home/.arnes.yaml
 	${CREATE_SYMLINK}
@@ -595,14 +596,6 @@ qovery-cli: /usr/local/bin/qovery
 /usr/local/bin/qovery:
 	# Homebrew version is outdated, use the upstream installer
 	curl -s https://get.qovery.com | bash
-
-.PHONY: firecrawl
-firecrawl: docker bun
-	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
-
-.PHONY: verify-firecrawl-docker
-verify-firecrawl-docker: bun
-	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify firecrawl "${DOCKER_UNAVAILABLE_POLICY}" "${DOTFILES_PATH}/harness/firecrawl/compose.yml"
 
 .PHONY: scrapling
 scrapling: docker bun ${LOCAL_BIN}/scrapling_mcp

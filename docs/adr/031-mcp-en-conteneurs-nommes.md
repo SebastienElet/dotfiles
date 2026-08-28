@@ -6,22 +6,21 @@
 
 ## Contexte
 
-Les serveurs MCP de récupération web (scrapling, firecrawl, CloakBrowser)
-embarquent navigateurs et dépendances Python lourdes, mal adaptées à une
-installation directe sur le poste. Enregistrés en `docker run -i --rm … mcp`,
-ils créaient un conteneur par session : le commit `0525f5a` constate
+Le MCP Scrapling et le navigateur d'escalade CloakBrowser embarquent des
+navigateurs et dépendances Python lourdes, mal adaptées à une installation
+directe sur le poste. L'ancien lancement de Scrapling par
+`docker run -i --rm … mcp` créait un conteneur par session : le commit `0525f5a` constate
 « five were still running, the oldest for 12 hours ».
 
 ## Décision
 
-Livrer ces MCP par images Docker et n'exécuter qu'un conteneur nommé par
-service : un script d'enveloppe démarre le conteneur à la demande
-(`docker start` ou `docker run`) puis lance le serveur stdio de chaque session
-à l'intérieur. L'enveloppe Scrapling vit sous `tooling/scrapling-mcp` et la
-composition Firecrawl sous `harness/firecrawl/compose.yml`. Une escalade par
+Livrer ces capacités par images Docker et n'exécuter qu'un conteneur nommé par
+service. L'enveloppe `tooling/scrapling-mcp` démarre le conteneur Scrapling à
+la demande puis lance le serveur stdio de chaque session à l'intérieur.
+CloakBrowser est démarré à la demande comme navigateur CDP. Une escalade par
 paliers est inscrite dans les instructions globales : fetch intégré, puis
-`stealthy_fetch`, puis CloakBrowser, avec `--idle-timeout` pour l'arrêt
-automatique.
+Scrapling `fetch`, puis `stealthy_fetch`, puis CloakBrowser, avec
+`--idle-timeout` pour l'arrêt automatique.
 
 ## Conséquences
 
