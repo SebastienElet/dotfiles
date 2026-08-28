@@ -1,12 +1,13 @@
 # Verdict cases
 
-Two end-to-end cases. Each names the PR to point the skill at, the verdict it must reach, and the
-criteria that decide pass or fail. They are assigned to different forges so that both command sets in
-`references/forges.md` get exercised.
+Three behavioral cases. Each names the PR or evidence package to review, the verdict it must reach,
+and the criteria that decide pass or fail. Cases A and B are assigned to different forges so that
+both command sets in `references/forges.md` get exercised.
 
-Run them against real pull requests — a case that never touched a forge proves nothing about a skill
-whose first phase is anchoring. Use a scratch repository if no suitable PR exists; the domain does not
-matter, the shape of the diff does.
+Run cases A and B against real pull requests — a case that never touched a forge proves nothing about
+a skill whose first phase is anchoring. Use a scratch repository if no suitable PR exists; the domain
+does not matter, the shape of the diff does. Case C deliberately isolates phase-5 ledger retention
+with an evidence package and makes no claim about forge behavior.
 
 ## Case A — changes required (Bitbucket)
 
@@ -40,15 +41,18 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
 ## Case B — approved with reservations (GitHub)
 
 **Diff under review.** A small, correct bug fix: a null-handling defect repaired at its cause, with
-one regression test covering the reported input. A second input path reaches the same function and is
-not covered, and the error code the endpoint now returns is not documented.
+one regression test covering the reported input and a controlled faulty variant that reproduces its
+test-first RED. A second, unchanged input path reaches the same function and is not covered, and the
+pre-existing error code is not documented.
 
 **Expected verdict:** _approved with reservations_.
 
 **Pass criteria**
 
-- The verdict names the reservation as a bounded consequence: the uncovered second path and the
-  undocumented code (failure class 6), with what would lift each.
+- The changed-behavior ledger records the repaired null input, its passing regression test on the
+  exact head, and the reproduced test-first RED as its negative witness.
+- The verdict names the reservation as a bounded consequence: the unchanged uncovered second path
+  and the pre-existing undocumented code (failure class 6), with what would lift each.
 - The barrier paragraph gives counts and states that coverage is limited to the reported input path.
 - No blocker is raised. Neither an uncovered path nor an undocumented code is a mechanism that loses
   data, so promoting either to a block fails the case.
@@ -61,9 +65,33 @@ not covered, and the error code the endpoint now returns is not documented.
 - "Everything is green" with no counts.
 - A barrier paragraph with no statement of what the single test does not cover.
 
+## Case C — changed behavior without negative witnesses
+
+**Evidence package under review.** A rolling-deployment change claims four observable contracts:
+historical cursors preserve their original ordering, create replay returns the original resource
+without a second allocation, a schema migration publishes atomically, and the public contract
+declares the conflict returned for an identical in-progress request. The exact head passes a large
+aggregate barrier, but the review record contains no test-first RED or controlled faulty variant for
+any of the four contracts.
+
+**Expected verdict:** _changes required_.
+
+**Pass criteria**
+
+- The changed-behavior ledger retains all four contracts as separate rows.
+- Aggregate barrier results are not substituted for behavior-level evidence.
+- Every missing negative witness is recorded as `absent`.
+- The verdict is _changes required_, with the four witnesses as lift criteria.
+
+**Fail signals**
+
+- Either approval verdict because the aggregate barrier is green.
+- A summary paragraph that drops one or more ledger rows.
+- A passing regression test described as a negative witness without an observed failing counterpart.
+
 ## Execution record
 
-Both cases were run once, on 2026-08-11, phases 1 to 5 only — publication was deliberately not
+Cases A and B were run once, on 2026-08-11, phases 1 to 5 only — publication was deliberately not
 reached. A third run, on 2026-08-12, was a real review rather than a case, and went through phase 6.
 
 - **Case A**, on a Bitbucket PR (`bkt`), reached _changes required_ as expected, on the three
@@ -75,7 +103,7 @@ reached. A third run, on 2026-08-12, was a real review rather than a case, and w
 - **Case B**, on a GitHub PR (`gh`), ran end to end but produced _changes required_ rather than the
   expected reservations: the target held a measured mechanism that destroys an unversioned file and
   still reports success. The expectation was wrong about the target, not about the skill — the
-  _approved with reservations_ path therefore remains unexercised.
+  original target therefore did not exercise the _approved with reservations_ path.
 - **Third run**, on GitHub, phases 1 to 6, first publication the skill has ever performed: a general
   comment written through a body file, plus a fix ticket and the re-review ticket the procedure then
   required. Verdict _changes required_, on classes 4 and 5 only. Five gaps came back into the skill.
@@ -87,6 +115,20 @@ reached. A third run, on 2026-08-12, was a real review rather than a case, and w
   different commands over different file sets, and only the second measures the head. And the
   non-blocking section grew until it rivalled the blocking one, which is where the three-line cap
   comes from. Last, the request anticipated a PR that was not open yet, a case phase 1 assumed away.
+
+Case C was run on 2026-08-28 in fresh Codex subagent contexts using GPT-5.4 at high reasoning effort.
+The candidate guidance retained all four rows in 3/3 runs. The first integrated wording returned the
+right block in 3/3 runs but retained the ledger rows in 0/3, so it was rejected; after phase 5 gained
+the template-ordered output contract, 3/3 new runs retained all four rows, marked every negative
+witness absent and returned _changes required_, with no contradictory result. The scenario supplied
+an already-run barrier and stopped at phase 5, so it validates verdict reasoning and ledger
+retention, not forge anchoring, command execution or publication.
+
+The revised Case B evidence package was run on 2026-08-28 in three fresh contexts with the same model
+and effort. All three retained the completed ledger row and returned _approved with reservations_;
+no contradictory result was observed. This isolates the approval decision after exact-head positive
+evidence and a controlled negative witness were supplied; it does not replace the original GitHub
+forge run.
 
 Nothing has yet validated: the marker's idempotent update, the duplicate-verdict guard, or Bitbucket
 comment publication.
@@ -102,9 +144,9 @@ since the blocking case is assigned to Bitbucket. The third run attempted it and
 the account being the PR's author; that measures the refusal, not the success path. Run case A a
 second time on GitHub, on a PR the account did not write, or the enforcement path stays unverified.
 
-_Approved with reservations_ has never been produced: both cases that reached a verdict landed on
-_changes required_. The state that requires stating a bound rather than forbidding a merge is
-therefore the least exercised part of the skill.
+Flat _approved_ has never been produced. The revised Case B evidence package exercises _approved with
+reservations_, but no recorded run yet proves that a clean review with complete ledger rows ends in
+an unconditional approval.
 
 Do not let the runs that went green imply either gap is covered: that is the same substitution of a
 green for a guarantee that phase 4 exists to prevent.

@@ -154,6 +154,9 @@ jobs:
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
           harness/skills/pr-feedback/SKILL.md
           harness/skills/pr-feedback/evals/trigger-queries.json
+          harness/skills/pr-verdict/SKILL.md
+          harness/skills/pr-verdict/assets/verdict-template.md
+          harness/skills/pr-verdict/references/cases.md
           harness/skills/requirements-clarification/SKILL.md
           harness/skills/requirements-clarification/evals/trigger-queries.json
           docs/requirements-clarification-validation.md
@@ -205,6 +208,9 @@ jobs:
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \
             harness/skills/pr-feedback/SKILL.md \
             harness/skills/pr-feedback/evals/trigger-queries.json \
+            harness/skills/pr-verdict/SKILL.md \
+            harness/skills/pr-verdict/assets/verdict-template.md \
+            harness/skills/pr-verdict/references/cases.md \
             harness/skills/requirements-clarification/SKILL.md \
             harness/skills/requirements-clarification/evals/trigger-queries.json \
             docs/requirements-clarification-validation.md \
