@@ -146,6 +146,8 @@ jobs:
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           docs/design-claim-audit-validation.md
+          docs/issue-257-installation-macos-audit.md
+          docs/issue-257-installation-macos-design.md
           harness/skills/design-claim-audit/SKILL.md
           harness/skills/design-claim-audit/evals/trigger-queries.json
           harness/skills/design-claim-audit/evals/fixture/*.md
