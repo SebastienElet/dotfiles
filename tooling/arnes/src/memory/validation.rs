@@ -74,6 +74,10 @@ pub fn parse_entry(bytes: &[u8]) -> Result<MemoryEntry, MemoryError> {
     validated_entry(raw)
 }
 
+pub fn parse_utc_timestamp(value: &str) -> Result<UtcTimestamp, MemoryError> {
+    utc_timestamp(value.to_owned())
+}
+
 fn validated_entry(raw: RawEntryKind) -> Result<MemoryEntry, MemoryError> {
     let (kind, data) = raw.split();
     validate_schema_number(data.schema_version)?;
