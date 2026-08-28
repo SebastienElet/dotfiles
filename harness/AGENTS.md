@@ -28,8 +28,8 @@ Before implementing any request:
 - Never record a workaround for a defect in code we own as intended behavior: fix it, or
   open a ticket and reference it.
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
-  field, apply the `pr-verdict` skill's `references/failure-classes.md` to the design; the
-  failure-path test ships in the same commit.
+  field, make every affected failure path explicit in the design; the corresponding failure-path
+  test ships in the same commit.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
