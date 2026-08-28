@@ -1,9 +1,11 @@
 mod error;
 mod identity;
+mod index;
 mod lock;
 mod model;
 mod path;
 mod process;
+mod search;
 mod sensitive;
 mod source;
 mod store;
@@ -11,6 +13,7 @@ mod validation;
 
 pub use error::MemoryError;
 pub use identity::{ProjectScope, resolve_project};
+pub use index::{Index, IndexDiagnostic, IndexLoad};
 pub use model::{
     AdmissionAuthorization, AdmissionDraft, AdmissionResult, EntryProof, EntryScope, EntrySource,
     EntryTransition, Fingerprint, MemoryEntry, MemoryId, MemoryKind, OracleVerdict, ProjectKey,
@@ -19,6 +22,7 @@ pub use model::{
 };
 pub use path::MemoryRoot;
 pub use process::{ProcessOutput, ProcessRunner, SystemProcessRunner};
+pub use search::{SearchRequest, SearchSelection, SelectedMemory, search};
 pub use source::{ResolvedDraft, ResolvedSource, SourceContext, resolve_sources};
 pub use store::{Store, StoreCommit, StoreFailpoint, StoreListing};
 pub use validation::{parse_draft, parse_entry, parse_utc_timestamp, validate_draft};

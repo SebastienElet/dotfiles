@@ -4,7 +4,7 @@ use crate::memory::path::ManagedPath;
 use std::fs::{File, Metadata};
 use std::io::{BufWriter, Write};
 
-pub(super) struct AtomicPublication<'a> {
+pub(crate) struct AtomicPublication<'a> {
     root: &'a ManagedPath,
     failpoint: Option<&'a StoreFailpoint>,
 }
@@ -44,24 +44,40 @@ impl<'a> AtomicPublication<'a> {
         )
     }
 
-    pub(super) fn stage_index(&self, bytes: &[u8]) -> Result<StagedFile, MemoryError> {
+    pub(crate) fn stage_index(&self, bytes: &[u8]) -> Result<StagedIndex, MemoryError> {
         let destination = self.root.join("index.json")?;
-        destination.open_read()?;
-        self.write_temporary(
+        let original = if destination.exists()? {
+            Some(destination.open_read()?)
+        } else {
+            None
+        };
+        let staged = self.write_temporary(
             &destination,
             bytes,
             StorePhase::BeforeIndexTemporaryCreate,
             StorePhase::BeforeIndexWrite,
             StorePhase::BeforeIndexFlush,
             StorePhase::BeforeIndexFsync,
-        )
+        )?;
+        Ok(StagedIndex {
+            staged,
+            destination,
+            original,
+        })
+    }
+
+    pub(crate) fn publish_index(&self, index: StagedIndex) -> Result<(), MemoryError> {
+        self.hit(StorePhase::BeforeIndexRename)?;
+        index.ensure_anchored()?;
+        index.publish()?;
+        self.root.sync_directory()
     }
 
     pub(super) fn publish(
         &self,
         yaml: StagedFile,
         destination: &ManagedPath,
-        index: StagedFile,
+        index: StagedIndex,
         replace: bool,
     ) -> Result<(), CommitFailure> {
         self.hit(StorePhase::BeforeYamlRename)
@@ -85,15 +101,7 @@ impl<'a> AtomicPublication<'a> {
         index
             .ensure_anchored()
             .map_err(|_| CommitFailure::AfterYaml)?;
-        index
-            .path
-            .rename_to(
-                &self
-                    .root
-                    .join("index.json")
-                    .map_err(|_| CommitFailure::AfterYaml)?,
-            )
-            .map_err(|_| CommitFailure::AfterYaml)?;
+        index.publish().map_err(|_| CommitFailure::AfterYaml)?;
         self.root
             .sync_directory()
             .map_err(|_| CommitFailure::AfterYaml)?;
@@ -150,10 +158,31 @@ impl<'a> AtomicPublication<'a> {
     }
 }
 
-pub(super) struct StagedFile {
+pub(crate) struct StagedFile {
     path: ManagedPath,
     file: File,
     metadata: Metadata,
+}
+
+pub(crate) struct StagedIndex {
+    staged: StagedFile,
+    destination: ManagedPath,
+    original: Option<File>,
+}
+
+impl StagedIndex {
+    fn ensure_anchored(&self) -> Result<(), MemoryError> {
+        self.staged.ensure_anchored()?;
+        match &self.original {
+            Some(original) => self.destination.ensure_same_file(original),
+            None if self.destination.exists()? => Err(unsafe_path()),
+            None => Ok(()),
+        }
+    }
+
+    fn publish(self) -> Result<(), MemoryError> {
+        self.staged.path.rename_to(&self.destination)
+    }
 }
 
 impl StagedFile {
@@ -178,4 +207,8 @@ fn store_io(_: std::io::Error) -> MemoryError {
 
 const fn store_error() -> MemoryError {
     MemoryError::new("store_unavailable", "store")
+}
+
+const fn unsafe_path() -> MemoryError {
+    MemoryError::new("unsafe_store_path", "store")
 }

@@ -8,15 +8,15 @@ use crate::memory::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize)]
-pub(super) struct StoredEntry {
+pub(crate) struct StoredEntry {
     schema_version: u8,
-    pub(super) id: String,
-    pub(super) kind: String,
-    pub(super) status: String,
-    statement: String,
-    pub(super) scope: StoredScope,
-    pub(super) retrieval_terms: Vec<String>,
-    pub(super) proof: StoredProof,
+    pub(crate) id: String,
+    pub(crate) kind: String,
+    pub(crate) status: String,
+    pub(crate) statement: String,
+    pub(crate) scope: StoredScope,
+    pub(crate) retrieval_terms: Vec<String>,
+    pub(crate) proof: StoredProof,
     oracle: StoredOracle,
     created_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -70,7 +70,7 @@ impl StoredEntry {
         })
     }
 
-    pub(super) fn from_entry(entry: &MemoryEntry) -> Self {
+    pub(crate) fn from_entry(entry: &MemoryEntry) -> Self {
         Self {
             schema_version: 1,
             id: entry.id().as_str().to_owned(),
@@ -131,8 +131,8 @@ impl StoredEntry {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub(super) enum StoredScope {
+#[serde(tag = "type", rename_all = "lowercase", deny_unknown_fields)]
+pub(crate) enum StoredScope {
     Project { key: String },
     User,
 }
@@ -156,8 +156,8 @@ impl StoredScope {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub(super) struct StoredProof {
-    pub(super) summary: String,
+pub(crate) struct StoredProof {
+    pub(crate) summary: String,
     sources: Vec<StoredSource>,
     established_at: String,
 }

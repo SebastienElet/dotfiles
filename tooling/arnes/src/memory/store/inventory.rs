@@ -5,7 +5,7 @@ use std::path::Path;
 
 const MAX_ENTRY_BYTES: u64 = 1024 * 1024;
 
-pub(super) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryError> {
+pub(crate) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryError> {
     let mut paths = Vec::new();
     let user = root.join("entries/user")?;
     for name in user.read_dir_names()? {
@@ -39,7 +39,7 @@ pub(super) fn repair_entry_modes(root: &ManagedPath) -> Result<(), MemoryError> 
     Ok(())
 }
 
-pub(super) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
+pub(crate) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
     let bytes = read_bounded(path)?;
     let entry = parse_entry(&bytes)?;
     validate_entry_location(path.relative(), &entry)?;
@@ -88,13 +88,13 @@ fn valid_entry_filename(value: &str) -> bool {
     value.strip_suffix(".yaml").is_some_and(valid_memory_id)
 }
 
-pub(super) fn valid_memory_id(value: &str) -> bool {
+pub(crate) fn valid_memory_id(value: &str) -> bool {
     value
         .strip_prefix("mem_")
         .is_some_and(|suffix| suffix.len() == 24 && suffix.bytes().all(is_lower_hex))
 }
 
-fn valid_project_key(value: &str) -> bool {
+pub(crate) fn valid_project_key(value: &str) -> bool {
     value
         .strip_prefix("project_")
         .is_some_and(|suffix| suffix.len() == 64 && suffix.bytes().all(is_lower_hex))

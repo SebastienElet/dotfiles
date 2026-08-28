@@ -157,6 +157,11 @@ fn replace_active_atomically_updates_yaml_and_index_once() {
         store.load(&id).unwrap().unwrap().status(),
         Status::Invalidated
     );
+    let listing = store.list().unwrap();
+    assert!(!listing.index_rebuild_required());
+    let index: serde_json::Value =
+        serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
+    assert!(index["entries"].as_array().unwrap().is_empty());
     assert_eq!(
         store.replace_active(&terminal).unwrap_err().code(),
         "entry_not_active"

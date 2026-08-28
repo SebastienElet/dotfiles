@@ -112,6 +112,7 @@ fn writes_private_user_and_project_entries_and_an_exact_minimal_index_row() {
             "path",
             "retrieval_terms",
             "scope",
+            "statement_tokens",
             "status",
             "summary",
         ]
@@ -124,6 +125,10 @@ fn writes_private_user_and_project_entries_and_an_exact_minimal_index_row() {
         serde_json::json!(["user invariant"])
     );
     assert_eq!(user_row["summary"], "é".repeat(160));
+    assert_eq!(
+        user_row["statement_tokens"],
+        serde_json::json!(["invariant", "user"])
+    );
     assert_eq!(user_row["path"], format!("entries/user/{user_id}.yaml"));
     assert_eq!(user_row["length"], fs::metadata(user_path).unwrap().len());
     assert!(user_row["modified_ns"].as_i64().is_some());

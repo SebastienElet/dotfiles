@@ -1,16 +1,15 @@
 mod canonicalization;
-mod document;
-mod index_writer;
-mod inventory;
-mod publication;
+pub(super) mod document;
+pub(super) mod inventory;
+pub(super) mod publication;
 mod types;
 
 use self::document::{StoredEntry, StoredScope, yaml_bytes};
-use self::index_writer::{empty_index_bytes, index_rebuild_required, prepared_index_bytes};
 use self::inventory::{entry_paths, read_entry, repair_entry_modes, valid_memory_id};
 use self::publication::{AtomicPublication, CommitFailure};
 use self::types::StorePhase;
 pub use self::types::{StoreCommit, StoreFailpoint, StoreListing};
+use super::index::{empty_index_bytes, index_rebuild_required, prepared_index_bytes};
 use super::lock::GlobalLock;
 use super::path::{ManagedPath, MemoryRoot, open_root};
 use super::{
@@ -198,7 +197,7 @@ impl Store {
         publication.publish(staged_yaml, destination, staged_index, replace)
     }
 
-    fn acquire_lock(&self) -> Result<GlobalLock, MemoryError> {
+    pub(super) fn acquire_lock(&self) -> Result<GlobalLock, MemoryError> {
         let path = self.root.join(".lock")?;
         let lock = GlobalLock::acquire(&self.root, &path)?;
         self.hit(StorePhase::AfterLockAcquire)?;
@@ -206,8 +205,16 @@ impl Store {
         Ok(lock)
     }
 
-    fn publication(&self) -> AtomicPublication<'_> {
+    pub(super) fn publication(&self) -> AtomicPublication<'_> {
         AtomicPublication::new(&self.root, self.failpoint.as_ref())
+    }
+
+    pub(super) fn root(&self) -> &ManagedPath {
+        &self.root
+    }
+
+    pub(super) fn before_index_entry_read(&self) -> Result<(), MemoryError> {
+        self.hit(StorePhase::BeforeIndexEntryRead)
     }
 
     fn entry_path(&self, entry: &StoredEntry) -> Result<ManagedPath, MemoryError> {
