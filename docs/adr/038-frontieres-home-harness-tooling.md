@@ -21,7 +21,7 @@ Adopter trois frontières :
 1. `home/` contient les artefacts déployés individuellement sous `$HOME` et
    reproduit leur chemin relatif de destination ;
 2. `harness/` contient les instructions et capacités partagées entre les
-   agents, dont `AGENTS.md`, `SOUL.md`, `USER.md` et Firecrawl ;
+   agents, dont `AGENTS.md`, `SOUL.md` et `USER.md` ;
 3. `tooling/` contient les applications et exécutables locaux maintenus. Les
    exécutables placés directement sous ce répertoire sont sans extension et
    nommés en kebab-case.

@@ -25,7 +25,7 @@ pub(crate) fn configured_fixture() -> Fixture {
     fixture.write_repository(".gitignore", ".harness-export/\n");
     fixture.write_repository("harness/skills/alpha/SKILL.md", "alpha\n");
     fixture.write_repository("harness/skills/beta/SKILL.md", "beta\n");
-    fixture.write_repository("harness/firecrawl/compose.yml", "services: {}\n");
+    fixture.write_repository("harness/assets/example.txt", "asset\n");
     git(&fixture, &["init", "-q"]);
     git(&fixture, &["add", "."]);
     git(

@@ -12,11 +12,11 @@ const dockerInstallerInvocationSchema = z
     action: z.enum(["install", "verify"]),
     artifact: z.string().min(1),
     policy: z.enum(["allow-skip", "require-docker"]),
-    target: z.enum(["cloakbrowser", "firecrawl", "scrapling"]),
+    target: z.enum(["cloakbrowser", "scrapling"]),
   })
   .strict();
 const dockerInstallerPattern =
-  /^"?(?:[^"\s]*\/)?tooling\/install-docker-artifact"? (?<action>install|verify) (?<target>cloakbrowser|firecrawl|scrapling) "(?<policy>allow-skip|require-docker)" "(?<artifact>[^"\n]+)"$/u;
+  /^"?(?:[^"\s]*\/)?tooling\/install-docker-artifact"? (?<action>install|verify) (?<target>cloakbrowser|scrapling) "(?<policy>allow-skip|require-docker)" "(?<artifact>[^"\n]+)"$/u;
 
 // Make -n exposes shell text, not expanded argv; this source inventory is advisory.
 const channelPatterns = [
@@ -94,11 +94,7 @@ function inventorySources(output: string): readonly string[] {
   const dockerInstaller = parseDockerInstallerInvocations(output);
   const installedDockerArtifacts = dockerInstaller.invocations
     .filter(({ action }) => action === "install")
-    .flatMap(({ artifact, target }) =>
-      target === "firecrawl"
-        ? ["channel:docker"]
-        : ["channel:docker", `docker:${artifact}`],
-    );
+    .flatMap(({ artifact }) => ["channel:docker", `docker:${artifact}`]);
   return [
     ...new Set([
       ...extractChannels(output),
@@ -120,13 +116,6 @@ function extractComposePaths(output: string): readonly string[] {
     const path = match.groups?.path;
     if (path !== undefined) {
       paths.push(path);
-    }
-  }
-  for (const { action, artifact, target } of parseDockerInstallerInvocations(
-    output,
-  ).invocations) {
-    if (action === "install" && target === "firecrawl") {
-      paths.push(artifact);
     }
   }
   return paths;

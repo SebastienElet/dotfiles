@@ -8,6 +8,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { discoverTrackedTypeScriptPaths } from "./tracked-typescript-paths.ts";
 import { format } from "oxfmt";
 import formatConfig from "../oxfmt.config.ts";
 import { tmpdir } from "node:os";
@@ -17,18 +18,6 @@ const invocationSchema = z.union([
   z.tuple([]),
   z.tuple([z.literal("--check")]),
 ]);
-const typescriptPathSchema = z
-  .string()
-  .min(1)
-  .refine(
-    (path) =>
-      [".ts", ".tsx", ".mts", ".cts"].some((extension) =>
-        path.endsWith(extension),
-      ),
-    "unsupported TypeScript path",
-  );
-const typescriptPathsSchema = z.array(typescriptPathSchema).min(1);
-
 type FormatSource = (
   fileName: string,
   sourceText: string,
@@ -61,33 +50,14 @@ function isOutside(root: string, path: string): boolean {
 async function findTrackedTypeScriptPaths(): Promise<
   Readonly<{ paths: readonly string[] | undefined; status: number }>
 > {
-  const git = Bun.spawn(
-    ["git", "ls-files", "-z", "--", "*.ts", "*.tsx", "*.mts", "*.cts"],
-    {
-      stderr: "inherit",
-      stdout: "pipe",
-    },
-  );
-  const [status, output] = await Promise.all([
-    git.exited,
-    new Response(git.stdout).arrayBuffer(),
-  ]);
-  if (status !== 0) {
-    return { paths: undefined, status };
+  const result = await discoverTrackedTypeScriptPaths(process.cwd());
+  if (result.status !== 0) {
+    return { paths: undefined, status: result.status };
   }
-  const serializedPaths = new TextDecoder("utf-8", { fatal: true }).decode(
-    output,
-  );
-  if (serializedPaths.length === 0) {
+  if (result.trackedCount === 0) {
     throw new Error("No tracked TypeScript files found.");
   }
-  if (!serializedPaths.endsWith("\0")) {
-    throw new Error("Git returned a malformed tracked TypeScript path list.");
-  }
-  const paths = typescriptPathsSchema.parse(
-    serializedPaths.slice(0, -1).split("\0"),
-  );
-  return { paths, status };
+  return { paths: result.paths, status: result.status };
 }
 
 async function readOwnedFile(root: string, path: string): Promise<string> {
