@@ -70,7 +70,7 @@ not create a duplicate memory entry.
    before applying one, reread its primary source and verify its status, scope, exact revision and
    each observable `invalidate_when` condition. If any check fails, cannot run or is ambiguous,
    return `status: invalidated`, name the failed check and do not apply the candidate. If every check
-   holds, use it only for the active task; do not promote or repersist it.
+   holds, use it only for the active task; do not promote or persist it.
 7. **Route behavior changes separately.** If the candidate would change agent instructions, skills,
    hooks or enforcement, use `harness-reflection`; memory evidence cannot promote itself into
    harness behavior.
