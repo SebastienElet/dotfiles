@@ -36,7 +36,7 @@ echo "ℹ️  Brew"
 brew update
 brew upgrade --yes
 brew upgrade --cask --greedy --yes
-brew cleanup -s
+HOMEBREW_CLEANUP_MAX_AGE_DAYS=7 brew cleanup -s
 
 echo "ℹ️  Brew diagnostic"
 brew doctor
