@@ -1,5 +1,6 @@
 tap "AlexsJones/llmfit"
 tap "avivsinai/tap"
+tap "dopplerhq/cli"
 tap "jesseduffield/lazydocker"
 tap "schpet/tap"
 
@@ -21,7 +22,7 @@ cask "claude"
 cask "cleanshot"
 cask "codexbar"
 cask "cursor-cli"
-cask "doppler-app"
+cask "dopplerhq/cli/doppler", trusted: true
 cask "google-chrome"
 cask "handy"
 cask "languagetool-desktop"

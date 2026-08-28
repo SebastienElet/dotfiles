@@ -117,7 +117,6 @@ function makeArguments(
   return [
     fixture.makeCommand,
     "--no-print-directory",
-    "--old-file=docker",
     "--old-file=bun",
     target,
     `LOCAL_BIN=${fixture.localBinaryDirectory}`,

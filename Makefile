@@ -4,7 +4,7 @@ CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .codex/config.toml .config/bat .config/cspell .config/fish .config/git/config.delta .config/nvim .config/starship.toml .config/tmux .config/wezterm .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/codegraph-repository-size .tmux/plugins/tpm .volta/bin/codegraph .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
+MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .codex/config.toml .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/codegraph-repository-size .tmux/plugins/tpm .volta/bin/codegraph .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -33,7 +33,8 @@ minimal: bootstrap brew
 	@$(MAKE) --no-print-directory minimal-artifacts </dev/null
 
 .PHONY: optional
-optional:
+optional: bootstrap
+	@$(MAKE) --no-print-directory brew
 	@$(MAKE) --no-print-directory minimal </dev/null
 	@$(MAKE) --no-print-directory bundle-optional </dev/null
 	@$(MAKE) --no-print-directory optional-artifacts </dev/null
