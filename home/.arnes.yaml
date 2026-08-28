@@ -58,6 +58,9 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: design-claim-audit
+    installations:
+      - { agent: codex, scope: user }
   - slug: skill-manager
     installations:
       - { agent: claude, scope: user }

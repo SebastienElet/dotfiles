@@ -145,6 +145,10 @@ jobs:
           .github/workflows/lint.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
+          docs/design-claim-audit-validation.md
+          harness/skills/design-claim-audit/SKILL.md
+          harness/skills/design-claim-audit/evals/trigger-queries.json
+          harness/skills/design-claim-audit/evals/fixture/*.md
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
@@ -182,6 +186,10 @@ jobs:
             .agents/skills/scripts/SKILL.md \
             harness/skills/agent-instructions/SKILL.md \
             harness/skills/agent-instructions/references/maintenance.md \
+            harness/skills/design-claim-audit/SKILL.md \
+            harness/skills/design-claim-audit/evals/trigger-queries.json \
+            harness/skills/design-claim-audit/evals/fixture/*.md \
+            home/.codex/agents/design-claim-auditor.toml \
             harness/skills/issue-creation/SKILL.md \
             harness/skills/issue-creation/references/forge-capabilities.md \
             harness/skills/issue-creation/evals/trigger-queries.json \
@@ -200,6 +208,7 @@ jobs:
             harness/skills/requirements-clarification/SKILL.md \
             harness/skills/requirements-clarification/evals/trigger-queries.json \
             docs/requirements-clarification-validation.md \
+            tooling/design-claim-audit.test.ts \
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
             tooling/obsidian-retrieval/default-corpus-contract.ts \
