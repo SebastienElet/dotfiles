@@ -400,7 +400,7 @@ cursor-hooks: arnes
 	"${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-pr-feedback-migration claude-code-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -443,14 +443,6 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback | ~/.claude/skills
 	${CREATE_SYMLINK}
-.PHONY: claude-pr-feedback-migration
-claude-pr-feedback-migration:
-	@target='${HOME}/.claude/commands/pr-feedback.md'; \
-	expected='${DOTFILES_PATH}/harness/commands/pr-feedback.md'; \
-	if [ ! -e "$$target" ] && [ ! -L "$$target" ]; then exit 0; fi; \
-	if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$expected" ]; then rm "$$target"; exit 0; fi; \
-	echo "Error: $$target exists and is not the legacy symbolic link" >&2; \
-	exit 1
 ~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict | ~/.claude/skills
 	${CREATE_SYMLINK}
 ~/.claude/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification | ~/.claude/skills
