@@ -1,5 +1,8 @@
 # Gouvernance mémoire candidate-only
 
+> Statut : remplacé par
+> `docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md` pour la suite de la PR 249.
+
 ## Contexte
 
 La PR 249 introduit une skill de gouvernance pour les invariants durables, mais son premier contrat
