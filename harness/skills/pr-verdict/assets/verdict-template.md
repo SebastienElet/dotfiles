@@ -15,6 +15,14 @@ the PR.
 naming the parent PR when the branch is stacked. Then the CI state, open tasks and conflicts,
 or "none observed".>
 
+<Changed-behavior ledger — REQUIRED. One row per externally observable behavior added, removed or
+changed by the diff:
+| Observable behavior | Positive evidence on the exact head | Negative witness | Result |
+The positive evidence was reproduced on the reviewed head. The negative witness identifies the
+executed test-first RED or controlled faulty variant derived from that head and the failure it
+observed; "test passes" alone is not a negative witness. Use `absent` for missing evidence. Either
+approval verdict is invalid while a row is incomplete or contradicted.>
+
 <Blocking paragraph — one clause per blocker: the mechanism, then the invariant it breaks. Close
 with one sentence stating what must become true to lift them. Omit this paragraph entirely when
 the verdict is "approved".>
@@ -54,6 +62,11 @@ gives numbers, then immediately spends a sentence dismantling its own green.
 Review of PR #1042 on a1b2c3d4e5f6, stacked base feat/ledger-read-side@9f8e7d6c5b4a.
 Pipeline #318 green, no task and no conflict observed.
 
+| Observable behavior | Positive evidence on the exact head | Negative witness | Result |
+| --- | --- | --- | --- |
+| A closing transaction retains concurrent writes | absent | absent | blocked |
+| Concurrent closes produce one successor | absent | absent | blocked |
+
 Blockers: the snapshot and the controls both run before the closing transaction, so a concurrent
 write can vanish from the successor; two simultaneous closes can create two successors, because the
 retry never re-reads the winning result and the uniqueness constraints that would refuse the second
@@ -76,6 +89,8 @@ Do not approve or merge this head.
 ## Self-check before publishing
 
 - The marker is the first line, and its SHA is the head you actually checked out.
+- Every changed observable behavior has one ledger row with reproduced positive evidence and an
+  observed negative witness; an aggregate green barrier is not repeated as row-level evidence.
 - Every clause in the blocking paragraph names a sequence of steps, not a quality judgement.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
@@ -85,4 +100,5 @@ Do not approve or merge this head.
 - No lift criterion asks for a run the PR already shows; it names the control the repository lacks.
 - At most three non-blocking lines; a fourth means the section is competing with the verdict.
 - No re-review ticket or `Re-review:` slot; the head-specific verdict is the re-review record.
-- Total under about thirty lines. Past that, preferences have leaked into the blocking section.
+- Outside the required ledger, total under about thirty lines. Past that, preferences have leaked
+  into the blocking section.
