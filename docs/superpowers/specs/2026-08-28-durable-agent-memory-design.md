@@ -35,6 +35,30 @@ retrieval observés ne suffit pas.
 - Aucune donnée mémoire n'est versionnée. Seule l'implémentation du système appartient au dépôt.
 - Une demande explicite écrit après admission ; une détection implicite propose sans écrire.
 
+## Frontières des outils
+
+Trois applications locales restent séparées par responsabilité :
+
+- `tooling/agent-memory/` est un package Cargo autonome. Son binaire `agent-memory` possède seul le
+  domaine mémoire : schéma, admission, identité projet, sources, stockage, index, oracles, cache,
+  retrieval, transitions et adaptation des entrées et sorties runtime propres à chaque agent.
+- `tooling/agent-handoff/` est un second package Cargo autonome. Il remplace l'exécutable Bun
+  existant sans changer son contrat observable : mêmes données lues sur stdin, mêmes variables
+  d'environnement interprétées, mêmes données écrites sur stdout et stderr, et mêmes codes de
+  sortie pour chaque succès et chaque échec.
+- Arnes configure, valide et mesure les hooks et leurs exécutables. Il ne contient aucun domaine
+  mémoire ou handoff, ne lit et n'écrit aucun de leurs états, et ne dépend d'aucun de leurs crates.
+
+Les deux nouveaux packages possèdent chacun leur `Cargo.toml`, leur `Cargo.lock`, leurs tests et leur
+binaire. Ils ne forment pas un workspace Cargo, ne partagent aucun crate interne et ne dépendent pas
+l'un de l'autre. Une duplication locale est préférable à une abstraction commune sans invariant
+métier commun établi.
+
+Le `Makefile` construit et déploie séparément `agent-memory` et `agent-handoff` sous
+`~/.local/bin/`. Arnes installe et contrôle seulement les commandes absolues qui les invoquent dans
+la configuration des agents. La réussite du build ou du diagnostic Arnes ne prouve donc aucun
+comportement runtime de mémoire ou de handoff.
+
 ## Stockage local
 
 Le store réside sous `~/.local/share/agent-memory/`, hors de tout dépôt Git. Le répertoire porte des
@@ -213,10 +237,23 @@ consommation repasse au minimum par le contrôle du cache et des invalidations l
 
 ## Intégration des trois agents
 
-Le domaine d'admission, le store, l'index et les oracles sont communs. Codex, Claude Code et Cursor
-ne possèdent que l'adaptation minimale nécessaire pour déclencher proposition, admission et
-retrieval selon leurs surfaces supportées au moment de l'implémentation. Aucun adapter ne duplique
-le schéma, le classement, la politique de confidentialité ou les transitions de statut.
+Le domaine d'admission, le store, l'index et les oracles sont exclusivement implémentés par
+`agent-memory`. Codex, Claude Code et Cursor ne possèdent que l'adaptation minimale nécessaire pour
+déclencher proposition, admission et retrieval selon leurs surfaces supportées au moment de
+l'implémentation. Aucun adapter ne duplique le schéma, le classement, la politique de
+confidentialité ou les transitions de statut.
+
+Pour Codex et Claude Code, Arnes configure et valide le hook supporté afin qu'il exécute le binaire
+absolu `~/.local/bin/agent-memory`. Le binaire interprète l'entrée du hook, exécute le retrieval et
+produit la réponse attendue par l'agent. Pour Cursor, la règle et la skill déclenchent le même
+binaire sans confier de logique mémoire à Arnes. Une défaillance ou une absence de `agent-memory`
+est un échec explicite de l'adapter et ne déclenche aucun repli vers Arnes.
+
+Le handoff suit la même séparation : Arnes configure et valide le hook qui lance
+`~/.local/bin/agent-handoff`, tandis que `agent-handoff` possède seul son comportement runtime. Sa
+migration de Bun vers Rust est terminée seulement si des tests de caractérisation exécutent les
+deux implémentations avec les mêmes matrices stdin, environnement et erreurs, puis prouvent des
+sorties stdout/stderr et codes de sortie identiques avant le retrait de l'implémentation Bun.
 
 L'automatisation ne peut pas être affirmée à partir de la seule présence d'une skill ou d'une règle.
 Pour chaque agent, une session fraîche doit montrer que le retrieval est déclenché avant qu'une
@@ -255,8 +292,17 @@ Les tests de fraîcheur couvrent cache valide avant 48 heures, expiration à 48 
 locale pendant la fenêtre, source distante indisponible, contradiction de preuve, fallback humain
 et absence de mise en cache d'un résultat non valide.
 
+Chaque package Cargo est construit, formaté, linté et testé depuis son propre manifeste, sans
+workspace racine. Les tests Arnes prouvent uniquement la configuration, la validation et la mesure
+des commandes de hooks. Les tests `agent-memory` prouvent le domaine et ses protocoles runtime. Les
+tests `agent-handoff` caractérisent puis conservent strictement le contrat de l'exécutable Bun
+remplacé, y compris stdin, environnement, stdout, stderr et codes de sortie.
+
 Chaque agent possède une évaluation de bout en bout en processus frais avec condition sans
-déploiement puis avec déploiement. Plusieurs réplicats distinguent :
+déploiement puis avec déploiement. Le chemin observé est obligatoirement
+`agent → adapter configuré → binaire agent-memory → adapter → agent` ; un appel direct du binaire,
+un test Arnes ou la seule présence du hook ne constitue pas cette preuve. Plusieurs réplicats
+distinguent :
 
 1. proposition automatique d'une connaissance admissible sans écriture préalable ;
 2. écriture après acceptation ou demande explicite ;
@@ -292,6 +338,10 @@ Cette possibilité ne justifie ni couche de compatibilité abstraite ni double �
 - SQLite dès cette PR : moins lisible pour l'audit humain et non justifié avant mesure du processus.
 - Un service MCP avec embeddings : dépendances, daemon, coût et surface de confidentialité sans
   besoin de recherche sémantique établi.
+- L'intégration du domaine mémoire ou du runtime handoff dans Arnes : elle confond la gestion du
+  harnais avec les capacités qu'il configure et empêche leur évolution et leur preuve indépendantes.
+- Un workspace ou un crate partagé entre `agent-memory` et `agent-handoff` : aucun invariant métier
+  commun ne justifie ce couplage dans cette PR.
 - L'édition de `~/.codex/memories/` : état généré propre à Codex, non partagé avec Claude ou Cursor.
 - Le stockage dans le dépôt : risque de versionner du contexte confidentiel et absence de scope
   utilisateur réellement local.
