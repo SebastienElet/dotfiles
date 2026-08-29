@@ -34,7 +34,8 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
-      - run: make bundle-minimal "$HOME/.local/bin/colgrep-search"
+      - run: brew install lightonai/tap/colgrep
+      - run: make "$HOME/.local/bin/colgrep-search"
       - run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: |

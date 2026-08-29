@@ -18,8 +18,9 @@ test("code-search CI installs and exercises guarded ColGrep retrieval", () => {
     codeSearchWorkflow.match(/^\s+- tooling\/colgrep-search\*$/gmu),
   ).toHaveLength(expectedPathFilters);
   expect(codeSearchWorkflow).toContain("colgrep --version");
+  expect(codeSearchWorkflow).toContain("brew install lightonai/tap/colgrep");
   expect(codeSearchWorkflow).toContain(
-    'make bundle-minimal "$HOME/.local/bin/colgrep-search"',
+    'make "$HOME/.local/bin/colgrep-search"',
   );
   expect(codeSearchWorkflow).toContain(
     "bun test tooling/deployment-links.test.ts tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts",
