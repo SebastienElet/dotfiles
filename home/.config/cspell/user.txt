@@ -3,6 +3,7 @@ backlink
 backlinks
 backticked
 codegraph
+colgrep
 cstring
 diffstat
 evals
