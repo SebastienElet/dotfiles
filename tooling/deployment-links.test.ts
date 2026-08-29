@@ -31,7 +31,7 @@ const userSkillDestinations = [
   [".agents", "agent-instructions"],
   ...[
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
     "enforcement-code",
     "harness-reflection",
     "handoff",
@@ -48,7 +48,7 @@ const userSkillDestinations = [
   ...[
     "claude-developer",
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
     "enforcement-code",
     "harness-reflection",
     "issue-creation",
@@ -64,7 +64,7 @@ const userSkillDestinations = [
   ...[
     "claude-developer",
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
     "design-claim-audit",
     "enforcement-code",
     "harness-reflection",
@@ -150,13 +150,13 @@ test(
   deploymentTimeoutMilliseconds,
 );
 
-test("deploys the ColGrep worktree entry point without replacing a destination", () => {
-  const fixture = createDeploymentFixture("colgrep-worktree");
-  const destination = join(fixture.home, ".local", "bin", "colgrep-worktree");
+test("deploys the guarded ColGrep entry point without replacing a destination", () => {
+  const fixture = createDeploymentFixture("colgrep-search");
+  const destination = join(fixture.home, ".local", "bin", "colgrep-search");
 
   expectSuccess(runMake(fixture, [destination], { repository: project }));
   expect(linkTarget(destination)).toBe(
-    join(project, "tooling", "colgrep-worktree-cli.ts"),
+    join(project, "tooling", "colgrep-search-cli.ts"),
   );
   expectSuccess(runMake(fixture, [destination], { repository: project }));
 

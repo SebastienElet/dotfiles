@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { main } from "./codegraph-repository-size.ts";
-
-process.exitCode = main();

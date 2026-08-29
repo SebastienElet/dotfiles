@@ -53,7 +53,7 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: codegraph
+  - slug: code-search
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
