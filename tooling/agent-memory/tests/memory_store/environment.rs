@@ -62,10 +62,10 @@ fn resolves_the_override_or_default_memory_root_and_rejects_invalid_environment_
             .arg("environment::memory_root_environment_worker")
             .arg("--nocapture")
             .env(ROOT_WORKER_OUTPUT, &output)
-            .env_remove("ARNES_MEMORY_ROOT")
+            .env_remove("AGENT_MEMORY_ROOT")
             .env_remove("HOME");
         if let Some(path) = override_root {
-            command.env("ARNES_MEMORY_ROOT", path);
+            command.env("AGENT_MEMORY_ROOT", path);
         }
         if let Some(path) = home {
             command.env("HOME", path);

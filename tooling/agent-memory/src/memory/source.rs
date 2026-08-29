@@ -100,7 +100,7 @@ pub fn resolve_sources(
         .iter()
         .any(|source| source.kind() == SourceKind::UserDecision);
     if has_official_url && !has_user_decision {
-        return Err(source_unavailable());
+        return Err(source_invalid());
     }
     let sources = draft
         .proof()
@@ -229,7 +229,7 @@ fn resolve_official_url(
     locator: &str,
     context: &SourceContext<'_>,
 ) -> Result<Vec<u8>, MemoryError> {
-    let url = validated_https_url(locator).map_err(|_| source_unavailable())?;
+    let url = validated_https_url(locator).map_err(|_| source_invalid())?;
     let temporary = create_private_temporary(context)?;
     let arguments = curl_arguments(temporary.path(), url.as_str());
     let output = context
@@ -243,7 +243,7 @@ fn resolve_official_url(
 
 fn create_private_temporary(context: &SourceContext<'_>) -> Result<NamedTempFile, MemoryError> {
     let mut builder = Builder::new();
-    builder.prefix(".arnes-memory-source-");
+    builder.prefix(".agent-memory-source-");
     let temporary = match context.temporary_directory {
         Some(directory) => builder.tempfile_in(directory),
         None => builder.tempfile(),
@@ -300,7 +300,7 @@ fn curl_metadata(output: &ProcessOutput) -> Result<CurlMetadata, MemoryError> {
     if !(100..=599).contains(&status) {
         return Err(source_unavailable());
     }
-    let final_url = validated_https_url(lines[1]).map_err(|_| source_unavailable())?;
+    let final_url = Url::parse(lines[1]).map_err(|_| source_unavailable())?;
     let remote_ip = lines[2]
         .parse::<IpAddr>()
         .map_err(|_| source_unavailable())?;
@@ -315,13 +315,13 @@ fn validate_curl_result(
     output: &ProcessOutput,
     metadata: &CurlMetadata,
 ) -> Result<(), MemoryError> {
+    if !allowed_https_url(&metadata.final_url) {
+        return Err(source_invalid());
+    }
     if matches!(metadata.status, 404 | 410) && output.code() == Some(22) {
         return Err(source_invalid());
     }
-    if !output.success()
-        || !matches!(metadata.status, 200..=299)
-        || metadata.final_url.scheme() != "https"
-    {
+    if !output.success() || !matches!(metadata.status, 200..=299) {
         return Err(source_unavailable());
     }
     Ok(())
@@ -329,15 +329,15 @@ fn validate_curl_result(
 
 fn validated_https_url(value: &str) -> Result<Url, ()> {
     let url = Url::parse(value).map_err(|_| ())?;
-    if url.scheme() != "https"
-        || !url.username().is_empty()
-        || url.password().is_some()
-        || url.fragment().is_some()
-        || !matches!(url.host(), Some(Host::Domain(_)))
-    {
-        return Err(());
-    }
-    Ok(url)
+    allowed_https_url(&url).then_some(url).ok_or(())
+}
+
+fn allowed_https_url(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.fragment().is_none()
+        && matches!(url.host(), Some(Host::Domain(_)))
 }
 
 fn classify_local_error(error: io::Error) -> MemoryError {

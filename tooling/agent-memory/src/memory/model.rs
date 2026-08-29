@@ -1,9 +1,9 @@
 mod transition;
 
 use super::MemoryError;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MemoryKind {
     Goal,
@@ -14,7 +14,7 @@ pub enum MemoryKind {
     Assumption,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     Active,
@@ -33,7 +33,7 @@ pub enum TransitionVerdict {
     Invalid,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SourceKind {
     GitFile,
@@ -42,9 +42,10 @@ pub enum SourceKind {
     UserDecision,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ScopeDraft {
+    #[default]
     Project,
     User,
 }
@@ -53,6 +54,7 @@ pub enum ScopeDraft {
 pub enum AdmissionAuthorization {
     ExplicitRequest,
     AcceptedProposal,
+    ImplicitProposal,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -152,6 +154,7 @@ impl RawDraftKind {
 pub(crate) struct RawDraftData {
     pub(crate) schema_version: u64,
     pub(crate) statement: String,
+    #[serde(default)]
     pub(crate) scope: ScopeDraft,
     pub(crate) retrieval_terms: Vec<String>,
     pub(crate) proof: RawDraftProof,

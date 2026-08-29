@@ -25,8 +25,14 @@ pub fn parse_draft(bytes: &[u8]) -> Result<AdmissionDraft, MemoryError> {
 
 pub fn validate_draft(
     draft: AdmissionDraft,
-    _authorization: AdmissionAuthorization,
+    authorization: AdmissionAuthorization,
 ) -> Result<ValidatedDraft, MemoryError> {
+    if authorization == AdmissionAuthorization::ImplicitProposal {
+        return Err(MemoryError::new(
+            "admission_not_authorized",
+            "authorization",
+        ));
+    }
     let data = draft.data;
     validate_schema_number(data.schema_version)?;
     let statement = statement(data.statement)?;

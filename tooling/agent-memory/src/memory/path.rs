@@ -13,7 +13,7 @@ pub struct MemoryRoot(PathBuf);
 
 impl MemoryRoot {
     pub fn from_environment() -> Result<Self, MemoryError> {
-        match env::var_os("ARNES_MEMORY_ROOT") {
+        match env::var_os("AGENT_MEMORY_ROOT") {
             Some(path) => Self::new(PathBuf::from(path)),
             None => {
                 let home = env::var_os("HOME")

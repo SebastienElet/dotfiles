@@ -1,6 +1,6 @@
 use agent_memory::{
-    AdmissionAuthorization, AdmissionResult, MemoryRoot, SourceContext, Store, parse_draft,
-    parse_utc_timestamp, resolve_sources, validate_draft,
+    AdmissionAuthorization, AdmissionContext, AdmissionResult, MemoryRoot, Store, SystemClock,
+    admit,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -29,28 +29,34 @@ fn draft(retrieval_term: &str) -> Vec<u8> {
 
 #[test]
 fn concurrency_worker() {
-    let Some(output) = std::env::var_os("ARNES_MEMORY_CONCURRENCY_OUTPUT") else {
+    let Some(output) = std::env::var_os("AGENT_MEMORY_CONCURRENCY_OUTPUT") else {
         return;
     };
-    let ready = PathBuf::from(std::env::var_os("ARNES_MEMORY_CONCURRENCY_READY").unwrap());
-    let go = PathBuf::from(std::env::var_os("ARNES_MEMORY_CONCURRENCY_GO").unwrap());
-    let variant = std::env::var("ARNES_MEMORY_CONCURRENCY_VARIANT").unwrap();
+    let ready = PathBuf::from(std::env::var_os("AGENT_MEMORY_CONCURRENCY_READY").unwrap());
+    let go = PathBuf::from(std::env::var_os("AGENT_MEMORY_CONCURRENCY_GO").unwrap());
+    let variant = std::env::var("AGENT_MEMORY_CONCURRENCY_VARIANT").unwrap();
     let root = MemoryRoot::from_environment().unwrap();
     let store = Store::open(root).unwrap();
     let runner = UnusedProcessRunner;
     let cwd = ready.parent().unwrap();
-    let context = SourceContext::new(cwd, &runner, &runner);
-    let admission = parse_draft(&draft(&variant)).unwrap();
-    let validated = validate_draft(admission, AdmissionAuthorization::ExplicitRequest).unwrap();
-    let resolved = resolve_sources(validated, &context).unwrap();
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
     fs::write(&ready, b"ready").unwrap();
     let deadline = Instant::now() + Duration::from_secs(5);
     while !go.exists() {
         assert!(Instant::now() < deadline, "concurrency gate timed out");
         std::thread::sleep(Duration::from_millis(5));
     }
-    let outcome = match store.admit(resolved, None, &timestamp, &context) {
+    let outcome = match admit(
+        &draft(&variant),
+        AdmissionContext {
+            store: &store,
+            cwd,
+            clock: &SystemClock,
+            processes: &runner,
+            authorization: AdmissionAuthorization::ExplicitRequest,
+        },
+    )
+    .unwrap()
+    {
         AdmissionResult::Stored { .. } => "stored",
         AdmissionResult::Duplicate { .. } => "duplicate",
         AdmissionResult::Conflict { .. } => "conflict",
@@ -136,11 +142,11 @@ fn spawn_worker(
         .arg("--exact")
         .arg("concurrency_worker")
         .arg("--nocapture")
-        .env("ARNES_MEMORY_ROOT", root)
-        .env("ARNES_MEMORY_CONCURRENCY_GO", go)
-        .env("ARNES_MEMORY_CONCURRENCY_READY", ready)
-        .env("ARNES_MEMORY_CONCURRENCY_OUTPUT", output)
-        .env("ARNES_MEMORY_CONCURRENCY_VARIANT", variant)
+        .env("AGENT_MEMORY_ROOT", root)
+        .env("AGENT_MEMORY_CONCURRENCY_GO", go)
+        .env("AGENT_MEMORY_CONCURRENCY_READY", ready)
+        .env("AGENT_MEMORY_CONCURRENCY_OUTPUT", output)
+        .env("AGENT_MEMORY_CONCURRENCY_VARIANT", variant)
         .spawn()
         .unwrap()
 }

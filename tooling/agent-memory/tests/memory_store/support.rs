@@ -11,7 +11,7 @@ pub(crate) use std::process::Command;
 pub(crate) use std::sync::{Arc, Barrier};
 pub(crate) use std::time::{Duration, Instant};
 
-pub(crate) const ROOT_WORKER_OUTPUT: &str = "ARNES_MEMORY_ROOT_WORKER_OUTPUT";
+pub(crate) const ROOT_WORKER_OUTPUT: &str = "AGENT_MEMORY_ROOT_WORKER_OUTPUT";
 
 pub(crate) fn private_mode(path: &Path) -> u32 {
     fs::symlink_metadata(path).unwrap().permissions().mode() & 0o777

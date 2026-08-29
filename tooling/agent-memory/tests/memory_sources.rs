@@ -236,7 +236,7 @@ fn fingerprints_an_absolute_regular_local_file() {
 }
 
 #[test]
-fn reports_unavailable_for_every_named_initial_url_bypass_without_invoking_curl() {
+fn refuses_every_named_initial_url_bypass_without_invoking_curl() {
     let repository = tempfile::tempdir().unwrap();
     let cases = [
         ("HTTP scheme", "http://sensitive.example.test/proof"),
@@ -252,7 +252,7 @@ fn reports_unavailable_for_every_named_initial_url_bypass_without_invoking_curl(
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
         let result = resolve_sources(official_url_draft(locator), &context);
         let diagnostic = result.as_ref().unwrap_err().to_string();
-        assert_eq!(verdict(result), "unavailable", "{bypass}");
+        assert_eq!(verdict(result), "invalid", "{bypass}");
         assert!(!diagnostic.contains(locator), "{bypass}");
         assert!(curl.calls().is_empty(), "{bypass}");
     }
@@ -274,7 +274,7 @@ fn refuses_an_official_url_without_a_user_decision_before_any_side_effect() {
     let result = resolve_sources(draft("official-url", locator), &context);
     let diagnostic = result.as_ref().unwrap_err().to_string();
 
-    assert_eq!(verdict(result), "unavailable");
+    assert_eq!(verdict(result), "invalid");
     assert!(!diagnostic.contains(locator));
     assert!(curl.calls().is_empty());
     assert!(fs::read_dir(temporary.path()).unwrap().next().is_none());
@@ -379,7 +379,7 @@ fn accepts_an_https_redirect_and_refuses_an_http_redirect() {
         (SUCCESS_METADATA, "valid"),
         (
             "200\nhttp://sensitive.example.test/final\n203.0.113.10\n",
-            "unavailable",
+            "invalid",
         ),
     ];
 

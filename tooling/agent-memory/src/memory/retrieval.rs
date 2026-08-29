@@ -7,6 +7,7 @@ use super::{
     SourceKind, SourceResolver, Status, Store,
 };
 pub use operation::retrieve;
+use serde::Serialize;
 use std::collections::BTreeMap;
 pub use transition::confirm;
 
@@ -167,14 +168,14 @@ impl<'a> RetrievalContext<'a> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Serialize)]
 pub struct RetrievalReport {
     pub injected: Vec<InjectedMemory>,
     pub omitted: Vec<OmittedMemory>,
     pub omitted_by_limit: usize,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Serialize)]
 pub struct InjectedMemory {
     pub id: String,
     pub kind: MemoryKind,
@@ -183,7 +184,7 @@ pub struct InjectedMemory {
     pub verdict_age_milliseconds: u64,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SourceSummary {
     pub kind: SourceKind,
     pub locator: Option<String>,
@@ -205,7 +206,7 @@ impl SourceSummary {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Serialize)]
 pub struct OmittedMemory {
     pub id: String,
     pub code: String,
@@ -213,7 +214,8 @@ pub struct OmittedMemory {
     pub effect: OmissionEffect,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum OmissionEffect {
     NotApplied,
 }
