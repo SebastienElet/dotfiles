@@ -117,16 +117,6 @@ ${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff FORCE | ${LOC
 docker:
 	@command -v docker >/dev/null || { echo "Error: Docker CLI unavailable" >&2; exit 1; }
 
-.PHONY: meteor
-meteor: ~/.meteor/meteor
-~/.meteor/meteor:
-	curl https://install.meteor.com/ | sh
-
-.PHONY: mongosh
-mongosh: brew ${BREW_BIN}/mongosh
-${BREW_BIN}/mongosh:
-	brew install mongosh
-
 .PHONY: postgresql
 postgresql: ~/.psqlrc
 ~/.psqlrc: ${DOTFILES_PATH}/home/.psqlrc FORCE
@@ -344,28 +334,6 @@ codegraph-ignore:
 ${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size FORCE | ${LOCAL_BIN}
 	@${CREATE_SYMLINK}
 
-.PHONY: googleworkspace-cli
-googleworkspace-cli: ${VOLTA_BIN}/gws
-${VOLTA_BIN}/gws: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g @googleworkspace/cli
-
-.PHONY: mistral-vibe
-mistral-vibe: ${LOCAL_BIN}/vibe
-${LOCAL_BIN}/vibe: | uv
-	${BREW_BIN}/uv tool install mistral-vibe
-
-.PHONY: opencode
-opencode: brew ${BREW_BIN}/opencode
-${BREW_BIN}/opencode:
-	brew tap anomalyco/tap
-	brew install anomalyco/tap/opencode
-
-.PHONY: qovery-cli
-qovery-cli: /usr/local/bin/qovery
-/usr/local/bin/qovery:
-	# Homebrew version is outdated, use the upstream installer
-	curl -s https://get.qovery.com | bash
-
 .PHONY: scrapling
 scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY}" "${SCRAPLING_IMAGE}"
@@ -388,34 +356,6 @@ cloakbrowser: docker
 verify-cloakbrowser-docker:
 	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify cloakbrowser "${DOCKER_UNAVAILABLE_POLICY}" "${CLOAKBROWSER_IMAGE}"
 
-.PHONY: frontcli
-frontcli: brew ${BREW_BIN}/frontcli
-${BREW_BIN}/frontcli:
-	brew tap dedene/tap
-	brew install dedene/tap/frontcli
-
-.PHONY: pi-coding-agent
-pi-coding-agent: ${VOLTA_BIN}/pi
-${VOLTA_BIN}/pi: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-
-.PHONY: specsmd
-specsmd:
-	npx specsmd@latest install
-
-################################################################################
-# Personal section
-################################################################################
-
-.PHONY: personal
-personal: \
-	apple-notes-exporter \
-	calibre \
-	discord \
-	obsidian \
-	perplexity \
-	whatsapp
-
 # No Homebrew cask available; the release ships the notes-export-mcp binary
 # inside the app bundle, used by the .mcp.json server entry.
 .PHONY: apple-notes-exporter
@@ -425,40 +365,6 @@ ${APP_BIN}/Apple\ Notes\ Exporter.app:
 	unzip -q -o /tmp/AppleNotesExporter.zip -d ${APP_BIN}
 	rm -f /tmp/AppleNotesExporter.zip
 
-.PHONY: calibre
-calibre: brew ${APP_BIN}/Calibre.app
-${APP_BIN}/Calibre.app:
-	brew install calibre
-
-.PHONY: discord
-discord: brew ${APP_BIN}/Discord.app
-${APP_BIN}/Discord.app:
-	brew install --cask discord
-
-.PHONY: obsidian
-obsidian: brew ${APP_BIN}/Obsidian.app
-${APP_BIN}/Obsidian.app:
-	brew install --cask obsidian
-
-.PHONY: perplexity
-perplexity: ${APP_BIN}/Perplexity.app
-${APP_BIN}/Perplexity.app:
-	@command -v mas >/dev/null || { echo "Error: mas is required; run make optional first" >&2; exit 1; }
-	mas install 6714467650 || echo "Warning: Failed to install Perplexity (may not be available in this App Store region)"
-
-.PHONY: whatsapp
-whatsapp: brew ${APP_BIN}/WhatsApp.app
-${APP_BIN}/WhatsApp.app:
-	brew install --cask whatsapp
-
-################################################################################
-# End of personal section
-################################################################################
-
-################################################################################
-# Utils section
-################################################################################
-
 .PHONY: things-3
 things-3:
 	@if [ "$(SKIP_PAID_APPS)" = "1" ]; then exit 0; fi; $(MAKE) --silent things3-cli-wrapper; if [ ! -d "${APP_BIN}/Things3.app" ]; then echo "Error: Homebrew Bundle did not install ${APP_BIN}/Things3.app" >&2; exit 1; fi
@@ -467,10 +373,6 @@ things-3:
 things3-cli-wrapper: ${VOLTA_BIN}/thangs
 ${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @dougskinner/thangs
-
-################################################################################
-# End of utils section
-################################################################################
 
 .PHONY: cspell
 cspell: ${VOLTA_BIN}/cspell

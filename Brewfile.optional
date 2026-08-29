@@ -17,16 +17,20 @@ brew "postgresql@16"
 brew "schpet/tap/linear", trusted: true
 brew "uv"
 brew "vale"
+cask "calibre"
 cask "chatgpt"
 cask "claude"
 cask "cleanshot"
 cask "codexbar"
 cask "cursor-cli"
+cask "discord"
 cask "dopplerhq/cli/doppler", trusted: true
 cask "google-chrome"
 cask "handy"
 cask "languagetool-desktop"
+cask "obsidian"
 cask "rectangle-pro"
 cask "vibe-island"
+cask "whatsapp"
 mas "DaisyDisk", id: 411643860
 mas "Things 3", id: 904280696
