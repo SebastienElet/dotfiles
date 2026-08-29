@@ -1,24 +1,29 @@
 #!/usr/bin/env bun
 
-import {
-  mkdirSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
 import { dirname, join } from "node:path";
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 
-const arguments_ = process.argv.slice(2);
+const commandArgumentOffset = 2;
+const commandArguments = process.argv.slice(commandArgumentOffset);
+const [command] = commandArguments;
+if (command === undefined) {
+  throw new Error("a ColGrep command is required");
+}
 const log = requiredEnvironment("COLGREP_TEST_INVOCATIONS");
 const projectRoot = requiredEnvironment("COLGREP_TEST_PROJECT_ROOT");
 const indexDirectory = requiredEnvironment("COLGREP_TEST_INDEX_DIRECTORY");
 const foreignRoot = requiredEnvironment("COLGREP_TEST_FOREIGN_ROOT");
 const mode = process.env.COLGREP_TEST_MODE ?? "healthy";
 
-await Bun.write(log, `${await Bun.file(log).text().catch(() => "")}${JSON.stringify(arguments_)}\n`);
+await Bun.write(
+  log,
+  `${await Bun.file(log)
+    .text()
+    .catch(() => "")}${JSON.stringify(commandArguments)}\n`,
+);
 
-switch (arguments_[0]) {
-  case "init":
+switch (command) {
+  case "init": {
     if (mode === "init-failure") {
       process.stderr.write("fixture init failed\n");
       process.exitCode = 70;
@@ -28,20 +33,24 @@ switch (arguments_[0]) {
       createIndex();
     }
     break;
-  case "status":
+  }
+  case "status": {
     if (mode === "missing-index") {
       process.stdout.write(`No index found for ${projectRoot}\n`);
       break;
     }
     if (mode === "ambiguous-status") {
-      process.stdout.write(`Project: ${projectRoot}\nProject: ${projectRoot}\nIndex:   ${indexDirectory}\n`);
+      process.stdout.write(
+        `Project: ${projectRoot}\nProject: ${projectRoot}\nIndex:   ${indexDirectory}\n`,
+      );
       break;
     }
     process.stdout.write(
       `Project: ${mode === "foreign-status" ? foreignRoot : projectRoot}\nModel:   lightonai/LateOn-Code-edge\nIndex:   ${indexDirectory}\n\nRun any search to update the index, or \`colgrep clear\` to rebuild from scratch.\n`,
     );
     break;
-  case "search":
+  }
+  case "search": {
     if (mode === "search-failure") {
       process.stderr.write("fixture search failed\n");
       process.exitCode = 71;
@@ -57,9 +66,13 @@ switch (arguments_[0]) {
       process.stdout.write(requiredEnvironment("COLGREP_TEST_RESULTS"));
     }
     break;
-  default:
-    process.stderr.write(`unexpected ColGrep invocation: ${arguments_.join(" ")}\n`);
+  }
+  default: {
+    process.stderr.write(
+      `unexpected ColGrep invocation: ${commandArguments.join(" ")}\n`,
+    );
     process.exitCode = 64;
+  }
 }
 
 function createIndex(): void {

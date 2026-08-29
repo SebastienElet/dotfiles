@@ -41,9 +41,9 @@ interface RepositoryFixture {
 const executableFileMode = 0o755;
 const invocationsSchema = z.array(z.string());
 const project = import.meta.dirname;
-const entryPoint = join(project, "colgrep-worktree");
-const provider = join(project, "colgrep-worktree-test-provider");
-const gitProvider = join(project, "colgrep-worktree-git-test-provider");
+const entryPoint = join(project, "colgrep-worktree-cli.ts");
+const provider = join(project, "colgrep-worktree-test-provider.ts");
+const gitProvider = join(project, "colgrep-worktree-git-test-provider.ts");
 const fixtureRoots: string[] = [];
 
 afterEach(() => {

@@ -1,12 +1,15 @@
 #!/usr/bin/env bun
 
-const arguments_ = process.argv.slice(2);
+const commandArgumentOffset = 2;
+const commandArguments = process.argv.slice(commandArgumentOffset);
 const mode = process.env.COLGREP_TEST_GIT_MODE ?? "healthy";
 const projectRoot = requiredEnvironment("COLGREP_TEST_PROJECT_ROOT");
 const gitDirectory = requiredEnvironment("COLGREP_TEST_GIT_DIRECTORY");
-const commonDirectory = requiredEnvironment("COLGREP_TEST_GIT_COMMON_DIRECTORY");
+const commonDirectory = requiredEnvironment(
+  "COLGREP_TEST_GIT_COMMON_DIRECTORY",
+);
 
-if (arguments_.includes("--show-toplevel")) {
+if (commandArguments.includes("--show-toplevel")) {
   if (mode === "empty-root") {
     process.stdout.write("");
   } else if (mode === "multiple-root") {
@@ -14,14 +17,16 @@ if (arguments_.includes("--show-toplevel")) {
   } else {
     process.stdout.write(`${projectRoot}\n`);
   }
-} else if (arguments_.includes("--absolute-git-dir")) {
+} else if (commandArguments.includes("--absolute-git-dir")) {
   process.stdout.write(`${gitDirectory}\n`);
-} else if (arguments_.includes("--git-common-dir")) {
+} else if (commandArguments.includes("--git-common-dir")) {
   process.stdout.write(`${commonDirectory}\n`);
-} else if (arguments_.includes("--show-superproject-working-tree")) {
+} else if (commandArguments.includes("--show-superproject-working-tree")) {
   process.stdout.write(mode === "superproject" ? `${commonDirectory}\n` : "");
 } else {
-  process.stderr.write(`unexpected Git invocation: ${arguments_.join(" ")}\n`);
+  process.stderr.write(
+    `unexpected Git invocation: ${commandArguments.join(" ")}\n`,
+  );
   process.exitCode = 64;
 }
 
@@ -32,3 +37,5 @@ function requiredEnvironment(name: string): string {
   }
   return value;
 }
+
+export { requiredEnvironment };

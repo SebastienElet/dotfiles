@@ -344,7 +344,7 @@ codegraph-ignore:
 ${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size FORCE | ${LOCAL_BIN}
 	@${CREATE_SYMLINK}
 
-${LOCAL_BIN}/colgrep-worktree: ${DOTFILES_PATH}/tooling/colgrep-worktree FORCE | ${LOCAL_BIN}
+${LOCAL_BIN}/colgrep-worktree: ${DOTFILES_PATH}/tooling/colgrep-worktree-cli.ts FORCE | ${LOCAL_BIN}
 	@${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli

@@ -156,7 +156,7 @@ test("deploys the ColGrep worktree entry point without replacing a destination",
 
   expectSuccess(runMake(fixture, [destination], { repository: project }));
   expect(linkTarget(destination)).toBe(
-    join(project, "tooling", "colgrep-worktree"),
+    join(project, "tooling", "colgrep-worktree-cli.ts"),
   );
   expectSuccess(runMake(fixture, [destination], { repository: project }));
 

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 
 const integrationEnabled = process.env.COLGREP_INTEGRATION === "1";
 const integrationTimeoutMilliseconds = 300_000;
-const entryPoint = join(import.meta.dirname, "colgrep-worktree");
+const entryPoint = join(import.meta.dirname, "colgrep-worktree-cli.ts");
 const fixtureRoots: string[] = [];
 
 setDefaultTimeout(integrationTimeoutMilliseconds);
