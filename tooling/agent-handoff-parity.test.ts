@@ -7,12 +7,19 @@ import {
 import { afterEach, expect, test } from "bun:test";
 import {
   concurrentParityCase,
+  homeFallbackCase,
   parityCases,
+  validClaudeWindowCase,
 } from "./agent-handoff-parity-cases.ts";
 import { rmSync } from "node:fs";
 
 const concurrentProcessCount = 3;
 const fixtures: Fixture[] = [];
+const noOutput = {
+  exitCode: 0,
+  stderr: new Uint8Array(),
+  stdout: new Uint8Array(),
+};
 
 type ConcurrentSetup = Readonly<{
   environment: Readonly<Record<string, string>>;
@@ -62,6 +69,28 @@ test.each(parityCases)(
     expect(rust).toEqual(legacy);
   },
 );
+
+test("legacy valid Claude context window changes the default decision", async () => {
+  const fixture = createParityFixture();
+  validClaudeWindowCase.prepare?.(fixture);
+  const result = await runLegacy(
+    validClaudeWindowCase.input(fixture),
+    validClaudeWindowCase.environment(fixture),
+    fixture,
+  );
+  expect(result).toEqual(noOutput);
+});
+
+test("legacy empty XDG_STATE_HOME falls back to HOME", async () => {
+  const fixture = createParityFixture();
+  homeFallbackCase.prepare?.(fixture);
+  const result = await runLegacy(
+    homeFallbackCase.input(fixture),
+    homeFallbackCase.environment(fixture),
+    fixture,
+  );
+  expect(result).toEqual(noOutput);
+});
 
 test(`matches Bun for ${concurrentParityCase.name}`, async () => {
   const legacySetup = prepareConcurrentFixture();

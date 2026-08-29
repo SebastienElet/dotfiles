@@ -96,6 +96,24 @@ const claudeTranscriptCases: readonly (readonly [string, number])[] = [
   ["Claude transcript above threshold", highUsage],
 ];
 
+const validClaudeWindowCase = parityCase("valid Claude context window", event, {
+  environment: (fixture) => environmentFor(fixture, { claudeWindow: "100002" }),
+  prepare: prepareClaude(thresholdUsage),
+});
+
+const homeFallbackCase = parityCase("HOME fallback", event, {
+  environment: (fixture) => environmentFor(fixture, { xdgStateHome: "" }),
+  prepare: (fixture) => {
+    prepareClaude()(fixture);
+    const sentinel = join(
+      fixture.home,
+      ".local/state/dotfiles/handoff/session",
+    );
+    mkdirSync(dirname(sentinel), { recursive: true });
+    writeFileSync(sentinel, "");
+  },
+});
+
 const thresholdCases = [
   ["valid explicit threshold", "50000"],
   ["empty explicit threshold", ""],
@@ -197,11 +215,7 @@ const parityCases: ParityCase[] = [
     environment: (fixture) => environmentFor(fixture, { claudeWindow: "" }),
     prepare: prepareClaude(),
   }),
-  parityCase("valid Claude context window", event, {
-    environment: (fixture) =>
-      environmentFor(fixture, { claudeWindow: "100001" }),
-    prepare: prepareClaude(thresholdUsage),
-  }),
+  validClaudeWindowCase,
   parityCase(
     "XDG_STATE_HOME priority over HOME",
     (fixture) => event(fixture, { session_id: "xdg-priority" }),
@@ -217,10 +231,7 @@ const parityCases: ParityCase[] = [
       },
     },
   ),
-  parityCase("HOME fallback", event, {
-    environment: (fixture) => environmentFor(fixture, { xdgStateHome: "" }),
-    prepare: prepareClaude(),
-  }),
+  homeFallbackCase,
   parityCase("absence of HOME and XDG_STATE_HOME", event, {
     environment: (fixture) =>
       environmentFor(fixture, { home: false, xdgStateHome: false }),
@@ -273,4 +284,9 @@ const concurrentParityCase = parityCase(
   { prepare: prepareClaude() },
 );
 
-export { concurrentParityCase, parityCases };
+export {
+  concurrentParityCase,
+  homeFallbackCase,
+  parityCases,
+  validClaudeWindowCase,
+};
