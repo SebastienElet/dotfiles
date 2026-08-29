@@ -1,0 +1,107 @@
+#!/usr/bin/env bun
+
+import {
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+
+const arguments_ = process.argv.slice(2);
+const log = requiredEnvironment("COLGREP_TEST_INVOCATIONS");
+const projectRoot = requiredEnvironment("COLGREP_TEST_PROJECT_ROOT");
+const indexDirectory = requiredEnvironment("COLGREP_TEST_INDEX_DIRECTORY");
+const foreignRoot = requiredEnvironment("COLGREP_TEST_FOREIGN_ROOT");
+const mode = process.env.COLGREP_TEST_MODE ?? "healthy";
+
+await Bun.write(log, `${await Bun.file(log).text().catch(() => "")}${JSON.stringify(arguments_)}\n`);
+
+switch (arguments_[0]) {
+  case "init":
+    if (mode === "init-failure") {
+      process.stderr.write("fixture init failed\n");
+      process.exitCode = 70;
+      break;
+    }
+    if (mode !== "missing-index") {
+      createIndex();
+    }
+    break;
+  case "status":
+    if (mode === "missing-index") {
+      process.stdout.write(`No index found for ${projectRoot}\n`);
+      break;
+    }
+    if (mode === "ambiguous-status") {
+      process.stdout.write(`Project: ${projectRoot}\nProject: ${projectRoot}\nIndex:   ${indexDirectory}\n`);
+      break;
+    }
+    process.stdout.write(
+      `Project: ${mode === "foreign-status" ? foreignRoot : projectRoot}\nModel:   lightonai/LateOn-Code-edge\nIndex:   ${indexDirectory}\n\nRun any search to update the index, or \`colgrep clear\` to rebuild from scratch.\n`,
+    );
+    break;
+  case "search":
+    if (mode === "search-failure") {
+      process.stderr.write("fixture search failed\n");
+      process.exitCode = 71;
+    } else if (mode === "malformed-results") {
+      process.stdout.write("{");
+    } else if (mode === "relative-result") {
+      process.stdout.write(JSON.stringify([{ unit: { file: "tracked.ts" } }]));
+    } else if (mode === "foreign-result") {
+      process.stdout.write(
+        JSON.stringify([{ unit: { file: join(foreignRoot, "tracked.ts") } }]),
+      );
+    } else {
+      process.stdout.write(requiredEnvironment("COLGREP_TEST_RESULTS"));
+    }
+    break;
+  default:
+    process.stderr.write(`unexpected ColGrep invocation: ${arguments_.join(" ")}\n`);
+    process.exitCode = 64;
+}
+
+function createIndex(): void {
+  rmSync(indexDirectory, { force: true, recursive: true });
+  const targetDirectory =
+    mode === "symlink-index" ? `${indexDirectory}-target` : indexDirectory;
+  mkdirSync(join(targetDirectory, "index"), { recursive: true });
+  writeFileSync(join(targetDirectory, "index", "metadata.json"), "{}\n");
+  const projectMetadata =
+    mode === "malformed-project"
+      ? "{"
+      : JSON.stringify({
+          model: "lightonai/LateOn-Code-edge",
+          project_name: "linked",
+          project_path: mode === "foreign-project" ? foreignRoot : projectRoot,
+        });
+  writeFileSync(join(targetDirectory, "project.json"), `${projectMetadata}\n`);
+  const state =
+    mode === "malformed-state"
+      ? "{"
+      : JSON.stringify({
+          cli_version: "1.7.0",
+          dirty: mode === "dirty-state",
+          files:
+            mode === "empty-state"
+              ? {}
+              : { "tracked.ts": { content_hash: 1, mtime: 1, size: 1 } },
+          ignored_files: [],
+          index_format_version: 2,
+          search_count: 0,
+        });
+  writeFileSync(join(targetDirectory, "state.json"), `${state}\n`);
+  if (mode === "symlink-index") {
+    mkdirSync(dirname(indexDirectory), { recursive: true });
+    symlinkSync(targetDirectory, indexDirectory);
+  }
+}
+
+function requiredEnvironment(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === "") {
+    throw new Error(`${name} is required`);
+  }
+  return value;
+}
