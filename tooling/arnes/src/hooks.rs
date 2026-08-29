@@ -1,5 +1,5 @@
-use crate::manifest::{self, Agent, HookKind, Scope};
 use crate::Roots;
+use crate::manifest::{self, Agent, HookKind, Scope};
 use clap::Args;
 use serde_json::json;
 use std::fmt::{self, Display};

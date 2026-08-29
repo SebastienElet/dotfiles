@@ -38,7 +38,7 @@ const agentHandoffJob = z
           .strict(),
       })
       .strict(),
-    "runs-on": z.literal("${{ matrix.os }}"),
+    "runs-on": z.literal(`\${{ matrix.os }}`),
     env: z.object({ RUSTFLAGS: z.literal("-Funsafe-code") }).strict(),
     steps: z.tuple([
       z.object({ uses: z.literal("actions/checkout@v5") }).strict(),
@@ -85,6 +85,7 @@ test("runs every agent-handoff Rust oracle on macOS and Linux", async () => {
   expect(workflowSchema.safeParse(Bun.YAML.parse(workflow)).success).toBeTrue();
 });
 
+const pullRequestPathFilterOccurrence = 2;
 const mutationCases = [
   [
     "missing Linux",
@@ -172,10 +173,14 @@ const mutationCases = [
     [
       `missing pull request path filter ${pathFilter}`,
       (workflow: string): string =>
-        removeOccurrence(workflow, `      - ${pathFilter}\n`, 2),
+        removeOccurrence(
+          workflow,
+          `      - ${pathFilter}\n`,
+          pullRequestPathFilterOccurrence,
+        ),
     ] as const,
   ]),
-] satisfies ReadonlyArray<readonly [string, (workflow: string) => string]>;
+] satisfies readonly (readonly [string, (workflow: string) => string])[];
 
 test.each(mutationCases)("rejects %s", async (_name, mutateWorkflow) => {
   const workflow = await Bun.file(workflowPath).text();

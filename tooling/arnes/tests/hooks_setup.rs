@@ -167,8 +167,10 @@ fn setup_installs_manifest_hooks_in_one_agent_configuration() {
         .flat_map(|group| group["hooks"].as_array().unwrap())
         .map(|handler| handler["command"].as_str().unwrap())
         .collect();
-    assert!(commands
-        .contains(&format!("'{}' measure hook --agent claude-code", arnes.display()).as_str()));
+    assert!(
+        commands
+            .contains(&format!("'{}' measure hook --agent claude-code", arnes.display()).as_str())
+    );
     assert!(commands.contains(&handoff.to_str().unwrap()));
 }
 
