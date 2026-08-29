@@ -140,6 +140,20 @@ fn blank_lines_are_ignored_but_retained_malformed_json_is_rejected() {
 }
 
 #[test]
+fn ecmascript_does_not_trim_next_line() {
+    let transcript = format!("{}\n\u{0085}\n", claude_usage(r#""input_tokens":42"#));
+
+    assert_usage_error(&transcript, "malformed transcript JSON at retained line 2");
+}
+
+#[test]
+fn ecmascript_trims_byte_order_mark() {
+    let transcript = format!("{}\n\u{feff}\n", claude_usage(r#""input_tokens":42"#));
+
+    assert_eq!(find_latest_usage(&transcript).unwrap().used, 42);
+}
+
+#[test]
 fn unsupported_json_records_do_not_replace_latest_usage() {
     let transcript = format!(
         "{}\nnull\n[]\n{{\"type\":\"other\"}}\n",

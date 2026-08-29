@@ -9,6 +9,7 @@ home/.config/fish/completions
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
 tooling/daily-routine/target/
+tooling/agent-handoff/target/
 tooling/arnes/target/
 node_modules/
 .harness-export/

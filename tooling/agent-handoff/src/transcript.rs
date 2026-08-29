@@ -28,7 +28,7 @@ pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
     let mut latest = None;
 
     for (index, line) in physical_lines[retained_start..].iter().enumerate() {
-        if line.trim().is_empty() {
+        if line.chars().all(is_ecmascript_trim_character) {
             continue;
         }
         let record: Value = serde_json::from_str(line).map_err(|_| {
@@ -48,6 +48,37 @@ pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
     }
 
     latest.ok_or_else(|| HandoffError::usage("no supported usage record in transcript"))
+}
+
+fn is_ecmascript_trim_character(character: char) -> bool {
+    matches!(
+        character,
+        '\u{0009}'
+            | '\u{000a}'
+            | '\u{000b}'
+            | '\u{000c}'
+            | '\u{000d}'
+            | '\u{0020}'
+            | '\u{00a0}'
+            | '\u{1680}'
+            | '\u{2000}'
+            | '\u{2001}'
+            | '\u{2002}'
+            | '\u{2003}'
+            | '\u{2004}'
+            | '\u{2005}'
+            | '\u{2006}'
+            | '\u{2007}'
+            | '\u{2008}'
+            | '\u{2009}'
+            | '\u{200a}'
+            | '\u{2028}'
+            | '\u{2029}'
+            | '\u{202f}'
+            | '\u{205f}'
+            | '\u{3000}'
+            | '\u{feff}'
+    )
 }
 
 fn parse_claude_usage(record: &Map<String, Value>) -> Result<Option<Usage>, HandoffError> {
