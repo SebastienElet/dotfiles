@@ -34,6 +34,14 @@ fn state_root_falls_back_to_home_for_absent_or_empty_xdg_state_home() {
 }
 
 #[test]
+fn state_root_lexically_normalizes_the_home_fallback() {
+    assert_eq!(
+        state_root(&environment(Some(""), Some("/home/file/.."))).unwrap(),
+        PathBuf::from("/home/.local/state")
+    );
+}
+
+#[test]
 fn state_root_rejects_absent_home_and_xdg_state_home() {
     assert_eq!(
         state_root(&Environment::default()).unwrap_err(),

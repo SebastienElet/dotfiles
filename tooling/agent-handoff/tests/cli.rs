@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use tempfile::TempDir;
 
+#[path = "cli/runtime_parity.rs"]
+mod runtime_parity;
+
 struct Fixture {
     _root: TempDir,
     home: PathBuf,
@@ -163,19 +166,6 @@ fn invalid_transcripts_do_not_create_a_sentinel() {
         b"agent-handoff: malformed transcript JSON at retained line 1\n"
     );
     assert!(!fixture.sentinel("invalid").exists());
-}
-
-#[test]
-fn non_utf8_transcripts_use_the_transcript_read_error() {
-    let fixture = Fixture::new();
-    fs::write(&fixture.transcript, [0xff]).unwrap();
-
-    let output = run_event(&fixture, "non-utf8");
-
-    assert_eq!(output.status.code(), Some(1));
-    assert_eq!(output.stdout, b"");
-    assert_eq!(output.stderr, b"agent-handoff: cannot read transcript\n");
-    assert!(!fixture.sentinel("non-utf8").exists());
 }
 
 #[test]

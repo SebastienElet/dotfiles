@@ -43,9 +43,9 @@ Trois applications locales restent séparées par responsabilité :
   domaine mémoire : schéma, admission, identité projet, sources, stockage, index, oracles, cache,
   retrieval, transitions et adaptation des entrées et sorties runtime propres à chaque agent.
 - `tooling/agent-handoff/` est un second package Cargo autonome. Il remplace l'exécutable Bun
-  existant sans changer son contrat observable : mêmes données lues sur stdin, mêmes variables
-  d'environnement interprétées, mêmes données écrites sur stdout et stderr, et mêmes codes de
-  sortie pour chaque succès et chaque échec.
+  existant sans changer son contrat applicatif observable : mêmes octets stdin déjà reçus, mêmes
+  variables d'environnement interprétées, mêmes données écrites sur stdout et stderr, et mêmes
+  codes de sortie lorsque stdout est accessible en écriture.
 - Arnes configure, valide et mesure les hooks et leurs exécutables. Il ne contient aucun domaine
   mémoire ou handoff, ne lit et n'écrit aucun de leurs états, et ne dépend d'aucun de leurs crates.
 
@@ -53,6 +53,13 @@ Les deux nouveaux packages possèdent chacun leur `Cargo.toml`, leur `Cargo.lock
 binaire. Ils ne forment pas un workspace Cargo, ne partagent aucun crate interne et ne dépendent pas
 l'un de l'autre. Une duplication locale est préférable à une abstraction commune sans invariant
 métier commun établi.
+
+Pour `agent-handoff`, la parité byte-for-byte commence après réception des octets stdin par le
+processus et suppose une sortie stdout accessible en écriture. Les échecs de lecture stdin ou
+d'écriture stdout au niveau du système d'exploitation sont hors de cette frontière : le runtime
+Rust les normalise en `unexpected failure`, code 3, au lieu de reproduire les diagnostics natifs
+instables du launcher ou du stream Bun. Toutes les erreurs applicatives après la frontière d'entrée
+restent soumises à la parité exacte.
 
 Le `Makefile` construit et déploie séparément `agent-memory` et `agent-handoff` sous
 `~/.local/bin/`. Arnes installe et contrôle seulement les commandes absolues qui les invoquent dans
@@ -264,8 +271,9 @@ est un échec explicite de l'adapter et ne déclenche aucun repli vers Arnes.
 Le handoff suit la même séparation : Arnes configure et valide le hook qui lance
 `~/.local/bin/agent-handoff`, tandis que `agent-handoff` possède seul son comportement runtime. Sa
 migration de Bun vers Rust est terminée seulement si des tests de caractérisation exécutent les
-deux implémentations avec les mêmes matrices stdin, environnement et erreurs, puis prouvent des
-sorties stdout/stderr et codes de sortie identiques avant le retrait de l'implémentation Bun.
+deux implémentations avec les mêmes octets stdin déjà reçus, environnement et erreurs applicatives,
+puis prouvent des sorties stdout/stderr et codes de sortie identiques avec stdout accessible en
+écriture avant le retrait de l'implémentation Bun.
 
 L'automatisation ne peut pas être affirmée à partir de la seule présence d'une skill ou d'une règle.
 Pour chaque agent, une session fraîche doit montrer que le retrieval est déclenché avant qu'une
@@ -308,7 +316,9 @@ Chaque package Cargo est construit, formaté, linté et testé depuis son propre
 workspace racine. Les tests Arnes prouvent uniquement la configuration, la validation et la mesure
 des commandes de hooks. Les tests `agent-memory` prouvent le domaine et ses protocoles runtime. Les
 tests `agent-handoff` caractérisent puis conservent strictement le contrat de l'exécutable Bun
-remplacé, y compris stdin, environnement, stdout, stderr et codes de sortie.
+remplacé après réception des octets stdin et avec stdout accessible en écriture, y compris
+environnement, stdout, stderr et codes de sortie. Les tests Rust conservent séparément la
+normalisation fail-closed des échecs de stdin et stdout au niveau du système d'exploitation.
 
 Chaque agent possède une évaluation de bout en bout en processus frais avec condition sans
 déploiement puis avec déploiement. Le chemin observé est obligatoirement

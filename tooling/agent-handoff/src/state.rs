@@ -15,13 +15,52 @@ pub fn state_root(environment: &Environment) -> Result<PathBuf, HandoffError> {
         .as_deref()
         .filter(|path| !path.is_empty())
     {
-        return Ok(path.into());
+        return Ok(join_posix(&[path]));
     }
     environment
         .home
         .as_deref()
-        .map(|home| Path::new(home).join(".local/state"))
+        .map(|home| join_posix(&[home, ".local", "state"]))
         .ok_or_else(|| HandoffError::usage("missing HOME and XDG_STATE_HOME"))
+}
+
+pub(crate) fn join_posix(paths: &[&str]) -> PathBuf {
+    let mut joined = String::new();
+    for path in paths.iter().filter(|path| !path.is_empty()) {
+        if !joined.is_empty() {
+            joined.push('/');
+        }
+        joined.push_str(path);
+    }
+    if joined.is_empty() {
+        return PathBuf::from(".");
+    }
+
+    let absolute = joined.starts_with('/');
+    let trailing_separator = joined.ends_with('/');
+    let mut components = Vec::new();
+    for component in joined.split('/') {
+        match component {
+            "" | "." => {}
+            ".." if components.last().is_some_and(|last| *last != "..") => {
+                components.pop();
+            }
+            ".." if !absolute => components.push(component),
+            ".." => {}
+            _ => components.push(component),
+        }
+    }
+
+    let mut normalized = components.join("/");
+    if absolute {
+        normalized.insert(0, '/');
+    } else if normalized.is_empty() {
+        normalized.push('.');
+    }
+    if trailing_separator && normalized != "/" {
+        normalized.push('/');
+    }
+    PathBuf::from(normalized)
 }
 
 pub fn inspect_sentinel(path: &Path) -> Result<bool, HandoffError> {
@@ -43,5 +82,34 @@ pub fn create_sentinel(path: &Path) -> Result<SentinelState, HandoffError> {
         Ok(_) => Ok(SentinelState::Created),
         Err(error) if error.kind() == ErrorKind::AlreadyExists => Ok(SentinelState::Existing),
         Err(_) => Err(HandoffError::unexpected("cannot create handoff sentinel")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::join_posix;
+    use std::path::PathBuf;
+
+    #[test]
+    fn posix_join_matches_node_lexical_normalization() {
+        let cases: &[(&[&str], &str)] = &[
+            (&[""], "."),
+            (&["/"], "/"),
+            (&["//"], "/"),
+            (&["foo/"], "foo/"),
+            (&["foo", ""], "foo"),
+            (&["foo", "."], "foo"),
+            (&["foo", ".."], "."),
+            (&["foo/../"], "./"),
+            (&["foo/../..", "bar"], "../bar"),
+            (&["/foo/../..", "bar"], "/bar"),
+            (&["a//b/./c/../", "d"], "a/b/d"),
+            (&["../a", "../b"], "../b"),
+            (&["a/../../"], "../"),
+        ];
+
+        for (paths, expected) in cases {
+            assert_eq!(join_posix(paths), PathBuf::from(expected), "{paths:?}");
+        }
     }
 }

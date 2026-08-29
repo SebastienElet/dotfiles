@@ -12,6 +12,7 @@ import {
   validClaudeWindowCase,
 } from "./agent-handoff-parity-cases.ts";
 import { rmSync } from "node:fs";
+import { runtimeParityCases } from "./agent-handoff-parity-runtime-cases.ts";
 
 const concurrentProcessCount = 3;
 const fixtures: Fixture[] = [];
@@ -20,6 +21,7 @@ const noOutput = {
   stderr: new Uint8Array(),
   stdout: new Uint8Array(),
 };
+const allParityCases = [...parityCases, ...runtimeParityCases];
 
 type ConcurrentSetup = Readonly<{
   environment: Readonly<Record<string, string>>;
@@ -49,7 +51,7 @@ function prepareConcurrentFixture(): ConcurrentSetup {
   };
 }
 
-test.each(parityCases)(
+test.each(allParityCases)(
   "matches Bun for $name",
   async ({ input, environment, prepare }) => {
     const legacyFixture = createParityFixture();

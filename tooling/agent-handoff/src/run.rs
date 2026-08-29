@@ -1,3 +1,4 @@
+use crate::state::join_posix;
 use crate::{
     Environment, HandoffError, SentinelState, create_sentinel, find_latest_usage, handoff_output,
     inspect_sentinel, parse_hook_event, select_threshold, state_root,
@@ -15,16 +16,16 @@ pub fn run_agent_handoff(
         return Ok(());
     }
 
-    let sentinel = state_root(environment)?
-        .join("dotfiles")
-        .join("handoff")
-        .join(event.session_id);
+    let state_root = state_root(environment)?;
+    let state_root = state_root.to_string_lossy();
+    let sentinel = join_posix(&[&state_root, "dotfiles", "handoff", &event.session_id]);
     if inspect_sentinel(&sentinel)? {
         return Ok(());
     }
 
-    let transcript = fs::read_to_string(event.transcript_path)
+    let transcript = fs::read(event.transcript_path)
         .map_err(|_| HandoffError::usage("cannot read transcript"))?;
+    let transcript = String::from_utf8_lossy(&transcript);
     let usage = find_latest_usage(&transcript)?;
     let threshold = select_threshold(&usage, environment)?;
     if usage.used < threshold {

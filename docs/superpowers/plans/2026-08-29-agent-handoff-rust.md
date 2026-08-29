@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remplacer l’exécutable Bun `agent-handoff` par un package Cargo autonome qui conserve exactement son contrat observable sur macOS et Linux.
+**Goal:** Remplacer l’exécutable Bun `agent-handoff` par un package Cargo autonome qui conserve exactement son contrat applicatif observable sur macOS et Linux après réception des octets stdin et avec stdout accessible en écriture.
 
-**Architecture:** `tooling/agent-handoff/` devient un crate binaire indépendant, sans workspace ni dépendance vers Arnes ou `agent-memory`. Le crate sépare parsing du hook, lecture du transcript, décision de seuil et publication atomique du sentinel ; Arnes reste limité à configurer et valider le chemin absolu du binaire. Une implémentation Bun relocalisée temporairement sert d’oracle différentiel, puis disparaît seulement après égalité byte-for-byte de stdin, environnement, stdout, stderr et code de sortie.
+**Architecture:** `tooling/agent-handoff/` devient un crate binaire indépendant, sans workspace ni dépendance vers Arnes ou `agent-memory`. Le crate sépare parsing du hook, lecture du transcript, décision de seuil et publication atomique du sentinel ; Arnes reste limité à configurer et valider le chemin absolu du binaire. Une implémentation Bun relocalisée temporairement sert d’oracle différentiel, puis disparaît seulement après égalité byte-for-byte des erreurs applicatives, de l’environnement, de stdout, de stderr et du code de sortie dans la frontière de parité.
 
 **Tech Stack:** Rust 2024, `serde`, `serde_json`, bibliothèque standard Rust, `tempfile` pour les tests, Bun uniquement comme oracle temporaire de migration, Cargo, Make et GitHub Actions.
 
@@ -16,7 +16,8 @@
 - Le package réside dans `tooling/agent-handoff/`, possède son propre `Cargo.toml` et son propre `Cargo.lock`, et n’appartient à aucun workspace Cargo.
 - `agent-handoff` ne dépend ni d’Arnes, ni d’`agent-memory`, ni d’un crate interne partagé.
 - Arnes configure et valide uniquement la commande absolue `~/.local/bin/agent-handoff`; il n’exécute, ne parse et ne réimplémente aucun comportement handoff.
-- La migration conserve les octets écrits sur stdout et stderr ainsi que le code de sortie pour chaque stdin, environnement et état de fichiers caractérisés.
+- La migration conserve les octets écrits sur stdout et stderr ainsi que le code de sortie pour chaque ensemble d'octets stdin déjà reçu, environnement et état de fichiers caractérisés, sous l'hypothèse d'un stdout accessible en écriture.
+- Les échecs de lecture stdin et d'écriture stdout au niveau du système d'exploitation sont hors de la frontière différentielle : Rust les normalise en `unexpected failure`, code 3; aucune divergence applicative n'est admise derrière cette exception.
 - L’implémentation Bun n’est supprimée qu’après exécution verte de la matrice différentielle Bun/Rust.
 - Le `Makefile` est l’unique installateur; dans un worktree, sa cible d’installation est vérifiée exclusivement avec `make -n` et les tests de déploiement.
 - Le binaire est formaté, linté et testé depuis son propre manifeste sur `macos-latest` et `ubuntu-latest`.
@@ -79,7 +80,7 @@ test.each(parityCases)(
 );
 ```
 
-La table nomme explicitement : JSON invalide; JSON `null`; objet sans événement; événements Claude et Codex autres que `Stop`; deux noms d’événement dont un contradictoire; `session_id` absent, vide, `.`, `..`, avec `/`, et valide avec lettres, chiffres, `.`, `_`, `-`; transcript absent; `stop_hook_active` non booléen; hook déjà actif avec transcript et environnement absents; transcript Claude sous seuil, à 85 %, au-dessus, sidechain et dernier record main-chain; transcript Codex avec fenêtre propre et invocation `$handoff`; les 499, 500 et 501 dernières lignes physiques; ligne JSON malformée retenue et ligne malformée hors fenêtre; nombres négatif, fractionnaire, supérieur à `Number.MAX_SAFE_INTEGER`, total Claude supérieur à `Number.MAX_SAFE_INTEGER`, fenêtre Codex nulle; seuil explicite valide, vide, nul, négatif, fractionnaire, `85k` et supérieur à `Number.MAX_SAFE_INTEGER`; fenêtre Claude absente, vide et valide; priorité `XDG_STATE_HOME`, repli sur `HOME`, absence des deux; sentinel fichier déjà présent; sentinel répertoire déjà présent; parent du sentinel fichier non répertoire; trois processus concurrents du même `session_id`; stdin non UTF-8; argument CLI supplémentaire ignoré.
+La table nomme explicitement : JSON invalide; JSON `null`; objet sans événement; événements Claude et Codex autres que `Stop`; deux noms d’événement dont un contradictoire; `session_id` absent, vide, `.`, `..`, avec `/`, et valide avec lettres, chiffres, `.`, `_`, `-`; transcript absent; `stop_hook_active` non booléen; hook déjà actif avec transcript et environnement absents; transcript Claude sous seuil, à 85 %, au-dessus, sidechain et dernier record main-chain; transcript avec octet UTF-8 invalide isolé et octet invalide dans une chaîne JSON ignorée; transcript Codex avec fenêtre propre et invocation `$handoff`; les 499, 500 et 501 dernières lignes physiques; ligne JSON malformée retenue et ligne malformée hors fenêtre; nombres négatif, fractionnaire, supérieur à `Number.MAX_SAFE_INTEGER`, total Claude supérieur à `Number.MAX_SAFE_INTEGER`, fenêtre Codex nulle; seuil explicite valide, vide, nul, négatif, fractionnaire, `85k` et supérieur à `Number.MAX_SAFE_INTEGER`; fenêtre Claude absente, vide et valide; priorité `XDG_STATE_HOME`, repli sur `HOME`, absence des deux; racine XDG contenant `file/..` ou le symlink `alias/..`; sentinel fichier déjà présent; sentinel répertoire déjà présent; parent du sentinel fichier non répertoire; trois processus concurrents du même `session_id`; stdin non UTF-8; argument CLI supplémentaire ignoré.
 
 Chaque runtime reçoit un fixture distinct mais structurellement identique afin qu’un sentinel créé par le premier ne modifie jamais l’observation du second. Chaque cas part d’un environnement vidé puis reçoit seulement `PATH`, `HOME`, `XDG_STATE_HOME`, `CLAUDE_CODE_AUTO_COMPACT_WINDOW` et les overrides déclarés. Les cas concurrents comparent le multiensemble trié des trois résultats et exigent exactement une sortie de blocage.
 
@@ -339,7 +340,9 @@ git commit -m "feat(handoff): preserve threshold decisions in Rust"
 - Créer : `tooling/agent-handoff/src/state.rs`
 - Créer : `tooling/agent-handoff/src/run.rs`
 - Créer : `tooling/agent-handoff/tests/cli.rs`
+- Créer : `tooling/agent-handoff/tests/cli/runtime_parity.rs`
 - Créer : `tooling/agent-handoff/tests/concurrency.rs`
+- Créer : `tooling/agent-handoff-parity-runtime-cases.ts`
 - Modifier : `tooling/agent-handoff/src/lib.rs`
 - Modifier : `tooling/agent-handoff/src/main.rs`
 - Modifier : `tooling/agent-handoff-parity.test.ts`
@@ -351,7 +354,7 @@ git commit -m "feat(handoff): preserve threshold decisions in Rust"
 
 - [ ] **Étape 1 : Écrire les RED du système de fichiers**
 
-Avec `tempfile::TempDir`, couvrir : priorité XDG; repli HOME; absence des deux; sentinel absent; sentinel fichier existant; sentinel répertoire existant; erreur d’inspection; création concurrente; parent existant comme fichier. Exiger :
+Avec `tempfile::TempDir`, couvrir : priorité XDG; repli HOME; absence des deux; normalisation POSIX lexicale des séparateurs, `.` et `..`; racines contenant un composant non-répertoire `file/..` ou un symlink `alias/..`; sentinel absent; sentinel fichier existant; sentinel répertoire existant; erreur d’inspection; création concurrente; parent existant comme fichier. Exiger :
 
 ```rust
 assert_eq!(create_sentinel(&path).unwrap(), SentinelState::Created);
@@ -376,7 +379,7 @@ Résultat attendu : FAIL sur l’API sentinel absente.
 
 - [ ] **Étape 4 : Écrire les RED du vrai point d’entrée**
 
-Les tests lancent `env!("CARGO_BIN_EXE_agent-handoff")`, utilisent `env_clear`, transmettent stdin comme octets, et capturent stdout/stderr/code. Ils exigent les quatre formes exactes :
+Les tests lancent `env!("CARGO_BIN_EXE_agent-handoff")`, utilisent `env_clear`, transmettent stdin comme octets déjà reçus par le processus, capturent stdout/stderr/code et drainent un stdout accessible en écriture. Ils exigent les quatre formes exactes :
 
 ```text
 succès sans blocage: exit 0, stdout vide, stderr vide
@@ -397,7 +400,7 @@ Résultat attendu : FAIL car `run_agent_handoff` ou `main` ne conduit pas encore
 
 - [ ] **Étape 6 : Implémenter le flux runtime minimal**
 
-`run_agent_handoff` suit strictement cet ordre : parser l’événement; sortir immédiatement si récursif; résoudre le state root; inspecter le sentinel; lire intégralement le transcript en UTF-8 ou retourner `cannot read transcript`, code 1; trouver l’usage; sélectionner le seuil; sortir si sous seuil; créer le sentinel avec `create_new`; sortir si un concurrent l’a créé; écrire le JSON exact. `main` lit stdin en octets, construit `Environment::current`, écrit le diagnostic préfixé sur stderr en cas d’erreur et retourne `ExitCode::from(error.exit_code)`; tout échec non classé devient `unexpected failure`, code 3.
+`run_agent_handoff` suit strictement cet ordre : parser l’événement; sortir immédiatement si récursif; résoudre et normaliser lexicalement le state root selon `path.posix.join`; inspecter le sentinel; lire intégralement le transcript comme octets ou retourner `cannot read transcript`, code 1; décoder avec remplacement UTF-8 lossy; trouver l’usage; sélectionner le seuil; sortir si sous seuil; créer le sentinel avec `create_new`; sortir si un concurrent l’a créé; écrire le JSON exact. `main` lit stdin en octets, construit `Environment::current`, écrit le diagnostic préfixé sur stderr en cas d’erreur et retourne `ExitCode::from(error.exit_code)`; tout échec non classé, notamment une lecture stdin ou une écriture stdout impossible au niveau du système d'exploitation, devient `unexpected failure`, code 3.
 
 - [ ] **Étape 7 : Exécuter la matrice différentielle complète**
 
@@ -407,12 +410,12 @@ bun test tooling/agent-handoff-parity.test.ts
 cargo test --manifest-path tooling/agent-handoff/Cargo.toml
 ```
 
-Résultat attendu : PASS; chaque cas compare les octets stdout/stderr et le code de sortie des deux processus. Si un cas diverge, conserver Bun comme oracle déployé, ajouter le cas minimal qui révèle la divergence, puis corriger Rust avant de poursuivre.
+Résultat attendu : PASS; après réception de stdin et avec stdout accessible en écriture, chaque cas compare les octets stdout/stderr et le code de sortie des deux processus. Si un cas applicatif diverge, conserver Bun comme oracle déployé, ajouter le cas minimal qui révèle la divergence, puis corriger Rust avant de poursuivre. Les pannes de lecture stdin et d'écriture stdout au niveau du système d'exploitation restent couvertes séparément par le contrat Rust fail-closed `unexpected failure`, code 3.
 
 - [ ] **Étape 8 : Commit**
 
 ```bash
-git add tooling/agent-handoff tooling/agent-handoff-parity.test.ts
+git add tooling/agent-handoff tooling/agent-handoff-parity.test.ts tooling/agent-handoff-parity-runtime-cases.ts
 git commit -m "feat(handoff): complete the Rust runtime contract"
 ```
 
@@ -431,6 +434,7 @@ git commit -m "feat(handoff): complete the Rust runtime contract"
 - Supprimer : `tooling/agent-handoff-test-support.ts`
 - Supprimer : `tooling/agent-handoff-parity-support.ts`
 - Supprimer : `tooling/agent-handoff-parity.test.ts`
+- Supprimer : `tooling/agent-handoff-parity-runtime-cases.ts`
 
 **Interfaces :**
 
@@ -473,7 +477,7 @@ Changer l’interface privée en `fn handoff_aliases(command: &Path, repository:
 
 - [ ] **Étape 5 : Conserver la matrice comme tests Rust permanents**
 
-Avant suppression, vérifier que `tests/event.rs`, `tests/transcript.rs`, `tests/decision.rs`, `tests/cli.rs` et `tests/concurrency.rs` nomment chacun des cas de `parityCases`. Ajouter tout cas absent au test Rust correspondant et relancer :
+Avant suppression, vérifier que `tests/event.rs`, `tests/transcript.rs`, `tests/decision.rs`, `tests/cli.rs`, `tests/cli/runtime_parity.rs` et `tests/concurrency.rs` nomment chacun des cas de `parityCases` et `runtimeParityCases`. Ajouter tout cas absent au test Rust correspondant et relancer :
 
 ```bash
 cargo test --manifest-path tooling/agent-handoff/Cargo.toml
@@ -511,7 +515,7 @@ Résultat attendu : PASS; les dry-runs ne mutent pas le poste, construisent le c
 
 ```bash
 git add Makefile tooling/deployment-codex-wiring.test.ts tooling/arnes/src/hooks.rs tooling/arnes/tests/hooks_setup.rs tooling/arnes/tests/hooks_validation.rs tooling/agent-handoff
-git add -u -- tooling/agent-handoff-legacy tooling/agent-handoff.test.ts tooling/agent-handoff-failures.test.ts tooling/agent-handoff-test-support.ts tooling/agent-handoff-parity-support.ts tooling/agent-handoff-parity.test.ts
+git add -u -- tooling/agent-handoff-legacy tooling/agent-handoff.test.ts tooling/agent-handoff-failures.test.ts tooling/agent-handoff-test-support.ts tooling/agent-handoff-parity-support.ts tooling/agent-handoff-parity.test.ts tooling/agent-handoff-parity-runtime-cases.ts
 git commit -m "refactor(handoff): deploy the independent Rust binary"
 ```
 
