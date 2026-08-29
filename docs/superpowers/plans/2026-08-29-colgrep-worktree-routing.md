@@ -31,6 +31,7 @@ three-agent routing policy; Makefile symlinks remain projections.
 ### Task 1: Fail-closed ColGrep process boundary
 
 **Files:**
+
 - Create: `tooling/colgrep-worktree`
 - Create: `tooling/colgrep-worktree.ts`
 - Create: `tooling/colgrep-worktree-contract.ts`
@@ -39,6 +40,7 @@ three-agent routing policy; Makefile symlinks remain projections.
 - Create: `tooling/colgrep-worktree-failures.test.ts`
 
 **Interfaces:**
+
 - Consumes: one non-empty conceptual query; `COLGREP_WORKTREE_GIT_BIN` and
   `COLGREP_WORKTREE_COLGREP_BIN` test overrides.
 - Produces: JSON result array on stdout and exit `0`, or one diagnostic ending in
@@ -56,14 +58,24 @@ JSON result inside the linked root.
 ```ts
 test("searches only after proving the active linked-worktree index", () => {
   const fixture = createLinkedWorktreeFixture();
-  const result = runEntryPoint(fixture.linkedRoot, "authentication boundary", fixture.environment);
+  const result = runEntryPoint(
+    fixture.linkedRoot,
+    "authentication boundary",
+    fixture.environment,
+  );
 
   expect(result.exitCode).toBe(0);
   expect(JSON.parse(result.stdout)).toEqual([fixture.activeResult]);
   expect(readInvocations(fixture)).toEqual([
     ["init", "-y", fixture.linkedRoot],
     ["status", fixture.linkedRoot],
-    ["search", "--json", "--no-update", "authentication boundary", fixture.linkedRoot],
+    [
+      "search",
+      "--json",
+      "--no-update",
+      "authentication boundary",
+      fixture.linkedRoot,
+    ],
   ]);
 });
 ```
@@ -83,24 +95,33 @@ stdout as fatal UTF-8; strip `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_
 JSON once with strict Zod schemas and write buffered search output only after validation.
 
 ```ts
-const projectMetadataSchema = z.object({
-  project_path: z.string().min(1),
-  project_name: z.string().min(1),
-  model: z.string().min(1),
-}).strict();
+const projectMetadataSchema = z
+  .object({
+    project_path: z.string().min(1),
+    project_name: z.string().min(1),
+    model: z.string().min(1),
+  })
+  .strict();
 
-const indexStateSchema = z.object({
-  cli_version: z.string().min(1),
-  index_format_version: z.number().int().positive(),
-  files: z.record(z.string(), z.object({
-    content_hash: z.number().nonnegative(),
-    mtime: z.number().nonnegative(),
-    size: z.number().nonnegative(),
-  }).strict()),
-  ignored_files: z.array(z.string()),
-  search_count: z.number().int().nonnegative(),
-  dirty: z.literal(false),
-}).strict();
+const indexStateSchema = z
+  .object({
+    cli_version: z.string().min(1),
+    index_format_version: z.number().int().positive(),
+    files: z.record(
+      z.string(),
+      z
+        .object({
+          content_hash: z.number().nonnegative(),
+          mtime: z.number().nonnegative(),
+          size: z.number().nonnegative(),
+        })
+        .strict(),
+    ),
+    ignored_files: z.array(z.string()),
+    search_count: z.number().int().nonnegative(),
+    dirty: z.literal(false),
+  })
+  .strict();
 ```
 
 - [ ] **Step 4: Run the happy-path test and verify GREEN**
@@ -119,17 +140,25 @@ foreign result path, and failed ColGrep search. Assert non-zero exit, empty stdo
 fallback diagnostic, and no search invocation whenever preconditions fail.
 
 ```ts
-test.each(["missing-project", "foreign-project", "dirty-state", "ambiguous-status"])(
-  "%s refuses before index search",
-  (mode) => {
-    const fixture = createLinkedWorktreeFixture({ mode });
-    const result = runEntryPoint(fixture.linkedRoot, "query", fixture.environment);
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toEndWith("Fall back to bounded rg/fd searches.\n");
-    expect(readInvocations(fixture)).not.toContainEqual(expect.arrayContaining(["search"]));
-  },
-);
+test.each([
+  "missing-project",
+  "foreign-project",
+  "dirty-state",
+  "ambiguous-status",
+])("%s refuses before index search", (mode) => {
+  const fixture = createLinkedWorktreeFixture({ mode });
+  const result = runEntryPoint(
+    fixture.linkedRoot,
+    "query",
+    fixture.environment,
+  );
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toEndWith("Fall back to bounded rg/fd searches.\n");
+  expect(readInvocations(fixture)).not.toContainEqual(
+    expect.arrayContaining(["search"]),
+  );
+});
 ```
 
 - [ ] **Step 6: Run failure tests and verify RED, then implement each refusal minimally**
@@ -155,12 +184,14 @@ Commit: `feat(ai): guard ColGrep worktree searches`
 ### Task 2: Installation and two-worktree integration
 
 **Files:**
+
 - Modify: `Brewfile`
 - Modify: `Makefile`
 - Modify: `tooling/deployment-links.test.ts`
 - Create: `tooling/colgrep-worktree-integration.test.ts`
 
 **Interfaces:**
+
 - Consumes: Homebrew formula `lightonai/tap/colgrep` and repository entry point.
 - Produces: minimal-profile ColGrep installation and `~/.local/bin/colgrep-worktree` symlink.
 
@@ -207,6 +238,7 @@ Commit: `feat(install): deploy ColGrep worktree search`
 ### Task 3: Canonical three-agent routing policy and ADR
 
 **Files:**
+
 - Modify: `harness/skills/codegraph/SKILL.md`
 - Modify: `harness/skills/codegraph/evals/trigger-queries.json`
 - Delete: `harness/skills/codegraph/scripts/skill_contract_test.sh`
@@ -216,6 +248,7 @@ Commit: `feat(install): deploy ColGrep worktree search`
 - Modify: `docs/codegraph.md`
 
 **Interfaces:**
+
 - Consumes: `colgrep-worktree <query>`, CodeGraph MCP, `rg`, and `fd`.
 - Produces: one skill projected unchanged to Claude Code, Codex, and Cursor.
 
@@ -270,10 +303,12 @@ Commit: `docs(ai): route worktree retrieval through ColGrep`
 ### Task 4: CI coverage and final proof
 
 **Files:**
+
 - Modify: `.github/workflows/test-codegraph.yml`
 - Create: `tooling/colgrep-worktree-ci-contract.test.ts`
 
 **Interfaces:**
+
 - Consumes: every TypeScript, skill, Makefile, Brewfile, and ADR file changed above.
 - Produces: Linux unit/type/lint coverage and macOS real ColGrep integration coverage.
 

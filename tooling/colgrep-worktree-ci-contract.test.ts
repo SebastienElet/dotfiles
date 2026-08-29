@@ -35,6 +35,8 @@ test("text CI formats every changed policy document", () => {
     "docs/adr/039-codegraph-recuperation-structurelle.md",
     "docs/adr/README.md",
     "docs/codegraph.md",
+    "docs/superpowers/plans/2026-08-29-colgrep-worktree-routing.md",
+    "docs/superpowers/specs/2026-08-29-recherche-worktrees-design.md",
     "harness/skills/codegraph/SKILL.md",
     "harness/skills/codegraph/evals/trigger-queries.json",
   ]) {
