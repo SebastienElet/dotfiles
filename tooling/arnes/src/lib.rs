@@ -7,7 +7,6 @@ pub mod hooks;
 pub mod instructions;
 pub mod manifest;
 pub mod measure;
-pub mod memory;
 pub mod prompts;
 pub mod roots;
 pub mod rules;
