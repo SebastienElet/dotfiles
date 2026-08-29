@@ -229,12 +229,33 @@ arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
 	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
-.PHONY: agent-handoff
-agent-handoff: rust | ${LOCAL_BIN}
+${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.toml \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/environment.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/error.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/lib.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/main.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/run.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/state.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli/runtime_parity.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/concurrency.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript/numeric.rs \
+	| ${BREW_BIN}/cargo
 	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
-	test ! -L ${LOCAL_BIN}/agent-handoff || test "$$(readlink ${LOCAL_BIN}/agent-handoff)" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
-	test -e ${LOCAL_BIN}/agent-handoff || test -L ${LOCAL_BIN}/agent-handoff || ln -s ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
-	test "$$(readlink ${LOCAL_BIN}/agent-handoff)" = "${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff"
+	test -x "$@"
+	touch "$@"
+${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff | ${LOCAL_BIN}
+	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
+	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
+	test "$$(readlink "$@")" = "$<"
 
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
@@ -457,7 +478,7 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 
 .PHONY: claude-code-hooks
-claude-code-hooks: arnes agent-handoff
+claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
@@ -526,7 +547,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 
 .PHONY: codex-hooks
-codex-hooks: arnes agent-handoff
+codex-hooks: arnes ${LOCAL_BIN}/agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent codex
 
 .PHONY: codexbar

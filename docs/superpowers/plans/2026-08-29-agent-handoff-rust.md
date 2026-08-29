@@ -439,11 +439,11 @@ git commit -m "feat(handoff): complete the Rust runtime contract"
 **Interfaces :**
 
 - Consomme : `tooling/agent-handoff/target/release/agent-handoff` vert sur toute la matrice différentielle.
-- Produit : cible `.PHONY` `agent-handoff`; lien `~/.local/bin/agent-handoff` vers le binaire release; hooks Claude/Codex qui ne contiennent que ce chemin absolu; tests Rust permanents qui conservent chaque cas de la matrice sans dépendre de Bun.
+- Produit : cible fichier `tooling/agent-handoff/target/release/agent-handoff` dépendant du manifeste, du lockfile, des sources et des tests du crate; cible fichier `~/.local/bin/agent-handoff` vers ce binaire release; hooks Claude/Codex qui ne contiennent que ce chemin absolu; tests Rust permanents qui conservent chaque cas de la matrice sans dépendre de Bun.
 
 - [ ] **Étape 1 : Écrire les RED de déploiement et de réconciliation**
 
-Dans `deployment-codex-wiring.test.ts`, exiger pour `claude-code-hooks` et `codex-hooks` : build avec `--manifest-path tooling/agent-handoff/Cargo.toml --release`; lien vers `tooling/agent-handoff/target/release/agent-handoff`; aucune invocation de Bun pour handoff; une destination absente créée; un lien historique exact vers `${DOTFILES_PATH}/tooling/agent-handoff` migré; un fichier ou lien inattendu préservé et diagnostiqué sans écrasement.
+Dans les tests de déploiement, exiger pour `claude-code-hooks` et `codex-hooks` le lien vers `tooling/agent-handoff/target/release/agent-handoff` sans invocation de Bun pour handoff. Chaque modification du manifeste, du lockfile, des sources ou des tests exacts du crate rend le binaire release obsolète et déclenche un unique build; un second appel ne reconstruit pas le binaire. Une destination absente est créée; le lien historique exact vers `${DOTFILES_PATH}/tooling/agent-handoff` est migré seulement lorsque le binaire release est plus récent; une destination inattendue à jour n’est ni inspectée ni modifiée, tandis qu’une destination inattendue obsolète est refusée sans écrasement.
 
 Dans les tests Arnes, construire un exécutable fixture `~/.local/bin/agent-handoff`, puis exiger que le hook configuré soit exactement ce chemin absolu, sans arguments Codex et avec `args: []` Claude. Ajouter une fixture contenant les anciens chemins `${repository}/tooling/agent-handoff` et `${repository}/scripts/agent_handoff`; `setup hooks` les retire, conserve les handlers tiers et installe uniquement `~/.local/bin/agent-handoff`. Aucun test Arnes ne lance le binaire handoff ni ne lit son sentinel.
 
@@ -458,18 +458,39 @@ Résultat attendu : FAIL sur la recette Bun encore active et sur la migration in
 
 - [ ] **Étape 3 : Basculer le Makefile vers le crate indépendant**
 
-Remplacer la règle fichier par :
+Déployer le crate et son lien par deux cibles fichier ordinaires conformes aux ADR-001 et ADR-003 :
 
 ```make
-.PHONY: agent-handoff
-agent-handoff: rust | ${LOCAL_BIN}
+${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.toml \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/environment.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/error.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/lib.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/main.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/run.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/state.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli/runtime_parity.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/concurrency.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript/numeric.rs \
+	| ${BREW_BIN}/cargo
 	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
-	test ! -L ${LOCAL_BIN}/agent-handoff || test "$$(readlink ${LOCAL_BIN}/agent-handoff)" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
-	test -e ${LOCAL_BIN}/agent-handoff || test -L ${LOCAL_BIN}/agent-handoff || ln -s ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
-	test "$$(readlink ${LOCAL_BIN}/agent-handoff)" = "${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff"
+	test -x "$@"
+	touch "$@"
+${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff | ${LOCAL_BIN}
+	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
+	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
+	test "$$(readlink "$@")" = "$<"
 ```
 
-Faire dépendre `claude-code-hooks` et `codex-hooks` de `agent-handoff`. Le troisième test refuse un fichier réel, un lien vers une autre source et un lien pendant inattendu, sans les supprimer.
+Faire dépendre `claude-code-hooks` et `codex-hooks` de `${LOCAL_BIN}/agent-handoff`. La recette du lien ne s’exécute que si la cible est absente ou obsolète; elle refuse alors un fichier réel, un lien vers une autre source et un lien pendant inattendu, sans les supprimer.
 
 - [ ] **Étape 4 : Borner Arnes à la migration de configuration**
 
@@ -500,10 +521,11 @@ Résultat attendu : aucune correspondance. Les mentions de `agent-handoff` resta
 - [ ] **Étape 7 : Vérifier le déploiement et la frontière Arnes**
 
 ```bash
-make -n agent-handoff
+make -n "$(pwd)/tooling/agent-handoff/target/release/agent-handoff"
+make -n "$HOME/.local/bin/agent-handoff"
 make -n claude-code-hooks
 make -n codex-hooks
-bun test tooling/deployment-codex-wiring.test.ts
+bun test tooling/deployment-agent-handoff.test.ts tooling/deployment-codex-wiring.test.ts
 cargo test --manifest-path tooling/arnes/Cargo.toml --test hooks_setup --test hooks_validation
 cargo test --manifest-path tooling/agent-handoff/Cargo.toml
 git diff --check
