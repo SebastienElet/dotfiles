@@ -13,7 +13,7 @@ impl Store {
             return Err(selection_stale());
         }
         let path = self.root.join(&selected.path)?;
-        let mut file = path.open_read()?;
+        let mut file = path.open_read_only()?;
         ensure_snapshot(&file.metadata().map_err(|_| selection_stale())?, selected)?;
         let entry = read_entry_from_file(&path, &mut file)?;
         self.hit(StorePhase::AfterRetrievalEntryRead)?;
@@ -47,5 +47,5 @@ fn modified_ns(metadata: &std::fs::Metadata) -> Result<i64, MemoryError> {
 }
 
 const fn selection_stale() -> MemoryError {
-    MemoryError::new("selection_stale", "selection")
+    MemoryError::conflict("selection_stale", "selection")
 }

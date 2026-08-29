@@ -47,6 +47,75 @@ fn conflicts_when_a_source_changes_after_resolution_under_the_lock() {
 }
 
 #[test]
+fn rechecks_the_source_after_staging_at_the_yaml_publication_boundary() {
+    let fixture = tempfile::tempdir().unwrap();
+    let source = fixture.path().join("proof.txt");
+    fs::write(&source, b"before").unwrap();
+    let root = fixture.path().join("store");
+    let barrier = Arc::new(Barrier::new(2));
+    let store = Store::open_with_failpoint(
+        MemoryRoot::new(&root).unwrap(),
+        StoreFailpoint::PauseBeforeYamlRename(Arc::clone(&barrier)),
+    )
+    .unwrap();
+    let processes = SystemProcessRunner;
+    let clock = FixedClock::new();
+    let bytes = draft(
+        Some("user"),
+        "invariant",
+        "Publication observes the final source snapshot.",
+        "local-file",
+        source.to_str().unwrap(),
+    );
+
+    let result = std::thread::scope(|scope| {
+        let worker = scope.spawn(|| {
+            admit(
+                &bytes,
+                context(
+                    &store,
+                    fixture.path(),
+                    &clock,
+                    &processes,
+                    AdmissionAuthorization::ExplicitRequest,
+                ),
+            )
+            .unwrap()
+        });
+        barrier.wait();
+        fs::write(&source, b"after staging").unwrap();
+        barrier.wait();
+        worker.join().unwrap()
+    });
+
+    assert_conflict(result, "source_changed");
+    assert!(store.list().unwrap().entries().is_empty());
+    assert!(yaml_paths(&root).is_empty());
+}
+
+fn yaml_paths(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut paths = Vec::new();
+    for scope in [root.join("entries/user"), root.join("entries/project")] {
+        collect_yaml(&scope, &mut paths);
+    }
+    paths
+}
+
+fn collect_yaml(path: &std::path::Path, paths: &mut Vec<std::path::PathBuf>) {
+    for entry in fs::read_dir(path).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            collect_yaml(&path, paths);
+        } else if path
+            .extension()
+            .is_some_and(|extension| extension == "yaml")
+        {
+            paths.push(path);
+        }
+    }
+}
+
+#[test]
 fn retry_after_a_post_yaml_failure_returns_duplicate() {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("store");

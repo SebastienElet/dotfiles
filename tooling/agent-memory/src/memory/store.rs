@@ -2,18 +2,19 @@ pub(super) mod canonicalization;
 pub(super) mod document;
 mod indexing;
 pub(super) mod inventory;
+mod opening;
 pub(super) mod publication;
 mod retrieval;
 pub(super) mod types;
 
 use self::document::{StoredEntry, StoredScope};
-use self::inventory::{entry_paths, read_entry, repair_entry_modes, valid_memory_id};
+use self::inventory::{entry_paths, read_entry, valid_memory_id};
 use self::publication::{AtomicPublication, CommitFailure};
 use self::types::StorePhase;
 pub use self::types::{StoreCommit, StoreFailpoint, StoreListing};
-use super::index::{empty_index_bytes, index_rebuild_required};
+use super::index::index_rebuild_required;
 use super::lock::GlobalLock;
-use super::path::{ManagedPath, MemoryRoot, open_root};
+use super::path::ManagedPath;
 use super::{
     AdmissionResult, MemoryEntry, MemoryError, MemoryId, ProjectScope, ResolvedDraft,
     SourceContext, Status, UtcTimestamp,
@@ -26,39 +27,6 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn open(root: MemoryRoot) -> Result<Self, MemoryError> {
-        Self::open_internal(root, None)
-    }
-
-    pub fn open_with_failpoint(
-        root: MemoryRoot,
-        failpoint: StoreFailpoint,
-    ) -> Result<Self, MemoryError> {
-        Self::open_internal(root, Some(failpoint))
-    }
-
-    fn open_internal(
-        root: MemoryRoot,
-        failpoint: Option<StoreFailpoint>,
-    ) -> Result<Self, MemoryError> {
-        let fail_mode_repair = matches!(failpoint.as_ref(), Some(StoreFailpoint::BeforeModeRepair));
-        let root = ManagedPath::root(open_root(&root, fail_mode_repair)?);
-        for relative in ["entries", "entries/user", "entries/project"] {
-            root.join(relative)?.ensure_directory(fail_mode_repair)?;
-        }
-        repair_entry_modes(&root)?;
-        root.join(".lock")?.ensure_file(fail_mode_repair)?;
-        let store = Self { root, failpoint };
-        let publication = store.publication();
-        publication.initialize_file("index.json", &empty_index_bytes()?, fail_mode_repair)?;
-        publication.initialize_file(
-            "oracle-cache.json",
-            b"{\n  \"schema_version\": 1,\n  \"entries\": []\n}\n",
-            fail_mode_repair,
-        )?;
-        Ok(store)
-    }
-
     pub fn admit(
         &self,
         resolved: ResolvedDraft,
@@ -90,22 +58,15 @@ impl Store {
             Ok(Some(false)) | Err(_) => {
                 return AdmissionResult::Conflict {
                     id,
-                    error: MemoryError::new("entry_conflict", "id"),
+                    error: MemoryError::conflict("entry_conflict", "id"),
                 };
             }
             Ok(None) => {}
         }
-        match self.commit_entry(&destination, &candidate, false) {
-            Ok(()) => AdmissionResult::Stored {
-                id,
-                index_rebuild_required: false,
-            },
-            Err(CommitFailure::BeforeYaml(error)) => AdmissionResult::Rejected { error },
-            Err(CommitFailure::AfterYaml) => AdmissionResult::Stored {
-                id,
-                index_rebuild_required: true,
-            },
-        }
+        let commit = self.commit_entry(&destination, &candidate, false, || {
+            resolved.recheck_sources(sources)
+        });
+        admission_commit(id, commit)
     }
 
     pub fn replace_active(&self, entry: &MemoryEntry) -> Result<StoreCommit, MemoryError> {
@@ -117,12 +78,12 @@ impl Store {
         let _lock = self.acquire_lock()?;
         let current = read_entry(&destination)?;
         if current.status() != Status::Active {
-            return Err(MemoryError::new("entry_not_active", "status"));
+            return Err(MemoryError::conflict("entry_not_active", "status"));
         }
         if StoredEntry::from_entry(&current).immutable_value()? != candidate.immutable_value()? {
-            return Err(MemoryError::new("entry_conflict", "id"));
+            return Err(MemoryError::conflict("entry_conflict", "id"));
         }
-        match self.commit_entry(&destination, &candidate, true) {
+        match self.commit_entry(&destination, &candidate, true, || Ok(())) {
             Ok(()) => Ok(StoreCommit {
                 index_rebuild_required: false,
             }),
@@ -144,7 +105,7 @@ impl Store {
             .filter(|entry| entry.id().as_str() == id);
         let found = matches.next();
         if matches.next().is_some() {
-            return Err(MemoryError::new("entry_conflict", "id"));
+            return Err(MemoryError::conflict("entry_conflict", "id"));
         }
         Ok(found)
     }
@@ -214,5 +175,27 @@ impl Store {
         self.failpoint
             .as_ref()
             .map_or(Ok(()), |failpoint| failpoint.reach(phase))
+    }
+}
+
+fn admission_failure(id: MemoryId, error: MemoryError) -> AdmissionResult {
+    if error.class() == super::MemoryErrorClass::Conflict {
+        AdmissionResult::Conflict { id, error }
+    } else {
+        AdmissionResult::Rejected { error }
+    }
+}
+
+fn admission_commit(id: MemoryId, result: Result<(), CommitFailure>) -> AdmissionResult {
+    match result {
+        Ok(()) => AdmissionResult::Stored {
+            id,
+            index_rebuild_required: false,
+        },
+        Err(CommitFailure::BeforeYaml(error)) => admission_failure(id, error),
+        Err(CommitFailure::AfterYaml) => AdmissionResult::Stored {
+            id,
+            index_rebuild_required: true,
+        },
     }
 }

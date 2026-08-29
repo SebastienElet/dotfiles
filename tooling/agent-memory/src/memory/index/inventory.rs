@@ -78,6 +78,9 @@ impl InventorySnapshot {
     }
 
     pub(super) fn matches_current(&self, root: &ManagedPath) -> Result<bool, MemoryError> {
+        self.entries
+            .iter()
+            .try_for_each(AnchoredEntry::ensure_current)?;
         let current = Self::capture(root)?;
         if self.items() != current.items() {
             return Ok(false);
@@ -99,7 +102,7 @@ impl InventorySnapshot {
 
 impl AnchoredEntry {
     fn open(path: &ManagedPath) -> Result<Self, MemoryError> {
-        Self::from_file(path.clone(), path.open_read()?)
+        Self::from_file(path.clone(), path.open_read_only()?)
     }
 
     fn from_file(path: ManagedPath, file: File) -> Result<Self, MemoryError> {
@@ -162,9 +165,9 @@ fn store_io(_: std::io::Error) -> MemoryError {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

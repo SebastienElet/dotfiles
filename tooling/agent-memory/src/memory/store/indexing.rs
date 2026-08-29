@@ -7,12 +7,16 @@ use crate::memory::index::prepared_index;
 use crate::memory::path::ManagedPath;
 
 impl Store {
-    pub(super) fn commit_entry(
+    pub(super) fn commit_entry<F>(
         &self,
         destination: &ManagedPath,
         entry: &StoredEntry,
         replace: bool,
-    ) -> Result<(), CommitFailure> {
+        before_publish: F,
+    ) -> Result<(), CommitFailure>
+    where
+        F: FnOnce() -> Result<(), MemoryError>,
+    {
         let publication = self.publication();
         let yaml = yaml_bytes(entry).map_err(CommitFailure::BeforeYaml)?;
         let staged_yaml = publication
@@ -34,6 +38,7 @@ impl Store {
             staged_index,
             index.inventory,
             replace,
+            before_publish,
         )
     }
 

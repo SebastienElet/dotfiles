@@ -1,3 +1,11 @@
+#[path = "memory_cli/admission_order.rs"]
+mod admission_order;
+#[path = "memory_cli/argument_redaction.rs"]
+mod argument_redaction;
+#[path = "memory_cli/canonical_reads.rs"]
+mod canonical_reads;
+#[path = "memory_cli/error_classes.rs"]
+mod error_classes;
 #[path = "memory_cli/support.rs"]
 mod support;
 
@@ -99,6 +107,34 @@ fn confirm_and_audit_include_a_terminal_entry_without_reactivation() {
 }
 
 #[test]
+fn confirm_rejects_a_shell_command_without_mutating_the_entry() {
+    let fixture = CliFixture::new();
+    let draft = fixture.git_draft(
+        "assumption",
+        "The durable assumption remains active.",
+        "durable assumption",
+    );
+    let admitted = fixture.run(["admit", "--format", "json"], &draft);
+    let id = stdout_json(&admitted)["id"].as_str().unwrap().to_owned();
+    let before = tree_snapshot(fixture.root());
+
+    let output = fixture.run(
+        [
+            "confirm",
+            "--id",
+            &id,
+            "--status",
+            "confirmed",
+            "--reason-stdin",
+        ],
+        b"$ rm -f unsafe",
+    );
+
+    assert_error(&output, 2, "shell_command");
+    assert_eq!(tree_snapshot(fixture.root()), before);
+}
+
+#[test]
 fn rejects_empty_and_oversized_stdin() {
     let fixture = CliFixture::new();
     let empty = fixture.run(["admit", "--format", "json"], b"");
@@ -117,9 +153,7 @@ fn unknown_options_are_usage_errors() {
     let fixture = CliFixture::new();
     let output = fixture.run(["admit", "--unknown"], b"");
 
-    assert_exit(&output, 2);
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--unknown"));
-    assert!(output.stdout.is_empty());
+    assert_error(&output, 2, "invalid_arguments");
 }
 
 #[test]

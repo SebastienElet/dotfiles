@@ -1,6 +1,7 @@
 use crate::{
     AdmissionAuthorization, AdmissionResult, Clock, MemoryError, ProcessRunner, ScopeDraft,
-    SourceContext, Store, parse_draft, resolve_project, resolve_sources, validate_draft,
+    SourceContext, Store, ValidatedDraft, parse_draft, resolve_project, resolve_sources,
+    validate_draft,
 };
 use std::path::Path;
 
@@ -13,14 +14,24 @@ pub struct AdmissionContext<'a> {
 }
 
 pub fn admit(bytes: &[u8], context: AdmissionContext<'_>) -> Result<AdmissionResult, MemoryError> {
-    let draft = match parse_draft(bytes) {
+    let draft = match prepare_admission(bytes, context.authorization) {
         Ok(draft) => draft,
         Err(error) => return Ok(AdmissionResult::Rejected { error }),
     };
-    let draft = match validate_draft(draft, context.authorization) {
-        Ok(draft) => draft,
-        Err(error) => return Ok(AdmissionResult::Rejected { error }),
-    };
+    admit_prepared(draft, context)
+}
+
+pub fn prepare_admission(
+    bytes: &[u8],
+    authorization: AdmissionAuthorization,
+) -> Result<ValidatedDraft, MemoryError> {
+    validate_draft(parse_draft(bytes)?, authorization)
+}
+
+pub(crate) fn admit_prepared(
+    draft: ValidatedDraft,
+    context: AdmissionContext<'_>,
+) -> Result<AdmissionResult, MemoryError> {
     let project = match draft.scope() {
         ScopeDraft::Project => match resolve_project(context.cwd, context.processes) {
             Ok(project) => Some(project),

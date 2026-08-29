@@ -127,7 +127,7 @@ fn read_index(root: &ManagedPath, maximum: u64) -> Result<Option<Vec<u8>>, Memor
     if !path.exists()? {
         return Ok(None);
     }
-    let mut file = path.open_read()?;
+    let mut file = path.open_read_only()?;
     let metadata = file.metadata().map_err(store_io)?;
     if metadata.len() > maximum {
         return Ok(None);
@@ -165,9 +165,9 @@ fn store_io(_: std::io::Error) -> MemoryError {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

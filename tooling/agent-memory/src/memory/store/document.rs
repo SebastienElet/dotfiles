@@ -236,5 +236,5 @@ pub(super) fn yaml_bytes(entry: &StoredEntry) -> Result<Vec<u8>, MemoryError> {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }

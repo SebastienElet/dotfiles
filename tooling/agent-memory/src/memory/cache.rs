@@ -216,5 +216,5 @@ fn valid_digest(value: &str) -> bool {
 }
 
 const fn cache_unavailable() -> MemoryError {
-    MemoryError::new("cache_unavailable", "cache")
+    MemoryError::unavailable("cache_unavailable", "cache")
 }

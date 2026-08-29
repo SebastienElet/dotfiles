@@ -21,10 +21,30 @@ impl ProjectScope {
 }
 
 pub fn resolve_project(cwd: &Path, git: &dyn ProcessRunner) -> Result<ProjectScope, MemoryError> {
+    let common_directory = resolve_git_directory(cwd, git, "--git-common-dir")?;
+    let hash = Sha256::digest(common_directory.as_os_str().as_bytes());
+    Ok(ProjectScope {
+        key: ProjectKey::from_validated(format!("project_{hash:x}")),
+        common_directory,
+    })
+}
+
+pub(crate) fn resolve_worktree_directory(
+    cwd: &Path,
+    git: &dyn ProcessRunner,
+) -> Result<PathBuf, MemoryError> {
+    resolve_git_directory(cwd, git, "--show-toplevel")
+}
+
+fn resolve_git_directory(
+    cwd: &Path,
+    git: &dyn ProcessRunner,
+    selector: &str,
+) -> Result<PathBuf, MemoryError> {
     let arguments = [
         OsString::from("rev-parse"),
         OsString::from("--path-format=absolute"),
-        OsString::from("--git-common-dir"),
+        OsString::from(selector),
     ];
     let output = git
         .run(OsStr::new("git"), &arguments, Some(cwd))
@@ -38,11 +58,7 @@ pub fn resolve_project(cwd: &Path, git: &dyn ProcessRunner) -> Result<ProjectSco
     if !common_directory.is_absolute() || !common_directory.is_dir() {
         return Err(scope_unavailable());
     }
-    let hash = Sha256::digest(common_directory.as_os_str().as_bytes());
-    Ok(ProjectScope {
-        key: ProjectKey::from_validated(format!("project_{hash:x}")),
-        common_directory,
-    })
+    Ok(common_directory)
 }
 
 fn single_absolute_path(bytes: &[u8]) -> Result<PathBuf, MemoryError> {
@@ -60,5 +76,5 @@ fn single_absolute_path(bytes: &[u8]) -> Result<PathBuf, MemoryError> {
 }
 
 const fn scope_unavailable() -> MemoryError {
-    MemoryError::new("scope_unavailable", "scope")
+    MemoryError::unavailable("scope_unavailable", "scope")
 }

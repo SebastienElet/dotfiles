@@ -147,9 +147,9 @@ fn valid_statement_tokens(tokens: &[String]) -> bool {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

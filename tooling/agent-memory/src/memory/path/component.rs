@@ -29,6 +29,26 @@ pub(crate) fn open_root(root: &MemoryRoot, fail_mode_repair: bool) -> Result<Fil
     Ok(directory)
 }
 
+pub(crate) fn open_existing_root(root: &MemoryRoot) -> Result<Option<File>, MemoryError> {
+    match std::fs::symlink_metadata(root.path()) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(store_unavailable(error)),
+    }
+    let mut directory = rustix::fs::open(
+        "/",
+        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+        Mode::empty(),
+    )
+    .map(File::from)
+    .map_err(classify_path_error)?;
+    for component in normal_components(root.path())? {
+        directory = open_directory_at(&directory, component)?;
+    }
+    validate_mode(&directory, private_directory_mode())?;
+    Ok(Some(directory))
+}
+
 pub(super) fn open_directory_at(directory: &File, name: &OsStr) -> Result<File, MemoryError> {
     rustix::fs::openat(
         directory,
@@ -42,10 +62,25 @@ pub(super) fn open_directory_at(directory: &File, name: &OsStr) -> Result<File, 
 
 pub(super) fn repair_mode(file: &File, mode: Mode, fail: bool) -> Result<(), MemoryError> {
     if fail {
-        return Err(MemoryError::new("store_permissions_unavailable", "store"));
+        return Err(MemoryError::unavailable(
+            "store_permissions_unavailable",
+            "store",
+        ));
     }
     rustix::fs::fchmod(file, mode)
-        .map_err(|_| MemoryError::new("store_permissions_unavailable", "store"))
+        .map_err(|_| MemoryError::unavailable("store_permissions_unavailable", "store"))
+}
+
+pub(super) fn validate_mode(file: &File, expected: Mode) -> Result<(), MemoryError> {
+    let actual = file.metadata().map_err(store_unavailable)?.mode() & 0o777;
+    if actual == u32::from(expected.as_raw_mode()) {
+        Ok(())
+    } else {
+        Err(MemoryError::unavailable(
+            "store_permissions_unavailable",
+            "store",
+        ))
+    }
 }
 
 pub(super) fn ensure_single_link_regular(file: &File) -> Result<(), MemoryError> {
@@ -78,7 +113,7 @@ pub(super) fn classify_path_error(error: rustix::io::Errno) -> MemoryError {
 }
 
 pub(super) fn store_unavailable(_: std::io::Error) -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 pub(super) const fn private_directory_mode() -> Mode {

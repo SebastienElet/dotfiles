@@ -100,8 +100,10 @@ fn passes_the_resolved_git_path_to_the_tracking_probe_as_separate_argv() {
     let repository = tempfile::tempdir().unwrap();
     fs::create_dir(repository.path().join("docs")).unwrap();
     fs::write(repository.path().join("docs/contract.md"), BODY).unwrap();
-    let git_runner =
-        FakeProcessRunner::with_responses([FakeResponse::success(b"docs/contract.md\n".to_vec())]);
+    let git_runner = FakeProcessRunner::with_responses([
+        FakeResponse::success(format!("{}\n", repository.path().display())),
+        FakeResponse::success(b"docs/contract.md\n".to_vec()),
+    ]);
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(repository.path(), &git_runner, &curl);
 
@@ -114,12 +116,19 @@ fn passes_the_resolved_git_path_to_the_tracking_probe_as_separate_argv() {
     );
 
     assert_eq!(
-        git_runner.calls()[0].arguments,
+        git_runner.calls()[1].arguments,
         [
             OsString::from("-C"),
-            repository.path().as_os_str().to_owned(),
+            repository
+                .path()
+                .canonicalize()
+                .unwrap()
+                .as_os_str()
+                .to_owned(),
+            OsString::from("--literal-pathspecs"),
             OsString::from("ls-files"),
             OsString::from("--error-unmatch"),
+            OsString::from("--full-name"),
             OsString::from("--"),
             OsString::from("docs/contract.md"),
         ]
@@ -169,7 +178,15 @@ fn refuses_every_named_local_source_bypass_without_disclosing_the_locator() {
     ];
 
     for (bypass, kind, locator, expected) in cases {
-        let git_runner = FakeProcessRunner::with_responses([FakeResponse::failure(1, Vec::new())]);
+        let responses = if bypass == "untracked git file" {
+            vec![
+                FakeResponse::success(format!("{}\n", repository.path().display())),
+                FakeResponse::failure(1, Vec::new()),
+            ]
+        } else {
+            vec![FakeResponse::failure(1, Vec::new())]
+        };
+        let git_runner = FakeProcessRunner::with_responses(responses);
         let curl = FakeProcessRunner::default();
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
         let result = resolve_sources(draft(kind, locator), &context);
@@ -208,7 +225,10 @@ fn reports_unavailable_for_unreadable_oversized_or_inconclusive_local_sources() 
     ] {
         let tracked = repository.path().join("tracked");
         fs::write(&tracked, BODY).unwrap();
-        let git_runner = FakeProcessRunner::with_responses([response]);
+        let git_runner = FakeProcessRunner::with_responses([
+            FakeResponse::success(format!("{}\n", repository.path().display())),
+            response,
+        ]);
         let curl = FakeProcessRunner::default();
         let context = SourceContext::new(repository.path(), &git_runner, &curl);
         assert_eq!(

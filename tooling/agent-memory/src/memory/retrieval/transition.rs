@@ -11,7 +11,7 @@ pub fn confirm(
         .load(id)?
         .ok_or_else(|| MemoryError::new("entry_not_found", "id"))?;
     if entry.status() != Status::Active {
-        return Err(MemoryError::new("entry_not_active", "status"));
+        return Err(MemoryError::conflict("entry_not_active", "status"));
     }
     let status = conclusion
         .status_for(entry.kind())

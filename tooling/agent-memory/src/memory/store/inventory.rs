@@ -15,13 +15,7 @@ pub(crate) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, Memory
             paths.push(user.join(name)?);
         }
     }
-    let projects = root.join("entries/project")?;
-    for key in projects.read_dir_names()? {
-        let key = key.to_str().ok_or_else(unsafe_path)?;
-        if !valid_project_key(key) {
-            return Err(unsafe_path());
-        }
-        let directory = projects.join(key)?;
+    for directory in project_directories(root)? {
         for name in directory.read_dir_names()? {
             let name = name.to_str().ok_or_else(unsafe_path)?;
             if valid_entry_filename(name) {
@@ -34,14 +28,42 @@ pub(crate) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, Memory
 }
 
 pub(super) fn repair_entry_modes(root: &ManagedPath) -> Result<(), MemoryError> {
+    for directory in project_directories(root)? {
+        directory.repair_directory_mode()?;
+    }
     for path in entry_paths(root)? {
         path.open_read()?;
     }
     Ok(())
 }
 
+pub(super) fn validate_entry_modes(root: &ManagedPath) -> Result<(), MemoryError> {
+    for directory in project_directories(root)? {
+        directory.validate_directory()?;
+    }
+    for path in entry_paths(root)? {
+        path.open_read_only()?;
+    }
+    Ok(())
+}
+
+fn project_directories(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryError> {
+    let projects = root.join("entries/project")?;
+    projects
+        .read_dir_names()?
+        .into_iter()
+        .map(|key| {
+            let key = key.to_str().ok_or_else(unsafe_path)?;
+            if !valid_project_key(key) {
+                return Err(unsafe_path());
+            }
+            projects.join(key)
+        })
+        .collect()
+}
+
 pub(crate) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
-    let mut file = path.open_read()?;
+    let mut file = path.open_read_only()?;
     read_entry_from_file(path, &mut file)
 }
 
@@ -79,7 +101,7 @@ fn validate_entry_location(path: &Path, entry: &MemoryEntry) -> Result<(), Memor
     let filename = components.last().ok_or_else(unsafe_path)?;
     let id = filename.strip_suffix(".yaml").ok_or_else(unsafe_path)?;
     if id != entry.id().as_str() {
-        return Err(MemoryError::new("entry_path_mismatch", "id"));
+        return Err(MemoryError::unavailable("entry_path_mismatch", "id"));
     }
     match (components.as_slice(), entry.scope()) {
         (["entries", "user", _], EntryScope::User) => Ok(()),
@@ -88,7 +110,7 @@ fn validate_entry_location(path: &Path, entry: &MemoryEntry) -> Result<(), Memor
         {
             Ok(())
         }
-        _ => Err(MemoryError::new("entry_path_mismatch", "scope")),
+        _ => Err(MemoryError::unavailable("entry_path_mismatch", "scope")),
     }
 }
 
@@ -117,9 +139,9 @@ fn store_io(_: std::io::Error) -> MemoryError {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

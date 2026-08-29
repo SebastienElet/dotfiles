@@ -139,5 +139,5 @@ fn diagnostic_key(diagnostic: &IndexDiagnostic) -> (&str, &str, &str) {
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

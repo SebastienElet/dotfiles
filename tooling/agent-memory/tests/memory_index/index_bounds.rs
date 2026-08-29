@@ -3,6 +3,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::os::unix::fs::MetadataExt;
+use std::os::unix::fs::PermissionsExt;
 
 #[test]
 fn a_legitimate_index_above_one_mibibyte_loads_fresh_repeatedly() {
@@ -37,6 +38,7 @@ fn a_legitimate_index_above_one_mibibyte_loads_fresh_repeatedly() {
             .replace(initial_statement, &statement);
         let absolute = root.join(&path);
         fs::write(&absolute, yaml).unwrap();
+        fs::set_permissions(&absolute, fs::Permissions::from_mode(0o600)).unwrap();
         let metadata = fs::metadata(&absolute).unwrap();
         let mut row = template.clone();
         row["id"] = id.into();

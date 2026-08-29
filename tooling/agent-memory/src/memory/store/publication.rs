@@ -109,16 +109,21 @@ impl<'a> AtomicPublication<'a> {
         self.root.sync_directory()
     }
 
-    pub(super) fn publish(
+    pub(super) fn publish<F>(
         &self,
         yaml: StagedFile,
         destination: &ManagedPath,
         index: StagedIndex,
         inventory: InventorySnapshot,
         replace: bool,
-    ) -> Result<(), CommitFailure> {
+        before_publish: F,
+    ) -> Result<(), CommitFailure>
+    where
+        F: FnOnce() -> Result<(), MemoryError>,
+    {
         self.hit(StorePhase::BeforeYamlRename)
             .map_err(CommitFailure::BeforeYaml)?;
+        before_publish().map_err(CommitFailure::BeforeYaml)?;
         yaml.ensure_anchored().map_err(CommitFailure::BeforeYaml)?;
         if replace {
             yaml.path.rename_to(destination)
@@ -240,9 +245,9 @@ fn store_io(_: std::io::Error) -> MemoryError {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }

@@ -1,5 +1,6 @@
 mod oracle;
 
+use super::identity::resolve_worktree_directory;
 use super::{Fingerprint, MemoryError, ProcessOutput, ProcessRunner, SourceKind, ValidatedDraft};
 use rustix::fs::{Mode, OFlags, open};
 use sha2::{Digest, Sha256};
@@ -75,9 +76,15 @@ impl ResolvedDraft {
 
     pub fn recheck_sources(&self, context: &SourceContext<'_>) -> Result<(), MemoryError> {
         for expected in &self.sources {
-            let actual = resolve_source(expected.kind, &expected.locator, context)?;
+            let actual = match resolve_source(expected.kind, &expected.locator, context) {
+                Ok(actual) => actual,
+                Err(error) if error.class() == super::MemoryErrorClass::Rejection => {
+                    return Err(source_changed());
+                }
+                Err(error) => return Err(error),
+            };
             if actual.fingerprint != expected.fingerprint {
-                return Err(MemoryError::new("source_changed", "proof.sources"));
+                return Err(source_changed());
             }
         }
         Ok(())
@@ -106,12 +113,24 @@ pub fn resolve_sources(
         .proof()
         .sources()
         .iter()
-        .map(|source| resolve_source(source.kind(), source.locator(), context))
+        .map(|source| resolve_draft_source(source.kind(), source.locator(), context))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(ResolvedDraft { draft, sources })
 }
 
-fn resolve_source(
+fn resolve_draft_source(
+    kind: SourceKind,
+    locator: &str,
+    context: &SourceContext<'_>,
+) -> Result<ResolvedSource, MemoryError> {
+    if kind != SourceKind::GitFile {
+        return resolve_source(kind, locator, context);
+    }
+    let (locator, bytes) = resolve_draft_git_file(locator, context)?;
+    Ok(fingerprinted_source(kind, locator, bytes))
+}
+
+pub(super) fn resolve_source(
     kind: SourceKind,
     locator: &str,
     context: &SourceContext<'_>,
@@ -122,15 +141,52 @@ fn resolve_source(
         SourceKind::OfficialUrl => resolve_official_url(locator, context)?,
         SourceKind::UserDecision => locator.as_bytes().to_vec(),
     };
-    Ok(ResolvedSource {
+    Ok(fingerprinted_source(kind, locator.to_owned(), bytes))
+}
+
+fn fingerprinted_source(kind: SourceKind, locator: String, bytes: Vec<u8>) -> ResolvedSource {
+    ResolvedSource {
         kind,
-        locator: locator.to_owned(),
+        locator,
         fingerprint: Fingerprint::from_validated(format!("sha256:{:x}", Sha256::digest(bytes))),
-    })
+    }
+}
+
+fn resolve_draft_git_file(
+    locator: &str,
+    context: &SourceContext<'_>,
+) -> Result<(String, Vec<u8>), MemoryError> {
+    let relative = Path::new(locator);
+    validate_relative_git_path(relative)?;
+    let cwd = context
+        .cwd
+        .canonicalize()
+        .map_err(|_| source_unavailable())?;
+    let path = resolved_regular_path(&cwd.join(relative))?;
+    let worktree = git_worktree(context)?;
+    if !cwd.starts_with(&worktree) || !path.starts_with(&worktree) {
+        return Err(source_invalid());
+    }
+    let relative = path.strip_prefix(&worktree).map_err(|_| source_invalid())?;
+    validate_relative_git_path(relative)?;
+    validate_tracked(relative, &worktree, context)?;
+    let locator = relative.to_str().ok_or_else(source_unavailable)?.to_owned();
+    Ok((locator, read_bounded_regular_file(&path)?))
 }
 
 fn resolve_git_file(locator: &str, context: &SourceContext<'_>) -> Result<Vec<u8>, MemoryError> {
     let relative = Path::new(locator);
+    validate_relative_git_path(relative)?;
+    let worktree = git_worktree(context)?;
+    let path = resolved_regular_path(&worktree.join(relative))?;
+    if !path.starts_with(&worktree) {
+        return Err(source_invalid());
+    }
+    validate_tracked(relative, &worktree, context)?;
+    read_bounded_regular_file(&path)
+}
+
+fn validate_relative_git_path(relative: &Path) -> Result<(), MemoryError> {
     if relative.as_os_str().is_empty()
         || relative.is_absolute()
         || !relative
@@ -139,24 +195,25 @@ fn resolve_git_file(locator: &str, context: &SourceContext<'_>) -> Result<Vec<u8
     {
         return Err(source_invalid());
     }
-    let repository = context
-        .cwd
-        .canonicalize()
-        .map_err(|_| source_unavailable())?;
-    let path = resolved_regular_path(&repository.join(relative))?;
-    if !path.starts_with(&repository) {
-        return Err(source_invalid());
-    }
-    validate_tracked(relative, context)?;
-    read_bounded_regular_file(&path)
+    Ok(())
 }
 
-fn validate_tracked(relative: &Path, context: &SourceContext<'_>) -> Result<(), MemoryError> {
+fn git_worktree(context: &SourceContext<'_>) -> Result<PathBuf, MemoryError> {
+    resolve_worktree_directory(context.cwd, context.git).map_err(|_| source_unavailable())
+}
+
+fn validate_tracked(
+    relative: &Path,
+    worktree: &Path,
+    context: &SourceContext<'_>,
+) -> Result<(), MemoryError> {
     let arguments = [
         OsString::from("-C"),
-        context.cwd.as_os_str().to_owned(),
+        worktree.as_os_str().to_owned(),
+        OsString::from("--literal-pathspecs"),
         OsString::from("ls-files"),
         OsString::from("--error-unmatch"),
+        OsString::from("--full-name"),
         OsString::from("--"),
         relative.as_os_str().to_owned(),
     ];
@@ -171,8 +228,9 @@ fn validate_tracked(relative: &Path, context: &SourceContext<'_>) -> Result<(), 
             Err(source_unavailable())
         };
     }
-    let stdout = std::str::from_utf8(output.stdout()).map_err(|_| source_unavailable())?;
-    if stdout.trim().is_empty() {
+    let locator = relative.to_str().ok_or_else(source_unavailable)?;
+    let expected = format!("{locator}\n");
+    if output.stdout() != expected.as_bytes() {
         return Err(source_unavailable());
     }
     Ok(())
@@ -357,5 +415,9 @@ const fn source_invalid() -> MemoryError {
 }
 
 const fn source_unavailable() -> MemoryError {
-    MemoryError::new("source_unavailable", "proof.sources")
+    MemoryError::unavailable("source_unavailable", "proof.sources")
+}
+
+const fn source_changed() -> MemoryError {
+    MemoryError::conflict("source_changed", "proof.sources")
 }

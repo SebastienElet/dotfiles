@@ -1,5 +1,9 @@
 #[path = "memory_admission/concurrency.rs"]
 mod concurrency;
+#[path = "memory_admission/preparation.rs"]
+mod preparation;
+#[path = "memory_admission/shell_commands.rs"]
+mod shell_commands;
 #[path = "memory_admission/support.rs"]
 mod support;
 

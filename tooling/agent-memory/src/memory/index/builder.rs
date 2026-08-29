@@ -104,5 +104,5 @@ fn diagnostic(entry_id: &str, check: &str) -> IndexDiagnostic {
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }

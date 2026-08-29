@@ -1,11 +1,12 @@
 use super::CliFailure;
 use super::arguments::{Command, ConfirmArguments, HumanStatus};
 use super::boundary::read_required;
+use crate::admission::admit_prepared;
 use crate::{
     AdmissionAuthorization, AdmissionContext, AdmissionResult, EntryScope, HumanConclusion, Index,
     MemoryError, MemoryKind, MemoryRoot, OracleEnvironment, RetrievalContext, RetrievalRequest,
     SearchRequest, SourceContext, Status, Store, SystemClock, SystemProcessRunner,
-    TransitionContext, admit, confirm, resolve_project, retrieve, search,
+    TransitionContext, confirm, prepare_admission, resolve_project, retrieve, search,
 };
 use serde_json::{Value, json};
 use std::env;
@@ -28,7 +29,7 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
         }
         Command::Hook(arguments) => {
             let _ = arguments.agent;
-            Err(CliFailure::from_memory(MemoryError::new(
+            Err(CliFailure::from_memory(MemoryError::unavailable(
                 "adapter_unavailable",
                 "agent",
             )))
@@ -37,12 +38,14 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
 }
 
 fn admit_command(bytes: &[u8]) -> Result<Value, CliFailure> {
+    let draft = prepare_admission(bytes, AdmissionAuthorization::ExplicitRequest)
+        .map_err(CliFailure::from_memory)?;
     let store = open_store()?;
     let cwd = current_directory()?;
     let clock = SystemClock;
     let processes = SystemProcessRunner;
-    let result = admit(
-        bytes,
+    let result = admit_prepared(
+        draft,
         AdmissionContext {
             store: &store,
             cwd: &cwd,
@@ -67,7 +70,7 @@ fn admission_json(result: AdmissionResult) -> Result<Value, CliFailure> {
         })),
         AdmissionResult::Duplicate { id } => Ok(json!({"status": "duplicate", "id": id.as_str()})),
         AdmissionResult::Rejected { error } => Err(CliFailure::from_memory(error)),
-        AdmissionResult::Conflict { error, .. } => Err(CliFailure::conflict(error)),
+        AdmissionResult::Conflict { error, .. } => Err(CliFailure::from_memory(error)),
     }
 }
 
@@ -80,10 +83,12 @@ fn retrieve_command(bytes: &[u8]) -> Result<Value, CliFailure> {
             "query",
         )));
     }
-    let store = open_store()?;
     let cwd = current_directory()?;
     let processes = SystemProcessRunner;
     let project = resolve_project(&cwd, &processes).map_err(CliFailure::from_memory)?;
+    let Some(store) = open_retrieval_store()? else {
+        return Ok(json!({"injected": [], "omitted": [], "omitted_by_limit": 0}));
+    };
     let index = Index::load_or_rebuild(&store).map_err(CliFailure::from_memory)?;
     let selection = search(
         &index.index,
@@ -136,7 +141,9 @@ fn conclusion(status: HumanStatus, reason: &str) -> Result<HumanConclusion, Memo
 }
 
 fn audit_command(include_terminal: bool) -> Result<Value, CliFailure> {
-    let store = open_store()?;
+    let Some(store) = open_read_only_store()? else {
+        return Ok(json!({"entries": [], "index_rebuild_required": false}));
+    };
     let listing = store.list().map_err(CliFailure::from_memory)?;
     let entries = listing
         .entries()
@@ -162,9 +169,20 @@ fn open_store() -> Result<Store, CliFailure> {
     Store::open(root).map_err(CliFailure::from_memory)
 }
 
+fn open_read_only_store() -> Result<Option<Store>, CliFailure> {
+    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
+    Store::open_read_only(root).map_err(CliFailure::from_memory)
+}
+
+fn open_retrieval_store() -> Result<Option<Store>, CliFailure> {
+    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
+    Store::open_for_retrieval(root).map_err(CliFailure::from_memory)
+}
+
 fn current_directory() -> Result<std::path::PathBuf, CliFailure> {
-    env::current_dir()
-        .map_err(|_| CliFailure::from_memory(MemoryError::new("scope_unavailable", "scope")))
+    env::current_dir().map_err(|_| {
+        CliFailure::from_memory(MemoryError::unavailable("scope_unavailable", "scope"))
+    })
 }
 
 fn scope_json(scope: &EntryScope) -> Value {

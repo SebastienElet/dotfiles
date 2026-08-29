@@ -4,18 +4,14 @@ mod commands;
 
 use arguments::Arguments;
 use boundary::write_json;
-use clap::Parser;
+use clap::{Parser, error::ErrorKind};
 use serde_json::json;
 use std::io;
 
 pub fn run_cli() -> u8 {
     let arguments = match Arguments::try_parse() {
         Ok(arguments) => arguments,
-        Err(error) => {
-            let exit = error.exit_code();
-            let _ = error.print();
-            return u8::try_from(exit).unwrap_or(2);
-        }
+        Err(error) => return report_argument_error(error),
     };
     let stdin = io::stdin();
     let mut input = stdin.lock();
@@ -28,6 +24,19 @@ pub fn run_cli() -> u8 {
         &mut output,
         &mut diagnostics,
     )
+}
+
+fn report_argument_error(error: clap::Error) -> u8 {
+    if matches!(
+        error.kind(),
+        ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+    ) {
+        let exit = error.exit_code();
+        let _ = error.print();
+        return u8::try_from(exit).unwrap_or(0);
+    }
+    let stderr = io::stderr();
+    write_failure(&mut stderr.lock(), CliFailure::invalid_arguments())
 }
 
 fn complete(
@@ -56,29 +65,22 @@ struct CliFailure {
 }
 
 impl CliFailure {
-    fn from_memory(error: crate::MemoryError) -> Self {
-        let exit = match error.code() {
-            "entry_conflict" | "entry_not_active" | "source_changed" => 3,
-            "adapter_unavailable"
-            | "memory_root_unavailable"
-            | "oracle_unavailable"
-            | "scope_unavailable"
-            | "source_unavailable"
-            | "stdin_unavailable"
-            | "store_unavailable"
-            | "unsafe_store_path" => 4,
-            _ => 2,
-        };
+    fn invalid_arguments() -> Self {
         Self {
-            exit,
-            code: error.code(),
-            field: error.field(),
+            exit: 2,
+            code: "invalid_arguments",
+            field: "arguments",
         }
     }
 
-    fn conflict(error: crate::MemoryError) -> Self {
+    fn from_memory(error: crate::MemoryError) -> Self {
+        let exit = match error.class() {
+            crate::MemoryErrorClass::Rejection => 2,
+            crate::MemoryErrorClass::Conflict => 3,
+            crate::MemoryErrorClass::Unavailable => 4,
+        };
         Self {
-            exit: 3,
+            exit,
             code: error.code(),
             field: error.field(),
         }

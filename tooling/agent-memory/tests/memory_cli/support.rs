@@ -1,6 +1,7 @@
 use serde_json::Value;
 use std::ffi::OsStr;
 use std::fs;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -35,6 +36,10 @@ impl CliFixture {
         .into_bytes()
     }
 
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
     pub fn run<const N: usize>(&self, arguments: [&str; N], stdin: &[u8]) -> Output {
         self.run_with_root(arguments, stdin, &self.root)
     }
@@ -56,6 +61,62 @@ impl CliFixture {
             .unwrap();
         std::io::Write::write_all(child.stdin.as_mut().unwrap(), stdin).unwrap();
         child.wait_with_output().unwrap()
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct TreeSnapshot(Vec<(PathBuf, u32, u64, Option<Vec<u8>>)>);
+
+pub fn tree_snapshot(root: &Path) -> TreeSnapshot {
+    let mut entries = Vec::new();
+    snapshot_entry(root, root, &mut entries);
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    TreeSnapshot(entries)
+}
+
+pub fn make_store_modes_non_private(root: &Path) {
+    let metadata = fs::symlink_metadata(root).unwrap();
+    let mode = if metadata.is_dir() { 0o755 } else { 0o644 };
+    fs::set_permissions(root, fs::Permissions::from_mode(mode)).unwrap();
+    if metadata.is_dir() {
+        for entry in fs::read_dir(root).unwrap() {
+            make_store_modes_non_private(&entry.unwrap().path());
+        }
+    }
+}
+
+pub fn only_yaml(root: &Path) -> PathBuf {
+    let mut yaml = Vec::new();
+    collect_yaml(root, &mut yaml);
+    assert_eq!(yaml.len(), 1);
+    yaml.pop().unwrap()
+}
+
+fn collect_yaml(path: &Path, yaml: &mut Vec<PathBuf>) {
+    let metadata = fs::symlink_metadata(path).unwrap();
+    if metadata.is_file() && path.extension() == Some(OsStr::new("yaml")) {
+        yaml.push(path.to_owned());
+    }
+    if metadata.is_dir() {
+        for entry in fs::read_dir(path).unwrap() {
+            collect_yaml(&entry.unwrap().path(), yaml);
+        }
+    }
+}
+
+fn snapshot_entry(
+    root: &Path,
+    path: &Path,
+    entries: &mut Vec<(PathBuf, u32, u64, Option<Vec<u8>>)>,
+) {
+    let metadata = fs::symlink_metadata(path).unwrap();
+    let relative = path.strip_prefix(root).unwrap().to_owned();
+    let bytes = metadata.is_file().then(|| fs::read(path).unwrap());
+    entries.push((relative, metadata.mode() & 0o777, metadata.ino(), bytes));
+    if metadata.is_dir() {
+        for entry in fs::read_dir(path).unwrap() {
+            snapshot_entry(root, &entry.unwrap().path(), entries);
+        }
     }
 }
 

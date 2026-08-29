@@ -1,6 +1,6 @@
 use super::component::{
     classify_path_error, ensure_single_link_regular, normal_components, open_directory_at,
-    private_directory_mode, private_file_mode, repair_mode, store_unavailable,
+    private_directory_mode, private_file_mode, repair_mode, store_unavailable, validate_mode,
 };
 use super::unsafe_path;
 use crate::memory::MemoryError;
@@ -80,7 +80,7 @@ impl ManagedPath {
     }
 
     pub(crate) fn ensure_same_file(&self, expected: &File) -> Result<(), MemoryError> {
-        let current = self.open_existing(OFlags::RDONLY)?;
+        let current = self.open_existing_for_identity()?;
         let expected_metadata = expected.metadata().map_err(store_unavailable)?;
         let current_metadata = current.metadata().map_err(store_unavailable)?;
         if expected_metadata.dev() != current_metadata.dev()
@@ -96,6 +96,20 @@ impl ManagedPath {
         let file = self.open_existing(OFlags::RDONLY)?;
         self.repair_private_file_mode(&file)?;
         Ok(file)
+    }
+
+    pub(crate) fn open_read_only(&self) -> Result<File, MemoryError> {
+        let file = self.open_existing(OFlags::RDONLY)?;
+        validate_mode(&file, private_file_mode())?;
+        Ok(file)
+    }
+
+    pub(crate) fn validate_directory(&self) -> Result<(), MemoryError> {
+        validate_mode(&self.open_directory()?, private_directory_mode())
+    }
+
+    pub(crate) fn repair_directory_mode(&self) -> Result<(), MemoryError> {
+        repair_mode(&self.open_directory()?, private_directory_mode(), false)
     }
 
     pub(crate) fn open_new(&self) -> Result<File, MemoryError> {
@@ -175,11 +189,26 @@ impl ManagedPath {
         Ok(file)
     }
 
+    fn open_existing_for_identity(&self) -> Result<File, MemoryError> {
+        let (directory, name) = self.parent_and_name()?;
+        let flags = OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
+        let file = rustix::fs::openat(directory, name, flags, Mode::empty())
+            .map(File::from)
+            .map_err(|error| {
+                if error == rustix::io::Errno::NOENT {
+                    unsafe_path()
+                } else {
+                    classify_path_error(error)
+                }
+            })?;
+        ensure_single_link_regular(&file)?;
+        Ok(file)
+    }
+
     fn open_directory(&self) -> Result<File, MemoryError> {
         let mut directory = self.root.try_clone().map_err(store_unavailable)?;
         for component in normal_components(&self.relative)? {
             directory = open_directory_at(&directory, component)?;
-            repair_mode(&directory, private_directory_mode(), false)?;
         }
         Ok(directory)
     }
@@ -190,7 +219,6 @@ impl ManagedPath {
         let mut directory = self.root.try_clone().map_err(store_unavailable)?;
         for component in components {
             directory = open_directory_at(&directory, component)?;
-            repair_mode(&directory, private_directory_mode(), false)?;
         }
         Ok((directory, name))
     }

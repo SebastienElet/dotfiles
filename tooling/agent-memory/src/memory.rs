@@ -9,11 +9,12 @@ mod path;
 mod process;
 mod search;
 mod sensitive;
+mod shell_command;
 mod source;
 mod store;
 mod validation;
 
-pub use error::MemoryError;
+pub use error::{MemoryError, MemoryErrorClass};
 pub use identity::{ProjectScope, resolve_project};
 pub use index::{Index, IndexDiagnostic, IndexLoad};
 pub use model::{

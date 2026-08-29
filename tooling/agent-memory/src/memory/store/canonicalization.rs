@@ -59,5 +59,5 @@ pub(super) fn transition_verdict_name(verdict: TransitionVerdict) -> &'static st
 }
 
 const fn store_error() -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }

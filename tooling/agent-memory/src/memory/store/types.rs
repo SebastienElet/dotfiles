@@ -86,7 +86,7 @@ impl StoreFailpoint {
                 barrier.wait();
                 Ok(())
             }
-            _ if self.matches(phase) => Err(MemoryError::new("store_unavailable", "store")),
+            _ if self.matches(phase) => Err(MemoryError::unavailable("store_unavailable", "store")),
             _ => Ok(()),
         }
     }

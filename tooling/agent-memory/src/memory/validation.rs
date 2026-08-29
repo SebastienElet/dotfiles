@@ -5,7 +5,7 @@ use super::model::{
     RawEntryScope, RetrievalTerm, SourceKind, Statement, UtcTimestamp, ValidatedDraft,
     ValidatedDraftProof, ValidatedDraftSource, ValidatedOracle,
 };
-use super::sensitive;
+use super::{sensitive, shell_command};
 use serde::de::DeserializeOwned;
 use serde_yaml_ng::{Mapping, Value};
 
@@ -42,14 +42,14 @@ pub fn validate_draft(
         return Err(MemoryError::new("missing_proof", "proof.sources"));
     }
     validate_text(&data.proof.summary, 1, 1000, "proof.summary")?;
-    reject_sensitive(&data.proof.summary, "proof.summary")?;
+    reject_persisted_text(&data.proof.summary, "proof.summary")?;
     let sources = data
         .proof
         .sources
         .into_iter()
         .map(|source| {
             let (kind, locator) = source.split();
-            reject_sensitive(&locator, "proof.sources.locator")?;
+            reject_persisted_text(&locator, "proof.sources.locator")?;
             Ok(ValidatedDraftSource::new(kind, locator))
         })
         .collect::<Result<Vec<_>, MemoryError>>()?;
@@ -126,13 +126,13 @@ fn validated_entry_proof(proof: super::model::RawEntryProof) -> Result<EntryProo
         return Err(MemoryError::new("missing_proof", "proof.sources"));
     }
     validate_text(&proof.summary, 1, 1000, "proof.summary")?;
-    reject_sensitive(&proof.summary, "proof.summary")?;
+    reject_persisted_text(&proof.summary, "proof.summary")?;
     let sources = proof
         .sources
         .into_iter()
         .map(|source| {
             let (kind, locator, fingerprint_value) = source.split();
-            reject_sensitive(&locator, "proof.sources.locator")?;
+            reject_persisted_text(&locator, "proof.sources.locator")?;
             Ok(EntrySource::new(
                 kind,
                 locator,
@@ -168,7 +168,7 @@ pub(crate) fn validate_transition_reason(value: &str) -> Result<(), MemoryError>
         ));
     }
     validate_text(value, 1, 500, "transition.reason")?;
-    reject_sensitive(value, "transition.reason")
+    reject_persisted_text(value, "transition.reason")
 }
 
 fn validated_oracle(oracle: super::model::RawOracle) -> Result<ValidatedOracle, MemoryError> {
@@ -186,7 +186,7 @@ fn validated_oracle(oracle: super::model::RawOracle) -> Result<ValidatedOracle, 
     ];
     for (field, value) in text_fields {
         validate_text(value, 1, 500, field)?;
-        reject_sensitive(value, field)?;
+        reject_persisted_text(value, field)?;
     }
     Ok(ValidatedOracle::new(
         oracle.automated,
@@ -320,7 +320,7 @@ fn status_allowed(kind: &str, status: &str) -> bool {
 
 fn statement(value: String) -> Result<Statement, MemoryError> {
     validate_text(&value, 1, 500, "statement")?;
-    reject_sensitive(&value, "statement")?;
+    reject_persisted_text(&value, "statement")?;
     Ok(Statement::from_validated(value))
 }
 
@@ -333,7 +333,7 @@ fn retrieval_terms(values: Vec<String>) -> Result<Vec<RetrievalTerm>, MemoryErro
         .into_iter()
         .map(|value| {
             validate_text(&value, 1, 100, "retrieval_terms")?;
-            reject_sensitive(&value, "retrieval_terms")?;
+            reject_persisted_text(&value, "retrieval_terms")?;
             Ok(RetrievalTerm::from_validated(value))
         })
         .collect()
@@ -487,6 +487,15 @@ fn validate_oracle_requirement(
 fn reject_sensitive(value: &str, field: &'static str) -> Result<(), MemoryError> {
     if sensitive::contains_sensitive(value) {
         Err(MemoryError::new("sensitive_content", field))
+    } else {
+        Ok(())
+    }
+}
+
+fn reject_persisted_text(value: &str, field: &'static str) -> Result<(), MemoryError> {
+    reject_sensitive(value, field)?;
+    if shell_command::contains_shell_command(value) {
+        Err(MemoryError::new("shell_command", field))
     } else {
         Ok(())
     }

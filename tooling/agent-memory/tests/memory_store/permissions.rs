@@ -1,7 +1,7 @@
 use super::support::*;
 
 #[test]
-fn open_list_and_admit_repair_existing_entry_and_scope_modes() {
+fn open_repairs_existing_entry_and_scope_modes() {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");
     let store = Store::open(memory_root(&root)).unwrap();
@@ -35,22 +35,7 @@ fn open_list_and_admit_repair_existing_entry_and_scope_modes() {
     expose(&directory, &yaml);
     let reopened = Store::open(memory_root(&root)).unwrap();
     assert_private(&directory, &yaml);
-
-    expose(&directory, &yaml);
     assert_eq!(reopened.list().unwrap().entries().len(), 1);
-    assert_private(&directory, &yaml);
-
-    expose(&directory, &yaml);
-    match reopened.admit(
-        resolved(&draft, &context),
-        Some(&project),
-        &timestamp,
-        &context,
-    ) {
-        AdmissionResult::Duplicate { id: duplicate } => assert_eq!(duplicate.as_str(), id),
-        result => panic!("unexpected admission result: {result:?}"),
-    }
-    assert_private(&directory, &yaml);
 }
 
 fn expose(directory: &Path, yaml: &Path) {

@@ -1,6 +1,7 @@
 pub use agent_memory::{
     AdmissionAuthorization, AdmissionContext, AdmissionResult, Clock, EntryScope, MemoryRoot,
     Store, StoreFailpoint, SystemProcessRunner, UtcTimestamp, admit, parse_utc_timestamp,
+    prepare_admission,
 };
 pub use std::fs;
 use std::path::Path;

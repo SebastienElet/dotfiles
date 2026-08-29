@@ -6,7 +6,7 @@ mod access;
 mod component;
 
 pub(crate) use access::ManagedPath;
-pub(crate) use component::open_root;
+pub(crate) use component::{open_existing_root, open_root};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MemoryRoot(PathBuf);
@@ -17,7 +17,7 @@ impl MemoryRoot {
             Some(path) => Self::new(PathBuf::from(path)),
             None => {
                 let home = env::var_os("HOME")
-                    .ok_or_else(|| MemoryError::new("memory_root_unavailable", "store"))?;
+                    .ok_or_else(|| MemoryError::unavailable("memory_root_unavailable", "store"))?;
                 Self::new(PathBuf::from(home).join(".local/share/agent-memory"))
             }
         }
@@ -58,9 +58,9 @@ fn resolve_missing_parent(path: &Path) -> Result<PathBuf, MemoryError> {
 }
 
 const fn unsafe_path() -> MemoryError {
-    MemoryError::new("unsafe_store_path", "store")
+    MemoryError::unavailable("unsafe_store_path", "store")
 }
 
 fn store_unavailable(_: std::io::Error) -> MemoryError {
-    MemoryError::new("store_unavailable", "store")
+    MemoryError::unavailable("store_unavailable", "store")
 }
