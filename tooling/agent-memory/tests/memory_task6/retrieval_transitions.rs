@@ -1,8 +1,7 @@
 use super::support::*;
 use agent_memory::{
-    HumanConclusion, OmissionEffect, OracleEnvironment, ProofAnswers, RetrievalContext,
-    RetrievalRequest, SourceResolution, Status, TransitionContext, TransitionVerdict, confirm,
-    retrieve,
+    HumanConclusion, OmissionEffect, OracleEnvironment, RetrievalContext, RetrievalRequest,
+    SourceResolution, Status, TransitionContext, TransitionVerdict, confirm, retrieve,
 };
 use std::fs;
 
@@ -216,36 +215,4 @@ fn unavailable_and_needs_confirmation_leave_yaml_byte_identical() {
         assert!(report.omitted[0].question.is_some());
         assert_eq!(fs::read(path).unwrap(), before);
     }
-}
-
-#[test]
-fn proof_valid_answers_enable_injection_without_creating_a_transition() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
-    let yaml = entry_yaml(
-        'c',
-        "invariant",
-        &[SourceFixture {
-            kind: "user-decision",
-            locator: "decision:fallback",
-            fingerprint: 'c',
-        }],
-    );
-    write_user_entry(&root, 'c', &yaml);
-    let key = project_key(fixture.path());
-    let selection = select(&store, &key, 5);
-    let mut answers = ProofAnswers::new();
-    answers.insert_valid("mem_cccccccccccccccccccccccc");
-    let resolver = FakeResolver::with_responses([]);
-    let clock = FixedClock::at("2026-08-28T01:00:00Z");
-    let report = retrieve(
-        RetrievalRequest::new(&selection, &key, true),
-        RetrievalContext::new(&store, &clock, &resolver, environment())
-            .with_proof_answers(&answers),
-    );
-
-    assert_eq!(report.injected.len(), 1);
-    let stored = store.load("mem_cccccccccccccccccccccccc").unwrap().unwrap();
-    assert_eq!(stored.status(), Status::Active);
-    assert!(stored.transition().is_none());
 }

@@ -3,11 +3,11 @@ mod transition;
 
 use super::validation::validate_transition_reason;
 use super::{
-    Clock, MemoryError, MemoryKind, OracleEnvironment, ProjectKey, SearchSelection, SourceKind,
-    SourceResolver, Status, Store,
+    Clock, MemoryError, MemoryKind, OracleEnvironment, ProjectKey, ProofValid, SearchSelection,
+    SourceKind, SourceResolver, Status, Store,
 };
 pub use operation::retrieve;
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 pub use transition::confirm;
 
 #[derive(Debug)]
@@ -95,7 +95,7 @@ impl TransitionResult {
 
 #[derive(Default)]
 pub struct ProofAnswers {
-    valid: BTreeSet<String>,
+    valid: BTreeMap<String, ProofValid>,
 }
 
 impl ProofAnswers {
@@ -103,12 +103,12 @@ impl ProofAnswers {
         Self::default()
     }
 
-    pub fn insert_valid(&mut self, entry_id: impl Into<String>) {
-        self.valid.insert(entry_id.into());
+    pub fn insert(&mut self, answer: ProofValid) {
+        self.valid.insert(answer.entry_id().to_owned(), answer);
     }
 
-    fn confirms(&self, entry_id: &str) -> bool {
-        self.valid.contains(entry_id)
+    fn for_entry(&self, entry_id: &str) -> Option<&ProofValid> {
+        self.valid.get(entry_id)
     }
 }
 
@@ -161,9 +161,9 @@ impl<'a> RetrievalContext<'a> {
         self
     }
 
-    fn proof_valid(&self, entry_id: &str) -> bool {
+    fn proof_valid(&self, entry_id: &str) -> Option<&ProofValid> {
         self.proof_answers
-            .is_some_and(|answers| answers.confirms(entry_id))
+            .and_then(|answers| answers.for_entry(entry_id))
     }
 }
 

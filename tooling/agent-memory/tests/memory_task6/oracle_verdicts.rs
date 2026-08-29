@@ -46,14 +46,17 @@ fn persists_only_valid_verdicts_with_canonical_ordered_cache_fields() {
         record["source_fingerprints"][1]["fingerprint"],
         fingerprint('b')
     );
-    assert!(record.get("locator").is_none());
-    for field in ["oracle_digest", "proof_digest"] {
-        assert!(
-            record[field]
-                .as_str()
-                .is_some_and(|value| value.starts_with("sha256:") && value.len() == 71)
-        );
-    }
+    assert_eq!(
+        record["oracle_digest"],
+        "sha256:92c5240dc81207720563324941353993080e84180b689efc52af46840add96c9"
+    );
+    assert_eq!(
+        record["proof_digest"],
+        "sha256:625882fbac49144bea8bd2b2d9079b287544e53a02cab481bc49a4d199bff679"
+    );
+    let serialized = serde_json::to_string(&cache).unwrap();
+    assert!(!serialized.contains("https://docs.example.test/first"));
+    assert!(!serialized.contains("/tmp/second"));
 }
 
 #[test]

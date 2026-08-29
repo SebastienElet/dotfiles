@@ -23,8 +23,8 @@ pub use model::{
     ValidatedDraft, ValidatedDraftProof, ValidatedDraftSource, ValidatedOracle,
 };
 pub use oracle::{
-    OracleContext, OracleEnvironment, OracleEvaluation, SourceResolution, SourceResolver,
-    evaluate_oracle,
+    OracleContext, OracleEnvironment, OracleEvaluation, ProofValid, SourceResolution,
+    SourceResolver, evaluate_oracle,
 };
 pub use path::MemoryRoot;
 pub use process::{ProcessOutput, ProcessRunner, SystemProcessRunner};

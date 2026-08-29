@@ -219,10 +219,14 @@ fn parse_entry_refuses_sensitive_content_in_entry_only_sinks() {
 
 #[test]
 fn enforces_transition_reason_boundaries() {
-    assert_eq!(
-        parse_entry(&valid_terminal_entry("")).unwrap_err().code(),
-        "invalid_field"
-    );
+    for reason in ["", "   "] {
+        assert_eq!(
+            parse_entry(&valid_terminal_entry(reason))
+                .unwrap_err()
+                .code(),
+            "invalid_transition_reason"
+        );
+    }
     assert!(parse_entry(&valid_terminal_entry(&"r".repeat(500))).is_ok());
     assert_eq!(
         parse_entry(&valid_terminal_entry(&"r".repeat(501)))

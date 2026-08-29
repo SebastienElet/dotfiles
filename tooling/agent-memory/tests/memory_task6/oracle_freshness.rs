@@ -1,5 +1,5 @@
 use super::support::*;
-use agent_memory::{OracleContext, OracleVerdict, SourceResolution, evaluate_oracle};
+use agent_memory::{OracleContext, OracleVerdict, ProofValid, SourceResolution, evaluate_oracle};
 
 #[test]
 fn revalidates_local_sources_but_does_not_refetch_a_fresh_url() {
@@ -26,9 +26,10 @@ fn revalidates_local_sources_but_does_not_refetch_a_fresh_url() {
     );
     let changed_local = FakeResolver::with_responses([valid('b')]);
     let later = FixedClock::at("2026-08-28T01:00:00Z");
+    let answer = ProofValid::new(local.id().as_str()).unwrap();
     let changed = evaluate_oracle(
         &local,
-        OracleContext::new(&store, &later, &changed_local, environment()),
+        OracleContext::new(&store, &later, &changed_local, environment()).with_proof_valid(&answer),
     );
     assert_eq!(changed.verdict(), OracleVerdict::Invalid);
 
@@ -84,12 +85,30 @@ fn expires_a_remote_verdict_and_accepts_only_an_explicit_proof_fallback() {
     assert_eq!(omitted.verdict(), OracleVerdict::Unavailable);
 
     let unavailable = FakeResolver::with_responses([SourceResolution::Unavailable]);
+    let wrong_answer = ProofValid::new("mem_ffffffffffffffffffffffff").unwrap();
+    let still_omitted = evaluate_oracle(
+        &remote,
+        OracleContext::new(&store, &expired, &unavailable, environment())
+            .with_proof_valid(&wrong_answer),
+    );
+    assert_eq!(still_omitted.verdict(), OracleVerdict::Unavailable);
+
+    let unavailable = FakeResolver::with_responses([SourceResolution::Unavailable]);
+    let answer = ProofValid::new(remote.id().as_str()).unwrap();
     let fallback = evaluate_oracle(
         &remote,
-        OracleContext::new(&store, &expired, &unavailable, environment()).with_proof_valid(),
+        OracleContext::new(&store, &expired, &unavailable, environment()).with_proof_valid(&answer),
     );
     assert_eq!(fallback.verdict(), OracleVerdict::Valid);
     assert!(!fallback.from_cache());
+}
+
+#[test]
+fn proof_valid_refuses_an_invalid_entry_id() {
+    assert_eq!(
+        ProofValid::new("not-a-memory-id").unwrap_err().code(),
+        "invalid_memory_id"
+    );
 }
 
 #[test]

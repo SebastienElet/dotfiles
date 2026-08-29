@@ -54,8 +54,8 @@ fn retrieve_selected(
         context.resolver,
         context.environment.clone(),
     );
-    if context.proof_valid(entry.id().as_str()) {
-        oracle = oracle.with_proof_valid();
+    if let Some(answer) = context.proof_valid(entry.id().as_str()) {
+        oracle = oracle.with_proof_valid(answer);
     }
     let evaluation = evaluate_oracle(&entry, oracle);
     apply_evaluation(entry, evaluation, context, report);

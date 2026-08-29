@@ -1,5 +1,6 @@
 use super::support::*;
 use agent_memory::{OracleContext, OracleVerdict, SourceResolution, evaluate_oracle};
+use std::fs;
 
 fn remote_entry() -> agent_memory::MemoryEntry {
     entry(
@@ -64,6 +65,32 @@ fn cache_timestamp_in_the_future_is_always_a_miss() {
 
     assert_eq!(evaluation.verdict(), OracleVerdict::Unavailable);
     assert!(!evaluation.from_cache());
+}
+
+#[test]
+fn malformed_timestamps_and_non_valid_verdicts_are_cache_misses() {
+    for (field, replacement) in [("validated_at", "not-a-timestamp"), ("verdict", "invalid")] {
+        let fixture = tempfile::tempdir().unwrap();
+        let (root, store) = open_store(fixture.path());
+        let entry = remote_entry();
+        prime(&store, &entry);
+        let mut cache = cache_json(&root);
+        cache["entries"][0][field] = replacement.into();
+        fs::write(
+            root.join("oracle-cache.json"),
+            serde_json::to_vec_pretty(&cache).unwrap(),
+        )
+        .unwrap();
+        let resolver = FakeResolver::with_responses([SourceResolution::Unavailable]);
+        let clock = FixedClock::at("2026-08-28T01:00:00Z");
+        let evaluation = evaluate_oracle(
+            &entry,
+            OracleContext::new(&store, &clock, &resolver, environment()),
+        );
+
+        assert_eq!(evaluation.verdict(), OracleVerdict::Unavailable, "{field}");
+        assert!(!evaluation.from_cache(), "{field}");
+    }
 }
 
 #[test]

@@ -1,7 +1,7 @@
 use super::support::*;
 use agent_memory::{
-    MemoryKind, OmissionEffect, ProofAnswers, RetrievalContext, RetrievalRequest, SourceKind,
-    SourceSummary, Store, StoreFailpoint, retrieve,
+    MemoryKind, OmissionEffect, ProofAnswers, ProofValid, RetrievalContext, RetrievalRequest,
+    SourceKind, SourceSummary, Store, StoreFailpoint, retrieve,
 };
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -27,7 +27,7 @@ fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() 
             },
             SourceFixture {
                 kind: "official-url",
-                locator: "https://docs.example.test/rules?private=query",
+                locator: "https://docs.example.test/rules?private=query#private-fragment",
                 fingerprint: 'c',
             },
             SourceFixture {
@@ -66,6 +66,7 @@ fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() 
     assert!(!diagnostic.contains("/Users/private/proof"));
     assert!(!diagnostic.contains("decision:private-body"));
     assert!(!diagnostic.contains("private=query"));
+    assert!(!diagnostic.contains("private-fragment"));
 }
 
 #[test]
@@ -90,7 +91,7 @@ fn preserves_search_limit_omissions_and_loads_no_unselected_yaml() {
     assert_eq!(selection.omitted_by_limit, 1);
     let mut answers = ProofAnswers::new();
     for selected in &selection.selected {
-        answers.insert_valid(&selected.entry_id);
+        answers.insert(ProofValid::new(&selected.entry_id).unwrap());
     }
     let unselected = root.join("entries/user/mem_666666666666666666666666.yaml");
     fs::write(&unselected, b"unreadable unselected yaml").unwrap();

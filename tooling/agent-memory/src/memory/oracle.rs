@@ -1,6 +1,9 @@
 use super::cache::CacheRecord;
 pub use super::cache::OracleEnvironment;
-use super::{Clock, EntrySource, MemoryEntry, OracleVerdict, SourceKind, Store, UtcTimestamp};
+use super::store::inventory::valid_memory_id;
+use super::{
+    Clock, EntrySource, MemoryEntry, MemoryError, OracleVerdict, SourceKind, Store, UtcTimestamp,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SourceResolution {
@@ -13,12 +16,35 @@ pub trait SourceResolver {
     fn resolve(&self, source: &EntrySource) -> SourceResolution;
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct ProofValid {
+    entry_id: String,
+}
+
+impl ProofValid {
+    pub fn new(entry_id: impl Into<String>) -> Result<Self, MemoryError> {
+        let entry_id = entry_id.into();
+        if !valid_memory_id(&entry_id) {
+            return Err(MemoryError::new("invalid_memory_id", "id"));
+        }
+        Ok(Self { entry_id })
+    }
+
+    pub(crate) fn entry_id(&self) -> &str {
+        &self.entry_id
+    }
+
+    fn confirms(&self, entry: &MemoryEntry) -> bool {
+        self.entry_id == entry.id().as_str()
+    }
+}
+
 pub struct OracleContext<'a> {
     store: &'a Store,
     clock: &'a dyn Clock,
     resolver: &'a dyn SourceResolver,
     environment: OracleEnvironment,
-    proof_valid: bool,
+    proof_valid: Option<&'a ProofValid>,
 }
 
 impl<'a> OracleContext<'a> {
@@ -33,12 +59,12 @@ impl<'a> OracleContext<'a> {
             clock,
             resolver,
             environment,
-            proof_valid: false,
+            proof_valid: None,
         }
     }
 
-    pub fn with_proof_valid(mut self) -> Self {
-        self.proof_valid = true;
+    pub fn with_proof_valid(mut self, answer: &'a ProofValid) -> Self {
+        self.proof_valid = Some(answer);
         self
     }
 }
@@ -96,7 +122,10 @@ fn fallback(
     now: UtcTimestamp,
     without_answer: OracleVerdict,
 ) -> OracleEvaluation {
-    if context.proof_valid {
+    if context
+        .proof_valid
+        .is_some_and(|answer| answer.confirms(entry))
+    {
         valid(entry, context, now)
     } else {
         transient(without_answer)
