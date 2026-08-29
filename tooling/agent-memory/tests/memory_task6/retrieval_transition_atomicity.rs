@@ -1,6 +1,30 @@
 use super::support::*;
-use agent_memory::{HumanConclusion, Status, Store, TransitionContext, confirm};
+use agent_memory::{
+    Clock, HumanConclusion, Status, Store, TransitionContext, UtcTimestamp, confirm,
+    parse_utc_timestamp,
+};
 use std::sync::{Arc, Barrier};
+
+struct SynchronizedClock {
+    barrier: Arc<Barrier>,
+    timestamp: UtcTimestamp,
+}
+
+impl SynchronizedClock {
+    fn at(timestamp: &str, barrier: Arc<Barrier>) -> Self {
+        Self {
+            barrier,
+            timestamp: parse_utc_timestamp(timestamp).unwrap(),
+        }
+    }
+}
+
+impl Clock for SynchronizedClock {
+    fn now(&self) -> UtcTimestamp {
+        self.barrier.wait();
+        self.timestamp.clone()
+    }
+}
 
 #[test]
 fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
@@ -16,17 +40,16 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
         }],
     );
     write_user_entry(&root, 'd', &yaml);
-    let barrier = Arc::new(Barrier::new(3));
+    let loaded_active = Arc::new(Barrier::new(3));
     let id = "mem_dddddddddddddddddddddddd";
     let attempts = [
         (Status::Achieved, true, "Goal achieved."),
         (Status::Abandoned, false, "Goal abandoned."),
     ]
     .map(|(status, achieved, reason)| {
-        let worker_barrier = Arc::clone(&barrier);
+        let worker_barrier = Arc::clone(&loaded_active);
         let worker_store = Store::open(memory_root(&root)).unwrap();
         std::thread::spawn(move || {
-            worker_barrier.wait();
             let conclusion = if achieved {
                 HumanConclusion::goal_achieved(reason)
             } else {
@@ -38,12 +61,15 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
                 confirm(
                     id,
                     conclusion,
-                    TransitionContext::new(&worker_store, &FixedClock::at("2026-08-28T01:00:00Z")),
+                    TransitionContext::new(
+                        &worker_store,
+                        &SynchronizedClock::at("2026-08-28T01:00:00Z", worker_barrier),
+                    ),
                 ),
             )
         })
     });
-    barrier.wait();
+    loaded_active.wait();
     let results = attempts.map(|attempt| attempt.join().unwrap());
     let success = results
         .iter()

@@ -73,6 +73,7 @@ impl<'a> OracleContext<'a> {
 pub struct OracleEvaluation {
     verdict: OracleVerdict,
     validated_at: Option<UtcTimestamp>,
+    evaluated_at: UtcTimestamp,
     from_cache: bool,
 }
 
@@ -83,6 +84,10 @@ impl OracleEvaluation {
 
     pub fn validated_at(&self) -> Option<&UtcTimestamp> {
         self.validated_at.as_ref()
+    }
+
+    pub(crate) fn evaluated_at(&self) -> &UtcTimestamp {
+        &self.evaluated_at
     }
 
     pub fn from_cache(&self) -> bool {
@@ -98,9 +103,9 @@ pub fn evaluate_oracle(entry: &MemoryEntry, context: OracleContext<'_>) -> Oracl
     {
         match evaluate_sources(entry, context.resolver, true) {
             SourceVerdict::Valid => {
-                return evaluation(OracleVerdict::Valid, cached.validated_at(), true);
+                return evaluation(OracleVerdict::Valid, cached.validated_at(), now, true);
             }
-            SourceVerdict::Invalid => return transient(OracleVerdict::Invalid),
+            SourceVerdict::Invalid => return transient(OracleVerdict::Invalid, now),
             SourceVerdict::Unavailable => {
                 return fallback(entry, &context, now, OracleVerdict::Unavailable);
             }
@@ -111,7 +116,7 @@ pub fn evaluate_oracle(entry: &MemoryEntry, context: OracleContext<'_>) -> Oracl
     }
     match evaluate_sources(entry, context.resolver, false) {
         SourceVerdict::Valid => valid(entry, &context, now),
-        SourceVerdict::Invalid => transient(OracleVerdict::Invalid),
+        SourceVerdict::Invalid => transient(OracleVerdict::Invalid, now),
         SourceVerdict::Unavailable => fallback(entry, &context, now, OracleVerdict::Unavailable),
     }
 }
@@ -128,7 +133,7 @@ fn fallback(
     {
         valid(entry, context, now)
     } else {
-        transient(without_answer)
+        transient(without_answer, now)
     }
 }
 
@@ -136,21 +141,23 @@ fn valid(entry: &MemoryEntry, context: &OracleContext<'_>, now: UtcTimestamp) ->
     if let Ok(record) = CacheRecord::new(entry, &now, &context.environment) {
         let _ = context.store.persist_validity(record);
     }
-    evaluation(OracleVerdict::Valid, Some(now), false)
+    evaluation(OracleVerdict::Valid, Some(now.clone()), now, false)
 }
 
-fn transient(verdict: OracleVerdict) -> OracleEvaluation {
-    evaluation(verdict, None, false)
+fn transient(verdict: OracleVerdict, evaluated_at: UtcTimestamp) -> OracleEvaluation {
+    evaluation(verdict, None, evaluated_at, false)
 }
 
 fn evaluation(
     verdict: OracleVerdict,
     validated_at: Option<UtcTimestamp>,
+    evaluated_at: UtcTimestamp,
     from_cache: bool,
 ) -> OracleEvaluation {
     OracleEvaluation {
         verdict,
         validated_at,
+        evaluated_at,
         from_cache,
     }
 }

@@ -4,8 +4,8 @@ use super::{
 };
 use crate::memory::clock::timestamp;
 use crate::memory::{
-    EntryScope, MemoryEntry, OracleContext, OracleEvaluation, OracleVerdict, SelectedMemory,
-    SourceKind, Status, TransitionVerdict, UtcTimestamp, evaluate_oracle,
+    EntryScope, MemoryEntry, MemoryError, OracleContext, OracleEvaluation, OracleVerdict,
+    SelectedMemory, SourceKind, Status, TransitionVerdict, evaluate_oracle,
 };
 use url::Url;
 
@@ -58,7 +58,33 @@ fn retrieve_selected(
         oracle = oracle.with_proof_valid(answer);
     }
     let evaluation = evaluate_oracle(&entry, oracle);
+    if evaluation.verdict() == OracleVerdict::Valid {
+        match revalidate_before_injection(selected, request, context) {
+            Ok(true) => {}
+            Ok(false) => {
+                report
+                    .omitted
+                    .push(omission(entry.id().as_str(), "selection_stale", None));
+                return;
+            }
+            Err(error) => {
+                report
+                    .omitted
+                    .push(omission(entry.id().as_str(), error.code(), None));
+                return;
+            }
+        }
+    }
     apply_evaluation(entry, evaluation, context, report);
+}
+
+fn revalidate_before_injection(
+    selected: &SelectedMemory,
+    request: &RetrievalRequest<'_>,
+    context: &RetrievalContext<'_>,
+) -> Result<bool, MemoryError> {
+    let entry = context.store.load_selected(selected)?;
+    Ok(entry.status() == Status::Active && in_scope(entry.scope(), request))
 }
 
 fn apply_evaluation(
@@ -68,13 +94,13 @@ fn apply_evaluation(
     report: &mut RetrievalReport,
 ) {
     match evaluation.verdict() {
-        OracleVerdict::Valid => match injected(&entry, &evaluation, context.clock.now()) {
+        OracleVerdict::Valid => match injected(&entry, &evaluation) {
             Some(injected) => report.injected.push(injected),
             None => report
                 .omitted
                 .push(omission(entry.id().as_str(), "oracle_unavailable", None)),
         },
-        OracleVerdict::Invalid => invalidate(entry, context, report),
+        OracleVerdict::Invalid => invalidate(entry, &evaluation, context, report),
         OracleVerdict::Unavailable => report.omitted.push(omission(
             entry.id().as_str(),
             "oracle_unavailable",
@@ -88,13 +114,9 @@ fn apply_evaluation(
     }
 }
 
-fn injected(
-    entry: &MemoryEntry,
-    evaluation: &OracleEvaluation,
-    now: UtcTimestamp,
-) -> Option<InjectedMemory> {
+fn injected(entry: &MemoryEntry, evaluation: &OracleEvaluation) -> Option<InjectedMemory> {
     let validated_at = timestamp(evaluation.validated_at()?)?;
-    let now = timestamp(&now)?;
+    let now = timestamp(evaluation.evaluated_at())?;
     let age = now.duration_since(validated_at);
     let verdict_age_milliseconds = u64::try_from(age.as_millis()).ok()?;
     Some(InjectedMemory {
@@ -128,12 +150,17 @@ fn source_summaries(entry: &MemoryEntry) -> Option<Vec<SourceSummary>> {
         .collect()
 }
 
-fn invalidate(entry: MemoryEntry, context: &RetrievalContext<'_>, report: &mut RetrievalReport) {
+fn invalidate(
+    entry: MemoryEntry,
+    evaluation: &OracleEvaluation,
+    context: &RetrievalContext<'_>,
+    report: &mut RetrievalReport,
+) {
     let id = entry.id().as_str().to_owned();
     let reason = entry.oracle().invalidated_outcome().to_owned();
     let terminal = entry.into_transition(
         Status::Invalidated,
-        context.clock.now(),
+        evaluation.evaluated_at().clone(),
         TransitionVerdict::Invalid,
         reason,
     );
