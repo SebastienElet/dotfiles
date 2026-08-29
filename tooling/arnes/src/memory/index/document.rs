@@ -1,13 +1,12 @@
-use super::IndexDiagnostic;
+mod diagnostics;
+
 use super::inventory::{InventoryItem, inventory_digest};
 use crate::memory::MemoryError;
-use crate::memory::path::ManagedPath;
 use crate::memory::search::normalized_tokens;
 use crate::memory::store::document::{StoredEntry, StoredScope};
 use crate::memory::store::inventory::{valid_memory_id, valid_project_key};
+pub(super) use diagnostics::{IndexDiagnostics, diagnostic_scope};
 use serde::{Deserialize, Serialize};
-use std::fs::Metadata;
-use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -16,18 +15,18 @@ pub(super) struct IndexDocument {
     schema_version: u8,
     inventory_digest: String,
     pub(super) entries: Vec<IndexRow>,
-    pub(super) diagnostics: Vec<IndexDiagnostic>,
+    pub(super) diagnostics: IndexDiagnostics,
 }
 
 impl IndexDocument {
     pub(super) fn empty() -> Result<Self, MemoryError> {
-        Self::with_inventory(Vec::new(), &[], Vec::new())
+        Self::with_inventory(Vec::new(), &[], IndexDiagnostics::default())
     }
 
     pub(super) fn with_inventory(
         entries: Vec<IndexRow>,
         inventory: &[InventoryItem],
-        diagnostics: Vec<IndexDiagnostic>,
+        diagnostics: IndexDiagnostics,
     ) -> Result<Self, MemoryError> {
         Ok(Self {
             schema_version: 1,
@@ -45,25 +44,13 @@ impl IndexDocument {
                 .windows(2)
                 .all(|rows| rows[0].path < rows[1].path)
             && self.entries.iter().all(|row| row.valid_for(inventory))
-            && self.diagnostics.windows(2).all(|diagnostics| {
-                diagnostic_key(&diagnostics[0]) < diagnostic_key(&diagnostics[1])
-            })
-            && self.diagnostics.iter().all(valid_diagnostic)
+            && self.diagnostics.valid()
             && self.entries.len() + self.diagnostics.len() == inventory.len()
             && inventory.iter().all(|item| self.represents(item))
     }
 
     fn represents(&self, item: &InventoryItem) -> bool {
-        self.entries.iter().any(|row| row.path == item.path)
-            || item
-                .path
-                .strip_suffix(".yaml")
-                .and_then(|path| path.rsplit('/').next())
-                .is_some_and(|id| {
-                    self.diagnostics
-                        .iter()
-                        .any(|diagnostic| diagnostic.entry_id == id)
-                })
+        self.entries.iter().any(|row| row.path == item.path) || self.diagnostics.represents(item)
     }
 }
 
@@ -83,15 +70,11 @@ pub(crate) struct IndexRow {
 }
 
 impl IndexRow {
-    pub(super) fn new(
-        entry: &StoredEntry,
-        path: &ManagedPath,
-        metadata: &Metadata,
-    ) -> Result<Self, MemoryError> {
+    pub(super) fn new(entry: &StoredEntry, item: &InventoryItem) -> Self {
         let mut statement_tokens = normalized_tokens(&entry.statement);
         statement_tokens.sort();
         statement_tokens.dedup();
-        Ok(Self {
+        Self {
             id: entry.id.clone(),
             kind: entry.kind.clone(),
             status: entry.status.clone(),
@@ -99,10 +82,10 @@ impl IndexRow {
             retrieval_terms: entry.retrieval_terms.clone(),
             statement_tokens,
             summary: entry.proof.summary.chars().take(160).collect(),
-            path: relative_string(path.relative())?,
-            length: metadata.len(),
-            modified_ns: modified_ns(metadata)?,
-        })
+            path: item.path.clone(),
+            length: item.length,
+            modified_ns: item.modified_ns,
+        }
     }
 
     fn valid_for(&self, inventory: &[InventoryItem]) -> bool {
@@ -110,7 +93,7 @@ impl IndexRow {
             && valid_memory_id(&self.id)
             && valid_kind(&self.kind)
             && self.valid_scope_and_path()
-            && !self.retrieval_terms.is_empty()
+            && valid_retrieval_terms(&self.retrieval_terms)
             && self.summary.chars().count() <= 160
             && valid_statement_tokens(&self.statement_tokens)
             && inventory.iter().any(|item| {
@@ -141,19 +124,18 @@ pub(super) fn relative_string(path: &Path) -> Result<String, MemoryError> {
     path.to_str().map(str::to_owned).ok_or_else(unsafe_path)
 }
 
-fn modified_ns(metadata: &Metadata) -> Result<i64, MemoryError> {
-    metadata
-        .mtime()
-        .checked_mul(1_000_000_000)
-        .and_then(|seconds| seconds.checked_add(metadata.mtime_nsec()))
-        .ok_or_else(store_error)
-}
-
 fn valid_kind(kind: &str) -> bool {
     matches!(
         kind,
         "goal" | "decision" | "evidence" | "invariant" | "unknown" | "assumption"
     )
+}
+
+fn valid_retrieval_terms(terms: &[String]) -> bool {
+    (1..=20).contains(&terms.len())
+        && terms
+            .iter()
+            .all(|term| (1..=100).contains(&term.chars().count()))
 }
 
 fn valid_statement_tokens(tokens: &[String]) -> bool {
@@ -162,21 +144,6 @@ fn valid_statement_tokens(tokens: &[String]) -> bool {
             let normalized = normalized_tokens(token);
             normalized.len() == 1 && normalized[0] == *token
         })
-}
-
-fn valid_diagnostic(diagnostic: &IndexDiagnostic) -> bool {
-    valid_memory_id(&diagnostic.entry_id)
-        && diagnostic.effect == "omitted"
-        && !diagnostic.check.is_empty()
-        && diagnostic.check.len() <= 64
-        && diagnostic
-            .check
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte == b'_')
-}
-
-fn diagnostic_key(diagnostic: &IndexDiagnostic) -> (&str, &str, &str) {
-    (&diagnostic.entry_id, &diagnostic.check, &diagnostic.effect)
 }
 
 const fn store_error() -> MemoryError {

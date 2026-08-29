@@ -31,6 +31,63 @@ fn lists_yaml_authority_when_the_index_is_corrupt_or_larger_than_one_mibibyte() 
 }
 
 #[test]
+fn admission_omits_malformed_and_future_yaml_from_the_derived_index() {
+    for (mutation, expected_check) in [
+        ("malformed", "malformed_yaml"),
+        ("future", "unsupported_schema"),
+    ] {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path().join("agent-memory");
+        let store = Store::open(memory_root(&root)).unwrap();
+        let runner = FakeProcessRunner::default();
+        let context = SourceContext::new(fixture.path(), &runner, &runner);
+        let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+        let existing_id = stored_id(store.admit(
+            resolved(
+                &user_draft("Existing authority.", "existing authority", "Established."),
+                &context,
+            ),
+            None,
+            &timestamp,
+            &context,
+        ));
+        let existing_path = root.join(format!("entries/user/{existing_id}.yaml"));
+        let bytes = fs::read_to_string(&existing_path).unwrap();
+        let changed = match mutation {
+            "malformed" => "not: [valid".to_owned(),
+            "future" => bytes.replacen("schema_version: 1", "schema_version: 2", 1),
+            _ => unreachable!(),
+        };
+        fs::write(existing_path, changed).unwrap();
+
+        let added_id = stored_id(store.admit(
+            resolved(
+                &user_draft("New authority.", "new authority", "Established."),
+                &context,
+            ),
+            None,
+            &timestamp,
+            &context,
+        ));
+
+        assert!(root.join(format!("entries/user/{added_id}.yaml")).is_file());
+        let index: serde_json::Value =
+            serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
+        assert_eq!(index["entries"].as_array().unwrap().len(), 1, "{mutation}");
+        assert_eq!(index["entries"][0]["id"], added_id, "{mutation}");
+        assert_eq!(
+            index["diagnostics"]["user"][0],
+            serde_json::json!({
+                "entry_id": existing_id,
+                "check": expected_check,
+                "effect": "omitted",
+            }),
+            "{mutation}"
+        );
+    }
+}
+
+#[test]
 fn writes_private_user_and_project_entries_and_an_exact_minimal_index_row() {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");

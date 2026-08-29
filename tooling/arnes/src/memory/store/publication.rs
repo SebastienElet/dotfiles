@@ -1,7 +1,8 @@
 use super::types::{StoreFailpoint, StorePhase};
 use crate::memory::MemoryError;
+use crate::memory::index::inventory::InventorySnapshot;
 use crate::memory::path::ManagedPath;
-use std::fs::{File, Metadata};
+use std::fs::File;
 use std::io::{BufWriter, Write};
 
 pub(crate) struct AtomicPublication<'a> {
@@ -66,8 +67,13 @@ impl<'a> AtomicPublication<'a> {
         })
     }
 
-    pub(crate) fn publish_index(&self, index: StagedIndex) -> Result<(), MemoryError> {
+    pub(crate) fn publish_index(
+        &self,
+        index: StagedIndex,
+        inventory: &InventorySnapshot,
+    ) -> Result<(), MemoryError> {
         self.hit(StorePhase::BeforeIndexRename)?;
+        inventory.ensure_current(self.root)?;
         index.ensure_anchored()?;
         index.publish()?;
         self.root.sync_directory()
@@ -78,6 +84,7 @@ impl<'a> AtomicPublication<'a> {
         yaml: StagedFile,
         destination: &ManagedPath,
         index: StagedIndex,
+        inventory: InventorySnapshot,
         replace: bool,
     ) -> Result<(), CommitFailure> {
         self.hit(StorePhase::BeforeYamlRename)
@@ -97,6 +104,9 @@ impl<'a> AtomicPublication<'a> {
             .sync_parent_directory()
             .map_err(|_| CommitFailure::AfterYaml)?;
         self.hit(StorePhase::BeforeIndexRename)
+            .map_err(|_| CommitFailure::AfterYaml)?;
+        inventory
+            .ensure_current(self.root)
             .map_err(|_| CommitFailure::AfterYaml)?;
         index
             .ensure_anchored()
@@ -127,13 +137,8 @@ impl<'a> AtomicPublication<'a> {
         writer.flush().map_err(store_io)?;
         self.hit(fsync)?;
         writer.get_ref().sync_all().map_err(store_io)?;
-        let metadata = writer.get_ref().metadata().map_err(store_io)?;
         let file = writer.into_inner().map_err(|_| store_error())?;
-        Ok(StagedFile {
-            path,
-            file,
-            metadata,
-        })
+        Ok(StagedFile { path, file })
     }
 
     fn temporary_path(&self, destination: &ManagedPath) -> Result<ManagedPath, MemoryError> {
@@ -161,7 +166,6 @@ impl<'a> AtomicPublication<'a> {
 pub(crate) struct StagedFile {
     path: ManagedPath,
     file: File,
-    metadata: Metadata,
 }
 
 pub(crate) struct StagedIndex {
@@ -186,8 +190,8 @@ impl StagedIndex {
 }
 
 impl StagedFile {
-    pub(super) fn metadata(&self) -> &Metadata {
-        &self.metadata
+    pub(super) fn anchor(&self) -> Result<File, MemoryError> {
+        self.file.try_clone().map_err(store_io)
     }
 
     fn ensure_anchored(&self) -> Result<(), MemoryError> {

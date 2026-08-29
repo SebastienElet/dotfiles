@@ -1,18 +1,18 @@
+mod builder;
 mod document;
-mod inventory;
+pub(crate) mod inventory;
 
+use self::builder::{PreparedIndex, prepare_with_candidate, rebuild_index};
 pub(crate) use self::document::IndexRow;
 use self::document::{IndexDocument, index_bytes};
-use self::inventory::{InventoryItem, inventory, prepared_inventory};
+use self::inventory::{InventorySnapshot, max_index_bytes};
 use super::path::ManagedPath;
 use super::store::document::StoredEntry;
-use super::store::inventory::{entry_paths, read_entry, valid_memory_id};
-use super::{MemoryError, Status, Store};
+use super::store::inventory::valid_memory_id;
+use super::{MemoryError, Store};
 use serde::{Deserialize, Serialize};
-use std::fs::Metadata;
+use std::fs::File;
 use std::io::Read;
-
-const MAX_INDEX_READ_BYTES: u64 = 1024 * 1024;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -36,37 +36,36 @@ pub struct Index {
 
 impl Index {
     pub fn load_or_rebuild(store: &Store) -> Result<IndexLoad, MemoryError> {
-        let paths = entry_paths(store.root())?;
-        let current_inventory = inventory(&paths)?;
-        if let Some(document) = load_fresh(store.root(), &current_inventory)? {
+        let inventory = InventorySnapshot::capture(store.root())?;
+        if let Some(document) = load_current(store.root(), &inventory)? {
             return Ok(Self::loaded(document, false));
         }
         let _lock = store.acquire_lock()?;
-        let paths = entry_paths(store.root())?;
-        let current_inventory = inventory(&paths)?;
-        if let Some(document) = load_fresh(store.root(), &current_inventory)? {
+        let inventory = InventorySnapshot::capture(store.root())?;
+        if let Some(document) = load_current(store.root(), &inventory)? {
             return Ok(Self::loaded(document, false));
         }
-        let document = rebuild_document(store, &paths, &current_inventory)?;
-        if inventory(&paths)? != current_inventory {
-            return Err(unsafe_path());
-        }
-        let bytes = index_bytes(&document)?;
-        let staged = store.publication().stage_index(&bytes)?;
-        store.publication().publish_index(staged)?;
-        Ok(Self::loaded(document, true))
+        let prepared = rebuild_index(store, inventory)?;
+        publish_rebuild(store, &prepared)?;
+        Ok(Self::loaded(prepared.document, true))
     }
 
     pub(super) fn entries(&self) -> &[IndexRow] {
         &self.document.entries
     }
 
-    pub(super) fn diagnostics(&self) -> &[IndexDiagnostic] {
-        &self.document.diagnostics
+    pub(super) fn diagnostics_for(
+        &self,
+        project_key: &str,
+        include_user: bool,
+    ) -> Vec<IndexDiagnostic> {
+        self.document
+            .diagnostics
+            .for_scope(project_key, include_user)
     }
 
     fn loaded(document: IndexDocument, rebuilt: bool) -> IndexLoad {
-        let diagnostics = document.diagnostics.clone();
+        let diagnostics = document.diagnostics.all();
         IndexLoad {
             index: Self { document },
             rebuilt,
@@ -79,113 +78,76 @@ pub(super) fn empty_index_bytes() -> Result<Vec<u8>, MemoryError> {
     index_bytes(&IndexDocument::empty()?)
 }
 
-pub(super) fn prepared_index_bytes(
+pub(super) fn prepared_index(
+    store: &Store,
     destination: &ManagedPath,
     candidate: &StoredEntry,
-    candidate_metadata: &Metadata,
-    paths: &[ManagedPath],
-) -> Result<Vec<u8>, MemoryError> {
-    let mut rows = Vec::new();
-    let mut diagnostics = Vec::new();
-    for path in paths
-        .iter()
-        .filter(|path| path.relative() != destination.relative())
-    {
-        let (row, row_diagnostic) = active_row(path)?;
-        rows.extend(row);
-        diagnostics.extend(row_diagnostic);
-    }
-    if candidate.status == "active" {
-        rows.push(IndexRow::new(candidate, destination, candidate_metadata)?);
-    } else {
-        diagnostics.push(diagnostic(&candidate.id, "status"));
-    }
-    rows.sort_by(|left, right| left.path.cmp(&right.path));
-    sort_diagnostics(&mut diagnostics);
-    let prepared = prepared_inventory(destination, candidate_metadata, paths)?;
-    index_bytes(&IndexDocument::with_inventory(
-        rows,
-        &prepared,
-        diagnostics,
-    )?)
+    candidate_file: File,
+) -> Result<PreparedIndex, MemoryError> {
+    prepare_with_candidate(
+        store,
+        destination,
+        candidate,
+        candidate_file,
+        InventorySnapshot::capture(store.root())?,
+    )
 }
 
-pub(super) fn index_rebuild_required(
+pub(super) fn index_rebuild_required(root: &ManagedPath) -> Result<bool, MemoryError> {
+    let inventory = InventorySnapshot::capture(root)?;
+    Ok(load_current(root, &inventory)?.is_none())
+}
+
+fn load_current(
     root: &ManagedPath,
-    paths: &[ManagedPath],
-) -> Result<bool, MemoryError> {
-    let inventory = inventory(paths)?;
-    Ok(load_fresh(root, &inventory)?.is_none())
-}
-
-fn active_row(
-    path: &ManagedPath,
-) -> Result<(Option<IndexRow>, Option<IndexDiagnostic>), MemoryError> {
-    let entry = read_entry(path)?;
-    if entry.status() != Status::Active {
-        return Ok((None, Some(diagnostic(entry.id().as_str(), "status"))));
-    }
-    let stored = StoredEntry::from_entry(&entry);
-    let metadata = path.open_read()?.metadata().map_err(store_io)?;
-    Ok((Some(IndexRow::new(&stored, path, &metadata)?), None))
-}
-
-fn rebuild_document(
-    store: &Store,
-    paths: &[ManagedPath],
-    inventory: &[InventoryItem],
-) -> Result<IndexDocument, MemoryError> {
-    let mut rows = Vec::new();
-    let mut diagnostics = Vec::new();
-    for path in paths {
-        store.before_index_entry_read()?;
-        match read_entry(path) {
-            Ok(entry) if entry.status() == Status::Active => {
-                let stored = StoredEntry::from_entry(&entry);
-                let metadata = path.open_read()?.metadata().map_err(store_io)?;
-                rows.push(IndexRow::new(&stored, path, &metadata)?);
-            }
-            Ok(entry) => diagnostics.push(diagnostic(entry.id().as_str(), "status")),
-            Err(error) => diagnostics.push(diagnostic(entry_id(path)?, error.code())),
-        }
-    }
-    rows.sort_by(|left, right| left.path.cmp(&right.path));
-    sort_diagnostics(&mut diagnostics);
-    IndexDocument::with_inventory(rows, inventory, diagnostics)
+    inventory: &InventorySnapshot,
+) -> Result<Option<IndexDocument>, MemoryError> {
+    let Some(document) = load_fresh(root, inventory)? else {
+        return Ok(None);
+    };
+    Ok(inventory.matches_current(root)?.then_some(document))
 }
 
 fn load_fresh(
     root: &ManagedPath,
-    inventory: &[InventoryItem],
+    inventory: &InventorySnapshot,
 ) -> Result<Option<IndexDocument>, MemoryError> {
-    let Some(bytes) = read_index(root)? else {
+    let items = inventory.items();
+    let Some(bytes) = read_index(root, max_index_bytes(items.len())?)? else {
         return Ok(None);
     };
     let Ok(document) = serde_json::from_slice::<IndexDocument>(&bytes) else {
         return Ok(None);
     };
-    Ok(document.valid_for(inventory).then_some(document))
+    Ok(document.valid_for(&items).then_some(document))
 }
 
-fn read_index(root: &ManagedPath) -> Result<Option<Vec<u8>>, MemoryError> {
+fn read_index(root: &ManagedPath, maximum: u64) -> Result<Option<Vec<u8>>, MemoryError> {
     let path = root.join("index.json")?;
     if !path.exists()? {
         return Ok(None);
     }
     let mut file = path.open_read()?;
     let metadata = file.metadata().map_err(store_io)?;
-    if metadata.len() > MAX_INDEX_READ_BYTES {
+    if metadata.len() > maximum {
         return Ok(None);
     }
-    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    let mut bytes = Vec::with_capacity(usize::try_from(metadata.len()).map_err(|_| store_error())?);
     Read::by_ref(&mut file)
-        .take(MAX_INDEX_READ_BYTES + 1)
+        .take(maximum.checked_add(1).ok_or_else(store_error)?)
         .read_to_end(&mut bytes)
         .map_err(store_io)?;
-    Ok((bytes.len() as u64 <= MAX_INDEX_READ_BYTES).then_some(bytes))
+    Ok(((bytes.len() as u64) <= maximum).then_some(bytes))
 }
 
-fn entry_id(path: &ManagedPath) -> Result<&str, MemoryError> {
+fn publish_rebuild(store: &Store, prepared: &PreparedIndex) -> Result<(), MemoryError> {
+    let staged = store.publication().stage_index(&prepared.bytes)?;
+    store
+        .publication()
+        .publish_index(staged, &prepared.inventory)
+}
+
+pub(super) fn entry_id(path: &ManagedPath) -> Result<&str, MemoryError> {
     let id = path
         .relative()
         .file_stem()
@@ -198,25 +160,11 @@ fn entry_id(path: &ManagedPath) -> Result<&str, MemoryError> {
     }
 }
 
-fn diagnostic(entry_id: &str, check: &str) -> IndexDiagnostic {
-    IndexDiagnostic {
-        entry_id: entry_id.to_owned(),
-        check: check.to_owned(),
-        effect: "omitted".to_owned(),
-    }
-}
-
-fn sort_diagnostics(diagnostics: &mut [IndexDiagnostic]) {
-    diagnostics.sort_by(|left, right| {
-        (&left.entry_id, &left.check, &left.effect).cmp(&(
-            &right.entry_id,
-            &right.check,
-            &right.effect,
-        ))
-    });
-}
-
 fn store_io(_: std::io::Error) -> MemoryError {
+    store_error()
+}
+
+const fn store_error() -> MemoryError {
     MemoryError::new("store_unavailable", "store")
 }
 

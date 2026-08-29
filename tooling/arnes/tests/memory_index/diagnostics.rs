@@ -51,7 +51,18 @@ fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redac
     assert_eq!(actual, expected);
     let index: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
-    for diagnostic in index["diagnostics"].as_array().unwrap() {
+    let diagnostics = index["diagnostics"]["user"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .chain(
+            index["diagnostics"]["projects"]
+                .as_object()
+                .unwrap()
+                .values()
+                .flat_map(|items| items.as_array().unwrap()),
+        );
+    for diagnostic in diagnostics {
         let mut keys = diagnostic
             .as_object()
             .unwrap()
@@ -106,7 +117,7 @@ fn an_index_row_with_a_missing_or_unknown_field_is_rebuilt() {
             }
             "extra-diagnostic" => {
                 let id = index["entries"][0]["id"].as_str().unwrap().to_owned();
-                index["diagnostics"] = serde_json::json!([{
+                index["diagnostics"]["user"] = serde_json::json!([{
                     "entry_id": id,
                     "check": "status",
                     "effect": "omitted",
@@ -126,6 +137,45 @@ fn an_index_row_with_a_missing_or_unknown_field_is_rebuilt() {
         let rebuilt = fs::read_to_string(path).unwrap();
         assert!(!rebuilt.contains("must not persist"));
         assert!(!rebuilt.contains("\"statement\""));
+    }
+}
+
+#[test]
+fn rebuilds_rows_with_retrieval_terms_outside_the_yaml_contract() {
+    for (mutation, terms) in [
+        ("empty", serde_json::json!([])),
+        ("too-long", serde_json::json!(["x".repeat(101)])),
+        ("too-many", serde_json::json!(vec!["term"; 21])),
+    ] {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path().join("agent-memory");
+        let store = Store::open(memory_root(&root)).unwrap();
+        admit_user(
+            &store,
+            fixture.path(),
+            "Retrieval term contract.",
+            &["valid term"],
+            "Established.",
+        );
+        let path = root.join("index.json");
+        let mut index: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        index["entries"][0]["retrieval_terms"] = terms;
+        fs::write(
+            &path,
+            format!("{}\n", serde_json::to_string_pretty(&index).unwrap()),
+        )
+        .unwrap();
+
+        let loaded = Index::load_or_rebuild(&store).unwrap();
+
+        assert!(loaded.rebuilt, "{mutation}");
+        let rebuilt: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(
+            rebuilt["entries"][0]["retrieval_terms"],
+            serde_json::json!(["valid term"]),
+            "{mutation}"
+        );
     }
 }
 

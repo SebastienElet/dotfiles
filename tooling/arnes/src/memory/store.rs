@@ -1,15 +1,16 @@
 mod canonicalization;
 pub(super) mod document;
+mod indexing;
 pub(super) mod inventory;
 pub(super) mod publication;
 mod types;
 
-use self::document::{StoredEntry, StoredScope, yaml_bytes};
+use self::document::{StoredEntry, StoredScope};
 use self::inventory::{entry_paths, read_entry, repair_entry_modes, valid_memory_id};
 use self::publication::{AtomicPublication, CommitFailure};
 use self::types::StorePhase;
 pub use self::types::{StoreCommit, StoreFailpoint, StoreListing};
-use super::index::{empty_index_bytes, index_rebuild_required, prepared_index_bytes};
+use super::index::{empty_index_bytes, index_rebuild_required};
 use super::lock::GlobalLock;
 use super::path::{ManagedPath, MemoryRoot, open_root};
 use super::{
@@ -155,7 +156,7 @@ impl Store {
             .collect::<Result<Vec<_>, _>>()?;
         Ok(StoreListing {
             entries,
-            index_rebuild_required: index_rebuild_required(&self.root, &paths)?,
+            index_rebuild_required: index_rebuild_required(&self.root)?,
         })
     }
 
@@ -173,30 +174,6 @@ impl Store {
         ))
     }
 
-    fn commit_entry(
-        &self,
-        destination: &ManagedPath,
-        entry: &StoredEntry,
-        replace: bool,
-    ) -> Result<(), CommitFailure> {
-        let publication = self.publication();
-        let yaml = yaml_bytes(entry).map_err(CommitFailure::BeforeYaml)?;
-        let staged_yaml = publication
-            .stage_yaml(destination, &yaml)
-            .map_err(CommitFailure::BeforeYaml)?;
-        let index = prepared_index_bytes(
-            destination,
-            entry,
-            staged_yaml.metadata(),
-            &entry_paths(&self.root).map_err(CommitFailure::BeforeYaml)?,
-        )
-        .map_err(CommitFailure::BeforeYaml)?;
-        let staged_index = publication
-            .stage_index(&index)
-            .map_err(CommitFailure::BeforeYaml)?;
-        publication.publish(staged_yaml, destination, staged_index, replace)
-    }
-
     pub(super) fn acquire_lock(&self) -> Result<GlobalLock, MemoryError> {
         let path = self.root.join(".lock")?;
         let lock = GlobalLock::acquire(&self.root, &path)?;
@@ -211,10 +188,6 @@ impl Store {
 
     pub(super) fn root(&self) -> &ManagedPath {
         &self.root
-    }
-
-    pub(super) fn before_index_entry_read(&self) -> Result<(), MemoryError> {
-        self.hit(StorePhase::BeforeIndexEntryRead)
     }
 
     fn entry_path(&self, entry: &StoredEntry) -> Result<ManagedPath, MemoryError> {

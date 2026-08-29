@@ -11,6 +11,13 @@ enum Substitution {
     Symlink,
 }
 
+#[derive(Clone, Copy, Debug)]
+enum InventoryMutation {
+    Add,
+    Delete,
+    Substitute,
+}
+
 #[test]
 fn yaml_substitution_between_inventory_and_parse_fails_closed() {
     for substitution in [
@@ -86,6 +93,99 @@ fn final_index_substitution_after_staging_fails_closed() {
         assert_eq!(error.code(), "unsafe_store_path", "{substitution:?}");
         assert_eq!(fs::read(&outside).unwrap(), b"substituted");
         assert_eq!(fs::read(index).unwrap(), b"substituted");
+    }
+}
+
+#[test]
+fn yaml_inventory_changes_immediately_before_publication_fail_closed() {
+    for mutation in [
+        InventoryMutation::Add,
+        InventoryMutation::Delete,
+        InventoryMutation::Substitute,
+    ] {
+        let fixture = tempfile::tempdir().unwrap();
+        let root = fixture.path().join("agent-memory");
+        let initial = Store::open(memory_root(&root)).unwrap();
+        let id = admit_user(
+            &initial,
+            fixture.path(),
+            "Final inventory identity.",
+            &["final inventory"],
+            "Established.",
+        );
+        let yaml = root.join(format!("entries/user/{id}.yaml"));
+        let index = root.join("index.json");
+        fs::write(&index, b"corrupt").unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let store = Store::open_with_failpoint(
+            memory_root(&root),
+            StoreFailpoint::PauseBeforeIndexRename(Arc::clone(&barrier)),
+        )
+        .unwrap();
+        let rebuild = std::thread::spawn(move || Index::load_or_rebuild(&store));
+        barrier.wait();
+        mutate_inventory(&yaml, mutation);
+        barrier.wait();
+
+        let error = rebuild.join().unwrap().unwrap_err();
+
+        assert_eq!(error.code(), "unsafe_store_path", "{mutation:?}");
+        assert_eq!(fs::read(index).unwrap(), b"corrupt", "{mutation:?}");
+    }
+}
+
+#[test]
+fn yaml_substitution_after_anchored_read_never_combines_content_and_metadata() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().join("agent-memory");
+    let initial = Store::open(memory_root(&root)).unwrap();
+    let id = admit_user(
+        &initial,
+        fixture.path(),
+        "Original anchored content.",
+        &["original anchored"],
+        "Established.",
+    );
+    let yaml = root.join(format!("entries/user/{id}.yaml"));
+    fs::write(root.join("index.json"), b"corrupt").unwrap();
+    let barrier = Arc::new(Barrier::new(2));
+    let store = Store::open_with_failpoint(
+        memory_root(&root),
+        StoreFailpoint::PauseAfterIndexEntryRead(Arc::clone(&barrier)),
+    )
+    .unwrap();
+    let rebuild = std::thread::spawn(move || Index::load_or_rebuild(&store));
+    barrier.wait();
+    let original = fs::read_to_string(&yaml).unwrap();
+    fs::rename(&yaml, yaml.with_extension("displaced")).unwrap();
+    fs::write(
+        &yaml,
+        original.replace("Original anchored content.", "Substituted content now."),
+    )
+    .unwrap();
+    barrier.wait();
+
+    let error = rebuild.join().unwrap().unwrap_err();
+
+    assert_eq!(error.code(), "unsafe_store_path");
+    assert_eq!(fs::read(root.join("index.json")).unwrap(), b"corrupt");
+}
+
+fn mutate_inventory(yaml: &Path, mutation: InventoryMutation) {
+    match mutation {
+        InventoryMutation::Add => {
+            fs::copy(
+                yaml,
+                yaml.with_file_name("mem_ffffffffffffffffffffffff.yaml"),
+            )
+            .unwrap();
+        }
+        InventoryMutation::Delete => fs::remove_file(yaml).unwrap(),
+        InventoryMutation::Substitute => {
+            let displaced = yaml.with_extension("displaced");
+            fs::rename(yaml, &displaced).unwrap();
+            fs::copy(displaced, yaml).unwrap();
+        }
     }
 }
 

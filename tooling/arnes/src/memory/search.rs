@@ -29,6 +29,7 @@ pub struct SearchSelection {
 }
 
 pub fn search(index: &Index, request: SearchRequest<'_>) -> SearchSelection {
+    let limit = request.limit.min(5);
     let query_tokens = normalized_tokens(request.query);
     let query_set = query_tokens
         .iter()
@@ -41,10 +42,10 @@ pub fn search(index: &Index, request: SearchRequest<'_>) -> SearchSelection {
         .filter_map(|entry| score(entry, &query_tokens, &query_set).map(|score| (score, entry)))
         .collect::<Vec<_>>();
     matches.sort_by_key(|(score, entry)| (Reverse(*score), entry.id.as_str()));
-    let omitted_by_limit = matches.len().saturating_sub(request.limit);
+    let omitted_by_limit = matches.len().saturating_sub(limit);
     let selected = matches
         .into_iter()
-        .take(request.limit)
+        .take(limit)
         .map(|(_, entry)| SelectedMemory {
             entry_id: entry.id.clone(),
             kind: entry.kind.clone(),
@@ -54,7 +55,7 @@ pub fn search(index: &Index, request: SearchRequest<'_>) -> SearchSelection {
     SearchSelection {
         selected,
         omitted_by_limit,
-        diagnostics: index.diagnostics().to_vec(),
+        diagnostics: index.diagnostics_for(request.project_key.as_str(), request.include_user),
     }
 }
 

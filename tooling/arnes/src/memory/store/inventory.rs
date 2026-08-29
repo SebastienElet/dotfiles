@@ -1,5 +1,6 @@
 use crate::memory::path::ManagedPath;
 use crate::memory::{EntryScope, MemoryEntry, MemoryError, parse_entry};
+use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
@@ -40,20 +41,27 @@ pub(super) fn repair_entry_modes(root: &ManagedPath) -> Result<(), MemoryError> 
 }
 
 pub(crate) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
-    let bytes = read_bounded(path)?;
+    let mut file = path.open_read()?;
+    read_entry_from_file(path, &mut file)
+}
+
+pub(crate) fn read_entry_from_file(
+    path: &ManagedPath,
+    file: &mut File,
+) -> Result<MemoryEntry, MemoryError> {
+    let bytes = read_bounded_file(file)?;
     let entry = parse_entry(&bytes)?;
     validate_entry_location(path.relative(), &entry)?;
     Ok(entry)
 }
 
-pub(super) fn read_bounded(path: &ManagedPath) -> Result<Vec<u8>, MemoryError> {
-    let mut file = path.open_read()?;
+fn read_bounded_file(file: &mut File) -> Result<Vec<u8>, MemoryError> {
     let metadata = file.metadata().map_err(store_io)?;
     if metadata.len() > MAX_ENTRY_BYTES {
         return Err(store_error());
     }
     let mut bytes = Vec::with_capacity(metadata.len() as usize);
-    Read::by_ref(&mut file)
+    Read::by_ref(file)
         .take(MAX_ENTRY_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(store_io)?;

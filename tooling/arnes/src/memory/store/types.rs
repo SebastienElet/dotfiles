@@ -20,6 +20,7 @@ pub enum StoreFailpoint {
     PauseBeforeYamlRename(Arc<Barrier>),
     PauseBeforeIndexRename(Arc<Barrier>),
     PauseBeforeIndexEntryRead(Arc<Barrier>),
+    PauseAfterIndexEntryRead(Arc<Barrier>),
     PauseAfterLockAcquire(Arc<Barrier>),
 }
 
@@ -40,6 +41,7 @@ pub(super) enum StorePhase {
     BeforeIndexFsync,
     BeforeIndexRename,
     BeforeIndexEntryRead,
+    AfterIndexEntryRead,
 }
 
 impl StoreFailpoint {
@@ -52,6 +54,11 @@ impl StoreFailpoint {
                 Ok(())
             }
             (Self::PauseBeforeIndexEntryRead(barrier), StorePhase::BeforeIndexEntryRead) => {
+                barrier.wait();
+                barrier.wait();
+                Ok(())
+            }
+            (Self::PauseAfterIndexEntryRead(barrier), StorePhase::AfterIndexEntryRead) => {
                 barrier.wait();
                 barrier.wait();
                 Ok(())
