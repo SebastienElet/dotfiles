@@ -3,7 +3,7 @@ name: para-organizer
 description: >
   Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents. Use when
   setting up, auditing, or reclassifying folders by actionability. Make sure to use it whenever a
-  request mentions PARA or asks where a folder belongs. For ~/Documents use johnny-decimal.
+  request mentions PARA or asks where a folder belongs.
 metadata:
   category: ops
   author: Tiago Forte (Forte Labs)
@@ -19,7 +19,8 @@ then execute and write an inventory. It follows the book's "Sixty-Second PARA Se
 everything first, create project folders for what is active now, and let areas and resources emerge
 just in time.
 
-Scope: any folder the user names **except** `~/Documents` (governed by `johnny-decimal`).
+Scope: any folder the user names **except** `~/Documents`, whose future organization remains a
+separate decision.
 
 ## Usage
 
@@ -35,7 +36,8 @@ Examples:
 
 ## Steps
 
-1. Confirm the target folder. If it is `~/Documents`, stop and use `johnny-decimal` instead.
+1. Confirm the target folder. If it is `~/Documents`, stop and report that no organization workflow
+   is currently configured for it.
 2. Read `references/para-framework.md` — the source of truth for category definitions.
 3. Read `references/workflow.md` and execute its four phases in order: Discover (read-only) →
    Present the Plan → Execute (only after approval) → Output Inventory.
@@ -116,9 +118,8 @@ version of the story.
 
 ## Gotchas
 
-- **Applying the `1 Projects/` layout to `~/Documents`** — that root uses numbered Johnny Decimal
-  ranges (`10-19 - Projects`, `20-29 - Areas`, …) and its index lives in Apple Notes. Creating PARA's
-  named folders there corrupts the index. Hand the request to `johnny-decimal`.
+- **Applying the `1 Projects/` layout to `~/Documents`** — no organization workflow is currently
+  approved for that root. Stop and leave its contents unchanged.
 - **Executing before the plan is approved** — the whole value of this skill is the approval gate. A
   "quick" folder creation before Phase 2 breaks the trust the skill is built on.
 - **Silently archiving screenshots and images** — they are usually captured for a reason. Flag them

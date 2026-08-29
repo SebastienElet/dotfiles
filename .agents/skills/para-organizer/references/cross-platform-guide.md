@@ -15,7 +15,7 @@ However, two important caveats:
 There are six main places people store digital information. Four of them are organized using PARA:
 
 ### Organized by PARA (categorical)
-1. **Computer file system** (Documents folder) — already set up
+1. **Computer file system** (the root organized through this skill)
 2. **Cloud storage drive** (Google Drive, OneDrive, Dropbox, iCloud Drive)
 3. **Digital notetaking app** (Notion, Obsidian, Evernote, Apple Notes)
 4. **To-do list app** (Things, Todoist, Asana) — *projects and areas only*, since these are the categories that have tasks associated with them
