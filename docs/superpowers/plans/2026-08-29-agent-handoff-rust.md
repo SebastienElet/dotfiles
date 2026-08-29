@@ -424,6 +424,7 @@ git commit -m "feat(handoff): complete the Rust runtime contract"
 **Fichiers :**
 
 - Modifier : `Makefile`
+- Créer : `tooling/deployment-agent-handoff.test.ts`
 - Modifier : `tooling/deployment-codex-wiring.test.ts`
 - Modifier : `tooling/arnes/src/hooks.rs`
 - Modifier : `tooling/arnes/tests/hooks_setup.rs`
@@ -450,7 +451,7 @@ Dans les tests Arnes, construire un exécutable fixture `~/.local/bin/agent-hand
 - [ ] **Étape 2 : Exécuter les tests pour vérifier leur échec**
 
 ```bash
-bun test tooling/deployment-codex-wiring.test.ts
+bun test tooling/deployment-agent-handoff.test.ts tooling/deployment-codex-wiring.test.ts
 cargo test --manifest-path tooling/arnes/Cargo.toml --test hooks_setup --test hooks_validation
 ```
 
@@ -536,7 +537,7 @@ Résultat attendu : PASS; les dry-runs ne mutent pas le poste, construisent le c
 - [ ] **Étape 8 : Commit**
 
 ```bash
-git add Makefile tooling/deployment-codex-wiring.test.ts tooling/arnes/src/hooks.rs tooling/arnes/tests/hooks_setup.rs tooling/arnes/tests/hooks_validation.rs tooling/agent-handoff
+git add Makefile tooling/deployment-agent-handoff.test.ts tooling/deployment-codex-wiring.test.ts tooling/arnes/src/hooks.rs tooling/arnes/tests/hooks_setup.rs tooling/arnes/tests/hooks_validation.rs tooling/agent-handoff
 git add -u -- tooling/agent-handoff-legacy tooling/agent-handoff.test.ts tooling/agent-handoff-failures.test.ts tooling/agent-handoff-test-support.ts tooling/agent-handoff-parity-support.ts tooling/agent-handoff-parity.test.ts tooling/agent-handoff-parity-runtime-cases.ts
 git commit -m "refactor(handoff): deploy the independent Rust binary"
 ```
@@ -668,7 +669,8 @@ cargo clippy --manifest-path tooling/arnes/Cargo.toml --all-targets -- -D warnin
 cargo test --manifest-path tooling/arnes/Cargo.toml
 bun test
 bun run typecheck
-make -n agent-handoff
+make -n "$(pwd)/tooling/agent-handoff/target/release/agent-handoff"
+make -n "$HOME/.local/bin/agent-handoff"
 make -n claude-code-hooks
 make -n codex-hooks
 git diff --check
