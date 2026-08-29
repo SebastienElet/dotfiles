@@ -2,20 +2,27 @@
 
 ## Installation
 
-Depuis le checkout canonique uniquement :
+Le profil minimal installe CodeGraph, ColGrep et le point d'entrée protégé :
 
 ```bash
-make codegraph
+make minimal
 ```
 
-La cible épingle CodeGraph 1.5.0, configure Codex, Claude Code et Cursor, désactive les sorties
-réseau automatiques et distribue la skill.
+Le profil configure CodeGraph pour Codex et Claude Code, désactive ses sorties réseau automatiques
+et distribue la skill aux trois agents. Le profil optionnel Cursor ajoute sa configuration MCP.
 
 ## Activation
 
 Les agents utilisent `codegraph-repository-size .` uniquement avant une exploration structurelle
-sans index. `initialize: true` autorise `codegraph init`. Une recherche exacte ne déclenche jamais
-la mesure.
+sans index et hors linked worktree. `initialize: true` autorise `codegraph init`. Une recherche
+exacte ne déclenche jamais la mesure.
+
+## Linked worktrees
+
+Une recherche exacte utilise `rg` ou `fd`. Une recherche conceptuelle passe exclusivement par
+`colgrep-worktree '<requête>'`, qui initialise ColGrep à la demande et refuse une racine, un index ou
+un résultat extérieur au worktree actif. Un refus entraîne un repli borné vers `rg`/`fd`, jamais
+CodeGraph. Aucun hook de création de worktree n'initialise ColGrep.
 
 ## Santé et fraîcheur
 

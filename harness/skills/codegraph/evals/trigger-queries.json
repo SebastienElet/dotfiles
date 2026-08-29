@@ -1,6 +1,6 @@
 {
   "skill": "codegraph",
-  "version": "1.0",
+  "version": "1.1",
   "queries": [
     {
       "query": "Explique-moi l'architecture de ce monorepo et les dépendances entre packages",
@@ -26,6 +26,11 @@
       "query": "Je découvre ce monorepo, aide-moi à le cartographier",
       "should_activate": true,
       "reason": "First contact with an unfamiliar repository needs structural retrieval, not targeted reads"
+    },
+    {
+      "query": "Dans ce Git worktree, retrouve conceptuellement le chemin d'authentification",
+      "should_activate": true,
+      "reason": "Conceptual retrieval in a linked worktree must route through the guarded ColGrep entry point"
     },
     {
       "query": "Trouve exactement la chaîne FEATURE_FLAG_DISABLED avec rg",

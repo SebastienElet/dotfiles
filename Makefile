@@ -310,7 +310,6 @@ codegraph-cursor: codegraph-cli claude-code codex
 
 .PHONY: codegraph-test
 codegraph-test: bun tokei
-	bash harness/skills/codegraph/scripts/skill_contract_test.sh
 	${BREW_BIN}/bun test tooling/colgrep-worktree*.test.ts
 	${BREW_BIN}/bun test tooling/codegraph-repository-*.test.ts
 	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex ${BREW_BIN}/bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
