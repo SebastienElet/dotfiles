@@ -115,7 +115,7 @@ soit garanti.
 | Terminal             | bat, bottom, broot, eza, fd, Fish, Fisher, fzf, git-delta, GNU sed, jq, lazygit, mtr, procs, ripgrep, Starship, tmux, tokei, zoxide |
 | Éditeur et interface | Arc, JetBrains Mono, Neovim, WezTerm                                                                                                |
 | Runtimes             | Bun, Node.js, OrbStack, pnpm, Rust, Volta                                                                                           |
-| Agents et outillage  | `agent-handoff` avec sa cible Make, Arnes, Claude Code, CodeGraph, Codex, Hunspell et ses dictionnaires                             |
+| Agents et outillage  | `agent-handoff` avec sa cible Make, Arnes, Claude Code, Codex, ColGrep, Hunspell et ses dictionnaires                               |
 
 ### Optionnel
 
@@ -153,8 +153,8 @@ exécutées par le workflow dédié.
 
 ## Découplages
 
-- CodeGraph minimal configure Claude Code et Codex sans installer Cursor, qui reste optionnel.
-- L'installation optionnelle de Cursor ajoute sa propre intégration CodeGraph.
+- Le profil minimal installe ColGrep et projette `code-search` pour Claude Code et Codex.
+- L'installation optionnelle de Cursor projette la même skill `code-search`.
 - OrbStack minimal n'installe pas lazydocker.
 - WezTerm minimal n'installe pas Iosevka Nerd Font.
 - Doppler et GnuPG restent ensemble dans le profil optionnel, conformément à la
