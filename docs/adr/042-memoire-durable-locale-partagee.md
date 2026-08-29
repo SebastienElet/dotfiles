@@ -9,18 +9,21 @@ La spécification approuvée de la PR 249 décrit une mémoire durable, locale e
 Codex, Claude Code et Cursor. Les décisions structurelles qui la rendent sûre et vérifiable doivent
 cependant devenir une autorité en vigueur dans `docs/adr/` avant l'implémentation.
 
-Les ADR-025, ADR-036, ADR-038, ADR-040 et ADR-041 imposent respectivement une source unique de
-règles, des instructions admises par mesure, des frontières explicites, des skills user sous
-`harness/` et Arnes pour l'automatisation qui porte un état durable. Les contrats officiels de hooks
-vérifiés le 2026-08-28 donnent une surface synchrone `UserPromptSubmit` avec `additionalContext`
-pour Codex et Claude, mais aucune injection query-specific native avant modèle pour Cursor.
+Les ADR-025, ADR-036, ADR-038 et ADR-040 imposent respectivement une source unique de règles, des
+instructions admises par mesure, des frontières explicites et des skills user sous `harness/`.
+L'ADR-041 impose Rust, pas Arnes, pour cette automatisation à état durable. Les contrats officiels
+de hooks vérifiés le 2026-08-28 donnent une surface synchrone `UserPromptSubmit` avec
+`additionalContext` pour Codex et Claude, mais aucune injection query-specific native avant modèle
+pour Cursor.
 
 ## Décision
 
 Les fichiers YAML sous `~/.local/share/agent-memory/`, hors Git, sont l'autorité humaine unique des
-entrées. L'index et le cache sont dérivés, supprimables et reconstruisibles. Arnes est l'unique
-frontière Rust : il possède le schéma, l'admission, les sources, le store, l'index, les oracles, le
-retrieval et les adaptateurs ; aucun état généré propre à un agent, notamment
+entrées. L'index et le cache sont dérivés, supprimables et reconstruisibles. `agent-memory` possède
+le schéma, l'admission, l'identité projet, les sources, le store, l'index, les oracles, le cache, le
+retrieval, les transitions, la CLI et les adapters runtime ; `agent-handoff` possède son runtime.
+Arnes configure, valide et mesure leurs hooks et exécutables. Les deux packages Cargo sont
+indépendants, sans workspace ni crate partagé. Aucun état généré propre à un agent, notamment
 `~/.codex/memories/`, n'est édité.
 
 La clé projet est `project_<sha256(realpath(git-common-dir))>`. Elle converge entre worktrees ; deux
@@ -62,13 +65,16 @@ toute modification locale observable invalide immédiatement le cache.
   transitions ; Cursor reste une capacité comportementale mesurée, non une garantie native.
 - Les limites de détection sensible et d'officialité URL sont explicites et leurs échecs ne créent
   ni injection ni écriture implicite.
-- La frontière Arnes concentre l'état durable et les échecs associés dans un binaire déjà installé
-  par le harnais.
+- Les domaines mémoire et handoff, leurs états et leurs échecs restent dans leurs exécutables
+  indépendants ; Arnes ne porte que la configuration, la validation et la mesure de leur
+  intégration.
 
 ## Alternatives écartées
 
-- Un second binaire ou crate : duplique racines, installation, hooks et diagnostics sans frontière
-  métier indépendante.
+- L'intégration du domaine mémoire ou du runtime handoff dans Arnes : confond la gestion du harnais
+  avec les capacités configurées et empêche leur évolution indépendante.
+- Un workspace ou un crate partagé entre `agent-memory` et `agent-handoff` : aucun invariant métier
+  commun ne justifie ce couplage.
 - SQLite dès cette phase : moins lisible pour l'audit et non justifié avant mesure du processus YAML.
 - Un service MCP avec embeddings : daemon, dépendances, coût et surface de confidentialité sans
   besoin de recherche sémantique établi.
