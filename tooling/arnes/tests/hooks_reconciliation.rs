@@ -1,6 +1,6 @@
 use serde_json::Value;
 use std::fs;
-use std::os::unix::fs::{FileTypeExt, PermissionsExt, symlink};
+use std::os::unix::fs::{symlink, FileTypeExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use tempfile::TempDir;
@@ -19,8 +19,9 @@ impl Harness {
     fn with_command_name(name: &str) -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join(name);
-        let executable = home.join(".local/bin/arnes");
         fs::create_dir(&home).unwrap();
+        let home = fs::canonicalize(home).unwrap();
+        let executable = home.join(".local/bin/arnes");
         fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::write(&executable, b"binary").unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
@@ -44,17 +45,28 @@ impl Harness {
     }
 
     fn setup(&self, agent: &str) -> Output {
+        self.setup_command(agent).output().unwrap()
+    }
+
+    fn setup_in_repository(&self, agent: &str, repository: &Path) -> Output {
+        self.setup_command(agent)
+            .current_dir(repository)
+            .output()
+            .unwrap()
+    }
+
+    fn setup_command(&self, agent: &str) -> Command {
         let agent = if agent == "claude-code" {
             "claude"
         } else {
             agent
         };
-        Command::new(env!("CARGO_BIN_EXE_arnes"))
+        let mut command = Command::new(env!("CARGO_BIN_EXE_arnes"));
+        command
             .args(["setup", "hooks", "--agent", agent])
             .env_clear()
-            .env("HOME", &self.home)
-            .output()
-            .unwrap()
+            .env("HOME", &self.home);
+        command
     }
 
     fn install_claude_with_handoff(&self, current: &Path, legacy: &Path) -> Output {
@@ -70,7 +82,8 @@ impl Harness {
         let deployed = self.home.join(".local/bin/agent-handoff");
         symlink(current, deployed).unwrap();
         self.write_manifest(true);
-        self.setup("claude-code")
+        let repository = current.parent().unwrap().parent().unwrap();
+        self.setup_in_repository("claude-code", repository)
     }
 
     fn config(&self, agent: &str) -> PathBuf {

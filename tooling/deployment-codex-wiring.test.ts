@@ -3,10 +3,14 @@ import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
   expectSuccess,
+  fileIdentity,
+  linkTarget,
   project,
+  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 
 afterEach(cleanupDeploymentFixtures);
 
@@ -64,6 +68,115 @@ describe("deployment area: Bun and hook wiring", () => {
   );
 });
 
+describe("deployment area: agent handoff", () => {
+  test.each(["claude-code-hooks", "codex-hooks"])(
+    "%s builds and deploys only the release Rust binary",
+    (target) => {
+      const fixture = createDeploymentFixture(`agent-handoff-${target}`);
+      const result = runMake(fixture, [target], {
+        dryRun: true,
+        repository: project,
+        variables: { BREW_BIN: fixture.bin },
+      });
+      expectSuccess(result);
+      expect(result.stdout).toContain(
+        `cd ${join(project, "tooling", "agent-handoff")} && ${join(fixture.bin, "cargo")} build --release`,
+      );
+      expect(result.stdout).toContain(
+        join(
+          project,
+          "tooling",
+          "agent-handoff",
+          "target",
+          "release",
+          "agent-handoff",
+        ),
+      );
+      expect(result.stdout).not.toContain("bun");
+    },
+  );
+});
+
+describe("deployment area: agent handoff managed destination", () => {
+  test("creates an absent agent-handoff destination", () => {
+    const fixture = createDeploymentFixture("agent-handoff-absent");
+    const { destination, release } = prepareAgentHandoff(fixture);
+
+    expectSuccess(
+      runMake(fixture, ["agent-handoff"], {
+        variables: { BREW_BIN: fixture.bin },
+      }),
+    );
+
+    expect(linkTarget(destination)).toBe(release);
+  });
+});
+
+describe("deployment area: agent handoff historical migration", () => {
+  test("migrates only the exact historical agent-handoff link", () => {
+    const fixture = createDeploymentFixture("agent-handoff-historical");
+    const { destination, release } = prepareAgentHandoff(fixture);
+    mkdirSync(join(fixture.home, ".local", "bin"), { recursive: true });
+    symlinkSync(
+      join(fixture.repository, "tooling", "agent-handoff"),
+      destination,
+    );
+
+    expectSuccess(
+      runMake(fixture, ["agent-handoff"], {
+        variables: { BREW_BIN: fixture.bin },
+      }),
+    );
+
+    expect(linkTarget(destination)).toBe(release);
+  });
+});
+
+describe("deployment area: agent handoff destination refusal", () => {
+  test("refuses an existing agent-handoff file without changing it", () => {
+    const fixture = createDeploymentFixture("agent-handoff-file");
+    const { destination } = prepareAgentHandoff(fixture);
+    mkdirSync(join(fixture.home, ".local", "bin"), { recursive: true });
+    writeFileSync(destination, "keep\n");
+    const before = fileIdentity(destination);
+
+    const result = runMake(fixture, ["agent-handoff"], {
+      variables: { BREW_BIN: fixture.bin },
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).not.toBe("");
+    expect(result.stdout).toContain(`readlink ${destination}`);
+    expect(fileIdentity(destination)).toEqual(before);
+  });
+
+  test.each([
+    ["unexpected", "unexpected", false],
+    ["unexpected dangling", "dangling", true],
+  ] as const)(
+    "refuses an %s agent-handoff link without changing it",
+    (_label, fixtureName, dangling) => {
+      const fixture = createDeploymentFixture(`agent-handoff-${fixtureName}`);
+      const { destination } = prepareAgentHandoff(fixture);
+      const target = join(fixture.root, "unexpected");
+      mkdirSync(join(fixture.home, ".local", "bin"), { recursive: true });
+      if (!dangling) {
+        writeFileSync(target, "keep\n");
+      }
+      symlinkSync(target, destination);
+
+      const result = runMake(fixture, ["agent-handoff"], {
+        variables: { BREW_BIN: fixture.bin },
+      });
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).not.toBe("");
+      expect(result.stdout).toContain(`readlink ${destination}`);
+      expect(linkTarget(destination)).toBe(target);
+    },
+  );
+});
+
 describe("deployment area: Hunspell wiring", () => {
   test("installs the formula, runtime, four pinned dictionaries, and Claude dependency", () => {
     const fixture = createDeploymentFixture("hunspell-wiring");
@@ -114,4 +227,26 @@ describe("deployment area: Hunspell wiring", () => {
 
 function count(value: string, needle: string): number {
   return value.split(needle).length - 1;
+}
+
+function prepareAgentHandoff(
+  fixture: ReturnType<typeof createDeploymentFixture>,
+): Readonly<{ destination: string; release: string }> {
+  const release = join(
+    fixture.repository,
+    "tooling",
+    "agent-handoff",
+    "target",
+    "release",
+    "agent-handoff",
+  );
+  mkdirSync(dirname(release), { recursive: true });
+  writeFileSync(release, "binary");
+  const noOperation = requireCommand("true");
+  symlinkSync(noOperation, join(fixture.bin, "brew"));
+  symlinkSync(noOperation, join(fixture.bin, "cargo"));
+  return {
+    destination: join(fixture.home, ".local", "bin", "agent-handoff"),
+    release,
+  };
 }

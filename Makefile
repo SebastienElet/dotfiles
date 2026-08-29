@@ -229,8 +229,12 @@ arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
 	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
-${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff-legacy/agent-handoff | ${LOCAL_BIN}
-	${CREATE_SYMLINK}
+.PHONY: agent-handoff
+agent-handoff: rust | ${LOCAL_BIN}
+	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
+	test ! -L ${LOCAL_BIN}/agent-handoff || test "$$(readlink ${LOCAL_BIN}/agent-handoff)" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
+	test -e ${LOCAL_BIN}/agent-handoff || test -L ${LOCAL_BIN}/agent-handoff || ln -s ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff ${LOCAL_BIN}/agent-handoff
+	test "$$(readlink ${LOCAL_BIN}/agent-handoff)" = "${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff"
 
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
@@ -453,7 +457,7 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 
 .PHONY: claude-code-hooks
-claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
+claude-code-hooks: arnes agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
@@ -522,7 +526,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 
 .PHONY: codex-hooks
-codex-hooks: arnes ${LOCAL_BIN}/agent-handoff
+codex-hooks: arnes agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent codex
 
 .PHONY: codexbar

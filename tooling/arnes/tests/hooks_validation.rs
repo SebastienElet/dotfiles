@@ -1,4 +1,4 @@
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
@@ -8,14 +8,18 @@ use tempfile::TempDir;
 struct Harness {
     _root: TempDir,
     home: PathBuf,
+    repository: PathBuf,
 }
 
 impl Harness {
     fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join("home");
+        let repository = root.path().join("repository");
         let executable = home.join(".local/bin/arnes");
         fs::create_dir(&home).unwrap();
+        fs::create_dir(&repository).unwrap();
+        let repository = fs::canonicalize(repository).unwrap();
         fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::write(&executable, b"binary").unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
@@ -24,7 +28,11 @@ impl Harness {
             "version: 1\nagents:\n  - id: claude\n    scopes: [user]\n  - id: cursor\n    scopes: [user]\n  - id: codex\n    scopes: [user]\nhooks:\n  - id: measurement\n    installations:\n      - { agent: claude, scope: user }\n      - { agent: cursor, scope: user }\n      - { agent: codex, scope: user }\nresources: []\n",
         )
         .unwrap();
-        Self { _root: root, home }
+        Self {
+            _root: root,
+            home,
+            repository,
+        }
     }
 
     fn config(&self, agent: &str) -> PathBuf {
@@ -46,6 +54,7 @@ impl Harness {
             .args(["setup", "hooks", "--agent", agent])
             .env_clear()
             .env("HOME", &self.home)
+            .current_dir(&self.repository)
             .output()
             .unwrap()
     }

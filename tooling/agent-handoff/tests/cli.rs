@@ -1,4 +1,4 @@
-use agent_handoff::{Environment, HandoffError, run_agent_handoff};
+use agent_handoff::{run_agent_handoff, Environment, HandoffError};
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -223,4 +223,20 @@ fn an_existing_sentinel_returns_before_transcript_access() {
     let output = run_event(&fixture, "existing");
 
     assert_clean_success(&output);
+}
+
+#[test]
+fn extra_cli_arguments_are_ignored() {
+    let fixture = Fixture::new();
+    fixture.write_claude_usage(84_999);
+    let mut command = fixture.command();
+    command.arg("ignored");
+
+    let output = run(
+        command,
+        &event(&fixture.transcript, "extra-argument", false),
+    );
+
+    assert_clean_success(&output);
+    assert!(!fixture.sentinel("extra-argument").exists());
 }

@@ -8,14 +8,22 @@ use tempfile::TempDir;
 struct Harness {
     _root: TempDir,
     home: PathBuf,
+    repository: PathBuf,
 }
 
 impl Harness {
     fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join("home");
+        let repository = root.path().join("repository");
         fs::create_dir(&home).unwrap();
-        Self { _root: root, home }
+        fs::create_dir(&repository).unwrap();
+        let repository = fs::canonicalize(repository).unwrap();
+        Self {
+            _root: root,
+            home,
+            repository,
+        }
     }
 
     fn write_manifest(&self) {
@@ -113,6 +121,7 @@ resources: []
             .args(["setup", "hooks", "--agent", agent])
             .env_clear()
             .env("HOME", &self.home)
+            .current_dir(&self.repository)
             .output()
             .unwrap()
     }
@@ -158,10 +167,8 @@ fn setup_installs_manifest_hooks_in_one_agent_configuration() {
         .flat_map(|group| group["hooks"].as_array().unwrap())
         .map(|handler| handler["command"].as_str().unwrap())
         .collect();
-    assert!(
-        commands
-            .contains(&format!("'{}' measure hook --agent claude-code", arnes.display()).as_str())
-    );
+    assert!(commands
+        .contains(&format!("'{}' measure hook --agent claude-code", arnes.display()).as_str()));
     assert!(commands.contains(&handoff.to_str().unwrap()));
 }
 
@@ -170,6 +177,16 @@ fn setup_installs_handoff_without_requiring_measurement() {
     let harness = Harness::new();
     harness.write_handoff_only_manifest();
     let handoff = harness.executable("agent-handoff");
+    let old_source = harness.repository.join("tooling/agent-handoff");
+    let old_script = harness.repository.join("scripts/agent_handoff");
+    let third_party = serde_json::json!({
+        "type":"command", "command":"third-party", "args":["keep"], "async":true
+    });
+    harness.write_claude_config(&serde_json::json!({"hooks":{"Stop":[{"hooks":[
+        {"type":"command","command":old_source,"timeout":7},
+        third_party,
+        {"type":"command","command":old_script}
+    ]}]}}));
     let output = harness.setup("claude");
     assert_eq!(
         output.status.code(),
@@ -177,10 +194,23 @@ fn setup_installs_handoff_without_requiring_measurement() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert_eq!(
-        harness.config()["hooks"]["Stop"][0]["hooks"][0]["command"],
-        handoff.to_str().unwrap()
-    );
+    let config = harness.config();
+    let serialized = serde_json::to_string(&config).unwrap();
+    assert!(!serialized.contains(old_source.to_str().unwrap()));
+    assert!(!serialized.contains(old_script.to_str().unwrap()));
+    let handlers: Vec<&Value> = config["hooks"]["Stop"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|group| group["hooks"].as_array().unwrap())
+        .collect();
+    assert!(handlers.contains(&&third_party));
+    let current = handlers
+        .iter()
+        .find(|handler| handler["command"] == handoff.to_str().unwrap())
+        .unwrap();
+    assert_eq!(current["args"], serde_json::json!([]));
+    assert_eq!(current["timeout"], 7);
 }
 
 #[test]
@@ -217,8 +247,12 @@ fn setup_removes_owned_capabilities_absent_from_the_manifest() {
     harness.write_measurement_only_manifest();
     let arnes = harness.executable("arnes");
     let handoff = harness.home.join(".local/bin/agent-handoff");
+    let old_source = harness.repository.join("tooling/agent-handoff");
+    let old_script = harness.repository.join("scripts/agent_handoff");
     harness.write_claude_config(&serde_json::json!({"hooks":{"Stop":[{"hooks":[
         {"type":"command","command":handoff},
+        {"type":"command","command":old_source},
+        {"type":"command","command":old_script},
         {"type":"command","command":"third-party"}
     ]}]}}));
 
@@ -227,6 +261,8 @@ fn setup_removes_owned_capabilities_absent_from_the_manifest() {
     assert_eq!(output.status.code(), Some(0));
     let serialized = serde_json::to_string(&harness.config()).unwrap();
     assert!(!serialized.contains(handoff.to_str().unwrap()));
+    assert!(!serialized.contains(old_source.to_str().unwrap()));
+    assert!(!serialized.contains(old_script.to_str().unwrap()));
     assert!(serialized.contains("third-party"));
     assert!(serialized.contains(&format!(
         "'{}' measure hook --agent claude-code",
