@@ -128,6 +128,7 @@ git commit -m "feat(ai): search every Git checkout with guarded ColGrep"
 
 - Rename: `harness/skills/codegraph/` → `harness/skills/code-search/`
 - Modify: `harness/skills/README.md`
+- Modify: `home/.arnes.yaml`
 - Modify: `Makefile`
 - Modify: `tooling/deployment-links.test.ts`
 
@@ -159,7 +160,7 @@ Set frontmatter `name: code-search`. Its first description sentence becomes `Sea
 
 - [ ] **Step 4: Update Make projections without cleanup logic**
 
-Replace the three agent projection targets and dependencies with `code-search`; deploy `${LOCAL_BIN}/colgrep-search`; remove old names from snapshot and smoke lists. Do not add deletion recipes for already-installed CodeGraph artifacts.
+Replace the three agent projection targets and dependencies with `code-search`; change the canonical Arnes manifest slug to `code-search`; deploy `${LOCAL_BIN}/colgrep-search`; remove old names from snapshot and smoke lists. Do not add deletion recipes for already-installed CodeGraph artifacts.
 
 - [ ] **Step 5: Pressure-test routing in fresh contexts**
 
@@ -178,7 +179,7 @@ make -n "$HOME/.local/bin/colgrep-search"
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Makefile harness/skills/code-search harness/skills/README.md tooling/deployment-links.test.ts
+git add Makefile home/.arnes.yaml harness/skills/code-search harness/skills/README.md tooling/deployment-links.test.ts
 git commit -m "feat(ai): expose technology-neutral code search"
 ```
 
