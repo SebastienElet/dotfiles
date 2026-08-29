@@ -229,7 +229,7 @@ arnes: rust ~/.arnes.yaml | ${LOCAL_BIN}
 	cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --release
 	test -e ${LOCAL_BIN}/arnes || ln -s ${DOTFILES_PATH}/tooling/arnes/target/release/arnes ${LOCAL_BIN}/arnes
 
-${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff | ${LOCAL_BIN}
+${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff-legacy/agent-handoff | ${LOCAL_BIN}
 	${CREATE_SYMLINK}
 
 .PHONY: arc

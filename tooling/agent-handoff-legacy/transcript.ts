@@ -1,4 +1,4 @@
-import { HandoffError } from "./agent-handoff-error.ts";
+import { HandoffError } from "./error.ts";
 
 type Usage = Readonly<{
   agent: "Claude Code" | "Codex";

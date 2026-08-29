@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
 
-import { runAgentHandoff } from "./agent-handoff.ts";
+import { runAgentHandoff } from "./run.ts";
 
 process.exit(await runAgentHandoff(await Bun.stdin.text(), process.env));

@@ -1,7 +1,7 @@
-import { type Usage, findLatestUsage } from "./agent-handoff-transcript.ts";
+import { type Usage, findLatestUsage } from "./transcript.ts";
 import { dirname, join } from "node:path";
 import { mkdir, open, readFile, stat } from "node:fs/promises";
-import { HandoffError } from "./agent-handoff-error.ts";
+import { HandoffError } from "./error.ts";
 
 type HookEvent = Readonly<{
   sessionId: string;

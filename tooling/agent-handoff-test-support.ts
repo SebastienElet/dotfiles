@@ -1,6 +1,10 @@
 import { join } from "node:path";
 
-const entryPoint = join(import.meta.dir, "agent-handoff");
+const entryPoint = join(
+  import.meta.dir,
+  "agent-handoff-legacy",
+  "agent-handoff",
+);
 const assistantMessageTokenCount = 2;
 const defaultContextWindow = 100_000;
 const inheritedEnvironment = Object.fromEntries(
