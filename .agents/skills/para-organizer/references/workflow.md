@@ -14,7 +14,7 @@ This is not optional. Say it before doing anything else.
 
 ### Step 2 — Understand the starting point
 
-Ask the user which folder they want to organize — typically a cloud-drive root or a custom root folder. Request access to it if you don't already have it. `~/Documents` is out of scope because it is governed by the `johnny-decimal` skill; if the user names it, stop and hand off.
+Ask the user which folder they want to organize — typically a cloud-drive root or a custom root folder. Request access to it if you don't already have it. `~/Documents` is out of scope because no organization workflow is currently configured for it; if the user names it, stop without changing its contents.
 
 **Check for a Master Prompt.** Before asking framing questions, check if the user has a Master Prompt (personal AI context document) available — either in their custom instructions, in the conversation, or as a file. If they do, read it. A Master Prompt typically lists their current projects, areas of responsibility, goals, and interests — exactly the information you need. Use it to pre-populate your understanding and skip or shorten the framing questions below. For example, if the Master Prompt already lists five active projects with goals and deadlines, don't ask "What are your main projects?" — instead confirm: "I see from your Master Prompt that your current projects include X, Y, and Z. Is that still accurate, or has anything changed?"
 

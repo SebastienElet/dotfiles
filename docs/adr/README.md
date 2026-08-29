@@ -66,7 +66,6 @@ ici sont les dates d'auteur.
 | [028](028-skills-ssot.md)                              | `.agents/skills/` comme source unique des skills projet          | 2026-05 |
 | [029](029-pas-de-skills-tierces.md)                    | Skills tierces refusées par défaut                               | 2026-05 |
 | [031](031-mcp-en-conteneurs-nommes.md)                 | MCP en conteneurs Docker nommés                                  | 2026-08 |
-| [032](032-johnny-decimal-documents.md)                 | Johnny Decimal pour `~/Documents`                                | 2025-08 |
 | [033](033-pas-de-rtk.md)                               | Ne pas utiliser RTK                                              | 2026-08 |
 | [034](034-pas-de-caveman.md)                           | Ne pas utiliser les skills Caveman                               | 2026-08 |
 | [035](035-agents-md-elague-par-mesure.md)              | `AGENTS.md` élagué par mesure du no-op                           | 2026-08 |
