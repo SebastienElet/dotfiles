@@ -5,18 +5,17 @@ import {
   validateColgrepIndex,
 } from "./colgrep-worktree-contract.ts";
 
-const gitEnvironmentVariables = [
-  "GIT_DIR",
-  "GIT_WORK_TREE",
-  "GIT_INDEX_FILE",
-  "GIT_COMMON_DIR",
-  "GIT_PREFIX",
-] as const;
+const commandArgumentOffset = 2;
 
 interface CommandResult {
   readonly exitCode: number;
   readonly stderr: string;
   readonly stdout: string;
+}
+
+interface CommandExecution {
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly run?: RunCommand;
 }
 
 type RunCommand = (
@@ -25,9 +24,12 @@ type RunCommand = (
   environment?: Readonly<Record<string, string | undefined>>,
 ) => CommandResult;
 
-function main(arguments_: readonly string[] = process.argv.slice(2)): number {
+function main(
+  arguments_: readonly string[] = process.argv.slice(commandArgumentOffset),
+): number {
   try {
-    if (arguments_.length !== 1 || arguments_[0]!.trim() === "") {
+    const [query] = arguments_;
+    if (arguments_.length !== 1 || query === undefined || query.trim() === "") {
       throw new Error("exactly one non-empty conceptual query is required");
     }
     const git = requireExecutable(
@@ -48,7 +50,7 @@ function main(arguments_: readonly string[] = process.argv.slice(2)): number {
       "search",
       "--json",
       "--no-update",
-      arguments_[0]!,
+      query,
       root,
     ]);
     const results = parseAndConfineResults(search.stdout, root);
@@ -71,18 +73,15 @@ function resolveLinkedWorktreeRoot(
   const rootEvidence = runRequired(
     git,
     ["-C", cwd, "rev-parse", "--show-toplevel"],
-    environment,
-    run,
+    { environment, run },
   ).stdout;
   const root = canonicalPath(singleLine(rootEvidence, "Git worktree root"));
   const gitDirectory = canonicalPath(
     singleLine(
-      runRequired(
-        git,
-        ["-C", root, "rev-parse", "--absolute-git-dir"],
+      runRequired(git, ["-C", root, "rev-parse", "--absolute-git-dir"], {
         environment,
         run,
-      ).stdout,
+      }).stdout,
       "Git directory",
     ),
   );
@@ -91,8 +90,7 @@ function resolveLinkedWorktreeRoot(
       runRequired(
         git,
         ["-C", root, "rev-parse", "--path-format=absolute", "--git-common-dir"],
-        environment,
-        run,
+        { environment, run },
       ).stdout,
       "Git common directory",
     ),
@@ -100,8 +98,7 @@ function resolveLinkedWorktreeRoot(
   const superproject = runRequired(
     git,
     ["-C", root, "rev-parse", "--show-superproject-working-tree"],
-    environment,
-    run,
+    { environment, run },
   ).stdout;
   if (superproject !== "" || gitDirectory === commonDirectory) {
     throw new Error("the active repository is not a linked worktree");
@@ -112,9 +109,10 @@ function resolveLinkedWorktreeRoot(
 function runRequired(
   binary: string,
   arguments_: readonly string[],
-  environment: Readonly<Record<string, string | undefined>> = process.env,
-  run: RunCommand = runCommand,
+  execution: Readonly<CommandExecution> = {},
 ): CommandResult {
+  const environment = execution.environment ?? process.env;
+  const run = execution.run ?? runCommand;
   const result = run(binary, arguments_, environment);
   if (result.exitCode !== 0) {
     throw new Error(
@@ -142,12 +140,15 @@ function runCommand(
 }
 
 function gitEnvironment(): Record<string, string | undefined> {
-  const environment = { ...process.env };
-  for (const variable of gitEnvironmentVariables) {
-    delete environment[variable];
-  }
-  environment.LC_ALL = "C";
-  return environment;
+  return {
+    ...process.env,
+    GIT_COMMON_DIR: undefined,
+    GIT_DIR: undefined,
+    GIT_INDEX_FILE: undefined,
+    GIT_PREFIX: undefined,
+    GIT_WORK_TREE: undefined,
+    LC_ALL: "C",
+  };
 }
 
 function singleLine(output: string, label: string): string {
@@ -157,7 +158,11 @@ function singleLine(output: string, label: string): string {
   if (lines.length !== 1 || lines[0] === "") {
     throw new Error(`${label} is missing or ambiguous`);
   }
-  return lines[0]!;
+  const [line] = lines;
+  if (line === undefined) {
+    throw new Error(`${label} is missing or ambiguous`);
+  }
+  return line;
 }
 
 function canonicalPath(path: string): string {
@@ -174,9 +179,11 @@ function requireExecutable(binary: string, name: string): string {
   return found ?? binary;
 }
 
-function decode(output: Uint8Array, stream: string): string {
+function decode(output: Readonly<ArrayLike<number>>, stream: string): string {
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(output);
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+      Uint8Array.from(output),
+    );
   } catch {
     throw new Error(`command ${stream} contains invalid UTF-8`);
   }

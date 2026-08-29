@@ -1,10 +1,10 @@
-import { expect, test } from "bun:test";
 import {
   createLinkedWorktreeFixture,
   gitProvider,
   readInvocations,
   runEntryPoint,
 } from "./colgrep-worktree-test-support.ts";
+import { expect, test } from "bun:test";
 
 test("refuses a main checkout before ColGrep", () => {
   const fixture = createLinkedWorktreeFixture();
@@ -70,22 +70,19 @@ test.each([
   ["empty-root", "Git worktree root is missing or ambiguous"],
   ["multiple-root", "Git worktree root is missing or ambiguous"],
   ["superproject", "the active repository is not a linked worktree"],
-])(
-  "%s Git evidence refuses before ColGrep",
-  (mode, expectedError) => {
-    const fixture = createLinkedWorktreeFixture();
-    const environment = {
-      ...fixture.environment,
-      COLGREP_TEST_GIT_MODE: mode,
-      COLGREP_WORKTREE_GIT_BIN: gitProvider,
-    };
+])("%s Git evidence refuses before ColGrep", (mode, expectedError) => {
+  const fixture = createLinkedWorktreeFixture();
+  const environment = {
+    ...fixture.environment,
+    COLGREP_TEST_GIT_MODE: mode,
+    COLGREP_WORKTREE_GIT_BIN: gitProvider,
+  };
 
-    const result = runEntryPoint(fixture.linkedRoot, "query", environment);
-    expectRefusal(result);
-    expect(result.stderr).toContain(expectedError);
-    expect(readInvocations(fixture)).toEqual([]);
-  },
-);
+  const result = runEntryPoint(fixture.linkedRoot, "query", environment);
+  expectRefusal(result);
+  expect(result.stderr).toContain(expectedError);
+  expect(readInvocations(fixture)).toEqual([]);
+});
 
 test.each([
   "init-failure",
@@ -101,10 +98,14 @@ test.each([
 ])("%s refuses before index search", (mode) => {
   const fixture = createLinkedWorktreeFixture({ mode });
 
-  expectRefusal(runEntryPoint(fixture.linkedRoot, "query", fixture.environment));
-  expect(readInvocations(fixture)).not.toContainEqual(
-    expect.arrayContaining(["search"]),
+  expectRefusal(
+    runEntryPoint(fixture.linkedRoot, "query", fixture.environment),
   );
+  expect(
+    readInvocations(fixture).some((invocation: readonly string[]) =>
+      invocation.includes("search"),
+    ),
+  ).toBeFalse();
 });
 
 test.each([
@@ -115,10 +116,14 @@ test.each([
 ])("%s publishes no partial result", (mode) => {
   const fixture = createLinkedWorktreeFixture({ mode });
 
-  expectRefusal(runEntryPoint(fixture.linkedRoot, "query", fixture.environment));
-  expect(readInvocations(fixture)).toContainEqual(
-    expect.arrayContaining(["search"]),
+  expectRefusal(
+    runEntryPoint(fixture.linkedRoot, "query", fixture.environment),
   );
+  expect(
+    readInvocations(fixture).some((invocation: readonly string[]) =>
+      invocation.includes("search"),
+    ),
+  ).toBeTrue();
 });
 
 function expectRefusal(result: {
@@ -128,7 +133,5 @@ function expectRefusal(result: {
 }): void {
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).toBe("");
-  expect(result.stderr).toEndWith(
-    "Fall back to bounded rg/fd searches.\n",
-  );
+  expect(result.stderr).toEndWith("Fall back to bounded rg/fd searches.\n");
 }

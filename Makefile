@@ -4,7 +4,7 @@ CODEGRAPH_GLOBAL_IGNORE?=$(HOME)/.config/git/ignore
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .codex/config.toml .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/codegraph-repository-size .tmux/plugins/tpm .volta/bin/codegraph .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
+MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .codex/config.toml .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/codegraph-repository-size .local/bin/colgrep-worktree .tmux/plugins/tpm .volta/bin/codegraph .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -44,7 +44,7 @@ smoke-minimal:
 	@set -eu; \
 	$(MAKE) --no-print-directory minimal </dev/null; \
 	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"; \
-	for executable in "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${VOLTA_BIN}/codegraph" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
+	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/codegraph-repository-size" "${LOCAL_BIN}/colgrep-worktree" "${VOLTA_BIN}/codegraph" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
 	stdout=$$(mktemp); stderr=$$(mktemp); trap 'rm -f "$$stdout" "$$stderr"' EXIT; \
 	before=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
 	if ! $(MAKE) --no-print-directory minimal </dev/null >"$$stdout" 2>"$$stderr"; then cat "$$stdout"; cat "$$stderr" >&2; exit 1; fi; \
@@ -63,7 +63,7 @@ bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
 
 .PHONY: minimal-artifacts
-minimal-artifacts: bat fish nvim wezterm git-delta starship tmux node pnpm arnes claude-code codex codegraph hunspell
+minimal-artifacts: bat fish nvim wezterm git-delta starship tmux node pnpm arnes claude-code codex codegraph hunspell ${LOCAL_BIN}/colgrep-worktree
 
 .PHONY: optional-artifacts
 optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3
@@ -311,6 +311,7 @@ codegraph-cursor: codegraph-cli claude-code codex
 .PHONY: codegraph-test
 codegraph-test: bun tokei
 	bash harness/skills/codegraph/scripts/skill_contract_test.sh
+	${BREW_BIN}/bun test tooling/colgrep-worktree*.test.ts
 	${BREW_BIN}/bun test tooling/codegraph-repository-*.test.ts
 	CODEGRAPH_REAL_CLAUDE_BIN=${LOCAL_BIN}/claude CODEGRAPH_REAL_CODEX_BIN=${VOLTA_BIN}/codex ${BREW_BIN}/bun test tooling/codegraph-configure.test.ts tooling/codegraph-configure-deployment.test.ts
 	CODEGRAPH_INTEGRATION=1 ${BREW_BIN}/bun test tooling/codegraph-integration.test.ts
@@ -342,6 +343,9 @@ codegraph-ignore:
 	ln -s "$$expected" "$$target"
 
 ${LOCAL_BIN}/codegraph-repository-size: ${DOTFILES_PATH}/tooling/codegraph-repository-size FORCE | ${LOCAL_BIN}
+	@${CREATE_SYMLINK}
+
+${LOCAL_BIN}/colgrep-worktree: ${DOTFILES_PATH}/tooling/colgrep-worktree FORCE | ${LOCAL_BIN}
 	@${CREATE_SYMLINK}
 
 .PHONY: googleworkspace-cli

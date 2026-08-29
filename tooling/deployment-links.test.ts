@@ -150,6 +150,23 @@ test(
   deploymentTimeoutMilliseconds,
 );
 
+test("deploys the ColGrep worktree entry point without replacing a destination", () => {
+  const fixture = createDeploymentFixture("colgrep-worktree");
+  const destination = join(fixture.home, ".local", "bin", "colgrep-worktree");
+
+  expectSuccess(runMake(fixture, [destination], { repository: project }));
+  expect(linkTarget(destination)).toBe(
+    join(project, "tooling", "colgrep-worktree"),
+  );
+  expectSuccess(runMake(fixture, [destination], { repository: project }));
+
+  unlinkSync(destination);
+  writeFileSync(destination, "keep\n");
+  const divergent = runMake(fixture, [destination], { repository: project });
+  expect(divergent.exitCode).not.toBe(0);
+  expect(readFileSync(destination, "utf8")).toBe("keep\n");
+});
+
 function expectDivergentSymlinkRejected(
   fixture: ReturnType<typeof createDeploymentFixture>,
   destination: string,

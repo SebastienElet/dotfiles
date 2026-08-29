@@ -1,3 +1,5 @@
+tap "lightonai/tap"
+
 brew "bat"
 brew "bottom"
 brew "broot"
@@ -12,6 +14,7 @@ brew "gnu-sed"
 brew "hunspell"
 brew "jq"
 brew "lazygit"
+brew "lightonai/tap/colgrep", trusted: true
 brew "mtr"
 brew "neovim"
 brew "procs"

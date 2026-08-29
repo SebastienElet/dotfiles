@@ -1,4 +1,3 @@
-import { afterEach } from "bun:test";
 import {
   chmodSync,
   existsSync,
@@ -8,9 +7,10 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { afterEach } from "bun:test";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { z } from "zod";
 
 interface CommandResult {
   readonly exitCode: number;
@@ -32,7 +32,15 @@ interface FixtureOptions {
   readonly mode?: string;
 }
 
-const project = dirname(fileURLToPath(import.meta.url));
+interface RepositoryFixture {
+  readonly linkedRoot: string;
+  readonly mainRoot: string;
+  readonly root: string;
+}
+
+const executableFileMode = 0o755;
+const invocationsSchema = z.array(z.string());
+const project = import.meta.dirname;
 const entryPoint = join(project, "colgrep-worktree");
 const provider = join(project, "colgrep-worktree-test-provider");
 const gitProvider = join(project, "colgrep-worktree-git-test-provider");
@@ -47,14 +55,41 @@ afterEach(() => {
 function createLinkedWorktreeFixture(
   options: FixtureOptions = {},
 ): LinkedWorktreeFixture {
-  chmodSync(provider, 0o755);
-  chmodSync(gitProvider, 0o755);
+  chmodSync(provider, executableFileMode);
+  chmodSync(gitProvider, executableFileMode);
+  const repository = createRepositoryFixture();
+  return createColgrepFixture(repository, options);
+}
+
+function createRepositoryFixture(): RepositoryFixture {
   const root = mkdtempSync(join(tmpdir(), "colgrep-worktree-test-"));
   fixtureRoots.push(root);
   const mainRoot = join(root, "main");
   const linkedRoot = join(root, "linked");
+  initializeMainRepository(root, mainRoot);
+  run(
+    [
+      "git",
+      "-C",
+      mainRoot,
+      "worktree",
+      "add",
+      "-q",
+      "-b",
+      "feature",
+      linkedRoot,
+    ],
+    root,
+  );
+  return { linkedRoot, mainRoot, root };
+}
+
+function initializeMainRepository(root: string, mainRoot: string): void {
   run(["git", "init", "-q", "-b", "main", mainRoot], root);
-  writeFileSync(join(mainRoot, "tracked.ts"), "export const mainSymbol = true;\n");
+  writeFileSync(
+    join(mainRoot, "tracked.ts"),
+    "export const mainSymbol = true;\n",
+  );
   run(["git", "-C", mainRoot, "add", "tracked.ts"], root);
   run(
     [
@@ -71,10 +106,13 @@ function createLinkedWorktreeFixture(
     ],
     root,
   );
-  run(
-    ["git", "-C", mainRoot, "worktree", "add", "-q", "-b", "feature", linkedRoot],
-    root,
-  );
+}
+
+function createColgrepFixture(
+  repository: RepositoryFixture,
+  options: FixtureOptions,
+): LinkedWorktreeFixture {
+  const { linkedRoot, mainRoot, root } = repository;
   const canonicalLinkedRoot = realpathSync.native(linkedRoot);
   const gitDirectory = run(
     ["git", "-C", canonicalLinkedRoot, "rev-parse", "--absolute-git-dir"],
@@ -82,7 +120,9 @@ function createLinkedWorktreeFixture(
   ).stdout.trimEnd();
   const indexDirectory = join(root, "data", "indices", "linked-fixture");
   const invocations = join(root, "invocations.jsonl");
-  const activeResult = { unit: { file: join(canonicalLinkedRoot, "tracked.ts") } };
+  const activeResult = {
+    unit: { file: join(canonicalLinkedRoot, "tracked.ts") },
+  };
   return {
     activeResult,
     environment: {
@@ -116,7 +156,7 @@ function readInvocations(fixture: LinkedWorktreeFixture): readonly string[][] {
     .trimEnd()
     .split("\n")
     .filter(Boolean)
-    .map((line) => JSON.parse(line) as string[]);
+    .map((line) => invocationsSchema.parse(JSON.parse(line)));
 }
 
 function runEntryPoint(
@@ -130,7 +170,9 @@ function runEntryPoint(
 function run(
   command: readonly string[],
   cwd: string,
-  environment: Readonly<Record<string, string>> = stringEnvironment(process.env),
+  environment: Readonly<Record<string, string>> = stringEnvironment(
+    process.env,
+  ),
 ): CommandResult {
   const result = Bun.spawnSync([...command], {
     cwd,
@@ -154,11 +196,13 @@ function requireExecutable(name: string): string {
 }
 
 function stringEnvironment(
-  environment: NodeJS.ProcessEnv,
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries(environment).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
+      (
+        entry: readonly [string, string | undefined],
+      ): entry is [string, string] => entry[1] !== undefined,
     ),
   );
 }

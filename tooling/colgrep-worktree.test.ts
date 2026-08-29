@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test";
 import {
   createLinkedWorktreeFixture,
   readInvocations,
   runEntryPoint,
 } from "./colgrep-worktree-test-support.ts";
+import { expect, test } from "bun:test";
 
 test("searches only after proving the active linked-worktree index", () => {
   const fixture = createLinkedWorktreeFixture();

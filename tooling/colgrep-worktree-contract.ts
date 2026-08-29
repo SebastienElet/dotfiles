@@ -1,5 +1,5 @@
-import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative } from "node:path";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { z } from "zod";
 
 const projectMetadataSchema = z
@@ -29,11 +29,9 @@ const indexStateSchema = z
   })
   .strict();
 
-const searchResultSchema = z
-  .object({
-    unit: z.object({ file: z.string().min(1) }).passthrough(),
-  })
-  .passthrough();
+const searchResultSchema = z.looseObject({
+  unit: z.looseObject({ file: z.string().min(1) }),
+});
 const searchResultsSchema = z.array(searchResultSchema);
 
 interface ColgrepStatus {
@@ -52,9 +50,14 @@ function parseColgrepStatus(stdout: string): ColgrepStatus {
   ) {
     throw new Error("ColGrep status is ambiguous");
   }
+  const [projectRoot] = projects;
+  const [indexDirectory] = indexes;
+  if (projectRoot === undefined || indexDirectory === undefined) {
+    throw new Error("ColGrep status is ambiguous");
+  }
   return {
-    indexDirectory: indexes[0]!,
-    projectRoot: projects[0]!,
+    indexDirectory,
+    projectRoot,
   };
 }
 
@@ -92,7 +95,7 @@ function validateColgrepIndex(
 function parseAndConfineResults(stdout: string, root: string): unknown[] {
   const results = searchResultsSchema.parse(JSON.parse(stdout));
   for (const result of results) {
-    const file = result.unit.file;
+    const { file } = result.unit;
     if (!isAbsolute(file)) {
       throw new Error("ColGrep returned a relative result path");
     }
@@ -101,7 +104,9 @@ function parseAndConfineResults(stdout: string, root: string): unknown[] {
     if (
       relativeFile === "" ||
       relativeFile === ".." ||
-      relativeFile.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+      relativeFile.startsWith(
+        `..${process.platform === "win32" ? "\\" : "/"}`,
+      ) ||
       isAbsolute(relativeFile)
     ) {
       throw new Error("ColGrep returned a result outside the worktree");
