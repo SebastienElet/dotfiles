@@ -145,12 +145,16 @@ jobs:
           .github/workflows/lint.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
+          docs/adr/039-codegraph-recuperation-structurelle.md
+          docs/adr/README.md docs/codegraph.md
           docs/design-claim-audit-validation.md
           docs/issue-257-installation-macos-audit.md
           docs/issue-257-installation-macos-design.md
           harness/skills/design-claim-audit/SKILL.md
           harness/skills/design-claim-audit/evals/trigger-queries.json
           harness/skills/design-claim-audit/evals/fixture/*.md
+          harness/skills/codegraph/SKILL.md
+          harness/skills/codegraph/evals/trigger-queries.json
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
