@@ -197,9 +197,11 @@ absente.
 
 ## Indexation et coût de contexte
 
-L'index est un artefact local dérivé et intégralement reconstruisible depuis les YAML. Il contient
-seulement l'identifiant, le type, le statut, le scope, les termes d'accès, un résumé court et le
-chemin du fichier. Il n'est jamais la source d'autorité d'une entrée et n'est jamais injecté en
+L'index est un artefact local dérivé et intégralement reconstruisible depuis les YAML. Chaque ligne
+contient l'identifiant, le type, le statut, le scope, les termes d'accès, les tokens normalisés et
+dédupliqués du statement, un résumé court et le chemin du fichier. Des diagnostics dérivés séparés
+par scope contiennent seulement l'identifiant, le contrôle et l'effet; leur inventaire couvre aussi
+les YAML omis. L'index n'est jamais la source d'autorité d'une entrée et n'est jamais injecté en
 bloc dans le contexte d'un modèle.
 
 Chaque recherche s'exécute localement contre l'index, puis charge seulement les fichiers retenus.
@@ -229,6 +231,16 @@ conclure, le fallback humain explicite peut produire un verdict `valid` ; en l'a
 l'entrée reste omise. Tout verdict `valid`, automatisé ou humain, suit la même fenêtre de cache de
 48 heures. Le cache est dérivé, séparé des YAML et ne peut pas servir de preuve de sa propre
 fraîcheur.
+
+Chaque record de cache lie le verdict à un digest de l'oracle déclaratif et à un `proof_digest`
+opaque calculé sur les sources ordonnées complètes `{kind, locator, fingerprint}`. Les locators ne
+sont pas conservés en clair dans le cache. Un changement de locator, d'ordre ou d'empreinte produit
+un miss; seules les empreintes locales sont recalculées avant un hit encore dans la fenêtre.
+
+Les conclusions humaines terminales forment une union fermée compatible avec le type : objectif
+atteint ou abandonné, décision supersédée, inconnue résolue, hypothèse confirmée. La validation
+humaine d'une preuve est un verdict `valid` distinct et ne crée jamais à elle seule une transition
+métier; `evidence` et `invariant` ne possèdent aucun terminal humain.
 
 L'agent annonce chaque mémoire injectée avec son `kind`, son `statement`, la source de sa preuve et
 l'âge du dernier verdict valide. Les résultats `unavailable`, `needs_confirmation` ou devenus

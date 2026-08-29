@@ -2,461 +2,246 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Livrer dans la PR 249 une mémoire locale durable, partagée et observable pour Codex, Claude Code et Cursor, avec admission, propositions automatiques, YAML hors Git, index dérivé, oracles et cache de fraîcheur de 48 h.
+**Goal:** Livrer une mémoire locale durable, partagée et observable pour Codex, Claude Code et Cursor sans confier son domaine ni son état à Arnes.
 
-**Architecture:** Étendre Arnes, déjà responsable du harnais et de ses hooks, avec un domaine Rust fermé qui possède validation, identité projet, sources, stockage, index, oracles et retrieval. Codex et Claude reçoivent le contexte par leur hook synchrone `UserPromptSubmit`; Cursor, dont le hook pré-prompt ne sait pas injecter, reçoit une règle user minimale qui impose l’appel de la même CLI avant tout travail, puis une évaluation comportementale bloque toute promesse non prouvée.
+**Architecture:** `tooling/agent-memory/` est un package Cargo autonome qui possède tout le domaine mémoire et ses adapters runtime. Arnes configure, valide et mesure uniquement les hooks et leurs exécutables; le `Makefile` déploie séparément `agent-memory` et le `agent-handoff` Rust livré par son propre plan, sans workspace ni crate partagé.
 
-**Tech Stack:** Rust 2024, `serde`/`serde_yaml_ng`, `sha2`, `rustix`, `jiff`, `unicode-normalization`, `url`, Git, curl, Bun 1.4, TypeScript 7, Make, YAML et JSON.
+**Tech Stack:** Rust 2024, `clap`, `serde`/`serde_yaml_ng`, `sha2`, `rustix`, `jiff`, `unicode-normalization`, `url`, Git, curl, Bun 1.4, TypeScript 7, Make, YAML et JSON.
 
 **Spec:** `docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md`
 
 ## Global Constraints
 
-- Les YAML sous `~/.local/share/agent-memory/` sont l’unique autorité; index et cache restent dérivés, supprimables et reconstruisibles.
-- Le store et ses répertoires sont `0700`; chaque YAML, index, cache, verrou et fichier temporaire est `0600`.
-- Aucun YAML, index, cache, résultat brut d’agent, prompt privé ou transcript n’entre dans Git.
-- Les scopes persistés sont `project` par défaut et `user` seulement après autorisation explicite; deux worktrees d’un même Git partagent la même clé projet.
-- Les six types restent fermés à `goal`, `decision`, `evidence`, `invariant`, `unknown` et `assumption`; les statuts autorisés restent exactement ceux de la spec.
-- Les sources initiales restent fermées à `git-file`, `local-file`, `official-url` et `user-decision`; aucune commande shell n’est persistée ou exécutée depuis un YAML.
-- La recherche reste locale, lexicale et déterministe, sans embedding, service ni similarité implicite; elle injecte au plus cinq entrées et annonce le nombre de résultats écartés.
-- Un verdict `valid` est réutilisable strictement moins de 48 heures; à exactement 48 heures il est expiré, et tout changement local observable invalide immédiatement le cache.
-- Une demande explicite ou l’acceptation d’une proposition peut écrire; une détection implicite propose sans jamais écrire.
-- `~/.codex/memories/` et tout état généré propre à un agent restent intouchables.
-- Les diagnostics contiennent identifiant, code du contrôle et effet, jamais statement complet, contenu source, credential, prompt ou transcript.
-- Le cœur portable est prouvé sur macOS et Linux; les agents réels sont évalués sur l’environnement nommé et ne valent pas pour une autre version ou plateforme.
-- Baseline de la spec : Codex CLI `0.150.1`, Claude Code `2.1.250`, Cursor `3.15.6`; version Cursor réellement observée pendant la discovery : `2026.08.25-3e8eec8` sur `Darwin arm64 26.6.2`.
-- Utiliser `enforcement-code` pour chaque refus, `skill-manager fix memory-governance user` pour la skill, puis `skill-manager sync-index user`; ne pas ajouter de commentaire de code.
-- Ne publier aucune promesse de persistance, injection, proposition automatique, isolation ou fraîcheur avant le GREEN de son oracle end-to-end nommé.
+- Lire la spec, `AGENTS.md`, `harness/AGENTS.md`, `harness/USER.md`, l’index ADR, ADR-038, ADR-041, ADR-042 et la skill mémoire avant toute modification.
+- Exécuter la tâche 1 de ce plan, puis le plan distinct `docs/superpowers/plans/2026-08-29-agent-handoff-rust.md` et sa revue avant de reprendre ici à la tâche 2. Il produit `tooling/agent-handoff/`, package Cargo autonome conservant exactement stdin, environnement, stdout, stderr et codes de sortie du runtime Bun.
+- `agent-memory` et `agent-handoff` ont chacun manifest, lockfile, source, tests et binaire; aucun workspace, crate interne partagé ou dépendance mutuelle.
+- Arnes ne dépend d’aucun de ces crates, ne contient aucun domaine mémoire/handoff et ne lit ni n’écrit leur état. Il configure, valide et mesure seulement hooks et exécutables.
+- Les YAML sous `~/.local/share/agent-memory/` sont l’autorité; index et cache sont dérivés. Répertoires `0700`, fichiers `0600`; aucune donnée mémoire ou résultat brut n’entre dans Git.
+- Scope `project` par défaut; scope `user` après autorisation explicite. Types fermés : `goal`, `decision`, `evidence`, `invariant`, `unknown`, `assumption`. Sources fermées : `git-file`, `local-file`, `official-url`, `user-decision`.
+- Clé projet : `project_<sha256(realpath(git-common-dir))>`; hors Git, résultat ambigu/non absolu/non canonique : rejet. ID : `mem_<24 premiers hex de sha256(schema_version, kind, scope.key, statement normalisé)>`; document canonique identique : `duplicate`; même identité et autre contenu : `conflict`.
+- Aucune commande shell dans un YAML; aucun commentaire de code. Diagnostics redacted sans statement, source brute, credential, prompt ou transcript.
+- Une `official-url` est HTTPS sans credentials, IP littérale ni fragment, avec cinq redirections HTTPS maximum, corps 1 Mio, connexion 5 s et durée totale 15 s; son domaine exige une source `user-decision` co-présente.
+- Publication : verrou global → préparation YAML/index → rename YAML → fsync répertoire → rename index → fsync. L’index ne pointe jamais vers un YAML absent; un index périmé est reconstruit au retrieval.
+- Recherche locale lexicale déterministe, cinq injections maximum. Verdict `valid` consommable strictement moins de 48 h; changement local immédiatement invalidant.
+- `invalid` produit seulement `invalidated`. Les terminaux métier `achieved`, `abandoned`, `superseded`, `resolved`, `confirmed` exigent une conclusion humaine `valid` compatible; une entrée ne transite qu’une fois.
+- Demande explicite ou proposition acceptée écrit; détection implicite propose sans écrire. Aucun état généré propre à un agent n’est édité.
+- Cœur portable prouvé sur macOS/Linux; agents réels seulement sur l’environnement nommé. Baseline : Codex `0.150.1`, Claude `2.1.250`, Cursor `3.15.6`; Cursor observé `2026.08.25-3e8eec8`, `Darwin arm64 26.6.2`.
+- Utiliser `enforcement-code` pour les refus, `skill-manager fix memory-governance user`, puis `skill-manager sync-index user`.
+- Aucune capacité n’est annoncée avant son oracle E2E vert.
 
-## Décisions fermées par la discovery
+## Structure cible
 
-- Ajouter l’ADR-042 avant le code : la spec approuvée est une exigence, mais `docs/adr/` reste l’autorité des décisions structurelles en vigueur.
-- Conserver un seul binaire `arnes`. Un second crate ou binaire dupliquerait racines, installation, hooks et diagnostics sans frontière métier indépendante.
-- Calculer `scope.key` comme `project_<sha256(realpath(git-common-dir))>`. Les worktrees convergent; deux clones et un dépôt déplacé restent volontairement distincts. Hors dépôt Git, `realpath` impossible ou résultat non absolu : admission projet refusée.
-- Générer `id` comme `mem_<24 premiers hex de sha256(schema_version, kind, scope.key, statement normalisé)>`. Même identité et document canonique identique : `duplicate`; même identité et autre contenu : `conflict`.
-- Un oracle automatisé `source-fingerprint` compare toutes les empreintes de preuve. Il produit `valid`, `invalid` ou `unavailable`; `invalid` entraîne uniquement `invalidated`. Les statuts `achieved`, `abandoned`, `superseded`, `resolved` et `confirmed` exigent une conclusion humaine `valid` explicitement typée pour le `kind`.
-- Une entrée ne transite qu’une fois de `active` vers un statut terminal et n’est jamais réactivée; l’objet `transition` unique est donc l’historique complet autorisé dans cette version.
-- L’ordre de commit est verrou global → préparation YAML et index → rename YAML → fsync répertoire → rename index → fsync. Il empêche un index vers un YAML absent; un crash après le YAML laisse seulement un index périmé, détecté et reconstruit au retrieval.
-- Codex et Claude utilisent `UserPromptSubmit` avec `additionalContext`. Cursor n’a aucune injection query-specific native avant modèle : sa règle user `alwaysApply` ne garantit que la présence de l’instruction; la capacité n’est annoncée que si la skill exécute effectivement le retrieval avant influence dans `3/3` processus frais.
-- Le contrôle de contenu sensible est une barrière déterministe pour les formes nommées et une heuristique advisory pour un prompt privé ou transcript non marqué. La skill et l’E2E complètent cette limite; aucune détection universelle n’est revendiquée.
-- `official-url` exige HTTPS sans credentials, IP littérale ni fragment, cinq redirections HTTPS maximum, 1 Mio maximum, connexion 5 s et durée totale 15 s. L’officialité du domaine est une décision utilisateur persistée comme source `user-decision`; le fetch ne prétend pas l’inférer.
+```text
+tooling/
+├── agent-handoff/                 # produit du plan handoff exécuté avant celui-ci
+│   ├── Cargo.toml
+│   ├── Cargo.lock
+│   ├── src/
+│   └── tests/
+├── agent-memory/
+│   ├── Cargo.toml
+│   ├── Cargo.lock
+│   ├── src/
+│   │   ├── lib.rs                 # réexporte la façade memory
+│   │   ├── main.rs
+│   │   ├── cli.rs
+│   │   ├── admission.rs
+│   │   ├── hook.rs
+│   │   ├── memory.rs              # façade du domaine déplacée depuis Arnes
+│   │   └── memory/                # implémentation du domaine déplacée depuis Arnes
+│   └── tests/
+├── agent-memory-eval.ts
+├── agent-memory-eval.test.ts
+└── agent-memory-eval-scenarios.json
+```
 
-## Matrice des échecs
+Arnes connaît les chemins absolus des deux exécutables, jamais leurs types, formats persistants ou invariants métier.
 
-| Frontière       | Échecs fermés et effet                                                                                                                                                            |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Parsing         | YAML invalide, clé dupliquée, champ inconnu, version future, taille > 1 Mio, Unicode ou date invalide → `rejected`, aucune écriture                                               |
-| Domaine         | type/statut/transition incohérent, termes vides, preuve ou oracle absent, commande arbitraire → `rejected`                                                                        |
-| Confidentialité | token préfixé connu, clé privée, URL avec credentials, champ secret, marqueur de prompt/transcript → `rejected`; diagnostic redacted                                              |
-| Scope           | Git absent, common dir ambigu/non canonique, scope key fourni par l’appelant, user scope non autorisé, mismatch projet → `rejected`                                               |
-| Source locale   | absent, non régulier, symlink, illisible, hors dépôt pour `git-file`, non suivi, taille excessive → `invalid` si disparition prouvée, sinon `unavailable`                         |
-| URL             | schéma/host interdit, redirection non HTTPS, DNS/TLS/timeout/429/5xx, corps excessif, curl absent → `unavailable`; 404/410 ou empreinte différente → `invalid`                    |
-| Admission       | doublon exact → `duplicate`; identité occupée, source changée pendant validation, lock après délai ou concurrence divergente → `conflict`                                         |
-| Persistance     | permissions, temp, flush, fsync ou rename YAML échoué → aucune entrée visible; index échoué après commit YAML → entrée autoritaire conservée, index périmé et diagnostic          |
-| Index           | absent/périmé/corrompu → reconstruction atomique; YAML invalide/futur → omission diagnostiquée; reconstruction impossible → aucun résultat injecté                                |
-| Cache           | timestamp futur/malformé, verdict non-valid, source locale changée → miss; écriture cache impossible → verdict courant utilisable sans cache                                      |
-| Retrieval       | requête vide, entrée disparue après sélection, oracle expiré indisponible/ambigu, transition impossible → omission et diagnostic, jamais d’ancien contexte                        |
-| Adapter         | stdin vide/malformé/surdimensionné, query/cwd absent, binaire non exécutable, sortie host impossible → aucune injection; l’agent reçoit l’indisponibilité quand le host le permet |
+## Matrice des échecs à préserver
+
+| Frontière       | Entrées et effet                                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parsing         | YAML invalide, clé dupliquée, champ inconnu, version future, taille >1 Mio, Unicode/date invalide → `rejected`, aucune écriture                                         |
+| Domaine         | kind/status/transition incohérent, terme vide, preuve/oracle absent, commande shell → `rejected`                                                                        |
+| Confidentialité | token préfixé, clé privée, URL credential, champ secret, marqueur prompt/transcript → `rejected`, diagnostic redacted                                                   |
+| Scope           | Git absent, common dir ambigu/non canonique, scope key appelant, user non autorisé, mismatch projet → `rejected`                                                        |
+| Source locale   | absent, non régulier, symlink, illisible, hors dépôt, non suivi, trop grand → `invalid` si disparition prouvée, sinon `unavailable`                                     |
+| URL             | schéma/host interdit ou redirect non HTTPS → refus; DNS/TLS/timeout/429/5xx/curl absent → `unavailable`; 404/410 ou fingerprint différent → `invalid`                   |
+| Admission       | document identique → `duplicate`; identité occupée, source changée sous lock, lock expiré, concurrence divergente → `conflict`                                          |
+| Persistance     | temp/flush/fsync/rename YAML échoué → rien de visible; index échoué après YAML → YAML conservé, index périmé et diagnostic                                              |
+| Index           | absent/périmé/corrompu → reconstruction atomique; YAML invalide/futur → omission; reconstruction impossible → aucune injection                                          |
+| Cache           | timestamp futur/malformé, verdict non-valid, source locale changée → miss; write cache échoué → verdict courant utilisable sans cache                                   |
+| Retrieval       | requête vide, entrée disparue, oracle expiré indisponible/ambigu, transition impossible → omission, aucun ancien contexte                                               |
+| Adapter         | stdin vide/malformé/surdimensionné, query/cwd absent, binaire inexécutable, sortie host impossible → aucune injection; indisponibilité annoncée quand le host le permet |
 
 ---
 
-### Tâche 1 : autorité architecturale et contrat exécutable
+### Tâche 1 : corriger ADR-042 avant le code
 
-**Fichiers :**
+**Files:**
 
-- Créer : `docs/adr/042-memoire-durable-locale-partagee.md`
-- Modifier : `docs/adr/README.md`
-- Modifier : `docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md`
+- Modify: `docs/adr/042-memoire-durable-locale-partagee.md`
+- Verify: `docs/adr/038-frontieres-home-harness-tooling.md`
+- Verify: `docs/adr/041-frontiere-automatisation-typescript-rust.md`
+- Verify: `docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md`
 
-**Interfaces :**
+**Interfaces:**
 
-- Consomme : spec approuvée au commit `25860b4`, ADR-025, ADR-036, ADR-038, ADR-040, ADR-041 et documentation officielle des hooks vérifiée le 2026-08-28.
-- Produit : autorité en vigueur pour les décisions listées dans « Décisions fermées par la discovery » et contrats non ambigus pour les tâches suivantes.
+- Consumes: spec approuvée au commit `7f58a03`.
+- Produces: autorité attribuant domaine mémoire à `agent-memory`, runtime handoff à `agent-handoff`, et seulement configuration/validation/mesure à Arnes.
 
-- [ ] **Step 1: Écrire le test documentaire RED**
-
-Exécuter :
-
-```bash
-test -f docs/adr/042-memoire-durable-locale-partagee.md
-```
-
-Résultat attendu : FAIL, fichier absent.
-
-- [ ] **Step 2: Écrire ADR-042**
-
-L’ADR contient exactement ces décisions : YAML autoritaire hors Git; Arnes comme frontière Rust; clé projet par `git-common-dir` canonique; ID déterministe; commit YAML avant index; verdict `invalid` vers `invalidated`; conclusions humaines typées; hooks Codex/Claude; règle + skill mesurée pour Cursor; limites de la détection sensible et de l’officialité URL; cache `< 48 h`; aucun état agent généré édité.
-
-Inclure dans « Alternatives écartées » : second binaire, SQLite, MCP/embeddings, règle globale partagée non mesurée, wrapper Cursor limité au CLI, écriture dans `~/.codex/memories/`.
-
-- [ ] **Step 3: Fermer le schéma dans la spec**
-
-Ajouter les unions suivantes sans changer les capacités demandées :
-
-```yaml
-proof:
-  sources:
-    - kind: git-file | local-file | official-url | user-decision
-      locator: <forme propre au kind>
-      fingerprint: sha256:<64 hex>
-oracle:
-  automated:
-    kind: source-fingerprint
-    expected: all-proof-sources-unchanged
-  human_fallback:
-    question: <question>
-    valid_when: <réponse observable>
-transition:
-  from: active
-  to: <statut terminal autorisé par kind>
-  at: <RFC 3339 UTC>
-  verdict: valid | invalid
-  reason: <texte concis>
-```
-
-Préciser que `automated` peut être absent seulement pour `user-decision`, que `human_fallback` reste obligatoire, que `invalid` produit `invalidated` et qu’un terminal métier exige `valid`.
-
-- [ ] **Step 4: Vérifier format et autorité**
-
-Exécuter :
+- [ ] **Step 1: écrire le RED documentaire**
 
 ```bash
-prettier --check docs/adr/042-memoire-durable-locale-partagee.md \
-  docs/adr/README.md \
-  docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md
-rg -n '042-memoire-durable-locale-partagee' docs/adr/README.md
+rg -n 'Arnes pour l.automatisation|Arnes est l.unique frontière Rust|frontière Arnes concentre|second binaire ou crate' docs/adr/042-memoire-durable-locale-partagee.md
+```
+
+Expected: les trois affirmations obsolètes sont trouvées.
+
+- [ ] **Step 2: corriger décision, conséquences et alternatives**
+
+Corriger d'abord le contexte : ADR-041 impose Rust, pas Arnes, pour cette automatisation à état durable. Écrire explicitement : `agent-memory` possède schéma, admission, identité projet, sources, store, index, oracles, cache, retrieval, transitions, CLI et adapters runtime; `agent-handoff` possède son runtime; Arnes configure, valide et mesure leurs hooks/exécutables. Les packages sont indépendants sans workspace/crate partagé. Conserver inchangées les décisions fonctionnelles mémoire.
+
+- [ ] **Step 3: vérifier puis committer**
+
+```bash
+prettier --check docs/adr/042-memoire-durable-locale-partagee.md docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md
+! rg -n 'Arnes pour l.automatisation|Arnes est l.unique frontière Rust|frontière Arnes concentre|second binaire ou crate' docs/adr/042-memoire-durable-locale-partagee.md
 git diff --check
+git add docs/adr/042-memoire-durable-locale-partagee.md
+git commit -m "docs(memory): correct runtime ownership"
 ```
 
-Résultat attendu : PASS; l’ADR apparaît une fois dans l’index.
+### Tâche 2 : extraire le domaine dans `agent-memory`
 
-- [ ] **Step 5: Commit**
+**Files:**
+
+- Create: `tooling/agent-memory/Cargo.toml`
+- Create: `tooling/agent-memory/Cargo.lock`
+- Create: `tooling/agent-memory/src/lib.rs`
+- Move: `tooling/arnes/src/memory.rs` → `tooling/agent-memory/src/memory.rs`
+- Move: `tooling/arnes/src/memory/` → `tooling/agent-memory/src/memory/`
+- Move: `tooling/arnes/tests/memory_model.rs` → `tooling/agent-memory/tests/memory_model.rs`
+- Move: `tooling/arnes/tests/memory_validation.rs` → `tooling/agent-memory/tests/memory_validation.rs`
+- Move: `tooling/arnes/tests/memory_identity.rs` → `tooling/agent-memory/tests/memory_identity.rs`
+- Move: `tooling/arnes/tests/memory_sources.rs` → `tooling/agent-memory/tests/memory_sources.rs`
+- Move: `tooling/arnes/tests/memory_store.rs` and `tooling/arnes/tests/memory_store/` → `tooling/agent-memory/tests/`
+- Move: `tooling/arnes/tests/memory_concurrency.rs` → `tooling/agent-memory/tests/memory_concurrency.rs`
+- Move: `tooling/arnes/tests/memory_index.rs` and `tooling/arnes/tests/memory_index/` → `tooling/agent-memory/tests/`
+- Move: `tooling/arnes/tests/memory_search.rs` and `tooling/arnes/tests/memory_search/` → `tooling/agent-memory/tests/`
+- Move: `tooling/arnes/tests/memory_oracle.rs` → `tooling/agent-memory/tests/memory_oracle.rs`
+- Move: `tooling/arnes/tests/memory_cache.rs` → `tooling/agent-memory/tests/memory_cache.rs`
+- Move: `tooling/arnes/tests/memory_retrieval.rs` → `tooling/agent-memory/tests/memory_retrieval.rs`
+- Move: `tooling/arnes/tests/memory_task6/` → `tooling/agent-memory/tests/memory_task6/`
+- Move: `tooling/arnes/tests/support/memory.rs` → `tooling/agent-memory/tests/support/memory.rs`
+- Modify: `tooling/arnes/src/lib.rs`
+- Modify: `tooling/arnes/Cargo.toml`
+- Modify: `tooling/arnes/Cargo.lock`
+
+**Interfaces:**
+
+- Consumes: code commité des tâches 2–5 jusqu’à `4f0c843` et WIP Task 6 dans les chemins Arnes.
+- Produces: crate importable `agent_memory` avec mêmes exports publics; WIP déplacé et réutilisé; Arnes sans module/dépendance mémoire.
+
+- [ ] **Step 1: inventorier le WIP sans le restaurer**
 
 ```bash
-git add docs/adr/042-memoire-durable-locale-partagee.md docs/adr/README.md \
-  docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md
-git commit -m "docs(memory): record durable memory architecture"
+git status --short
+git diff -- tooling/arnes/Cargo.toml tooling/arnes/Cargo.lock tooling/arnes/src/memory.rs tooling/arnes/src/memory tooling/arnes/tests > /tmp/pr-249-task6.patch
+{
+  git diff --name-only -z -- tooling/arnes/Cargo.toml tooling/arnes/Cargo.lock tooling/arnes/src/memory.rs tooling/arnes/src/memory tooling/arnes/tests
+  git ls-files --others --exclude-standard -z -- tooling/arnes/src/memory tooling/arnes/tests
+} | sort -zu | xargs -0 shasum -a 256 > /tmp/pr-249-task6-files.sha256
 ```
 
-### Tâche 2 : modèle fermé, parsing et refus sensibles
+Expected: le WIP Task 6 est inventorié; aucun reset, checkout ou suppression.
 
-**Fichiers :**
+- [ ] **Step 2: écrire le test RED de crate**
 
-- Créer : `tooling/arnes/src/memory.rs`
-- Créer : `tooling/arnes/src/memory/model.rs`
-- Créer : `tooling/arnes/src/memory/error.rs`
-- Créer : `tooling/arnes/src/memory/validation.rs`
-- Créer : `tooling/arnes/src/memory/sensitive.rs`
-- Créer : `tooling/arnes/tests/memory_model.rs`
-- Créer : `tooling/arnes/tests/memory_validation.rs`
-- Modifier : `tooling/arnes/src/lib.rs`
-- Modifier : `tooling/arnes/Cargo.toml`
-- Modifier : `tooling/arnes/Cargo.lock`
-
-**Interfaces :**
-
-- Consomme : YAML UTF-8 de 1 Mio maximum.
-- Produit : `parse_draft(bytes: &[u8]) -> Result<AdmissionDraft, MemoryError>`, `parse_entry(bytes: &[u8]) -> Result<MemoryEntry, MemoryError>`, `validate_draft(draft: AdmissionDraft, authorization: AdmissionAuthorization) -> Result<ValidatedDraft, MemoryError>`.
-
-- [ ] **Step 1: Écrire les tests RED du modèle discriminé**
-
-Écrire des tables couvrant les six kinds et chaque statut autorisé/interdit. Les assertions structurantes sont :
+Créer `tooling/agent-memory/tests/crate_boundary.rs` :
 
 ```rust
-assert_eq!(parse_entry(active_invariant()).unwrap().status(), Status::Active);
-assert_eq!(parse_entry(goal_with_status("superseded")).unwrap_err().code(), "invalid_kind_status");
-assert_eq!(parse_entry(active_with_transition()).unwrap_err().code(), "unexpected_transition");
-assert_eq!(parse_entry(terminal_without_transition()).unwrap_err().code(), "missing_transition");
-assert_eq!(parse_entry(future_schema()).unwrap_err().code(), "unsupported_schema");
-assert_eq!(parse_entry(duplicate_yaml_key()).unwrap_err().code(), "duplicate_field");
-```
+use agent_memory::{MemoryRoot, parse_draft};
 
-- [ ] **Step 2: Exécuter le RED ciblé**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_model --test memory_validation
-```
-
-Résultat attendu : FAIL, module `memory` absent.
-
-- [ ] **Step 3: Implémenter les types fermés**
-
-Utiliser des enums `serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)` et ces résultats publics :
-
-```rust
-pub enum AdmissionResult {
-    Stored {
-        id: MemoryId,
-        index_rebuild_required: bool,
-    },
-    Duplicate { id: MemoryId },
-    Rejected { error: MemoryError },
-    Conflict { id: MemoryId, error: MemoryError },
-}
-
-pub enum OracleVerdict {
-    Valid,
-    Invalid,
-    Unavailable,
-    NeedsConfirmation,
-}
-
-pub enum ScopeDraft {
-    Project,
-    User,
+#[test]
+fn domain_is_exported_by_agent_memory() {
+    let _parse = parse_draft;
+    let _root = MemoryRoot::new;
 }
 ```
 
-`MemoryId`, `ProjectKey`, `Statement`, `RetrievalTerm`, `Fingerprint` et `UtcTimestamp` restent des newtypes validés; aucun appelant ne construit directement un `MemoryEntry` invalide.
+Run: `cargo test --manifest-path tooling/agent-memory/Cargo.toml --test crate_boundary`.
+Expected: FAIL, crate absent.
 
-- [ ] **Step 4: Implémenter les refus de contenu**
+- [ ] **Step 3: déplacer code et tests avec leur état de travail**
 
-La barrière refuse PEM privées, URL avec userinfo, `Authorization:`, assignments `password|secret|token|api_key`, préfixes `sk-`, `ghp_`, `github_pat_`, `xox[baprs]-`, marqueurs de system prompt et blocs transcript à rôles répétés. Les longueurs sont bornées : statement 1–500 caractères, summary 1–1000, terme 1–100, question et raison 1–500, 20 termes et 20 sources maximum.
+Créer le package édition 2024 avec `getrandom`, `jiff`, `rustix`, `serde`, `serde_path_to_error`, `serde_json`, `serde_yaml_ng`, `sha2`, `tempfile`, `url`, `unicode-normalization`. `src/lib.rs` contient exactement `mod memory; pub use memory::*;`; la façade déplacée reste `src/memory.rs`, afin que ses sous-modules continuent de résoudre sous `src/memory/`. Remplacer `arnes::memory` par `agent_memory` dans les tests, retirer `pub mod memory` d’Arnes et seulement ses dépendances devenues inutilisées. Régénérer les deux lockfiles par leur manifest; ne créer ni `Cargo.toml` racine ni `tooling/Cargo.toml`.
 
-Tester chaque forme, casse et séparateur, plus les faux positifs autorisés `token budget` et `secret management policy`. Le test nomme la liste des contournements conformément à `enforcement-code`.
-
-- [ ] **Step 5: Exécuter le GREEN et les checks Rust**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_model --test memory_validation
-cargo fmt --manifest-path tooling/arnes/Cargo.toml --check
-cargo clippy --manifest-path tooling/arnes/Cargo.toml --all-targets -- -D warnings
-```
-
-Résultat attendu : PASS sur l’environnement courant.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: prouver séparation et conservation**
 
 ```bash
-git add tooling/arnes/src/lib.rs tooling/arnes/src/memory.rs tooling/arnes/src/memory \
-  tooling/arnes/tests/memory_model.rs tooling/arnes/tests/memory_validation.rs \
-  tooling/arnes/Cargo.toml tooling/arnes/Cargo.lock
-git commit -m "feat(memory): define the durable entry contract"
+cargo fmt --manifest-path tooling/agent-memory/Cargo.toml --check
+cargo clippy --manifest-path tooling/agent-memory/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path tooling/agent-memory/Cargo.toml --test memory_model --test memory_validation --test memory_identity --test memory_sources --test memory_store --test memory_concurrency --test memory_index --test memory_search
+cargo test --manifest-path tooling/arnes/Cargo.toml
+! rg -n 'pub mod memory|arnes::memory|agent_memory|agent-memory|ARNES_MEMORY_ROOT' tooling/arnes/src tooling/arnes/tests tooling/arnes/Cargo.toml
+test ! -e Cargo.toml && test ! -e tooling/Cargo.toml
+test -f tooling/agent-memory/src/memory/cache.rs
+test -f tooling/agent-memory/tests/memory_cache.rs
+git diff --find-renames=50% --summary 4f0c843.. -- tooling/arnes tooling/agent-memory
 ```
 
-### Tâche 3 : identité projet et résolution des sources
+Expected: tâches 2–5 vertes depuis le nouveau manifest; WIP Task 6 présent; aucun double domaine.
 
-**Fichiers :**
-
-- Créer : `tooling/arnes/src/memory/identity.rs`
-- Créer : `tooling/arnes/src/memory/source.rs`
-- Créer : `tooling/arnes/src/memory/process.rs`
-- Créer : `tooling/arnes/tests/memory_identity.rs`
-- Créer : `tooling/arnes/tests/memory_sources.rs`
-- Créer : `tooling/arnes/tests/support/memory.rs`
-
-**Interfaces :**
-
-- Consomme : `ValidatedDraft`, cwd, Git et curl injectables dans les tests.
-- Produit : `resolve_project(cwd: &Path, git: &dyn ProcessRunner) -> Result<ProjectScope, MemoryError>` et `resolve_sources(draft: ValidatedDraft, context: &SourceContext) -> Result<ResolvedDraft, MemoryError>`.
-
-- [ ] **Step 1: Écrire les tests RED d’identité**
-
-Créer un dépôt principal et deux worktrees réels; exiger la même clé. Exiger une autre clé pour un clone séparé, puis `scope_unavailable` hors Git, sur sortie Git vide, chemin relatif, chemin non canonique et process Git non nul.
-
-```rust
-assert_eq!(resolve_project(main_worktree)?, resolve_project(linked_worktree)?);
-assert_ne!(resolve_project(main_worktree)?, resolve_project(separate_clone)?);
-assert_eq!(resolve_project(non_git).unwrap_err().code(), "scope_unavailable");
-```
-
-- [ ] **Step 2: Écrire les tests RED de sources**
-
-Tester `git-file` suivi/modifié, fichier non suivi, chemin `..`, symlink, fichier local absolu, fichier disparu, permission refusée, URL HTTP, credentials, IP littérale, redirect HTTPS, redirect HTTP, 404, 429, 5xx, timeout, TLS, corps > 1 Mio, curl absent et décision utilisateur sans transcript.
-
-Chaque test vérifie `valid`, `invalid` ou `unavailable` et l’absence du locator sensible dans le diagnostic.
-
-- [ ] **Step 3: Implémenter l’identité et les empreintes locales**
-
-Appeler Git avec argv séparé :
-
-```text
-git rev-parse --path-format=absolute --git-common-dir
-git -C <cwd> ls-files --error-unmatch -- <relative-path>
-```
-
-Canonicaliser sans suivre un symlink final, lire seulement un fichier régulier borné, puis produire `sha256:<hex>`. Recalculer l’empreinte après validation et avant commit d’admission afin de détecter le TOCTOU.
-
-- [ ] **Step 4: Implémenter le fetch URL borné**
-
-Parser avec `url`; exécuter curl par argv avec HTTPS seulement, redirections et délais fermés :
-
-```text
-curl --silent --show-error --fail-with-body --location --max-redirs 5
-     --proto =https --proto-redir =https --connect-timeout 5 --max-time 15
-     --max-filesize 1048576 --output <0600-temp> --write-out <status/final-url/remote-ip>
-```
-
-Valider URL finale, statut et IP rapportée avant de hasher le corps. Mapper 404/410 vers `invalid`; 429, 5xx, DNS, TLS et timeout vers `unavailable`; toute autre sortie non reconnue échoue `source_unavailable`.
-
-- [ ] **Step 5: Exécuter les tests ciblés**
+- [ ] **Step 5: commit**
 
 ```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_identity --test memory_sources
+git add tooling/agent-memory tooling/arnes/src/lib.rs tooling/arnes/Cargo.toml tooling/arnes/Cargo.lock tooling/arnes/tests
+git commit -m "refactor(memory): isolate the memory runtime"
 ```
 
-Résultat attendu : PASS sans accès réseau réel; le faux curl du fixture couvre toutes les sorties.
+### Tâche 3 : terminer oracles, cache et retrieval depuis le WIP
 
-- [ ] **Step 6: Commit**
+**Files:**
+
+- Modify: `tooling/agent-memory/src/lib.rs`
+- Modify: `tooling/agent-memory/src/memory/clock.rs`
+- Modify: `tooling/agent-memory/src/memory/oracle.rs`
+- Modify: `tooling/agent-memory/src/memory/cache.rs`
+- Modify: `tooling/agent-memory/src/memory/retrieval.rs`
+- Modify: `tooling/agent-memory/src/memory/retrieval/operation.rs`
+- Modify: `tooling/agent-memory/src/memory/retrieval/transition.rs`
+- Modify: `tooling/agent-memory/src/memory/store.rs`
+- Modify: `tooling/agent-memory/src/memory/store/retrieval.rs`
+- Test: `tooling/agent-memory/tests/memory_oracle.rs`
+- Test: `tooling/agent-memory/tests/memory_cache.rs`
+- Test: `tooling/agent-memory/tests/memory_retrieval.rs`
+- Test: `tooling/agent-memory/tests/memory_task6/`
+
+**Interfaces:**
+
+- Consumes: `Store`, `Index`, `search`, `Clock`, `SourceResolver` et WIP déplacé.
+- Produces: `evaluate_oracle(entry: &MemoryEntry, context: OracleContext<'_>) -> OracleEvaluation`; `retrieve(request: RetrievalRequest<'_>, context: RetrievalContext<'_>) -> RetrievalReport`; `confirm(id: &str, conclusion: HumanConclusion, context: TransitionContext<'_>) -> Result<TransitionResult, MemoryError>`.
+
+- [ ] **Step 1: obtenir le RED réel**
 
 ```bash
-git add tooling/arnes/src/memory tooling/arnes/tests/memory_identity.rs \
-  tooling/arnes/tests/memory_sources.rs tooling/arnes/tests/support/memory.rs \
-  tooling/arnes/Cargo.toml tooling/arnes/Cargo.lock
-git commit -m "feat(memory): resolve project and proof sources"
+cargo test --manifest-path tooling/agent-memory/Cargo.toml --test memory_oracle --test memory_cache --test memory_retrieval
 ```
 
-### Tâche 4 : store YAML atomique et concurrence
+Expected: premier contrat WIP incomplet en échec. Si tout passe déjà, ajouter d’abord un cas manquant de Step 2 et observer son échec.
 
-**Fichiers :**
+- [ ] **Step 2: fermer les matrices par tests**
 
-- Créer : `tooling/arnes/src/memory/path.rs`
-- Créer : `tooling/arnes/src/memory/store.rs`
-- Créer : `tooling/arnes/src/memory/lock.rs`
-- Créer : `tooling/arnes/tests/memory_store.rs`
-- Créer : `tooling/arnes/tests/memory_concurrency.rs`
+Tester hit `47:59:59.999`, miss `48:00:00.000`, timestamp futur, changement local, URL non refetchée avant 48 h, URL expirée indisponible, fallback humain et aucun cache non-valid. Tester les cinq constructeurs `goal_achieved`, `goal_abandoned`, `decision_superseded`, `unknown_resolved`, `assumption_confirmed`, plus terminal incompatible, seconde transition, raison vide, fingerprint différent vers `invalidated`, YAML byte-identique sur `unavailable`/`needs_confirmation`.
 
-**Interfaces :**
+- [ ] **Step 3: achever cache/oracle/retrieval**
 
-- Consomme : `ResolvedDraft`, `MemoryRoot` issu de `ARNES_MEMORY_ROOT` ou de `~/.local/share/agent-memory`.
-- Produit : `Store::open`, `Store::admit`, `Store::replace_active`, `Store::load`, `Store::list`; aucune autre fonction n’écrit un YAML.
+Cache v1 : records triés par `entry_id`; digest canonique de l’oracle déclaratif; `proof_digest = sha256(JSON canonique compact des sources ordonnées {kind,locator,fingerprint})`; fingerprints `{kind,fingerprint}` dans l’ordre YAML; `validated_at`; environnement `{os,arch}`; seulement `verdict: valid`; aucun locator/réponse humaine en clair. Un hit exige le même `proof_digest`; refingerprint local avant hit; URL hit avant 48 h; échec write cache sans invalider le verdict courant.
 
-- [ ] **Step 1: Écrire les tests RED de layout et permissions**
+`HumanConclusion` reste une union fermée `GoalAchieved | GoalAbandoned | DecisionSuperseded | UnknownResolved | AssumptionConfirmed`, chaque variante portant sa raison. La validation du fallback humain utilise une réponse `ProofValid` distincte, qui peut produire un verdict cacheable mais jamais une transition YAML; `confirm` n'accepte que les cinq conclusions métier.
 
-Exiger ce snapshot :
-
-```text
-agent-memory/                         0700
-  .lock                              0600
-  entries/user/<id>.yaml             0600
-  entries/project/<key>/<id>.yaml    0600
-  index.json                         0600
-  oracle-cache.json                  0600
-```
-
-Tester racine symlink, parent non répertoire, permissions trop ouvertes réparables, chmod refusé, fichier final existant et traversal par ID.
-
-- [ ] **Step 2: Écrire les tests RED d’atomicité et concurrence**
-
-Injecter des failpoints avant flush, avant fsync, avant rename YAML, après rename YAML et avant rename index. Après chaque interruption, rouvrir le store et exiger soit aucun YAML, soit un YAML complet avec index déclaré périmé, jamais un YAML partiel ni un index pendant.
-
-Lancer deux processus : même draft donne un `stored` et un `duplicate`; drafts divergents au même ID donnent un `stored` et un `conflict`.
-
-- [ ] **Step 3: Implémenter le verrou et les remplacements atomiques**
-
-Utiliser le lock exclusif `rustix`, une attente bornée à 2 s, un nom temporaire aléatoire créé `create_new`, `write_all`, `sync_all`, rename dans le même répertoire et fsync du répertoire. Refuser tout symlink à chaque composant contrôlé.
-
-- [ ] **Step 4: Implémenter l’admission idempotente**
-
-Canonicaliser le document sans `created_at`, calculer l’ID, acquérir le lock, revalider les sources locales, comparer le YAML existant, préparer l’index en mémoire, puis appliquer l’ordre de commit global. Un échec d’index après rename YAML retourne `Stored { index_rebuild_required: true }`, jamais `rejected` ni rollback destructif.
-
-- [ ] **Step 5: Exécuter les tests ciblés**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_store --test memory_concurrency
-```
-
-Résultat attendu : PASS; aucun fixture ne touche le store personnel.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add tooling/arnes/src/memory tooling/arnes/tests/memory_store.rs \
-  tooling/arnes/tests/memory_concurrency.rs
-git commit -m "feat(memory): persist entries atomically"
-```
-
-### Tâche 5 : index dérivé et classement lexical
-
-**Fichiers :**
-
-- Créer : `tooling/arnes/src/memory/index.rs`
-- Créer : `tooling/arnes/src/memory/search.rs`
-- Créer : `tooling/arnes/tests/memory_index.rs`
-- Créer : `tooling/arnes/tests/memory_search.rs`
-
-**Interfaces :**
-
-- Consomme : YAML du store et `SearchRequest { query, project_key, include_user: true, limit: 5 }`.
-- Produit : `Index::load_or_rebuild(store) -> Result<IndexLoad, MemoryError>` et `search(index, request) -> SearchSelection` avec `selected`, `omitted_by_limit` et diagnostics.
-
-- [ ] **Step 1: Écrire les tests RED de reconstruction**
-
-Tester index absent, JSON corrompu, inventaire périmé après ajout/modification/suppression, YAML illisible, schema futur, statut invalide, entrée terminale, index non inscriptible et deuxième reconstruction byte-identique.
-
-Une entrée invalide est omise avec `entry_id`, `check` et `effect`; son statement ne paraît jamais dans le diagnostic.
-
-- [ ] **Step 2: Écrire les tests RED du ranking**
-
-Normaliser NFKD, retirer les diacritiques, passer en minuscules et remplacer tout séparateur par un espace. Le score est le tuple décroissant : nombre de phrases `retrieval_terms` présentes, nombre de tokens de termes présents, nombre de tokens statement présents. Une phrase de terme suffit; sans phrase, au moins deux tokens distincts sont requis. Les ties sont `id` bytewise.
-
-```rust
-assert_eq!(ids(search("deploiement mémoire", fixture_index())), ["mem_alias", "mem_statement"]);
-assert_eq!(search("sans rapport", fixture_index()).selected.len(), 0);
-assert_eq!(search("agent", six_matches()).selected.len(), 5);
-assert_eq!(search("agent", six_matches()).omitted_by_limit, 1);
-```
-
-- [ ] **Step 3: Implémenter l’index minimal**
-
-Chaque ligne contient seulement `id`, `kind`, `status`, `scope`, `retrieval_terms`, résumé tronqué à 160 caractères Unicode, chemin relatif du YAML, longueur et mtime nanoseconde. L’en-tête contient `schema_version: 1` et le digest SHA-256 de l’inventaire trié.
-
-Le check de fraîcheur liste et stat les YAML sans les parser; tout écart reconstruit sous lock. L’index n’est jamais injecté en bloc.
-
-- [ ] **Step 4: Exécuter le GREEN**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_index --test memory_search
-```
-
-Résultat attendu : PASS sur le filesystem temporaire.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tooling/arnes/src/memory tooling/arnes/tests/memory_index.rs \
-  tooling/arnes/tests/memory_search.rs
-git commit -m "feat(memory): derive the lexical index"
-```
-
-### Tâche 6 : oracles, cache 48 h et transitions
-
-**Fichiers :**
-
-- Créer : `tooling/arnes/src/memory/clock.rs`
-- Créer : `tooling/arnes/src/memory/oracle.rs`
-- Créer : `tooling/arnes/src/memory/cache.rs`
-- Créer : `tooling/arnes/src/memory/retrieval.rs`
-- Créer : `tooling/arnes/tests/memory_oracle.rs`
-- Créer : `tooling/arnes/tests/memory_cache.rs`
-- Créer : `tooling/arnes/tests/memory_retrieval.rs`
-
-**Interfaces :**
-
-- Consomme : `SearchSelection`, `Clock`, `SourceResolver`, `Store`.
-- Produit : `evaluate_oracle(entry, context) -> OracleEvaluation`, `retrieve(request, context) -> RetrievalReport`, `confirm(id, HumanConclusion, context) -> TransitionResult`.
-
-- [ ] **Step 1: Écrire les tests RED de fraîcheur**
-
-Avec une horloge injectée, couvrir `47:59:59.999` cache hit, `48:00:00` miss, timestamp futur miss, modification locale pendant la fenêtre, distant non refetché avant 48 h, distant expiré indisponible, fallback humain, et absence de cache pour trois verdicts non-valid.
-
-```rust
-assert!(cache.usable_at(validated_at + hours(48) - millis(1)));
-assert!(!cache.usable_at(validated_at + hours(48)));
-assert!(!cache.usable_at(validated_at - millis(1)));
-```
-
-- [ ] **Step 2: Écrire les tests RED de transitions**
-
-Pour chaque kind, tester chaque terminal autorisé avec verdict humain `valid`; tester terminal incompatible, seconde transition et raison vide. Un fingerprint différent produit seulement `invalidated`; `unavailable` et `needs_confirmation` ne modifient aucun octet YAML.
-
-- [ ] **Step 3: Implémenter cache et oracle**
-
-Le cache JSON contient `entry_id`, digest de l’oracle, empreintes sources, `validated_at`, environnement et uniquement `verdict: valid`. Pour une source locale, recalculer toujours l’empreinte avant cache hit; pour URL, accepter le hit avant 48 h. Une écriture cache échouée conserve le verdict courant mais rend le prochain tour non caché.
-
-- [ ] **Step 4: Implémenter retrieval sans mémoire stale**
-
-Charger seulement les cinq YAML sélectionnés, les reparsing après sélection, évaluer cache/oracle, appliquer atomiquement toute invalidation, puis rendre :
+Retrieval : charger/reparser seulement cinq YAML sélectionnés, évaluer l’oracle, persister atomiquement une invalidation certaine, puis rendre :
 
 ```rust
 pub struct RetrievalReport {
@@ -466,362 +251,336 @@ pub struct RetrievalReport {
 }
 ```
 
-`InjectedMemory` contient kind, statement, sources résumées et âge du verdict; `OmittedMemory` contient id, code, question humaine éventuelle et effet `not_applied`.
+Résumé source : `git-file` relatif; `official-url` sans query/fragment; `local-file` et `user-decision` sans locator. Omission : id, code, question éventuelle, `NotApplied`.
 
-- [ ] **Step 5: Exécuter le GREEN**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml \
-  --test memory_oracle --test memory_cache --test memory_retrieval
-```
-
-Résultat attendu : PASS, avec snapshots YAML inchangés sur tous les verdicts transitoires.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: GREEN et commit**
 
 ```bash
-git add tooling/arnes/src/memory tooling/arnes/tests/memory_oracle.rs \
-  tooling/arnes/tests/memory_cache.rs tooling/arnes/tests/memory_retrieval.rs
+cargo fmt --manifest-path tooling/agent-memory/Cargo.toml --check
+cargo clippy --manifest-path tooling/agent-memory/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path tooling/agent-memory/Cargo.toml
+git add tooling/agent-memory
 git commit -m "feat(memory): verify freshness before retrieval"
 ```
 
-### Tâche 7 : admission orchestrée et CLI stable
+### Tâche 4 : admission et CLI `agent-memory`
 
-**Fichiers :**
+**Files:**
 
-- Créer : `tooling/arnes/src/memory/admission.rs`
-- Créer : `tooling/arnes/src/memory_cli.rs`
-- Créer : `tooling/arnes/tests/memory_admission.rs`
-- Créer : `tooling/arnes/tests/memory_cli.rs`
-- Modifier : `tooling/arnes/src/cli.rs`
-- Modifier : `tooling/arnes/src/main.rs`
+- Create: `tooling/agent-memory/src/main.rs`
+- Create: `tooling/agent-memory/src/cli.rs`
+- Create: `tooling/agent-memory/src/admission.rs`
+- Create: `tooling/agent-memory/tests/memory_admission.rs`
+- Create: `tooling/agent-memory/tests/memory_cli.rs`
+- Modify: `tooling/agent-memory/src/lib.rs`
+- Modify: `tooling/agent-memory/Cargo.toml`
+- Modify: `tooling/agent-memory/Cargo.lock`
 
-**Interfaces :**
+**Interfaces:**
 
-- Consomme : draft YAML sur stdin, query UTF-8 sur stdin, IDs et conclusions via options typées.
-- Produit : `arnes memory admit|retrieve|confirm|audit|hook`, JSON stable sur stdout, diagnostics redacted sur stderr, exit `0` succès/duplicate, `2` usage/rejet, `3` conflit, `4` indisponibilité.
+- Consumes: YAML/query stdin, cwd, ID, terminal, raison; services du domaine.
+- Produces: `agent-memory admit|retrieve|confirm|audit|hook`; JSON stdout; diagnostic redacted stderr; exit `0` succès/duplicate, `2` usage/rejet, `3` conflit, `4` indisponibilité.
 
-- [ ] **Step 1: Écrire les tests RED d’admission**
+- [ ] **Step 1: écrire les RED admission et CLI**
 
-Prouver l’ordre validation → scope → source → oracle → duplicate → commit. Chaque échec de la matrice globale vérifie snapshot store inchangé, sauf l’échec index explicitement post-commit.
+```rust
+pub struct AdmissionContext<'a> {
+    pub store: &'a Store,
+    pub cwd: &'a Path,
+    pub clock: &'a dyn Clock,
+    pub processes: &'a dyn ProcessRunner,
+    pub authorization: AdmissionAuthorization,
+}
 
-Tester demande projet par défaut, `--user-scope-authorized` obligatoire pour user, confirmation humaine absente, source changée entre résolution et lock, retry après commit YAML/index échoué et concurrence divergente.
-
-- [ ] **Step 2: Écrire les tests RED CLI**
-
-Tester ces formes exactes :
-
-```bash
-printf '%s' "$draft" | arnes memory admit --format json
-printf '%s' "$query" | arnes memory retrieve --query-stdin --format json
-printf '%s' "$reason" | arnes memory confirm --id "$id" --status confirmed --reason-stdin
-arnes memory audit --include-terminal --format json
+pub fn admit(bytes: &[u8], context: AdmissionContext<'_>)
+    -> Result<AdmissionResult, MemoryError>;
 ```
 
-Exiger une seule valeur JSON stdout, stderr vide au succès, codes stables, stdin vide/surdimensionné, option inconnue, scope user non autorisé et aucun contenu sensible dans les erreurs.
-
-- [ ] **Step 3: Implémenter l’orchestration**
-
-`admit` remplit ID, scope key, fingerprints et timestamps; le modèle ne peut pas les fournir. `retrieve` résout toujours le cwd courant et interroge scope projet + user. `confirm` ne permet qu’un terminal compatible et exige la réponse utilisateur par la skill. `audit` lit sans réactiver ni réparer les YAML.
-
-- [ ] **Step 4: Exécuter le GREEN CLI**
+Prouver parsing → validation → scope → sources → oracle → duplicate → commit; projet défaut, autorisation user, source changée entre résolution/lock, retry post-YAML, concurrence. Tester exactement :
 
 ```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_admission --test memory_cli
-cargo test --manifest-path tooling/arnes/Cargo.toml
+printf '%s' "$draft" | agent-memory admit --format json
+printf '%s' "$query" | agent-memory retrieve --query-stdin --format json
+printf '%s' "$reason" | agent-memory confirm --id "$id" --status confirmed --reason-stdin
+agent-memory audit --include-terminal --format json
 ```
 
-Résultat attendu : PASS dans un `ARNES_MEMORY_ROOT` temporaire.
+Tester stdin vide/>1 Mio, option inconnue, refus user et redaction.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 2: implémenter la frontière**
+
+`admit` remplit ID/scope/fingerprints/timestamps. `retrieve` résout cwd et scopes projet+user. `confirm` accepte uniquement terminal humain compatible. `audit` ne répare ni réactive. Root : `AGENT_MEMORY_ROOT` ou `~/.local/share/agent-memory`; jamais `ARNES_MEMORY_ROOT`.
+
+- [ ] **Step 3: GREEN et commit**
 
 ```bash
-git add tooling/arnes/src/cli.rs tooling/arnes/src/main.rs tooling/arnes/src/memory_cli.rs \
-  tooling/arnes/src/memory tooling/arnes/tests/memory_admission.rs \
-  tooling/arnes/tests/memory_cli.rs
+cargo test --manifest-path tooling/agent-memory/Cargo.toml --test memory_admission --test memory_cli
+cargo test --manifest-path tooling/agent-memory/Cargo.toml
+! rg -n 'arnes|ARNES_MEMORY_ROOT' tooling/agent-memory/src tooling/agent-memory/tests
+git add tooling/agent-memory
 git commit -m "feat(memory): expose admission and retrieval commands"
 ```
 
-### Tâche 8 : hooks synchrones Codex et Claude
+### Tâche 5 : adapters runtime Codex et Claude
 
-**Fichiers :**
+**Files:**
 
-- Créer : `tooling/arnes/src/memory/hook.rs`
-- Créer : `tooling/arnes/tests/memory_hooks.rs`
-- Modifier : `tooling/arnes/src/manifest/hooks.rs`
-- Modifier : `tooling/arnes/src/hooks.rs`
-- Modifier : `tooling/arnes/src/hooks/adapters.rs`
-- Modifier : `tooling/arnes/src/hooks/reconcile.rs`
-- Modifier : `tooling/arnes/tests/hooks_setup.rs`
-- Modifier : `tooling/arnes/tests/hooks_reconciliation/installation.rs`
-- Modifier : `tooling/arnes/tests/hooks_reconciliation/ownership.rs`
+- Create: `tooling/agent-memory/src/hook.rs`
+- Create: `tooling/agent-memory/src/hook/codex.rs`
+- Create: `tooling/agent-memory/src/hook/claude.rs`
+- Create: `tooling/agent-memory/tests/memory_hooks.rs`
+- Create: `tooling/agent-memory/tests/fixtures/hooks/codex-minimal.json`
+- Create: `tooling/agent-memory/tests/fixtures/hooks/codex-complete.json`
+- Create: `tooling/agent-memory/tests/fixtures/hooks/claude-minimal.json`
+- Create: `tooling/agent-memory/tests/fixtures/hooks/claude-complete.json`
+- Modify: `tooling/agent-memory/src/cli.rs`
+- Modify: `tooling/agent-memory/src/main.rs`
 
-**Interfaces :**
+**Interfaces:**
 
-- Consomme : payload natif `UserPromptSubmit` Codex/Claude.
-- Produit : `arnes memory hook --agent codex|claude`, réponse host avec `additionalContext`; aucune installation mémoire Cursor à cette frontière.
+- Consumes: payload `UserPromptSubmit` stdin et `HookAgent::Codex | HookAgent::Claude`.
+- Produces: `agent-memory hook --agent codex|claude`, réponse host `additionalContext`; aucune variante Cursor.
 
-- [ ] **Step 1: Capturer les contrats officiels dans des fixtures RED**
+- [ ] **Step 1: écrire les RED protocoles et snapshots**
 
-Ajouter un payload minimal et un payload complet pour chaque agent. Exiger query/cwd, refuser mauvais événement, stdin vide, JSON > 1 Mio et champ requis absent. Tester une mémoire pertinente, aucune correspondance, oracle unavailable et cinq plus un résultats.
-
-- [ ] **Step 2: Tester le contexte rendu**
-
-Le texte injecté commence par un marqueur versionné `ARNES_MEMORY_CONTEXT_V1`, liste chaque mémoire avec kind, statement, preuve et âge, liste séparément les omissions, puis impose : annoncer ces éléments avant application, ne rien appliquer d’omis, et proposer sans écrire toute nouvelle connaissance admissible.
-
-Le test vérifie que le texte ne contient jamais l’index complet, cache, chemin absolu du store ou source brute.
-
-- [ ] **Step 3: Étendre la réconciliation des hooks**
-
-Ajouter `HookKind::Memory` et une matrice événements par kind. Installer la commande absolue `~/.local/bin/arnes memory hook --agent <agent>` seulement sur `UserPromptSubmit` Codex/Claude. Préserver ordre et handlers tiers, supprimer les anciennes occurrences possédées, refuser configuration invalide et conserver l’idempotence byte à byte.
-
-- [ ] **Step 4: Exécuter les tests hooks**
-
-```bash
-cargo test --manifest-path tooling/arnes/Cargo.toml --test memory_hooks
-cargo test --manifest-path tooling/arnes/Cargo.toml --test hooks_setup \
-  --test hooks_reconciliation
+```rust
+pub enum HookAgent { Codex, Claude }
+pub struct HookRequest { pub query: String, pub cwd: PathBuf }
+pub fn parse_hook_request(agent: HookAgent, bytes: &[u8]) -> Result<HookRequest, HookError>;
+pub fn render_hook_response(agent: HookAgent, report: &RetrievalReport) -> Result<Vec<u8>, HookError>;
 ```
 
-Résultat attendu : PASS; Cursor ne reçoit aucun faux handler pré-prompt.
+Tester query/cwd, mauvais événement, stdin vide/>1 Mio, champ absent, aucun résultat, oracle indisponible, limite cinq. Contexte `AGENT_MEMORY_CONTEXT_V1`, injections avec kind/statement/source/âge, omissions distinctes; jamais index/cache/path store/source brute.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 2: implémenter sans repli Arnes**
+
+Lire stdin une fois, borner avant parsing, appeler le domaine, produire réponse host. Payload invalide sort `2`; store/oracle indisponible sort `4`; aucune erreur ne restitue d’ancien contexte.
+
+- [ ] **Step 3: GREEN et commit**
 
 ```bash
-git add tooling/arnes/src/memory tooling/arnes/src/manifest/hooks.rs \
-  tooling/arnes/src/hooks.rs tooling/arnes/src/hooks tooling/arnes/tests/memory_hooks.rs \
-  tooling/arnes/tests/hooks_setup.rs tooling/arnes/tests/hooks_reconciliation
-git commit -m "feat(memory): inject retrieval through supported hooks"
+cargo test --manifest-path tooling/agent-memory/Cargo.toml --test memory_hooks
+cargo test --manifest-path tooling/agent-memory/Cargo.toml
+git add tooling/agent-memory
+git commit -m "feat(memory): adapt supported prompt hooks"
 ```
 
-### Tâche 9 : skill commune, règle Cursor et déploiement
+### Tâche 6 : configurer les hooks depuis Arnes
 
-**Fichiers :**
+**Files:**
 
-- Modifier : `harness/skills/memory-governance/SKILL.md`
-- Créer : `harness/skills/memory-governance/references/entry-contract.md`
-- Modifier : `harness/skills/memory-governance/evals/trigger-queries.json`
-- Modifier, généré : `harness/skills/README.md`
-- Créer : `harness/rules/memory-governance-cursor.mdc`
-- Modifier : `home/.arnes.yaml`
-- Modifier : `Makefile`
-- Modifier : `tooling/deployment-links.test.ts`
-- Modifier : `tooling/deployment-codex-wiring.test.ts`
-- Modifier : `tooling/arnes/src/rules.rs`
-- Modifier : `tooling/arnes/tests/rules.rs`
-- Modifier : `tooling/arnes/tests/manifest_rules.rs`
+- Modify: `tooling/arnes/src/manifest/hooks.rs`
+- Modify: `tooling/arnes/src/hooks.rs`
+- Modify: `tooling/arnes/src/hooks/adapters.rs`
+- Modify: `tooling/arnes/src/hooks/reconcile.rs`
+- Modify: `tooling/arnes/tests/hooks_setup.rs`
+- Modify: `tooling/arnes/tests/hooks_reconciliation/installation.rs`
+- Modify: `tooling/arnes/tests/hooks_reconciliation/ownership.rs`
+- Create: `tooling/arnes/tests/runtime_boundaries.rs`
 
-**Interfaces :**
+**Interfaces:**
 
-- Consomme : contexte hook Codex/Claude, règle Cursor, commandes CLI de la tâche 7.
-- Produit : un seul workflow conversationnel d’admission/proposition; installations user sur trois agents; Cursor exécute la retrieval avant le travail sous oracle comportemental.
+- Consumes: `HookKind::Memory`, `~/.local/bin/agent-memory`, `~/.local/bin/agent-handoff`.
+- Produces: hooks Codex/Claude vers le binaire mémoire; Stop vers handoff; validation fichier régulier/exécutable et ownership de configuration.
 
-- [ ] **Step 1: Écrire les tests de déploiement RED**
+- [ ] **Step 1: écrire les RED de réconciliation et frontière**
 
-Étendre les tableaux attendus afin que `memory-governance` soit lié depuis `harness/skills/memory-governance` vers `.agents/skills`, `.claude/skills` et `.cursor/skills`. Exiger la règle Cursor liée depuis `harness/rules/memory-governance-cursor.mdc`, et `HookKind::Memory` seulement pour Codex/Claude dans `.arnes.yaml`. Étendre le doctor Arnes afin que `cursor + user + rules` soit une combinaison supportée, avec destination canonique `~/.cursor/rules/<name>.mdc`; toutes les autres nouvelles combinaisons restent `unsupported`.
+Tester événements par kind, ordre handlers tiers, suppression owned, chemin absolu, absent/non-régulier/non-exécutable, config invalide, concurrence, idempotence; aucun handler mémoire Cursor. Commandes après résolution home :
 
-```bash
-bun test tooling/deployment-links.test.ts tooling/deployment-codex-wiring.test.ts
+```text
+'/absolute/home/.local/bin/agent-memory' hook --agent codex
+'/absolute/home/.local/bin/agent-memory' hook --agent claude
 ```
 
-Résultat attendu : FAIL sur les liens et déclarations absents.
+`runtime_boundaries.rs` échoue si Arnes dépend des crates, possède `src/memory.rs`, lit `AGENT_MEMORY_ROOT`/`.local/share/agent-memory`, ou nomme `MemoryEntry`/`RetrievalReport`.
 
-- [ ] **Step 2: Migrer la skill via `skill-manager fix`**
+- [ ] **Step 2: implémenter uniquement config/validation/mesure**
 
-La description distingue quatre triggers : demande explicite, acceptation, connaissance durable détectée, et début de toute tâche Cursor. Le body impose : retrieval avant travail Cursor; annonce des mémoires appliquées; présentation d’une proposition complète sans écriture implicite; admission immédiate après autorisation; confirmation humaine; refus et redaction.
+Arnes ne parse pas le prompt, ne rend pas `additionalContext`, ne mappe pas les erreurs mémoire. Sa mesure observe exécution/durée/exit sans lire stdin privé ni état mémoire.
 
-Déplacer le schéma, exemples de draft et commandes détaillées dans `references/entry-contract.md`; garder `SKILL.md` sous 500 lignes et sans placeholder shell positionnel.
-
-- [ ] **Step 3: Ajouter la règle Cursor minimale**
-
-Écrire un frontmatter Cursor `alwaysApply: true` et uniquement ce contrat d’adapter : avant toute analyse ou outil, charger `memory-governance`, lui fournir le prompt actif, attendre `arnes memory retrieve`, puis suivre son résultat; en cas d’échec, annoncer l’indisponibilité sans appliquer de mémoire. Ne dupliquer ni schéma, ni ranking, ni politique de confidentialité.
-
-- [ ] **Step 4: Déployer les surfaces**
-
-Déclarer la skill pour les trois agents, le hook mémoire pour Codex/Claude et la règle user Cursor dans le manifeste et le Makefile. Les cibles agent dépendent du binaire Arnes avant hooks/règle. Toute destination existante inattendue reste un échec sans écrasement.
-
-- [ ] **Step 5: Doctor et index déterministe**
+- [ ] **Step 3: GREEN et commit**
 
 ```bash
-command -v skills-ref || true
-prettier --write harness/skills/memory-governance/SKILL.md \
-  harness/skills/memory-governance/references/entry-contract.md \
-  harness/skills/memory-governance/evals/trigger-queries.json \
-  harness/rules/memory-governance-cursor.mdc home/.arnes.yaml
+cargo test --manifest-path tooling/arnes/Cargo.toml --test hooks_setup --test hooks_reconciliation --test runtime_boundaries
+cargo test --manifest-path tooling/arnes/Cargo.toml
+git add tooling/arnes/src/manifest/hooks.rs tooling/arnes/src/hooks.rs tooling/arnes/src/hooks tooling/arnes/tests
+git commit -m "feat(arnes): configure the memory runtime hook"
 ```
 
-Exécuter `skill-manager sync-index user`, enregistrer le hash, l’exécuter une seconde fois puis vérifier le hash :
+### Tâche 7 : skill, règle Cursor et déploiement
+
+**Files:**
+
+- Modify: `harness/skills/memory-governance/SKILL.md`
+- Create: `harness/skills/memory-governance/references/entry-contract.md`
+- Modify: `harness/skills/memory-governance/evals/trigger-queries.json`
+- Modify generated: `harness/skills/README.md`
+- Create: `harness/rules/memory-governance-cursor.mdc`
+- Modify: `home/.arnes.yaml`
+- Modify: `Makefile`
+- Modify: `tooling/deployment-links.test.ts`
+- Modify: `tooling/deployment-codex-wiring.test.ts`
+- Modify: `tooling/arnes/src/rules.rs`
+- Modify: `tooling/arnes/tests/rules.rs`
+- Modify: `tooling/arnes/tests/manifest_rules.rs`
+
+**Interfaces:**
+
+- Consumes: CLI/adapters mémoire, config Arnes, cible handoff préexistante.
+- Produces: binaire mémoire déployé séparément; workflow partagé; skill trois agents; hooks Codex/Claude; règle Cursor.
+
+- [ ] **Step 1: écrire le RED déploiement**
+
+Exiger liens skill trois agents, règle Cursor, hook mémoire Codex/Claude seulement et binaires séparés sous `~/.local/bin`.
+
+Run: `bun test tooling/deployment-links.test.ts tooling/deployment-codex-wiring.test.ts`.
+Expected: FAIL sur cibles/déclarations absentes.
+
+- [ ] **Step 2: migrer skill et règle**
+
+Exécuter `skill-manager fix memory-governance user`. Triggers : demande, acceptation, détection durable, début tâche Cursor. Body : retrieval avant travail Cursor, annonce, proposition sans écriture, admission autorisée, confirmation, refus redacted. Référence : schéma, draft complet, commandes `agent-memory`. Supprimer toute commande `arnes memory`/`ARNES_MEMORY_ROOT`.
+
+Règle Cursor `alwaysApply: true` : charger la skill, fournir prompt, attendre `agent-memory retrieve`, suivre le résultat; en échec annoncer indisponibilité et ne rien appliquer. Aucun schéma/ranking/politique dupliqué.
+
+- [ ] **Step 3: déclarer et déployer**
+
+Manifeste : skill trois agents, hook mémoire Codex/Claude, règle user Cursor. Make : cible `agent-memory` buildant son manifest et liant son binaire; conserver la cible handoff déjà livrée. Les cibles agents dépendent des exécutables avant setup.
+
+- [ ] **Step 4: vérifier puis commit**
 
 ```bash
-shasum -a 256 harness/skills/README.md > /tmp/memory-skills-index.sha256
-shasum -a 256 -c /tmp/memory-skills-index.sha256
-```
-
-Exécuter ensuite le doctor complet. Résultat attendu : PASS local; si `skills-ref` manque, rapporter exactement `Standard validation: unavailable (skills-ref not installed)`.
-
-- [ ] **Step 6: Vérifier le déploiement sans mutation globale**
-
-```bash
-make -n codex claude-code cursor
+skill-manager doctor memory-governance user
+skill-manager sync-index user
+shasum -a 256 harness/skills/README.md > /tmp/memory-index.sha256
+skill-manager sync-index user
+shasum -a 256 -c /tmp/memory-index.sha256
+make -n agent-memory agent-handoff codex claude-code cursor
 bun test tooling/deployment-links.test.ts tooling/deployment-codex-wiring.test.ts
 cargo test --manifest-path tooling/arnes/Cargo.toml --test rules --test manifest_rules
+git add harness/skills/memory-governance harness/skills/README.md harness/rules/memory-governance-cursor.mdc home/.arnes.yaml Makefile tooling/deployment-links.test.ts tooling/deployment-codex-wiring.test.ts tooling/arnes/src/rules.rs tooling/arnes/tests/rules.rs tooling/arnes/tests/manifest_rules.rs
+git commit -m "feat(memory): deploy the runtime to every agent"
 ```
 
-Résultat attendu : une skill par agent, deux hooks mémoire synchrones, une règle Cursor, aucun install réel depuis le worktree.
+### Tâche 8 : oracle end-to-end multi-agent
 
-- [ ] **Step 7: Commit**
+**Files:**
 
-```bash
-git add harness/skills/memory-governance harness/skills/README.md \
-  harness/rules/memory-governance-cursor.mdc home/.arnes.yaml Makefile \
-  tooling/deployment-links.test.ts tooling/deployment-codex-wiring.test.ts \
-  tooling/arnes/src/rules.rs tooling/arnes/tests/rules.rs \
-  tooling/arnes/tests/manifest_rules.rs
-git commit -m "feat(memory): deploy governance to every agent"
-```
+- Create: `tooling/agent-memory-eval.ts`
+- Create: `tooling/agent-memory-eval.test.ts`
+- Create: `tooling/agent-memory-eval-scenarios.json`
+- Replace: `docs/memory-governance-validation.md`
 
-### Tâche 10 : oracle end-to-end multi-agent
+**Interfaces:**
 
-**Fichiers :**
+- Consumes: agents résolus, adapters déployés dans homes temporaires, `agent-memory`, fixture Git et `AGENT_MEMORY_ROOT` temporaires.
+- Produces: raw hors Git et rapport normalisé; preuve `agent → adapter configuré → agent-memory → adapter → agent`.
 
-- Créer : `tooling/agent-memory-eval.ts`
-- Créer : `tooling/agent-memory-eval.test.ts`
-- Créer : `tooling/agent-memory-eval-scenarios.json`
-- Remplacer : `docs/memory-governance-validation.md`
+- [ ] **Step 1: écrire les RED runner**
 
-**Interfaces :**
+Faux agents/binaire : process frais, timeout 120 s, exit non nul, JSONL malformé, nonce absent, appel binaire absent, ordre incorrect, mutation contrôle, store personnel, version absente, cleanup interrompu. Refuser un store hors racine temporaire.
 
-- Consomme : binaires agents explicitement résolus, Arnes buildé, fixture Git neutre, `ARNES_MEMORY_ROOT` temporaire, scénarios versionnés.
-- Produit : résultats bruts sous un `mktemp -d` hors Git et rapport normalisé sans contenu privé; aucun PASS dérivé de la réponse finale seule.
+- [ ] **Step 2: implémenter quatre scénarios, contrôle/déployé, trois réplicats**
 
-- [ ] **Step 1: Écrire les tests RED du runner**
+1. détection durable → proposition → aucune écriture;
+2. acceptation → `stored` → session pertinente avec preuve/fraîcheur → session sans rapport sans injection;
+3. secret/transcript → `rejected` → store inchangé;
+4. source indisponible omise sans mutation → contradiction vers `invalidated`.
 
-Avec trois faux binaires, tester process frais, timeout 120 s, exit non nul, JSONL malformé, nonce absent, ordre d’événements incorrect, mutation en contrôle, store personnel référencé, version absente et cleanup interrompu. Le runner refuse de démarrer si le store résolu n’est pas sous sa racine temporaire.
+Chaque réplicat a store, home, dépôt et processus distincts.
 
-- [ ] **Step 2: Implémenter quatre scénarios composés**
+- [ ] **Step 3: implémenter les oracles agents**
 
-Le JSON versionné contient :
+- Codex : `UserPromptSubmit` → fin `agent-memory` → `additionalContext` → premier événement modèle avec nonce.
+- Claude : même ordre via `--include-hook-events`.
+- Cursor : lecture règle/skill → fin `agent-memory retrieve` → première analyse/action avec nonce; preuve comportementale versionnée.
+- Tous : permissions, YAML, index, cache, absence mutation implicite et absence lecture store personnel.
 
-1. connaissance durable implicite → proposition visible → aucune écriture;
-2. acceptation explicite → `stored` → nouveau processus pertinent → annonce preuve/fraîcheur → nouveau processus sans rapport → aucune injection;
-3. secret évident et transcript brut → `rejected` → store inchangé;
-4. entrée seedée → source indisponible omise sans mutation → source contradictoire transitionnée `invalidated`.
-
-Chaque scénario a condition `control` sans skill/hook/règle et `deployed`, trois réplicats par agent. Chaque réplicat utilise son store et son dépôt fixture; aucune session ne partage le contexte agent d’une autre.
-
-- [ ] **Step 3: Implémenter les oracles par surface**
-
-- Codex : journal prouve `UserPromptSubmit`, fin du retrieval, `additionalContext`, puis premier événement modèle portant le nonce.
-- Claude : `--include-hook-events` prouve le même ordre.
-- Cursor : journal prouve lecture de la règle et de `SKILL.md`, appel `arnes memory retrieve` terminé, puis première analyse/action utilisant le nonce; cela reste un oracle comportemental de version, pas une garantie native.
-- Tous : inspecter directement le store temporaire pour permissions, YAML, index, cache et absence de mutation implicite.
-
-- [ ] **Step 4: Exécuter le runner unitairement**
+- [ ] **Step 4: tests, runs réels et rapport**
 
 ```bash
 bun test tooling/agent-memory-eval.test.ts
-bun run typecheck
-bun run lint
-bun run format:typescript:check
-```
-
-Résultat attendu : PASS avec faux agents sur macOS et Linux.
-
-- [ ] **Step 5: Exécuter les agents réels sur macOS**
-
-Résoudre et enregistrer `uname -mrs` et chaque `--version`, puis lancer sans modifier les configurations user :
-
-```bash
+bun run typecheck && bun run lint && bun run format:typescript:check
 bun tooling/agent-memory-eval.ts --agent codex --replicates 3
 bun tooling/agent-memory-eval.ts --agent claude --replicates 3
 bun tooling/agent-memory-eval.ts --agent cursor --replicates 3
 ```
 
-Le runner construit des fixtures projet contrôle/déployé, utilise les commandes fraîches documentées dans la spec, conserve les raw JSONL hors Git et échoue au premier oracle absent. Pour Cursor, aucun `--ephemeral` ni exclusion totale des settings n’est revendiqué; nouveau processus, fixture et nonce isolent seulement la mesure.
+Rapport : date, OS/arch, versions, SHA binaire, commandes, résultats par capacité/agent, limites Cursor/Linux, nettoyage. Une capacité sous `3/3` bloque la PR sans dégradation/report.
 
-- [ ] **Step 6: Écrire le rapport versionné**
-
-`docs/memory-governance-validation.md` nomme date, OS/architecture, versions, commandes, nombre de réplicats, résultat par capacité et agent, limites Cursor et Linux, chemins des artefacts temporaires et nettoyage. Il remplace explicitement les 26 checks candidate-only; aucun transcript, statement privé ou taux inventé n’y paraît.
-
-Si un agent n’atteint pas `3/3` sur une capacité requise, arrêter la PR : ne pas dégrader le critère, ne pas ajouter une promesse, ne pas créer de ticket de report pour cette capacité.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: commit**
 
 ```bash
-git add tooling/agent-memory-eval.ts tooling/agent-memory-eval.test.ts \
-  tooling/agent-memory-eval-scenarios.json docs/memory-governance-validation.md
-git commit -m "test(memory): prove durable memory across agents"
+git add tooling/agent-memory-eval.ts tooling/agent-memory-eval.test.ts tooling/agent-memory-eval-scenarios.json docs/memory-governance-validation.md
+git commit -m "test(memory): prove the adapter runtime path"
 ```
 
-### Tâche 11 : barrières portables et vérification finale
+### Tâche 9 : CI portable et vérification finale
 
-**Fichiers :**
+**Files:**
 
-- Modifier : `.github/workflows/test-arnes.yml`
-- Modifier : `.github/workflows/lint.yml`
-- Vérifier : tous les fichiers des tâches 1–10
+- Create: `.github/workflows/test-agent-memory.yml`
+- Modify: `.github/workflows/test-arnes.yml`
+- Modify: `.github/workflows/lint.yml`
+- Create: `tooling/agent-memory-workflow.test.ts`
 
-**Interfaces :**
+**Interfaces:**
 
-- Consomme : implémentation et rapport E2E commités.
-- Produit : gates couvrant chaque extension touchée sur ses plateformes supportées, puis head exact prêt pour revue.
+- Consumes: implémentation/rapport; workflow handoff livré par son plan.
+- Produces: gates indépendantes mémoire/handoff/Arnes macOS+Linux; head exact revu.
 
-- [ ] **Step 1: Écrire le RED de couverture CI**
+- [ ] **Step 1: écrire le RED CI puis séparer les workflows**
 
-Étendre le test de contrat workflow pour exiger une matrice `ubuntu-latest` et `macos-latest` sur Arnes avec `cargo fmt`, `cargo clippy --all-targets -- -D warnings` et `cargo test`. Ajouter les nouveaux Markdown/YAML/JSON au `prettier --check` et `cspell`; le TypeScript est déjà couvert par les scripts Bun.
-
-- [ ] **Step 2: Exécuter toutes les barrières locales**
+Le contract test exige `ubuntu-latest`/`macos-latest` et :
 
 ```bash
-cargo fmt --manifest-path tooling/arnes/Cargo.toml --check
-cargo clippy --manifest-path tooling/arnes/Cargo.toml --all-targets -- -D warnings
-cargo test --manifest-path tooling/arnes/Cargo.toml
+cargo fmt --manifest-path tooling/agent-memory/Cargo.toml --check
+cargo clippy --manifest-path tooling/agent-memory/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path tooling/agent-memory/Cargo.toml
+```
+
+`test-arnes.yml` reste indépendant; workflow handoff inchangé; aucun `--workspace`. Le lint couvre nouveaux Markdown/YAML/JSON/TS.
+
+- [ ] **Step 2: exécuter toutes les barrières**
+
+```bash
+for manifest in tooling/agent-memory/Cargo.toml tooling/agent-handoff/Cargo.toml tooling/arnes/Cargo.toml; do
+  cargo fmt --manifest-path "$manifest" --check
+  cargo clippy --manifest-path "$manifest" --all-targets -- -D warnings
+  cargo test --manifest-path "$manifest"
+done
 bun test
-bun run lint
-bun run typecheck
-bun run format:typescript:check
-prettier --check docs/adr/README.md docs/adr/042-memoire-durable-locale-partagee.md \
-  docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md \
-  docs/memory-governance-validation.md home/.arnes.yaml \
-  harness/skills/memory-governance/SKILL.md \
-  harness/skills/memory-governance/references/entry-contract.md \
-  harness/skills/memory-governance/evals/trigger-queries.json \
-  harness/rules/memory-governance-cursor.mdc tooling/agent-memory-eval-scenarios.json
-git diff --check 25860b4..HEAD
+bun run lint && bun run typecheck && bun run format:typescript:check
+prettier --check docs/adr/042-memoire-durable-locale-partagee.md docs/superpowers/specs/2026-08-28-durable-agent-memory-design.md docs/memory-governance-validation.md home/.arnes.yaml harness/skills/memory-governance/SKILL.md harness/skills/memory-governance/references/entry-contract.md harness/skills/memory-governance/evals/trigger-queries.json harness/rules/memory-governance-cursor.mdc tooling/agent-memory-eval-scenarios.json
+git diff --check 7f58a03..HEAD
 ```
 
-Résultat attendu : PASS sur macOS observé; la CI reproduit le cœur Rust/Bun sur macOS et Linux. Les agents réels restent prouvés seulement sur le macOS et les versions du rapport.
+Expected: PASS local macOS; CI répète les trois crates sur macOS/Linux.
 
-- [ ] **Step 3: Vérifier taille, commentaires et état local**
-
-Inspecter chaque fonction de production > 50 lignes logiques et fichier manuscrit > 250 lignes; scinder par responsabilité ou justifier dans la delivery note. Exécuter :
+- [ ] **Step 3: vérifier frontières, tailles et commentaires**
 
 ```bash
-rg -n '^\s*(//|/\*|\*)' tooling/arnes/src/memory tooling/agent-memory-eval.ts || true
+! rg -n 'agent_memory|AGENT_MEMORY_ROOT|MemoryEntry|RetrievalReport|\.local/share/agent-memory' tooling/arnes/src tooling/arnes/Cargo.toml
+test ! -e Cargo.toml && test ! -e tooling/Cargo.toml
+rg -n '^\s*(//|/\*|\*)' tooling/agent-memory/src tooling/agent-handoff/src tooling/agent-memory-eval.ts || true
 git status --short
 ```
 
-Résultat attendu : aucun commentaire de code ajouté; uniquement les fichiers attendus avant le commit de barrière.
+Inspecter fonctions production >50 lignes logiques et fichiers manuscrits >250 lignes; scinder ou justifier. Expected: aucun commentaire ajouté, donnée mémoire ou raw suivi.
 
-- [ ] **Step 4: Commit des gates**
+- [ ] **Step 4: commit, oracles head exact et revue**
 
 ```bash
-git add .github/workflows/test-arnes.yml .github/workflows/lint.yml
-git commit -m "ci(memory): verify the durable memory system"
+git add .github/workflows/test-agent-memory.yml .github/workflows/test-arnes.yml .github/workflows/lint.yml
+git commit -m "ci(memory): verify independent agent runtimes"
 ```
 
-- [ ] **Step 5: Rejouer les oracles sur le head exact**
-
-Rejouer les commandes de Step 2, les trois runs d’agent de la tâche 10 et `git diff --check 25860b4..HEAD`. Enregistrer le SHA exact dans le rapport si les résultats diffèrent du commit de preuve; sinon vérifier que le SHA documenté est toujours ancêtre de HEAD et que seuls les gates ont changé.
-
-- [ ] **Step 6: Revue indépendante**
-
-Utiliser `superpowers:requesting-code-review`, puis une passe adversariale `enforcement-code` ciblée sur traversal, symlink, TOCTOU, collision, lock, URL/redirect, secrets, bypass user-scope et hooks absents. Toute correction rejoue le test ciblé, la suite complète et les oracles affectés avant livraison.
+Rejouer Step 2 et les trois runs Task 8; actualiser le SHA du rapport si binaire/adapters changent. Utiliser `superpowers:requesting-code-review`, puis `enforcement-code` sur traversal, symlink, TOCTOU, collision, lock, URL/redirect, secrets, scope user, hook absent et couplage Arnes. Toute correction rejoue test ciblé, trois suites Cargo et oracles affectés.
 
 ## Self-review du plan
 
-- Couverture spec : admission/proposition (tâches 7/9/10), YAML/permissions/concurrence (4), index/recherche/isolation (5), preuves/sources (3), oracles/cache/transitions (6), hooks et visibilité (8/9), trois agents et A/B frais (10), plateformes et gates (11).
-- Limite certaine conservée : Cursor ne possède pas d’injection pré-prompt native; seule l’observation `3/3` de la règle + skill autorise la capacité sur la version mesurée.
-- Chemins externes explicités : Git, fichiers, curl/URL, stdin hook, horloge, filesystem, processus agents et configuration user résiduelle Cursor.
-- Aucun placeholder, migration SQLite, capacité future, double écriture ou édition d’état généré agent n’est prévu.
-- Commentaires ajoutés par ce plan : aucun commentaire de code; les futurs implementers doivent conserver cette liste vide.
+- Tâche 1 corrige l’autorité avant tout code; le plan handoff s’exécute ensuite, avant la tâche 2.
+- Tâche 2 extrait les tâches 2–5 et déplace le WIP Task 6; tâches 3–5 terminent seulement `agent-memory`; tâche 6 borne Arnes.
+- Modèle/refus, sources/scope, store/atomicité, index/recherche, cache/oracles/transitions, admission/CLI et adapters sont couverts.
+- Tâche 7 déploie les surfaces; tâche 8 prouve le chemin complet en `3/3`; tâche 9 couvre macOS/Linux.
+- Le package handoff et sa parité stricte sont un prérequis d’un plan distinct, non dupliqué.
+- Aucun placeholder, capacité différée, workspace, état agent généré, commentaire de code ou dépendance crate vers Arnes.
