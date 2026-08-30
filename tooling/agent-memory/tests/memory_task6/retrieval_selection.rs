@@ -11,9 +11,11 @@ use std::sync::{Arc, Barrier};
 fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() {
     let fixture = tempfile::tempdir().unwrap();
     let (root, store) = open_store(fixture.path());
-    let yaml = entry_yaml(
+    let key = project_key(fixture.path());
+    let yaml = project_entry_yaml(
         'd',
         "invariant",
+        &key,
         &[
             SourceFixture {
                 kind: "git-file",
@@ -37,8 +39,7 @@ fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() 
             },
         ],
     );
-    write_user_entry(&root, 'd', &yaml);
-    let key = project_key(fixture.path());
+    write_project_entry(&root, &key, 'd', &yaml);
     let selection = select(&store, &key, 5);
     let resolver = FakeResolver::with_responses([valid('a'), valid('b'), valid('c'), valid('d')]);
     let clock = FixedClock::at("2026-08-28T01:00:00Z");

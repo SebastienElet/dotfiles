@@ -1,23 +1,22 @@
-#[allow(dead_code)]
-#[path = "support/memory.rs"]
-mod memory_support;
-
 use agent_memory::{
     AdmissionAuthorization, SourceContext, SystemProcessRunner, parse_draft, resolve_sources,
     validate_draft,
 };
-use memory_support::FakeProcessRunner;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-fn draft(scope: &str, locator: &str) -> agent_memory::ValidatedDraft {
-    let yaml = format!(
+fn draft_yaml(scope: &str, locator: &str) -> Vec<u8> {
+    format!(
         "schema_version: 1\nkind: invariant\nstatement: A tracked proof establishes this memory.\nscope: {scope}\nretrieval_terms:\n  - tracked proof\nproof:\n  summary: The tracked file is authoritative.\n  sources:\n    - kind: git-file\n      locator: {}\noracle:\n  automated:\n    kind: source-fingerprint\n    expected: all-proof-sources-unchanged\n  human_fallback:\n    question: Does the tracked file remain authoritative?\n    valid_when: The tracked file retains the requirement.\n  outcomes:\n    valid: The proof is unchanged.\n    invalidated: The proof changed.\n",
         serde_json::to_string(locator).unwrap()
-    );
+    )
+    .into_bytes()
+}
+
+fn draft(scope: &str, locator: &str) -> agent_memory::ValidatedDraft {
     validate_draft(
-        parse_draft(yaml.as_bytes()).unwrap(),
+        parse_draft(&draft_yaml(scope, locator)).unwrap(),
         AdmissionAuthorization::AcceptedProposal,
     )
     .unwrap()
@@ -115,14 +114,10 @@ fn linked_worktrees_share_the_same_canonical_git_locator() {
 }
 
 #[test]
-fn user_scope_git_sources_are_rejected_before_git_resolution() {
-    let temporary = tempfile::tempdir().unwrap();
-    fs::write(temporary.path().join("proof.txt"), b"proof").unwrap();
-    let runner = FakeProcessRunner::default();
-    let context = SourceContext::new(temporary.path(), &runner, &runner);
-
-    let error = resolve_sources(draft("user", "proof.txt"), &context).unwrap_err();
+fn user_scope_git_sources_are_rejected_by_admission_validation() {
+    let parsed = parse_draft(&draft_yaml("user", "proof.txt")).unwrap();
+    let error = validate_draft(parsed, AdmissionAuthorization::AcceptedProposal).unwrap_err();
 
     assert_eq!(error.code(), "source_invalid");
-    assert!(runner.calls().is_empty());
+    assert_eq!(error.field(), "proof.sources");
 }

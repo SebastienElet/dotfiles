@@ -7,6 +7,8 @@ mod retrieval_proof_fallback;
 mod retrieval_races;
 #[path = "memory_task6/retrieval_reporting.rs"]
 mod retrieval_reporting;
+#[path = "memory_task6/retrieval_scope_policy.rs"]
+mod retrieval_scope_policy;
 #[path = "memory_task6/retrieval_selection.rs"]
 mod retrieval_selection;
 #[path = "memory_task6/retrieval_transition_atomicity.rs"]

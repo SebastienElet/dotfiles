@@ -51,11 +51,81 @@ fn valid_terminal_entry(reason: &str) -> Vec<u8> {
     )
 }
 
+fn valid_user_entry_with_sources(sources: &str, automated: bool) -> Vec<u8> {
+    let fingerprint = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let original_scope = "scope:\n  type: project\n  key: project_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n";
+    let original_source = format!(
+        "    - kind: git-file\n      locator: \"docs/outcome.md\"\n      fingerprint: {fingerprint}\n"
+    );
+    let mut yaml = String::from_utf8(valid_terminal_entry("The goal was demonstrably achieved."))
+        .unwrap()
+        .replace(original_scope, "scope:\n  type: user\n")
+        .replace(&original_source, sources);
+    if !automated {
+        yaml = yaml.replace(
+            "  automated:\n    kind: source-fingerprint\n    expected: all-proof-sources-unchanged\n",
+            "",
+        );
+    }
+    yaml.into_bytes()
+}
+
 fn validate(bytes: &[u8]) -> Result<(), String> {
     let draft = parse_draft(bytes).map_err(|error| error.code().to_owned())?;
     validate_draft(draft, AdmissionAuthorization::ExplicitRequest)
         .map(|_| ())
         .map_err(|error| error.code().to_owned())
+}
+
+#[test]
+fn persisted_entry_validation_rejects_a_user_git_source() {
+    let fingerprint = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let yaml = valid_user_entry_with_sources(
+        &format!(
+            "    - kind: git-file\n      locator: \"docs/outcome.md\"\n      fingerprint: {fingerprint}\n"
+        ),
+        true,
+    );
+
+    let error = parse_entry(&yaml).unwrap_err();
+
+    assert_eq!(error.code(), "source_invalid");
+    assert_eq!(error.field(), "proof.sources");
+}
+
+#[test]
+fn persisted_user_entries_accept_supported_non_git_sources() {
+    let fingerprint = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let cases = [
+        (
+            "local-file",
+            format!(
+                "    - kind: local-file\n      locator: \"/tmp/proof.txt\"\n      fingerprint: {fingerprint}\n"
+            ),
+            true,
+        ),
+        (
+            "official-url-and-user-decision",
+            format!(
+                "    - kind: official-url\n      locator: \"https://docs.example.test/proof\"\n      fingerprint: {fingerprint}\n    - kind: user-decision\n      locator: \"decision:proof-accepted\"\n      fingerprint: {fingerprint}\n"
+            ),
+            true,
+        ),
+        (
+            "user-decision",
+            format!(
+                "    - kind: user-decision\n      locator: \"decision:proof-accepted\"\n      fingerprint: {fingerprint}\n"
+            ),
+            false,
+        ),
+    ];
+
+    for (source, sources, automated) in cases {
+        assert!(
+            parse_entry(&valid_user_entry_with_sources(&sources, automated)).is_ok(),
+            "{source}"
+        );
+    }
 }
 
 #[test]

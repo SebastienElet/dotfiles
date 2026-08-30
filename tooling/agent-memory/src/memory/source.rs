@@ -1,9 +1,7 @@
 mod oracle;
 
 use super::identity::resolve_worktree_directory;
-use super::{
-    Fingerprint, MemoryError, ProcessOutput, ProcessRunner, ScopeDraft, SourceKind, ValidatedDraft,
-};
+use super::{Fingerprint, MemoryError, ProcessOutput, ProcessRunner, SourceKind, ValidatedDraft};
 use rustix::fs::{Mode, OFlags, open};
 use sha2::{Digest, Sha256};
 use std::ffi::{OsStr, OsString};
@@ -102,13 +100,6 @@ pub fn resolve_sources(
     context: &SourceContext<'_>,
 ) -> Result<ResolvedDraft, MemoryError> {
     let proof_sources = draft.proof().sources();
-    if draft.scope() == ScopeDraft::User
-        && proof_sources
-            .iter()
-            .any(|source| source.kind() == SourceKind::GitFile)
-    {
-        return Err(source_invalid());
-    }
     let has_official_url = proof_sources
         .iter()
         .any(|source| source.kind() == SourceKind::OfficialUrl);

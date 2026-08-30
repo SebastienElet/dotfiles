@@ -113,6 +113,21 @@ pub fn entry_yaml(id_character: char, kind: &str, sources: &[SourceFixture<'_>])
     .into_bytes()
 }
 
+pub fn project_entry_yaml(
+    id_character: char,
+    kind: &str,
+    key: &ProjectKey,
+    sources: &[SourceFixture<'_>],
+) -> Vec<u8> {
+    String::from_utf8(entry_yaml(id_character, kind, sources))
+        .unwrap()
+        .replace(
+            "scope:\n  type: user\n",
+            &format!("scope:\n  type: project\n  key: {}\n", key.as_str()),
+        )
+        .into_bytes()
+}
+
 pub fn memory_root(path: &Path) -> MemoryRoot {
     MemoryRoot::new(path).unwrap()
 }
@@ -128,6 +143,21 @@ pub fn write_user_entry(root: &Path, id_character: char, yaml: &[u8]) -> PathBuf
         "entries/user/mem_{}.yaml",
         id_character.to_string().repeat(24)
     ));
+    fs::write(&path, yaml).unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    path
+}
+
+pub fn write_project_entry(
+    root: &Path,
+    key: &ProjectKey,
+    id_character: char,
+    yaml: &[u8],
+) -> PathBuf {
+    let directory = root.join("entries/project").join(key.as_str());
+    fs::create_dir_all(&directory).unwrap();
+    fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+    let path = directory.join(format!("mem_{}.yaml", id_character.to_string().repeat(24)));
     fs::write(&path, yaml).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
     path

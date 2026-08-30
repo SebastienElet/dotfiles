@@ -2,7 +2,7 @@ use super::error::MemoryError;
 use super::model::{
     AdmissionAuthorization, AdmissionDraft, EntryData, EntryProof, EntryScope, EntrySource,
     EntryTransition, Fingerprint, MemoryEntry, MemoryId, ProjectKey, RawDraftKind, RawEntryKind,
-    RawEntryScope, RetrievalTerm, SourceKind, Statement, UtcTimestamp, ValidatedDraft,
+    RawEntryScope, RetrievalTerm, ScopeDraft, SourceKind, Statement, UtcTimestamp, ValidatedDraft,
     ValidatedDraftProof, ValidatedDraftSource, ValidatedOracle,
 };
 use super::{sensitive, shell_command};
@@ -53,6 +53,10 @@ pub fn validate_draft(
             Ok(ValidatedDraftSource::new(kind, locator))
         })
         .collect::<Result<Vec<_>, MemoryError>>()?;
+    validate_scope_source_kinds(
+        data.scope == ScopeDraft::User,
+        sources.iter().map(ValidatedDraftSource::kind),
+    )?;
     validate_oracle_requirement(
         data.oracle.automated.is_some(),
         sources
@@ -95,6 +99,10 @@ fn validated_entry(raw: RawEntryKind) -> Result<MemoryEntry, MemoryError> {
     };
     let retrieval_terms = retrieval_terms(data.retrieval_terms)?;
     let proof = validated_entry_proof(data.proof)?;
+    validate_scope_source_kinds(
+        matches!(&scope, EntryScope::User),
+        proof.sources().iter().map(EntrySource::kind),
+    )?;
     validate_oracle_requirement(
         data.oracle.automated.is_some(),
         proof
@@ -481,6 +489,17 @@ fn validate_oracle_requirement(
         Ok(())
     } else {
         Err(MemoryError::new("missing_oracle", "oracle.automated"))
+    }
+}
+
+fn validate_scope_source_kinds(
+    user_scope: bool,
+    mut source_kinds: impl Iterator<Item = SourceKind>,
+) -> Result<(), MemoryError> {
+    if user_scope && source_kinds.any(|kind| kind == SourceKind::GitFile) {
+        Err(MemoryError::new("source_invalid", "proof.sources"))
+    } else {
+        Ok(())
     }
 }
 
