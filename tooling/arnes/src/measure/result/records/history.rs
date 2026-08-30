@@ -7,11 +7,14 @@ use std::fs::File;
 
 pub struct EventHistory {
     last_event: Option<String>,
+    first_event_at_ms: Option<u64>,
+    last_event_at_ms: Option<u64>,
+    timestamps_consistent: bool,
     latest_result: Option<ResultRecord>,
     previous_result: Option<ResultRecord>,
 }
 
-#[derive(Clone, Copy, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ResultState {
     Pending,
@@ -46,12 +49,34 @@ pub fn read_events_with<T>(
     Ok((history, result))
 }
 
+pub fn read_events_for_list_with<T>(
+    path: &ManagedPath,
+    run_id: &str,
+    read_result: impl FnOnce() -> Result<T, MeasureError>,
+) -> Result<(EventHistory, T), MeasureError> {
+    match open_locked_jsonl(path)? {
+        Some(mut file) => {
+            let history = read_events_file_allow_empty(&mut file, run_id)?;
+            let result = read_result()?;
+            Ok((history, result))
+        }
+        None => Ok((EventHistory::new(), read_result()?)),
+    }
+}
+
 pub fn read_events_file(file: &mut File, run_id: &str) -> Result<EventHistory, MeasureError> {
+    read_events_file_allow_empty(file, run_id)?.finish()
+}
+
+fn read_events_file_allow_empty(
+    file: &mut File,
+    run_id: &str,
+) -> Result<EventHistory, MeasureError> {
     let mut history = EventHistory::new();
     visit_jsonl_typed_file::<StoredEvent>(file, "events.jsonl", |event| {
         history.push(event, run_id)
     })?;
-    history.finish()
+    Ok(history)
 }
 
 pub fn latest_result(history: &EventHistory) -> Option<&ResultRecord> {
@@ -83,6 +108,9 @@ impl EventHistory {
     fn new() -> Self {
         Self {
             last_event: None,
+            first_event_at_ms: None,
+            last_event_at_ms: None,
+            timestamps_consistent: true,
             latest_result: None,
             previous_result: None,
         }
@@ -97,6 +125,11 @@ impl EventHistory {
         if let Some(result) = event.result {
             self.push_result(result)?;
         }
+        self.first_event_at_ms.get_or_insert(event.timestamp_ms);
+        self.timestamps_consistent &= self
+            .last_event_at_ms
+            .is_none_or(|previous| previous <= event.timestamp_ms);
+        self.last_event_at_ms = Some(event.timestamp_ms);
         self.last_event = Some(event.event);
         Ok(())
     }
@@ -126,6 +159,18 @@ impl EventHistory {
     pub fn last_event(&self) -> Option<&str> {
         self.last_event.as_deref()
     }
+
+    pub fn first_event_at_ms(&self) -> Option<u64> {
+        self.first_event_at_ms
+    }
+
+    pub fn last_event_at_ms(&self) -> Option<u64> {
+        self.last_event_at_ms
+    }
+
+    pub fn timestamps_consistent(&self) -> bool {
+        self.timestamps_consistent
+    }
 }
 
 fn revision_error() -> MeasureError {
@@ -134,7 +179,7 @@ fn revision_error() -> MeasureError {
 
 #[cfg(test)]
 mod tests {
-    use super::read_events_with;
+    use super::{read_events_for_list_with, read_events_with};
     use crate::measure::store::ManagedPath;
     use serde_json::json;
     use std::fs::OpenOptions;
@@ -168,5 +213,35 @@ mod tests {
         .unwrap();
 
         assert_eq!(result, 7);
+    }
+
+    #[test]
+    fn list_keeps_the_event_lock_while_reading_the_result_snapshot() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("events.jsonl");
+        let event_id = "a".repeat(64);
+        let mut file = std::fs::File::create(&path).unwrap();
+        writeln!(
+            file,
+            "{}",
+            json!({
+                "timestamp_ms": 1,
+                "event_id": event_id,
+                "event": "prompt.submit",
+                "native_event": "UserPromptSubmit",
+                "artifact": "artifacts/hooks/event.json",
+                "native_ids": {}
+            })
+        )
+        .unwrap();
+
+        let result =
+            read_events_for_list_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
+                let other = OpenOptions::new().read(true).write(true).open(&path)?;
+                assert!(other.try_lock().is_err());
+                Ok(7)
+            });
+
+        assert_eq!(result.unwrap().1, 7);
     }
 }
