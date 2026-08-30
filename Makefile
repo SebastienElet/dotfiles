@@ -243,7 +243,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/agents:
 	mkdir -p $@
 ~/.codex/agents/design-claim-auditor.toml: ${DOTFILES_PATH}/home/.codex/agents/design-claim-auditor.toml FORCE | ~/.codex/agents
-	cp "$<" "$@"
+	@if [ -f "$@" ] && cmp -s "$<" "$@"; then exit 0; fi; cp "$<" "$@"
 ~/.agents/skills:
 	mkdir -p $@
 ~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions FORCE | ~/.agents/skills
