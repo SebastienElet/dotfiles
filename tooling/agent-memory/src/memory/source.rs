@@ -289,7 +289,8 @@ fn resolve_official_url(
 ) -> Result<Vec<u8>, MemoryError> {
     let url = validated_https_url(locator).map_err(|_| source_invalid())?;
     let temporary = create_private_temporary(context)?;
-    let arguments = curl_arguments(temporary.path(), url.as_str());
+    let max_time = curl_max_time(context.curl)?;
+    let arguments = curl_arguments(temporary.path(), url.as_str(), &max_time);
     let output = context
         .curl
         .run(OsStr::new("curl"), &arguments, None)
@@ -314,7 +315,7 @@ fn create_private_temporary(context: &SourceContext<'_>) -> Result<NamedTempFile
     Ok(temporary)
 }
 
-fn curl_arguments(output: &Path, locator: &str) -> Vec<OsString> {
+fn curl_arguments(output: &Path, locator: &str, max_time: &str) -> Vec<OsString> {
     [
         OsString::from("--disable"),
         OsString::from("--silent"),
@@ -330,7 +331,7 @@ fn curl_arguments(output: &Path, locator: &str) -> Vec<OsString> {
         OsString::from("--connect-timeout"),
         OsString::from("5"),
         OsString::from("--max-time"),
-        OsString::from("15"),
+        OsString::from(max_time),
         OsString::from("--max-filesize"),
         OsString::from("1048576"),
         OsString::from("--output"),
@@ -340,6 +341,22 @@ fn curl_arguments(output: &Path, locator: &str) -> Vec<OsString> {
         OsString::from(locator),
     ]
     .into()
+}
+
+fn curl_max_time(runner: &dyn ProcessRunner) -> Result<String, MemoryError> {
+    let Some(remaining) = runner.remaining_time() else {
+        return Ok("15".to_owned());
+    };
+    let capped = remaining.min(std::time::Duration::from_secs(15));
+    let milliseconds = capped.as_millis();
+    if milliseconds == 0 {
+        return Err(source_unavailable());
+    }
+    Ok(format!(
+        "{}.{:03}",
+        milliseconds / 1000,
+        milliseconds % 1000
+    ))
 }
 
 struct CurlMetadata {

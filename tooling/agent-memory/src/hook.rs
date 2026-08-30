@@ -91,20 +91,6 @@ pub fn render_hook_response(
     agent: HookAgent,
     report: &RetrievalReport,
 ) -> Result<Vec<u8>, HookError> {
-    if report
-        .omitted
-        .iter()
-        .any(|omission| omission.code == "oracle_unavailable")
-    {
-        return Err(HookError::unavailable("oracle_unavailable", "oracle"));
-    }
-    if report
-        .omitted
-        .iter()
-        .any(|omission| omission.code.ends_with("_unavailable"))
-    {
-        return Err(HookError::unavailable("retrieval_unavailable", "memory"));
-    }
     let context = context::render(report)?;
     match agent {
         HookAgent::Codex => codex::render(context.as_deref()),

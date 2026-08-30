@@ -3,7 +3,7 @@ mod support;
 
 use serde_json::Value;
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{PermissionsExt, symlink};
 use std::process::{Command, Stdio};
 use support::*;
 
@@ -122,6 +122,30 @@ fn an_unavailable_store_never_reuses_prior_context() {
 }
 
 #[test]
+fn an_unavailable_selected_yaml_exits_four_without_context() {
+    let fixture = CliFixture::new();
+    let statement = "Durable selected path memory.";
+    let draft = fixture.git_draft("invariant", statement, "durable selected path");
+    let admitted = fixture.run(["admit", "--format", "json"], &draft);
+    assert_exit(&admitted, 0);
+    let id = stdout_json(&admitted)["id"].as_str().unwrap().to_owned();
+    let path = find_entry(fixture.root(), &format!("{id}.yaml")).unwrap();
+    let displaced = fixture.root().join("displaced-selected.yaml");
+    fs::rename(&path, &displaced).unwrap();
+    symlink(&displaced, &path).unwrap();
+    let payload = payload(
+        "UserPromptSubmit",
+        "Apply durable selected path",
+        fixture.repository(),
+    );
+
+    let output = fixture.run(["hook", "--agent", "claude"], &payload);
+
+    assert_error(&output, 4, "unsafe_store_path");
+    assert!(!String::from_utf8_lossy(&output.stderr).contains(statement));
+}
+
+#[test]
 fn a_hook_stdout_failure_uses_exit_four_without_context_on_stderr() {
     let fixture = CliFixture::new();
     let statement = "Durable stdout memory.";
@@ -161,4 +185,18 @@ fn payload(event: &str, prompt: &str, cwd: &std::path::Path) -> Vec<u8> {
         "prompt": prompt,
     }))
     .unwrap()
+}
+
+fn find_entry(directory: &std::path::Path, name: &str) -> Option<std::path::PathBuf> {
+    for entry in fs::read_dir(directory).ok()? {
+        let path = entry.ok()?.path();
+        if path.is_dir() {
+            if let Some(found) = find_entry(&path, name) {
+                return Some(found);
+            }
+        } else if path.file_name().and_then(|value| value.to_str()) == Some(name) {
+            return Some(path);
+        }
+    }
+    None
 }

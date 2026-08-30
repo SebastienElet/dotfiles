@@ -2,14 +2,17 @@
 mod memory_support;
 
 use agent_memory::{
-    AdmissionAuthorization, MemoryError, ResolvedDraft, SourceContext, SystemProcessRunner,
-    parse_draft, resolve_sources, validate_draft,
+    AdmissionAuthorization, MemoryError, ProcessOutput, ProcessRunner, ResolvedDraft,
+    SourceContext, SystemProcessRunner, parse_draft, resolve_sources, validate_draft,
 };
 use memory_support::{FakeProcessRunner, FakeResponse, git};
 use sha2::{Digest, Sha256};
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::fs;
+use std::io;
 use std::os::unix::fs::{PermissionsExt, symlink};
+use std::path::Path;
+use std::time::Duration;
 
 const BODY: &[u8] = b"authoritative body";
 const SUCCESS_METADATA: &str = "200\nhttps://docs.example.test/final\n203.0.113.10\n";
@@ -394,6 +397,54 @@ fn invokes_curl_with_the_closed_https_redirect_time_and_size_policy() {
     assert_eq!(output_files[0].1, 0o600);
     assert!(!output_files[0].0.exists());
     assert!(fs::read_dir(temporary.path()).unwrap().next().is_none());
+}
+
+struct RemainingProcessRunner {
+    inner: FakeProcessRunner,
+    remaining: Duration,
+}
+
+impl ProcessRunner for RemainingProcessRunner {
+    fn run(
+        &self,
+        program: &OsStr,
+        arguments: &[OsString],
+        current_directory: Option<&Path>,
+    ) -> io::Result<ProcessOutput> {
+        self.inner.run(program, arguments, current_directory)
+    }
+
+    fn remaining_time(&self) -> Option<Duration> {
+        Some(self.remaining)
+    }
+}
+
+#[test]
+fn caps_curl_to_the_remaining_shared_deadline() {
+    let repository = tempfile::tempdir().unwrap();
+    let temporary = tempfile::tempdir().unwrap();
+    let git_runner = FakeProcessRunner::default();
+    let curl = RemainingProcessRunner {
+        inner: FakeProcessRunner::with_responses([
+            FakeResponse::success(SUCCESS_METADATA).with_body(BODY)
+        ]),
+        remaining: Duration::from_millis(2750),
+    };
+    let context = SourceContext::new(repository.path(), &git_runner, &curl)
+        .with_temporary_directory(temporary.path());
+
+    resolve_sources(
+        official_url_draft("https://docs.example.test/start"),
+        &context,
+    )
+    .unwrap();
+
+    let arguments = &curl.inner.calls()[0].arguments;
+    assert!(
+        arguments
+            .windows(2)
+            .any(|window| { window == [OsString::from("--max-time"), OsString::from("2.750")] })
+    );
 }
 
 #[test]

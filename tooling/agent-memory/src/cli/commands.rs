@@ -76,8 +76,15 @@ fn retrieve_command(bytes: &[u8]) -> Result<Value, CliFailure> {
 }
 
 fn hook_command(agent: HookAgent, bytes: &[u8]) -> Result<Value, CliFailure> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(25);
     let request = parse_hook_request(agent, bytes).map_err(CliFailure::from_hook)?;
-    let report = retrieval::report(&request.query, &request.cwd)?;
+    let report = retrieval::injection_report(&request.query, &request.cwd, deadline)?;
+    if std::time::Instant::now() >= deadline {
+        return Err(CliFailure::from_memory(MemoryError::unavailable(
+            "retrieval_deadline_exceeded",
+            "memory",
+        )));
+    }
     let response = render_hook_response(agent, &report).map_err(CliFailure::from_hook)?;
     serde_json::from_slice(&response).map_err(|_| output_failure())
 }

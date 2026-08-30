@@ -2,6 +2,11 @@ use std::ffi::{OsStr, OsString};
 use std::io;
 use std::path::Path;
 use std::process::Command;
+use std::time::Duration;
+
+mod deadline;
+
+pub use deadline::DeadlineProcessRunner;
 
 #[derive(Debug)]
 pub struct ProcessOutput {
@@ -45,6 +50,10 @@ pub trait ProcessRunner {
         arguments: &[OsString],
         current_directory: Option<&Path>,
     ) -> io::Result<ProcessOutput>;
+
+    fn remaining_time(&self) -> Option<Duration> {
+        None
+    }
 }
 
 pub struct SystemProcessRunner;

@@ -1,6 +1,10 @@
 #[path = "memory_task6/support.rs"]
 mod support;
 
+#[path = "memory_task6/process_deadline.rs"]
+mod process_deadline;
+#[path = "memory_task6/retrieval_failures.rs"]
+mod retrieval_failures;
 #[path = "memory_task6/retrieval_proof_fallback.rs"]
 mod retrieval_proof_fallback;
 #[path = "memory_task6/retrieval_races.rs"]

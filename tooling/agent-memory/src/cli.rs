@@ -107,6 +107,11 @@ mod tests {
 
     struct FailingWriter;
 
+    #[derive(Default)]
+    struct FlushFailingWriter {
+        bytes: Vec<u8>,
+    }
+
     impl Write for FailingWriter {
         fn write(&mut self, _buffer: &[u8]) -> io::Result<usize> {
             Err(io::Error::other("write unavailable"))
@@ -114,6 +119,17 @@ mod tests {
 
         fn flush(&mut self) -> io::Result<()> {
             Ok(())
+        }
+    }
+
+    impl Write for FlushFailingWriter {
+        fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
+            self.bytes.extend_from_slice(buffer);
+            Ok(buffer.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Err(io::Error::other("flush unavailable"))
         }
     }
 
@@ -131,5 +147,23 @@ mod tests {
         let value: serde_json::Value = serde_json::from_slice(&diagnostics).unwrap();
         assert_eq!(value["error"]["code"], "output_unavailable");
         assert_eq!(value["error"]["field"], "stdout");
+    }
+
+    #[test]
+    fn reports_flush_only_failure_without_copying_context_to_diagnostics() {
+        let context = "AGENT_MEMORY_CONTEXT_V1 secret statement";
+        let mut output = FlushFailingWriter::default();
+        let mut diagnostics = Vec::new();
+
+        let exit = complete(
+            Ok(json!({"additionalContext": context})),
+            &mut output,
+            &mut diagnostics,
+        );
+
+        assert_eq!(exit, 4);
+        assert!(!String::from_utf8_lossy(&diagnostics).contains(context));
+        let value: serde_json::Value = serde_json::from_slice(&diagnostics).unwrap();
+        assert_eq!(value["error"]["code"], "output_unavailable");
     }
 }

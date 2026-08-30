@@ -1,49 +1,92 @@
-use super::{
-    InjectedMemory, OmissionEffect, OmittedMemory, RetrievalContext, RetrievalReport,
-    RetrievalRequest, SourceSummary,
-};
-use crate::memory::clock::timestamp;
+mod projection;
+
+use super::{OmissionEffect, OmittedMemory, RetrievalContext, RetrievalReport, RetrievalRequest};
 use crate::memory::{
     EntryScope, MemoryEntry, MemoryError, OracleContext, OracleEvaluation, OracleVerdict,
-    SelectedMemory, SourceKind, Status, TransitionVerdict, evaluate_oracle,
+    SelectedMemory, Status, TransitionVerdict, evaluate_oracle,
 };
-use url::Url;
+use projection::injected;
 
 pub fn retrieve(request: RetrievalRequest<'_>, context: RetrievalContext<'_>) -> RetrievalReport {
+    retrieve_outcome(request, context, RetrievalMode::Report).report
+}
+
+pub fn retrieve_for_injection(
+    request: RetrievalRequest<'_>,
+    context: RetrievalContext<'_>,
+) -> Result<RetrievalReport, MemoryError> {
+    let outcome = retrieve_outcome(request, context, RetrievalMode::Injection);
+    outcome.unavailable.map_or(Ok(outcome.report), Err)
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RetrievalMode {
+    Report,
+    Injection,
+}
+
+struct RetrievalOutcome {
+    report: RetrievalReport,
+    unavailable: Option<MemoryError>,
+}
+
+fn retrieve_outcome(
+    request: RetrievalRequest<'_>,
+    context: RetrievalContext<'_>,
+    mode: RetrievalMode,
+) -> RetrievalOutcome {
     let extra = request.selection.selected.len().saturating_sub(5);
-    let mut report = RetrievalReport {
-        injected: Vec::new(),
-        omitted: request
-            .selection
-            .diagnostics
-            .iter()
-            .map(|diagnostic| omission(&diagnostic.entry_id, &diagnostic.check, None))
-            .collect(),
-        omitted_by_limit: request.selection.omitted_by_limit + extra,
+    let mut outcome = RetrievalOutcome {
+        report: RetrievalReport {
+            injected: Vec::new(),
+            omitted: request
+                .selection
+                .diagnostics
+                .iter()
+                .map(|diagnostic| omission(&diagnostic.entry_id, &diagnostic.check, None))
+                .collect(),
+            omitted_by_limit: request.selection.omitted_by_limit + extra,
+        },
+        unavailable: None,
     };
     for selected in request.selection.selected.iter().take(5) {
-        retrieve_selected(selected, &request, &context, &mut report);
+        if context.deadline_exceeded() {
+            outcome.unavailable = Some(MemoryError::unavailable(
+                "retrieval_deadline_exceeded",
+                "memory",
+            ));
+            break;
+        }
+        retrieve_selected(selected, &request, &context, &mut outcome);
+        if context.deadline_exceeded() && outcome.unavailable.is_none() {
+            outcome.unavailable = Some(MemoryError::unavailable(
+                "retrieval_deadline_exceeded",
+                "memory",
+            ));
+        }
+        if mode == RetrievalMode::Injection && outcome.unavailable.is_some() {
+            break;
+        }
     }
-    report
+    outcome
 }
 
 fn retrieve_selected(
     selected: &SelectedMemory,
     request: &RetrievalRequest<'_>,
     context: &RetrievalContext<'_>,
-    report: &mut RetrievalReport,
+    outcome: &mut RetrievalOutcome,
 ) {
     let entry = match context.store.load_selected(selected) {
         Ok(entry) => entry,
         Err(error) => {
-            report
-                .omitted
-                .push(omission(&selected.entry_id, error.code(), None));
+            omit_error(outcome, &selected.entry_id, error, None);
             return;
         }
     };
     if entry.status() != Status::Active || !in_scope(entry.scope(), request) {
-        report
+        outcome
+            .report
             .omitted
             .push(omission(entry.id().as_str(), "selection_stale", None));
         return;
@@ -62,20 +105,19 @@ fn retrieve_selected(
         match revalidate_before_injection(selected, request, context) {
             Ok(true) => {}
             Ok(false) => {
-                report
+                outcome
+                    .report
                     .omitted
                     .push(omission(entry.id().as_str(), "selection_stale", None));
                 return;
             }
             Err(error) => {
-                report
-                    .omitted
-                    .push(omission(entry.id().as_str(), error.code(), None));
+                omit_error(outcome, entry.id().as_str(), error, None);
                 return;
             }
         }
     }
-    apply_evaluation(entry, evaluation, context, report);
+    apply_evaluation(entry, evaluation, context, outcome);
 }
 
 fn revalidate_before_injection(
@@ -91,22 +133,29 @@ fn apply_evaluation(
     entry: MemoryEntry,
     evaluation: OracleEvaluation,
     context: &RetrievalContext<'_>,
-    report: &mut RetrievalReport,
+    outcome: &mut RetrievalOutcome,
 ) {
     match evaluation.verdict() {
         OracleVerdict::Valid => match injected(&entry, &evaluation) {
-            Some(injected) => report.injected.push(injected),
-            None => report
-                .omitted
-                .push(omission(entry.id().as_str(), "oracle_unavailable", None)),
+            Some(injected) => outcome.report.injected.push(injected),
+            None => omit_error(
+                outcome,
+                entry.id().as_str(),
+                MemoryError::unavailable("oracle_unavailable", "oracle"),
+                None,
+            ),
         },
-        OracleVerdict::Invalid => invalidate(entry, &evaluation, context, report),
-        OracleVerdict::Unavailable => report.omitted.push(omission(
-            entry.id().as_str(),
-            "oracle_unavailable",
-            Some(entry.oracle().fallback_question()),
-        )),
-        OracleVerdict::NeedsConfirmation => report.omitted.push(omission(
+        OracleVerdict::Invalid => invalidate(entry, &evaluation, context, outcome),
+        OracleVerdict::Unavailable => {
+            let question = entry.oracle().fallback_question().to_owned();
+            omit_error(
+                outcome,
+                entry.id().as_str(),
+                MemoryError::unavailable("oracle_unavailable", "oracle"),
+                Some(&question),
+            );
+        }
+        OracleVerdict::NeedsConfirmation => outcome.report.omitted.push(omission(
             entry.id().as_str(),
             "oracle_needs_confirmation",
             Some(entry.oracle().fallback_question()),
@@ -114,47 +163,11 @@ fn apply_evaluation(
     }
 }
 
-fn injected(entry: &MemoryEntry, evaluation: &OracleEvaluation) -> Option<InjectedMemory> {
-    let validated_at = timestamp(evaluation.validated_at()?)?;
-    let now = timestamp(evaluation.evaluated_at())?;
-    let age = now.duration_since(validated_at);
-    let verdict_age_milliseconds = u64::try_from(age.as_millis()).ok()?;
-    Some(InjectedMemory {
-        id: entry.id().as_str().to_owned(),
-        kind: entry.kind(),
-        statement: entry.statement().as_str().to_owned(),
-        sources: source_summaries(entry)?,
-        verdict_age_milliseconds,
-    })
-}
-
-fn source_summaries(entry: &MemoryEntry) -> Option<Vec<SourceSummary>> {
-    entry
-        .proof()
-        .sources()
-        .iter()
-        .map(|source| match source.kind() {
-            SourceKind::GitFile => Some(SourceSummary::with_locator(
-                SourceKind::GitFile,
-                source.locator(),
-            )),
-            SourceKind::OfficialUrl => {
-                let mut url = Url::parse(source.locator()).ok()?;
-                url.set_query(None);
-                url.set_fragment(None);
-                Some(SourceSummary::with_locator(SourceKind::OfficialUrl, url))
-            }
-            SourceKind::LocalFile => Some(SourceSummary::redacted(SourceKind::LocalFile)),
-            SourceKind::UserDecision => Some(SourceSummary::redacted(SourceKind::UserDecision)),
-        })
-        .collect()
-}
-
 fn invalidate(
     entry: MemoryEntry,
     evaluation: &OracleEvaluation,
     context: &RetrievalContext<'_>,
-    report: &mut RetrievalReport,
+    outcome: &mut RetrievalOutcome,
 ) {
     let id = entry.id().as_str().to_owned();
     let reason = entry.oracle().invalidated_outcome().to_owned();
@@ -164,11 +177,28 @@ fn invalidate(
         TransitionVerdict::Invalid,
         reason,
     );
-    let code = match context.store.replace_active(&terminal) {
-        Ok(_) => "oracle_invalidated",
-        Err(error) => error.code(),
-    };
-    report.omitted.push(omission(&id, code, None));
+    match context.store.replace_active(&terminal) {
+        Ok(_) => outcome
+            .report
+            .omitted
+            .push(omission(&id, "oracle_invalidated", None)),
+        Err(error) => omit_error(outcome, &id, error, None),
+    }
+}
+
+fn omit_error(
+    outcome: &mut RetrievalOutcome,
+    entry_id: &str,
+    error: MemoryError,
+    question: Option<&str>,
+) {
+    outcome
+        .report
+        .omitted
+        .push(omission(entry_id, error.code(), question));
+    if error.class() == crate::MemoryErrorClass::Unavailable && outcome.unavailable.is_none() {
+        outcome.unavailable = Some(error);
+    }
 }
 
 fn in_scope(scope: &EntryScope, request: &RetrievalRequest<'_>) -> bool {

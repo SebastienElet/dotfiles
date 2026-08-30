@@ -1,17 +1,17 @@
 use agent_memory::{HookAgent, HookErrorClass, parse_hook_request};
 use std::path::PathBuf;
 
-const CODEX_MINIMAL: &[u8] = include_bytes!("../fixtures/hooks/codex-minimal.json");
+const CODEX_PARSER_PROJECTION: &[u8] = include_bytes!("../fixtures/hooks/codex-minimal.json");
 const CODEX_COMPLETE: &[u8] = include_bytes!("../fixtures/hooks/codex-complete.json");
-const CLAUDE_MINIMAL: &[u8] = include_bytes!("../fixtures/hooks/claude-minimal.json");
+const CLAUDE_PARSER_PROJECTION: &[u8] = include_bytes!("../fixtures/hooks/claude-minimal.json");
 const CLAUDE_COMPLETE: &[u8] = include_bytes!("../fixtures/hooks/claude-complete.json");
 
 #[test]
-fn parses_minimal_and_complete_host_payloads() {
+fn parses_field_projections_and_complete_host_payloads() {
     let cases = [
         (
             HookAgent::Codex,
-            CODEX_MINIMAL,
+            CODEX_PARSER_PROJECTION,
             "durable memory",
             "/workspace",
         ),
@@ -23,7 +23,7 @@ fn parses_minimal_and_complete_host_payloads() {
         ),
         (
             HookAgent::Claude,
-            CLAUDE_MINIMAL,
+            CLAUDE_PARSER_PROJECTION,
             "durable memory",
             "/workspace",
         ),

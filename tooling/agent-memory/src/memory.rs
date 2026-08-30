@@ -28,11 +28,11 @@ pub use oracle::{
     SourceResolver, evaluate_oracle,
 };
 pub use path::MemoryRoot;
-pub use process::{ProcessOutput, ProcessRunner, SystemProcessRunner};
+pub use process::{DeadlineProcessRunner, ProcessOutput, ProcessRunner, SystemProcessRunner};
 pub use retrieval::{
     HumanConclusion, InjectedMemory, OmissionEffect, OmittedMemory, ProofAnswers, RetrievalContext,
     RetrievalReport, RetrievalRequest, SourceSummary, TransitionContext, TransitionResult, confirm,
-    retrieve,
+    retrieve, retrieve_for_injection,
 };
 pub use search::{SearchRequest, SearchSelection, SelectedMemory, search};
 pub use source::{ResolvedDraft, ResolvedSource, SourceContext, resolve_sources};

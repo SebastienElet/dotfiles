@@ -6,7 +6,7 @@ use super::{
     Clock, MemoryError, MemoryKind, OracleEnvironment, ProjectKey, ProofValid, SearchSelection,
     SourceKind, SourceResolver, Status, Store,
 };
-pub use operation::retrieve;
+pub use operation::{retrieve, retrieve_for_injection};
 use serde::Serialize;
 use std::collections::BTreeMap;
 pub use transition::confirm;
@@ -139,6 +139,7 @@ pub struct RetrievalContext<'a> {
     resolver: &'a dyn SourceResolver,
     environment: OracleEnvironment,
     proof_answers: Option<&'a ProofAnswers>,
+    deadline: Option<std::time::Instant>,
 }
 
 impl<'a> RetrievalContext<'a> {
@@ -154,12 +155,23 @@ impl<'a> RetrievalContext<'a> {
             resolver,
             environment,
             proof_answers: None,
+            deadline: None,
         }
     }
 
     pub fn with_proof_answers(mut self, answers: &'a ProofAnswers) -> Self {
         self.proof_answers = Some(answers);
         self
+    }
+
+    pub fn with_deadline(mut self, deadline: std::time::Instant) -> Self {
+        self.deadline = Some(deadline);
+        self
+    }
+
+    fn deadline_exceeded(&self) -> bool {
+        self.deadline
+            .is_some_and(|deadline| std::time::Instant::now() >= deadline)
     }
 
     fn proof_valid(&self, entry_id: &str) -> Option<&ProofValid> {
