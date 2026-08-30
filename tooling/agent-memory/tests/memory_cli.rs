@@ -190,9 +190,14 @@ fn unavailable_root_uses_the_unavailability_exit() {
 }
 
 #[test]
-fn hook_is_recognized_and_fails_closed_until_its_adapter_exists() {
+fn hook_rejects_a_payload_without_a_prompt() {
     let fixture = CliFixture::new();
-    let output = fixture.run(["hook", "--agent", "codex"], b"{}");
+    let payload = serde_json::to_vec(&serde_json::json!({
+        "hook_event_name": "UserPromptSubmit",
+        "cwd": fixture.repository(),
+    }))
+    .unwrap();
+    let output = fixture.run(["hook", "--agent", "codex"], &payload);
 
-    assert_error(&output, 4, "adapter_unavailable");
+    assert_error(&output, 2, "missing_hook_query");
 }

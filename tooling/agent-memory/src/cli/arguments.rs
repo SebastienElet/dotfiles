@@ -1,3 +1,4 @@
+use crate::HookAgent;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
@@ -66,10 +67,4 @@ pub(super) enum HumanStatus {
     Superseded,
     Resolved,
     Confirmed,
-}
-
-#[derive(Clone, Copy, Debug, ValueEnum)]
-pub(super) enum HookAgent {
-    Codex,
-    Claude,
 }

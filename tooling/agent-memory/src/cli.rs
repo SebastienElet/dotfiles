@@ -1,6 +1,7 @@
 mod arguments;
 mod boundary;
 mod commands;
+mod retrieval;
 
 use arguments::Arguments;
 use boundary::write_json;
@@ -78,6 +79,18 @@ impl CliFailure {
             crate::MemoryErrorClass::Rejection => 2,
             crate::MemoryErrorClass::Conflict => 3,
             crate::MemoryErrorClass::Unavailable => 4,
+        };
+        Self {
+            exit,
+            code: error.code(),
+            field: error.field(),
+        }
+    }
+
+    fn from_hook(error: crate::HookError) -> Self {
+        let exit = match error.class() {
+            crate::HookErrorClass::Rejection => 2,
+            crate::HookErrorClass::Unavailable => 4,
         };
         Self {
             exit,

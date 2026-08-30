@@ -24,6 +24,7 @@ pub(super) fn write_json(output: &mut dyn Write, value: &impl Serialize) -> Resu
         .map_err(|_| failure(4, "output_unavailable", "stdout"))?;
     output
         .write_all(b"\n")
+        .and_then(|()| output.flush())
         .map_err(|_| failure(4, "output_unavailable", "stdout"))
 }
 

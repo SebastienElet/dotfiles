@@ -1,12 +1,12 @@
 use super::CliFailure;
 use super::arguments::{Command, ConfirmArguments, HumanStatus};
 use super::boundary::read_required;
+use super::retrieval;
 use crate::admission::{admit_prepared, resolve_admission};
 use crate::{
-    AdmissionAuthorization, AdmissionResult, EntryScope, HumanConclusion, Index, MemoryError,
-    MemoryKind, MemoryRoot, OracleEnvironment, RetrievalContext, RetrievalRequest, SearchRequest,
-    SourceContext, Status, Store, SystemClock, SystemProcessRunner, TransitionContext, confirm,
-    prepare_admission, resolve_project, retrieve, search,
+    AdmissionAuthorization, AdmissionResult, EntryScope, HookAgent, HumanConclusion, MemoryError,
+    MemoryKind, MemoryRoot, SourceContext, Status, Store, SystemClock, SystemProcessRunner,
+    TransitionContext, confirm, parse_hook_request, prepare_admission, render_hook_response,
 };
 use serde_json::{Value, json};
 use std::env;
@@ -27,13 +27,7 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
             let _ = arguments.format;
             audit_command(arguments.include_terminal)
         }
-        Command::Hook(arguments) => {
-            let _ = arguments.agent;
-            Err(CliFailure::from_memory(MemoryError::unavailable(
-                "adapter_unavailable",
-                "agent",
-            )))
-        }
+        Command::Hook(arguments) => hook_command(arguments.agent, &read_required(input)?),
     }
 }
 
@@ -77,33 +71,15 @@ fn retrieve_command(bytes: &[u8]) -> Result<Value, CliFailure> {
         )));
     }
     let cwd = current_directory()?;
-    let processes = SystemProcessRunner;
-    let project = resolve_project(&cwd, &processes).map_err(CliFailure::from_memory)?;
-    let Some(store) = open_retrieval_store()? else {
-        return Ok(json!({"injected": [], "omitted": [], "omitted_by_limit": 0}));
-    };
-    let index = Index::load_or_rebuild(&store).map_err(CliFailure::from_memory)?;
-    let selection = search(
-        &index.index,
-        SearchRequest {
-            query,
-            project_key: project.key(),
-            include_user: true,
-            limit: 5,
-        },
-    );
-    let sources = SourceContext::new(&cwd, &processes, &processes);
-    let clock = SystemClock;
-    let report = retrieve(
-        RetrievalRequest::new(&selection, project.key(), true),
-        RetrievalContext::new(
-            &store,
-            &clock,
-            &sources,
-            OracleEnvironment::new(env::consts::OS, env::consts::ARCH),
-        ),
-    );
+    let report = retrieval::report(query, &cwd)?;
     serde_json::to_value(report).map_err(|_| output_failure())
+}
+
+fn hook_command(agent: HookAgent, bytes: &[u8]) -> Result<Value, CliFailure> {
+    let request = parse_hook_request(agent, bytes).map_err(CliFailure::from_hook)?;
+    let report = retrieval::report(&request.query, &request.cwd)?;
+    let response = render_hook_response(agent, &report).map_err(CliFailure::from_hook)?;
+    serde_json::from_slice(&response).map_err(|_| output_failure())
 }
 
 fn confirm_command(arguments: ConfirmArguments, bytes: &[u8]) -> Result<Value, CliFailure> {
@@ -165,11 +141,6 @@ fn open_store() -> Result<Store, CliFailure> {
 fn open_read_only_store() -> Result<Option<Store>, CliFailure> {
     let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
     Store::open_read_only(root).map_err(CliFailure::from_memory)
-}
-
-fn open_retrieval_store() -> Result<Option<Store>, CliFailure> {
-    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
-    Store::open_for_retrieval(root).map_err(CliFailure::from_memory)
 }
 
 fn current_directory() -> Result<std::path::PathBuf, CliFailure> {
