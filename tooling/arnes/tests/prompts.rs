@@ -195,13 +195,14 @@ fn unmanaged_and_plugin_owned_commands_are_ignored_and_preserved() {
 }
 
 #[test]
-fn doctor_without_resource_still_reports_only_the_manifest() {
+fn doctor_without_resource_does_not_aggregate_prompts() {
     let fixture = configured_fixture();
     fixture.write_home(".claude/commands/deploy.md", "stale\n");
 
     let (code, stdout, stderr) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
+    assert!(stdout.contains("Skills · user scope"));
+    assert!(!stdout.contains("Prompts"));
     assert!(stderr.is_empty());
 }

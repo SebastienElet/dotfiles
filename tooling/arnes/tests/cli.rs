@@ -85,7 +85,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment() {
 fn json_doctor_emits_the_manifest_diagnostic() {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", &manifest("valid.yaml"));
-    let output = fixture.command(["doctor", "--format", "json"]);
+    let output = fixture.command(["doctor", "manifest", "--format", "json"]);
 
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
@@ -160,15 +160,17 @@ fn output_failures_exit_two_instead_of_passing_silently() {
 }
 
 #[test]
-fn manifest_doctor_requires_home_without_reading_the_environment() {
-    let output = run(&["doctor", "manifest"]);
+fn manifest_and_default_doctors_require_home_without_fallback() {
+    for args in [&["doctor", "manifest"][..], &["doctor"][..]] {
+        let output = run(args);
 
-    assert_eq!(output.status.code(), Some(2));
-    assert_eq!(
-        String::from_utf8(output.stdout).unwrap(),
-        "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
-    );
-    assert!(output.stderr.is_empty());
+        assert_eq!(output.status.code(), Some(2));
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap(),
+            "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
+        );
+        assert!(output.stderr.is_empty());
+    }
 }
 
 #[test]

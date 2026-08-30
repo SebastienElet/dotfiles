@@ -136,11 +136,12 @@ fn instructions_doctor_is_read_only() {
 }
 
 #[test]
-fn doctor_without_resource_does_not_aggregate_instructions_yet() {
+fn doctor_without_resource_does_not_aggregate_instructions() {
     let fixture = configured_fixture();
     fs::remove_file(fixture.home().join(".codex/AGENTS.md")).unwrap();
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
+    assert!(stdout.contains("Skills · user scope"));
+    assert!(!stdout.contains("Instructions"));
 }
