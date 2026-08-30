@@ -12,7 +12,7 @@ fn lists_yaml_authority_when_the_index_is_corrupt_or_larger_than_one_mibibyte() 
     stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
     let index = root.join("index.json");
     let oversized = serde_json::to_vec(&serde_json::json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "inventory_digest": format!("sha256:{}", "0".repeat(64)),
         "entries": [],
         "padding": "x".repeat(1024 * 1024),
@@ -141,7 +141,7 @@ fn writes_private_user_and_project_entries_and_an_exact_minimal_index_row() {
 
     let index: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
-    assert_eq!(index["schema_version"], 1);
+    assert_eq!(index["schema_version"], 2);
     assert!(
         index["inventory_digest"]
             .as_str()

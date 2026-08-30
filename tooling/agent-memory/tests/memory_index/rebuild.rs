@@ -156,7 +156,7 @@ fn repeated_rebuilds_are_byte_identical_and_rows_have_the_closed_shape() {
 
     assert_eq!(first, second);
     let value: serde_json::Value = serde_json::from_slice(&second).unwrap();
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     let row = value["entries"][0].as_object().unwrap();
     let mut keys = row.keys().cloned().collect::<Vec<_>>();
     keys.sort();

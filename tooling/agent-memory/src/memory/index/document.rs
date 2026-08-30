@@ -29,7 +29,7 @@ impl IndexDocument {
         diagnostics: IndexDiagnostics,
     ) -> Result<Self, MemoryError> {
         Ok(Self {
-            schema_version: 1,
+            schema_version: 2,
             inventory_digest: inventory_digest(inventory)?,
             entries,
             diagnostics,
@@ -37,7 +37,7 @@ impl IndexDocument {
     }
 
     pub(super) fn valid_for(&self, inventory: &[InventoryItem]) -> bool {
-        self.schema_version == 1
+        self.schema_version == 2
             && inventory_digest(inventory).is_ok_and(|digest| digest == self.inventory_digest)
             && self
                 .entries

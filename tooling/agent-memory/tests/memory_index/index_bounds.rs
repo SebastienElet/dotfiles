@@ -61,7 +61,7 @@ fn a_legitimate_index_above_one_mibibyte_loads_fresh_repeatedly() {
         Sha256::digest(serde_json::to_vec(&inventory).unwrap())
     );
     let document = serde_json::json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "inventory_digest": digest,
         "entries": rows,
         "diagnostics": { "user": [], "projects": {} },
