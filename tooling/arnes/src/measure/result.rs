@@ -22,6 +22,11 @@ pub(super) use records::{ResultRecord, validate_result_record};
 pub struct ListArgs {
     #[arg(long, value_enum)]
     pub agent: Option<HookAgent>,
+    #[arg(
+        long,
+        help = "Report only runs without structured result history; silence does not prove blockage, active time, or process state"
+    )]
+    pub without_result: bool,
     #[arg(long, value_enum, default_value_t)]
     pub format: ListFormat,
 }

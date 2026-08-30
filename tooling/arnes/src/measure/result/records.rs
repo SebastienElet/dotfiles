@@ -8,7 +8,8 @@ use serde_json::{Map, Value};
 
 mod history;
 pub use history::{
-    EventHistory, ResultState, latest_result, read_events_file, read_events_with, result_state,
+    EventHistory, ResultState, latest_result, read_events_file, read_events_for_list_with,
+    read_events_with, result_state,
 };
 
 #[derive(Clone, Deserialize, PartialEq, Serialize)]
