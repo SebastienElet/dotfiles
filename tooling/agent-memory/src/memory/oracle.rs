@@ -14,6 +14,10 @@ pub enum SourceResolution {
 
 pub trait SourceResolver {
     fn resolve(&self, source: &EntrySource) -> SourceResolution;
+
+    fn deadline_exceeded(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -178,6 +182,9 @@ fn evaluate_sources(
     for source in entry.proof().sources() {
         if local_only && !matches!(source.kind(), SourceKind::GitFile | SourceKind::LocalFile) {
             continue;
+        }
+        if resolver.deadline_exceeded() {
+            return SourceVerdict::Unavailable;
         }
         match resolver.resolve(source) {
             SourceResolution::Fingerprint(actual) if actual == source.fingerprint().as_str() => {}

@@ -9,4 +9,12 @@ impl SourceResolver for SourceContext<'_> {
             Err(_) => SourceResolution::Unavailable,
         }
     }
+
+    fn deadline_exceeded(&self) -> bool {
+        self.git.remaining_time().is_some_and(|time| time.is_zero())
+            || self
+                .curl
+                .remaining_time()
+                .is_some_and(|time| time.is_zero())
+    }
 }

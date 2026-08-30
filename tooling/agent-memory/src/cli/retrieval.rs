@@ -91,3 +91,39 @@ fn empty_report() -> RetrievalReport {
         omitted_by_limit: 0,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ProcessOutput;
+    use std::ffi::{OsStr, OsString};
+    use std::io;
+
+    struct TimedOutGit;
+
+    impl crate::ProcessRunner for TimedOutGit {
+        fn run(
+            &self,
+            _program: &OsStr,
+            _arguments: &[OsString],
+            _current_directory: Option<&Path>,
+        ) -> io::Result<ProcessOutput> {
+            Err(io::Error::new(io::ErrorKind::TimedOut, "process_deadline"))
+        }
+    }
+
+    #[test]
+    fn hook_retrieval_maps_project_lookup_timeout_to_exit_four() {
+        let error = report_with_processes(
+            "durable memory",
+            Path::new("/"),
+            RetrievalMode::Injection,
+            &TimedOutGit,
+            Some(Instant::now() + std::time::Duration::from_secs(1)),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.exit, 4);
+        assert_eq!(error.code, "scope_unavailable");
+    }
+}

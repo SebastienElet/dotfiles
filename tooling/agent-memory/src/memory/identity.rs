@@ -48,7 +48,7 @@ fn resolve_git_directory(
     ];
     let output = git
         .run(OsStr::new("git"), &arguments, Some(cwd))
-        .map_err(|_| scope_unavailable())?;
+        .map_err(classify_git_error)?;
     if !output.success() {
         return Err(scope_unavailable());
     }
@@ -77,4 +77,40 @@ fn single_absolute_path(bytes: &[u8]) -> Result<PathBuf, MemoryError> {
 
 const fn scope_unavailable() -> MemoryError {
     MemoryError::new("scope_unavailable", "scope")
+}
+
+fn classify_git_error(error: std::io::Error) -> MemoryError {
+    if error.kind() == std::io::ErrorKind::TimedOut {
+        MemoryError::unavailable("scope_unavailable", "scope")
+    } else {
+        scope_unavailable()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::memory::ProcessOutput;
+    use std::io;
+
+    struct TimedOutGit;
+
+    impl ProcessRunner for TimedOutGit {
+        fn run(
+            &self,
+            _program: &OsStr,
+            _arguments: &[OsString],
+            _current_directory: Option<&Path>,
+        ) -> io::Result<ProcessOutput> {
+            Err(io::Error::new(io::ErrorKind::TimedOut, "process_deadline"))
+        }
+    }
+
+    #[test]
+    fn classifies_a_timed_out_project_lookup_as_unavailable() {
+        let error = resolve_project(Path::new("/"), &TimedOutGit).unwrap_err();
+
+        assert_eq!(error.class(), crate::MemoryErrorClass::Unavailable);
+        assert_eq!(error.code(), "scope_unavailable");
+    }
 }
