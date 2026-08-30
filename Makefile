@@ -3,7 +3,7 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .codex/config.toml .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
+MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -243,7 +243,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/agents:
 	mkdir -p $@
 ~/.codex/agents/design-claim-auditor.toml: ${DOTFILES_PATH}/home/.codex/agents/design-claim-auditor.toml FORCE | ~/.codex/agents
-	cp "$<" "$@"
+	@if [ -f "$@" ] && cmp -s "$<" "$@"; then exit 0; fi; cp "$<" "$@"
 ~/.agents/skills:
 	mkdir -p $@
 ~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions FORCE | ~/.agents/skills
@@ -355,7 +355,7 @@ nvim: ~/.config/nvim ~/cspell.json ~/.config/cspell/user.txt
 	@${CREATE_SYMLINK}
 
 .PHONY: git-delta
-git-delta: ~/.config/git/config.delta
+git-delta: ~/.config/git/config.delta ~/.config/git/ignore
 	@includes=$$(git config --global --get-all include.path || test $$? -eq 1) || exit; \
 	if ! printf '%s\n' "$$includes" | grep -Fxq '~/.config/git/config.delta'; then \
 		git config --global --add include.path '~/.config/git/config.delta' || exit; \
@@ -367,6 +367,8 @@ git-delta: ~/.config/git/config.delta
 ~/.config/git:
 	mkdir -p $@
 ~/.config/git/config.delta: ${DOTFILES_PATH}/home/.config/git/config.delta FORCE | ~/.config/git
+	@${CREATE_SYMLINK}
+~/.config/git/ignore: ${DOTFILES_PATH}/home/.config/git/ignore FORCE | ~/.config/git
 	@${CREATE_SYMLINK}
 
 .PHONY: starship

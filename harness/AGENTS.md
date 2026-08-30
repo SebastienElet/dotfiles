@@ -56,9 +56,15 @@ Escalate only when the previous tier fails; never start above the first tier:
 
 ## Verification Claims
 
+- **Index new files before validation.** Before format, lint or typecheck, add every new file in
+  the intended change to Git's index with explicit pathspecs and stop if staging fails. Do not use
+  a broad untracked-file scan to compensate: these gates may deliberately discover inputs from the
+  index, so a pre-staging run is not evidence for the eventual commit.
 - **Check that the barrier covers what changed.** Before saying "green", confirm a linter
   and a test actually run on the extensions you touched. If nothing covers them, that gap
   is the first thing to fix — not a reason to claim green.
+- **Treat hooks as advisory.** A hook that can be bypassed is not the final barrier; verify the
+  indexed change with the repository checks and require the remote CI before merge.
 - **Name the environment.** Every piece of evidence states where it was produced and is
   valid only there. Green on one platform, one shell or one image says nothing about the
   others the project supports: list the supported targets, say which you exercised.

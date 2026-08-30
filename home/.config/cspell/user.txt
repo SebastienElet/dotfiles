@@ -2,6 +2,9 @@ AppleScript
 backlink
 backlinks
 backticked
+cloakbrowser
+cloakhq
+cloakserve
 colgrep
 cstring
 diffstat
@@ -15,9 +18,11 @@ libc
 mkfifo
 osascript
 pagelen
+pathspecs
 pullrequests
 renameat
 renamex
+scrapling
 wezterm
 wikilinks
 worktree
