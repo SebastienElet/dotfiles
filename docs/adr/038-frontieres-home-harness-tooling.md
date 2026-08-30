@@ -30,10 +30,10 @@ Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
 `CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
 
-Le déploiement normal laisse Make créer chaque destination absente avec
-`ln -s`. La recette n'écrase aucune destination existante et ne revalide pas le
-contenu d'une cible que Make juge à jour. Aucun lien de compatibilité n'est
-conservé dans le dépôt.
+Conformément à l'[ADR-003](003-deploiement-par-symlinks.md), le déploiement part
+d'un état propre et laisse Make créer chaque destination absente. Les recettes
+n'inspectent ni ne migrent une destination préexistante. Aucun lien de
+compatibilité n'est conservé dans le dépôt.
 
 ## Conséquences
 
@@ -41,8 +41,9 @@ conservé dans le dépôt.
   responsabilité.
 - L'arborescence `home/` rend visible la correspondance avec `$HOME` sans
   changer les destinations utilisées par les outils.
-- Un déplacement de source est plus coûteux qu'un simple `git mv`, car tous
-  les consommateurs et les liens déjà posés doivent migrer ensemble.
+- Un déplacement de source impose d'aligner les consommateurs versionnés, puis
+  de reconstruire les destinations avec `make clean` et la cible d'installation
+  voulue.
 - Les chemins de découverte imposés restent des exceptions visibles à la
   racine plutôt que des copies sous `harness/`.
 

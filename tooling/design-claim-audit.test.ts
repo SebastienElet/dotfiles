@@ -7,13 +7,7 @@ import {
   project,
   runMake,
 } from "./deployment-test-support.ts";
-import {
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -53,63 +47,6 @@ test("Codex deploys the design claim auditor as a regular file", () => {
       "utf8",
     ),
   );
-});
-
-test("Codex migrates the managed design claim auditor symlink", () => {
-  const fixture = createDeploymentFixture("design-claim-auditor-migration");
-  const source = join(project, "home/.codex/agents/design-claim-auditor.toml");
-  const destination = join(
-    fixture.home,
-    ".codex/agents/design-claim-auditor.toml",
-  );
-  mkdirSync(join(fixture.home, ".codex/agents"), { recursive: true });
-  symlinkSync(source, destination);
-
-  const first = runMake(fixture, [destination], { repository: project });
-  const second = runMake(fixture, [destination], { repository: project });
-
-  expectSuccess(first);
-  expectSuccess(second);
-  expect(lstatSync(destination).isSymbolicLink()).toBe(false);
-  expect(readFileSync(destination, "utf8")).toBe(readFileSync(source, "utf8"));
-  expect(second.stdout).toBe("");
-  expect(second.stderr).toBe("");
-});
-
-test("Codex preserves an unrelated design claim auditor symlink", () => {
-  const fixture = createDeploymentFixture("design-claim-auditor-wrong-link");
-  const destination = join(
-    fixture.home,
-    ".codex/agents/design-claim-auditor.toml",
-  );
-  const unrelated = join(fixture.root, "unrelated.toml");
-  mkdirSync(join(fixture.home, ".codex/agents"), { recursive: true });
-  writeFileSync(unrelated, 'name = "unrelated"\n');
-  symlinkSync(unrelated, destination);
-
-  const result = runMake(fixture, [destination], { repository: project });
-
-  expect(result.exitCode).not.toBe(0);
-  expect(lstatSync(destination).isSymbolicLink()).toBe(true);
-  expect(readFileSync(destination, "utf8")).toBe('name = "unrelated"\n');
-});
-
-test("Codex preserves a divergent regular design claim auditor file", () => {
-  const fixture = createDeploymentFixture(
-    "design-claim-auditor-divergent-file",
-  );
-  const destination = join(
-    fixture.home,
-    ".codex/agents/design-claim-auditor.toml",
-  );
-  mkdirSync(join(fixture.home, ".codex/agents"), { recursive: true });
-  writeFileSync(destination, 'name = "local-override"\n');
-
-  const result = runMake(fixture, [destination], { repository: project });
-
-  expect(result.exitCode).not.toBe(0);
-  expect(lstatSync(destination).isSymbolicLink()).toBe(false);
-  expect(readFileSync(destination, "utf8")).toBe('name = "local-override"\n');
 });
 
 test("design claim auditor declares its canonical role and execution defaults", () => {
