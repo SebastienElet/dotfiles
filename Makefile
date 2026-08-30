@@ -243,7 +243,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.codex/agents:
 	mkdir -p $@
 ~/.codex/agents/design-claim-auditor.toml: ${DOTFILES_PATH}/home/.codex/agents/design-claim-auditor.toml FORCE | ~/.codex/agents
-	@${CREATE_SYMLINK}
+	@set -eu; expected="$@.expected.$$$$"; trap 'rm -f "$$expected"' EXIT; cp "$<" "$$expected"; if [ -f "$@" ] && [ ! -L "$@" ]; then if cmp -s "$$expected" "$@"; then exit 0; fi; echo "Error: $@ exists and does not contain the expected agent configuration" >&2; exit 1; fi; if [ -L "$@" ] && [ "$$(readlink "$@")" != "$<" ]; then echo "Error: $@ exists and is not the expected managed symbolic link" >&2; exit 1; fi; if [ -e "$@" ] && [ ! -L "$@" ]; then echo "Error: $@ exists and is not a regular file" >&2; exit 1; fi; echo "mv $$expected $@"; mv "$$expected" "$@"; trap - EXIT
 ~/.agents/skills:
 	mkdir -p $@
 ~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions FORCE | ~/.agents/skills

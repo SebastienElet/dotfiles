@@ -24,7 +24,7 @@ requests.
 ## Steps
 
 1. Record the document-returning task as `author_task`; its caller is never the author.
-2. Before reading evidence or drafting, spawn `design_claim_auditor` with paths, scope, and repository
+2. Before reading evidence or drafting, spawn `design-claim-auditor` with paths, scope, and repository
    context, but no expected finding. Record its distinct identity as `auditor_task`. If this named
    child is unavailable, stop with the audit absent.
 3. Wait for the child ledger. Each changed claim gets one row with `claim`, `authority`, `mechanism`,
@@ -60,7 +60,7 @@ requests.
 
 ## Constraints
 
-- Auditor is the dedicated `design_claim_auditor`; its checked-in configuration requests
+- Auditor is the dedicated `design-claim-auditor`; its checked-in configuration requests
   `read-only`, but a live parent sandbox override can supersede that default.
 - A context certifies only owned facts and decisions.
 - A waiver satisfies only canonically named gates.
