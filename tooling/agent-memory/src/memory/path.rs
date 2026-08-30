@@ -4,9 +4,11 @@ use std::path::{Component, Path, PathBuf};
 
 mod access;
 mod component;
+mod policy;
 
 pub(crate) use access::ManagedPath;
 pub(crate) use component::{open_existing_root, open_root};
+pub(crate) use policy::DirectoryAccess;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MemoryRoot(PathBuf);

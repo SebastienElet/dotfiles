@@ -13,12 +13,22 @@ pub struct AdmissionContext<'a> {
     pub authorization: AdmissionAuthorization,
 }
 
+pub(crate) struct PreparedAdmission {
+    resolved: crate::ResolvedDraft,
+    project: Option<crate::ProjectScope>,
+}
+
 pub fn admit(bytes: &[u8], context: AdmissionContext<'_>) -> Result<AdmissionResult, MemoryError> {
     let draft = match prepare_admission(bytes, context.authorization) {
         Ok(draft) => draft,
         Err(error) => return Ok(AdmissionResult::Rejected { error }),
     };
-    admit_prepared(draft, context)
+    let prepared = match resolve_admission(draft, context.cwd, context.processes) {
+        Ok(prepared) => prepared,
+        Err(error) => return Ok(AdmissionResult::Rejected { error }),
+    };
+    let sources = SourceContext::new(context.cwd, context.processes, context.processes);
+    admit_prepared(prepared, context.store, context.clock, &sources)
 }
 
 pub fn prepare_admission(
@@ -28,23 +38,30 @@ pub fn prepare_admission(
     validate_draft(parse_draft(bytes)?, authorization)
 }
 
-pub(crate) fn admit_prepared(
+pub(crate) fn resolve_admission(
     draft: ValidatedDraft,
-    context: AdmissionContext<'_>,
-) -> Result<AdmissionResult, MemoryError> {
+    cwd: &Path,
+    processes: &dyn ProcessRunner,
+) -> Result<PreparedAdmission, MemoryError> {
     let project = match draft.scope() {
-        ScopeDraft::Project => match resolve_project(context.cwd, context.processes) {
-            Ok(project) => Some(project),
-            Err(error) => return Ok(AdmissionResult::Rejected { error }),
-        },
+        ScopeDraft::Project => Some(resolve_project(cwd, processes)?),
         ScopeDraft::User => None,
     };
-    let sources = SourceContext::new(context.cwd, context.processes, context.processes);
-    let resolved = match resolve_sources(draft, &sources) {
-        Ok(resolved) => resolved,
-        Err(error) => return Ok(AdmissionResult::Rejected { error }),
-    };
-    Ok(context
-        .store
-        .admit(resolved, project.as_ref(), &context.clock.now(), &sources))
+    let sources = SourceContext::new(cwd, processes, processes);
+    let resolved = resolve_sources(draft, &sources)?;
+    Ok(PreparedAdmission { resolved, project })
+}
+
+pub(crate) fn admit_prepared(
+    prepared: PreparedAdmission,
+    store: &Store,
+    clock: &dyn Clock,
+    sources: &SourceContext<'_>,
+) -> Result<AdmissionResult, MemoryError> {
+    Ok(store.admit(
+        prepared.resolved,
+        prepared.project.as_ref(),
+        &clock.now(),
+        sources,
+    ))
 }

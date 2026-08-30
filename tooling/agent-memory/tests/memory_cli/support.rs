@@ -36,6 +36,18 @@ impl CliFixture {
         .into_bytes()
     }
 
+    pub fn user_git_draft(&self, statement: &str) -> Vec<u8> {
+        let draft =
+            String::from_utf8(self.git_draft("invariant", statement, "user git proof")).unwrap();
+        draft
+            .replacen("statement:", "scope: user\nstatement:", 1)
+            .into_bytes()
+    }
+
+    pub fn repository(&self) -> &Path {
+        &self.repository
+    }
+
     pub fn root(&self) -> &Path {
         &self.root
     }
@@ -59,6 +71,46 @@ impl CliFixture {
             .stderr(std::process::Stdio::piped())
             .spawn()
             .unwrap();
+        std::io::Write::write_all(child.stdin.as_mut().unwrap(), stdin).unwrap();
+        child.wait_with_output().unwrap()
+    }
+
+    pub fn run_from_with_root<const N: usize>(
+        &self,
+        directory: &Path,
+        arguments: [&str; N],
+        stdin: &[u8],
+        root: impl AsRef<OsStr>,
+    ) -> Output {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_agent-memory"))
+            .args(arguments)
+            .current_dir(directory)
+            .env("AGENT_MEMORY_ROOT", root)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        std::io::Write::write_all(child.stdin.as_mut().unwrap(), stdin).unwrap();
+        child.wait_with_output().unwrap()
+    }
+
+    pub fn run_after_cwd_removal<const N: usize>(
+        &self,
+        directory: &Path,
+        arguments: [&str; N],
+        stdin: &[u8],
+    ) -> Output {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_agent-memory"))
+            .args(arguments)
+            .current_dir(directory)
+            .env("AGENT_MEMORY_ROOT", &self.root)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        fs::remove_dir(directory).unwrap();
         std::io::Write::write_all(child.stdin.as_mut().unwrap(), stdin).unwrap();
         child.wait_with_output().unwrap()
     }

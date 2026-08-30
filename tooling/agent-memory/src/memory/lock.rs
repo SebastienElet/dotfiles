@@ -45,7 +45,7 @@ fn acquire_exclusive(file: &File, started: Instant) -> Result<(), MemoryError> {
             {
                 let elapsed = started.elapsed();
                 if elapsed >= LOCK_TIMEOUT {
-                    return Err(MemoryError::unavailable("store_lock_timeout", "store"));
+                    return Err(MemoryError::conflict("store_lock_timeout", "store"));
                 }
                 std::thread::sleep(LOCK_POLL_INTERVAL.min(LOCK_TIMEOUT - elapsed));
             }

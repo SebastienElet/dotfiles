@@ -2,6 +2,7 @@ use super::component::{
     classify_path_error, ensure_single_link_regular, normal_components, open_directory_at,
     private_directory_mode, private_file_mode, repair_mode, store_unavailable, validate_mode,
 };
+use super::policy::DirectoryAccess;
 use super::unsafe_path;
 use crate::memory::MemoryError;
 use rustix::fs::{AtFlags, Mode, OFlags, RenameFlags};
@@ -16,13 +17,15 @@ use std::sync::Arc;
 pub(crate) struct ManagedPath {
     root: Arc<File>,
     relative: PathBuf,
+    directory_access: DirectoryAccess,
 }
 
 impl ManagedPath {
-    pub(crate) fn root(root: File) -> Self {
+    pub(crate) fn root(root: File, directory_access: DirectoryAccess) -> Self {
         Self {
             root: Arc::new(root),
             relative: PathBuf::new(),
+            directory_access,
         }
     }
 
@@ -31,22 +34,25 @@ impl ManagedPath {
         Ok(Self {
             root: Arc::clone(&self.root),
             relative: self.relative.join(path),
+            directory_access: self.directory_access,
         })
     }
 
     pub(crate) fn open_root_directory(&self) -> Result<File, MemoryError> {
-        rustix::fs::openat(
+        let directory = rustix::fs::openat(
             &self.root,
             ".",
             OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
             Mode::empty(),
         )
         .map(File::from)
-        .map_err(classify_path_error)
+        .map_err(classify_path_error)?;
+        self.directory_access.enforce(&directory)?;
+        Ok(directory)
     }
 
     pub(crate) fn ensure_directory(&self, fail_mode_repair: bool) -> Result<(), MemoryError> {
-        let mut directory = self.root.try_clone().map_err(store_unavailable)?;
+        let mut directory = self.open_start_directory()?;
         for component in normal_components(&self.relative)? {
             match rustix::fs::mkdirat(&directory, component, private_directory_mode()) {
                 Ok(()) | Err(rustix::io::Errno::EXIST) => {}
@@ -166,6 +172,11 @@ impl ManagedPath {
             .map_err(classify_path_error)
     }
 
+    pub(crate) fn remove_file(&self) -> Result<(), MemoryError> {
+        let (directory, name) = self.parent_and_name()?;
+        rustix::fs::unlinkat(directory, name, AtFlags::empty()).map_err(classify_path_error)
+    }
+
     pub(crate) fn sync_directory(&self) -> Result<(), MemoryError> {
         rustix::fs::fsync(self.open_directory()?).map_err(classify_path_error)
     }
@@ -206,9 +217,10 @@ impl ManagedPath {
     }
 
     fn open_directory(&self) -> Result<File, MemoryError> {
-        let mut directory = self.root.try_clone().map_err(store_unavailable)?;
+        let mut directory = self.open_start_directory()?;
         for component in normal_components(&self.relative)? {
             directory = open_directory_at(&directory, component)?;
+            self.directory_access.enforce(&directory)?;
         }
         Ok(directory)
     }
@@ -216,10 +228,17 @@ impl ManagedPath {
     fn parent_and_name(&self) -> Result<(File, OsString), MemoryError> {
         let mut components = normal_components(&self.relative)?;
         let name = components.pop().ok_or_else(unsafe_path)?.to_owned();
-        let mut directory = self.root.try_clone().map_err(store_unavailable)?;
+        let mut directory = self.open_start_directory()?;
         for component in components {
             directory = open_directory_at(&directory, component)?;
+            self.directory_access.enforce(&directory)?;
         }
         Ok((directory, name))
+    }
+
+    fn open_start_directory(&self) -> Result<File, MemoryError> {
+        let directory = self.root.try_clone().map_err(store_unavailable)?;
+        self.directory_access.enforce(&directory)?;
+        Ok(directory)
     }
 }

@@ -1,7 +1,12 @@
+#[allow(dead_code)]
+#[path = "support/memory.rs"]
+mod memory_support;
+
 use agent_memory::{
     AdmissionAuthorization, SourceContext, SystemProcessRunner, parse_draft, resolve_sources,
     validate_draft,
 };
+use memory_support::FakeProcessRunner;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -110,19 +115,14 @@ fn linked_worktrees_share_the_same_canonical_git_locator() {
 }
 
 #[test]
-fn user_scope_git_sources_do_not_rebind_across_projects() {
+fn user_scope_git_sources_are_rejected_before_git_resolution() {
     let temporary = tempfile::tempdir().unwrap();
-    let first = temporary.path().join("first");
-    let second = temporary.path().join("second");
-    initialize_repository(&first);
-    initialize_repository(&second);
-    let runner = SystemProcessRunner;
-    let first_docs = first.join("docs");
-    let first_context = SourceContext::new(&first_docs, &runner, &runner);
-    let second_context = SourceContext::new(&second, &runner, &runner);
-    let resolved = resolve_sources(draft("user", "proof.txt"), &first_context).unwrap();
+    fs::write(temporary.path().join("proof.txt"), b"proof").unwrap();
+    let runner = FakeProcessRunner::default();
+    let context = SourceContext::new(temporary.path(), &runner, &runner);
 
-    resolved.recheck_sources(&second_context).unwrap();
+    let error = resolve_sources(draft("user", "proof.txt"), &context).unwrap_err();
 
-    assert_eq!(resolved.sources()[0].locator(), "docs/proof.txt");
+    assert_eq!(error.code(), "source_invalid");
+    assert!(runner.calls().is_empty());
 }

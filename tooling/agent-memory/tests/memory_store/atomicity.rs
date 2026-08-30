@@ -73,8 +73,8 @@ fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
 fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");
-    let assert_temporary = matches!(failpoint, StoreFailpoint::BeforeYamlRename);
     let store = Store::open_with_failpoint(memory_root(&root), failpoint.clone()).unwrap();
+    let before = directory_inventory(&root);
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
@@ -107,23 +107,24 @@ fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
         assert!(listing.entries().is_empty(), "{failpoint:?}");
         assert!(!listing.index_rebuild_required(), "{failpoint:?}");
         assert!(index["entries"].as_array().unwrap().is_empty());
+        assert_eq!(directory_inventory(&root), before, "{failpoint:?}");
     }
+}
 
-    let mut temporary_count = 0;
-    for entry in fs::read_dir(root.join("entries/user")).unwrap() {
-        let entry = entry.unwrap();
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        if name.contains(".tmp-") {
-            temporary_count += 1;
-            assert_eq!(private_mode(&entry.path()), 0o600, "{failpoint:?}");
-        } else {
-            let bytes = fs::read(entry.path()).unwrap();
-            assert!(parse_entry(&bytes).is_ok(), "{failpoint:?}");
+fn directory_inventory(root: &Path) -> Vec<std::path::PathBuf> {
+    let mut paths = Vec::new();
+    collect_paths(root, root, &mut paths);
+    paths.sort();
+    paths
+}
+
+fn collect_paths(root: &Path, directory: &Path, paths: &mut Vec<std::path::PathBuf>) {
+    for entry in fs::read_dir(directory).unwrap() {
+        let path = entry.unwrap().path();
+        paths.push(path.strip_prefix(root).unwrap().to_owned());
+        if path.is_dir() {
+            collect_paths(root, &path, paths);
         }
-    }
-    if assert_temporary {
-        assert!(temporary_count > 0);
     }
 }
 

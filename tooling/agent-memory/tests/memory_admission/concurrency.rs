@@ -58,6 +58,7 @@ fn rechecks_the_source_after_staging_at_the_yaml_publication_boundary() {
         StoreFailpoint::PauseBeforeYamlRename(Arc::clone(&barrier)),
     )
     .unwrap();
+    let before = directory_inventory(&root);
     let processes = SystemProcessRunner;
     let clock = FixedClock::new();
     let bytes = draft(
@@ -90,27 +91,26 @@ fn rechecks_the_source_after_staging_at_the_yaml_publication_boundary() {
 
     assert_conflict(result, "source_changed");
     assert!(store.list().unwrap().entries().is_empty());
-    assert!(yaml_paths(&root).is_empty());
+    assert_eq!(directory_inventory(&root), before);
 }
 
-fn yaml_paths(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+fn directory_inventory(root: &std::path::Path) -> Vec<std::path::PathBuf> {
     let mut paths = Vec::new();
-    for scope in [root.join("entries/user"), root.join("entries/project")] {
-        collect_yaml(&scope, &mut paths);
-    }
+    collect_paths(root, root, &mut paths);
+    paths.sort();
     paths
 }
 
-fn collect_yaml(path: &std::path::Path, paths: &mut Vec<std::path::PathBuf>) {
+fn collect_paths(
+    root: &std::path::Path,
+    path: &std::path::Path,
+    paths: &mut Vec<std::path::PathBuf>,
+) {
     for entry in fs::read_dir(path).unwrap() {
         let path = entry.unwrap().path();
+        paths.push(path.strip_prefix(root).unwrap().to_owned());
         if path.is_dir() {
-            collect_yaml(&path, paths);
-        } else if path
-            .extension()
-            .is_some_and(|extension| extension == "yaml")
-        {
-            paths.push(path);
+            collect_paths(root, &path, paths);
         }
     }
 }

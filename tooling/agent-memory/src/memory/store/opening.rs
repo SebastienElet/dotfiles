@@ -2,7 +2,9 @@ use super::inventory::{repair_entry_modes, validate_entry_modes};
 use super::{Store, StoreFailpoint};
 use crate::memory::MemoryError;
 use crate::memory::index::empty_index_bytes;
-use crate::memory::path::{ManagedPath, MemoryRoot, open_existing_root, open_root};
+use crate::memory::path::{
+    DirectoryAccess, ManagedPath, MemoryRoot, open_existing_root, open_root,
+};
 
 impl Store {
     pub fn open(root: MemoryRoot) -> Result<Self, MemoryError> {
@@ -21,7 +23,7 @@ impl Store {
         failpoint: Option<StoreFailpoint>,
     ) -> Result<Self, MemoryError> {
         let fail_mode_repair = matches!(failpoint.as_ref(), Some(StoreFailpoint::BeforeModeRepair));
-        let root = ManagedPath::root(open_root(&root, fail_mode_repair)?);
+        let root = ManagedPath::root(open_root(&root, fail_mode_repair)?, DirectoryAccess::Repair);
         for relative in ["entries", "entries/user", "entries/project"] {
             root.join(relative)?.ensure_directory(fail_mode_repair)?;
         }
@@ -53,7 +55,7 @@ impl Store {
         let Some(root) = open_existing_root(&root)? else {
             return Ok(None);
         };
-        let root = ManagedPath::root(root);
+        let root = ManagedPath::root(root, DirectoryAccess::Validate);
         for relative in ["entries", "entries/user", "entries/project"] {
             root.join(relative)?.validate_directory()?;
         }

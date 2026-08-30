@@ -19,6 +19,10 @@ fn draft(kind: &str, locator: &str) -> agent_memory::ValidatedDraft {
 }
 
 fn draft_with_sources(sources: &[(&str, &str)]) -> agent_memory::ValidatedDraft {
+    draft_with_scope_sources("project", sources)
+}
+
+fn draft_with_scope_sources(scope: &str, sources: &[(&str, &str)]) -> agent_memory::ValidatedDraft {
     let automated = if sources.iter().all(|(kind, _)| *kind == "user-decision") {
         ""
     } else {
@@ -34,7 +38,7 @@ fn draft_with_sources(sources: &[(&str, &str)]) -> agent_memory::ValidatedDraft 
         })
         .collect::<String>();
     let yaml = format!(
-        "schema_version: 1\nkind: invariant\nstatement: A durable invariant remains independently useful.\nscope: project\nretrieval_terms:\n  - durable invariant\nproof:\n  summary: The source establishes the invariant.\n  sources:\n{proof_sources}oracle:\n{automated}  human_fallback:\n    question: Does the evidence still establish the invariant?\n    valid_when: The evidence remains observable.\n  outcomes:\n    valid: The evidence is unchanged.\n    invalidated: The evidence no longer establishes the invariant.\n"
+        "schema_version: 1\nkind: invariant\nstatement: A durable invariant remains independently useful.\nscope: {scope}\nretrieval_terms:\n  - durable invariant\nproof:\n  summary: The source establishes the invariant.\n  sources:\n{proof_sources}oracle:\n{automated}  human_fallback:\n    question: Does the evidence still establish the invariant?\n    valid_when: The evidence remains observable.\n  outcomes:\n    valid: The evidence is unchanged.\n    invalidated: The evidence no longer establishes the invariant.\n"
     );
     validate_draft(
         parse_draft(yaml.as_bytes()).unwrap(),
@@ -540,6 +544,34 @@ fn fingerprints_a_user_decision_without_a_process_or_transcript() {
     );
     assert!(git_runner.calls().is_empty());
     assert!(curl.calls().is_empty());
+}
+
+#[test]
+fn user_scope_supports_non_git_source_kinds() {
+    let repository = tempfile::tempdir().unwrap();
+    let local = repository.path().join("local-proof");
+    fs::write(&local, BODY).unwrap();
+    let git_runner = FakeProcessRunner::default();
+    let curl =
+        FakeProcessRunner::with_responses(
+            [FakeResponse::success(SUCCESS_METADATA).with_body(BODY)],
+        );
+    let context = SourceContext::new(repository.path(), &git_runner, &curl);
+    let official = [
+        ("official-url", "https://docs.example.test/start"),
+        (
+            "user-decision",
+            "The user designated this proof as official.",
+        ),
+    ];
+
+    for sources in [
+        vec![("local-file", local.to_str().unwrap())],
+        vec![("user-decision", "decision:user-proof")],
+        official.to_vec(),
+    ] {
+        resolve_sources(draft_with_scope_sources("user", &sources), &context).unwrap();
+    }
 }
 
 #[test]

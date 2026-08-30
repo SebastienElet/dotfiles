@@ -1,6 +1,7 @@
 use super::Store;
 use super::document::{StoredEntry, yaml_bytes};
 use super::publication::CommitFailure;
+use super::staging::StagedFile;
 use super::types::StorePhase;
 use crate::memory::MemoryError;
 use crate::memory::index::prepared_index;
@@ -22,16 +23,18 @@ impl Store {
         let staged_yaml = publication
             .stage_yaml(destination, &yaml)
             .map_err(CommitFailure::BeforeYaml)?;
-        let index = prepared_index(
-            self,
-            destination,
-            entry,
-            staged_yaml.anchor().map_err(CommitFailure::BeforeYaml)?,
-        )
-        .map_err(CommitFailure::BeforeYaml)?;
-        let staged_index = publication
-            .stage_index(&index.bytes)
-            .map_err(CommitFailure::BeforeYaml)?;
+        let anchor = match staged_yaml.anchor() {
+            Ok(anchor) => anchor,
+            Err(error) => return Err(cleanup_yaml(staged_yaml, error)),
+        };
+        let index = match prepared_index(self, destination, entry, anchor) {
+            Ok(index) => index,
+            Err(error) => return Err(cleanup_yaml(staged_yaml, error)),
+        };
+        let staged_index = match publication.stage_index(&index.bytes) {
+            Ok(index) => index,
+            Err(error) => return Err(cleanup_yaml(staged_yaml, error)),
+        };
         publication.publish(
             staged_yaml,
             destination,
@@ -49,4 +52,8 @@ impl Store {
     pub(crate) fn after_index_entry_read(&self) -> Result<(), MemoryError> {
         self.hit(StorePhase::AfterIndexEntryRead)
     }
+}
+
+fn cleanup_yaml(yaml: StagedFile, error: MemoryError) -> CommitFailure {
+    CommitFailure::BeforeYaml(yaml.discard().err().unwrap_or(error))
 }

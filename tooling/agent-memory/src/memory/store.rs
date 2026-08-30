@@ -5,6 +5,7 @@ pub(super) mod inventory;
 mod opening;
 pub(super) mod publication;
 mod retrieval;
+mod staging;
 pub(super) mod types;
 
 use self::document::{StoredEntry, StoredScope};

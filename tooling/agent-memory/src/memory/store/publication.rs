@@ -1,8 +1,8 @@
+use super::staging::{StagedFile, StagedIndex, cleanup_temporary};
 use super::types::{StoreFailpoint, StorePhase};
 use crate::memory::MemoryError;
 use crate::memory::index::inventory::InventorySnapshot;
 use crate::memory::path::ManagedPath;
-use std::fs::File;
 use std::io::{BufWriter, Write};
 
 pub(crate) struct AtomicPublication<'a> {
@@ -83,16 +83,16 @@ impl<'a> AtomicPublication<'a> {
             None
         };
         let staged = self.write_temporary(&destination, bytes, create, write, flush, fsync)?;
-        Ok(StagedIndex {
-            staged,
-            destination,
-            original,
-        })
+        Ok(StagedIndex::new(staged, destination, original))
     }
 
     pub(crate) fn publish_cache(&self, cache: StagedIndex) -> Result<(), MemoryError> {
-        self.hit(StorePhase::BeforeCacheRename)?;
-        cache.ensure_anchored()?;
+        if let Err(error) = self
+            .hit(StorePhase::BeforeCacheRename)
+            .and_then(|()| cache.ensure_anchored())
+        {
+            return Err(cleanup_derived(cache, error));
+        }
         cache.publish()?;
         self.root.sync_directory()
     }
@@ -102,9 +102,13 @@ impl<'a> AtomicPublication<'a> {
         index: StagedIndex,
         inventory: &InventorySnapshot,
     ) -> Result<(), MemoryError> {
-        self.hit(StorePhase::BeforeIndexRename)?;
-        inventory.ensure_current(self.root)?;
-        index.ensure_anchored()?;
+        if let Err(error) = self
+            .hit(StorePhase::BeforeIndexRename)
+            .and_then(|()| inventory.ensure_current(self.root))
+            .and_then(|()| index.ensure_anchored())
+        {
+            return Err(cleanup_derived(index, error));
+        }
         index.publish()?;
         self.root.sync_directory()
     }
@@ -121,16 +125,17 @@ impl<'a> AtomicPublication<'a> {
     where
         F: FnOnce() -> Result<(), MemoryError>,
     {
-        self.hit(StorePhase::BeforeYamlRename)
-            .map_err(CommitFailure::BeforeYaml)?;
-        before_publish().map_err(CommitFailure::BeforeYaml)?;
-        yaml.ensure_anchored().map_err(CommitFailure::BeforeYaml)?;
-        if replace {
-            yaml.path.rename_to(destination)
-        } else {
-            yaml.path.rename_new_to(destination)
+        let before_rename = self
+            .hit(StorePhase::BeforeYamlRename)
+            .and_then(|()| before_publish())
+            .and_then(|()| yaml.ensure_anchored());
+        if let Err(error) = before_rename {
+            return Err(cleanup_before_yaml(yaml, index, error));
         }
-        .map_err(CommitFailure::BeforeYaml)?;
+        let rename = yaml.rename_to(destination, replace);
+        if let Err(error) = rename {
+            return Err(cleanup_before_yaml(yaml, index, error));
+        }
         self.hit(StorePhase::AfterYamlRename)
             .map_err(|_| CommitFailure::AfterYaml)?;
         self.hit(StorePhase::BeforeYamlDirectoryFsync)
@@ -166,14 +171,28 @@ impl<'a> AtomicPublication<'a> {
         let path = self.temporary_path(destination)?;
         let file = path.open_new()?;
         let mut writer = BufWriter::new(file);
-        self.hit(write)?;
-        writer.write_all(bytes).map_err(store_io)?;
-        self.hit(flush)?;
-        writer.flush().map_err(store_io)?;
-        self.hit(fsync)?;
-        writer.get_ref().sync_all().map_err(store_io)?;
-        let file = writer.into_inner().map_err(|_| store_error())?;
-        Ok(StagedFile { path, file })
+        let write_result = self
+            .hit(write)
+            .and_then(|()| writer.write_all(bytes).map_err(store_io))
+            .and_then(|()| self.hit(flush))
+            .and_then(|()| writer.flush().map_err(store_io))
+            .and_then(|()| self.hit(fsync))
+            .and_then(|()| writer.get_ref().sync_all().map_err(store_io));
+        if let Err(error) = write_result {
+            return Err(cleanup_temporary(&path, writer.get_ref())
+                .err()
+                .unwrap_or(error));
+        }
+        let file = match writer.into_inner() {
+            Ok(file) => file,
+            Err(error) => {
+                let writer = error.into_inner();
+                return Err(cleanup_temporary(&path, writer.get_ref())
+                    .err()
+                    .unwrap_or_else(store_error));
+            }
+        };
+        Ok(StagedFile::new(path, file))
     }
 
     fn temporary_path(&self, destination: &ManagedPath) -> Result<ManagedPath, MemoryError> {
@@ -198,42 +217,6 @@ impl<'a> AtomicPublication<'a> {
     }
 }
 
-pub(crate) struct StagedFile {
-    path: ManagedPath,
-    file: File,
-}
-
-pub(crate) struct StagedIndex {
-    staged: StagedFile,
-    destination: ManagedPath,
-    original: Option<File>,
-}
-
-impl StagedIndex {
-    fn ensure_anchored(&self) -> Result<(), MemoryError> {
-        self.staged.ensure_anchored()?;
-        match &self.original {
-            Some(original) => self.destination.ensure_same_file(original),
-            None if self.destination.exists()? => Err(unsafe_path()),
-            None => Ok(()),
-        }
-    }
-
-    fn publish(self) -> Result<(), MemoryError> {
-        self.staged.path.rename_to(&self.destination)
-    }
-}
-
-impl StagedFile {
-    pub(super) fn anchor(&self) -> Result<File, MemoryError> {
-        self.file.try_clone().map_err(store_io)
-    }
-
-    fn ensure_anchored(&self) -> Result<(), MemoryError> {
-        self.path.ensure_same_file(&self.file)
-    }
-}
-
 #[derive(Debug)]
 pub(super) enum CommitFailure {
     BeforeYaml(MemoryError),
@@ -248,6 +231,17 @@ const fn store_error() -> MemoryError {
     MemoryError::unavailable("store_unavailable", "store")
 }
 
-const fn unsafe_path() -> MemoryError {
-    MemoryError::unavailable("unsafe_store_path", "store")
+fn cleanup_before_yaml(yaml: StagedFile, index: StagedIndex, error: MemoryError) -> CommitFailure {
+    let index_cleanup = index.discard();
+    let yaml_cleanup = yaml.discard();
+    CommitFailure::BeforeYaml(
+        index_cleanup
+            .err()
+            .or_else(|| yaml_cleanup.err())
+            .unwrap_or(error),
+    )
+}
+
+fn cleanup_derived(staged: StagedIndex, error: MemoryError) -> MemoryError {
+    staged.discard().err().unwrap_or(error)
 }

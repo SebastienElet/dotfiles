@@ -44,6 +44,7 @@ fn refuses_a_substituted_yaml_temporary_before_publication() {
         assert_rejected(result, "unsafe_store_path");
         assert_eq!(fs::read(outside).unwrap(), b"substituted");
         assert_eq!(yaml_paths(&root.join("entries/user")).len(), 0);
+        assert!(temporary_paths(&root).is_empty());
     }
 }
 
@@ -96,7 +97,13 @@ fn refuses_a_substituted_index_temporary_without_publishing_it() {
 }
 
 fn only_temporary(directory: &Path) -> PathBuf {
-    let paths = fs::read_dir(directory)
+    let paths = temporary_paths(directory);
+    assert_eq!(paths.len(), 1, "{}", directory.display());
+    paths.into_iter().next().unwrap()
+}
+
+fn temporary_paths(directory: &Path) -> Vec<PathBuf> {
+    fs::read_dir(directory)
         .unwrap()
         .map(|entry| entry.unwrap().path())
         .filter(|path| {
@@ -105,9 +112,7 @@ fn only_temporary(directory: &Path) -> PathBuf {
                 .to_string_lossy()
                 .contains(".tmp-")
         })
-        .collect::<Vec<_>>();
-    assert_eq!(paths.len(), 1, "{}", directory.display());
-    paths.into_iter().next().unwrap()
+        .collect()
 }
 
 fn substitute(temporary: &Path, substitution: Substitution) -> PathBuf {

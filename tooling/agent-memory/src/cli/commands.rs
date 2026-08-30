@@ -1,12 +1,12 @@
 use super::CliFailure;
 use super::arguments::{Command, ConfirmArguments, HumanStatus};
 use super::boundary::read_required;
-use crate::admission::admit_prepared;
+use crate::admission::{admit_prepared, resolve_admission};
 use crate::{
-    AdmissionAuthorization, AdmissionContext, AdmissionResult, EntryScope, HumanConclusion, Index,
-    MemoryError, MemoryKind, MemoryRoot, OracleEnvironment, RetrievalContext, RetrievalRequest,
-    SearchRequest, SourceContext, Status, Store, SystemClock, SystemProcessRunner,
-    TransitionContext, confirm, prepare_admission, resolve_project, retrieve, search,
+    AdmissionAuthorization, AdmissionResult, EntryScope, HumanConclusion, Index, MemoryError,
+    MemoryKind, MemoryRoot, OracleEnvironment, RetrievalContext, RetrievalRequest, SearchRequest,
+    SourceContext, Status, Store, SystemClock, SystemProcessRunner, TransitionContext, confirm,
+    prepare_admission, resolve_project, retrieve, search,
 };
 use serde_json::{Value, json};
 use std::env;
@@ -40,21 +40,14 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
 fn admit_command(bytes: &[u8]) -> Result<Value, CliFailure> {
     let draft = prepare_admission(bytes, AdmissionAuthorization::ExplicitRequest)
         .map_err(CliFailure::from_memory)?;
-    let store = open_store()?;
     let cwd = current_directory()?;
     let clock = SystemClock;
     let processes = SystemProcessRunner;
-    let result = admit_prepared(
-        draft,
-        AdmissionContext {
-            store: &store,
-            cwd: &cwd,
-            clock: &clock,
-            processes: &processes,
-            authorization: AdmissionAuthorization::ExplicitRequest,
-        },
-    )
-    .map_err(CliFailure::from_memory)?;
+    let prepared = resolve_admission(draft, &cwd, &processes).map_err(CliFailure::from_memory)?;
+    let store = open_store()?;
+    let sources = SourceContext::new(&cwd, &processes, &processes);
+    let result =
+        admit_prepared(prepared, &store, &clock, &sources).map_err(CliFailure::from_memory)?;
     admission_json(result)
 }
 
@@ -180,9 +173,8 @@ fn open_retrieval_store() -> Result<Option<Store>, CliFailure> {
 }
 
 fn current_directory() -> Result<std::path::PathBuf, CliFailure> {
-    env::current_dir().map_err(|_| {
-        CliFailure::from_memory(MemoryError::unavailable("scope_unavailable", "scope"))
-    })
+    env::current_dir()
+        .map_err(|_| CliFailure::from_memory(MemoryError::new("scope_unavailable", "scope")))
 }
 
 fn scope_json(scope: &EntryScope) -> Value {

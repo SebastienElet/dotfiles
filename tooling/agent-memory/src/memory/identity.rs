@@ -76,5 +76,5 @@ fn single_absolute_path(bytes: &[u8]) -> Result<PathBuf, MemoryError> {
 }
 
 const fn scope_unavailable() -> MemoryError {
-    MemoryError::unavailable("scope_unavailable", "scope")
+    MemoryError::new("scope_unavailable", "scope")
 }

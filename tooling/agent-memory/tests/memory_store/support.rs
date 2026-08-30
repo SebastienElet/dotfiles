@@ -1,7 +1,7 @@
 pub(crate) use crate::memory_support::{FakeProcessRunner, FakeResponse};
 pub(crate) use agent_memory::{
-    AdmissionAuthorization, AdmissionResult, MemoryRoot, SourceContext, Status, Store,
-    StoreFailpoint, SystemProcessRunner, parse_draft, parse_entry, parse_utc_timestamp,
+    AdmissionAuthorization, AdmissionResult, MemoryErrorClass, MemoryRoot, SourceContext, Status,
+    Store, StoreFailpoint, SystemProcessRunner, parse_draft, parse_entry, parse_utc_timestamp,
     resolve_project, resolve_sources, validate_draft,
 };
 pub(crate) use std::fs;
@@ -80,7 +80,15 @@ pub(crate) fn assert_rejected(result: AdmissionResult, expected_code: &str) {
 
 pub(crate) fn assert_conflict(result: AdmissionResult, expected_code: &str) {
     match result {
-        AdmissionResult::Conflict { error, .. } => assert_eq!(error.code(), expected_code),
+        AdmissionResult::Conflict { error, .. } => {
+            assert_eq!(error.code(), expected_code);
+            let expected_class = if expected_code == "store_lock_unavailable" {
+                MemoryErrorClass::Unavailable
+            } else {
+                MemoryErrorClass::Conflict
+            };
+            assert_eq!(error.class(), expected_class);
+        }
         result => panic!("unexpected admission result: {result:?}"),
     }
 }
