@@ -46,8 +46,10 @@ Trois applications locales restent séparées par responsabilité :
   existant sans changer son contrat applicatif observable : mêmes octets stdin déjà reçus, mêmes
   variables d'environnement interprétées, mêmes données écrites sur stdout et stderr, et mêmes
   codes de sortie lorsque stdout est accessible en écriture.
-- Arnes configure, valide et mesure les hooks et leurs exécutables. Il ne contient aucun domaine
-  mémoire ou handoff, ne lit et n'écrit aucun de leurs états, et ne dépend d'aucun de leurs crates.
+- Arnes configure et valide les hooks et leurs exécutables. Sa mesure couvre uniquement les
+  événements que les agents lui remettent directement ; elle n'observe ni ne prouve l'exécution
+  d'un handler frère. Il ne contient aucun domaine mémoire ou handoff, ne lit et n'écrit aucun de
+  leurs états, et ne dépend d'aucun de leurs crates.
 
 Les deux nouveaux packages possèdent chacun leur `Cargo.toml`, leur `Cargo.lock`, leurs tests et leur
 binaire. Ils ne forment pas un workspace Cargo, ne partagent aucun crate interne et ne dépendent pas
@@ -313,11 +315,12 @@ locale pendant la fenêtre, source distante indisponible, contradiction de preuv
 et absence de mise en cache d'un résultat non valide.
 
 Chaque package Cargo est construit, formaté, linté et testé depuis son propre manifeste, sans
-workspace racine. Les tests Arnes prouvent uniquement la configuration, la validation et la mesure
-des commandes de hooks. Les tests `agent-memory` prouvent le domaine et ses protocoles runtime. Les
-tests `agent-handoff` caractérisent puis conservent strictement le contrat de l'exécutable Bun
-remplacé après réception des octets stdin et avec stdout accessible en écriture, y compris
-environnement, stdout, stderr et codes de sortie. Les tests Rust conservent séparément la
+workspace racine. Les tests Arnes prouvent la configuration et la validation des commandes de
+hooks ; ses tests de mesure prouvent uniquement le traitement des événements remis directement à
+Arnes, jamais l'exécution d'un handler frère. Les tests `agent-memory` prouvent le domaine et ses
+protocoles runtime. Les tests `agent-handoff` caractérisent puis conservent strictement le contrat
+de l'exécutable Bun remplacé après réception des octets stdin et avec stdout accessible en écriture,
+y compris environnement, stdout, stderr et codes de sortie. Les tests Rust conservent séparément la
 normalisation fail-closed des échecs de stdin et stdout au niveau du système d'exploitation.
 
 Chaque agent possède une évaluation de bout en bout en processus frais avec condition sans

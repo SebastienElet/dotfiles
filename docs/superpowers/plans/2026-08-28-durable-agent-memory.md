@@ -4,7 +4,7 @@
 
 **Goal:** Livrer une mémoire locale durable, partagée et observable pour Codex, Claude Code et Cursor sans confier son domaine ni son état à Arnes.
 
-**Architecture:** `tooling/agent-memory/` est un package Cargo autonome qui possède tout le domaine mémoire et ses adapters runtime. Arnes configure, valide et mesure uniquement les hooks et leurs exécutables; le `Makefile` déploie séparément `agent-memory` et le `agent-handoff` Rust livré par son propre plan, sans workspace ni crate partagé.
+**Architecture:** `tooling/agent-memory/` est un package Cargo autonome qui possède tout le domaine mémoire et ses adapters runtime. Arnes configure et valide uniquement les hooks et leurs exécutables ; sa mesure reste limitée aux événements que les agents lui remettent directement et ne prouve jamais l'exécution d'un handler frère. Le `Makefile` déploie séparément `agent-memory` et le `agent-handoff` Rust livré par son propre plan, sans workspace ni crate partagé.
 
 **Tech Stack:** Rust 2024, `clap`, `serde`/`serde_yaml_ng`, `sha2`, `rustix`, `jiff`, `unicode-normalization`, `url`, Git, curl, Bun 1.4, TypeScript 7, Make, YAML et JSON.
 
@@ -15,7 +15,7 @@
 - Lire la spec, `AGENTS.md`, `harness/AGENTS.md`, `harness/USER.md`, l’index ADR, ADR-038, ADR-041, ADR-042 et la skill mémoire avant toute modification.
 - Exécuter la tâche 1 de ce plan, puis le plan distinct `docs/superpowers/plans/2026-08-29-agent-handoff-rust.md` et sa revue avant de reprendre ici à la tâche 2. Il produit `tooling/agent-handoff/`, package Cargo autonome conservant exactement stdin, environnement, stdout, stderr et codes de sortie du runtime Bun.
 - `agent-memory` et `agent-handoff` ont chacun manifest, lockfile, source, tests et binaire; aucun workspace, crate interne partagé ou dépendance mutuelle.
-- Arnes ne dépend d’aucun de ces crates, ne contient aucun domaine mémoire/handoff et ne lit ni n’écrit leur état. Il configure, valide et mesure seulement hooks et exécutables.
+- Arnes ne dépend d’aucun de ces crates, ne contient aucun domaine mémoire/handoff et ne lit ni n’écrit leur état. Il configure et valide seulement hooks et exécutables ; sa mesure ne couvre que ses propres événements de harnais.
 - Les YAML sous `~/.local/share/agent-memory/` sont l’autorité; index et cache sont dérivés. Répertoires `0700`, fichiers `0600`; aucune donnée mémoire ou résultat brut n’entre dans Git.
 - Scope `project` par défaut; scope `user` après autorisation explicite. Types fermés : `goal`, `decision`, `evidence`, `invariant`, `unknown`, `assumption`. Sources fermées : `git-file`, `local-file`, `official-url`, `user-decision`.
 - Clé projet : `project_<sha256(realpath(git-common-dir))>`; hors Git, résultat ambigu/non absolu/non canonique : rejet. ID : `mem_<24 premiers hex de sha256(schema_version, kind, scope.key, statement normalisé)>`; document canonique identique : `duplicate`; même identité et autre contenu : `conflict`.
@@ -88,7 +88,7 @@ Arnes connaît les chemins absolus des deux exécutables, jamais leurs types, fo
 **Interfaces:**
 
 - Consumes: spec approuvée au commit `7f58a03`.
-- Produces: autorité attribuant domaine mémoire à `agent-memory`, runtime handoff à `agent-handoff`, et seulement configuration/validation/mesure à Arnes.
+- Produces: autorité attribuant domaine mémoire à `agent-memory`, runtime handoff à `agent-handoff`, configuration/validation à Arnes et mesure limitée à ses propres événements.
 
 - [ ] **Step 1: écrire le RED documentaire**
 
@@ -100,7 +100,7 @@ Expected: les trois affirmations obsolètes sont trouvées.
 
 - [ ] **Step 2: corriger décision, conséquences et alternatives**
 
-Corriger d'abord le contexte : ADR-041 impose Rust, pas Arnes, pour cette automatisation à état durable. Écrire explicitement : `agent-memory` possède schéma, admission, identité projet, sources, store, index, oracles, cache, retrieval, transitions, CLI et adapters runtime; `agent-handoff` possède son runtime; Arnes configure, valide et mesure leurs hooks/exécutables. Les packages sont indépendants sans workspace/crate partagé. Conserver inchangées les décisions fonctionnelles mémoire.
+Corriger d'abord le contexte : ADR-041 impose Rust, pas Arnes, pour cette automatisation à état durable. Écrire explicitement : `agent-memory` possède schéma, admission, identité projet, sources, store, index, oracles, cache, retrieval, transitions, CLI et adapters runtime ; `agent-handoff` possède son runtime ; Arnes configure et valide leurs hooks/exécutables, et mesure seulement ses propres événements. Les packages sont indépendants sans workspace/crate partagé. Conserver inchangées les décisions fonctionnelles mémoire.
 
 - [ ] **Step 3: vérifier puis committer**
 
@@ -394,9 +394,11 @@ Tester événements par kind, ordre handlers tiers, suppression owned, chemin ab
 
 `runtime_boundaries.rs` échoue si Arnes dépend des crates, possède `src/memory.rs`, lit `AGENT_MEMORY_ROOT`/`.local/share/agent-memory`, ou nomme `MemoryEntry`/`RetrievalReport`.
 
-- [ ] **Step 2: implémenter uniquement config/validation/mesure**
+- [ ] **Step 2: implémenter uniquement config/validation**
 
-Arnes ne parse pas le prompt, ne rend pas `additionalContext`, ne mappe pas les erreurs mémoire. Sa mesure observe exécution/durée/exit sans lire stdin privé ni état mémoire.
+Arnes ne parse pas le prompt, ne rend pas `additionalContext`, ne mappe pas les erreurs mémoire et
+n'observe pas le processus d'un handler frère. Sa mesure existante reste indépendante et ne prouve
+que les événements remis directement à Arnes, jamais l'exécution de `agent-memory`.
 
 - [ ] **Step 3: GREEN et commit**
 

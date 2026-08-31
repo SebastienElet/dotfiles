@@ -22,9 +22,10 @@ Les fichiers YAML sous `~/.local/share/agent-memory/`, hors Git, sont l'autorit�
 entrées. L'index et le cache sont dérivés, supprimables et reconstruisibles. `agent-memory` possède
 le schéma, l'admission, l'identité projet, les sources, le store, l'index, les oracles, le cache, le
 retrieval, les transitions, la CLI et les adapters runtime ; `agent-handoff` possède son runtime.
-Arnes configure, valide et mesure leurs hooks et exécutables. Les deux packages Cargo sont
-indépendants, sans workspace ni crate partagé. Aucun état généré propre à un agent, notamment
-`~/.codex/memories/`, n'est édité.
+Arnes configure et valide leurs hooks et exécutables. Sa mesure reste limitée aux événements que
+les agents lui remettent directement ; elle n'observe ni ne prouve l'exécution d'un handler frère.
+Les deux packages Cargo sont indépendants, sans workspace ni crate partagé. Aucun état généré
+propre à un agent, notamment `~/.codex/memories/`, n'est édité.
 
 La clé projet est `project_<sha256(realpath(git-common-dir))>`. Elle converge entre worktrees ; deux
 clones et un dépôt déplacé restent distincts. Une admission projet est refusée hors Git, si le
@@ -66,8 +67,8 @@ toute modification locale observable invalide immédiatement le cache.
 - Les limites de détection sensible et d'officialité URL sont explicites et leurs échecs ne créent
   ni injection ni écriture implicite.
 - Les domaines mémoire et handoff, leurs états et leurs échecs restent dans leurs exécutables
-  indépendants ; Arnes ne porte que la configuration, la validation et la mesure de leur
-  intégration.
+  indépendants ; Arnes porte leur configuration et leur validation, tandis que ses mesures ne
+  couvrent que ses propres événements de harnais.
 
 ## Alternatives écartées
 
