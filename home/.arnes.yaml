@@ -125,6 +125,8 @@ external:
   plugins:
     - { agent: claude, scope: user, id: superpowers@claude-plugins-official }
     - { agent: cursor, scope: user, id: superpowers }
+    - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
+    - { agent: codex, scope: user, id: github@openai-curated }
     - { agent: codex, scope: user, id: superpowers@openai-curated }
   skills:
     - agent: codex
