@@ -46,6 +46,15 @@ echo "ℹ️  Mas upgrade"
 mas outdated
 mas upgrade
 
+echo "ℹ️  Moon upgrade"
+if [[ ! -x $HOME/.moon/bin/moon ]]; then
+  echo "  Warning: Moon not found, unable to upgrade Moon"
+  upgrade_status=1
+elif ! "$HOME/.moon/bin/moon" upgrade; then
+  echo "  Warning: unable to upgrade Moon"
+  upgrade_status=1
+fi
+
 echo "ℹ️  Volta Node.js upgrade"
 node_pin_stage=
 if ! command -v volta &> /dev/null; then

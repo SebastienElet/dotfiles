@@ -33,10 +33,13 @@ $workflow-automation review these repeated agent runs for an automation candidat
 2. Name the stable outcome, inputs, outputs, effects, authority, failure modes, and variable choices.
    Remove discovery, debugging, and recovery commands that are incidental to one run.
 3. Search for an existing supported command, connector, configuration, task, or workflow that already
-   provides the outcome. Standardize that primitive before creating another one.
-4. Choose the narrowest durable implementation. Use Just for fixed command orchestration, Bun and
-   TypeScript for small testable utilities, Rust for substantial or system-oriented CLIs, and CI or
-   a supported scheduler for event-driven or timed execution.
+   provides the outcome. Standardize that primitive before creating another one. When a supported
+   CLI query and a direct `jq` projection express the complete outcome, keep them in the workflow
+   instead of wrapping them in a new program.
+4. Choose the narrowest durable implementation. Use Moon for named development tasks, project
+   graphs, and affected selection, Bun and TypeScript for small testable utilities, Rust for
+   substantial or system-oriented CLIs, and CI or a supported scheduler for event-driven or timed
+   execution.
 5. Automate every safe deterministic step. Keep an explicit human checkpoint only for unresolved
    judgment, missing authority, or an irreversible external effect.
 6. Make effects explicit and design for idempotence, inspection or dry-run, bounded retries,
@@ -67,7 +70,8 @@ $workflow-automation review these repeated agent runs for an automation candidat
 - Never automate irreversible or externally visible effects without established authority and an
   explicit checkpoint when that authority cannot be delegated safely.
 - Reuse an existing supported primitive before introducing a new tool.
-- Follow the applicable `scripts` boundary: Just orchestrates fixed commands, Bun and TypeScript own
-  small utilities, and Rust owns substantial or system-oriented CLIs.
+- Follow the applicable `scripts` boundary: Moon owns named tasks, project graphs, and affected
+  selection, Bun and TypeScript own small utilities, and Rust owns substantial or system-oriented
+  CLIs.
 - Never store secrets or raw private prompts in automation evidence, fixtures, or logs.
 - Test the shipped entry point rather than a duplicate implementation in the test harness.

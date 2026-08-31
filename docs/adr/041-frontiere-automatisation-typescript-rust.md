@@ -1,4 +1,4 @@
-# ADR-041 — Frontière d'automatisation entre Shell, Just, TypeScript et Rust
+# ADR-041 — Frontière d'automatisation entre Shell, Moon, TypeScript et Rust
 
 - **Statut** : accepté
 - **Date** : 2026-08
@@ -22,7 +22,8 @@ plutôt que comme infrastructure vide.
 
 - Le `Makefile` reste l'installateur idempotent défini par l'ADR-001.
 - Bash se limite à l'amorçage, à l'environnement et à une courte séquence linéaire de commandes.
-- Just porte les recettes de développement nommées et délègue tout comportement à un outil testable.
+- Moon porte les tâches de développement nommées progressivement migrées, leur graphe de dépendances
+  et leur sélection affectée; chaque migration conserve une frontière de projet précise.
 - Bun et TypeScript sont le choix par défaut pour un petit utilitaire cohésif qui dépasse la frontière
   Shell, y compris l'analyse et la validation de données ou une politique bornée.
 - Rust est retenu pour une CLI substantielle, un état durable, une concurrence complexe, une
@@ -39,6 +40,8 @@ plutôt que comme infrastructure vide.
 - Bun et `tsc` constituent deux oracles distincts : tests d'exécution et vérification statique.
 - Une migration de Bash reste locale au comportement modifié ; les scripts historiques ne sont pas
   réécrits sans besoin.
+- La migration vers Moon est progressive : les commandes non migrées conservent leur point d’entrée
+  actuel.
 - La frontière Rust repose sur les garanties requises, pas sur un seuil arbitraire de lignes.
 
 ## Alternatives écartées

@@ -126,7 +126,9 @@ async function createUpgradeFakes(
   scenario: UpgradeScenario,
 ): Promise<string> {
   const bin = join(root, "bin");
+  const moonBin = join(root, "home", ".moon/bin");
   await mkdir(bin, { recursive: true });
+  await mkdir(moonBin, { recursive: true });
   for (const command of ["brew", "mas", "npm"]) {
     await writeExecutable(join(bin, command), "exit 0");
   }
@@ -134,6 +136,7 @@ async function createUpgradeFakes(
     join(bin, "date"),
     String.raw`printf '%s\n' 2026-08-23T00:00:00Z`,
   );
+  await writeExecutable(join(moonBin, "moon"), "exit 0");
   if (scenario.includeVolta !== false) {
     await writeExecutable(
       join(bin, "volta"),

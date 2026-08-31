@@ -9,6 +9,7 @@ home/.config/fish/completions
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
 tooling/arnes/target/
+.moon/cache/
 node_modules/
 .harness-export/
 

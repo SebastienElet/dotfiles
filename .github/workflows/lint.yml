@@ -142,11 +142,12 @@ jobs:
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
-          .github/workflows/lint.yml
+          .github/workflows/lint.yml .github/workflows/test-moon-arnes.yml
+          .moon/workspace.yml tooling/arnes/moon.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/AGENTS.md
-          docs/adr/039-code-search.md
+          docs/adr/039-code-search.md docs/adr/041-frontiere-automatisation-typescript-rust.md
           docs/adr/README.md docs/code-search.md
           docs/superpowers/plans/2026-08-29-code-search-replacement.md
           docs/superpowers/specs/2026-08-29-code-search-design.md

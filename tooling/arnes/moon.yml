@@ -1,0 +1,12 @@
+tasks:
+  check:
+    command: cargo check --all-targets --locked
+    inputs:
+      - Cargo.toml
+      - Cargo.lock
+      - build.rs
+      - src/**/*
+      - tests/**/*
+      - examples/**/*
+      - benches/**/*
+      - /.cargo/**/*
