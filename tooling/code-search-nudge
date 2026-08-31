@@ -1,0 +1,11 @@
+#!/usr/bin/env bun
+
+import { runCodeSearchNudge } from "./code-search-nudge-hook.ts";
+
+const result = runCodeSearchNudge(await Bun.stdin.text(), process.env);
+if (result.stdout !== undefined) {
+  process.stdout.write(result.stdout);
+}
+if (result.stderr !== undefined) {
+  process.stderr.write(`${result.stderr}\n`);
+}
