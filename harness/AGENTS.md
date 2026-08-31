@@ -35,8 +35,17 @@ Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and
 
 ## Context Management
 
-- For open-ended exploration, research, or multi-file searches, delegate to the Explore or general-purpose agent instead of reading files directly in the main thread.
-- Keep the main thread for orchestration/decisions; push bulk reading, grepping, and exploration into subagents.
+- **Locate with `code-search`, in the main thread.** Any exploratory or structural search —
+  architecture, call paths, dependencies, cross-package behavior, change impact, first contact with
+  an unfamiliar repository — goes through the `code-search` skill, invoked here rather than handed
+  to a subagent. Locating is cheap: `rg`, `fd` and `colgrep-search` return bounded output. A one-off
+  lookup of a literal you already know stays a plain `rg`.
+- **Delegate reading, not locating.** A subagent carries the bulk reading and the synthesis that
+  follow a search, never the search itself. Test before delegating: can you state everything you
+  need back in one line — a path, a count, a verdict? Then delegate. Otherwise it stays here.
+- A subagent does not inherit skill routing. When one must search on its own, its prompt names
+  `code-search` explicitly.
+- Keep the main thread for orchestration and decisions.
 
 ## Web Fetching
 
