@@ -14,7 +14,7 @@ CURSOR
 CLAUDE
   1 unsupported · 1 healthy
 
-  UNSUPPORTED system skills inventory
+  UNSUPPORTED plugin registry version
 
 CODEX
   1 unsupported · 0 healthy

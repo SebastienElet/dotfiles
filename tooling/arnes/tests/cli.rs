@@ -76,7 +76,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment() {
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "Skills · project scope · codex agent\n✓ 0 healthy\n! 3 unsupported (non-blocking)\n\nCODEX\n  3 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n  codex project unsupported capabilities\n    UNSUPPORTED system skills inventory is unsupported\n  UNSUPPORTED external codex project plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=project plugin activation has no documented filesystem registry\n"
+        "Skills · project scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nCODEX\n  1 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n"
     );
     assert!(output.stderr.is_empty());
 }

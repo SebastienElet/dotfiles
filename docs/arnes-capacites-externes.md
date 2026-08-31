@@ -15,6 +15,12 @@ Le manifest `.arnes.yaml` sépare trois déclarations :
 L'origine `managed` désigne un skill standalone géré hors d'Arnes mais déjà exposé dans une racine
 de projection. Cette autorisation ne l'adopte pas et ne déclenche aucun contrôle qualitatif.
 
+Un diagnostic `unsupported` rapporte une observation qui a échoué : version de registre inconnue,
+résolveur illisible, exposition indéterminable. Une capacité dont aucun inventaire n'est observable
+n'en produit aucun : elle est documentée ici et reste silencieuse à l'exécution. Une racine non
+déclarée est donc absente du rapport plutôt que signalée, le manifeste restant la source unique de
+ce qui est audité.
+
 Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son absence ne crée donc
 aucun drift. La propriété reste `external`, même pour une capacité autorisée. Les diagnostics
 conservent le schéma partagé `resource/state/message` et exposent dans le message l'origine, le
@@ -38,7 +44,9 @@ sans chemin physique public pour ces derniers. Elle définit aussi `[[skills.con
 Le chemin `~/.codex/skills/.system` utilisé dans le manifest de ce dépôt est un contrat
 d'implémentation local explicite, pas une convention Codex universelle. Arnes peut donc auditer
 `openai-docs` sous cette racine sans transformer une observation de HOME en table Rust. Une autre
-installation doit déclarer sa propre racine stable ou accepter un diagnostic `unsupported`.
+installation déclare sa propre racine stable ; sans déclaration, aucun skill système n'est audité.
+L'activation des plugins de projet n'a aucun registre filesystem : le scope project ne rapporte donc
+aucun plugin Codex.
 
 Codex CLI 0.147.0 expose `codex plugin marketplace list --json` et `codex plugin list --json`. La
 première commande fournit les marketplaces considérées ; la seconde fournit la sélection installée,
@@ -68,8 +76,13 @@ sont lus depuis leurs fichiers documentés ; le réglage le plus proche du proje
 périmètre observable par un doctor lancé dans ce projet. Les réglages managed, serveur ou MDM ne
 sont pas déduits depuis HOME.
 
-L'interface officiellement supportée pour l'inventaire est `claude plugin list --json`. Le schéma
-statique de `~/.claude/plugins/installed_plugins.json` n'est pas publié. Arnes reconnaît seulement la
+Les *bundled skills* sont embarqués dans le binaire natif, sans répertoire ni sous-commande
+d'énumération ; `disableBundledSkills` et `skillOverrides` documentent leur exposition, pas leur
+inventaire. Les reconstituer exigerait une table de noms en Rust liée à une version du binaire :
+Arnes n'audite donc aucun skill système Claude.
+
+L'interface officiellement supportée pour l'inventaire des plugins est `claude plugin list --json`.
+Le schéma statique de `~/.claude/plugins/installed_plugins.json` n'est pas publié. Arnes reconnaît seulement la
 version 2 observée par l'installation couverte par cette slice ; toute autre version devient
 `unsupported`. Le registre sélectionne l'unique `installPath` effectif. Les anciennes versions du
 cache et les market places connues ne sont jamais prises pour des plugins actifs.
@@ -90,9 +103,15 @@ filesystem stable pour les builtins. Il documente le chargement de plugins de d�
 `~/.cursor/plugins/local/<plugin>` ; Arnes audite uniquement cette racine explicite.
 
 Customize reste l'interface officielle des plugins marketplace installés. Aucun registre
-filesystem stable ne publie leur activation, et `workspaceOpen` peut produire des chemins
-dynamiquement. Les plugins marketplace, extensions, builtins et capacités dynamiques sont donc
-`unsupported` plutôt que déduits depuis un cache ou exécutés par le doctor.
+filesystem stable ne publie leur activation, `cursor-agent plugin marketplace list` n'énumère que
+les marketplaces, et `workspaceOpen` peut produire des chemins dynamiquement.
+`~/.cursor/extensions/extensions.json` liste les extensions installées mais pas leur activation,
+qui réside dans le stockage global non documenté de l'éditeur ; aucune extension n'expose de skill.
+Le répertoire `~/.cursor/skills-cursor` contient bien les builtins synchronisés, mais il est non
+documenté, décrit par deux manifestes internes divergents, et Cursor ne documente aucun moyen de
+désactiver un builtin : un inventaire y serait donc un drift permanent sans remède. Les plugins
+marketplace, extensions, builtins et capacités dynamiques ne sont donc ni audités, ni déduits depuis
+un cache, ni obtenus en exécutant l'agent.
 
 Sources : [Skills](https://cursor.com/docs/skills),
 [Plugins](https://cursor.com/docs/plugins),
