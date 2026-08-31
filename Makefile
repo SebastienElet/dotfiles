@@ -411,6 +411,10 @@ ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install pnpm
 	touch $@
 
+.PHONY: moon
+moon:
+	curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+
 .PHONY: clean
 clean:
 	rm -rf ~/.config/nvim

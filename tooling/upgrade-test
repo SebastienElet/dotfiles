@@ -31,7 +31,9 @@ remote=$test_root/remote.git
 mock_bin=$test_root/bin
 git_log=$test_root/git.log
 command_log=$test_root/command.log
-mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin"
+moon_bin=$test_home/.moon/bin
+moon=$moon_bin/moon
+mkdir -p "$repository/tooling" "$repository/home/.config/nvim" "$mock_bin" "$moon_bin"
 cp "$upgrade" "$main_branch_helper" "$main_branch_cli" "$main_branch_core" "$repository/tooling/"
 cp "$node_version_contract" "$repository/tooling/"
 cp "$package_json" "$repository/"
@@ -76,6 +78,10 @@ printf '%s\n' \
   'exec "$REAL_GIT" "$@"' >"$mock_bin/git"
 chmod +x "$mock_bin"/*
 ln -s "$real_bun" "$mock_bin/bun"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'exit 0' >"$moon"
+chmod +x "$moon"
 
 run_upgrade() {
   output=$test_root/$1.out
@@ -159,5 +165,21 @@ assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$probe_tip" "fail
 [[ ! -s $git_log ]] || fail "failed repository probe allowed a push"
 grep -Fq "fatal: simulated rev-parse failure" "$test_root/probe-rev-parse.out" || fail "rev-parse error was suppressed"
 grep -Fq "unable to determine the main dotfiles branch" "$test_root/probe-rev-parse.out" || fail "rev-parse failure was not reported"
+
+rm "$moon"
+run_upgrade moon-missing moon-update 1
+grep -Fq "Moon not found, unable to upgrade Moon" "$test_root/moon-missing.out" ||
+  fail "missing Moon was not reported"
+grep -Fxq 'brew update' "$command_log" || fail "Moon absence stopped the remaining upgrade sequence"
+
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s\\n" "simulated Moon upgrade failure" >&2' \
+  'exit 42' >"$moon"
+chmod +x "$moon"
+run_upgrade moon-failure moon-update 1
+grep -Fq "simulated Moon upgrade failure" "$test_root/moon-failure.out" ||
+  fail "Moon upgrade failure was not preserved"
+grep -Fxq 'brew update' "$command_log" || fail "Moon failure stopped the remaining upgrade sequence"
 
 echo "upgrade tests passed"
