@@ -93,14 +93,32 @@ impl GroupController for FailingGroupController {
     }
 }
 
+struct TransientProbeFailureController(AtomicUsize);
+
+impl GroupController for TransientProbeFailureController {
+    fn kill_group(&self, group: Pid) -> io::Result<()> {
+        SystemGroupController.kill_group(group)
+    }
+
+    fn group_closed(&self, group: Pid) -> io::Result<bool> {
+        if self.0.fetch_add(1, Ordering::AcqRel) == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "group_probe_unavailable",
+            ));
+        }
+        SystemGroupController.group_closed(group)
+    }
+}
+
 #[test]
-fn skips_an_injected_spawner_after_the_work_deadline() {
+fn skips_an_injected_spawner_after_observing_an_expired_work_cutoff() {
     let spawner = CountingSpawner(AtomicUsize::new(0));
     let mut command = Command::new("sh");
 
     let error = run_command(
         &mut command,
-        Deadlines::new(Instant::now() - Duration::from_millis(1)),
+        ProcessBudget::new(Instant::now() - Duration::from_millis(1)),
         &spawner,
         &SystemGroupController,
     )
@@ -123,12 +141,13 @@ fn reaps_a_live_child_when_the_second_reader_creation_fails() {
 #[test]
 fn returns_promptly_when_group_kill_fails_but_the_leader_is_live() {
     let spawner = RecordingSpawner::new();
+    let _group_guard = spawner.group_guard();
     let mut command = sleep_command();
     let started = Instant::now();
 
     let error = run_command(
         &mut command,
-        Deadlines::new(Instant::now() + Duration::from_millis(120)),
+        ProcessBudget::new(Instant::now() + Duration::from_millis(120)),
         &spawner,
         &FailingGroupController,
     )
@@ -139,8 +158,28 @@ fn returns_promptly_when_group_kill_fails_but_the_leader_is_live() {
     assert!(test_kill_process(spawner.pid()).is_err());
 }
 
+#[test]
+fn returns_success_after_a_transient_group_probe_error_and_verified_closure() {
+    let spawner = RecordingSpawner::new();
+    let _group_guard = spawner.group_guard();
+    let controller = TransientProbeFailureController(AtomicUsize::new(0));
+    let mut command = successful_command();
+
+    let output = run_command(
+        &mut command,
+        ProcessBudget::new(Instant::now() + Duration::from_millis(500)),
+        &spawner,
+        &controller,
+    )
+    .unwrap();
+
+    assert!(output.success());
+    assert_eq!(controller.0.load(Ordering::Acquire), 2);
+}
+
 fn assert_reader_failure_reaps(fail_on: usize) {
     let spawner = RecordingSpawner::new();
+    let _group_guard = spawner.group_guard();
     let readers = FailingReaderSpawner {
         fail_on,
         attempts: AtomicUsize::new(0),
@@ -149,7 +188,7 @@ fn assert_reader_failure_reaps(fail_on: usize) {
 
     let error = run_command_with_readers(
         &mut command,
-        Deadlines::new(Instant::now() + Duration::from_millis(500)),
+        ProcessBudget::new(Instant::now() + Duration::from_millis(500)),
         &spawner,
         &readers,
         &SystemGroupController,
@@ -165,6 +204,16 @@ fn sleep_command() -> Command {
     let mut command = Command::new("sleep");
     command
         .arg("5")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .process_group(0);
+    command
+}
+
+fn successful_command() -> Command {
+    let mut command = Command::new("sh");
+    command
+        .args(["-c", "printf ready"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
@@ -188,7 +237,7 @@ fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_gro
 
     let error = run_command(
         &mut command,
-        Deadlines::new(Instant::now() + Duration::from_millis(120)),
+        ProcessBudget::new(Instant::now() + Duration::from_millis(120)),
         &spawner,
         &FailingGroupController,
     )

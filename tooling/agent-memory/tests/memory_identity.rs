@@ -1,7 +1,7 @@
 #[path = "support/memory.rs"]
 mod memory_support;
 
-use agent_memory::{ProcessRunner, SystemProcessRunner, resolve_project};
+use agent_memory::{MemoryErrorClass, ProcessRunner, SystemProcessRunner, resolve_project};
 use memory_support::{FakeProcessRunner, FakeResponse, git};
 use std::ffi::{OsStr, OsString};
 use std::fs;
@@ -78,7 +78,7 @@ fn invokes_git_with_separate_arguments_at_the_requested_working_directory() {
 }
 
 #[test]
-fn refuses_every_named_project_scope_bypass() {
+fn rejects_invalid_project_scope_outputs() {
     let outside_git = tempfile::tempdir().unwrap();
     assert_scope_unavailable(resolve_project(outside_git.path(), &SystemProcessRunner));
 
@@ -102,15 +102,26 @@ fn refuses_every_named_project_scope_bypass() {
         ),
         ("malformed output", FakeResponse::success(vec![0xff, b'\n'])),
         ("nonzero process", FakeResponse::failure(128, Vec::new())),
-        ("missing process", FakeResponse::missing()),
     ];
 
     for (bypass, response) in cases {
         let runner = FakeProcessRunner::with_responses([response]);
         let error = resolve_project(existing.path(), &runner).unwrap_err();
+        assert_eq!(error.class(), MemoryErrorClass::Rejection, "{bypass}");
         assert_eq!(error.code(), "scope_unavailable", "{bypass}");
         assert!(!error.to_string().contains("missing.git"), "{bypass}");
     }
+}
+
+#[test]
+fn classifies_a_missing_git_program_as_unavailable() {
+    let directory = tempfile::tempdir().unwrap();
+    let runner = FakeProcessRunner::with_responses([FakeResponse::missing()]);
+
+    let error = resolve_project(directory.path(), &runner).unwrap_err();
+
+    assert_eq!(error.class(), MemoryErrorClass::Unavailable);
+    assert_eq!(error.code(), "scope_unavailable");
 }
 
 fn assert_scope_unavailable<T: std::fmt::Debug>(result: Result<T, agent_memory::MemoryError>) {

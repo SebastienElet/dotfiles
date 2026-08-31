@@ -1,4 +1,4 @@
-use super::budget::Deadlines;
+use super::budget::ProcessBudget;
 use super::cleanup::{GroupController, close_and_reap, process_deadline};
 use super::readers::{ReaderSpawner, Readers, SystemReaderSpawner, set_nonblocking};
 use crate::memory::ProcessOutput;
@@ -23,69 +23,63 @@ impl CommandSpawner for SystemCommandSpawner {
 
 pub(super) fn run_command(
     command: &mut Command,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     spawner: &dyn CommandSpawner,
     controller: &dyn GroupController,
 ) -> io::Result<ProcessOutput> {
-    run_command_with_readers(
-        command,
-        deadlines,
-        spawner,
-        &SystemReaderSpawner,
-        controller,
-    )
+    run_command_with_readers(command, budget, spawner, &SystemReaderSpawner, controller)
 }
 
 fn run_command_with_readers(
     command: &mut Command,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     spawner: &dyn CommandSpawner,
     reader_spawner: &dyn ReaderSpawner,
     controller: &dyn GroupController,
 ) -> io::Result<ProcessOutput> {
-    if deadlines.work_expired() {
+    if budget.work_cutoff_observed_expired() {
         return Err(process_deadline());
     }
     let mut child = spawner.spawn(command)?;
     let mut readers = Readers::new();
-    if deadlines.work_expired() {
+    if budget.work_cutoff_observed_expired() {
         return fail_after_cleanup(
             &mut child,
             &mut readers,
-            deadlines,
+            budget,
             controller,
             process_deadline(),
         );
     }
-    let (stdout, stderr) = take_pipes(&mut child, &mut readers, deadlines, controller)?;
+    let (stdout, stderr) = take_pipes(&mut child, &mut readers, budget, controller)?;
     if let Err(error) = set_nonblocking(&stdout).and_then(|()| set_nonblocking(&stderr)) {
-        return fail_after_cleanup(&mut child, &mut readers, deadlines, controller, error);
+        return fail_after_cleanup(&mut child, &mut readers, budget, controller, error);
     }
     if let Err(error) = readers.start_stdout(stdout, reader_spawner) {
-        return fail_after_cleanup(&mut child, &mut readers, deadlines, controller, error);
+        return fail_after_cleanup(&mut child, &mut readers, budget, controller, error);
     }
     if let Err(error) = readers.start_stderr(stderr, reader_spawner) {
-        return fail_after_cleanup(&mut child, &mut readers, deadlines, controller, error);
+        return fail_after_cleanup(&mut child, &mut readers, budget, controller, error);
     }
-    wait_for_process(&mut child, &mut readers, deadlines, controller)
+    wait_for_process(&mut child, &mut readers, budget, controller)
 }
 
 fn take_pipes(
     child: &mut Child,
     readers: &mut Readers,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     controller: &dyn GroupController,
 ) -> io::Result<(std::process::ChildStdout, std::process::ChildStderr)> {
     match (child.stdout.take(), child.stderr.take()) {
         (Some(stdout), Some(stderr)) => Ok((stdout, stderr)),
-        _ => fail_after_cleanup(child, readers, deadlines, controller, pipe_unavailable()),
+        _ => fail_after_cleanup(child, readers, budget, controller, pipe_unavailable()),
     }
 }
 
 fn wait_for_process(
     child: &mut Child,
     readers: &mut Readers,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     controller: &dyn GroupController,
 ) -> io::Result<ProcessOutput> {
     let mut status = None;
@@ -95,33 +89,33 @@ fn wait_for_process(
                 Ok(Some(completed)) => status = Some(completed),
                 Ok(None) => {}
                 Err(error) => {
-                    return fail_after_cleanup(child, readers, deadlines, controller, error);
+                    return fail_after_cleanup(child, readers, budget, controller, error);
                 }
             }
         }
         if let Some(error) = readers.failure() {
-            return fail_after_cleanup(child, readers, deadlines, controller, error);
+            return fail_after_cleanup(child, readers, budget, controller, error);
         }
         if let Some(status) = status
             && readers.finished()
         {
-            return complete_after_cleanup(child, readers, deadlines, controller, status);
+            return complete_after_cleanup(child, readers, budget, controller, status);
         }
-        if deadlines.work_expired() {
-            return fail_after_cleanup(child, readers, deadlines, controller, process_deadline());
+        if budget.work_cutoff_observed_expired() {
+            return fail_after_cleanup(child, readers, budget, controller, process_deadline());
         }
-        thread::sleep(POLL_INTERVAL.min(deadlines.remaining_work()));
+        thread::sleep(POLL_INTERVAL.min(budget.remaining_work_at_observation()));
     }
 }
 
 fn complete_after_cleanup(
     child: &mut Child,
     readers: &mut Readers,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     controller: &dyn GroupController,
     status: std::process::ExitStatus,
 ) -> io::Result<ProcessOutput> {
-    close_and_reap(child, readers, deadlines.hard(), controller)?;
+    close_and_reap(child, readers, budget.cleanup_deadline(), controller)?;
     let (stdout, stderr) = readers.join_outputs()?;
     Ok(ProcessOutput::new(
         status.success(),
@@ -134,11 +128,11 @@ fn complete_after_cleanup(
 fn fail_after_cleanup<T>(
     child: &mut Child,
     readers: &mut Readers,
-    deadlines: Deadlines,
+    budget: ProcessBudget,
     controller: &dyn GroupController,
     error: io::Error,
 ) -> io::Result<T> {
-    let cleanup = close_and_reap(child, readers, deadlines.hard(), controller);
+    let cleanup = close_and_reap(child, readers, budget.cleanup_deadline(), controller);
     let joined = readers.join_finished();
     match cleanup {
         Ok(()) => match joined {

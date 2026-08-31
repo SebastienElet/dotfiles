@@ -5,25 +5,25 @@ use agent_memory::{
 };
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-struct DeadlineAfterUnavailableResolver {
+struct ObservedWorkCutoffAfterUnavailableResolver {
     expired: AtomicBool,
     calls: AtomicUsize,
 }
 
-impl SourceResolver for DeadlineAfterUnavailableResolver {
+impl SourceResolver for ObservedWorkCutoffAfterUnavailableResolver {
     fn resolve(&self, _source: &agent_memory::EntrySource) -> SourceResolution {
         self.calls.fetch_add(1, Ordering::AcqRel);
         self.expired.store(true, Ordering::Release);
         SourceResolution::Unavailable
     }
 
-    fn deadline_exceeded(&self) -> bool {
+    fn work_cutoff_observed_expired(&self) -> bool {
         self.expired.load(Ordering::Acquire)
     }
 }
 
 #[test]
-fn an_expired_source_budget_stops_before_later_source_resolution() {
+fn an_observed_expired_source_budget_stops_before_later_source_resolution() {
     let fixture = tempfile::tempdir().unwrap();
     let (root, store) = open_store(fixture.path());
     let yaml = entry_yaml(
@@ -45,7 +45,7 @@ fn an_expired_source_budget_stops_before_later_source_resolution() {
     write_user_entry(&root, 'e', &yaml);
     let key = project_key(fixture.path());
     let selection = select(&store, &key, 5);
-    let resolver = DeadlineAfterUnavailableResolver {
+    let resolver = ObservedWorkCutoffAfterUnavailableResolver {
         expired: AtomicBool::new(false),
         calls: AtomicUsize::new(0),
     };

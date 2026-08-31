@@ -79,12 +79,8 @@ const fn scope_unavailable() -> MemoryError {
     MemoryError::new("scope_unavailable", "scope")
 }
 
-fn classify_git_error(error: std::io::Error) -> MemoryError {
-    if error.kind() == std::io::ErrorKind::TimedOut {
-        MemoryError::unavailable("scope_unavailable", "scope")
-    } else {
-        scope_unavailable()
-    }
+fn classify_git_error(_error: std::io::Error) -> MemoryError {
+    MemoryError::unavailable("scope_unavailable", "scope")
 }
 
 #[cfg(test)]
@@ -93,24 +89,44 @@ mod tests {
     use crate::memory::ProcessOutput;
     use std::io;
 
-    struct TimedOutGit;
+    struct FailingGit(io::ErrorKind);
 
-    impl ProcessRunner for TimedOutGit {
+    impl ProcessRunner for FailingGit {
         fn run(
             &self,
             _program: &OsStr,
             _arguments: &[OsString],
             _current_directory: Option<&Path>,
         ) -> io::Result<ProcessOutput> {
-            Err(io::Error::new(io::ErrorKind::TimedOut, "process_deadline"))
+            Err(io::Error::new(self.0, "process_unavailable"))
         }
     }
 
     #[test]
     fn classifies_a_timed_out_project_lookup_as_unavailable() {
-        let error = resolve_project(Path::new("/"), &TimedOutGit).unwrap_err();
+        let error =
+            resolve_project(Path::new("/"), &FailingGit(io::ErrorKind::TimedOut)).unwrap_err();
 
         assert_eq!(error.class(), crate::MemoryErrorClass::Unavailable);
         assert_eq!(error.code(), "scope_unavailable");
+    }
+
+    #[test]
+    fn classifies_every_project_process_failure_as_unavailable() {
+        for kind in [
+            io::ErrorKind::Other,
+            io::ErrorKind::PermissionDenied,
+            io::ErrorKind::Interrupted,
+            io::ErrorKind::NotFound,
+        ] {
+            let error = resolve_project(Path::new("/"), &FailingGit(kind)).unwrap_err();
+
+            assert_eq!(
+                error.class(),
+                crate::MemoryErrorClass::Unavailable,
+                "{kind:?}"
+            );
+            assert_eq!(error.code(), "scope_unavailable", "{kind:?}");
+        }
     }
 }

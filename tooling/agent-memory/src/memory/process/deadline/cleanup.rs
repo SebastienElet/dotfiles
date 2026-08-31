@@ -54,14 +54,18 @@ fn wait_for_closure(
     controller: &dyn GroupController,
     error: &mut Option<io::Error>,
 ) -> io::Result<()> {
+    let mut group_error = None;
     loop {
         let reaped = poll_child(child, error);
-        let closed = poll_group(controller, group, error);
+        let closed = poll_group(controller, group, &mut group_error);
         if reaped && closed && readers.finished() {
             return error.take().map_or(Ok(()), Err);
         }
         if Instant::now() >= deadline {
-            return Err(error.take().unwrap_or_else(process_deadline));
+            return Err(error
+                .take()
+                .or(group_error)
+                .unwrap_or_else(process_deadline));
         }
         thread::sleep(POLL_INTERVAL.min(deadline.saturating_duration_since(Instant::now())));
     }
@@ -78,11 +82,15 @@ fn poll_child(child: &mut Child, error: &mut Option<io::Error>) -> bool {
     }
 }
 
-fn poll_group(controller: &dyn GroupController, group: Pid, error: &mut Option<io::Error>) -> bool {
+fn poll_group(
+    controller: &dyn GroupController,
+    group: Pid,
+    group_error: &mut Option<io::Error>,
+) -> bool {
     match controller.group_closed(group) {
         Ok(closed) => closed,
         Err(observed) => {
-            remember(error, observed);
+            remember(group_error, observed);
             false
         }
     }

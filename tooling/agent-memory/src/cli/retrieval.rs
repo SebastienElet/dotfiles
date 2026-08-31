@@ -99,16 +99,16 @@ mod tests {
     use std::ffi::{OsStr, OsString};
     use std::io;
 
-    struct TimedOutGit;
+    struct FailingGit(io::ErrorKind);
 
-    impl crate::ProcessRunner for TimedOutGit {
+    impl crate::ProcessRunner for FailingGit {
         fn run(
             &self,
             _program: &OsStr,
             _arguments: &[OsString],
             _current_directory: Option<&Path>,
         ) -> io::Result<ProcessOutput> {
-            Err(io::Error::new(io::ErrorKind::TimedOut, "process_deadline"))
+            Err(io::Error::new(self.0, "process_unavailable"))
         }
     }
 
@@ -118,7 +118,22 @@ mod tests {
             "durable memory",
             Path::new("/"),
             RetrievalMode::Injection,
-            &TimedOutGit,
+            &FailingGit(io::ErrorKind::TimedOut),
+            Some(Instant::now() + std::time::Duration::from_secs(1)),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.exit, 4);
+        assert_eq!(error.code, "scope_unavailable");
+    }
+
+    #[test]
+    fn hook_retrieval_maps_project_process_failure_to_exit_four() {
+        let error = report_with_processes(
+            "durable memory",
+            Path::new("/"),
+            RetrievalMode::Injection,
+            &FailingGit(io::ErrorKind::Other),
             Some(Instant::now() + std::time::Duration::from_secs(1)),
         )
         .unwrap_err();

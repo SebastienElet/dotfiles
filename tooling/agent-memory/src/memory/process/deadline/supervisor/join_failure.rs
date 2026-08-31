@@ -64,7 +64,7 @@ fn closes_redirected_descendants_before_returning_a_joined_reader_error() {
 
     let error = run_command_with_readers(
         &mut command,
-        Deadlines::new(Instant::now() + Duration::from_secs(1)),
+        ProcessBudget::new(Instant::now() + Duration::from_secs(1)),
         &spawner,
         &JoinErrorReaderSpawner,
         &SystemGroupController,

@@ -10,7 +10,7 @@ impl SourceResolver for SourceContext<'_> {
         }
     }
 
-    fn deadline_exceeded(&self) -> bool {
+    fn work_cutoff_observed_expired(&self) -> bool {
         self.git.remaining_time().is_some_and(|time| time.is_zero())
             || self
                 .curl

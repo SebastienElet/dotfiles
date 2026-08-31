@@ -1,5 +1,5 @@
 use super::{ProcessOutput, ProcessRunner};
-use budget::Deadlines;
+use budget::ProcessBudget;
 use cleanup::SystemGroupController;
 use std::ffi::{OsStr, OsString};
 use std::io;
@@ -15,13 +15,13 @@ mod readers;
 mod supervisor;
 
 pub struct DeadlineProcessRunner {
-    deadlines: Deadlines,
+    budget: ProcessBudget,
 }
 
 impl DeadlineProcessRunner {
     pub fn new(deadline: Instant) -> Self {
         Self {
-            deadlines: Deadlines::new(deadline),
+            budget: ProcessBudget::new(deadline),
         }
     }
 }
@@ -44,13 +44,13 @@ impl ProcessRunner for DeadlineProcessRunner {
         }
         run_command(
             &mut command,
-            self.deadlines,
+            self.budget,
             &SystemCommandSpawner,
             &SystemGroupController,
         )
     }
 
     fn remaining_time(&self) -> Option<Duration> {
-        Some(self.deadlines.remaining_work())
+        Some(self.budget.remaining_work_at_observation())
     }
 }

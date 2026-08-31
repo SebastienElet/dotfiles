@@ -15,7 +15,7 @@ pub enum SourceResolution {
 pub trait SourceResolver {
     fn resolve(&self, source: &EntrySource) -> SourceResolution;
 
-    fn deadline_exceeded(&self) -> bool {
+    fn work_cutoff_observed_expired(&self) -> bool {
         false
     }
 }
@@ -183,7 +183,7 @@ fn evaluate_sources(
         if local_only && !matches!(source.kind(), SourceKind::GitFile | SourceKind::LocalFile) {
             continue;
         }
-        if resolver.deadline_exceeded() {
+        if resolver.work_cutoff_observed_expired() {
             return SourceVerdict::Unavailable;
         }
         match resolver.resolve(source) {

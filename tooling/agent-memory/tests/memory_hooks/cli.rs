@@ -93,6 +93,30 @@ fn invalid_payloads_use_exit_two_without_echoing_input() {
 }
 
 #[test]
+fn an_unavailable_project_git_process_exits_four_without_context() {
+    let fixture = CliFixture::new();
+    let payload = payload(
+        "UserPromptSubmit",
+        "Apply durable hook architecture",
+        fixture.repository(),
+    );
+    let mut child = Command::new(env!("CARGO_BIN_EXE_agent-memory"))
+        .args(["hook", "--agent", "codex"])
+        .current_dir(fixture.repository())
+        .env("AGENT_MEMORY_ROOT", fixture.root())
+        .env("PATH", fixture.root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    std::io::Write::write_all(child.stdin.as_mut().unwrap(), &payload).unwrap();
+    let output = child.wait_with_output().unwrap();
+
+    assert_error(&output, 4, "scope_unavailable");
+}
+
+#[test]
 fn cursor_is_not_a_native_hook_variant() {
     let fixture = CliFixture::new();
     let output = fixture.run(["hook", "--agent", "cursor"], b"{}");
