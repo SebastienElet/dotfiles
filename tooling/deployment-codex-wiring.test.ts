@@ -45,22 +45,18 @@ test.each([
     expectSuccess(hook);
     expect(count(hook.stdout, expected)).toBe(1);
     expect(hook.stdout).toContain("cargo build --release");
-    if (deploysHandoff) {
-      expect(hook.stdout).toContain(
-        join(fixture.home, ".local", "bin", "agent-handoff"),
-      );
-    }
-    if (target !== "cursor") {
-      expect(hook.stdout).toContain(
-        join(fixture.home, ".local", "bin", "agent-memory"),
-      );
-    }
+    const memory = join(fixture.home, ".local", "bin", "agent-memory");
+    const handoff = join(fixture.home, ".local", "bin", "agent-handoff");
+    expect(hook.stdout).toContain(memory);
+    expectRuntime(hook.stdout, handoff, deploysHandoff);
     const entry = runMake(fixture, [target], {
       dryRun: true,
       repository: project,
     });
     expectSuccess(entry);
     expect(count(entry.stdout, expected)).toBe(1);
+    expect(entry.stdout).toContain(memory);
+    expectRuntime(entry.stdout, handoff, deploysHandoff);
     if (target === "codex") {
       expect(entry.stdout).toContain(
         join(project, "harness", "skills", "agent-instructions"),
@@ -161,4 +157,12 @@ test("installs the formula, runtime, four pinned dictionaries, and Claude depend
 
 function count(value: string, needle: string): number {
   return value.split(needle).length - 1;
+}
+
+function expectRuntime(output: string, path: string, present: boolean): void {
+  if (present) {
+    expect(output).toContain(path);
+    return;
+  }
+  expect(output).not.toContain(path);
 }

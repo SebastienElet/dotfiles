@@ -11,8 +11,8 @@ Admit an entry only when all of these hold:
 - a current primary source establishes it;
 - retaining it avoids material repeated investigation;
 - an observable oracle can detect when it no longer holds;
-- it contains no raw transcript, complete private prompt, secret, credential, personal data, or
-  workaround for a defect in owned code.
+- it contains no raw transcript, complete private prompt, secret, credential, or workaround for a
+  defect in owned code.
 
 Project is the default scope. User scope requires an explicit user persistence request. A primary
 source may be a tracked Git file, supported local file, official URL, or explicit user decision.

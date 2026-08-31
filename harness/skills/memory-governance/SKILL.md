@@ -28,9 +28,10 @@ when the durable destination is agent behavior.
 
 1. **Retrieve before Cursor work.** Announce retrieval before analysis or action. Pass the complete
    current user prompt on stdin to `agent-memory retrieve --query-stdin --format json`, wait for
-   completion, and apply only a successful sanitized result. Announce each applied entry's kind,
-   statement, proof source, and age of its last valid verdict. On any failure or unavailable result,
-   announce that durable memory is unavailable and apply nothing.
+   completion, and accept only a successful sanitized result. Before an entry influences analysis
+   or action, announce its kind, statement, proof source, and age of its last valid verdict; only
+   then apply it. On any failure or unavailable result, announce that durable memory is unavailable
+   and apply nothing.
 2. **Propose without writing.** When work reveals durable knowledge that may be materially costly to
    rediscover, locate its current primary authority and apply the admission contract in the
    reference. Return a complete draft and state that it was not persisted. Do not run `admit`
@@ -43,9 +44,8 @@ when the durable destination is agent behavior.
    entry, pass only the reason on stdin to the exact `confirm` command in the reference. Report the
    returned status. Never infer a human conclusion from silence or task progress.
 5. **Fail closed and redact.** Refuse raw transcripts, complete private prompts, secrets,
-   credentials, personal data, and workarounds for defects in owned code. Name the failed criterion
-   without reproducing the content, do not send refused material to `agent-memory`, and persist
-   nothing.
+   credentials, and workarounds for defects in owned code. Name the failed criterion without
+   reproducing the content, do not send refused material to `agent-memory`, and persist nothing.
 6. **Keep behavior changes separate.** Memory cannot promote itself into instructions, skills,
    hooks, or enforcement. Use `harness-reflection` for that evidence and trial.
 
@@ -69,8 +69,8 @@ when the durable destination is agent behavior.
   relevant injected entry.
 - Never admit without an explicit request or acceptance of a complete proposal.
 - Never let memory replace, amend, or outrank its primary source.
-- Never persist raw transcripts, complete private prompts, secrets, credentials, personal data, or
-  owned-defect workarounds.
+- Never persist raw transcripts, complete private prompts, secrets, credentials, or owned-defect
+  workarounds.
 - Never broaden scope beyond what the verified authority establishes.
 
 ## References
