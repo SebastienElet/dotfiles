@@ -10,35 +10,21 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Diagnostic> {
-    let mut diagnostics = Vec::new();
-    if scope == Scope::User {
-        let root = roots.home().join(".cursor/plugins/local");
-        match local_plugins(&root, roots.home()) {
-            Ok(plugins) => diagnostics.extend(plugin_diagnostics(
-                policy,
-                Agent::Cursor,
-                scope,
-                plugins,
-            )),
-            Err(detail) => diagnostics.push(Diagnostic::new(
-                "skills",
-                State::Error,
-                format!(
-                    "external cursor user local plugin root origin=plugin ownership=external exposure=unknown topology=unreadable policy=unknown activation=unknown path={} detail={detail}",
-                    root.display(),
-                ),
-            )),
-        }
+    if scope == Scope::Project {
+        return Vec::new();
     }
-    diagnostics.push(unsupported(
-        scope,
-        "marketplace plugin activation has no documented filesystem registry",
-    ));
-    diagnostics.push(unsupported(
-        scope,
-        "extension activation and skill exposure have no documented filesystem registry",
-    ));
-    diagnostics
+    let root = roots.home().join(".cursor/plugins/local");
+    match local_plugins(&root, roots.home()) {
+        Ok(plugins) => plugin_diagnostics(policy, Agent::Cursor, scope, plugins),
+        Err(detail) => vec![Diagnostic::new(
+            "skills",
+            State::Error,
+            format!(
+                "external cursor user local plugin root origin=plugin ownership=external exposure=unknown topology=unreadable policy=unknown activation=unknown path={} detail={detail}",
+                root.display(),
+            ),
+        )],
+    }
 }
 
 fn local_plugins(root: &Path, home: &Path) -> Result<Vec<Plugin>, &'static str> {
@@ -122,14 +108,4 @@ fn inspect_plugin(root: &Path, entry: DirEntry) -> Option<Plugin> {
         detail,
         skills: inspected.skills,
     })
-}
-
-fn unsupported(scope: Scope, detail: &str) -> Diagnostic {
-    Diagnostic::new(
-        "skills",
-        State::Unsupported,
-        format!(
-            "external cursor {scope} plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail={detail}"
-        ),
-    )
 }

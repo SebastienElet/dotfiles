@@ -1,5 +1,5 @@
 use crate::Roots;
-use crate::diagnostic::{Diagnostic, State};
+use crate::diagnostic::Diagnostic;
 use crate::manifest::{Agent, Manifest, Scope};
 
 mod claude;
@@ -22,20 +22,6 @@ pub(super) fn diagnose(
         Agent::Codex => codex::diagnose(roots, manifest, scope),
     });
     diagnostics
-}
-
-pub(super) fn unsupported(agent: Agent, scope: Scope, subject: &str) -> Diagnostic {
-    Diagnostic::new(
-        "skills",
-        State::Unsupported,
-        format!(
-            "external {agent} {scope} {subject} origin=system ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown"
-        ),
-    )
-    .with_human(
-        format!("{agent} {scope} unsupported capabilities"),
-        subject,
-    )
 }
 
 pub(super) fn is_claude_skills_plugin(agent: Agent, path: &std::path::Path) -> bool {
