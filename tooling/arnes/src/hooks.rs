@@ -5,14 +5,17 @@ use serde_json::json;
 use std::fmt::{self, Display};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod adapters;
+mod inspect;
 mod io;
 mod json_value;
 mod ownership;
 mod reconcile;
 mod validate;
+
+pub use inspect::diagnose;
 
 #[derive(Args)]
 pub struct SetupHooksArgs {
@@ -39,8 +42,8 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     }
     let desired: Vec<HookKind> = manifest.hooks(args.agent, args.scope).collect();
     let policy = adapters::policy(args.agent);
-    let measurement_path = roots.home().join(".local/bin/arnes");
-    let handoff_path = roots.home().join(".local/bin/agent-handoff");
+    let measurement_path = measurement_path(roots.home());
+    let handoff_path = handoff_path(roots.home());
     let measurement = measurement_command(&measurement_path, args.agent)?;
     let handoff_aliases = handoff_aliases(&handoff_path)?;
     let file = io::ConfigFile::open(roots.home(), policy.directory, policy.filename)?;
@@ -75,6 +78,14 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
         }
     }
     file.replace(&serde_json::to_vec_pretty(&config)?)
+}
+
+fn measurement_path(home: &Path) -> PathBuf {
+    home.join(".local/bin/arnes")
+}
+
+fn handoff_path(home: &Path) -> PathBuf {
+    home.join(".local/bin/agent-handoff")
 }
 
 fn handoff_aliases(command: &Path) -> Result<Vec<String>, HooksError> {

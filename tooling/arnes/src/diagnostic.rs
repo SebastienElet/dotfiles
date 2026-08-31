@@ -194,6 +194,10 @@ impl Report {
         &self.diagnostics
     }
 
+    pub fn into_diagnostics(self) -> Vec<Diagnostic> {
+        self.diagnostics
+    }
+
     pub fn exit_code(&self) -> u8 {
         self.diagnostics
             .iter()

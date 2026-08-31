@@ -120,7 +120,7 @@ fn doctor_without_resource_fails_when_skills_drift() {
 }
 
 #[test]
-fn json_doctor_without_resource_includes_manifest_and_skills() {
+fn json_doctor_without_resource_includes_manifest_skills_and_hooks() {
     let fixture = configured_fixture();
     let (code, stdout, _) = run(&fixture, &["doctor", "--format", "json"]);
     let diagnostics: serde_json::Value = serde_json::from_str(&stdout).unwrap();
@@ -128,13 +128,19 @@ fn json_doctor_without_resource_includes_manifest_and_skills() {
 
     assert_eq!(code, 0, "{stdout}");
     assert_eq!(diagnostics[0]["resource"], "manifest");
+    let resources = diagnostics
+        .iter()
+        .skip(1)
+        .map(|diagnostic| diagnostic["resource"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(resources.contains(&"skills"), "{stdout}");
+    assert!(resources.contains(&"hooks"), "{stdout}");
     assert!(
-        diagnostics
+        resources
             .iter()
-            .skip(1)
-            .all(|diagnostic| diagnostic["resource"] == "skills")
+            .all(|resource| matches!(*resource, "skills" | "hooks")),
+        "{stdout}"
     );
-    assert!(diagnostics.len() > 1);
 }
 
 #[test]
