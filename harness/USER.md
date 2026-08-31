@@ -55,7 +55,11 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   aucun oracle ne peut détecter une erreur réelle. Une configuration portant un invariant de sécurité
   ou de compatibilité reste testée par son comportement. Choisir l'oracle le moins coûteux qui prouve
   réellement l'invariant : unitaire si possible, intégration dès que la preuve appartient à la DB,
-  une transaction, un mapping ORM, un protocole ou autre composant.
+  une transaction, un mapping ORM, un protocole ou autre composant. Une gate explicitement demandée
+  reste une exigence à implémenter. Sans exigence explicite, n'ajouter une gate que si elle apporte un
+  oracle durable sur du code ou un invariant possédé, après inventaire des oracles existants ; l'absence
+  de test dédié ne suffit pas. Ne pas créer de suite miroir pour un Makefile déjà couvert par un smoke
+  test, pour le comportement interne d'un outil externe tel que Moon, ni pour tester la CI elle-même.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
