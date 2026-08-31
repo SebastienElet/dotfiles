@@ -64,7 +64,7 @@ fn merge_memory(
         .ok_or_else(|| HooksError::new("memory hook event must be an array"))?;
     let mut retained = Vec::with_capacity(entries.len() + 1);
     for mut group in std::mem::take(entries) {
-        if !remove_measurement_from_group(&mut group, command)? {
+        if !remove_owned_handlers_from_group(&mut group, command)? {
             retained.push(group);
         }
     }
@@ -80,7 +80,7 @@ fn merge_nested(entries: &mut Value, command: &str) -> Result<(), HooksError> {
         .ok_or_else(|| HooksError::new("nested hook event must be an array"))?;
     let mut retained = Vec::with_capacity(entries.len() + 1);
     for mut group in std::mem::take(entries) {
-        if !remove_measurement_from_group(&mut group, command)? {
+        if !remove_owned_handlers_from_group(&mut group, command)? {
             retained.push(group);
         }
     }
@@ -89,7 +89,7 @@ fn merge_nested(entries: &mut Value, command: &str) -> Result<(), HooksError> {
     Ok(())
 }
 
-fn remove_measurement_from_group(group: &mut Value, command: &str) -> Result<bool, HooksError> {
+fn remove_owned_handlers_from_group(group: &mut Value, command: &str) -> Result<bool, HooksError> {
     let group = group
         .as_object_mut()
         .ok_or_else(|| HooksError::new("nested hook group must be an object"))?;
