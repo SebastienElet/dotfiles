@@ -79,3 +79,65 @@ fn preserves_prompt_hooks_on_touched_events() {
         harness.command("cursor")
     );
 }
+
+#[test]
+fn memory_reconciliation_preserves_third_party_order_and_replaces_owned_handlers() {
+    for agent in ["codex", "claude-code"] {
+        let harness = Harness::new();
+        harness.write_memory_manifest(agent);
+        harness.executable_named("agent-memory");
+        let command = harness.memory_command(agent);
+        harness.write_config(
+            agent,
+            &serde_json::json!({"hooks":{"UserPromptSubmit":[
+                {"matcher":"first","hooks":[{"type":"command","command":"third-before"}]},
+                {"hooks":[
+                    {"type":"command","command":command,"timeout":7},
+                    {"type":"command","command":"third-after"}
+                ]},
+                {"hooks":[{"type":"command","command":command}]}
+            ]}}),
+        );
+
+        assert_success(&harness.install(agent));
+
+        let config = read_json(harness.config(agent));
+        let commands: Vec<&str> = config["hooks"]["UserPromptSubmit"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|group| group["hooks"].as_array().unwrap())
+            .filter_map(|handler| handler["command"].as_str())
+            .collect();
+        assert_eq!(commands, vec!["third-before", "third-after", &command]);
+        let owned = config["hooks"]["UserPromptSubmit"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|group| group["hooks"].as_array().unwrap())
+            .find(|handler| handler["command"] == command)
+            .unwrap();
+        assert_eq!(owned["timeout"], 30);
+    }
+}
+
+#[test]
+fn owned_memory_hooks_are_removed_when_absent_from_the_manifest() {
+    for agent in ["codex", "claude-code"] {
+        let harness = Harness::new();
+        let command = harness.memory_command(agent);
+        harness.write_config(
+            agent,
+            &serde_json::json!({"hooks":{"UserPromptSubmit":[{"hooks":[
+                {"type":"command","command":command},
+                {"type":"command","command":"third-party"}
+            ]}]}}),
+        );
+
+        assert_success(&harness.install(agent));
+
+        let serialized = serde_json::to_string(&read_json(harness.config(agent))).unwrap();
+        assert!(!serialized.contains("agent-memory"));
+        assert!(serialized.contains("third-party"));
+    }
+}

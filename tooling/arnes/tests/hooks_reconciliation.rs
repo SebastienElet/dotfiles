@@ -2,7 +2,7 @@ use serde_json::Value;
 use std::fs;
 use std::os::unix::fs::{FileTypeExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use tempfile::TempDir;
 
 struct Harness {
@@ -69,6 +69,14 @@ impl Harness {
         command
     }
 
+    fn executable_named(&self, name: &str) -> PathBuf {
+        let path = self.home.join(".local/bin").join(name);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, b"binary").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+        path
+    }
+
     fn install_claude_with_handoff(&self, current: &Path, legacy: &Path) -> Output {
         assert_eq!(
             legacy,
@@ -99,6 +107,36 @@ impl Harness {
     fn command(&self, agent: &str) -> String {
         let path = self.executable.to_str().unwrap().replace('\'', "'\\''");
         format!("'{path}' measure hook --agent {agent}")
+    }
+
+    fn memory_command(&self, agent: &str) -> String {
+        let agent = if agent == "claude-code" {
+            "claude"
+        } else {
+            agent
+        };
+        let path = self
+            .home
+            .join(".local/bin/agent-memory")
+            .to_str()
+            .unwrap()
+            .replace('\'', "'\\''");
+        format!("'{path}' hook --agent {agent}")
+    }
+
+    fn write_memory_manifest(&self, agent: &str) {
+        let agent = if agent == "claude-code" {
+            "claude"
+        } else {
+            agent
+        };
+        fs::write(
+            self.home.join(".arnes.yaml"),
+            format!(
+                "version: 1\nagents:\n  - id: {agent}\n    scopes: [user]\nhooks:\n  - id: memory\n    installations:\n      - {{ agent: {agent}, scope: user }}\nresources: []\n"
+            ),
+        )
+        .unwrap();
     }
 
     fn write_manifest(&self, handoff: bool) {

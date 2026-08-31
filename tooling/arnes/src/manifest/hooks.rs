@@ -6,6 +6,7 @@ use serde::Deserialize;
 pub enum HookKind {
     Measurement,
     Handoff,
+    Memory,
 }
 
 #[derive(Deserialize)]

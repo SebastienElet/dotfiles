@@ -13,6 +13,8 @@ mod ownership;
 mod reconcile;
 mod validate;
 
+const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
+
 #[derive(Args)]
 pub struct SetupHooksArgs {
     #[arg(long, value_enum)]
@@ -40,8 +42,14 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     let policy = adapters::policy(args.agent);
     let measurement_path = roots.home().join(".local/bin/arnes");
     let handoff_path = roots.home().join(".local/bin/agent-handoff");
+    let memory_path = roots.home().join(".local/bin/agent-memory");
     let measurement = measurement_command(&measurement_path, args.agent)?;
     let handoff_aliases = handoff_aliases(&handoff_path, roots.repository())?;
+    let memory = memory_command(&memory_path, args.agent)?;
+    let memory_event = policy.memory_event;
+    if desired.contains(&HookKind::Memory) && (memory.is_none() || memory_event.is_none()) {
+        return Err(HooksError::new("Cursor does not support the memory hook"));
+    }
     let file = io::ConfigFile::open(roots.home(), policy.directory, policy.filename)?;
     let mut config = file
         .content()
@@ -50,6 +58,9 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
         .unwrap_or_else(|| json!({}));
     validate::configuration(&config, args.agent)?;
     ownership::remove_everywhere(&mut config, args.agent, &measurement)?;
+    if let Some(command) = &memory {
+        ownership::remove_everywhere(&mut config, args.agent, command)?;
+    }
     if desired.contains(&HookKind::Measurement) {
         validate_command(&measurement_path)?;
         reconcile::measurement(
@@ -58,6 +69,21 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
             policy.nested,
             policy.excluded,
             &measurement,
+        )?;
+    }
+    if desired.contains(&HookKind::Memory) {
+        let Some(memory) = memory else {
+            return Err(HooksError::new("Cursor does not support the memory hook"));
+        };
+        let Some(memory_event) = memory_event else {
+            return Err(HooksError::new("Cursor does not support the memory hook"));
+        };
+        validate_command(&memory_path)?;
+        reconcile::memory(
+            &mut config,
+            memory_event,
+            &memory,
+            MEMORY_HOOK_TIMEOUT_SECONDS,
         )?;
     }
     if desired.contains(&HookKind::Handoff) {
@@ -107,6 +133,17 @@ fn measurement_command(command: &Path, agent: Agent) -> Result<String, HooksErro
         Agent::Cursor => "cursor",
     };
     Ok(format!("{quoted} measure hook --agent {agent}"))
+}
+
+fn memory_command(command: &Path, agent: Agent) -> Result<Option<String>, HooksError> {
+    let agent = match agent {
+        Agent::Codex => "codex",
+        Agent::Claude => "claude",
+        Agent::Cursor => return Ok(None),
+    };
+    let command = path_string(command)?;
+    let quoted = format!("'{}'", command.replace('\'', "'\\''"));
+    Ok(Some(format!("{quoted} hook --agent {agent}")))
 }
 
 fn path_string(path: &Path) -> Result<String, HooksError> {

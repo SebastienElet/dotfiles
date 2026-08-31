@@ -52,6 +52,7 @@ pub struct Policy {
     pub excluded: &'static [&'static str],
     pub handoff_args: bool,
     pub handoff_execution_fields: &'static [&'static str],
+    pub memory_event: Option<&'static str>,
 }
 
 pub fn policy(agent: Agent) -> Policy {
@@ -64,6 +65,7 @@ pub fn policy(agent: Agent) -> Policy {
             excluded: &[],
             handoff_args: false,
             handoff_execution_fields: &["async"],
+            memory_event: Some("UserPromptSubmit"),
         },
         Agent::Claude => Policy {
             directory: ".claude",
@@ -73,6 +75,7 @@ pub fn policy(agent: Agent) -> Policy {
             excluded: &[],
             handoff_args: true,
             handoff_execution_fields: &["async", "asyncRewake", "once", "if"],
+            memory_event: Some("UserPromptSubmit"),
         },
         Agent::Cursor => Policy {
             directory: ".cursor",
@@ -82,6 +85,7 @@ pub fn policy(agent: Agent) -> Policy {
             excluded: &["afterAgentThought"],
             handoff_args: false,
             handoff_execution_fields: &[],
+            memory_event: None,
         },
     }
 }

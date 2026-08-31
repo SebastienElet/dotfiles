@@ -36,6 +36,44 @@ pub(super) fn measurement(
     remove_excluded(hooks, excluded, command)
 }
 
+pub(super) fn memory(
+    config: &mut Value,
+    event: &str,
+    command: &str,
+    timeout_seconds: u64,
+) -> Result<(), HooksError> {
+    let config = config
+        .as_object_mut()
+        .ok_or_else(|| HooksError::new("hook configuration must be a JSON object"))?;
+    let hooks = config
+        .entry("hooks")
+        .or_insert_with(|| json!({}))
+        .as_object_mut()
+        .ok_or_else(|| HooksError::new("hooks must be a JSON object"))?;
+    let entries = hooks.entry(event.to_owned()).or_insert_with(|| json!([]));
+    merge_memory(entries, command, timeout_seconds)
+}
+
+fn merge_memory(
+    entries: &mut Value,
+    command: &str,
+    timeout_seconds: u64,
+) -> Result<(), HooksError> {
+    let entries = entries
+        .as_array_mut()
+        .ok_or_else(|| HooksError::new("memory hook event must be an array"))?;
+    let mut retained = Vec::with_capacity(entries.len() + 1);
+    for mut group in std::mem::take(entries) {
+        if !remove_measurement_from_group(&mut group, command)? {
+            retained.push(group);
+        }
+    }
+    retained
+        .push(json!({"hooks":[{"type":"command","command":command,"timeout":timeout_seconds}]}));
+    *entries = retained;
+    Ok(())
+}
+
 fn merge_nested(entries: &mut Value, command: &str) -> Result<(), HooksError> {
     let entries = entries
         .as_array_mut()
