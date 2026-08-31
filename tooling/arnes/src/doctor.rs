@@ -3,7 +3,8 @@ use crate::cli_output::write_output;
 use arnes::Roots;
 use arnes::commands;
 use arnes::config;
-use arnes::diagnostic::{ColorMode, Diagnostic, HumanContext, HumanOptions, Report, State};
+use arnes::diagnostic::{ColorMode, Diagnostic, HumanOptions, Report, State};
+use arnes::hooks;
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
 use arnes::prompts;
@@ -11,6 +12,8 @@ use arnes::rules;
 use arnes::skills;
 use std::io::{self, IsTerminal};
 use std::process::ExitCode;
+
+mod render;
 
 pub(super) fn run(
     resource: Option<Resource>,
@@ -37,7 +40,7 @@ pub(super) fn run(
         std::env::var_os("NO_COLOR").as_deref(),
     );
     let (output, exit_code) = match format {
-        Format::Human => render_human(diagnostics, resource, agent, scope, human_options),
+        Format::Human => render::human(diagnostics, resource, agent, scope, human_options),
         Format::Json => {
             let report = Report::new(diagnostics);
             (
@@ -52,79 +55,6 @@ pub(super) fn run(
         return ExitCode::from(2);
     }
     ExitCode::from(exit_code)
-}
-
-fn render_human(
-    diagnostics: Vec<Diagnostic>,
-    resource: Option<Resource>,
-    agent: Option<Agent>,
-    scope: Option<Scope>,
-    options: HumanOptions,
-) -> (String, u8) {
-    if resource.is_some() {
-        let report = Report::new(diagnostics);
-        return (
-            report.human(&human_context(resource, agent, scope), options),
-            report.exit_code(),
-        );
-    }
-
-    let (manifest, skills): (Vec<_>, Vec<_>) = diagnostics
-        .into_iter()
-        .partition(|diagnostic| diagnostic.resource == "manifest");
-    let manifest_report = Report::new(manifest);
-    let mut output = manifest_report.human(
-        &human_context(Some(Resource::Manifest), agent, scope),
-        options,
-    );
-    let mut exit_code = manifest_report.exit_code();
-    if !skills.is_empty() {
-        let skills_report = Report::new(skills);
-        output.push_str("\n\n");
-        output.push_str(&skills_report.human(
-            &human_context(Some(Resource::Skills), agent, scope),
-            options,
-        ));
-        exit_code = exit_code.max(skills_report.exit_code());
-    }
-    (output, exit_code)
-}
-
-impl Resource {
-    fn heading(self) -> &'static str {
-        match self {
-            Self::Manifest => "Manifest",
-            Self::Config => "Config",
-            Self::Instructions => "Instructions",
-            Self::Skills => "Skills",
-            Self::Prompts => "Prompts",
-            Self::Commands => "Commands",
-            Self::Rules => "Rules",
-            Self::Hooks => "Hooks",
-            Self::Mcp => "MCP",
-            Self::Statusline => "Statusline",
-        }
-    }
-}
-
-fn human_context(
-    resource: Option<Resource>,
-    agent: Option<Agent>,
-    scope: Option<Scope>,
-) -> HumanContext {
-    let resource = resource.unwrap_or(Resource::Manifest);
-    let mut context = HumanContext::new(resource.heading());
-    if resource != Resource::Manifest {
-        if let Some(scope) = scope {
-            context = context.with_qualifier(format!("{scope} scope"));
-        }
-        if let Some(agent) = agent {
-            context = context.with_qualifier(format!("{agent} agent"));
-        } else if resource == Resource::Skills {
-            context = context.with_section_count("agent", "agents", "all agents");
-        }
-    }
-    context
 }
 
 fn diagnose(
@@ -166,6 +96,10 @@ fn diagnose(
             Ok(roots) => diagnose_rules(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("rules", State::Error, error.to_string())],
         },
+        Some(Resource::Hooks) => match Roots::from_environment() {
+            Ok(roots) => diagnose_hooks(&roots, agent, scope),
+            Err(error) => vec![Diagnostic::new("hooks", State::Error, error.to_string())],
+        },
         _ => Vec::new(),
     }
 }
@@ -185,6 +119,7 @@ fn diagnose_default(agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnosti
         "manifest is valid",
     )];
     diagnostics.extend(skills::diagnose(&roots, &manifest, agent, scope));
+    diagnostics.extend(hooks::diagnose(&roots, &manifest, agent, scope));
     diagnostics
 }
 
@@ -242,5 +177,12 @@ fn diagnose_rules(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> 
     match manifest::load(roots.home()) {
         Ok(manifest) => rules::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("rules", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_hooks(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => hooks::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("hooks", State::Error, error.to_string())],
     }
 }

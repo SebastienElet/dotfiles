@@ -1,11 +1,21 @@
 use super::{Agent, Manifest, Scope};
 use serde::Deserialize;
+use std::fmt::{self, Display};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum HookKind {
     Measurement,
     Handoff,
+}
+
+impl Display for HookKind {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Measurement => "measurement",
+            Self::Handoff => "handoff",
+        })
+    }
 }
 
 #[derive(Deserialize)]
