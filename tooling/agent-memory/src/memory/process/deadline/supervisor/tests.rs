@@ -102,13 +102,26 @@ impl GroupController for TransientProbeFailureController {
 
     fn group_closed(&self, group: Pid) -> io::Result<bool> {
         if self.0.fetch_add(1, Ordering::AcqRel) == 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::PermissionDenied,
-                "group_probe_unavailable",
-            ));
+            return Err(group_probe_error());
         }
         SystemGroupController.group_closed(group)
     }
+}
+
+struct PersistentProbeFailureController;
+
+impl GroupController for PersistentProbeFailureController {
+    fn kill_group(&self, group: Pid) -> io::Result<()> {
+        SystemGroupController.kill_group(group)
+    }
+
+    fn group_closed(&self, _group: Pid) -> io::Result<bool> {
+        Err(group_probe_error())
+    }
+}
+
+fn group_probe_error() -> io::Error {
+    io::Error::new(io::ErrorKind::PermissionDenied, "group_probe_unavailable")
 }
 
 #[test]
@@ -175,6 +188,27 @@ fn returns_success_after_a_transient_group_probe_error_and_verified_closure() {
 
     assert!(output.success());
     assert_eq!(controller.0.load(Ordering::Acquire), 2);
+}
+
+#[test]
+fn returns_a_persistent_group_probe_error_at_the_cleanup_deadline() {
+    let spawner = RecordingSpawner::new();
+    let _group_guard = spawner.group_guard();
+    let mut command = successful_command();
+    let started = Instant::now();
+    let cleanup_deadline = started + Duration::from_millis(120);
+
+    let error = run_command(
+        &mut command,
+        ProcessBudget::new(cleanup_deadline),
+        &spawner,
+        &PersistentProbeFailureController,
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+    assert_eq!(error.to_string(), "group_probe_unavailable");
+    assert!((Duration::from_millis(120)..Duration::from_millis(250)).contains(&started.elapsed()));
 }
 
 fn assert_reader_failure_reaps(fail_on: usize) {

@@ -15,7 +15,7 @@ fn kills_and_drains_a_process_that_exceeds_the_output_bound() {
 }
 
 #[test]
-fn kills_and_reaps_a_process_at_the_deadline() {
+fn kills_and_reaps_after_the_cooperative_work_cutoff_by_the_cleanup_deadline() {
     let runner = DeadlineProcessRunner::new(Instant::now() + Duration::from_millis(50));
     let started = Instant::now();
     let arguments = [OsString::from("5")];
@@ -28,7 +28,7 @@ fn kills_and_reaps_a_process_at_the_deadline() {
 }
 
 #[test]
-fn shares_one_deadline_across_processes() {
+fn shares_one_work_budget_and_cleanup_deadline_across_processes() {
     let started = Instant::now();
     let runner = DeadlineProcessRunner::new(started + Duration::from_millis(500));
     runner
