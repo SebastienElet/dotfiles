@@ -256,6 +256,23 @@ ${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/releas
 	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
 	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
 	test "$$(readlink "$@")" = "$<"
+.PHONY: agent-handoff
+agent-handoff: ${LOCAL_BIN}/agent-handoff
+
+${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory: \
+	${DOTFILES_PATH}/tooling/agent-memory/Cargo.lock \
+	${DOTFILES_PATH}/tooling/agent-memory/Cargo.toml \
+	$(shell find ${DOTFILES_PATH}/tooling/agent-memory/src ${DOTFILES_PATH}/tooling/agent-memory/tests -type f -name '*.rs') \
+	| ${BREW_BIN}/cargo
+	cd ${DOTFILES_PATH}/tooling/agent-memory && ${BREW_BIN}/cargo build --release
+	test -x "$@"
+	touch "$@"
+${LOCAL_BIN}/agent-memory: ${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory | ${LOCAL_BIN}
+	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-memory" || ln -sfn "$<" "$@"
+	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
+	test "$$(readlink "$@")" = "$<"
+.PHONY: agent-memory
+agent-memory: ${LOCAL_BIN}/agent-memory
 
 .PHONY: arc
 arc: brew ${APP_BIN}/Arc.app
@@ -382,11 +399,15 @@ ${APP_BIN}/1Password.app:
 	brew install --cask 1password
 
 .PHONY: cursor
-cursor: brew ${BREW_BIN}/cursor-agent ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+cursor: brew ${BREW_BIN}/cursor-agent ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-developer ~/.cursor/skills/codegraph ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/memory-governance ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ${BREW_BIN}/cursor-agent:
 	brew install --cask cursor-cli
 ~/.cursor/skills:
 	mkdir -p $@
+~/.cursor/rules:
+	mkdir -p $@
+~/.cursor/rules/memory-governance-cursor.mdc: ${DOTFILES_PATH}/harness/rules/memory-governance-cursor.mdc | ~/.cursor/rules
+	${CREATE_SYMLINK}
 ~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/codegraph: ${DOTFILES_PATH}/harness/skills/codegraph | ~/.cursor/skills
@@ -405,6 +426,8 @@ ${BREW_BIN}/cursor-agent:
 	${CREATE_SYMLINK}
 ~/.cursor/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.cursor/skills
 	${CREATE_SYMLINK}
+~/.cursor/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance | ~/.cursor/skills
+	${CREATE_SYMLINK}
 ~/.cursor/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.cursor/skills
 	${CREATE_SYMLINK}
 ~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix | ~/.cursor/skills
@@ -421,11 +444,11 @@ ${BREW_BIN}/cursor-agent:
 	${CREATE_SYMLINK}
 
 .PHONY: cursor-hooks
-cursor-hooks: arnes
+cursor-hooks: arnes agent-memory
 	"${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: bun hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/codegraph ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -460,6 +483,8 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 ~/.claude/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow | ~/.claude/skills
 	${CREATE_SYMLINK}
+~/.claude/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance | ~/.claude/skills
+	${CREATE_SYMLINK}
 ~/.claude/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval | ~/.claude/skills
 	${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
@@ -478,7 +503,7 @@ ${LOCAL_BIN}/claude:
 	${CREATE_SYMLINK}
 
 .PHONY: claude-code-hooks
-claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
+claude-code-hooks: arnes agent-memory agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
@@ -547,7 +572,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${CREATE_SYMLINK}
 
 .PHONY: codex-hooks
-codex-hooks: arnes ${LOCAL_BIN}/agent-handoff
+codex-hooks: arnes agent-memory agent-handoff
 	"${LOCAL_BIN}/arnes" setup hooks --agent codex
 
 .PHONY: codexbar

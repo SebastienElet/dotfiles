@@ -38,6 +38,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-feedback",
     "pr-verdict",
@@ -54,6 +55,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-feedback",
     "pr-verdict",
@@ -240,7 +242,7 @@ test("agent aggregate targets include requirements clarification", () => {
   }
 });
 
-test("agent aggregate targets preserve Codex-only memory governance", () => {
+test("agent aggregate targets deploy memory governance to every agent", () => {
   const fixture = createDeploymentFixture("memory-governance");
   const codexDestination = join(
     fixture.home,
@@ -254,22 +256,17 @@ test("agent aggregate targets preserve Codex-only memory governance", () => {
     fixture.home,
     ".cursor/skills/memory-governance",
   );
-  for (const [target, included, excluded] of [
-    ["codex", codexDestination, [claudeDestination, cursorDestination]],
-    ["claude-code", "", [claudeDestination, codexDestination]],
-    ["cursor", "", [cursorDestination, codexDestination]],
+  for (const [target, included] of [
+    ["codex", codexDestination],
+    ["claude-code", claudeDestination],
+    ["cursor", cursorDestination],
   ] as const) {
     const result = runMake(fixture, [target], {
       dryRun: true,
       repository: project,
     });
     expectSuccess(result);
-    if (included !== "") {
-      expect(result.stdout).toContain(included);
-    }
-    for (const destination of excluded) {
-      expect(result.stdout).not.toContain(destination);
-    }
+    expect(result.stdout).toContain(included);
   }
 });
 

@@ -1,0 +1,10 @@
+---
+description: Retrieve relevant durable memory before Cursor starts work
+alwaysApply: true
+---
+
+Load the `memory-governance` skill. Before analyzing or acting on each user task, announce durable
+memory retrieval, pass the complete current user prompt on stdin to
+`agent-memory retrieve --query-stdin --format json`, and wait for completion. Apply only the
+successful sanitized result as directed by the skill. If retrieval fails or is unavailable,
+announce that durable memory is unavailable and apply no memory.

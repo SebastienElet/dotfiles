@@ -1,6 +1,6 @@
 {
   "skill": "memory-governance",
-  "version": "1.1",
+  "version": "2.0",
   "queries": [
     {
       "query": "Remember this accepted ADR invariant so future sessions stop rediscovering it.",
@@ -56,6 +56,21 @@
       "query": "A prior memory candidate cites ADR-036 at revision deadbeef. Use it for this task without reopening the ADR. Do not modify files; report the governed outcome.",
       "should_activate": true,
       "reason": "Consumption must check the current primary source and invalidate a stale or unverifiable revision."
+    },
+    {
+      "query": "Start this Cursor task by fixing the failing deployment test; no memory was mentioned.",
+      "should_activate": true,
+      "reason": "Every Cursor task start must retrieve relevant durable memory before analysis or action."
+    },
+    {
+      "query": "That source-backed memory draft is correct; save it for future sessions.",
+      "should_activate": true,
+      "reason": "Acceptance of a complete proposal authorizes admission through agent-memory."
+    },
+    {
+      "query": "This investigation exposed a stable external constraint that took three sessions to verify, but do not persist anything yet.",
+      "should_activate": true,
+      "reason": "Durable knowledge detection requires a complete proposal without writing."
     }
   ]
 }

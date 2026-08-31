@@ -56,9 +56,8 @@ que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
 
 La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
 issues de la même source canonique sous `harness/skills/`.
-Les [User Rules de Cursor](https://docs.cursor.com/context/rules) vivent dans
-Settings et n'ont pas de chemin fichier utilisateur pris en charge ; le
-`Makefile` ne peut donc pas y distribuer cette source.
+Les [User Rules de Cursor](https://docs.cursor.com/context/rules) sont distribuées sous
+`~/.cursor/rules` depuis leurs sources canoniques dans `harness/rules/`.
 
 Les skills user vivent dans `harness/skills/` et sont déployées individuellement
 vers les répertoires utilisateur de Claude, Cursor et Codex. Les skills propres

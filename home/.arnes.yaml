@@ -35,6 +35,8 @@ skills:
       - { agent: codex, scope: user }
   - slug: memory-governance
     installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - slug: enforcement-code
     installations:
@@ -113,6 +115,10 @@ hooks:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - id: handoff
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
+  - id: memory
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
@@ -454,6 +460,14 @@ resources:
         path: harness/skills/agent-instructions/references/maintenance.md,
       }
     destination: { root: home, path: .claude/rules/agent-instructions.md }
+  - id: cursor-user-memory-governance
+    kind: rules
+    agent: cursor
+    scope: user
+    source:
+      { root: repository, path: harness/rules/memory-governance-cursor.mdc }
+    destination:
+      { root: home, path: .cursor/rules/memory-governance-cursor.mdc }
   - id: claude-project-instructions
     kind: instructions
     agent: claude
