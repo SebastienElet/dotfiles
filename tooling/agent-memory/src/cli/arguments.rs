@@ -17,6 +17,18 @@ pub(super) enum Command {
     Hook(HookArguments),
 }
 
+impl Command {
+    pub(super) fn trace_name(&self) -> &'static str {
+        match self {
+            Self::Admit(_) => "admit",
+            Self::Retrieve(_) => "retrieve",
+            Self::Confirm(_) => "confirm",
+            Self::Audit(_) => "audit",
+            Self::Hook(_) => "hook",
+        }
+    }
+}
+
 #[derive(Debug, Args)]
 pub(super) struct FormatArguments {
     #[arg(long, value_enum)]

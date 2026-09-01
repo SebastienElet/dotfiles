@@ -2,6 +2,7 @@ mod arguments;
 mod boundary;
 mod commands;
 mod retrieval;
+mod trace;
 
 use arguments::Arguments;
 use boundary::write_json;
@@ -20,11 +21,16 @@ pub fn run_cli() -> u8 {
     let mut output = stdout.lock();
     let stderr = io::stderr();
     let mut diagnostics = stderr.lock();
-    complete(
-        commands::dispatch(arguments.command, &mut input),
-        &mut output,
-        &mut diagnostics,
-    )
+    let mut trace = match trace::EvaluationTrace::from_environment(arguments.command.trace_name()) {
+        Ok(trace) => trace,
+        Err(failure) => return write_failure(&mut diagnostics, failure),
+    };
+    let result = commands::dispatch(arguments.command, &mut input);
+    let exit = complete(result, &mut output, &mut diagnostics);
+    if let Err(failure) = trace.finish(exit) {
+        return write_failure(&mut diagnostics, failure);
+    }
+    exit
 }
 
 fn report_argument_error(error: clap::Error) -> u8 {
@@ -59,6 +65,7 @@ fn write_failure(diagnostics: &mut dyn io::Write, failure: CliFailure) -> u8 {
     write_json(diagnostics, &value).map_or(4, |()| failure.exit)
 }
 
+#[derive(Clone, Copy)]
 struct CliFailure {
     exit: u8,
     code: &'static str,
@@ -71,6 +78,14 @@ impl CliFailure {
             exit: 2,
             code: "invalid_arguments",
             field: "arguments",
+        }
+    }
+
+    fn evaluation_trace_unavailable() -> Self {
+        Self {
+            exit: 4,
+            code: "evaluation_trace_unavailable",
+            field: "trace",
         }
     }
 
