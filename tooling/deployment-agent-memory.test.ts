@@ -5,10 +5,11 @@ import {
   expectSuccess,
   linkTarget,
   project,
+  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
+import { readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { readFileSync } from "node:fs";
 
 afterEach(cleanupDeploymentFixtures);
 
@@ -27,9 +28,11 @@ test.each([
     const handoff = join(fixture.home, ".local", "bin", "agent-handoff");
     const expected = `"${fixture.home}/.local/bin/arnes" setup hooks --agent ${agent}`;
 
+    installBuildProviders(fixture);
     const result = runMake(fixture, [target], {
       dryRun: true,
       repository: project,
+      variables: { BREW_BIN: fixture.bin },
     });
 
     expectSuccess(result);
@@ -70,8 +73,13 @@ test("keeps memory and handoff runtime targets independent", () => {
   const memory = join(fixture.home, ".local", "bin", "agent-memory");
   const handoff = join(fixture.home, ".local", "bin", "agent-handoff");
   const result = (target: string): ReturnType<typeof runMake> =>
-    runMake(fixture, [target], { dryRun: true, repository: project });
+    runMake(fixture, [target], {
+      dryRun: true,
+      repository: project,
+      variables: { BREW_BIN: fixture.bin },
+    });
 
+  installBuildProviders(fixture);
   const memoryResult = result("agent-memory");
   const handoffResult = result("agent-handoff");
   expectSuccess(memoryResult);
@@ -81,3 +89,12 @@ test("keeps memory and handoff runtime targets independent", () => {
   expect(handoffResult.stdout).toContain(handoff);
   expect(handoffResult.stdout).not.toContain(memory);
 });
+
+function installBuildProviders(
+  fixture: ReturnType<typeof createDeploymentFixture>,
+): void {
+  const provider = requireCommand("true");
+  for (const command of ["bun", "cargo", "volta"]) {
+    symlinkSync(provider, join(fixture.bin, command));
+  }
+}

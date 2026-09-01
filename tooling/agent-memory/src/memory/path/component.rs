@@ -73,7 +73,7 @@ pub(super) fn repair_mode(file: &File, mode: Mode, fail: bool) -> Result<(), Mem
 
 pub(super) fn validate_mode(file: &File, expected: Mode) -> Result<(), MemoryError> {
     let actual = file.metadata().map_err(store_unavailable)?.mode() & 0o777;
-    if actual == u32::from(expected.as_raw_mode()) {
+    if u64::from(actual) == u64::from(expected.as_raw_mode()) {
         Ok(())
     } else {
         Err(MemoryError::unavailable(
