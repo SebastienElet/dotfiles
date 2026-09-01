@@ -52,6 +52,10 @@ fn rejects_invalid_and_duplicate_declarations() {
             "mcp[0].command: command cannot be blank",
         ),
         (
+            "\n  - { name: managed, agent: claude, scope: user, command: ../mcp }",
+            "mcp[0].command: relative command must stay within its scope root",
+        ),
+        (
             "\n  - { name: managed, agent: claude, scope: user, command: mcp, environment: [GOOD, BAD-NAME] }",
             "mcp[0].environment[1]: must be a shell environment variable name",
         ),

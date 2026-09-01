@@ -2,7 +2,12 @@ use crate::cli::Resource;
 use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report};
 use arnes::manifest::{Agent, Scope};
 
-const DEFAULT_RESOURCES: [Resource; 3] = [Resource::Manifest, Resource::Skills, Resource::Hooks];
+const DEFAULT_RESOURCES: [Resource; 4] = [
+    Resource::Manifest,
+    Resource::Skills,
+    Resource::Hooks,
+    Resource::Mcp,
+];
 
 pub(super) fn human(
     diagnostics: Vec<Diagnostic>,
@@ -29,8 +34,13 @@ pub(super) fn human(
         if !output.is_empty() {
             output.push_str("\n\n");
         }
+        let section_scope = if section == Resource::Mcp {
+            scope
+        } else {
+            scope.or(Some(Scope::User))
+        };
         output.push_str(
-            &Report::new(diagnostics).human(&context(Some(section), agent, scope), options),
+            &Report::new(diagnostics).human(&context(Some(section), agent, section_scope), options),
         );
     }
     (output, exit_code)

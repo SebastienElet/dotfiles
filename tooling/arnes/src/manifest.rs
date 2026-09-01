@@ -1,10 +1,10 @@
 use clap::ValueEnum;
 use serde::Deserialize;
-use std::fmt::{self, Display};
 use std::path::{Path, PathBuf};
 
 mod commands;
 mod config;
+mod error;
 mod external;
 mod hooks;
 mod mcp;
@@ -15,6 +15,7 @@ mod validation;
 
 pub use commands::{Command, CommandBinding};
 pub use config::UserConfig;
+pub use error::ManifestError;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use hooks::HookKind;
 pub use mcp::McpRegistration;
@@ -24,29 +25,6 @@ pub use rules::RuleResource;
 
 const MANIFEST_FILE: &str = ".arnes.yaml";
 const SCHEMA_VERSION: u64 = 1;
-
-#[derive(Debug)]
-pub struct ManifestError {
-    field: String,
-    reason: String,
-}
-
-impl ManifestError {
-    fn new(field: impl Into<String>, reason: impl Into<String>) -> Self {
-        Self {
-            field: field.into(),
-            reason: reason.into(),
-        }
-    }
-}
-
-impl Display for ManifestError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}: {}", self.field, self.reason)
-    }
-}
-
-impl std::error::Error for ManifestError {}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

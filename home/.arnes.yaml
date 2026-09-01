@@ -427,6 +427,12 @@ external:
         plugin: superpowers@openai-curated,
         slug: writing-skills,
       }
+mcp:
+  - name: apple-notes
+    agent: claude
+    scope: project
+    command: /Applications/Apple Notes Exporter.app/Contents/SharedSupport/notes-export-mcp
+    enabled: true
 resources:
   - id: claude-user-instructions
     kind: instructions

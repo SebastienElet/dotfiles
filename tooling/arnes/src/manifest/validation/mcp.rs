@@ -1,6 +1,7 @@
 use super::super::mcp::McpDeclaration;
 use super::super::{Agent, ManifestError, Scope};
 use std::collections::{HashMap, HashSet};
+use std::path::{Component, Path};
 
 pub(super) fn validate(
     declarations: &[McpDeclaration],
@@ -38,6 +39,12 @@ fn validate_declaration(declaration: &McpDeclaration, index: usize) -> Result<()
         return Err(ManifestError::new(
             field("command"),
             "command cannot be blank",
+        ));
+    }
+    if !valid_command(&declaration.command) {
+        return Err(ManifestError::new(
+            field("command"),
+            "relative command must stay within its scope root",
         ));
     }
     if declaration.agent == Agent::Cursor && declaration.enabled.is_some() {
@@ -80,4 +87,13 @@ fn valid_environment_name(name: &str) -> bool {
     let mut bytes = name.bytes();
     matches!(bytes.next(), Some(b'A'..=b'Z' | b'a'..=b'z' | b'_'))
         && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+}
+
+fn valid_command(command: &str) -> bool {
+    let path = Path::new(command);
+    path.is_absolute()
+        || !command.contains(std::path::MAIN_SEPARATOR)
+        || path
+            .components()
+            .all(|component| matches!(component, Component::CurDir | Component::Normal(_)))
 }
