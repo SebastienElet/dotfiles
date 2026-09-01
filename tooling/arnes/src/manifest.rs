@@ -11,6 +11,7 @@ mod mcp;
 mod parsing;
 mod prompts;
 mod rules;
+mod statusline;
 mod validation;
 
 pub use commands::{Command, CommandBinding};
@@ -22,6 +23,7 @@ pub use mcp::McpRegistration;
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
 pub use rules::RuleResource;
+pub use statusline::Statusline;
 
 const MANIFEST_FILE: &str = ".arnes.yaml";
 const SCHEMA_VERSION: u64 = 1;
@@ -44,6 +46,8 @@ pub struct Manifest {
     hooks: Vec<hooks::HookDeclaration>,
     #[serde(default)]
     mcp: Vec<mcp::McpDeclaration>,
+    #[serde(default)]
+    statuslines: Vec<statusline::StatuslineDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 

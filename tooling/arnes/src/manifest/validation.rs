@@ -10,6 +10,7 @@ mod mcp;
 mod prompts;
 mod rules;
 mod skills;
+mod statusline;
 
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
     let mapping = value
@@ -86,6 +87,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     commands::validate(&manifest.commands, &manifest.prompts, &agents)?;
     hooks::validate(&manifest.hooks, &agents)?;
     mcp::validate(&manifest.mcp, &agents)?;
+    statusline::validate(&manifest.statuslines, &agents)?;
     skills::validate(&manifest.skills, &manifest.resources, &agents)?;
     external::validate(&manifest.external, &agents)
 }
