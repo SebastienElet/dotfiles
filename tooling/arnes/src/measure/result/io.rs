@@ -124,7 +124,8 @@ mod tests {
 
     #[test]
     fn visits_a_long_journal_line_by_line() {
-        let mut file = tempfile::NamedTempFile::new().unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let mut file = tempfile::NamedTempFile::new_in(directory.path()).unwrap();
         for sequence in 0..20_000 {
             writeln!(file, "{{\"sequence\":{sequence}}}").unwrap();
         }
