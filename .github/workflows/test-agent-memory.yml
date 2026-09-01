@@ -2,31 +2,9 @@ name: Agent Memory tests
 
 on:
   push:
-    paths:
-      - .cargo/**
-      - tooling/agent-memory/**
-      - tooling/agent-memory-eval*.ts
-      - tooling/agent-memory-eval-scenarios.json
-      - tooling/deployment-agent-memory.test.ts
-      - tooling/arnes/**
-      - harness/rules/memory-governance-cursor.mdc
-      - harness/skills/memory-governance/**
-      - home/.arnes.yaml
-      - Makefile
-      - .github/workflows/test-agent-memory.yml
+    branches:
+      - main
   pull_request:
-    paths:
-      - .cargo/**
-      - tooling/agent-memory/**
-      - tooling/agent-memory-eval*.ts
-      - tooling/agent-memory-eval-scenarios.json
-      - tooling/deployment-agent-memory.test.ts
-      - tooling/arnes/**
-      - harness/rules/memory-governance-cursor.mdc
-      - harness/skills/memory-governance/**
-      - home/.arnes.yaml
-      - Makefile
-      - .github/workflows/test-agent-memory.yml
 
 jobs:
   agent-memory:
@@ -34,10 +12,14 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      RUSTFLAGS: -Funsafe-code
     steps:
       - uses: actions/checkout@v5
-      - run: cargo fmt --manifest-path tooling/agent-memory/Cargo.toml --check
-      - run: cargo clippy --manifest-path tooling/agent-memory/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path tooling/agent-memory/Cargo.toml
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+        with:
+          moon-version: 2.5.3
+      - run: >-
+          moon ci tooling/agent-memory:fmt tooling/agent-memory:clippy
+          tooling/agent-memory:test
