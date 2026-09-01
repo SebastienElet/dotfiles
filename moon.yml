@@ -21,7 +21,6 @@ fileGroups:
     - "**/*.yaml"
     - "**/*.md"
     - "**/*.json"
-    - "!harness/rules/agent-instructions.md"
     - "!home/.config/nvim/lazy-lock.json"
     - "!home/.config/nvim/lazyvim.json"
 
@@ -47,7 +46,6 @@ tasks:
   prettier-check:
     command: >-
       bun run prettier --check "**/*.{yml,yaml,md,json}"
-      "!harness/rules/agent-instructions.md"
       "!home/.config/nvim/lazy-lock.json"
       "!home/.config/nvim/lazyvim.json"
     inputs:
