@@ -1,12 +1,44 @@
+fileGroups:
+  rust:
+    - Cargo.toml
+    - Cargo.lock
+    - build*.rs
+    - src/**/*
+    - tests/**/*
+    - examples/**/*
+    - benches/**/*
+    - /.cargo/**/*
+    - /.github/workflows/test-arnes.yml
+    - /.moon/**/*
+  repositoryTests:
+    - /Makefile
+    - /home/.arnes.yaml
+    - /harness/**/*
+
+env:
+  RUSTFLAGS: -Funsafe-code
+
 tasks:
+  fmt:
+    command: cargo fmt --check
+    inputs:
+      - "@group(rust)"
+  clippy:
+    command: cargo clippy --all-targets --locked -- -D warnings
+    inputs:
+      - "@group(rust)"
+    options:
+      mutex: arnes-cargo-target
   check:
     command: cargo check --all-targets --locked
     inputs:
-      - Cargo.toml
-      - Cargo.lock
-      - build.rs
-      - src/**/*
-      - tests/**/*
-      - examples/**/*
-      - benches/**/*
-      - /.cargo/**/*
+      - "@group(rust)"
+    options:
+      mutex: arnes-cargo-target
+  test:
+    command: cargo test --locked
+    inputs:
+      - "@group(rust)"
+      - "@group(repositoryTests)"
+    options:
+      mutex: arnes-cargo-target

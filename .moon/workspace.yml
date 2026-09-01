@@ -1,2 +1,5 @@
 projects:
   tooling/arnes: tooling/arnes
+
+vcs:
+  defaultBranch: main
