@@ -5,9 +5,17 @@ import {
   expectSuccess,
   installProvider,
   linkTarget,
+  project,
+  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { join } from "node:path";
 
 afterEach(cleanupDeploymentFixtures);
@@ -24,9 +32,11 @@ test("installs through the real Make target and replays without invoking Fish", 
     "functions",
     "fzf_configure_bindings.fish",
   );
+  const pluginConfiguration = join(source, "conf.d", "fzf.fish");
   const marker = join(fixture.root, "fish-called");
   mkdirSync(join(fixture.home, ".config"), { recursive: true });
   mkdirSync(source, { recursive: true });
+  copyTrackedFzfConfiguration(pluginConfiguration);
   installProvider(fixture, "fish");
   const environment = {
     DEPLOYMENT_MARKER: marker,
@@ -42,6 +52,7 @@ test("installs through the real Make target and replays without invoking Fish", 
   );
   expect(linkTarget(join(fixture.home, ".config", "fish"))).toBe(source);
   expect(existsSync(bindings)).toBeTrue();
+  expect(existsSync(pluginConfiguration)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
     "-c fisher update PatrickF1/fzf.fish; or fisher install PatrickF1/fzf.fish\n",
   );
@@ -55,6 +66,34 @@ test("installs through the real Make target and replays without invoking Fish", 
   );
   expect(existsSync(marker)).toBeFalse();
 });
+
+function copyTrackedFzfConfiguration(destination: string): void {
+  const relativePath = "home/.config/fish/conf.d/fzf.fish";
+  const source = join(project, relativePath);
+  if (!existsSync(source)) {
+    return;
+  }
+  const tracked = Bun.spawnSync(
+    [
+      requireCommand("git"),
+      "-C",
+      project,
+      "ls-files",
+      "--error-unmatch",
+      "--",
+      relativePath,
+    ],
+    { stderr: "pipe", stdout: "pipe" },
+  );
+  if (tracked.exitCode === 1) {
+    return;
+  }
+  if (tracked.exitCode !== 0) {
+    throw new Error("could not inspect the tracked Fish configuration");
+  }
+  mkdirSync(join(destination, ".."), { recursive: true });
+  copyFileSync(source, destination);
+}
 
 test("fails explicitly when Fish returns success without producing bindings", () => {
   const fixture = createDeploymentFixture("fish-empty");

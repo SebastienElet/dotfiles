@@ -14,7 +14,8 @@ end
 
 set -l config_root (path resolve (path dirname (status filename))/..)
 set -gx HOME "$path_test_root"
-/bin/mkdir -p "$HOME/.cargo/bin" "$HOME/.volta/bin" "$HOME/.bun/bin" "$HOME/.moon/bin" \
+/bin/mkdir -p "$HOME/.local/bin" "$HOME/.fzf/bin" "$HOME/.cargo/bin" "$HOME/.volta/bin" \
+    "$HOME/.bun/bin" "$HOME/.moon/bin" \
     "$HOME/homebrew/opt/postgresql@16/bin" "$HOME/homebrew/opt/ruby/bin"
 or fail "could not create test directories"
 set -gx PATH (path dirname (status fish-path))
@@ -51,7 +52,8 @@ for entry in $PATH
     set -a seen_path "$entry"
 end
 
-for expected in "$HOME/.cargo/bin" "$HOME/.volta/bin" "$HOME/.bun/bin" "$HOME/.moon/bin" \
+for expected in "$HOME/.local/bin" "$HOME/.fzf/bin" "$HOME/.cargo/bin" "$HOME/.volta/bin" \
+    "$HOME/.bun/bin" "$HOME/.moon/bin" \
     "$HOME/homebrew/opt/postgresql@16/bin" "$HOME/homebrew/opt/ruby/bin"
     contains -- "$expected" $PATH; or fail "missing PATH entry: $expected"
 end

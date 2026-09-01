@@ -52,3 +52,6 @@ jobs:
 
       - name: Test PATH idempotency
         run: fish --no-config home/.config/fish/tests/path_test.fish
+
+      - name: Test runtime state isolation
+        run: fish --no-config home/.config/fish/tests/runtime_state_test.fish

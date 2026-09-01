@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -26,8 +26,21 @@ if (mode === "ln") {
     required("DEPLOYMENT_MARKER"),
     `${process.argv.slice(argumentOffset).join(" ")}\n`,
   );
+  const pluginConfiguration = join(
+    required("HOME"),
+    ".config",
+    "fish",
+    "conf.d",
+    "fzf.fish",
+  );
+  if (existsSync(pluginConfiguration)) {
+    process.stderr.write(`conflicting file: ${pluginConfiguration}\n`);
+    process.exit(commandFailureExitCode);
+  }
   const functions = join(required("HOME"), ".config", "fish", "functions");
+  mkdirSync(join(pluginConfiguration, ".."), { recursive: true });
   mkdirSync(functions, { recursive: true });
+  writeFileSync(pluginConfiguration, "");
   writeFileSync(join(functions, "fzf_configure_bindings.fish"), "");
 } else if (mode === "fish-empty") {
   process.exit(0);
