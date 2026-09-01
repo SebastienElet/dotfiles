@@ -9,30 +9,47 @@ fileGroups:
   typecheckedTypeScript:
     - tooling/**/*.ts
     - .agents/skills/apple-notes/scripts/**/*.ts
-  staticTypeScriptToolchain:
+  typescriptToolchain:
     - package.json
     - bun.lock
     - .moon/workspace.yml
     - .moon/toolchains.yml
     - moon.yml
-    - .github/workflows/check-typescript.yml
+    - .github/workflows/check-static.yml
+  prettierFiles:
+    - "**/*.yml"
+    - "**/*.yaml"
+    - "**/*.md"
+    - "**/*.json"
+    - "!harness/rules/agent-instructions.md"
+    - "!home/.config/nvim/lazy-lock.json"
+    - "!home/.config/nvim/lazyvim.json"
 
 tasks:
-  lint:
+  typescript-lint:
     command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
     inputs:
       - "@group(trackedTypeScript)"
-      - "@group(staticTypeScriptToolchain)"
+      - "@group(typescriptToolchain)"
       - .oxlintrc.json
       - tsconfig.json
-  typecheck:
+  typescript-typecheck:
     command: bun --config=/dev/null --no-env-file run typecheck
     inputs:
       - "@group(typecheckedTypeScript)"
-      - "@group(staticTypeScriptToolchain)"
+      - "@group(typescriptToolchain)"
       - tsconfig.json
-  format-check:
+  typescript-format-check:
     command: bun run format:typescript:check
     inputs:
       - "@group(trackedTypeScript)"
-      - "@group(staticTypeScriptToolchain)"
+      - "@group(typescriptToolchain)"
+  prettier-check:
+    command: >-
+      bun run prettier --check "**/*.{yml,yaml,md,json}"
+      "!harness/rules/agent-instructions.md"
+      "!home/.config/nvim/lazy-lock.json"
+      "!home/.config/nvim/lazyvim.json"
+    inputs:
+      - "@group(prettierFiles)"
+      - bun.lock

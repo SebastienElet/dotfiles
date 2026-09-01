@@ -58,11 +58,11 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
    never from a same-named package script, then run the tier the corrections actually reach on the
    repair worktree:
 
-   | Delta                                                 | Barrier                                                                             |
-   | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
-   | Comments, documentation or PR text only                | format, spellcheck, lint, typecheck                                                 |
-   | Code that changes no observable behavior               | the above, plus the unit tests of every touched package                             |
-   | Behavior, a seam, a contract, a schema or a migration  | the full merge-blocking barrier, failure-path tests and end-to-end suites included   |
+   | Delta                                                 | Barrier                                                                            |
+   | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
+   | Comments, documentation or PR text only               | format, spellcheck, lint, typecheck                                                |
+   | Code that changes no observable behavior              | the above, plus the unit tests of every touched package                            |
+   | Behavior, a seam, a contract, a schema or a migration | the full merge-blocking barrier, failure-path tests and end-to-end suites included |
 
    A tier is a floor, not a ceiling: run the full barrier whenever the delta's reach is uncertain,
    and never let a tier excuse a gate the corrections do reach. Name the tier you ran in the report,

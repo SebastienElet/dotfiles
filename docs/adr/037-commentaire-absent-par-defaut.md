@@ -7,8 +7,8 @@
 ## Contexte
 
 `ai/AGENTS.md` portait trois puces sous `## Code Style` : « All comments and documentation in
-English », « Prefer self-documenting code over comments » et « Only comment when explaining *why*,
-not *what* ». Les deux dernières sont des propriétés de la prose, jugées pendant qu'on l'écrit ;
+English », « Prefer self-documenting code over comments » et « Only comment when explaining _why_,
+not _what_ ». Les deux dernières sont des propriétés de la prose, jugées pendant qu'on l'écrit ;
 l'[ADR-036](036-regles-ia-admises-par-ablation.md) pose qu'une règle ne lie que si elle exige un
 **acte observable**, dont l'absence se voit dans la réponse finale.
 
@@ -19,8 +19,8 @@ retirée dans #59 sur trois constats :
 
 - le hook n'attrapait qu'une des trois violations de #51 — les deux autres étaient une paraphrase
   d'une et de deux lignes, et seule la longueur est décidable mécaniquement ;
-- abaissé à *tout* commentaire ajouté, il refusait 42 des 67 fichiers de code suivis, soit 247 blocs
-  dont 175 d'une seule ligne, majoritairement de vrais *why* sur du comportement tiers qu'aucun
+- abaissé à _tout_ commentaire ajouté, il refusait 42 des 67 fichiers de code suivis, soit 247 blocs
+  dont 175 d'une seule ligne, majoritairement de vrais _why_ sur du comportement tiers qu'aucun
   renommage n'exprime ;
 - Codex exige une approbation interactive par entrée de `hooks.json`, et l'`afterFileEdit` de Cursor
   est documenté comme observationnel : l'objection n'atteint jamais cet agent.
@@ -50,7 +50,7 @@ le commentaire coûteux à justifier pour qu'il ne soit pas écrit.
 Deux clauses disparaissent. La règle de langue, parce que la question se tranche là où elle est
 décidable : `docs/AGENTS.md` impose le français sous `docs/` ici, l'`AGENTS.md` du projet décide
 ailleurs, et un défaut global n'atteint que les projets muets. L'interdiction explicite de commenter
-l'édition (« added », « now handles »), parce qu'un tel commentaire enregistre un fait *interne* au
+l'édition (« added », « now handles »), parce qu'un tel commentaire enregistre un fait _interne_ au
 fichier et que le test d'admissibilité le refuse déjà ; la garder reposait sur l'intuition qu'un
 contre-exemple concret lie mieux qu'un test abstrait, c'est-à-dire sur le sédiment que
 l'[ADR-035](035-agents-md-elague-par-mesure.md) arrête.

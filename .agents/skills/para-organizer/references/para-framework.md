@@ -1,6 +1,6 @@
 # The PARA Framework — Classification Reference
 
-This document contains the precise definitions, distinction guidelines, and classification logic for the PARA Method, extracted from *The PARA Method* by Tiago Forte. Use this as your source of truth when classifying items.
+This document contains the precise definitions, distinction guidelines, and classification logic for the PARA Method, extracted from _The PARA Method_ by Tiago Forte. Use this as your source of truth when classifying items.
 
 ## Table of Contents
 
@@ -20,13 +20,14 @@ This document contains the precise definitions, distinction guidelines, and clas
 
 ## The Four Categories
 
-PARA stands for Projects, Areas, Resources, and Archives. These four categories are universal — they encompass every type of information you might encounter in your work and life. They are ordered by *actionability*, from most actionable to least.
+PARA stands for Projects, Areas, Resources, and Archives. These four categories are universal — they encompass every type of information you might encounter in your work and life. They are ordered by _actionability_, from most actionable to least.
 
 ### Projects
 
 A project is **a series of tasks linked to a goal, with a deadline**.
 
 Key characteristics:
+
 - Has a specific, concrete outcome or deliverable
 - Has a timeframe (even if approximate)
 - Can be completed and checked off
@@ -35,6 +36,7 @@ Key characteristics:
 Examples: complete website redesign, write research report, plan team offsite, renovate bathroom, develop project proposal, prepare for conference presentation, publish blog post, set up new employee onboarding.
 
 A well-defined project has:
+
 1. A goal (what does "done" look like?)
 2. A deadline or timeframe (by when?)
 
@@ -50,17 +52,18 @@ Examples of actionable units that should live in Projects, not Areas:
 - **Q3 Board Report** → Project (not under Areas/Reporting). Deadline-driven.
 - **Kitchen Reno** → Project (not under Areas/Home).
 
-The area itself stays in place for the *ongoing* responsibility — general reference material, long-term planning, steady-state maintenance work. Specific time-bound initiatives get promoted to Projects so they're visible, trackable, and completable.
+The area itself stays in place for the _ongoing_ responsibility — general reference material, long-term planning, steady-state maintenance work. Specific time-bound initiatives get promoted to Projects so they're visible, trackable, and completable.
 
 This is one of the most commonly miscategorized patterns. Almost every area of responsibility contains one or more actionable units that should be promoted out of it.
 
-**Edge case — a "future project" is not a project.** Something you *plan* to start but haven't actively begun working on is not a project yet. It's a Resource (if it's an idea or interest) or an Archive (if it's something you've moved on from). A project requires forward momentum — something is actively happening on it this week or this month. Holding dormant "future projects" in Projects bloats the list and diffuses focus. Move them out until the moment they become active.
+**Edge case — a "future project" is not a project.** Something you _plan_ to start but haven't actively begun working on is not a project yet. It's a Resource (if it's an idea or interest) or an Archive (if it's something you've moved on from). A project requires forward momentum — something is actively happening on it this week or this month. Holding dormant "future projects" in Projects bloats the list and diffuses focus. Move them out until the moment they become active.
 
 ### Areas of Responsibility
 
 An area of responsibility is **a sphere of activity with a standard to be maintained over time**.
 
 Key characteristics:
+
 - Ongoing, with no end date
 - Requires a standard of performance to maintain
 - Would have negative consequences if neglected
@@ -68,13 +71,14 @@ Key characteristics:
 
 Examples: health, finances, professional development, direct reports, product development, marketing, legal, administration, home maintenance, parenting, marriage/partnership.
 
-The critical difference from projects: areas have a *standard* to maintain, not a *goal* to achieve. You don't "finish" your health or complete your finances — you maintain them at an acceptable level.
+The critical difference from projects: areas have a _standard_ to maintain, not a _goal_ to achieve. You don't "finish" your health or complete your finances — you maintain them at an acceptable level.
 
 ### Resources
 
 A resource is **a topic or theme of ongoing interest**.
 
 Key characteristics:
+
 - Driven by curiosity or usefulness, not responsibility
 - No standard to maintain — if you neglected it, nothing bad would happen
 - Useful for reference, learning, or sharing
@@ -89,6 +93,7 @@ Resources include "assets" like stock photos, product testimonials, code snippet
 Archives include **inactive items from any of the other three categories**.
 
 Items move to Archives when:
+
 - A project is completed or cancelled
 - An area of responsibility you're no longer committed to (changed jobs, handed off responsibility)
 - A resource topic you're no longer interested in
@@ -151,6 +156,7 @@ Ask: **Does this have a specific outcome I'm trying to achieve, with a timeframe
 ### Projects live within areas
 
 Every project falls under an area of responsibility. This is normal:
+
 - Area: "Health" → Project: "Complete physical therapy for back pain"
 - Area: "Marketing" → Project: "Launch Q4 email campaign"
 - Area: "Home" → Project: "Renovate kitchen"
@@ -160,26 +166,27 @@ The project is finite and will end. The area continues. Both get their own folde
 ### Recognizing disguised areas
 
 Watch for "projects" that have no clear end:
+
 - "Get healthy" → This is an area (Health), not a project. A project would be: "Complete 30-day fitness challenge by March 1."
 - "Improve sales" → This is an area (Sales). A project would be: "Close 3 enterprise deals by end of quarter."
 - "Learn Spanish" → This is probably an area or resource. A project would be: "Pass B2 Spanish exam by December."
 
 ### Examples side by side
 
-| Project (has goal + deadline) | Area (ongoing standard) |
-|-------------------------------|------------------------|
-| Run a marathon | Health & fitness |
-| Publish a book | Writing |
-| Complete website redesign | Product development |
-| Plan team offsite | Team management |
-| Save for down payment | Finances |
-| Learn Python basics | Professional development |
+| Project (has goal + deadline) | Area (ongoing standard)  |
+| ----------------------------- | ------------------------ |
+| Run a marathon                | Health & fitness         |
+| Publish a book                | Writing                  |
+| Complete website redesign     | Product development      |
+| Plan team offsite             | Team management          |
+| Save for down payment         | Finances                 |
+| Learn Python basics           | Professional development |
 
 ---
 
 ## Areas vs. Resources — The Boundary of Responsibility {#areas-vs-resources}
 
-This distinction is about the boundary between what you're *responsible for* and what you're merely *interested in*.
+This distinction is about the boundary between what you're _responsible for_ and what you're merely _interested in_.
 
 ### The key test
 
@@ -197,21 +204,21 @@ This is an additional guideline many people find helpful:
 
 ### The opportunity for self-honesty
 
-The line between areas and resources is an opportunity to be completely honest with yourself: What is *inside* the circle of your responsibilities — things no one else is going to take care of for you — and what is outside?
+The line between areas and resources is an opportunity to be completely honest with yourself: What is _inside_ the circle of your responsibilities — things no one else is going to take care of for you — and what is outside?
 
 People often pour tremendous time into "side interests" (resources) while neglecting critical areas of their lives like exercise, relationships, or mental health. The Area/Resource distinction makes this pattern visible.
 
 ### Examples
 
-| Area (you're responsible) | Resource (you're interested) |
-|--------------------------|----------------------------|
-| Cooking (your nutrition) | Recipes (collection of ideas) |
-| Home maintenance | Interior design inspiration |
-| Direct reports (managing people) | Leadership techniques |
-| Product development | Industry trends |
-| Marketing (your job) | Marketing best practices (general interest) |
+| Area (you're responsible)        | Resource (you're interested)                |
+| -------------------------------- | ------------------------------------------- |
+| Cooking (your nutrition)         | Recipes (collection of ideas)               |
+| Home maintenance                 | Interior design inspiration                 |
+| Direct reports (managing people) | Leadership techniques                       |
+| Product development              | Industry trends                             |
+| Marketing (your job)             | Marketing best practices (general interest) |
 
-Note: the *same topic* can be an area for one person and a resource for another. "Graphic design" is an area for a designer (it's their job), but a resource for a marketer who finds it interesting.
+Note: the _same topic_ can be an area for one person and a resource for another. "Graphic design" is an area for a designer (it's their job), but a resource for a marketer who finds it interesting.
 
 ---
 
@@ -220,12 +227,14 @@ Note: the *same topic* can be an area for one person and a resource for another.
 These patterns help with rapid classification of typical folders and files found on a computer:
 
 ### Likely Projects
+
 - Folders with a specific deliverable in the name: "Website Redesign," "2024 Annual Report," "Kitchen Renovation"
 - Folders with a person's name + a task: "Client Proposal — Acme Corp"
 - Folders with dates that are current or recent: "Q2 Marketing Campaign"
 - Any folder the user named as a current project in the interview
 
 ### Likely Areas
+
 - Broad life/work categories: "Health," "Finances," "Career," "Family"
 - Job function names: "Marketing," "Sales," "Engineering," "HR"
 - Relationship-based: "Direct Reports," "Clients," "Vendors"
@@ -233,12 +242,14 @@ These patterns help with rapid classification of typical folders and files found
 - Any folder the user named as an ongoing responsibility
 
 ### Likely Resources
+
 - Topic/interest names: "Photography," "AI Research," "Book Recommendations"
 - Collections: "Templates," "Stock Photos," "Code Snippets," "Swipe File"
 - Learning-oriented: "Online Courses," "Tutorial Notes," "Conference Notes"
 - Hobby-related: "Guitar," "Woodworking," "Travel Ideas"
 
 ### Likely Archives
+
 - Anything with past dates: "2019 Tax Returns," "Old Job — Company Name"
 - Completed projects: "Finished — [anything]," "Done — [anything]"
 - Previous employers or roles: "[Company name] Files"
@@ -246,6 +257,7 @@ These patterns help with rapid classification of typical folders and files found
 - Items not modified in 2+ years (use modification date as a signal, not a rule)
 
 ### Skip / Leave Alone
+
 - System folders: Applications, Library, System, .config, .ssh, etc.
 - Application data: folders that belong to specific apps
 - Downloads: suggest the user process it as an inbox, not classify it wholesale
@@ -261,7 +273,7 @@ Do not auto-archive screenshots. They're almost always captured for a reason —
 
 If any of the above is unclear, flag the item as ambiguous and ask the user before placing it. Only archive screenshots that are clearly ephemeral — a calendar notification, a meme, a temporary confirmation screen with no ongoing relevance.
 
-When a screenshot clearly belongs to an active project (a UI capture for a product launch, a chart for a report in progress), place it *inside* that project's folder — not loose anywhere.
+When a screenshot clearly belongs to an active project (a UI capture for a product launch, a chart for a report in progress), place it _inside_ that project's folder — not loose anywhere.
 
 ---
 
@@ -299,12 +311,15 @@ The one thing to avoid at all costs is **duplication** — never have two copies
 These three habits keep a PARA system healthy over time:
 
 ### Habit 1: Organize According to Outcomes
+
 Every decision about where to put something is made through the lens of "What will help me move forward?" The most actionable category (Projects) is closely guarded against distractions from interesting-but-not-useful information.
 
 ### Habit 2: Organize Just in Time
+
 Organize as little as possible, as late as possible, and only as much as needed. Don't organize "just in case" — organize "just in time" for the project you're working on right now. This saves energy for when you know what you need.
 
 ### Habit 3: Keep Things Informal
+
 PARA requires precision in only one place: the definition of projects. Everything else can remain somewhat messy. Don't create rigid internal structures within folders, don't use standardized templates for notes, don't build deep subfolder hierarchies. Simple, straightforward folder names are all you need.
 
 ---
@@ -314,17 +329,22 @@ PARA requires precision in only one place: the definition of projects. Everythin
 PARA is a living system. Without regular maintenance, it drifts out of alignment with your life. The book recommends a brief weekly review — just a few minutes — with three steps:
 
 ### Step 1: Retitle
+
 Scan your folder and notebook names. Do they still reflect what's inside? As projects evolve, their names may need updating. A folder called "Website Redesign" might now be more accurately called "Website Launch" if the redesign is done and you're in the launch phase.
 
 ### Step 2: Sort
+
 Move items between PARA categories as their actionability changes:
+
 - A completed project → move to Archives
 - A resource that's become a real responsibility → promote to Areas
 - An area you've left behind (job change, life shift) → move to Archives
 - A new interest → create a Resource folder (only when you have something to put in it)
 
 ### Step 3: Update
+
 Look at the big picture:
+
 - Are there new projects that need folders?
 - Are any projects stale and should be archived or cancelled?
 - Is anything in Archives that should be reactivated?
@@ -340,6 +360,7 @@ The Project List is the cornerstone of PARA. It's a list of all the outcomes you
 ### The five-step process
 
 **Step 1 — List your current projects.** Ask yourself:
+
 - What's currently worrying you?
 - What problem is taking more mental bandwidth than it deserves?
 - What needs to happen that you're not making consistent progress on?
@@ -350,9 +371,10 @@ The Project List is the cornerstone of PARA. It's a list of all the outcomes you
 
 **Step 3 — Add deadlines or timeframes.** Add "by [date]" to each project.
 
-**Step 4 — Prioritize for this week only.** Which projects need the most mental bandwidth *this week*? Put those at the top.
+**Step 4 — Prioritize for this week only.** Which projects need the most mental bandwidth _this week_? Put those at the top.
 
 **Step 5 — Reevaluate.** Ask the hard questions:
+
 - Which goals that matter to you don't have any projects associated with them? (These are "dreams" — not yet activated.)
 - Which projects are you spending time on that don't have goals? (These are "hobbies" — fun, but don't confuse them with committed projects.)
 - What can you cancel, postpone, delegate, reduce in scope, or clarify?
@@ -362,7 +384,7 @@ The Project List is the cornerstone of PARA. It's a list of all the outcomes you
 ## FAQ and Edge Cases {#faq-and-edge-cases}
 
 **Q: What about files that don't fit into any category?**
-A: Everything fits somewhere. If you can't decide, ask: "What is this most relevant to *right now*?" Put it there. You can always move it later.
+A: Everything fits somewhere. If you can't decide, ask: "What is this most relevant to _right now_?" Put it there. You can always move it later.
 
 **Q: How many projects is too many?**
 A: Most people have 10–20 active projects. If you have more than 25, some of them are probably areas or resources in disguise, or projects that should be archived or cancelled.
@@ -374,7 +396,7 @@ A: No — PARA only governs the top-level structure. Internal organization of su
 A: Treat Downloads as a temporary inbox. Don't classify the whole folder — instead, periodically move individual items from Downloads to their correct PARA location.
 
 **Q: Can the same folder exist in multiple PARA categories?**
-A: No. Each item should exist in one place only. If materials are relevant to both a project and an area, put them where they're most *actionable* right now (usually the project). Avoid duplication.
+A: No. Each item should exist in one place only. If materials are relevant to both a project and an area, put them where they're most _actionable_ right now (usually the project). Avoid duplication.
 
 **Q: What if I'm not sure whether something is a project or an area?**
 A: Apply the two-part test: Does it have (1) a specific goal and (2) a deadline? If yes, it's a project. If it's something you need to maintain indefinitely, it's an area. When truly ambiguous, lean toward making it a project — having a concrete goal and deadline is clarifying and motivating.
@@ -383,10 +405,10 @@ A: Apply the two-part test: Does it have (1) a specific goal and (2) a deadline?
 A: One unified system is recommended. The whole point of PARA is that it mirrors the structure of your life, and your life doesn't have a clean work/personal divide. Keeping them together gives you a complete picture of all your commitments.
 
 **Q: What about email? Calendar? Task manager?**
-A: PARA applies to platforms where you *store* information: file system, cloud drive, notetaking app, and task manager (projects and areas only, since tasks are associated with goals). Calendar and email are not organized by PARA — they're organized chronologically, which is appropriate for their nature.
+A: PARA applies to platforms where you _store_ information: file system, cloud drive, notetaking app, and task manager (projects and areas only, since tasks are associated with goals). Calendar and email are not organized by PARA — they're organized chronologically, which is appropriate for their nature.
 
 **Q: If something falls within an area of responsibility, does it go in that Area folder or in Projects?**
-A: If it's a specific, actionable unit with a goal and a timeframe — **Projects.** Pull it out of the area, give it its own project folder, and keep it visible. Visibility matters more than taxonomy: the actionable thing needs to be in sight so you can move it forward, and knowing which area it "technically" falls under is just categorization. The Area folder stays in place for the *ongoing* responsibility — general reference, steady-state maintenance, long-term planning. Examples: "2025 Tax Filing" is a Project (not buried in Finances). "Establish Workout Routine" is a Project (not under Health). "Q3 Board Report" is a Project (not under Reporting). "Onboard [New Hire]" is a Project (not under Direct Reports). Almost every Area of your life contains one or two actionable units that should be promoted to Projects.
+A: If it's a specific, actionable unit with a goal and a timeframe — **Projects.** Pull it out of the area, give it its own project folder, and keep it visible. Visibility matters more than taxonomy: the actionable thing needs to be in sight so you can move it forward, and knowing which area it "technically" falls under is just categorization. The Area folder stays in place for the _ongoing_ responsibility — general reference, steady-state maintenance, long-term planning. Examples: "2025 Tax Filing" is a Project (not buried in Finances). "Establish Workout Routine" is a Project (not under Health). "Q3 Board Report" is a Project (not under Reporting). "Onboard [New Hire]" is a Project (not under Direct Reports). Almost every Area of your life contains one or two actionable units that should be promoted to Projects.
 
 **Q: What should I do with screenshots?**
 A: Don't auto-archive them. Screenshots are almost always captured for a reason — documentation, evidence, reference material, or content for a specific project. Before placing a screenshot, ask: what does it show, does it relate to any active project, was it captured as documentation? If it clearly belongs to an active project, place it inside that project's folder. Only archive screenshots that are truly ephemeral (notifications, memes, temporary confirmations).

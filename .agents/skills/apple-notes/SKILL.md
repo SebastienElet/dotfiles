@@ -152,7 +152,7 @@ end tell
 ## Gotchas
 
 - **Never pass both `name:` and `body:` when creating a note** — Notes derives the title from the
-  body's first line and *also* prepends the `name:` value, so the title appears twice inside the
+  body's first line and _also_ prepends the `name:` value, so the title appears twice inside the
   note. Put the title as the first line of the body (`<div><h1>Title</h1></div>`), which is what
   `notes.sh note` does.
 - **Renaming a note means rewriting the body's first line, and only that** — `set name of n` renames
@@ -207,8 +207,8 @@ end tell
   `osascript` heredoc is a syntax error. `notes.sh` strips newlines (HTML ignores them); do the same
   in hand-written scripts, or concatenate with `& return &`.
 - **`log` inside a `tell application "Notes"` block prints the specifier, not the value** — `log
-  (name of n)` outputs `name of note id x-coredata://…`. Force evaluation with `get`: `log (get name
-  of n)`.
+(name of n)` outputs `name of note id x-coredata://…`. Force evaluation with `get`: `log (get name
+of n)`.
 - **`delete folder` sends notes to Recently Deleted, not oblivion, but it is still destructive** —
   never delete a folder or note without explicit user confirmation; there is no undo from the
   script's side.

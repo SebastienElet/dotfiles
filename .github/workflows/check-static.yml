@@ -1,4 +1,4 @@
-name: TypeScript static gates
+name: Static gates
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   static:
-    name: TypeScript static gates
+    name: Static gates
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -19,5 +19,5 @@ jobs:
         with:
           moon-version: 2.5.3
       - run: >-
-          moon ci typescript:lint typescript:typecheck
-          typescript:format-check
+          moon ci repository:typescript-lint repository:typescript-typecheck
+          repository:typescript-format-check repository:prettier-check

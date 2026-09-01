@@ -7,10 +7,6 @@ const codeSearchWorkflow = readFileSync(
   join(repositoryRoot, ".github", "workflows", "test-code-search.yml"),
   "utf8",
 );
-const lintWorkflow = readFileSync(
-  join(repositoryRoot, ".github", "workflows", "lint.yml"),
-  "utf8",
-);
 const expectedPathFilters = 2;
 
 test("code-search CI installs and exercises guarded ColGrep retrieval", () => {
@@ -30,21 +26,3 @@ test("code-search CI installs and exercises guarded ColGrep retrieval", () => {
   );
   expect(codeSearchWorkflow.toLowerCase()).not.toContain("codegraph");
 });
-
-test("text CI formats every changed policy document", () => {
-  for (const path of [
-    "docs/adr/039-code-search.md",
-    "docs/adr/README.md",
-    "docs/code-search.md",
-    "docs/superpowers/plans/2026-08-29-code-search-replacement.md",
-    "docs/superpowers/specs/2026-08-29-code-search-design.md",
-    "harness/skills/code-search/SKILL.md",
-    "harness/skills/code-search/evals/trigger-queries.json",
-  ]) {
-    expect(countOccurrences(lintWorkflow, path)).toBe(1);
-  }
-});
-
-function countOccurrences(content: string, value: string): number {
-  return content.split(value).length - 1;
-}

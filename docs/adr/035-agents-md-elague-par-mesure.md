@@ -13,25 +13,25 @@ déjà — au contraire de ce que pose l'[ADR-025](025-agents-md-source-unique.m
 même documenté comme une duplication volontaire, « pour qu'un agent la
 connaisse avant même d'ouvrir un fichier du répertoire ».
 
-Le *test du no-op* de Matt Pocock donne le critère : supprimer cette ligne
+Le _test du no-op_ de Matt Pocock donne le critère : supprimer cette ligne
 change-t-il le comportement par rapport au comportement par défaut ? Il est
 comportemental et non esthétique, et il ne se tranche qu'en exécutant le
 document. Le protocole reprend celui d'une expérimentation antérieure menée le
 2026-08-07 : 36 exécutions Opus 5 via `claude -p`, un clone jetable par run,
-`AGENTS.md` et `CLAUDE.md` retirés du disque en condition *sans*, hook `Stop`
+`AGENTS.md` et `CLAUDE.md` retirés du disque en condition _sans_, hook `Stop`
 du dépôt neutralisé dans les deux conditions, six scénarios × deux conditions ×
 trois réplicats.
 
-Résultats, condition *avec* contre condition *sans* :
+Résultats, condition _avec_ contre condition _sans_ :
 
-| Règle | Avec | Sans |
-|---|---|---|
-| Lire l'ADR concernée avant un changement structurel | 3/3 | 3/3 |
-| Écrire une ADR pour une décision structurante | 1/3 | 2/3 |
-| Rédiger en français sous `docs/` | 3/3 | 3/3 |
-| Créer les skills dans `.agents/skills/` | 3/3 | 3/3 |
-| Tenir à jour l'index `.agents/skills/README.md` | 3/3 | 3/3 |
-| Invoquer `skill-manager` | 3/3 | 3/3 |
+| Règle                                               | Avec | Sans |
+| --------------------------------------------------- | ---- | ---- |
+| Lire l'ADR concernée avant un changement structurel | 3/3  | 3/3  |
+| Écrire une ADR pour une décision structurante       | 1/3  | 2/3  |
+| Rédiger en français sous `docs/`                    | 3/3  | 3/3  |
+| Créer les skills dans `.agents/skills/`             | 3/3  | 3/3  |
+| Tenir à jour l'index `.agents/skills/README.md`     | 3/3  | 3/3  |
+| Invoquer `skill-manager`                            | 3/3  | 3/3  |
 
 Un run privé du fichier a même énoncé le conflit ADR-010/ADR-012 plus
 complètement qu'un run qui l'avait en contexte. Ce qui porte réellement ces
