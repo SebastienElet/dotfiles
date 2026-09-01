@@ -15,7 +15,7 @@ fileGroups:
     - .moon/workspace.yml
     - .moon/toolchains.yml
     - moon.yml
-    - .github/workflows/check-static.yml
+    - .github/workflows/check-typescript.yml
   prettierFiles:
     - "**/*.yml"
     - "**/*.yaml"
