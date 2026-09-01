@@ -10,6 +10,7 @@ mod mcp;
 mod prompts;
 mod rules;
 mod skills;
+mod statusline;
 
 pub(super) fn validate_value(value: &Value) -> Result<(), ManifestError> {
     let mapping = value
@@ -86,6 +87,7 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     commands::validate(&manifest.commands, &manifest.prompts, &agents)?;
     hooks::validate(&manifest.hooks, &agents)?;
     mcp::validate(&manifest.mcp, &agents)?;
+    statusline::validate(&manifest.statuslines, &agents)?;
     skills::validate(&manifest.skills, &manifest.resources, &agents)?;
     external::validate(&manifest.external, &agents)
 }
@@ -97,7 +99,6 @@ fn validate_resources(
     let mut identifiers = HashMap::new();
     let mut destinations = HashMap::new();
     let mut skill_projections = HashMap::new();
-
     for (index, resource) in resources.iter().enumerate() {
         let field = |name: &str| format!("resources[{index}].{name}");
         if resource.id.is_empty() {
@@ -151,6 +152,7 @@ fn validate_normalized_resource_kind(
     let name = match resource.kind {
         super::ResourceKind::Prompts => "prompts",
         super::ResourceKind::Commands => "commands",
+        super::ResourceKind::Statusline => "statuslines",
         _ => return Ok(()),
     };
     Err(ManifestError::new(

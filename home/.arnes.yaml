@@ -436,6 +436,14 @@ external:
         plugin: superpowers@openai-curated,
         slug: writing-skills,
       }
+statuslines:
+  - agent: codex
+    scope: user
+    items:
+      - model-with-reasoning
+      - current-dir
+      - context-used
+      - context-window-size
 mcp:
   - name: apple-notes
     agent: claude
