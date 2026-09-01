@@ -25,6 +25,7 @@
 ### Task 1: Déclaration normalisée des status lines Codex
 
 **Files:**
+
 - Create: `tooling/arnes/src/manifest/statusline.rs`
 - Create: `tooling/arnes/src/manifest/validation/statusline.rs`
 - Create: `tooling/arnes/tests/manifest_statusline.rs`
@@ -32,6 +33,7 @@
 - Modify: `tooling/arnes/src/manifest/validation.rs`
 
 **Interfaces:**
+
 - Consumes: `Agent`, `Scope`, `ManifestError` et `validation::validate_target` existants.
 - Produces: `Statusline<'a> { agent: Agent, scope: Scope, items: &'a [String] }` et `Manifest::statuslines() -> impl Iterator<Item = Statusline<'_>>`.
 
@@ -166,6 +168,7 @@ git commit -m "feat(arnes): declare Codex status lines"
 ### Task 2: Lecture TOML stricte et diagnostic Doctor
 
 **Files:**
+
 - Create: `tooling/arnes/src/statusline.rs`
 - Create: `tooling/arnes/src/statusline/configuration.rs`
 - Create: `tooling/arnes/tests/statusline.rs`
@@ -173,6 +176,7 @@ git commit -m "feat(arnes): declare Codex status lines"
 - Modify: `tooling/arnes/src/doctor.rs`
 
 **Interfaces:**
+
 - Consumes: `Roots`, `Manifest::statuslines()`, `Diagnostic`, `State`, `Agent`, `Scope`.
 - Produces: `statusline::diagnose(roots: &Roots, manifest: &Manifest, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic>` et `configuration::load(roots: &Roots, scope: Scope) -> Result<Option<Vec<String>>, ConfigurationError>`.
 
@@ -399,9 +403,11 @@ git commit -m "feat(arnes): diagnose Codex status lines"
 ### Task 3: Déclaration maintenue et barrière complète
 
 **Files:**
+
 - Modify: `home/.arnes.yaml`
 
 **Interfaces:**
+
 - Consumes: le schéma `statuslines` et `arnes doctor statusline` ajoutés dans les tâches précédentes.
 - Produces: la projection utilisateur Codex maintenue par le dépôt, égale à la configuration actuelle attendue.
 
