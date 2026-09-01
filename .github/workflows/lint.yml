@@ -128,22 +128,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-
-      - run: bun install --frozen-lockfile
-
       - run: npm install --global cspell prettier
-
-      - name: Check TypeScript formatting
-        run: bun run format:typescript:check
 
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
-          .github/workflows/lint.yml .github/workflows/test-arnes.yml
-          .moon/workspace.yml tooling/arnes/moon.yml
+          .github/workflows/check-typescript.yml .github/workflows/lint.yml
+          .github/workflows/test-arnes.yml .github/workflows/test-typescript.yml
+          .moon/workspace.yml moon.yml tooling/arnes/moon.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/AGENTS.md

@@ -3,17 +3,6 @@ name: TypeScript
 on: [push, pull_request]
 
 jobs:
-  lint:
-    name: TypeScript lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
-      - run: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
-
   test:
     name: Bun tests
     runs-on: ubuntu-latest
@@ -28,14 +17,3 @@ jobs:
       - run: bun --config=/dev/null --no-env-file test --timeout 15000
         env:
           SCRAPLING_DOCKER_SMOKE: "1"
-
-  typecheck:
-    name: TypeScript types
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
-      - run: bun --config=/dev/null --no-env-file run typecheck

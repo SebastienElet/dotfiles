@@ -1,0 +1,40 @@
+language: unknown
+
+fileGroups:
+  trackedTypeScript:
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.mts"
+    - "**/*.cts"
+  typecheckedTypeScript:
+    - tooling/**/*.ts
+    - .agents/skills/apple-notes/scripts/**/*.ts
+  staticTypeScriptToolchain:
+    - package.json
+    - bun.lock
+    - .moon/workspace.yml
+    - moon.yml
+    - .github/workflows/check-typescript.yml
+
+tasks:
+  lint:
+    command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
+    toolchains: system
+    inputs:
+      - "@group(trackedTypeScript)"
+      - "@group(staticTypeScriptToolchain)"
+      - .oxlintrc.json
+      - tsconfig.json
+  typecheck:
+    command: bun --config=/dev/null --no-env-file run typecheck
+    toolchains: system
+    inputs:
+      - "@group(typecheckedTypeScript)"
+      - "@group(staticTypeScriptToolchain)"
+      - tsconfig.json
+  format-check:
+    command: bun run format:typescript:check
+    toolchains: system
+    inputs:
+      - "@group(trackedTypeScript)"
+      - "@group(staticTypeScriptToolchain)"

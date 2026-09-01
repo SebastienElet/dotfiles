@@ -1,4 +1,5 @@
 projects:
+  typescript: .
   tooling/arnes: tooling/arnes
 
 vcs:
