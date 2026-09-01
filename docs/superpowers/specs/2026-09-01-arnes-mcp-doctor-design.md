@@ -37,11 +37,11 @@ la validation existante du manifeste.
 
 Le diagnostic lit directement les fichiers natifs sans appeler les agents :
 
-| Agent | Scope utilisateur | Scope projet |
-| --- | --- | --- |
-| Claude Code | `~/.claude.json` | `.mcp.json` |
-| Cursor | `~/.cursor/mcp.json` | `.cursor/mcp.json` |
-| Codex | `~/.codex/config.toml` | `.codex/config.toml` |
+| Agent       | Scope utilisateur      | Scope projet         |
+| ----------- | ---------------------- | -------------------- |
+| Claude Code | `~/.claude.json`       | `.mcp.json`          |
+| Cursor      | `~/.cursor/mcp.json`   | `.cursor/mcp.json`   |
+| Codex       | `~/.codex/config.toml` | `.codex/config.toml` |
 
 Les formats JSON et TOML sont validés avant toute comparaison. Une racine, une table ou une entrée
 de type inattendu produit une erreur explicite ; une valeur inconnue ne devient jamais une valeur
