@@ -1,5 +1,6 @@
 mod support;
 
+use std::fs;
 use support::Fixture;
 
 fn manifest(scope: &str, items: &str) -> String {
@@ -140,15 +141,40 @@ fn project_scope_reads_only_project_codex_configuration() {
         ".codex/config.toml",
         "[tui]\nstatus_line = [\"wrong-user-item\"]\n",
     );
-    fixture.write_repository(
-        ".codex/config.toml",
+    let project_configuration = fixture.repository().join(".codex/config.toml");
+    fs::create_dir_all(project_configuration.parent().unwrap()).unwrap();
+    fs::write(
+        project_configuration,
         "[tui]\nstatus_line = [\"project-item\"]\n",
-    );
+    )
+    .unwrap();
 
     let output = fixture.command(["doctor", "statusline", "--scope", "project", "-v"]);
 
     assert_eq!(output.status.code(), Some(0));
     assert!(stdout(&output).contains("healthy statusline: codex project"));
+}
+
+#[test]
+fn unscoped_statusline_diagnoses_all_declared_scopes_without_a_scope_qualifier() {
+    let fixture = Fixture::new();
+    fixture.write_home(
+        ".arnes.yaml",
+        "version: 1\nagents:\n  - id: codex\n    scopes: [user, project]\nstatuslines:\n  - { agent: codex, scope: user, items: [model] }\n  - { agent: codex, scope: project, items: [current-dir] }\nresources: []\n",
+    );
+    fixture.write_home(".codex/config.toml", "[tui]\nstatus_line = [\"model\"]\n");
+    fixture.write_repository(
+        ".codex/config.toml",
+        "[tui]\nstatus_line = [\"current-dir\"]\n",
+    );
+
+    let output = fixture.command(["doctor", "statusline", "-v"]);
+    let rendered = stdout(&output);
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(rendered.contains("healthy statusline: codex user"));
+    assert!(rendered.contains("healthy statusline: codex project"));
+    assert!(!rendered.contains("Statusline · user scope"));
 }
 
 #[test]
@@ -165,7 +191,6 @@ fn missing_statusline_key_is_drift() {
 
 #[test]
 fn configuration_symlink_cannot_escape_scope_root() {
-    use std::fs;
     use std::os::unix::fs::symlink;
 
     let fixture = Fixture::new();

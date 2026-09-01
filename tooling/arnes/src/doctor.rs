@@ -41,14 +41,12 @@ pub(super) fn run(
         io::stdout().is_terminal(),
         std::env::var_os("NO_COLOR").as_deref(),
     );
+    let rendered_scope = match resource {
+        Some(Resource::Statusline) => scope,
+        _ => resource.and(scope.or(Some(Scope::User))).or(scope),
+    };
     let (output, exit_code) = match format {
-        Format::Human => render::human(
-            diagnostics,
-            resource,
-            agent,
-            resource.and(scope.or(Some(Scope::User))).or(scope),
-            human_options,
-        ),
+        Format::Human => render::human(diagnostics, resource, agent, rendered_scope, human_options),
         Format::Json => {
             let report = Report::new(diagnostics);
             (
@@ -113,7 +111,7 @@ fn diagnose(
             Err(error) => vec![Diagnostic::new("mcp", State::Error, error.to_string())],
         },
         Some(Resource::Statusline) => match Roots::from_environment() {
-            Ok(roots) => diagnose_statusline(&roots, agent, scope.or(Some(Scope::User))),
+            Ok(roots) => diagnose_statusline(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new(
                 "statusline",
                 State::Error,
