@@ -19,10 +19,10 @@ impl Store {
         F: FnOnce() -> Result<(), MemoryError>,
     {
         let publication = self.publication();
-        let yaml = yaml_bytes(entry).map_err(CommitFailure::BeforeYaml)?;
+        let yaml = yaml_bytes(entry).map_err(CommitFailure::YamlNotDurable)?;
         let staged_yaml = publication
             .stage_yaml(destination, &yaml)
-            .map_err(CommitFailure::BeforeYaml)?;
+            .map_err(CommitFailure::YamlNotDurable)?;
         let anchor = match staged_yaml.anchor() {
             Ok(anchor) => anchor,
             Err(error) => return Err(cleanup_yaml(staged_yaml, error)),
@@ -55,5 +55,5 @@ impl Store {
 }
 
 fn cleanup_yaml(yaml: StagedFile, error: MemoryError) -> CommitFailure {
-    CommitFailure::BeforeYaml(yaml.discard().err().unwrap_or(error))
+    CommitFailure::YamlNotDurable(yaml.discard().err().unwrap_or(error))
 }

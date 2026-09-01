@@ -31,7 +31,7 @@ fn persists_only_valid_verdicts_with_canonical_ordered_cache_fields() {
     let cache = cache_json(&root);
     assert_eq!(cache["schema_version"], 1);
     let record = &cache["entries"][0];
-    assert_eq!(record["entry_id"], "mem_555555555555555555555555");
+    assert_eq!(record["entry_id"], user_entry_id('5', "invariant"));
     assert_eq!(record["verdict"], "valid");
     assert_eq!(record["validated_at"], "2026-08-28T00:00:00Z");
     assert_eq!(record["environment"]["os"], "macos");

@@ -56,21 +56,30 @@ fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
         StoreFailpoint::BeforeIndexFlush,
         StoreFailpoint::BeforeIndexFsync,
     ];
-    let post_yaml = [
+    let undurable_yaml = [
         StoreFailpoint::AfterYamlRename,
         StoreFailpoint::BeforeYamlDirectoryFsync,
-        StoreFailpoint::BeforeIndexRename,
     ];
+    let durable_yaml = [StoreFailpoint::BeforeIndexRename];
 
     for failpoint in pre_yaml {
-        assert_interrupted_state(failpoint, false);
+        assert_interrupted_state(failpoint, InterruptedAdmission::Absent);
     }
-    for failpoint in post_yaml {
-        assert_interrupted_state(failpoint, true);
+    for failpoint in undurable_yaml {
+        assert_interrupted_state(failpoint, InterruptedAdmission::Renamed);
+    }
+    for failpoint in durable_yaml {
+        assert_interrupted_state(failpoint, InterruptedAdmission::Durable);
     }
 }
 
-fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
+enum InterruptedAdmission {
+    Absent,
+    Renamed,
+    Durable,
+}
+
+fn assert_interrupted_state(failpoint: StoreFailpoint, expected: InterruptedAdmission) {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("agent-memory");
     let store = Store::open_with_failpoint(memory_root(&root), failpoint.clone()).unwrap();
@@ -91,23 +100,32 @@ fn assert_interrupted_state(failpoint: StoreFailpoint, yaml_committed: bool) {
     let index: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
 
-    if yaml_committed {
-        match result {
-            AdmissionResult::Stored {
-                index_rebuild_required: true,
-                ..
-            } => {}
-            result => panic!("{failpoint:?}: {result:?}"),
+    match expected {
+        InterruptedAdmission::Absent => {
+            assert_rejected(result, "store_unavailable");
+            assert!(listing.entries().is_empty(), "{failpoint:?}");
+            assert!(!listing.index_rebuild_required(), "{failpoint:?}");
+            assert!(index["entries"].as_array().unwrap().is_empty());
+            assert_eq!(directory_inventory(&root), before, "{failpoint:?}");
         }
-        assert_eq!(listing.entries().len(), 1, "{failpoint:?}");
-        assert!(listing.index_rebuild_required(), "{failpoint:?}");
-        assert!(index["entries"].as_array().unwrap().is_empty());
-    } else {
-        assert_rejected(result, "store_unavailable");
-        assert!(listing.entries().is_empty(), "{failpoint:?}");
-        assert!(!listing.index_rebuild_required(), "{failpoint:?}");
-        assert!(index["entries"].as_array().unwrap().is_empty());
-        assert_eq!(directory_inventory(&root), before, "{failpoint:?}");
+        InterruptedAdmission::Renamed => {
+            assert_rejected(result, "store_unavailable");
+            assert_eq!(listing.entries().len(), 1, "{failpoint:?}");
+            assert!(listing.index_rebuild_required(), "{failpoint:?}");
+            assert!(index["entries"].as_array().unwrap().is_empty());
+        }
+        InterruptedAdmission::Durable => {
+            match result {
+                AdmissionResult::Stored {
+                    index_rebuild_required: true,
+                    ..
+                } => {}
+                result => panic!("{failpoint:?}: {result:?}"),
+            }
+            assert_eq!(listing.entries().len(), 1, "{failpoint:?}");
+            assert!(listing.index_rebuild_required(), "{failpoint:?}");
+            assert!(index["entries"].as_array().unwrap().is_empty());
+        }
     }
 }
 

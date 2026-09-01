@@ -94,7 +94,17 @@ fn preserves_search_limit_omissions_and_loads_no_unselected_yaml() {
     for selected in &selection.selected {
         answers.insert(ProofValid::new(&selected.entry_id).unwrap());
     }
-    let unselected = root.join("entries/user/mem_666666666666666666666666.yaml");
+    let selected_ids = selection
+        .selected
+        .iter()
+        .map(|selected| selected.entry_id.as_str())
+        .collect::<Vec<_>>();
+    let unselected_id = ['1', '2', '3', '4', '5', '6']
+        .map(|id| user_entry_id(id, "invariant"))
+        .into_iter()
+        .find(|id| !selected_ids.contains(&id.as_str()))
+        .unwrap();
+    let unselected = root.join(format!("entries/user/{unselected_id}.yaml"));
     fs::write(&unselected, b"unreadable unselected yaml").unwrap();
     fs::set_permissions(&unselected, fs::Permissions::from_mode(0o000)).unwrap();
     let resolver = FakeResolver::with_responses([]);

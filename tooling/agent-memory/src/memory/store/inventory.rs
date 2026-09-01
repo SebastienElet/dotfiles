@@ -1,3 +1,4 @@
+use super::document::StoredEntry;
 use crate::memory::path::ManagedPath;
 use crate::memory::{EntryScope, MemoryEntry, MemoryError, parse_entry};
 use std::fs::File;
@@ -73,6 +74,7 @@ pub(crate) fn read_entry_from_file(
 ) -> Result<MemoryEntry, MemoryError> {
     let bytes = read_bounded_file(file)?;
     let entry = parse_entry(&bytes)?;
+    StoredEntry::from_entry(&entry).validate_identity()?;
     validate_entry_location(path.relative(), &entry)?;
     Ok(entry)
 }

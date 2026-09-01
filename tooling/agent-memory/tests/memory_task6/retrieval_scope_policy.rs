@@ -136,7 +136,7 @@ fn user_non_git_sources_remain_indexed_and_retrievable() {
 
 fn legacy_index_bytes(yaml: &Path) -> Vec<u8> {
     let metadata = fs::metadata(yaml).unwrap();
-    let id = "mem_aaaaaaaaaaaaaaaaaaaaaaaa";
+    let id = yaml.file_stem().unwrap().to_str().unwrap();
     let path = format!("entries/user/{id}.yaml");
     let inventory = [LegacyInventoryItem {
         path: path.clone(),

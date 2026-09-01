@@ -116,7 +116,7 @@ fn collect_paths(
 }
 
 #[test]
-fn retry_after_a_post_yaml_failure_returns_duplicate() {
+fn retry_after_an_undurable_yaml_result_returns_duplicate() {
     let fixture = tempfile::tempdir().unwrap();
     let root = fixture.path().join("store");
     let failing_store = Store::open_with_failpoint(
@@ -145,7 +145,7 @@ fn retry_after_a_post_yaml_failure_returns_duplicate() {
         ),
     )
     .unwrap();
-    let id = stored_id(first, true);
+    assert_rejected(first, "store_unavailable");
     let store = Store::open(MemoryRoot::new(&root).unwrap()).unwrap();
     let retry = admit(
         &bytes,
@@ -160,7 +160,9 @@ fn retry_after_a_post_yaml_failure_returns_duplicate() {
     .unwrap();
 
     match retry {
-        AdmissionResult::Duplicate { id: duplicate } => assert_eq!(duplicate.as_str(), id),
+        AdmissionResult::Duplicate { id } => {
+            assert_eq!(store.list().unwrap().entries()[0].id(), &id)
+        }
         result => panic!("unexpected result: {result:?}"),
     }
     assert_eq!(store.list().unwrap().entries().len(), 1);

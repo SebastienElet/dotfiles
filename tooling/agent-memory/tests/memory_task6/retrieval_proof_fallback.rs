@@ -19,8 +19,9 @@ fn proof_valid_is_cached_without_creating_a_transition() {
     write_user_entry(&root, 'c', &yaml);
     let key = project_key(fixture.path());
     let selection = select(&store, &key, 5);
+    let id = user_entry_id('c', "invariant");
     let mut answers = ProofAnswers::new();
-    answers.insert(ProofValid::new("mem_cccccccccccccccccccccccc").unwrap());
+    answers.insert(ProofValid::new(&id).unwrap());
     let resolver = FakeResolver::with_responses([]);
     let clock = FixedClock::at("2026-08-28T01:00:00Z");
     let report = retrieve(
@@ -40,7 +41,7 @@ fn proof_valid_is_cached_without_creating_a_transition() {
         ),
     );
     assert_eq!(cached.injected[0].verdict_age_milliseconds, 3_600_000);
-    let stored = store.load("mem_cccccccccccccccccccccccc").unwrap().unwrap();
+    let stored = store.load(&id).unwrap().unwrap();
     assert_eq!(stored.status(), Status::Active);
     assert!(stored.transition().is_none());
 }

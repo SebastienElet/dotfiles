@@ -128,6 +128,14 @@ impl StoredEntry {
         root.remove("transition");
         Ok(value)
     }
+
+    pub(super) fn validate_identity(&self) -> Result<(), MemoryError> {
+        if memory_id(&self.kind, &self.scope, &self.statement)? == self.id {
+            Ok(())
+        } else {
+            Err(MemoryError::unavailable("entry_identity_mismatch", "id"))
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -88,6 +88,9 @@ fn omits_unreadable_future_invalid_and_terminal_entries_with_redacted_diagnostic
         ("malformed", "malformed_yaml"),
         ("future", "unsupported_schema"),
         ("invalid", "invalid_kind_status"),
+        ("identity-statement", "entry_identity_mismatch"),
+        ("identity-kind", "entry_identity_mismatch"),
+        ("identity-scope", "entry_identity_mismatch"),
         ("terminal", "status"),
     ] {
         let fixture = tempfile::tempdir().unwrap();
@@ -107,6 +110,13 @@ fn omits_unreadable_future_invalid_and_terminal_entries_with_redacted_diagnostic
             "malformed" => "not: [valid".to_owned(),
             "future" => bytes.replacen("schema_version: 1", "schema_version: 2", 1),
             "invalid" => bytes.replacen("status: active", "status: achieved", 1),
+            "identity-statement" => bytes.replacen(&statement, "Edited authority.", 1),
+            "identity-kind" => bytes.replacen("kind: invariant", "kind: evidence", 1),
+            "identity-scope" => bytes.replacen(
+                "scope:\n  type: user",
+                "scope:\n  type: project\n  key: project_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                1,
+            ),
             "terminal" => format!(
                 "{}transition:\n  from: active\n  to: invalidated\n  at: 2026-08-28T13:00:00Z\n  verdict: invalid\n  reason: Proof changed.\n",
                 bytes.replacen("status: active", "status: invalidated", 1)

@@ -55,7 +55,7 @@ fn every_typed_human_business_terminal_transitions_once() {
         );
         write_user_entry(&root, id, &yaml);
         let clock = FixedClock::at("2026-08-28T01:00:00Z");
-        let id = format!("mem_{}", id.to_string().repeat(24));
+        let id = user_entry_id(id, kind);
         let result = confirm(
             &id,
             conclusion("Human conclusion established.").unwrap(),
@@ -106,7 +106,7 @@ fn refuses_empty_reasons_and_incompatible_human_terminals_without_mutation() {
         let before = fs::read(&path).unwrap();
         let clock = FixedClock::at("2026-08-28T01:00:00Z");
         let result = confirm(
-            &format!("mem_{}", id.to_string().repeat(24)),
+            &user_entry_id(id, kind),
             HumanConclusion::goal_achieved("Wrong terminal.").unwrap(),
             TransitionContext::new(&store, &clock),
         );
@@ -154,10 +154,7 @@ fn automated_invalidity_is_the_only_path_to_invalidated_for_every_kind() {
         assert!(report.injected.is_empty(), "{kind}");
         assert_eq!(report.omitted[0].code, "oracle_invalidated", "{kind}");
         assert_eq!(report.omitted[0].effect, OmissionEffect::NotApplied);
-        let stored = store
-            .load(&format!("mem_{}", id.to_string().repeat(24)))
-            .unwrap()
-            .unwrap();
+        let stored = store.load(&user_entry_id(id, kind)).unwrap().unwrap();
         assert_eq!(stored.status(), Status::Invalidated, "{kind}");
         assert_eq!(
             stored.transition().unwrap().verdict(),

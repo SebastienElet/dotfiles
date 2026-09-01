@@ -122,12 +122,9 @@ fn cache_records_are_sorted_by_entry_id() {
         .map(|entry| entry["entry_id"].as_str().unwrap())
         .collect::<Vec<_>>();
 
-    assert_eq!(
-        ids,
-        [
-            "mem_111111111111111111111111",
-            "mem_999999999999999999999999",
-            "mem_ffffffffffffffffffffffff"
-        ]
-    );
+    let mut expected = ['1', '9', 'f']
+        .map(|id| user_entry_id(id, "invariant"))
+        .to_vec();
+    expected.sort();
+    assert_eq!(ids, expected);
 }

@@ -52,7 +52,7 @@ fn unavailable_initial_load_is_fatal_for_injection_but_remains_a_direct_omission
         serde_json::json!({
             "injected": [],
             "omitted": [{
-                "id": "mem_111111111111111111111111",
+                "id": user_entry_id('1', "invariant"),
                 "code": "unsafe_store_path",
                 "question": null,
                 "effect": "not_applied",

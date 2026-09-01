@@ -41,7 +41,7 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
     );
     write_user_entry(&root, 'd', &yaml);
     let loaded_active = Arc::new(Barrier::new(3));
-    let id = "mem_dddddddddddddddddddddddd";
+    let id = user_entry_id('d', "goal");
     let attempts = [
         (Status::Achieved, true, "Goal achieved."),
         (Status::Abandoned, false, "Goal abandoned."),
@@ -49,6 +49,7 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
     .map(|(status, achieved, reason)| {
         let worker_barrier = Arc::clone(&loaded_active);
         let worker_store = Store::open(memory_root(&root)).unwrap();
+        let id = id.clone();
         std::thread::spawn(move || {
             let conclusion = if achieved {
                 HumanConclusion::goal_achieved(reason)
@@ -59,7 +60,7 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
             (
                 status,
                 confirm(
-                    id,
+                    &id,
                     conclusion,
                     TransitionContext::new(
                         &worker_store,
@@ -88,7 +89,7 @@ fn concurrent_human_conclusions_publish_exactly_one_terminal_transition() {
             .collect::<Vec<_>>(),
         ["entry_not_active"]
     );
-    let stored = store.load(id).unwrap().unwrap();
+    let stored = store.load(&id).unwrap().unwrap();
     assert_eq!(stored.status(), success);
     assert_eq!(stored.transition().unwrap().to(), success);
 }

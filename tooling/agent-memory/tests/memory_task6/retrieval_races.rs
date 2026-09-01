@@ -53,8 +53,9 @@ fn terminal_transition_published_during_oracle_resolution_is_omitted() {
         )
     });
     resolution_started.wait();
+    let id = user_entry_id('a', "goal");
     let transition = confirm(
-        "mem_aaaaaaaaaaaaaaaaaaaaaaaa",
+        &id,
         HumanConclusion::goal_achieved("Goal completed concurrently.").unwrap(),
         TransitionContext::new(&store, &FixedClock::at("2026-08-28T01:00:00Z")),
     )

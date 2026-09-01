@@ -5,6 +5,7 @@ use agent_memory::{
     SearchSelection, SourceKind, SourceResolution, SourceResolver, Store, UtcTimestamp,
     parse_entry, parse_utc_timestamp, resolve_project, search,
 };
+use sha2::{Digest, Sha256};
 use std::collections::VecDeque;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -106,9 +107,10 @@ pub fn entry_yaml(id_character: char, kind: &str, sources: &[SourceFixture<'_>])
             )
         })
         .collect::<String>();
+    let statement = format!("Durable memory statement {id_character}.");
+    let id = canonical_entry_id(kind, "user", &statement);
     format!(
-        "schema_version: 1\nid: mem_{}\nkind: {kind}\nstatus: active\nstatement: Durable memory statement {id_character}.\nscope:\n  type: user\nretrieval_terms:\n  - durable memory\nproof:\n  summary: Durable proof summary.\n  sources:\n{sources}  established_at: 2026-08-28T00:00:00Z\noracle:\n{automated}  human_fallback:\n    question: Does the proof still establish this memory?\n    valid_when: The proof remains observable.\n  outcomes:\n    valid: The memory remains established.\n    invalidated: The proof no longer establishes the memory.\ncreated_at: 2026-08-28T00:00:00Z\n",
-        id_character.to_string().repeat(24)
+        "schema_version: 1\nid: {id}\nkind: {kind}\nstatus: active\nstatement: {statement}\nscope:\n  type: user\nretrieval_terms:\n  - durable memory\nproof:\n  summary: Durable proof summary.\n  sources:\n{sources}  established_at: 2026-08-28T00:00:00Z\noracle:\n{automated}  human_fallback:\n    question: Does the proof still establish this memory?\n    valid_when: The proof remains observable.\n  outcomes:\n    valid: The memory remains established.\n    invalidated: The proof no longer establishes the memory.\ncreated_at: 2026-08-28T00:00:00Z\n"
     )
     .into_bytes()
 }
@@ -119,8 +121,12 @@ pub fn project_entry_yaml(
     key: &ProjectKey,
     sources: &[SourceFixture<'_>],
 ) -> Vec<u8> {
+    let statement = format!("Durable memory statement {id_character}.");
+    let user_id = canonical_entry_id(kind, "user", &statement);
+    let project_id = canonical_entry_id(kind, key.as_str(), &statement);
     String::from_utf8(entry_yaml(id_character, kind, sources))
         .unwrap()
+        .replace(&format!("id: {user_id}"), &format!("id: {project_id}"))
         .replace(
             "scope:\n  type: user\n",
             &format!("scope:\n  type: project\n  key: {}\n", key.as_str()),
@@ -139,10 +145,9 @@ pub fn open_store(directory: &Path) -> (PathBuf, Store) {
 }
 
 pub fn write_user_entry(root: &Path, id_character: char, yaml: &[u8]) -> PathBuf {
-    let path = root.join(format!(
-        "entries/user/mem_{}.yaml",
-        id_character.to_string().repeat(24)
-    ));
+    let id = yaml_entry_id(yaml);
+    assert!(String::from_utf8_lossy(yaml).contains(id_character));
+    let path = root.join(format!("entries/user/{id}.yaml"));
     fs::write(&path, yaml).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
     path
@@ -157,10 +162,41 @@ pub fn write_project_entry(
     let directory = root.join("entries/project").join(key.as_str());
     fs::create_dir_all(&directory).unwrap();
     fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
-    let path = directory.join(format!("mem_{}.yaml", id_character.to_string().repeat(24)));
+    let id = yaml_entry_id(yaml);
+    assert!(String::from_utf8_lossy(yaml).contains(id_character));
+    let path = directory.join(format!("{id}.yaml"));
     fs::write(&path, yaml).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
     path
+}
+
+pub fn user_entry_id(id_character: char, kind: &str) -> String {
+    canonical_entry_id(
+        kind,
+        "user",
+        &format!("Durable memory statement {id_character}."),
+    )
+}
+
+pub fn project_entry_id(id_character: char, kind: &str, key: &ProjectKey) -> String {
+    canonical_entry_id(
+        kind,
+        key.as_str(),
+        &format!("Durable memory statement {id_character}."),
+    )
+}
+
+fn canonical_entry_id(kind: &str, scope: &str, statement: &str) -> String {
+    let preimage = serde_json::to_vec(&(1_u8, kind, scope, statement)).unwrap();
+    let digest = format!("{:x}", Sha256::digest(preimage));
+    format!("mem_{}", &digest[..24])
+}
+
+fn yaml_entry_id(yaml: &[u8]) -> String {
+    serde_yaml_ng::from_slice::<serde_yaml_ng::Value>(yaml).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned()
 }
 
 pub fn project_key(directory: &Path) -> ProjectKey {

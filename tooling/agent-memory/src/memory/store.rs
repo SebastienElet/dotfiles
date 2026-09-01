@@ -88,8 +88,8 @@ impl Store {
             Ok(()) => Ok(StoreCommit {
                 index_rebuild_required: false,
             }),
-            Err(CommitFailure::BeforeYaml(error)) => Err(error),
-            Err(CommitFailure::AfterYaml) => Ok(StoreCommit {
+            Err(CommitFailure::YamlNotDurable(error)) => Err(error),
+            Err(CommitFailure::YamlDurable) => Ok(StoreCommit {
                 index_rebuild_required: true,
             }),
         }
@@ -193,8 +193,8 @@ fn admission_commit(id: MemoryId, result: Result<(), CommitFailure>) -> Admissio
             id,
             index_rebuild_required: false,
         },
-        Err(CommitFailure::BeforeYaml(error)) => admission_failure(id, error),
-        Err(CommitFailure::AfterYaml) => AdmissionResult::Stored {
+        Err(CommitFailure::YamlNotDurable(error)) => admission_failure(id, error),
+        Err(CommitFailure::YamlDurable) => AdmissionResult::Stored {
             id,
             index_rebuild_required: true,
         },

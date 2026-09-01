@@ -136,25 +136,25 @@ impl<'a> AtomicPublication<'a> {
         if let Err(error) = rename {
             return Err(cleanup_before_yaml(yaml, index, error));
         }
-        self.hit(StorePhase::AfterYamlRename)
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        self.hit(StorePhase::BeforeYamlDirectoryFsync)
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        destination
-            .sync_parent_directory()
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        self.hit(StorePhase::BeforeIndexRename)
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        inventory
-            .ensure_current(self.root)
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        index
-            .ensure_anchored()
-            .map_err(|_| CommitFailure::AfterYaml)?;
-        index.publish().map_err(|_| CommitFailure::AfterYaml)?;
+        let yaml_sync = self
+            .hit(StorePhase::AfterYamlRename)
+            .and_then(|()| self.hit(StorePhase::BeforeYamlDirectoryFsync))
+            .and_then(|()| destination.sync_parent_directory());
+        if let Err(error) = yaml_sync {
+            return Err(yaml_not_durable(index, error));
+        }
+        let before_index = self
+            .hit(StorePhase::BeforeIndexRename)
+            .and_then(|()| inventory.ensure_current(self.root))
+            .and_then(|()| index.ensure_anchored());
+        if before_index.is_err() {
+            let _ = index.discard();
+            return Err(CommitFailure::YamlDurable);
+        }
+        index.publish().map_err(|_| CommitFailure::YamlDurable)?;
         self.root
             .sync_directory()
-            .map_err(|_| CommitFailure::AfterYaml)?;
+            .map_err(|_| CommitFailure::YamlDurable)?;
         Ok(())
     }
 
@@ -219,8 +219,8 @@ impl<'a> AtomicPublication<'a> {
 
 #[derive(Debug)]
 pub(super) enum CommitFailure {
-    BeforeYaml(MemoryError),
-    AfterYaml,
+    YamlNotDurable(MemoryError),
+    YamlDurable,
 }
 
 fn store_io(_: std::io::Error) -> MemoryError {
@@ -234,12 +234,16 @@ const fn store_error() -> MemoryError {
 fn cleanup_before_yaml(yaml: StagedFile, index: StagedIndex, error: MemoryError) -> CommitFailure {
     let index_cleanup = index.discard();
     let yaml_cleanup = yaml.discard();
-    CommitFailure::BeforeYaml(
+    CommitFailure::YamlNotDurable(
         index_cleanup
             .err()
             .or_else(|| yaml_cleanup.err())
             .unwrap_or(error),
     )
+}
+
+fn yaml_not_durable(index: StagedIndex, error: MemoryError) -> CommitFailure {
+    CommitFailure::YamlNotDurable(index.discard().err().unwrap_or(error))
 }
 
 fn cleanup_derived(staged: StagedIndex, error: MemoryError) -> MemoryError {
