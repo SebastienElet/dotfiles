@@ -33,6 +33,11 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: memory-governance
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: enforcement-code
     installations:
       - { agent: claude, scope: user }
@@ -113,6 +118,10 @@ hooks:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - id: handoff
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
+  - id: memory
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
@@ -427,6 +436,12 @@ external:
         plugin: superpowers@openai-curated,
         slug: writing-skills,
       }
+mcp:
+  - name: apple-notes
+    agent: claude
+    scope: project
+    command: /Applications/Apple Notes Exporter.app/Contents/SharedSupport/notes-export-mcp
+    enabled: true
 resources:
   - id: claude-user-instructions
     kind: instructions
@@ -456,6 +471,14 @@ resources:
         path: harness/skills/agent-instructions/references/maintenance.md,
       }
     destination: { root: home, path: .claude/rules/agent-instructions.md }
+  - id: cursor-user-memory-governance
+    kind: rules
+    agent: cursor
+    scope: user
+    source:
+      { root: repository, path: harness/rules/memory-governance-cursor.mdc }
+    destination:
+      { root: home, path: .cursor/rules/memory-governance-cursor.mdc }
   - id: claude-project-instructions
     kind: instructions
     agent: claude

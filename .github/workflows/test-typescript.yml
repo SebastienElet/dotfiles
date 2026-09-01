@@ -14,6 +14,7 @@ jobs:
           bun-version-file: package.json
       - run: bun --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
       - run: bun --config=/dev/null --no-env-file tooling/node-version-contract.ts verify-runtime
+      - run: cargo build --release --manifest-path tooling/agent-memory/Cargo.toml
       - run: bun --config=/dev/null --no-env-file test --timeout 15000
         env:
           SCRAPLING_DOCKER_SMOKE: "1"

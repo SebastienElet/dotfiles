@@ -1,0 +1,33 @@
+name: Agent Handoff tests
+
+on:
+  push:
+    paths:
+      - .cargo/**
+      - tooling/agent-handoff/**
+      - Makefile
+      - tooling/deployment-codex-wiring.test.ts
+      - tooling/arnes/**
+      - .github/workflows/test-agent-handoff.yml
+  pull_request:
+    paths:
+      - .cargo/**
+      - tooling/agent-handoff/**
+      - Makefile
+      - tooling/deployment-codex-wiring.test.ts
+      - tooling/arnes/**
+      - .github/workflows/test-agent-handoff.yml
+
+jobs:
+  agent-handoff:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: -Funsafe-code
+    steps:
+      - uses: actions/checkout@v5
+      - run: cargo fmt --manifest-path tooling/agent-handoff/Cargo.toml --check
+      - run: cargo clippy --manifest-path tooling/agent-handoff/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --manifest-path tooling/agent-handoff/Cargo.toml

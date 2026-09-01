@@ -243,3 +243,70 @@ fn accepts_an_executable_symlink_like_the_deployed_arnes_command() {
         )
     );
 }
+
+#[test]
+fn installs_memory_hook_on_user_prompt_submit_only() {
+    for agent in ["codex", "claude-code"] {
+        let harness = Harness::new();
+        harness.write_memory_manifest(agent);
+        harness.executable_named("agent-memory");
+
+        assert_success(&harness.install(agent));
+
+        let config = read_json(harness.config(agent));
+        let hooks = config["hooks"].as_object().unwrap();
+        assert_eq!(
+            hooks.keys().collect::<Vec<&String>>(),
+            vec!["UserPromptSubmit"]
+        );
+        let handler = &hooks["UserPromptSubmit"][0]["hooks"][0];
+        assert_eq!(handler["type"], "command");
+        assert_eq!(handler["command"], harness.memory_command(agent));
+        assert_eq!(handler["timeout"], 30);
+    }
+}
+
+#[test]
+fn concurrent_memory_installations_leave_one_owned_hook_and_visible_failures() {
+    let harness = Harness::new();
+    harness.write_memory_manifest("codex");
+    harness.executable_named("agent-memory");
+
+    let first = spawn_captured(harness.setup_command("codex"));
+    let second = spawn_captured(harness.setup_command("codex"));
+    let first = first.wait_with_output().unwrap();
+    let second = second.wait_with_output().unwrap();
+    let outputs = [&first, &second];
+
+    assert!(
+        outputs.iter().any(|output| output.status.code() == Some(0)),
+        "neither concurrent installation succeeded"
+    );
+    for output in outputs {
+        if output.status.code() != Some(0) {
+            assert_eq!(output.status.code(), Some(2));
+            assert!(!output.stderr.is_empty());
+        }
+    }
+    let concurrent = fs::read(harness.config("codex")).unwrap();
+    let config: Value = serde_json::from_slice(&concurrent).unwrap();
+    let serialized = serde_json::to_string(&config).unwrap();
+    assert_eq!(
+        serialized.matches(&harness.memory_command("codex")).count(),
+        1
+    );
+    assert_eq!(
+        config["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"],
+        30
+    );
+    assert_success(&harness.install("codex"));
+    assert_eq!(fs::read(harness.config("codex")).unwrap(), concurrent);
+}
+
+fn spawn_captured(mut command: Command) -> std::process::Child {
+    command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap()
+}

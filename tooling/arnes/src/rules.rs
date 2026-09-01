@@ -41,7 +41,7 @@ pub fn diagnose(
 }
 
 fn supported(agent: Agent, scope: Scope) -> bool {
-    agent == Agent::Claude && scope == Scope::User
+    matches!(agent, Agent::Claude | Agent::Cursor) && scope == Scope::User
 }
 
 fn diagnose_resource(roots: &Roots, resource: RuleResource<'_>) -> Diagnostic {

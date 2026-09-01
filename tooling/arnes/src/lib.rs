@@ -6,6 +6,7 @@ mod files;
 pub mod hooks;
 pub mod instructions;
 pub mod manifest;
+pub mod mcp;
 pub mod measure;
 pub mod prompts;
 pub mod roots;

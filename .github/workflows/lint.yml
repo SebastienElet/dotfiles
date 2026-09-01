@@ -159,6 +159,8 @@ jobs:
             harness/skills/linear-workflow/references/bitbucket.md \
             harness/skills/linear-workflow/references/completion-evidence.md \
             harness/skills/linear-workflow/references/transports.md \
+            harness/skills/memory-governance/SKILL.md \
+            harness/skills/memory-governance/evals/trigger-queries.json \
             harness/skills/obsidian-retrieval/SKILL.md \
             harness/skills/obsidian-retrieval/references/obsidian-cli.md \
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \

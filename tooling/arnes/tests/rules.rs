@@ -3,6 +3,8 @@ pub mod rule_support;
 pub mod support;
 
 use rule_support::{configured_fixture, run};
+use std::fs;
+use std::os::unix::fs::symlink;
 
 #[test]
 fn claude_user_rule_symlinks_are_healthy() {
@@ -18,6 +20,45 @@ fn claude_user_rule_symlinks_are_healthy() {
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy rules: claude user rule agent-instructions"));
     assert!(stdout.contains("destination ~/.claude/rules/agent-instructions.md is current"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn cursor_user_rule_symlinks_are_healthy() {
+    let fixture = support::Fixture::new();
+    fixture.write_home(
+        ".arnes.yaml",
+        "version: 1\nagents:\n  - id: cursor\n    scopes: [user]\nresources:\n  - id: memory-governance-cursor\n    kind: rules\n    agent: cursor\n    scope: user\n    source: { root: repository, path: harness/rules/memory-governance-cursor.mdc }\n    destination: { root: home, path: .cursor/rules/memory-governance-cursor.mdc }\n",
+    );
+    fixture.write_repository(
+        "harness/rules/memory-governance-cursor.mdc",
+        "---\nalwaysApply: true\n---\n",
+    );
+    let destination = fixture
+        .home()
+        .join(".cursor/rules/memory-governance-cursor.mdc");
+    fs::create_dir_all(destination.parent().unwrap()).unwrap();
+    symlink(
+        fs::canonicalize(
+            fixture
+                .repository()
+                .join("harness/rules/memory-governance-cursor.mdc"),
+        )
+        .unwrap(),
+        destination,
+    )
+    .unwrap();
+
+    let (code, stdout, stderr) = run(
+        &fixture,
+        &[
+            "doctor", "rules", "--agent", "cursor", "--scope", "user", "-v",
+        ],
+    );
+
+    assert_eq!(code, 0, "{stdout}");
+    assert!(stdout.contains("healthy rules: cursor user rule memory-governance-cursor"));
+    assert!(stdout.contains("destination ~/.cursor/rules/memory-governance-cursor.mdc is current"));
     assert!(stderr.is_empty());
 }
 

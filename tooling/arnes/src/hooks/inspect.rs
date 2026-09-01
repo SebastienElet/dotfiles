@@ -11,7 +11,7 @@ mod comparison;
 mod expectation;
 mod presence;
 
-const KINDS: [HookKind; 2] = [HookKind::Measurement, HookKind::Handoff];
+const KINDS: [HookKind; 3] = [HookKind::Measurement, HookKind::Handoff, HookKind::Memory];
 
 pub fn diagnose(
     roots: &Roots,
@@ -64,17 +64,26 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
     if declared.is_empty() {
         diagnostics.push(unsupported(format!("{subject} hooks are not declared")));
     }
-    diagnostics.extend(KINDS.into_iter().filter_map(|kind| {
-        diagnose_kind(
-            roots,
-            &config,
-            &policy,
-            agent,
-            kind,
-            declared.contains(&kind),
-            &subject,
-        )
-    }));
+    diagnostics.extend(
+        KINDS
+            .into_iter()
+            .filter(|kind| {
+                *kind != HookKind::Memory
+                    || policy.memory_event.is_some()
+                    || declared.contains(kind)
+            })
+            .filter_map(|kind| {
+                diagnose_kind(
+                    roots,
+                    &config,
+                    &policy,
+                    agent,
+                    kind,
+                    declared.contains(&kind),
+                    &subject,
+                )
+            }),
+    );
     diagnostics
 }
 

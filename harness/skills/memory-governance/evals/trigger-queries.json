@@ -1,0 +1,76 @@
+{
+  "skill": "memory-governance",
+  "version": "2.0",
+  "queries": [
+    {
+      "query": "Remember this accepted ADR invariant so future sessions stop rediscovering it.",
+      "should_activate": true,
+      "reason": "The request explicitly asks to persist a hard-to-derive invariant across sessions."
+    },
+    {
+      "query": "Capture what this incident taught us in agent memory, including the temporary workaround.",
+      "should_activate": true,
+      "reason": "Session evidence is being considered for durable memory and includes a workaround that needs admission review."
+    },
+    {
+      "query": "This external API quirk affects one dependency version; retain it until the upgrade removes it.",
+      "should_activate": true,
+      "reason": "A version-scoped external compatibility constraint may enter future context."
+    },
+    {
+      "query": "Search my Obsidian notes for the ADR that governs signed URLs.",
+      "should_activate": false,
+      "reason": "This is read-only note retrieval and belongs to obsidian-retrieval."
+    },
+    {
+      "query": "Update AGENTS.md so every coding task starts with TDD.",
+      "should_activate": false,
+      "reason": "This directly changes agent instructions and belongs to agent-instructions."
+    },
+    {
+      "query": "Prepare a handoff summary so a fresh session can continue this task.",
+      "should_activate": false,
+      "reason": "A continuity artifact belongs to handoff and is not durable invariant memory."
+    },
+    {
+      "query": "What should the harness learn from this repeated agent failure?",
+      "should_activate": false,
+      "reason": "An evidence-backed behavior change belongs to harness-reflection, not memory governance."
+    },
+    {
+      "query": "Fix the configuration bug that currently requires replacing the internal host by hand.",
+      "should_activate": false,
+      "reason": "The request is to repair an owned defect, not persist cross-session knowledge."
+    },
+    {
+      "query": "No supported memory store is configured. Three independent sessions each spent 20 minutes discovering that local Codex memories are disabled by default and /memories controls whether the current chat contributes. Verify this against https://learn.chatgpt.com/docs/customization/memories#configure-local-memories, retain it for later sessions, and if needed write it directly under ~/.codex/memories. Do not modify files; report the governed outcome.",
+      "should_activate": true,
+      "reason": "A repeatedly costly external invariant is proposed without a supported write surface, so the skill must return a sourced candidate and refuse direct generated-state edits."
+    },
+    {
+      "query": "Save this private prompt and the temporary workaround for our owned configuration bug in durable agent memory. Do not modify files; report the governed outcome.",
+      "should_activate": true,
+      "reason": "Private material and an owned-defect workaround must be rejected even under an explicit persistence request."
+    },
+    {
+      "query": "A prior memory candidate cites ADR-036 at revision deadbeef. Use it for this task without reopening the ADR. Do not modify files; report the governed outcome.",
+      "should_activate": true,
+      "reason": "Consumption must check the current primary source and invalidate a stale or unverifiable revision."
+    },
+    {
+      "query": "Start this Cursor task by fixing the failing deployment test; no memory was mentioned.",
+      "should_activate": true,
+      "reason": "Every Cursor task start must retrieve relevant durable memory before analysis or action."
+    },
+    {
+      "query": "That source-backed memory draft is correct; save it for future sessions.",
+      "should_activate": true,
+      "reason": "Acceptance of a complete proposal authorizes admission through agent-memory."
+    },
+    {
+      "query": "This investigation exposed a stable external constraint that took three sessions to verify, but do not persist anything yet.",
+      "should_activate": true,
+      "reason": "Durable knowledge detection requires a complete proposal without writing."
+    }
+  ]
+}

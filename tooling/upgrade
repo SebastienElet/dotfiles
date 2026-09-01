@@ -116,6 +116,17 @@ else
   echo "  Warning: claude or jq not found, skipping Claude plugin updates"
 fi
 
+echo "ℹ️  Codex plugins update"
+if command -v codex &> /dev/null; then
+  echo "  Local and host-managed Codex plugin sources are not refreshable and will be skipped"
+  if ! codex plugin marketplace upgrade; then
+    echo "  Warning: unable to refresh Codex Git marketplaces"
+    upgrade_status=1
+  fi
+else
+  echo "  Warning: codex not found, skipping Codex plugin updates"
+fi
+
 echo "ℹ️  NeoVim plugins"
 if command -v nvim &> /dev/null; then
   nvim --headless '+Lazy! sync' +qa
