@@ -1,0 +1,10 @@
+javascript:
+  packageManager: bun
+
+bun:
+  version: "1.4.0"
+  installArgs:
+    - --config=/dev/null
+    - --no-env-file
+    - --frozen-lockfile
+    - --ignore-scripts

@@ -135,7 +135,7 @@ jobs:
           prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
           .github/workflows/check-typescript.yml .github/workflows/lint.yml
           .github/workflows/test-arnes.yml .github/workflows/test-typescript.yml
-          .moon/workspace.yml moon.yml tooling/arnes/moon.yml
+          .moon/toolchains.yml .moon/workspace.yml moon.yml tooling/arnes/moon.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
           harness/AGENTS.md
