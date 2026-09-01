@@ -4,6 +4,7 @@ home/.config/nvim/pack/
 home/.config/fish/fish_plugins
 home/.config/fish/functions
 home/.config/fish/completions
+home/.config/fish/conf.d/fzf.fish
 home/.config/fish/fish_variables
 .DS_Store
 
