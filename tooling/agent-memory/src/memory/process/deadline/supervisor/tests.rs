@@ -1,7 +1,9 @@
 use super::*;
 use crate::memory::process::deadline::cleanup::SystemGroupController;
 use crate::memory::process::deadline::readers::{ReaderPipe, ReaderSpawner, ReaderState};
-use rustix::process::{Pid, Signal, kill_process, kill_process_group, test_kill_process};
+use rustix::process::{
+    Pid, Signal, WaitOptions, kill_process, kill_process_group, test_kill_process, waitpid,
+};
 use std::io;
 use std::os::unix::process::CommandExt;
 use std::process::Stdio;
@@ -168,7 +170,7 @@ fn returns_promptly_when_group_kill_fails_but_the_leader_is_live() {
 
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
     assert!(started.elapsed() < Duration::from_millis(250));
-    assert!(test_kill_process(spawner.pid()).is_err());
+    assert_child_reaped(spawner.pid());
 }
 
 #[test]
@@ -231,7 +233,14 @@ fn assert_reader_failure_reaps(fail_on: usize) {
 
     assert_eq!(error.kind(), io::ErrorKind::Other);
     assert_eq!(readers.attempts.load(Ordering::Acquire), fail_on);
-    assert!(test_kill_process(spawner.pid()).is_err());
+    assert_child_reaped(spawner.pid());
+}
+
+fn assert_child_reaped(pid: Pid) {
+    assert!(matches!(
+        waitpid(Some(pid), WaitOptions::NOHANG),
+        Err(rustix::io::Errno::CHILD)
+    ));
 }
 
 fn sleep_command() -> Command {
