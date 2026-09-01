@@ -109,8 +109,50 @@ ${LOCAL_BIN}/arnes: ${DOTFILES_PATH}/tooling/arnes/Cargo.toml FORCE | ${LOCAL_BI
 	@cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --quiet --release
 	@source_path="${DOTFILES_PATH}/tooling/arnes/target/release/arnes"; if [ -L "$@" ] && [ "$$(readlink "$@")" = "$$source_path" ]; then exit 0; fi; if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and is not the expected symbolic link" >&2; exit 1; fi; echo "ln -s $$source_path $@"; ln -s "$$source_path" "$@"
 
-${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff FORCE | ${LOCAL_BIN}
-	@${CREATE_SYMLINK}
+${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
+	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.toml \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/environment.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/error.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/lib.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/main.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/run.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/state.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/src/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli/runtime_parity.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/concurrency.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/decision.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/event.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript.rs \
+	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript/numeric.rs \
+	| ${BREW_BIN}/cargo
+	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
+	test -x "$@"
+	touch "$@"
+${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff | ${LOCAL_BIN}
+	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
+	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
+	test "$$(readlink "$@")" = "$<"
+.PHONY: agent-handoff
+agent-handoff: ${LOCAL_BIN}/agent-handoff
+
+${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory: \
+	${DOTFILES_PATH}/tooling/agent-memory/Cargo.lock \
+	${DOTFILES_PATH}/tooling/agent-memory/Cargo.toml \
+	$(shell find ${DOTFILES_PATH}/tooling/agent-memory/src ${DOTFILES_PATH}/tooling/agent-memory/tests -type f -name '*.rs') \
+	| ${BREW_BIN}/cargo
+	cd ${DOTFILES_PATH}/tooling/agent-memory && ${BREW_BIN}/cargo build --release
+	test -x "$@"
+	touch "$@"
+${LOCAL_BIN}/agent-memory: ${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory | ${LOCAL_BIN}
+	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-memory" || ln -sfn "$<" "$@"
+	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
+	test "$$(readlink "$@")" = "$<"
+.PHONY: agent-memory
+agent-memory: ${LOCAL_BIN}/agent-memory
 
 .PHONY: docker
 docker:
@@ -122,9 +164,13 @@ postgresql: ~/.psqlrc
 	@${CREATE_SYMLINK}
 
 .PHONY: cursor
-cursor: ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/memory-governance ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ~/.cursor/skills:
 	mkdir -p $@
+~/.cursor/rules:
+	mkdir -p $@
+~/.cursor/rules/memory-governance-cursor.mdc: ${DOTFILES_PATH}/harness/rules/memory-governance-cursor.mdc FORCE | ~/.cursor/rules
+	@${CREATE_SYMLINK}
 ~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.cursor/skills
@@ -143,6 +189,8 @@ cursor: ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
+~/.cursor/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.cursor/skills
+	@${CREATE_SYMLINK}
 ~/.cursor/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix FORCE | ~/.cursor/skills
@@ -159,11 +207,11 @@ cursor: ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor
 	@${CREATE_SYMLINK}
 
 .PHONY: cursor-hooks
-cursor-hooks: arnes
+cursor-hooks: arnes agent-memory
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent cursor --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -198,6 +246,8 @@ ${LOCAL_BIN}/claude:
 	@${CREATE_SYMLINK}
 ~/.claude/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
+~/.claude/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.claude/skills
+	@${CREATE_SYMLINK}
 ~/.claude/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 # Linked globally because a pull request is reviewed from the repository under
@@ -216,7 +266,7 @@ ${LOCAL_BIN}/claude:
 	@${CREATE_SYMLINK}
 
 .PHONY: claude-code-hooks
-claude-code-hooks: arnes ${LOCAL_BIN}/agent-handoff
+claude-code-hooks: arnes agent-memory agent-handoff
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent claude --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
@@ -230,7 +280,7 @@ hunspell-dictionaries:
 	@"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -270,6 +320,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	@${CREATE_SYMLINK}
 ~/.agents/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
+~/.agents/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.agents/skills
+	@${CREATE_SYMLINK}
 ~/.agents/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix FORCE | ~/.agents/skills
@@ -286,7 +338,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	@${CREATE_SYMLINK}
 
 .PHONY: codex-hooks
-codex-hooks: arnes ${LOCAL_BIN}/agent-handoff
+codex-hooks: arnes agent-memory agent-handoff
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent codex --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent codex
 
 .PHONY: obsidian-retrieval-test

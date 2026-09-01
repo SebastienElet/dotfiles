@@ -16,6 +16,7 @@ afterEach(cleanupDeploymentFixtures);
 test("Codex aggregate target includes design claim audit", () => {
   const fixture = createDeploymentFixture("design-claim-audit");
   installProvider(fixture, "bun");
+  installProvider(fixture, "cargo");
   installProvider(fixture, "volta");
   const result = runMake(fixture, ["codex"], {
     dryRun: true,

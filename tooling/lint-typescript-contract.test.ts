@@ -184,6 +184,13 @@ const testJobSchema = z
       z
         .object({
           run: z.literal(
+            "cargo build --release --manifest-path tooling/agent-memory/Cargo.toml",
+          ),
+        })
+        .strict(),
+      z
+        .object({
+          run: z.literal(
             "bun --config=/dev/null --no-env-file test --timeout 15000",
           ),
           env: z.object({ SCRAPLING_DOCKER_SMOKE: z.literal("1") }).strict(),
@@ -262,6 +269,10 @@ test("runs Oxlint and TypeScript as independent Ubuntu gates", async (): Promise
       "name: TypeScript lint\n    if: false",
     ),
     workflow.replace("name: Bun tests", "name: Bun tests\n    if: false"),
+    workflow.replace(
+      "      - run: cargo build --release --manifest-path tooling/agent-memory/Cargo.toml\n",
+      "",
+    ),
     `defaults:\n  run:\n    shell: "true {0}"\n${workflow}`,
   ]) {
     expect(

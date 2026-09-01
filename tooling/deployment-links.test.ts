@@ -38,6 +38,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-feedback",
     "pr-verdict",
@@ -54,6 +55,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-feedback",
     "pr-verdict",
@@ -72,6 +74,7 @@ const userSkillDestinations = [
     "issue-creation",
     "linear-issue-spec",
     "linear-sync",
+    "memory-governance",
     "pr-fix",
     "pr-feedback",
     "pr-verdict",
@@ -262,3 +265,35 @@ test(
   },
   extendedDeploymentTimeoutMilliseconds,
 );
+test("agent aggregate targets deploy memory governance to every agent", () => {
+  const fixture = createDeploymentFixture("memory-governance");
+  const codexDestination = join(
+    fixture.home,
+    ".agents/skills/memory-governance",
+  );
+  const claudeDestination = join(
+    fixture.home,
+    ".claude/skills/memory-governance",
+  );
+  const cursorDestination = join(
+    fixture.home,
+    ".cursor/skills/memory-governance",
+  );
+  const provider = requireCommand("true");
+  for (const command of ["bun", "cargo", "volta"]) {
+    symlinkSync(provider, join(fixture.bin, command));
+  }
+  for (const [target, included] of [
+    ["codex", codexDestination],
+    ["claude-code", claudeDestination],
+    ["cursor", cursorDestination],
+  ] as const) {
+    const result = runMake(fixture, [target], {
+      dryRun: true,
+      repository: project,
+      variables: { BREW_BIN: fixture.bin },
+    });
+    expectSuccess(result);
+    expect(result.stdout).toContain(included);
+  }
+});

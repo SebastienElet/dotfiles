@@ -7,6 +7,7 @@ use std::fmt::{self, Display};
 pub enum HookKind {
     Measurement,
     Handoff,
+    Memory,
 }
 
 impl Display for HookKind {
@@ -14,6 +15,7 @@ impl Display for HookKind {
         formatter.write_str(match self {
             Self::Measurement => "measurement",
             Self::Handoff => "handoff",
+            Self::Memory => "memory",
         })
     }
 }

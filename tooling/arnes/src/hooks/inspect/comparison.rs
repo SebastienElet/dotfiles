@@ -24,7 +24,7 @@ pub fn compare(
     if problems.is_empty() {
         return healthy(format!(
             "{subject} {kind} hook is installed on {}",
-            coverage(expectation.events)
+            coverage(&expectation.events)
         ));
     }
     drift(format!(

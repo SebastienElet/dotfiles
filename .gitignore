@@ -10,6 +10,8 @@ home/.config/fish/fish_variables
 
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
+tooling/agent-memory/target/
+tooling/agent-handoff/target/
 tooling/arnes/target/
 .moon/cache/
 node_modules/

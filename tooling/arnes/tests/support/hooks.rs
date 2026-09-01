@@ -42,6 +42,17 @@ hooks:
 resources: []
 ";
 
+pub const MEMORY_MANIFEST: &str = "version: 1
+agents:
+  - id: claude
+    scopes: [user]
+hooks:
+  - id: memory
+    installations:
+      - { agent: claude, scope: user }
+resources: []
+";
+
 pub fn configured_fixture() -> Fixture {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", MANIFEST);
@@ -61,7 +72,7 @@ pub fn linked_handoff_fixture() -> Fixture {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", MANIFEST);
     executable(&fixture, "arnes");
-    let target = fixture.home().join("dotfiles/tooling/agent-handoff");
+    let target = fixture.repository().join("tooling/agent-handoff");
     fs::create_dir_all(target.parent().unwrap()).unwrap();
     fs::write(&target, b"binary").unwrap();
     fs::set_permissions(&target, fs::Permissions::from_mode(0o700)).unwrap();
@@ -74,9 +85,9 @@ pub fn linked_handoff_fixture() -> Fixture {
 }
 
 pub fn superseded_handoff_command(fixture: &Fixture) -> String {
-    fixture
-        .home()
-        .join("dotfiles/scripts/agent_handoff")
+    fs::canonicalize(fixture.repository())
+        .unwrap()
+        .join("scripts/agent_handoff")
         .to_str()
         .unwrap()
         .to_owned()

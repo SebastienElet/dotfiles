@@ -1,6 +1,7 @@
 use super::super::adapters::Policy;
 use super::super::{
     HooksError, handoff_aliases, handoff_path, measurement_command, measurement_path,
+    memory_command, memory_path,
 };
 use super::{drift, error};
 use crate::Roots;
@@ -14,7 +15,7 @@ use std::path::PathBuf;
 const HANDOFF_EVENTS: &[&str] = &["Stop"];
 
 pub struct Expectation {
-    pub events: &'static [&'static str],
+    pub events: Vec<&'static str>,
     pub nested: bool,
     pub command: String,
     pub superseded: Vec<String>,
@@ -32,7 +33,7 @@ pub fn expectation(
         HookKind::Measurement => {
             let path = measurement_path(roots.home());
             Ok(Expectation {
-                events: policy.events,
+                events: policy.events.to_vec(),
                 nested: policy.nested,
                 command: measurement_command(&path, agent)?,
                 superseded: Vec::new(),
@@ -42,17 +43,33 @@ pub fn expectation(
         }
         HookKind::Handoff => {
             let path = handoff_path(roots.home());
-            let mut aliases = handoff_aliases(&path)?.into_iter();
+            let mut aliases = handoff_aliases(&path, roots.repository())?.into_iter();
             let command = aliases
                 .next()
                 .ok_or_else(|| HooksError::new("handoff hook command is required"))?;
             Ok(Expectation {
-                events: HANDOFF_EVENTS,
+                events: HANDOFF_EVENTS.to_vec(),
                 nested: true,
                 command,
                 superseded: aliases.collect(),
                 path,
                 label: "~/.local/bin/agent-handoff",
+            })
+        }
+        HookKind::Memory => {
+            let path = memory_path(roots.home());
+            let command = memory_command(&path, agent)?
+                .ok_or_else(|| HooksError::new("Cursor does not support the memory hook"))?;
+            let event = policy
+                .memory_event
+                .ok_or_else(|| HooksError::new("Cursor does not support the memory hook"))?;
+            Ok(Expectation {
+                events: vec![event],
+                nested: policy.nested,
+                command,
+                superseded: Vec::new(),
+                path,
+                label: "~/.local/bin/agent-memory",
             })
         }
     }
