@@ -38,6 +38,7 @@ fn parses_ordered_codex_statusline_projections() {
         (projections[1].agent, projections[1].scope),
         (Agent::Codex, Scope::Project)
     );
+    assert_eq!(projections[1].items, ["context-used"]);
 }
 
 #[test]
