@@ -12,5 +12,6 @@ pub mod prompts;
 pub mod roots;
 pub mod rules;
 pub mod skills;
+pub mod statusline;
 
 pub use roots::Roots;
