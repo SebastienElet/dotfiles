@@ -7,6 +7,7 @@ use arnes::diagnostic::{ColorMode, Diagnostic, HumanOptions, Report, State};
 use arnes::hooks;
 use arnes::instructions;
 use arnes::manifest::{self, Agent, Scope};
+use arnes::mcp;
 use arnes::prompts;
 use arnes::rules;
 use arnes::skills;
@@ -40,7 +41,13 @@ pub(super) fn run(
         std::env::var_os("NO_COLOR").as_deref(),
     );
     let (output, exit_code) = match format {
-        Format::Human => render::human(diagnostics, resource, agent, scope, human_options),
+        Format::Human => render::human(
+            diagnostics,
+            resource,
+            agent,
+            resource.and(scope.or(Some(Scope::User))).or(scope),
+            human_options,
+        ),
         Format::Json => {
             let report = Report::new(diagnostics);
             (
@@ -69,11 +76,11 @@ fn diagnose(
             Err(error) => vec![Diagnostic::new("manifest", State::Error, error.to_string())],
         },
         Some(Resource::Config) => match Roots::from_environment() {
-            Ok(roots) => diagnose_config(&roots, agent, scope),
+            Ok(roots) => diagnose_config(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("config", State::Error, error.to_string())],
         },
         Some(Resource::Instructions) => match Roots::from_environment() {
-            Ok(roots) => diagnose_instructions(&roots, agent, scope),
+            Ok(roots) => diagnose_instructions(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new(
                 "instructions",
                 State::Error,
@@ -81,24 +88,28 @@ fn diagnose(
             )],
         },
         Some(Resource::Skills) => match Roots::from_environment() {
-            Ok(roots) => diagnose_skills(&roots, agent, scope),
+            Ok(roots) => diagnose_skills(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("skills", State::Error, error.to_string())],
         },
         Some(Resource::Prompts) => match Roots::from_environment() {
-            Ok(roots) => diagnose_prompts(&roots, agent, scope),
+            Ok(roots) => diagnose_prompts(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("prompts", State::Error, error.to_string())],
         },
         Some(Resource::Commands) => match Roots::from_environment() {
-            Ok(roots) => diagnose_commands(&roots, agent, scope),
+            Ok(roots) => diagnose_commands(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("commands", State::Error, error.to_string())],
         },
         Some(Resource::Rules) => match Roots::from_environment() {
-            Ok(roots) => diagnose_rules(&roots, agent, scope),
+            Ok(roots) => diagnose_rules(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("rules", State::Error, error.to_string())],
         },
         Some(Resource::Hooks) => match Roots::from_environment() {
-            Ok(roots) => diagnose_hooks(&roots, agent, scope),
+            Ok(roots) => diagnose_hooks(&roots, agent, scope.or(Some(Scope::User))),
             Err(error) => vec![Diagnostic::new("hooks", State::Error, error.to_string())],
+        },
+        Some(Resource::Mcp) => match Roots::from_environment() {
+            Ok(roots) => diagnose_mcp(&roots, agent, scope.or(Some(Scope::User))),
+            Err(error) => vec![Diagnostic::new("mcp", State::Error, error.to_string())],
         },
         _ => Vec::new(),
     }
@@ -118,8 +129,10 @@ fn diagnose_default(agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnosti
         State::Healthy,
         "manifest is valid",
     )];
-    diagnostics.extend(skills::diagnose(&roots, &manifest, agent, scope));
-    diagnostics.extend(hooks::diagnose(&roots, &manifest, agent, scope));
+    let user_scope = scope.or(Some(Scope::User));
+    diagnostics.extend(skills::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(hooks::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(mcp::diagnose(&roots, &manifest, agent, scope));
     diagnostics
 }
 
@@ -184,5 +197,12 @@ fn diagnose_hooks(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> 
     match manifest::load(roots.home()) {
         Ok(manifest) => hooks::diagnose(roots, &manifest, agent, scope),
         Err(error) => vec![Diagnostic::new("hooks", State::Error, error.to_string())],
+    }
+}
+
+fn diagnose_mcp(roots: &Roots, agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnostic> {
+    match manifest::load(roots.home()) {
+        Ok(manifest) => mcp::diagnose(roots, &manifest, agent, scope),
+        Err(error) => vec![Diagnostic::new("mcp", State::Error, error.to_string())],
     }
 }
