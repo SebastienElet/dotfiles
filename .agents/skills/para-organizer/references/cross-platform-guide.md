@@ -7,6 +7,7 @@ After setting up PARA on the local file system, offer to help the user mirror th
 Use the **same PARA structure** — with the exact same spelling, punctuation, and capitalization — across every platform. This reduces the cognitive effort of switching between tools because the organizational system is always the same.
 
 However, two important caveats:
+
 1. **Only create a folder when you have something to put in it.** Don't create empty folders "just in case" — you'll end up with a maze of empty folders that clutter your workspace.
 2. **Not every category needs to exist on every platform.** A "Zoom Recordings" resource might only live on your computer. Only extend a category across platforms when you need to.
 
@@ -15,16 +16,19 @@ However, two important caveats:
 There are six main places people store digital information. Four of them are organized using PARA:
 
 ### Organized by PARA (categorical)
+
 1. **Computer file system** (the root organized through this skill)
 2. **Cloud storage drive** (Google Drive, OneDrive, Dropbox, iCloud Drive)
 3. **Digital notetaking app** (Notion, Obsidian, Evernote, Apple Notes)
-4. **To-do list app** (Things, Todoist, Asana) — *projects and areas only*, since these are the categories that have tasks associated with them
+4. **To-do list app** (Things, Todoist, Asana) — _projects and areas only_, since these are the categories that have tasks associated with them
 
 ### Organized chronologically (not PARA)
+
 5. **Calendar app** — appointments and meetings organized by date
 6. **Photos app** — organized by date automatically
 
 ### Sensitive/encrypted (separate)
+
 7. **Password manager** — for tax documents, credit card details, medical data, passwords
 
 ## How to Set Up PARA on Each Platform
@@ -32,6 +36,7 @@ There are six main places people store digital information. Four of them are org
 ### Cloud Storage (Google Drive, OneDrive, Dropbox)
 
 Create the same top-level structure:
+
 ```
 0 Inbox
 1 Projects
@@ -45,6 +50,7 @@ Cloud storage is ideal for content you'll collaborate on with others. The rule o
 ### Notetaking App (Notion, Obsidian, Evernote)
 
 Create top-level notebooks, folders, or sections:
+
 ```
 0 Inbox
 1 Projects
@@ -74,7 +80,7 @@ Most tasks belong to a project. Occasionally you'll have a standalone task withi
 
 ## The Storage Flowchart
 
-When deciding *which platform* to save something on:
+When deciding _which platform_ to save something on:
 
 1. **Is it an appointment or meeting?** → Calendar
 2. **Is it a task?** → To-do list app

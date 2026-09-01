@@ -13,7 +13,8 @@ prompts:
       - agent: claude
         scope: user
         representation: symlink
-        destination: &destination { root: home, path: .claude/commands/review.md }
+        destination:
+          &destination { root: home, path: .claude/commands/review.md }
   - id: other
     source: { root: repository, path: harness/prompts/other.md }
     includes: []

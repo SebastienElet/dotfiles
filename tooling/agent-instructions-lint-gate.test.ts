@@ -11,14 +11,12 @@ const stepBody = (workflow: string, name: string): string => {
   return workflow.slice(start, nextStep === -1 ? undefined : nextStep);
 };
 
-test("text CI formats and spellchecks the canonical agent instructions", async () => {
+test("text CI spellchecks the canonical agent instructions", async () => {
   const workflow = await Bun.file(workflowPath).text();
-  const formatStep = stepBody(workflow, "Check text syntax and formatting");
   const spellStep = stepBody(
     workflow,
     "Check configuration and user dictionary",
   );
 
-  expect(formatStep).toContain("harness/AGENTS.md");
   expect(spellStep).toContain("harness/AGENTS.md");
 });

@@ -60,11 +60,11 @@ The PARA Method was created by Tiago Forte. Before classifying anything, read `r
 
 ### Quick orientation
 
-PARA organizes all digital information into four categories based on *actionability* — how immediately relevant something is to your current work and life:
+PARA organizes all digital information into four categories based on _actionability_ — how immediately relevant something is to your current work and life:
 
 - **Projects** — Short-term efforts with a goal and a deadline. Active, finite, completable. Folder names should be short, pithy labels — the kind you'd scan on a one-page project list. Goal and deadline live separately (in the inventory), not inside the folder name. Examples: "New Website," "Japan Trip," "Q3 Report."
-- **Areas** — Ongoing responsibilities with a *standard to maintain* but no end date. Examples: "Health," "Finances," "Direct Reports," "Product Development."
-- **Resources** — Topics of ongoing *interest* for future reference. Not tied to a responsibility — purely curiosity-driven or useful as reference material. Examples: "Photography," "Marketing best practices," "Recipes."
+- **Areas** — Ongoing responsibilities with a _standard to maintain_ but no end date. Examples: "Health," "Finances," "Direct Reports," "Product Development."
+- **Resources** — Topics of ongoing _interest_ for future reference. Not tied to a responsibility — purely curiosity-driven or useful as reference material. Examples: "Photography," "Marketing best practices," "Recipes."
 - **Archives** — Inactive items from any of the above three categories. Completed projects, areas you're no longer responsible for, topics you've lost interest in.
 
 The spectrum runs from most actionable (Projects) to least actionable (Archives). Information flows between categories as your life changes.
@@ -91,7 +91,7 @@ The PARA Method is meant to be lightweight and forgiving. Resist the urge to ove
 - **Trust is the top priority.** You are touching the user's real files. Always present the plan first. Always get approval. Never surprise them.
 - **No loose files at the top level.** Every file must live inside a named subfolder (a specific project, area, or resource). Nothing sits loose at the root of `1 Projects/`, `2 Areas/`, `3 Resources/`, or `4 Archives/`.
 - **Default to more actionable on ties.** When a file could plausibly be either a Project or an Area (or an Area or a Resource), default to the more actionable category. It's better to over-promote to Projects than to bury something in Archives where it won't surface.
-- There is no single "correct" place for any item — what matters is the user's *relationship* to it right now.
+- There is no single "correct" place for any item — what matters is the user's _relationship_ to it right now.
 - Don't create subfolders or internal structure within PARA folders. The user can do that later if they want to. PARA doesn't prescribe it.
 - Don't rename the user's files or folders unless they ask.
 - Never create an empty folder. Only create a folder when you have something to put in it.

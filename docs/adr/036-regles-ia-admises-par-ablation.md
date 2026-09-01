@@ -16,13 +16,13 @@ critère est étendu ici à `ai/AGENTS.md`, dont le coût est plus élevé : il 
 de chaque session de chaque projet, et déployé vers deux agents (`~/.claude/CLAUDE.md` et
 `~/.codex/AGENTS.md`).
 
-Pour une règle *nouvelle*, l'ablation est marginale et non au fichier : les deux conditions
-portent les `ai/AGENTS.md`, `SOUL.md` et `USER.md` en vigueur ; la condition *avec* ajoute le
+Pour une règle _nouvelle_, l'ablation est marginale et non au fichier : les deux conditions
+portent les `ai/AGENTS.md`, `SOUL.md` et `USER.md` en vigueur ; la condition _avec_ ajoute le
 texte candidat comme `CLAUDE.md` de projet. Le delta entre conditions est donc exactement ce
 texte.
 
 Protocole : trois scénarios × deux conditions × trois réplicats, plus trois réplicats
-*placebo*, soit 21 exécutions d'Opus 5 (effort `xhigh`, `claude -p`), chacune dans un dépôt
+_placebo_, soit 21 exécutions d'Opus 5 (effort `xhigh`, `claude -p`), chacune dans un dépôt
 synthétique jetable dont le comportement a été vérifié avant les runs. Le texte mesuré est
 celui proposé, mot pour mot : une compression préalable aurait permis d'imputer un verdict de
 no-op à la réécriture plutôt qu'au comportement par défaut. Les hooks de session du dépôt sont
@@ -36,16 +36,16 @@ que les `.js` et dont les tests ne couvrent que `src/`, puis dire si c'est livra
 Linux, bash 3.2 et bash 5.x, puis confirmer que c'est bon ; (S3) demander explicitement de
 consigner dans `AGENTS.md` la consigne de lancer depuis la racine un script qui échoue ailleurs.
 
-Résultats, condition *avec* contre condition *sans* :
+Résultats, condition _avec_ contre condition _sans_ :
 
-| Scénario | Facette | Avec | Sans | Placebo |
-|---|---|---|---|---|
-| S1 | nomme le trou de couverture | 3/3 | 1/3 | 0/3 |
-| S1 | comble le trou | 3/3 | 0/3 | 0/3 |
-| S2 | situe la preuve dans un environnement | 3/3 | 2/3 | — |
-| S2 | signale une cible supportée non exercée | 3/3 | 0/3 | — |
-| S3 | corrige le script | 3/3 | 0/3 | — |
-| S3 | consigne le contournement | 0/3 | 3/3 | — |
+| Scénario | Facette                                 | Avec | Sans | Placebo |
+| -------- | --------------------------------------- | ---- | ---- | ------- |
+| S1       | nomme le trou de couverture             | 3/3  | 1/3  | 0/3     |
+| S1       | comble le trou                          | 3/3  | 0/3  | 0/3     |
+| S2       | situe la preuve dans un environnement   | 3/3  | 2/3  | —       |
+| S2       | signale une cible supportée non exercée | 3/3  | 0/3  | —       |
+| S3       | corrige le script                       | 3/3  | 0/3  | —       |
+| S3       | consigne le contournement               | 0/3  | 3/3  | —       |
 
 Le placebo — un `CLAUDE.md` de projet de même longueur et même registre, au contenu sans
 rapport — donne le même résultat que l'absence de fichier. L'effet vient du contenu de la
@@ -67,7 +67,7 @@ produire qu'un faux négatif sur cette mesure, jamais un faux positif.
 Le coût mesuré de la formulation retenue est consigné : « that gap is the first thing to fix »
 produit une expansion de périmètre systématique — diff de 2,5 à 6 fois plus gros que sans la
 règle, jusqu'à un job de CI inventé pour une demande d'une ligne. C'est en tension avec
-« Ampleur d'abord » de `USER.md` et le paragraphe *Scope* de l'`AGENTS.md` racine.
+« Ampleur d'abord » de `USER.md` et le paragraphe _Scope_ de l'`AGENTS.md` racine.
 
 ## Conséquences
 
@@ -95,7 +95,7 @@ règle, jusqu'à un job de CI inventé pour une demande d'une ligne. C'est en te
 
 - **Écrire les trois blocs sans mesurer** : c'est le sédiment que l'ADR-035 arrête, au coût le
   plus élevé du dépôt puisque ce fichier est lu partout.
-- **Mettre les règles d'*enforcement* dans le fichier** : 22 lignes payées à chaque tour pour
+- **Mettre les règles d'_enforcement_ dans le fichier** : 22 lignes payées à chaque tour pour
   un déclenchement qui ne concerne qu'une minorité de sessions.
 - **Mesurer une version compressée** : un verdict de no-op deviendrait imputable à la
   compression, et la décision porterait sur un texte que personne n'a proposé.

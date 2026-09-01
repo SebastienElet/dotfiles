@@ -1,4 +1,5 @@
 projects:
+  repository: .
   tooling/arnes: tooling/arnes
 
 vcs:

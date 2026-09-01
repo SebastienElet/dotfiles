@@ -76,7 +76,7 @@ sont lus depuis leurs fichiers documentés ; le réglage le plus proche du proje
 périmètre observable par un doctor lancé dans ce projet. Les réglages managed, serveur ou MDM ne
 sont pas déduits depuis HOME.
 
-Les *bundled skills* sont embarqués dans le binaire natif, sans répertoire ni sous-commande
+Les _bundled skills_ sont embarqués dans le binaire natif, sans répertoire ni sous-commande
 d'énumération ; `disableBundledSkills` et `skillOverrides` documentent leur exposition, pas leur
 inventaire. Les reconstituer exigerait une table de noms en Rust liée à une version du binaire :
 Arnes n'audite donc aucun skill système Claude.

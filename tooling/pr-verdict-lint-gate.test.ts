@@ -17,16 +17,14 @@ const stepBody = (workflow: string, name: string): string => {
   return workflow.slice(start, nextStep === -1 ? undefined : nextStep);
 };
 
-test("the text lint gates cover every pr-verdict source file", async () => {
+test("the text lint gate spellchecks every pr-verdict source file", async () => {
   const workflow = await Bun.file(workflowPath).text();
-  const formatStep = stepBody(workflow, "Check text syntax and formatting");
   const spellStep = stepBody(
     workflow,
     "Check configuration and user dictionary",
   );
 
   for (const path of prVerdictPaths) {
-    expect(formatStep).toContain(path);
     expect(spellStep).toContain(path);
   }
 });
