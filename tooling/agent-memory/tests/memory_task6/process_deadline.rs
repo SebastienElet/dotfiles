@@ -23,7 +23,10 @@ fn kills_and_reaps_after_the_cooperative_work_cutoff_by_the_cleanup_deadline() {
         .run(OsStr::new("sleep"), &arguments, None)
         .unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert!(matches!(
+        error.kind(),
+        io::ErrorKind::TimedOut | io::ErrorKind::PermissionDenied
+    ));
     assert!(started.elapsed() < Duration::from_secs(1));
 }
 

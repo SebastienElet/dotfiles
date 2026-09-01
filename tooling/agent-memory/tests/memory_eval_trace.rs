@@ -1,6 +1,9 @@
 use serde_json::Value;
 use std::fs;
+use std::net::Shutdown;
+use std::os::fd::OwnedFd;
 use std::os::unix::fs::{PermissionsExt, symlink};
+use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
@@ -142,15 +145,17 @@ fn records_output_failure_instead_of_success() {
     let fixture = TraceFixture::new();
     let trace_root = tempfile::tempdir().unwrap();
     let trace = trace_root.path().join("broken-output.jsonl");
-    let mut child = traced_command(
+    let (output, peer) = UnixStream::pair().unwrap();
+    peer.shutdown(Shutdown::Read).unwrap();
+    drop(peer);
+    let status = traced_command(
         &fixture,
         ["audit", "--format", "json"],
         Some((trace_root.path(), &trace, "codex")),
     )
-    .spawn()
+    .stdout(Stdio::from(OwnedFd::from(output)))
+    .status()
     .unwrap();
-    drop(child.stdout.take());
-    let status = child.wait().unwrap();
     assert_eq!(status.code(), Some(4));
     let events = trace_events(&trace);
     assert_event(&events[1], "error", "codex", "audit", "unavailable");
