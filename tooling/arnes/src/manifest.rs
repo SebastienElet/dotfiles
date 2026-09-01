@@ -7,6 +7,7 @@ mod commands;
 mod config;
 mod external;
 mod hooks;
+mod mcp;
 mod parsing;
 mod prompts;
 mod rules;
@@ -16,6 +17,7 @@ pub use commands::{Command, CommandBinding};
 pub use config::UserConfig;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use hooks::HookKind;
+pub use mcp::McpRegistration;
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
 pub use rules::RuleResource;
@@ -62,6 +64,8 @@ pub struct Manifest {
     commands: Vec<commands::CommandDeclaration>,
     #[serde(default)]
     hooks: Vec<hooks::HookDeclaration>,
+    #[serde(default)]
+    mcp: Vec<mcp::McpDeclaration>,
     resources: Vec<ResourceDeclaration>,
 }
 
