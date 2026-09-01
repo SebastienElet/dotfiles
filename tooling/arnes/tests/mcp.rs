@@ -94,7 +94,7 @@ fn default_doctor_checks_project_mcp_without_changing_other_scope_defaults() {
     let output = fixture.command(["doctor", "-v"]);
     let stdout = stdout(&output);
 
-    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(output.status.code(), Some(1));
     assert!(stdout.contains("MCP"));
     assert!(stdout.contains("healthy mcp: claude project managed"));
     assert!(stdout.contains("Skills · user scope"));

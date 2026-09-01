@@ -195,14 +195,27 @@ fn unmanaged_and_plugin_owned_commands_are_ignored_and_preserved() {
 }
 
 #[test]
-fn doctor_without_resource_does_not_aggregate_prompts() {
+fn default_doctor_reuses_filtered_prompt_diagnostics() {
     let fixture = configured_fixture();
     fixture.write_home(".claude/commands/deploy.md", "stale\n");
+    let (_, direct, _) = run(
+        &fixture,
+        &[
+            "doctor", "prompts", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let (_, aggregate, _) = run(
+        &fixture,
+        &[
+            "doctor", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let direct: Vec<Value> = serde_json::from_str(&direct).unwrap();
+    let aggregate: Vec<Value> = serde_json::from_str(&aggregate).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "prompts")
+        .collect::<Vec<_>>();
 
-    let (code, stdout, stderr) = run(&fixture, &["doctor"]);
-
-    assert_eq!(code, 0);
-    assert!(stdout.contains("Skills · user scope"));
-    assert!(!stdout.contains("Prompts"));
-    assert!(stderr.is_empty());
+    assert_eq!(aggregate, direct);
 }

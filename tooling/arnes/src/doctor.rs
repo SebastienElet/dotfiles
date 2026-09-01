@@ -136,9 +136,15 @@ fn diagnose_default(agent: Option<Agent>, scope: Option<Scope>) -> Vec<Diagnosti
         "manifest is valid",
     )];
     let user_scope = scope.or(Some(Scope::User));
+    diagnostics.extend(config::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(instructions::diagnose(&roots, &manifest, agent, user_scope));
     diagnostics.extend(skills::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(prompts::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(commands::diagnose(&roots, &manifest, agent, user_scope));
+    diagnostics.extend(rules::diagnose(&roots, &manifest, agent, user_scope));
     diagnostics.extend(hooks::diagnose(&roots, &manifest, agent, user_scope));
     diagnostics.extend(mcp::diagnose(&roots, &manifest, agent, scope));
+    diagnostics.extend(statusline::diagnose(&roots, &manifest, agent, scope));
     diagnostics
 }
 

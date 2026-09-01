@@ -211,3 +211,31 @@ fn configuration_symlink_cannot_escape_scope_root() {
     assert!(stdout(&output).contains("escapes its scope root"));
     assert!(!stdout(&output).contains("outside"));
 }
+
+#[test]
+fn default_doctor_reuses_filtered_statusline_diagnostics() {
+    let fixture = Fixture::new();
+    fixture.write_home(".arnes.yaml", &manifest("user", "model"));
+    fixture.write_home(".codex/config.toml", "[tui]\nstatus_line = [\"model\"]\n");
+    let direct = fixture.command([
+        "doctor",
+        "statusline",
+        "--agent",
+        "codex",
+        "--scope",
+        "user",
+        "--format",
+        "json",
+    ]);
+    let aggregate = fixture.command([
+        "doctor", "--agent", "codex", "--scope", "user", "--format", "json",
+    ]);
+    let direct: Vec<serde_json::Value> = serde_json::from_str(&stdout(&direct)).unwrap();
+    let aggregate: Vec<serde_json::Value> = serde_json::from_str(&stdout(&aggregate)).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "statusline")
+        .collect::<Vec<_>>();
+
+    assert_eq!(aggregate, direct);
+}

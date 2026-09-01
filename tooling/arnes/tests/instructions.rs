@@ -136,12 +136,34 @@ fn instructions_doctor_is_read_only() {
 }
 
 #[test]
-fn doctor_without_resource_does_not_aggregate_instructions() {
+fn default_doctor_reuses_filtered_instruction_diagnostics() {
     let fixture = configured_fixture();
     fs::remove_file(fixture.home().join(".codex/AGENTS.md")).unwrap();
-    let (code, stdout, _) = run(&fixture, &["doctor"]);
+    let (_, direct, _) = run(
+        &fixture,
+        &[
+            "doctor",
+            "instructions",
+            "--agent",
+            "codex",
+            "--scope",
+            "user",
+            "--format",
+            "json",
+        ],
+    );
+    let (_, aggregate, _) = run(
+        &fixture,
+        &[
+            "doctor", "--agent", "codex", "--scope", "user", "--format", "json",
+        ],
+    );
+    let direct: Vec<serde_json::Value> = serde_json::from_str(&direct).unwrap();
+    let aggregate: Vec<serde_json::Value> = serde_json::from_str(&aggregate).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "instructions")
+        .collect::<Vec<_>>();
 
-    assert_eq!(code, 0);
-    assert!(stdout.contains("Skills · user scope"));
-    assert!(!stdout.contains("Instructions"));
+    assert_eq!(aggregate, direct);
 }

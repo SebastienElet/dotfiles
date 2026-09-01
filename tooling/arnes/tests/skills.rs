@@ -96,13 +96,24 @@ fn skills_doctor_is_isolated_and_read_only() {
 }
 
 #[test]
-fn doctor_without_resource_reports_manifest_then_skills() {
+fn doctor_without_resource_reports_resources_in_canonical_order() {
     let fixture = configured_fixture();
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
-    assert_eq!(code, 0);
+    assert_eq!(code, 1);
+    let positions = [
+        "Manifest",
+        "Config · user scope",
+        "Instructions · user scope",
+        "Skills · user scope",
+        "Prompts · user scope",
+        "Commands · user scope",
+        "Rules · user scope",
+        "Hooks · user scope",
+    ]
+    .map(|heading| stdout.find(heading).unwrap());
     assert!(
-        stdout.starts_with("Manifest\n✓ 1 healthy\n\nSkills · user scope · 3 agents\n"),
+        positions.windows(2).all(|pair| pair[0] < pair[1]),
         "{stdout}"
     );
 }
@@ -115,31 +126,43 @@ fn doctor_without_resource_fails_when_skills_drift() {
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.starts_with("Manifest\n✓ 1 healthy\n\nSkills · user scope"));
+    assert!(stdout.starts_with("Manifest\n✓ 1 healthy"));
+    assert!(stdout.contains("Skills · user scope"));
     assert!(stdout.contains("DRIFT alpha"));
 }
 
 #[test]
-fn json_doctor_without_resource_includes_manifest_skills_and_hooks() {
+fn json_doctor_without_resource_preserves_canonical_resource_order() {
     let fixture = configured_fixture();
     let (code, stdout, _) = run(&fixture, &["doctor", "--format", "json"]);
     let diagnostics: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     let diagnostics = diagnostics.as_array().unwrap();
 
-    assert_eq!(code, 0, "{stdout}");
-    assert_eq!(diagnostics[0]["resource"], "manifest");
+    assert_eq!(code, 1, "{stdout}");
     let resources = diagnostics
         .iter()
-        .skip(1)
         .map(|diagnostic| diagnostic["resource"].as_str().unwrap())
         .collect::<Vec<_>>();
-    assert!(resources.contains(&"skills"), "{stdout}");
-    assert!(resources.contains(&"hooks"), "{stdout}");
-    assert!(
-        resources
-            .iter()
-            .all(|resource| matches!(*resource, "skills" | "hooks")),
-        "{stdout}"
+    let resource_groups = resources
+        .into_iter()
+        .fold(Vec::new(), |mut groups, resource| {
+            if groups.last() != Some(&resource) {
+                groups.push(resource);
+            }
+            groups
+        });
+    assert_eq!(
+        resource_groups,
+        [
+            "manifest",
+            "config",
+            "instructions",
+            "skills",
+            "prompts",
+            "commands",
+            "rules",
+            "hooks",
+        ]
     );
 }
 
