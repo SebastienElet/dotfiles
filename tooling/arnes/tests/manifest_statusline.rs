@@ -43,12 +43,18 @@ fn parses_ordered_codex_statusline_projections() {
 
 #[test]
 fn absent_statusline_declarations_remain_compatible() {
+    let input = "version: 1\nagents:\n  - id: codex\n    scopes: [user, project]\nresources: []\n";
+
+    assert_eq!(manifest::parse(input).unwrap().statuslines().count(), 0);
+}
+
+#[test]
+fn legacy_statusline_resources_are_rejected_in_favor_of_top_level_declarations() {
+    let input = "version: 1\nagents:\n  - id: codex\n    scopes: [user]\nstatuslines:\n  - { agent: codex, scope: user, items: [model] }\nresources:\n  - id: legacy-statusline\n    kind: statusline\n    agent: codex\n    scope: user\n    source: { root: repository, path: config.toml }\n    destination: { root: home, path: .codex/config.toml }\n";
+
     assert_eq!(
-        manifest::parse(&input(" []"))
-            .unwrap()
-            .statuslines()
-            .count(),
-        0
+        manifest::parse(input).err().unwrap().to_string(),
+        "resources[0].kind: statuslines must use normalized top-level declarations"
     );
 }
 

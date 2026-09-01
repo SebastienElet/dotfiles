@@ -66,10 +66,11 @@ initiale de l'issue #122 qui demandait un état explicite pour les combinaisons 
 ## Frontières et erreurs
 
 Le contrôle est strictement en lecture seule. Il ne lance ni Codex ni shell, ne résout aucun
-exécutable, ne lit aucune variable d'environnement, ne modifie aucun fichier et ne contacte aucun
-réseau. Aucune status line ne référence d'artefact local dans la représentation Codex prise en
-charge ; les contrôles de présence et de permission prévus par l'issue initiale ne s'appliquent donc
-pas.
+exécutable, ne lit aucune variable d'environnement contenue dans ou référencée par la configuration
+inspectée, ne modifie aucun fichier et ne contacte aucun réseau. `HOME`, pour résoudre le scope
+utilisateur, et `NO_COLOR`, pour le rendu CLI, restent des entrées légitimes. Aucune status line ne
+référence d'artefact local dans la représentation Codex prise en charge ; les contrôles de présence
+et de permission prévus par l'issue initiale ne s'appliquent donc pas.
 
 Les valeurs externes sont parsées sans valeur de repli permissive. Un format inattendu reste une
 erreur observable plutôt que d'être transformé en configuration absente ou divergente. Le

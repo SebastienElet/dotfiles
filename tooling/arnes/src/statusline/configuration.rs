@@ -57,17 +57,25 @@ pub fn load(roots: &Roots, scope: Scope) -> Result<Option<Vec<String>>, Configur
 }
 
 fn read_optional(path: &Path, root: &Path) -> Result<Option<Vec<u8>>, ConfigurationError> {
-    match fs::symlink_metadata(path) {
+    let canonical = match fs::symlink_metadata(path) {
         Err(error) if error.kind() == ErrorKind::NotFound => return Ok(None),
-        Ok(_) if canonical_within(path, root).is_none() => {
-            return Err(ConfigurationError::new(format!(
-                "{} escapes its scope root",
-                path.display()
-            )));
-        }
-        Err(_) | Ok(_) => {}
+        Ok(_) => canonical_within(path, root).ok_or_else(|| {
+            ConfigurationError::new(format!("{} escapes its scope root", path.display()))
+        })?,
+        Err(_) => return Err(could_not_read(path)),
+    };
+    let metadata = fs::metadata(&canonical).map_err(|_| could_not_read(path))?;
+    if !metadata.is_file() {
+        return Err(ConfigurationError::new(format!(
+            "{} must be a regular file",
+            path.display()
+        )));
     }
-    fs::read(path)
+    fs::read(canonical)
         .map(Some)
-        .map_err(|_| ConfigurationError::new(format!("could not read {}", path.display())))
+        .map_err(|_| could_not_read(path))
+}
+
+fn could_not_read(path: &Path) -> ConfigurationError {
+    ConfigurationError::new(format!("could not read {}", path.display()))
 }

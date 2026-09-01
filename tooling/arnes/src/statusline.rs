@@ -10,7 +10,7 @@ pub fn diagnose(
     agent: Option<Agent>,
     scope: Option<Scope>,
 ) -> Vec<Diagnostic> {
-    // Claude Code status lines execute shell commands (code.claude.com/docs/en/statusline), while Cursor publishes no persistent schema; only Codex tui.status_line is diagnosed statically.
+    // Claude Code status lines execute shell commands (code.claude.com/docs/en/statusline); Cursor documents /statusline and CLI configuration but no persistent schema sufficient for static validation of a custom status line, so only Codex tui.status_line is diagnosed.
     manifest
         .statuslines()
         .filter(|statusline| agent.is_none_or(|agent| agent == statusline.agent))
