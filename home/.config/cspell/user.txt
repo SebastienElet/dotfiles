@@ -23,6 +23,7 @@ pullrequests
 renameat
 renamex
 scrapling
+unmatch
 wezterm
 wikilinks
 worktree
