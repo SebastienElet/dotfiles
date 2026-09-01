@@ -43,7 +43,7 @@ test("installs through the real Make target and replays without invoking Fish", 
   expect(linkTarget(join(fixture.home, ".config", "fish"))).toBe(source);
   expect(existsSync(bindings)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
-    "-c fisher install PatrickF1/fzf.fish\n",
+    "-c fisher update PatrickF1/fzf.fish; or fisher install PatrickF1/fzf.fish\n",
   );
 
   rmSync(marker);
