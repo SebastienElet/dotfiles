@@ -2,29 +2,19 @@ name: Arnes tests
 
 on:
   push:
-    paths:
-      - .cargo/**
-      - Makefile
-      - home/.arnes.yaml
-      - harness/**
-      - tooling/arnes/**
-      - .github/workflows/test-arnes.yml
+    branches:
+      - main
   pull_request:
-    paths:
-      - .cargo/**
-      - Makefile
-      - home/.arnes.yaml
-      - harness/**
-      - tooling/arnes/**
-      - .github/workflows/test-arnes.yml
 
 jobs:
   arnes:
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -Funsafe-code
     steps:
       - uses: actions/checkout@v5
-      - run: cargo fmt --manifest-path tooling/arnes/Cargo.toml --check
-      - run: cargo clippy --manifest-path tooling/arnes/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path tooling/arnes/Cargo.toml
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: >-
+          moon ci tooling/arnes:fmt tooling/arnes:clippy
+          tooling/arnes:check tooling/arnes:test
