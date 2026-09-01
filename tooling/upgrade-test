@@ -52,7 +52,7 @@ printf 'base\n' >"$repository/home/.config/nvim/lazy-lock.json"
 "$real_git" --git-dir="$remote" symbolic-ref HEAD refs/heads/main
 remote_tip=$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)
 
-for command_name in brew make mas npm volta claude jq; do
+for command_name in brew make mas npm volta claude codex jq; do
   printf '%s\n' \
     '#!/usr/bin/env bash' \
     'printf "%s %s\n" "$(basename "$0")" "$*" >>"$COMMAND_LOG"' \
@@ -117,6 +117,9 @@ grep -Fxq 'npm update -g --before=2026-08-13T00:00:00Z --min-release-age-exclude
 grep -Fxq 'volta pin node@lts' "$command_log" || fail "Volta does not refresh the project Node pin"
 grep -Fxq "volta install $expected_node_install_spec" "$command_log" || fail "Volta does not install the exact project Node pin"
 grep -Fxq 'claude update' "$command_log" || fail "Claude update is not independent from npm"
+grep -Fxq 'codex plugin marketplace upgrade' "$command_log" || fail "Codex Git marketplaces were not refreshed"
+grep -Fq 'Local and host-managed Codex plugin sources are not refreshable' "$test_root/main.out" ||
+  fail "unsupported Codex plugin sources were not reported"
 
 "$real_git" -C "$repository" checkout -q -B feature-test origin/main
 printf 'feature\n' >"$repository/feature-change"
@@ -165,6 +168,32 @@ assert_equal "$("$real_git" -C "$repository" rev-parse HEAD)" "$probe_tip" "fail
 [[ ! -s $git_log ]] || fail "failed repository probe allowed a push"
 grep -Fq "fatal: simulated rev-parse failure" "$test_root/probe-rev-parse.out" || fail "rev-parse error was suppressed"
 grep -Fq "unable to determine the main dotfiles branch" "$test_root/probe-rev-parse.out" || fail "rev-parse failure was not reported"
+
+rm "$mock_bin/codex"
+run_upgrade codex-missing codex-missing-update 0
+grep -Fq "codex not found, skipping Codex plugin updates" "$test_root/codex-missing.out" ||
+  fail "missing Codex was not reported"
+assert_equal "$(cat "$repository/home/.config/nvim/lazy-lock.json")" "codex-missing-update" \
+  "Codex absence stopped the remaining upgrade sequence"
+
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s\\n" "simulated Codex marketplace failure" >&2' \
+  'exit 42' >"$mock_bin/codex"
+chmod +x "$mock_bin/codex"
+run_upgrade codex-failure codex-failure-update 1
+grep -Fq "simulated Codex marketplace failure" "$test_root/codex-failure.out" ||
+  fail "Codex marketplace failure was not preserved"
+grep -Fq "unable to refresh Codex Git marketplaces" "$test_root/codex-failure.out" ||
+  fail "Codex marketplace failure was not reported"
+assert_equal "$(cat "$repository/home/.config/nvim/lazy-lock.json")" "codex-failure-update" \
+  "Codex failure stopped the remaining upgrade sequence"
+
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "%s %s\\n" "$(basename "$0")" "$*" >>"$COMMAND_LOG"' \
+  'exit 0' >"$mock_bin/codex"
+chmod +x "$mock_bin/codex"
 
 rm "$moon"
 run_upgrade moon-missing moon-update 1
