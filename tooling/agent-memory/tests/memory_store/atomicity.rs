@@ -73,6 +73,41 @@ fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
     }
 }
 
+#[test]
+fn retry_syncs_a_renamed_admission_before_reporting_duplicate() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().join("agent-memory");
+    let git = FakeProcessRunner::default();
+    let curl = FakeProcessRunner::default();
+    let context = SourceContext::new(fixture.path(), &git, &curl);
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let draft = user_draft(
+        "A retried admission becomes durable before success.",
+        "retry durability",
+        "Established.",
+    );
+    let interrupted =
+        Store::open_with_failpoint(memory_root(&root), StoreFailpoint::AfterYamlRename).unwrap();
+    assert_rejected(
+        interrupted.admit(resolved(&draft, &context), None, &timestamp, &context),
+        "store_unavailable",
+    );
+
+    let failed_retry =
+        Store::open_with_failpoint(memory_root(&root), StoreFailpoint::BeforeYamlDirectoryFsync)
+            .unwrap();
+    assert_rejected(
+        failed_retry.admit(resolved(&draft, &context), None, &timestamp, &context),
+        "store_unavailable",
+    );
+
+    let durable_retry = Store::open(memory_root(&root)).unwrap();
+    match durable_retry.admit(resolved(&draft, &context), None, &timestamp, &context) {
+        AdmissionResult::Duplicate { .. } => {}
+        result => panic!("unexpected admission result: {result:?}"),
+    }
+}
+
 enum InterruptedAdmission {
     Absent,
     Renamed,

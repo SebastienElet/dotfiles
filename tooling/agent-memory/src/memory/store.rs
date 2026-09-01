@@ -55,7 +55,15 @@ impl Store {
             return AdmissionResult::Rejected { error };
         }
         match self.existing_admission(&destination, &candidate) {
-            Ok(Some(true)) => return AdmissionResult::Duplicate { id },
+            Ok(Some(true)) => {
+                let durability = self
+                    .hit(StorePhase::BeforeYamlDirectoryFsync)
+                    .and_then(|()| destination.sync_parent_directory());
+                return match durability {
+                    Ok(()) => AdmissionResult::Duplicate { id },
+                    Err(error) => admission_failure(id, error),
+                };
+            }
             Ok(Some(false)) | Err(_) => {
                 return AdmissionResult::Conflict {
                     id,
