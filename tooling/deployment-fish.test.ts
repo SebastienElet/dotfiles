@@ -54,7 +54,7 @@ test("installs through the real Make target and replays without invoking Fish", 
   expect(existsSync(bindings)).toBeTrue();
   expect(existsSync(pluginConfiguration)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
-    "-c fisher update PatrickF1/fzf.fish; or fisher install PatrickF1/fzf.fish\n",
+    "-c fisher install PatrickF1/fzf.fish\n",
   );
 
   rmSync(marker);

@@ -86,7 +86,7 @@ fish: starship ~/.config/fish ~/.config/fish/functions/fzf_configure_bindings.fi
 	@${CREATE_SYMLINK}
 ~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
 	@if [ ! -e "$@" ]; then \
-		if ! ${BREW_BIN}/fish -c 'fisher update PatrickF1/fzf.fish; or fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
+		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
 			echo "Error: Fisher did not install $@" >&2; \
 			exit 1; \
 		fi; \
