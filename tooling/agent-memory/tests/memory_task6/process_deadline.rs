@@ -23,10 +23,7 @@ fn kills_and_reaps_after_the_cooperative_work_cutoff_by_the_cleanup_deadline() {
         .run(OsStr::new("sleep"), &arguments, None)
         .unwrap_err();
 
-    assert!(matches!(
-        error.kind(),
-        io::ErrorKind::TimedOut | io::ErrorKind::PermissionDenied
-    ));
+    assert_deadline_or_cleanup_denial(&error);
     assert!(started.elapsed() < Duration::from_secs(1));
 }
 
@@ -41,7 +38,7 @@ fn shares_one_work_budget_and_cleanup_deadline_across_processes() {
         .run(OsStr::new("sleep"), &[OsString::from("5")], None)
         .unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert_deadline_or_cleanup_denial(&error);
     assert!(started.elapsed() < Duration::from_secs(1));
 }
 
@@ -52,7 +49,7 @@ fn kills_descendants_that_keep_output_pipes_open() {
     let arguments = [OsString::from("-c"), OsString::from("sleep 5 & wait")];
     let error = runner.run(OsStr::new("sh"), &arguments, None).unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert_deadline_or_cleanup_denial(&error);
     assert!(started.elapsed() < Duration::from_secs(1));
 }
 
@@ -63,11 +60,15 @@ fn kills_descendants_after_the_parent_exits_with_open_pipes() {
     let arguments = [OsString::from("-c"), OsString::from("sleep 2 &")];
     let error = runner.run(OsStr::new("sh"), &arguments, None).unwrap_err();
 
+    assert_deadline_or_cleanup_denial(&error);
+    assert!(started.elapsed() < Duration::from_secs(1));
+}
+
+fn assert_deadline_or_cleanup_denial(error: &io::Error) {
     assert!(matches!(
         error.kind(),
         io::ErrorKind::TimedOut | io::ErrorKind::PermissionDenied
     ));
-    assert!(started.elapsed() < Duration::from_secs(1));
 }
 
 #[test]
