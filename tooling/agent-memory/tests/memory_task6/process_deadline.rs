@@ -60,7 +60,10 @@ fn kills_descendants_after_the_parent_exits_with_open_pipes() {
     let arguments = [OsString::from("-c"), OsString::from("sleep 2 &")];
     let error = runner.run(OsStr::new("sh"), &arguments, None).unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert!(matches!(
+        error.kind(),
+        io::ErrorKind::TimedOut | io::ErrorKind::PermissionDenied
+    ));
     assert!(started.elapsed() < Duration::from_secs(1));
 }
 

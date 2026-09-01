@@ -173,17 +173,23 @@ test("kills descendants that ignore SIGTERM within the timeout grace", async () 
     runEvaluationProcess([parent], {}, shortTimeoutMilliseconds),
   ).rejects.toThrow("timed out");
   const pid = Number(await readFile(childPid, "utf8"));
-  let alive = true;
-  try {
-    process.kill(pid, 0);
-  } catch {
-    alive = false;
-  }
-  if (alive) {
+  const running = processIsRunning(pid);
+  if (running) {
     process.kill(pid, "SIGKILL");
   }
-  expect(alive).toBe(false);
+  expect(running).toBe(false);
 });
+
+function processIsRunning(pid: number): boolean {
+  const probe = Bun.spawnSync(["/bin/ps", "-o", "stat=", "-p", String(pid)], {
+    stderr: "ignore",
+    stdout: "pipe",
+  });
+  if (probe.exitCode !== 0) {
+    return false;
+  }
+  return !probe.stdout.toString().trim().startsWith("Z");
+}
 
 test("redacts a credential printed by a failing process", async () => {
   const root = await fixtureRoot();

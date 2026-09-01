@@ -279,6 +279,10 @@ test("agent aggregate targets deploy memory governance to every agent", () => {
     fixture.home,
     ".cursor/skills/memory-governance",
   );
+  const provider = requireCommand("true");
+  for (const command of ["bun", "cargo", "volta"]) {
+    symlinkSync(provider, join(fixture.bin, command));
+  }
   for (const [target, included] of [
     ["codex", codexDestination],
     ["claude-code", claudeDestination],
@@ -287,6 +291,7 @@ test("agent aggregate targets deploy memory governance to every agent", () => {
     const result = runMake(fixture, [target], {
       dryRun: true,
       repository: project,
+      variables: { BREW_BIN: fixture.bin },
     });
     expectSuccess(result);
     expect(result.stdout).toContain(included);
