@@ -1,8 +1,8 @@
 # Durable memory end-to-end validation
 
-- Candidate SHA-256: `828445206099ffba6d0dca64e1a053b2706cc3d7696af34dca90114a38f64444`
+- Candidate SHA-256: `366d33f93d2da9b9023552bbc8bf8954e5d1d2b2387753638da6de7f7570d744`
 - Runtime SHA-256: `4fd4bc0deeaf1198a1242afb88c95d61549482addf964029a4708e1427694a45`
-- Date: 2026-09-01T07:23:43.856Z
+- Date: 2026-09-01T07:42:43.505Z
 - Environment: darwin arm64
 - Timeout: 120 seconds per process, then TERM and bounded KILL
 
