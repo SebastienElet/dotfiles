@@ -6,63 +6,10 @@ on:
   pull_request:
 
 jobs:
-  select:
-    runs-on: ubuntu-latest
-    outputs:
-      targets: ${{ steps.targets.outputs.targets }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - uses: oven-sh/setup-bun@v2
-        if: github.event_name == 'pull_request'
-        with:
-          bun-version-file: package.json
-
-      - name: Select install targets
-        id: targets
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
-            # Advisory only: push to main still enforces the default installation.
-            targets=$(tooling/ci-smoke-targets "$BASE_SHA" "$GITHUB_SHA")
-          else
-            targets='["all"]'
-          fi
-          echo "targets=$targets" >> "$GITHUB_OUTPUT"
-
-  build:
-    needs: select
-    if: needs.select.outputs.targets != '[]'
-    name: Install ${{ matrix.target }}
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ${{ fromJSON(needs.select.outputs.targets) }}
+  minimal:
+    name: Minimal macOS profile
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-
-      - name: Execute install twice
-        env:
-          DOCKER_UNAVAILABLE_POLICY: allow-skip
-        run: |
-          export PATH="/Applications/OrbStack.app/Contents/MacOS/xbin:$PATH"
-          make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
-          make trust-taps "${{ matrix.target }}" SKIP_PAID_APPS=1
-
-      - name: Verify Hunspell dictionaries
-        if: matrix.target == 'hunspell' || matrix.target == 'all'
-        run: |
-          discovery=$(hunspell -D </dev/null 2>&1)
-          printf '%s\n' "$discovery"
-          printf '%s\n' "$discovery" | grep -F "$HOME/Library/Spelling/fr"
-          printf '%s\n' "$discovery" | grep -F "$HOME/Library/Spelling/en_US"
-
-          misspellings=$(printf '%s\n' français hello bonjouurr hellloo | hunspell -d fr,en_US -l)
-          expected=$(printf '%s\n' bonjouurr hellloo)
-          printf '%s\n' "$misspellings"
-          test "$misspellings" = "$expected"
+      - run: make smoke-minimal

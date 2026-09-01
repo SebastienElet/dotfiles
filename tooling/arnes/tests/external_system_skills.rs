@@ -87,7 +87,7 @@ fn absent_roots_and_allowed_skills_do_not_drift() {
 }
 
 #[test]
-fn undeclared_system_mechanism_is_explicitly_unsupported() {
+fn undeclared_system_root_is_silent_rather_than_unsupported() {
     let fixture = configured_fixture();
 
     let (code, stdout, _) = run(
@@ -98,8 +98,8 @@ fn undeclared_system_mechanism_is_explicitly_unsupported() {
     );
 
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("codex user unsupported capabilities"));
-    assert!(stdout.contains("system skills inventory is unsupported"));
+    assert!(!stdout.contains("system skills"), "{stdout}");
+    assert!(!stdout.contains("unsupported capabilities"), "{stdout}");
 }
 
 #[test]

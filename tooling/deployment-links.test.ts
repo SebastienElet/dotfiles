@@ -31,7 +31,7 @@ const userSkillDestinations = [
   [".agents", "agent-instructions"],
   ...[
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
     "enforcement-code",
     "harness-reflection",
     "handoff",
@@ -49,7 +49,7 @@ const userSkillDestinations = [
   ...[
     "claude-developer",
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
     "enforcement-code",
     "harness-reflection",
     "issue-creation",
@@ -66,7 +66,8 @@ const userSkillDestinations = [
   ...[
     "claude-developer",
     "obsidian-retrieval",
-    "codegraph",
+    "code-search",
+    "design-claim-audit",
     "enforcement-code",
     "harness-reflection",
     "handoff",
@@ -147,16 +148,45 @@ test(
     );
     expect(pathExists(marker)).toBeFalse();
 
-    unlinkSync(starship);
-    const unexpected = join(fixture.root, "unexpected");
-    mkdirSync(unexpected);
-    symlinkSync(unexpected, starship);
-    expectSuccess(runMake(fixture, [starship], { repository: project }));
-    expect(linkTarget(starship)).toBe(unexpected);
+    expectDivergentSymlinkRejected(fixture, starship);
   },
   deploymentTimeoutMilliseconds,
 );
-test("deploys shared instructions and skills, preserves local rules, and replays idempotently", () => {
+
+test("deploys the guarded ColGrep entry point without replacing a destination", () => {
+  const fixture = createDeploymentFixture("colgrep-search");
+  const destination = join(fixture.home, ".local", "bin", "colgrep-search");
+
+  expectSuccess(runMake(fixture, [destination], { repository: project }));
+  expect(linkTarget(destination)).toBe(
+    join(project, "tooling", "colgrep-search-cli.ts"),
+  );
+  expectSuccess(runMake(fixture, [destination], { repository: project }));
+
+  unlinkSync(destination);
+  writeFileSync(destination, "keep\n");
+  const divergent = runMake(fixture, [destination], { repository: project });
+  expect(divergent.exitCode).not.toBe(0);
+  expect(readFileSync(destination, "utf8")).toBe("keep\n");
+});
+
+function expectDivergentSymlinkRejected(
+  fixture: ReturnType<typeof createDeploymentFixture>,
+  destination: string,
+): void {
+  unlinkSync(destination);
+  const unexpected = join(fixture.root, "unexpected");
+  mkdirSync(unexpected);
+  symlinkSync(unexpected, destination);
+  const result = runMake(fixture, [destination], { repository: project });
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    `exists and is not the expected symbolic link`,
+  );
+  expect(linkTarget(destination)).toBe(unexpected);
+}
+
+test("deploys shared instructions and skills, rejects divergent rules, and replays idempotently", () => {
   const fixture = createDeploymentFixture("agent-instructions");
   const claudeRule = join(
     fixture.home,
@@ -185,14 +215,9 @@ test("deploys shared instructions and skills, preserves local rules, and replays
   expect(linkTarget(codexSkill)).toBe(
     join(project, "harness", "skills", "agent-instructions"),
   );
-  const expected =
-    readFileSync(join(project, "harness", "AGENTS.md"), "utf8").replaceAll(
-      /^@.*\n/gmu,
-      "",
-    ) +
-    readFileSync(join(project, "harness", "SOUL.md"), "utf8") +
-    readFileSync(join(project, "harness", "USER.md"), "utf8");
-  expect(readFileSync(codexInstructions, "utf8")).toBe(expected);
+  expect(readFileSync(codexInstructions, "utf8")).toBe(
+    expectedCodexInstructions(),
+  );
   const before = fileIdentity(codexInstructions);
   expectSuccess(
     runMake(fixture, [claudeRule, codexInstructions], {
@@ -202,9 +227,24 @@ test("deploys shared instructions and skills, preserves local rules, and replays
   expect(fileIdentity(codexInstructions)).toEqual(before);
   unlinkSync(claudeRule);
   writeFileSync(claudeRule, "keep\n");
-  expectSuccess(runMake(fixture, [claudeRule], { repository: project }));
+  const divergent = runMake(fixture, [claudeRule], { repository: project });
+  expect(divergent.exitCode).not.toBe(0);
+  expect(divergent.stderr).toContain(
+    "exists and is not the expected symbolic link",
+  );
   expect(readFileSync(claudeRule, "utf8")).toBe("keep\n");
 });
+
+function expectedCodexInstructions(): string {
+  return (
+    readFileSync(join(project, "harness", "AGENTS.md"), "utf8").replaceAll(
+      /^@.*\n/gmu,
+      "",
+    ) +
+    readFileSync(join(project, "harness", "SOUL.md"), "utf8") +
+    readFileSync(join(project, "harness", "USER.md"), "utf8")
+  );
+}
 
 test(
   "deploys every public user skill from the shared collection",
@@ -225,23 +265,6 @@ test(
   },
   extendedDeploymentTimeoutMilliseconds,
 );
-
-test("agent aggregate targets include requirements clarification", () => {
-  const fixture = createDeploymentFixture("requirements-clarification");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/requirements-clarification"],
-    ["cursor", ".cursor/skills/requirements-clarification"],
-    ["codex", ".agents/skills/requirements-clarification"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
-  }
-});
-
 test("agent aggregate targets deploy memory governance to every agent", () => {
   const fixture = createDeploymentFixture("memory-governance");
   const codexDestination = join(
@@ -267,21 +290,5 @@ test("agent aggregate targets deploy memory governance to every agent", () => {
     });
     expectSuccess(result);
     expect(result.stdout).toContain(included);
-  }
-});
-
-test("agent aggregate targets include PR feedback", () => {
-  const fixture = createDeploymentFixture("pr-feedback");
-  for (const [target, destination] of [
-    ["claude-code", ".claude/skills/pr-feedback"],
-    ["cursor", ".cursor/skills/pr-feedback"],
-    ["codex", ".agents/skills/pr-feedback"],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(join(fixture.home, destination));
   }
 });

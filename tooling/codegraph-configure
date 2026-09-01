@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { main } from "./codegraph-configure.ts";
-
-process.exitCode = main();

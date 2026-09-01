@@ -1,6 +1,5 @@
 use super::codex;
 use super::model::{Exposure, SystemSkill, Topology, external_skill_diagnostic};
-use super::unsupported;
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::files::paths::{ancestor_within, canonical_within, label};
@@ -21,11 +20,7 @@ pub(super) fn diagnose(
         .filter(|root| root.agent == agent && root.scope == scope)
         .collect::<Vec<_>>();
     if declared.is_empty() {
-        return vec![unsupported(
-            agent,
-            scope,
-            "system skills inventory is unsupported",
-        )];
+        return Vec::new();
     }
     let base = match scope {
         Scope::User => roots.home(),

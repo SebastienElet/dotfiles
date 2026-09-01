@@ -37,6 +37,7 @@ test("deploys XDG links while preserving obsolete user links", () => {
     join(project, "home", ".config", "wezterm", "wezterm.lua"),
     join(project, "home", ".config", "tmux", "tmux.conf"),
     join(project, "home", ".config", "git", "config.delta"),
+    join(project, "home", ".config", "git", "ignore"),
   ]);
   expect(legacy.map((name) => linkTarget(join(fixture.home, name)))).toEqual(
     legacy.map((name) => join(project, "home", name)),
@@ -47,16 +48,18 @@ test("public targets wire their XDG destinations", () => {
   const fixture = createDeploymentFixture("xdg-wiring");
   const targets = xdgTargets(fixture.home);
   for (const [name, expected] of [
-    ["wezterm", targets[0]],
-    ["tmux", targets[1]],
-    ["git-delta", targets[2]],
+    ["wezterm", [targets[0]]],
+    ["tmux", [targets[1]]],
+    ["git-delta", [targets[2], targets[3]]],
   ] as const) {
     const result = runMake(fixture, [name], {
       dryRun: true,
       repository: project,
     });
     expectSuccess(result);
-    expect(result.stdout).toContain(expected);
+    for (const target of expected) {
+      expect(result.stdout).toContain(target);
+    }
   }
 });
 
@@ -219,10 +222,11 @@ function git(fixture: Fixture, arguments_: readonly string[]): void {
   }
 }
 
-function xdgTargets(home: string): [string, string, string] {
+function xdgTargets(home: string): [string, string, string, string] {
   return [
     join(home, ".config", "wezterm", "wezterm.lua"),
     join(home, ".config", "tmux", "tmux.conf"),
     join(home, ".config", "git", "config.delta"),
+    join(home, ".config", "git", "ignore"),
   ];
 }

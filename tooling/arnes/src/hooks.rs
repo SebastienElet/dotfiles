@@ -3,10 +3,12 @@ use crate::manifest::{self, Agent, HookKind, Scope};
 use clap::Args;
 use serde_json::json;
 use std::fmt::{self, Display};
+use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod adapters;
+mod inspect;
 mod io;
 mod json_value;
 mod ownership;
@@ -14,6 +16,7 @@ mod reconcile;
 mod validate;
 
 const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
+pub use inspect::diagnose;
 
 #[derive(Args)]
 pub struct SetupHooksArgs {
@@ -40,9 +43,9 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     }
     let desired: Vec<HookKind> = manifest.hooks(args.agent, args.scope).collect();
     let policy = adapters::policy(args.agent);
-    let measurement_path = roots.home().join(".local/bin/arnes");
-    let handoff_path = roots.home().join(".local/bin/agent-handoff");
-    let memory_path = roots.home().join(".local/bin/agent-memory");
+    let measurement_path = measurement_path(roots.home());
+    let handoff_path = handoff_path(roots.home());
+    let memory_path = memory_path(roots.home());
     let measurement = measurement_command(&measurement_path, args.agent)?;
     let handoff_aliases = handoff_aliases(&handoff_path, roots.repository())?;
     let memory = memory_command(&memory_path, args.agent)?;
@@ -102,12 +105,42 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     file.replace(&serde_json::to_vec_pretty(&config)?)
 }
 
+fn measurement_path(home: &Path) -> PathBuf {
+    home.join(".local/bin/arnes")
+}
+
+fn handoff_path(home: &Path) -> PathBuf {
+    home.join(".local/bin/agent-handoff")
+}
+
+fn memory_path(home: &Path) -> PathBuf {
+    home.join(".local/bin/agent-memory")
+}
+
 fn handoff_aliases(command: &Path, repository: &Path) -> Result<Vec<String>, HooksError> {
     let mut aliases = vec![
         path_string(command)?,
         path_string(&repository.join("tooling/agent-handoff"))?,
         path_string(&repository.join("scripts/agent_handoff"))?,
     ];
+    let metadata = match fs::symlink_metadata(command) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(aliases),
+        Err(error) => return Err(error.into()),
+    };
+    if !metadata.file_type().is_symlink() {
+        return Ok(aliases);
+    }
+    let target = fs::read_link(command)?;
+    let target = if target.is_absolute() {
+        target
+    } else {
+        command
+            .parent()
+            .unwrap_or_else(|| Path::new("/"))
+            .join(target)
+    };
+    aliases.push(path_string(&target)?);
     aliases.dedup();
     Ok(aliases)
 }
@@ -188,5 +221,23 @@ impl From<rustix::io::Errno> for HooksError {
 impl From<serde_json::Error> for HooksError {
     fn from(error: serde_json::Error) -> Self {
         Self(error.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::handoff_aliases;
+    use std::path::Path;
+
+    #[test]
+    fn handoff_aliases_include_repository_runtimes() {
+        let aliases = handoff_aliases(
+            Path::new("/tmp/home/.local/bin/agent-handoff"),
+            Path::new("/tmp/repository"),
+        )
+        .unwrap();
+
+        assert!(aliases.contains(&"/tmp/repository/tooling/agent-handoff".to_owned()));
+        assert!(aliases.contains(&"/tmp/repository/scripts/agent_handoff".to_owned()));
     }
 }

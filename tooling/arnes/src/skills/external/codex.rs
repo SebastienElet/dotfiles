@@ -39,11 +39,7 @@ struct SkillConfig {
 
 pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Diagnostic> {
     if scope == Scope::Project {
-        return vec![Diagnostic::new(
-            "skills",
-            State::Unsupported,
-            "external codex project plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=project plugin activation has no documented filesystem registry",
-        )];
+        return Vec::new();
     }
     let path = roots.home().join(".codex/config.toml");
     let config = match load(&path, roots.home()) {

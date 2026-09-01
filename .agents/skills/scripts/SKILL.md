@@ -13,9 +13,9 @@ metadata:
 ## Overview
 
 Keep Bash at the process boundary: bootstrap a machine, set environment, and invoke fixed commands
-in a short linear sequence. Use Just for named development recipes, Bun and TypeScript for small
-testable utilities, and Rust for substantial or system-oriented CLIs. Existing complex shell is
-legacy to reduce, not a pattern for new work.
+in a short linear sequence. Use Moon for named development tasks, project graphs, and affected
+selection, Bun and TypeScript for small testable utilities, and Rust for substantial or
+system-oriented CLIs. Existing complex shell is legacy to reduce, not a pattern for new work.
 
 ## Usage
 

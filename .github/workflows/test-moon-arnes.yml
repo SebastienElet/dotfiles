@@ -1,0 +1,26 @@
+name: Moon affected Arnes check
+
+on:
+  pull_request:
+    paths:
+      - .moon/**
+      - .cargo/**
+      - tooling/arnes/**
+
+jobs:
+  moon:
+    name: Moon affected Arnes check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      MOON_BASE: ${{ github.event.pull_request.base.sha }}
+      MOON_HEAD: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@v0
+      - run: moon task tooling/arnes:check
+      - run: moon query affected | jq -e '.tasks | has("tooling/arnes:check")'
+      - run: moon run tooling/arnes:check --cache write --summary detailed

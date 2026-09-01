@@ -26,8 +26,8 @@ fn report() -> Report {
         diagnostic(
             claude,
             State::Unsupported,
-            "system skills inventory is unsupported",
-            "system skills inventory",
+            "unsupported registry version 3",
+            "plugin registry version",
         ),
         diagnostic(
             cursor.clone(),
@@ -94,7 +94,8 @@ fn skills_doctor_attaches_agent_sections_without_reading_real_home() {
     let (_, verbose, verbose_stderr) = run(&fixture, &["doctor", "skills", "-v"]);
 
     assert_eq!(code, 1, "{normal}");
-    assert!(normal.find("CURSOR").unwrap() < normal.find("CLAUDE").unwrap());
+    assert!(normal.contains("CURSOR"), "{normal}");
+    assert!(verbose.find("CURSOR").unwrap() < verbose.find("CLAUDE").unwrap());
     assert!(!normal.contains("HEALTHY"));
     assert!(verbose.contains("HEALTHY"));
     assert!(stderr.is_empty());

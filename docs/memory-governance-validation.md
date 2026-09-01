@@ -1,39 +1,39 @@
 # Durable memory end-to-end validation
 
-- Candidate SHA-256: `047d036d36b160d5194e9edb09ae1eafc3665a590ba6b243c924e016116c30c4`
+- Candidate SHA-256: `10b8ba0be1e1aa8af9b79c59a397f8d78a71937b41cce92b02447172c8f108ac`
 - Runtime SHA-256: `4fd4bc0deeaf1198a1242afb88c95d61549482addf964029a4708e1427694a45`
-- Date: 2026-09-01T05:58:08.868Z
+- Date: 2026-09-01T07:08:19.089Z
 - Environment: darwin arm64
 - Timeout: 120 seconds per process, then TERM and bounded KILL
 
 Agent | Version | Status | Replicates | Failure | Cleanup
 --- | --- | --- | ---: | --- | ---
-Codex | unavailable | missing | 0/0 | not_run | not_run
-Claude | 2.1.252 | complete | 1/1 | none | complete
-Cursor | unavailable | missing | 0/0 | not_run | not_run
+Codex | codex-cli 0.152.0 | complete | 3/3 | none | complete
+Claude | unavailable | failed | 0/3 | authentication_unavailable | complete
+Cursor | unavailable | failed | 0/3 | authentication_unavailable | complete
 
 Capability | Codex | Claude | Cursor
 --- | ---: | ---: | ---:
-authorized_admission | not_run | 1/1 | not_run
-complete_proposal | not_run | 1/1 | not_run
-contradiction_invalidated | not_run | 1/1 | not_run
-durable_detection | not_run | 1/1 | not_run
-fresh_retrieval | not_run | 1/1 | not_run
-freshness_before_influence | not_run | 1/1 | not_run
-no_implicit_write | not_run | 1/1 | not_run
-proof_before_influence | not_run | 1/1 | not_run
-rejection_redacted | not_run | 1/1 | not_run
-sensitive_rejected | not_run | 1/1 | not_run
-store_unchanged | not_run | 1/1 | not_run
-stored | not_run | 1/1 | not_run
-unavailable_no_mutation | not_run | 1/1 | not_run
-unavailable_omitted | not_run | 1/1 | not_run
-unrelated_not_injected | not_run | 1/1 | not_run
+authorized_admission | 3/3 | 0/3 | 0/3
+complete_proposal | 3/3 | 0/3 | 0/3
+contradiction_invalidated | 3/3 | 0/3 | 0/3
+durable_detection | 3/3 | 0/3 | 0/3
+fresh_retrieval | 3/3 | 0/3 | 0/3
+freshness_before_influence | 3/3 | 0/3 | 0/3
+no_implicit_write | 3/3 | 0/3 | 0/3
+proof_before_influence | 3/3 | 0/3 | 0/3
+rejection_redacted | 3/3 | 0/3 | 0/3
+sensitive_rejected | 3/3 | 0/3 | 0/3
+store_unchanged | 3/3 | 0/3 | 0/3
+stored | 3/3 | 0/3 | 0/3
+unavailable_no_mutation | 3/3 | 0/3 | 0/3
+unavailable_omitted | 3/3 | 0/3 | 0/3
+unrelated_not_injected | 3/3 | 0/3 | 0/3
 
 ## Commands
 
 - `bun tooling/agent-memory-eval.ts --agent codex --replicates 3`
-- `bun tooling/agent-memory-eval.ts --agent claude --replicates 1`
+- `bun tooling/agent-memory-eval.ts --agent claude --replicates 3`
 - `bun tooling/agent-memory-eval.ts --agent cursor --replicates 3`
 
 Cleanup is recorded only after fixture removal is verified.

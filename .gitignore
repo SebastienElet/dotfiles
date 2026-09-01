@@ -8,10 +8,10 @@ home/.config/fish/completions
 
 # Temporary working files
 PRODUCTIVITY_REVIEW.md
-tooling/daily-routine/target/
 tooling/agent-memory/target/
 tooling/agent-handoff/target/
 tooling/arnes/target/
+.moon/cache/
 node_modules/
 .harness-export/
 

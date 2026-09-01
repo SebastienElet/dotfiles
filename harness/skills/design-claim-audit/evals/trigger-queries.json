@@ -1,0 +1,36 @@
+{
+  "skill": "design-claim-audit",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Update this ADR to guarantee that the Registry receipt proves the entire cross-context import is complete.",
+      "should_activate": true,
+      "reason": "The ADR would claim completeness beyond one context's authority."
+    },
+    {
+      "query": "Document the transaction boundary and lifecycle gate promised by this onboarding design.",
+      "should_activate": true,
+      "reason": "The design makes atomicity and state-transition guarantees."
+    },
+    {
+      "query": "Clarify in the domain specification which legal source authorizes this waiver.",
+      "should_activate": true,
+      "reason": "The specification would attach a legal consequence to a domain operation."
+    },
+    {
+      "query": "Fix spelling and wrap long lines in this ADR without changing its meaning.",
+      "should_activate": false,
+      "reason": "Purely editorial work does not create or strengthen a claim."
+    },
+    {
+      "query": "Review open pull request 645, including its ADR guarantee claims.",
+      "should_activate": false,
+      "reason": "Reviews of open pull requests are outside this skill's scope."
+    },
+    {
+      "query": "Implement the already-approved endpoint without changing its design or specification.",
+      "should_activate": false,
+      "reason": "Implementation alone does not author an architectural or business claim."
+    }
+  ]
+}

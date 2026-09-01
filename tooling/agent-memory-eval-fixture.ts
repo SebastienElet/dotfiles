@@ -1,20 +1,20 @@
-import {
-  chmod,
-  lstat,
-  readFile,
-  readlink,
-  readdir,
-  rm,
-  writeFile,
-} from "node:fs/promises";
-import { createHash } from "node:crypto";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { lstat, readFile, rm, writeFile } from "node:fs/promises";
 import {
   runEvaluationProcess,
   runManagedProcess,
 } from "./agent-memory-eval-process.ts";
+import { recoveryExperimentEvidence } from "./agent-memory-eval-fixture-evidence.ts";
 
-const project = resolve(import.meta.dir, "..");
+const executableDirectoryMode = 0o700;
+const fileModeMask = 0o777;
+const gitTimeoutMilliseconds = 10_000;
+const runtimeTimeoutMilliseconds = 120_000;
+const expectedEvidenceColumns = 4;
+const cleanupMarkerMode = 0o600;
+const octalRadix = 8;
+const outcomeColumnIndex = 2;
+const profileColumnIndex = 3;
 
 function assertEvaluatorRoot(root: string, candidate: string): void {
   const absoluteRoot = resolve(root);
@@ -31,14 +31,19 @@ function assertEvaluatorRoot(root: string, candidate: string): void {
   }
 }
 
-async function withEvaluationFixture<T>(
+async function withEvaluationFixture<Result>(
   root: string,
   store: string,
-  operation: () => Promise<T>,
-): Promise<T> {
+  operation: () => Promise<Result>,
+): Promise<Result> {
   assertEvaluatorRoot(resolve(root), resolve(store));
-  const mode = (await lstat(store)).mode & 0o777;
-  if (mode !== 0o700) throw new Error(`store must have mode 0700, received 0${mode.toString(8)}`);
+  const metadata = await lstat(store);
+  const mode = metadata.mode & fileModeMask;
+  if (mode !== executableDirectoryMode) {
+    throw new Error(
+      `store must have mode 0700, received 0${mode.toString(octalRadix)}`,
+    );
+  }
   try {
     return await operation();
   } finally {
@@ -47,11 +52,17 @@ async function withEvaluationFixture<T>(
       assertEvaluatorRoot(root, path);
       await rm(path, { force: true, recursive: true });
     }
-    await writeFile(resolve(root, "cleanup.json"), '{"complete":true}\n', { mode: 0o600 });
+    await writeFile(resolve(root, "cleanup.json"), '{"complete":true}\n', {
+      mode: cleanupMarkerMode,
+    });
   }
 }
 
-function evaluationEnvironment(home: string, store: string, runtime: string): NodeJS.ProcessEnv {
+function evaluationEnvironment(
+  home: string,
+  store: string,
+  runtime: string,
+): NodeJS.ProcessEnv {
   assertEvaluatorRoot(dirname(dirname(dirname(dirname(runtime)))), store);
   return {
     ...process.env,
@@ -66,10 +77,12 @@ function evaluationEnvironment(home: string, store: string, runtime: string): No
 }
 
 function assertFixtureEnvironment(
-  root: string,
-  repository: string,
-  runtime: string,
-  environment: NodeJS.ProcessEnv,
+  ...[root, repository, runtime, environment]: readonly [
+    string,
+    string,
+    string,
+    Readonly<NodeJS.ProcessEnv>,
+  ]
 ): void {
   const required = [
     repository,
@@ -82,7 +95,9 @@ function assertFixtureEnvironment(
     environment.TMPDIR,
   ];
   for (const path of required) {
-    if (path === undefined) throw new Error("fixture environment path is missing");
+    if (path === undefined) {
+      throw new Error("fixture environment path is missing");
+    }
     assertEvaluatorRoot(root, path);
   }
   if (environment.PATH?.split(":")[0] !== dirname(runtime)) {
@@ -90,11 +105,22 @@ function assertFixtureEnvironment(
   }
 }
 
-async function initializeRepository(repository: string, profile: string): Promise<void> {
-  await runEvaluationProcess(["git", "init", "-q", repository], {}, 10_000);
-  await writeFile(join(repository, "proof.txt"), recoveryExperimentEvidence(profile), {
-    mode: 0o600,
-  });
+async function initializeRepository(
+  repository: string,
+  profile: string,
+): Promise<void> {
+  await runEvaluationProcess(
+    ["git", "init", "-q", repository],
+    {},
+    gitTimeoutMilliseconds,
+  );
+  await writeFile(
+    join(repository, "proof.txt"),
+    recoveryExperimentEvidence(profile),
+    {
+      mode: 0o600,
+    },
+  );
   await writeFile(
     join(repository, "recovery-method.txt"),
     "Each row records one destructive 20-minute hardware recovery cycle. Transport window, checksum seed, and controller profile are durable controller settings. Accepted means the controller restored service and passed the stability probe.\n",
@@ -103,7 +129,7 @@ async function initializeRepository(repository: string, profile: string): Promis
   await runEvaluationProcess(
     ["git", "-C", repository, "add", "proof.txt", "recovery-method.txt"],
     {},
-    10_000,
+    gitTimeoutMilliseconds,
   );
   await runEvaluationProcess(
     [
@@ -120,113 +146,83 @@ async function initializeRepository(repository: string, profile: string): Promis
       "record recovery experiment",
     ],
     {},
-    10_000,
+    gitTimeoutMilliseconds,
   );
 }
 
-function recoveryExperimentEvidence(profile: string): string {
-  const windows = ["window-amber-11", "window-cobalt-19", "window-fern-23", "window-ivory-29", "window-mica-37", "window-onyx-41", "window-pearl-43", "window-quartz-47", "window-slate-53"];
-  const seeds = ["seed-ash-13", "seed-birch-17", "seed-cedar-31", "seed-ember-91", "seed-fir-101", "seed-hazel-127", "seed-maple-149", "seed-oak-163", "seed-yew-181"];
-  let trial = 0;
-  const results = windows.flatMap((window) =>
-    seeds.map((seed) => {
-      trial += 1;
-      const accepted = window === "window-mica-37" && seed === "seed-ember-91";
-      return `${window},${seed},${accepted ? "accepted" : "rejected"},${accepted ? profile : `profile-${trial}`}`;
-    },
-    ),
-  );
-  return [
-    "transport_window,checksum_seed,outcome,controller_profile",
-    ...results,
-    "",
-  ].join("\n");
-}
-
-async function acceptedRecoveryRelation(repository: string): Promise<Readonly<{
-  profile: string;
-  seed: string;
-  window: string;
-}>> {
-  const rows = (await readFile(join(repository, "proof.txt"), "utf8"))
+async function acceptedRecoveryRelation(repository: string): Promise<
+  Readonly<{
+    profile: string;
+    seed: string;
+    window: string;
+  }>
+> {
+  const evidence = await readFile(join(repository, "proof.txt"), "utf8");
+  const rows: readonly (readonly string[])[] = evidence
     .split("\n")
     .slice(1)
     .filter(Boolean)
     .map((line) => line.split(","));
-  const accepted = rows.filter((row) => row[2] === "accepted");
-  if (accepted.length !== 1 || accepted[0]?.length !== 4) {
+  const accepted = rows.filter((row) => {
+    const outcome = row.at(outcomeColumnIndex);
+    return outcome === "accepted";
+  });
+  if (
+    accepted.length !== 1 ||
+    accepted[0]?.length !== expectedEvidenceColumns
+  ) {
     throw new Error("recovery evidence must contain one accepted relation");
   }
-  const [window, seed, , profile] = accepted[0];
+  const [relation] = accepted;
+  const window = relation?.at(0);
+  const seed = relation?.at(1);
+  const profile = relation?.at(profileColumnIndex);
   if (window === undefined || seed === undefined || profile === undefined) {
     throw new Error("accepted recovery relation is incomplete");
   }
   return { profile, seed, window };
 }
 
-async function runtimeCommand(
-  runtime: string,
-  arguments_: readonly string[],
-  stdin: string,
-  cwd: string,
-  environment: NodeJS.ProcessEnv,
-  acceptedExitCodes: readonly number[] = [0],
+function runtimeCommand(
+  ...[
+    runtime,
+    arguments_,
+    stdin,
+    cwd,
+    environment,
+    acceptedExitCodes,
+  ]: readonly [
+    string,
+    readonly string[],
+    string,
+    string,
+    Readonly<NodeJS.ProcessEnv>,
+    (readonly number[])?,
+  ]
 ): Promise<Readonly<{ exitCode: number; stdout: string; stderr: string }>> {
   return runManagedProcess({
-    acceptedExitCodes,
+    acceptedExitCodes: acceptedExitCodes ?? [0],
     command: [runtime, ...arguments_],
     cwd,
     environment,
     stdin,
-    timeoutMilliseconds: 120_000,
+    timeoutMilliseconds: runtimeTimeoutMilliseconds,
   });
 }
 
 function memoryDraft(nonce: string): string {
-  return memoryDraftWithSource(nonce, "durable fixture nonce", "git-file", "proof.txt");
+  return memoryDraftWithSource(
+    nonce,
+    "durable fixture nonce",
+    "git-file",
+    "proof.txt",
+  );
 }
 
-function memoryDraftWithSource(statement: string, term: string, kind: string, locator: string): string {
+function memoryDraftWithSource(
+  ...[statement, term, kind, locator]: readonly [string, string, string, string]
+): string {
   return `schema_version: 1\nkind: invariant\nstatement: ${JSON.stringify(statement)}\nretrieval_terms:\n  - ${JSON.stringify(term)}\nproof:\n  summary: The fixture source establishes this memory.\n  sources:\n    - kind: ${kind}\n      locator: ${JSON.stringify(locator)}\noracle:\n  automated:\n    kind: source-fingerprint\n    expected: all-proof-sources-unchanged\n  human_fallback:\n    question: Does the fixture source remain authoritative?\n    valid_when: The fixture source remains unchanged.\n  outcomes:\n    valid: The fixture memory remains valid.\n    invalidated: The fixture source changed.\n`;
-}
-
-async function treeDigest(root: string): Promise<string> {
-  const hash = createHash("sha256");
-  async function visit(path: string): Promise<void> {
-    let entries;
-    try {
-      entries = await readdir(path, { withFileTypes: true });
-    } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
-      throw error;
-    }
-    entries.sort((left, right) => left.name.localeCompare(right.name));
-    for (const entry of entries) {
-      const child = join(path, entry.name);
-      const metadata = await lstat(child);
-      hash.update(relative(root, child));
-      hash.update(
-        `:${metadata.mode & 0o777}:${entry.isDirectory() ? "d" : entry.isFile() ? "f" : "l"}:`,
-      );
-      if (entry.isDirectory()) await visit(child);
-      else if (entry.isFile()) {
-        hash.update(await readFile(child));
-      } else if (entry.isSymbolicLink()) {
-        hash.update(await readlink(child));
-      }
-    }
-  }
-  await visit(root);
-  return hash.digest("hex");
-}
-
-async function runtimeSha(): Promise<string> {
-  const bytes = await readFile(join(project, "tooling/agent-memory/target/release/agent-memory"));
-  return createHash("sha256").update(bytes).digest("hex");
-}
-
-async function makeSourceUnavailable(source: string): Promise<void> {
-  await chmod(source, 0o000);
 }
 
 export {
@@ -237,9 +233,11 @@ export {
   initializeRepository,
   memoryDraft,
   memoryDraftWithSource,
-  makeSourceUnavailable,
   runtimeCommand,
-  runtimeSha,
-  treeDigest,
   withEvaluationFixture,
 };
+export {
+  makeSourceUnavailable,
+  runtimeSha,
+  treeDigest,
+} from "./agent-memory-eval-fixture-files.ts";

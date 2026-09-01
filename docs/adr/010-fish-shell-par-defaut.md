@@ -13,10 +13,9 @@ suggestion à la frappe, coloration syntaxique — que Fish fournit nativement.
 
 ## Décision
 
-Fish devient le shell par défaut, installé et déclaré comme shell de connexion
-par le `Makefile`. La configuration zsh est supprimée (`5375b5c`), à
-l'exception d'un `home/.zshrc` minimal conservé pour les outils qui présument
-un shell POSIX ou injectent leur initialisation dans zsh (`c7bec47`).
+Fish devient le shell par défaut, installé par le profil minimal. La configuration zsh et son
+déploiement sont supprimés ; les processus non interactifs utilisent explicitement leur
+interpréteur.
 
 ## Conséquences
 
@@ -24,8 +23,7 @@ un shell POSIX ou injectent leur initialisation dans zsh (`c7bec47`).
 - Fish n'est pas POSIX : les extraits d'installation copiés depuis une
   documentation doivent être traduits, ce dont témoignent plusieurs correctifs
   de syntaxe.
-- Le `.zshrc` minimal doit rester minimal, sous peine de reconstituer une
-  seconde configuration de shell.
+- Aucun second shell interactif n'est maintenu par le dépôt.
 
 ## Alternatives écartées
 

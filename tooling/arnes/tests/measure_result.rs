@@ -10,3 +10,5 @@ mod list;
 mod measure_support;
 #[path = "measure_result/recovery.rs"]
 mod recovery;
+#[path = "measure_result/silence.rs"]
+mod silence;

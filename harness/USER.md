@@ -49,9 +49,17 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   ambigus. Valider la configuration au démarrage et injecter un objet typé ; `process.env`
   hors frontière est un code smell.
 - **TDD par défaut.** Test avant code ; pour un bug, reproduire d'abord la régression. Exception :
-  déclaratif sans comportement utile à tester, où un smoke test/CI peut suffire. Choisir l'oracle
-  le moins coûteux qui prouve réellement l'invariant : unitaire si possible, intégration dès que
-  la preuve appartient à la DB, une transaction, un mapping ORM, un protocole ou autre composant.
+  déclaratif sans comportement utile à tester. Une constante, version, variable d'environnement ou
+  option de commande sans branche ni invariant propre ne reçoit ni TDD ni test de valeur ; utiliser
+  uniquement un oracle existant utile — syntaxe, schéma, dry-run ou CI — et n'ajouter aucune gate si
+  aucun oracle ne peut détecter une erreur réelle. Une configuration portant un invariant de sécurité
+  ou de compatibilité reste testée par son comportement. Choisir l'oracle le moins coûteux qui prouve
+  réellement l'invariant : unitaire si possible, intégration dès que la preuve appartient à la DB,
+  une transaction, un mapping ORM, un protocole ou autre composant. Une gate explicitement demandée
+  reste une exigence à implémenter. Sans exigence explicite, n'ajouter une gate que si elle apporte un
+  oracle durable sur du code ou un invariant possédé, après inventaire des oracles existants ; l'absence
+  de test dédié ne suffit pas. Ne pas créer de suite miroir pour un Makefile déjà couvert par un smoke
+  test, pour le comportement interne d'un outil externe tel que Moon, ni pour tester la CI elle-même.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et

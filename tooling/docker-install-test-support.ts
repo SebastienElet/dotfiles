@@ -93,11 +93,24 @@ function createDockerInstallFixture(
   mkdirSync(localBinaryDirectory);
   writeFileSync(trace, "");
   chmodSync(provider, executableMode);
+  symlinkRequiredCommand("readlink", binaryDirectory);
+  symlinkRequiredCommand("uname", binaryDirectory);
   if (dockerProviderAvailable) {
     symlinkSync(provider, join(binaryDirectory, "docker"));
   }
-  writeFileSync(join(localBinaryDirectory, "scrapling_mcp"), "installed\n");
+  symlinkSync(
+    join(repositoryRoot, "tooling", "scrapling-mcp"),
+    join(localBinaryDirectory, "scrapling_mcp"),
+  );
   return { binaryDirectory, localBinaryDirectory, makeCommand, trace };
+}
+
+function symlinkRequiredCommand(command: string, destination: string): void {
+  const executable = Bun.which(command);
+  if (executable === null) {
+    throw new Error(`${command} is unavailable`);
+  }
+  symlinkSync(executable, join(destination, command));
 }
 
 function makeArguments(
@@ -114,7 +127,6 @@ function makeArguments(
   return [
     fixture.makeCommand,
     "--no-print-directory",
-    "--old-file=docker",
     "--old-file=bun",
     target,
     `LOCAL_BIN=${fixture.localBinaryDirectory}`,

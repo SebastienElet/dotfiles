@@ -19,8 +19,10 @@ dialog, then rerun the command above after the installation finishes.
 cd && \
   git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles && \
   cd .dotfiles && \
-  make all
+  make minimal
 ```
+
+Install the separately maintained optional profile with `make optional`.
 
 ## Architecture decisions
 

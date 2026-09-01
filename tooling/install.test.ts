@@ -28,7 +28,12 @@ type InstallResult = Readonly<{
   stdout: string;
 }>;
 
-type GitState = "missing" | "system-shim" | "unusable" | "working";
+type GitState =
+  | "missing"
+  | "system-shim"
+  | "unusable"
+  | "working"
+  | "working-without-clt";
 
 afterEach(() => {
   for (const root of fixtures.splice(0)) {
@@ -48,7 +53,7 @@ function createFixture(gitState: GitState): Fixture {
   installCommand(
     bin,
     "xcode-select",
-    `printf 'xcode-select %s\n' "$*" >> "$INSTALL_TEST_TRACE"${gitState === "system-shim" ? "\nexit 1" : ""}`,
+    `printf 'xcode-select %s\n' "$*" >> "$INSTALL_TEST_TRACE"${gitState === "system-shim" || gitState === "working-without-clt" ? "\nexit 1" : ""}`,
   );
   installTracedCommand(bin, "make");
   if (gitState !== "missing") {
@@ -146,7 +151,7 @@ test.each([
   const result = await runInstaller(fixture, input);
 
   expectActionableGitFailure(result);
-  expect(readTrace(fixture)).toBe("");
+  expect(readTrace(fixture)).toBe("xcode-select --print-path\n");
 });
 
 test("fails closed when a Git command is present but unusable", async () => {
@@ -154,11 +159,19 @@ test("fails closed when a Git command is present but unusable", async () => {
   const result = await runInstaller(fixture);
 
   expectActionableGitFailure(result);
-  expect(readTrace(fixture)).toBe("git --version\n");
+  expect(readTrace(fixture)).toBe("xcode-select --print-path\ngit --version\n");
 });
 
 test("does not invoke the macOS Git shim without developer tools", async () => {
   const fixture = createFixture("system-shim");
+  const result = await runInstaller(fixture);
+
+  expectActionableGitFailure(result);
+  expect(readTrace(fixture)).toBe("xcode-select --print-path\n");
+});
+
+test("rejects a third-party Git when developer tools are absent", async () => {
+  const fixture = createFixture("working-without-clt");
   const result = await runInstaller(fixture);
 
   expectActionableGitFailure(result);
@@ -171,6 +184,6 @@ test("clones and runs make through the shipped entry point when Git works", asyn
 
   expect(result).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   expect(readTrace(fixture)).toBe(
-    "git --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake all\n",
+    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake brew\nmake minimal\n",
   );
 });

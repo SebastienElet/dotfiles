@@ -76,7 +76,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment() {
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        "Skills · project scope · codex agent\n✓ 0 healthy\n! 3 unsupported (non-blocking)\n\nCODEX\n  3 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n  codex project unsupported capabilities\n    UNSUPPORTED system skills inventory is unsupported\n  UNSUPPORTED external codex project plugin inventory origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail=project plugin activation has no documented filesystem registry\n"
+        "Skills · project scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nCODEX\n  1 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n"
     );
     assert!(output.stderr.is_empty());
 }
@@ -85,7 +85,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment() {
 fn json_doctor_emits_the_manifest_diagnostic() {
     let fixture = Fixture::new();
     fixture.write_home(".arnes.yaml", &manifest("valid.yaml"));
-    let output = fixture.command(["doctor", "--format", "json"]);
+    let output = fixture.command(["doctor", "manifest", "--format", "json"]);
 
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
@@ -160,15 +160,17 @@ fn output_failures_exit_two_instead_of_passing_silently() {
 }
 
 #[test]
-fn manifest_doctor_requires_home_without_reading_the_environment() {
-    let output = run(&["doctor", "manifest"]);
+fn manifest_and_default_doctors_require_home_without_fallback() {
+    for args in [&["doctor", "manifest"][..], &["doctor"][..]] {
+        let output = run(args);
 
-    assert_eq!(output.status.code(), Some(2));
-    assert_eq!(
-        String::from_utf8(output.stdout).unwrap(),
-        "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
-    );
-    assert!(output.stderr.is_empty());
+        assert_eq!(output.status.code(), Some(2));
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap(),
+            "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
+        );
+        assert!(output.stderr.is_empty());
+    }
 }
 
 #[test]

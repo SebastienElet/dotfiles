@@ -1,52 +1,44 @@
-# ADR-003 — Déploiement de la configuration par symlinks
+# ADR-003 — Déploiement depuis un état propre
 
 - **Statut** : accepté
-- **Date** : 2014-10
-- **Commits** : `9160770`, `0fb9e89`, `1772db9`
+- **Date** : 2026-08
+- **Issue** : [#152](https://github.com/SebastienElet/dotfiles/issues/152)
 
 ## Contexte
 
-Les fichiers de configuration doivent rester versionnés dans `~/.dotfiles`
-tout en étant lus depuis leur emplacement attendu par chaque outil. Copier les
-fichiers imposerait une resynchronisation après chaque modification.
+Le `Makefile` installe les artefacts versionnés sous `home/`, `harness/` et `tooling/`. La
+revalidation des destinations avait transformé des recettes d'installation en logique de
+diagnostic, de préservation et de migration. Cette responsabilité appartient aux oracles du
+harnais, pas à l'installateur.
 
 ## Décision
 
-Le `Makefile` crée des symlinks depuis `$(DOTFILES_PATH)/home/…`, qui reproduit
-le chemin relatif à `$HOME`, vers l'emplacement attendu sous `~/…`. Les
-instructions partagées et les exécutables suivent le même mécanisme depuis
-`harness/` et `tooling/` ([ADR-038](038-frontieres-home-harness-tooling.md)).
-L'édition se fait dans le dépôt, l'effet est immédiat.
+Une cible de déploiement Make part d'un état propre : sa destination possédée est absente. Sa
+recette applique directement l'opération d'installation requise, sans inspecter le type ou le
+contenu d'un état préexistant et sans branche de migration, de réconciliation ou de réparation.
 
-Chaque artefact statique lié est une cible fichier ordinaire du `Makefile`,
-avec sa source comme dépendance et son répertoire parent comme dépendance
-d'ordre. Make décide si la recette doit s'exécuter ; elle vérifie seulement que
-la destination est absente avant `ln -s`. Les exécutables générés sont liés par
-leur cible de build après compilation. Le contenu d'un lien existant n'est pas
-revalidé à chaque installation ; sa réparation explicite est suivie par
-l'issue #152.
+Make laisse une cible déjà présente à la résolution normale de son graphe ; ce constat ne certifie
+ni son contenu ni sa provenance. Les fichiers assemblés suivent le même contrat. `~/.codex/AGENTS.md`
+reste assemblé parce que Codex ignore les directives `@import`.
 
-Une exception documentée : `~/.codex/AGENTS.md` est **assemblé** par
-concaténation à l'installation. Le commit `1772db9` en donne la raison —
-« Codex loads AGENTS.md but ignores its @import directives, verified with a
-control prompt » —, la concaténation étant alors le seul mécanisme disponible.
+La remise en état explicite consiste à exécuter `make clean`, puis le profil ou la cible
+d'installation voulu, par exemple `make minimal`. Le nettoyage supprime les destinations exactes
+possédées par le dépôt sans interpréter leur état courant et sans suivre les liens symboliques. Les
+oracles dédiés du harnais diagnostiquent la conformité ; les recettes d'installation ne la prouvent
+pas.
 
 ## Conséquences
 
-- `tooling/upgrade` relance `make all` après son `git pull`, afin de poser les
-  nouveaux liens et de régénérer les fichiers assemblés.
-- Un fichier assemblé se périme silencieusement : il faut relancer la cible
-  après modification des sources.
-- Les liens déjà corrects restent inchangés ; la seconde installation ne doit
-  ni les recréer ni réinstaller un outil déjà présent.
-- Un fichier ou lien inattendu peut satisfaire la cible selon sa date ; une
-  cible obsolète fait échouer `ln -s` sans écraser la destination.
+- Le chemin supporté est une installation propre ou une reconstruction explicite.
+- Un profil peut rester silencieux au second passage parce que Make juge ses cibles présentes, sans
+  que ce silence garantisse leur conformité.
+- Le comportement d'une recette invoquée directement sur une destination préexistante n'appartient
+  pas au contrat.
+- Une remise en état peut supprimer une modification locale placée à une destination possédée.
 
 ## Alternatives écartées
 
-- `stow` ou `chezmoi` : une dépendance de plus pour ce que quelques règles
-  `make` couvrent déjà.
-- Copie des fichiers à l'installation : divergence garantie entre dépôt et
-  poste.
-- Revalidation forcée par un helper : logique et tests disproportionnés pour
-  une course externe au graphe de Make.
+- Revalider chaque destination pendant l'installation : mélange installation et diagnostic.
+- Préserver et classifier chaque état divergent : transforme Make en outil de maintenance.
+- Migrer automatiquement une ancienne disposition : pérennise dans l'installateur un état
+  historique qui doit disparaître par reconstruction.

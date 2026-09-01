@@ -142,14 +142,31 @@ jobs:
       - name: Check text syntax and formatting
         run: >-
           prettier --check .github/ISSUE_TEMPLATE/change.yml .github/dependabot.yml
-          .github/workflows/lint.yml
+          .github/workflows/lint.yml .github/workflows/test-moon-arnes.yml
+          .moon/workspace.yml tooling/arnes/moon.yml
           package.json tsconfig.json
           docs/AGENTS.md docs/ARCHITECTURE.md
+          harness/AGENTS.md
+          docs/adr/039-code-search.md docs/adr/041-frontiere-automatisation-typescript-rust.md
+          docs/adr/README.md docs/code-search.md
+          docs/superpowers/plans/2026-08-29-code-search-replacement.md
+          docs/superpowers/specs/2026-08-29-code-search-design.md
+          docs/design-claim-audit-validation.md
+          docs/issue-257-installation-macos-audit.md
+          docs/issue-257-installation-macos-design.md
+          harness/skills/design-claim-audit/SKILL.md
+          harness/skills/design-claim-audit/evals/trigger-queries.json
+          harness/skills/design-claim-audit/evals/fixture/*.md
+          harness/skills/code-search/SKILL.md
+          harness/skills/code-search/evals/trigger-queries.json
           harness/skills/obsidian-retrieval/SKILL.md
           harness/skills/obsidian-retrieval/references/obsidian-cli.md
           harness/skills/obsidian-retrieval/evals/trigger-queries.json
           harness/skills/pr-feedback/SKILL.md
           harness/skills/pr-feedback/evals/trigger-queries.json
+          harness/skills/pr-verdict/SKILL.md
+          harness/skills/pr-verdict/assets/verdict-template.md
+          harness/skills/pr-verdict/references/cases.md
           harness/skills/requirements-clarification/SKILL.md
           harness/skills/requirements-clarification/evals/trigger-queries.json
           docs/requirements-clarification-validation.md
@@ -181,9 +198,14 @@ jobs:
           HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
             home/cspell.json \
             home/.config/cspell/user.txt \
+            harness/AGENTS.md \
             .agents/skills/scripts/SKILL.md \
             harness/skills/agent-instructions/SKILL.md \
             harness/skills/agent-instructions/references/maintenance.md \
+            harness/skills/design-claim-audit/SKILL.md \
+            harness/skills/design-claim-audit/evals/trigger-queries.json \
+            harness/skills/design-claim-audit/evals/fixture/*.md \
+            home/.codex/agents/design-claim-auditor.toml \
             harness/skills/issue-creation/SKILL.md \
             harness/skills/issue-creation/references/forge-capabilities.md \
             harness/skills/issue-creation/evals/trigger-queries.json \
@@ -201,9 +223,13 @@ jobs:
             harness/skills/obsidian-retrieval/evals/trigger-queries.json \
             harness/skills/pr-feedback/SKILL.md \
             harness/skills/pr-feedback/evals/trigger-queries.json \
+            harness/skills/pr-verdict/SKILL.md \
+            harness/skills/pr-verdict/assets/verdict-template.md \
+            harness/skills/pr-verdict/references/cases.md \
             harness/skills/requirements-clarification/SKILL.md \
             harness/skills/requirements-clarification/evals/trigger-queries.json \
             docs/requirements-clarification-validation.md \
+            tooling/design-claim-audit.test.ts \
             tooling/obsidian-retrieval/contract.ts \
             tooling/obsidian-retrieval/contract.test.ts \
             tooling/obsidian-retrieval/default-corpus-contract.ts \

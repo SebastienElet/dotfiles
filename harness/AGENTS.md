@@ -35,8 +35,17 @@ Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and
 
 ## Context Management
 
-- For open-ended exploration, research, or multi-file searches, delegate to the Explore or general-purpose agent instead of reading files directly in the main thread.
-- Keep the main thread for orchestration/decisions; push bulk reading, grepping, and exploration into subagents.
+- **Locate with `code-search`, in the main thread.** Any exploratory or structural search —
+  architecture, call paths, dependencies, cross-package behavior, change impact, first contact with
+  an unfamiliar repository — goes through the `code-search` skill, invoked here rather than handed
+  to a subagent. Locating is cheap: `rg`, `fd` and `colgrep-search` return bounded output. A one-off
+  lookup of a literal you already know stays a plain `rg`.
+- **Delegate reading, not locating.** A subagent carries the bulk reading and the synthesis that
+  follow a search, never the search itself. Test before delegating: can you state everything you
+  need back in one line — a path, a count, a verdict? Then delegate. Otherwise it stays here.
+- A subagent does not inherit skill routing. When one must search on its own, its prompt names
+  `code-search` explicitly.
+- Keep the main thread for orchestration and decisions.
 
 ## Web Fetching
 
@@ -56,9 +65,15 @@ Escalate only when the previous tier fails; never start above the first tier:
 
 ## Verification Claims
 
+- **Index new files before validation.** Before format, lint or typecheck, add every new file in
+  the intended change to Git's index with explicit pathspecs and stop if staging fails. Do not use
+  a broad untracked-file scan to compensate: these gates may deliberately discover inputs from the
+  index, so a pre-staging run is not evidence for the eventual commit.
 - **Check that the barrier covers what changed.** Before saying "green", confirm a linter
   and a test actually run on the extensions you touched. If nothing covers them, that gap
   is the first thing to fix — not a reason to claim green.
+- **Treat hooks as advisory.** A hook that can be bypassed is not the final barrier; verify the
+  indexed change with the repository checks and require the remote CI before merge.
 - **Name the environment.** Every piece of evidence states where it was produced and is
   valid only there. Green on one platform, one shell or one image says nothing about the
   others the project supports: list the supported targets, say which you exercised.

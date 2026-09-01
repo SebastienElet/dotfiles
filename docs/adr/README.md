@@ -37,9 +37,9 @@ ici sont les dates d'auteur.
 
 | #                                                      | Titre                                                            | Date    |
 | ------------------------------------------------------ | ---------------------------------------------------------------- | ------- |
-| [001](001-makefile-installateur.md)                    | Makefile idempotent comme installateur de poste                  | 2014-08 |
-| [002](002-homebrew-source-unique.md)                   | Homebrew et `mas` comme unique source de paquets                 | 2015-02 |
-| [003](003-deploiement-par-symlinks.md)                 | Déploiement de la configuration par symlinks                     | 2014-10 |
+| [001](001-makefile-installateur.md)                    | Profils hybrides comme installateur de poste                     | 2026-08 |
+| [002](002-homebrew-source-unique.md)                   | Brewfiles comme source unique des paquets                        | 2026-08 |
+| [003](003-deploiement-par-symlinks.md)                 | Déploiement depuis un état propre                                | 2026-08 |
 | [004](004-script-upgrade-unique.md)                    | Script `upgrade` unique pour toutes les mises à jour             | 2017-09 |
 | [005](005-elagage-des-cibles.md)                       | Élagage périodique des cibles inutilisées                        | 2025-12 |
 | [006](006-neovim-editeur-par-defaut.md)                | Neovim comme éditeur par défaut                                  | 2019-11 |
@@ -58,7 +58,7 @@ ici sont les dates d'auteur.
 | [019](019-pas-de-tiling-window-manager.md)             | Aucun gestionnaire de fenêtres en tuiles                         | 2025-12 |
 | [021](021-branche-main-detectee.md)                    | `main` détectée dynamiquement                                    | 2023-12 |
 | [022](022-conventional-commits.md)                     | Conventional Commits imposés                                     | 2025-12 |
-| [023](023-ci-lint-et-installation.md)                  | CI de lint et test d'installation                                | 2026-01 |
+| [023](023-ci-lint-et-installation.md)                  | CI de lint et smoke minimal macOS                                | 2026-08 |
 | [024](024-instructions-ia-versionnees.md)              | Instructions IA versionnées dans le dépôt                        | 2026-01 |
 | [025](025-agents-md-source-unique.md)                  | `AGENTS.md` comme source unique agent-agnostique                 | 2026-02 |
 | [026](026-agents-cli-plutot-que-copilot.md)            | Agents CLI plutôt que Copilot                                    | 2025-10 |
@@ -66,14 +66,13 @@ ici sont les dates d'auteur.
 | [028](028-skills-ssot.md)                              | `.agents/skills/` comme source unique des skills projet          | 2026-05 |
 | [029](029-pas-de-skills-tierces.md)                    | Skills tierces refusées par défaut                               | 2026-05 |
 | [031](031-mcp-en-conteneurs-nommes.md)                 | MCP en conteneurs Docker nommés                                  | 2026-08 |
-| [032](032-johnny-decimal-documents.md)                 | Johnny Decimal pour `~/Documents`                                | 2025-08 |
 | [033](033-pas-de-rtk.md)                               | Ne pas utiliser RTK                                              | 2026-08 |
 | [034](034-pas-de-caveman.md)                           | Ne pas utiliser les skills Caveman                               | 2026-08 |
 | [035](035-agents-md-elague-par-mesure.md)              | `AGENTS.md` élagué par mesure du no-op                           | 2026-08 |
 | [036](036-regles-ia-admises-par-ablation.md)           | Règles d'instructions IA admises par ablation marginale          | 2026-08 |
 | [037](037-commentaire-absent-par-defaut.md)            | Commentaire absent par défaut, comptabilisé dans le compte rendu | 2026-08 |
 | [038](038-frontieres-home-harness-tooling.md)          | Frontières `home/`, `harness/` et `tooling/`                     | 2026-08 |
-| [039](039-codegraph-recuperation-structurelle.md)      | CodeGraph à la demande pour la récupération structurelle         | 2026-08 |
+| [039](039-code-search.md)                              | Recherche exacte et conceptuelle dans les checkouts Git          | 2026-08 |
 | [040](040-skills-user-dans-harness.md)                 | Skills user dans `harness/`                                      | 2026-08 |
-| [041](041-frontiere-automatisation-typescript-rust.md) | Frontière d'automatisation entre Shell, Just, TypeScript et Rust | 2026-08 |
+| [041](041-frontiere-automatisation-typescript-rust.md) | Frontière d'automatisation entre Shell, Moon, TypeScript et Rust | 2026-08 |
 | [042](042-memoire-durable-locale-partagee.md)          | Mémoire durable locale partagée                                  | 2026-08 |

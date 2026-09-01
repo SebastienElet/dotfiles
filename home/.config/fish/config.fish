@@ -18,6 +18,7 @@ end
 # bun
 set --export BUN_INSTALL "$HOME/.bun"
 fish_add_path --global --move --path $BUN_INSTALL/bin
+fish_add_path --global --move --path "$HOME/.moon/bin"
 
 # zoxide - smarter cd command
 if type -q zoxide

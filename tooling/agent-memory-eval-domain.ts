@@ -18,35 +18,60 @@ const expectedCapabilities = [
 
 function capabilityChecks(
   evidence: Readonly<Record<string, unknown>>,
+  nonce: string,
 ): Record<(typeof expectedCapabilities)[number], boolean> {
-  const read = (name: string): string => String(evidence[name] ?? "");
+  const read = (name: string): string =>
+    typeof evidence[name] === "string" ? evidence[name] : "";
   const runtimeObserved = evidence.runtimeObserved === true;
-  const lifecycle = evidence.lifecycle as Readonly<Record<string, boolean>>;
-  const proposal = evidence.proposalValidation as Readonly<Record<string, boolean>>;
+  const lifecycle = booleanRecord(evidence.lifecycle);
+  const proposal = booleanRecord(evidence.proposalValidation);
   return {
     authorized_admission: evidence.admissionObserved === true,
     complete_proposal: proposal.stored === true,
     contradiction_invalidated: lifecycle.contradictionInvalidated === true,
     durable_detection: proposal.statementDetected === true,
     fresh_retrieval:
-      runtimeObserved && evidence.adapterValid === true && evidence.storeArtifactsValid === true,
-    freshness_before_influence: runtimeObserved && evidence.contextObserved === true,
+      runtimeObserved &&
+      evidence.adapterValid === true &&
+      evidence.storeArtifactsValid === true,
+    freshness_before_influence:
+      runtimeObserved && evidence.contextObserved === true,
     no_implicit_write:
       read("proposalState") === read("afterProposal") &&
       proposal.evaluatedStoreUnchanged === true,
-    proof_before_influence: runtimeObserved && evidence.contextObserved === true,
+    proof_before_influence:
+      runtimeObserved && evidence.contextObserved === true,
     rejection_redacted: evidence.sensitiveRedacted === true,
     sensitive_rejected: evidence.sensitiveRefused === true,
     store_unchanged: evidence.sensitiveUnchanged === true,
-    stored: evidence.admissionStored === true && evidence.storeArtifactsValid === true,
+    stored:
+      evidence.admissionStored === true &&
+      evidence.storeArtifactsValid === true,
     unavailable_no_mutation: lifecycle.unavailableNoMutation === true,
     unavailable_omitted: lifecycle.unavailableOmitted === true,
     unrelated_not_injected:
       evidence.controlUnchanged === true &&
       evidence.unrelatedUnchanged === true &&
-      !read("controlText").includes(read("nonce")) &&
-      !read("unrelatedText").includes(read("nonce")),
+      !read("controlText").includes(nonce) &&
+      !read("unrelatedText").includes(nonce),
   };
+}
+
+function booleanRecord(value: unknown): Readonly<Record<string, boolean>> {
+  if (!isRecord(value)) {
+    return {};
+  }
+  const entries: [string, boolean][] = [];
+  for (const [key, field] of Object.entries(value)) {
+    if (typeof field === "boolean") {
+      entries.push([key, field]);
+    }
+  }
+  return Object.fromEntries(entries);
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 export { capabilityChecks, expectedCapabilities };

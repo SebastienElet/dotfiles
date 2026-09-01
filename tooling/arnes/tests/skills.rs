@@ -96,10 +96,67 @@ fn skills_doctor_is_isolated_and_read_only() {
 }
 
 #[test]
-fn doctor_without_resource_does_not_aggregate_skills_yet() {
+fn doctor_without_resource_reports_manifest_then_skills() {
     let fixture = configured_fixture();
     let (code, stdout, _) = run(&fixture, &["doctor"]);
 
     assert_eq!(code, 0);
-    assert_eq!(stdout, "Manifest\n✓ 1 healthy\n");
+    assert!(
+        stdout.starts_with("Manifest\n✓ 1 healthy\n\nSkills · user scope · 3 agents\n"),
+        "{stdout}"
+    );
+}
+
+#[test]
+fn doctor_without_resource_fails_when_skills_drift() {
+    let fixture = configured_fixture();
+    std::fs::remove_file(fixture.home().join(".cursor/skills/alpha")).unwrap();
+
+    let (code, stdout, _) = run(&fixture, &["doctor"]);
+
+    assert_eq!(code, 1, "{stdout}");
+    assert!(stdout.starts_with("Manifest\n✓ 1 healthy\n\nSkills · user scope"));
+    assert!(stdout.contains("DRIFT alpha"));
+}
+
+#[test]
+fn json_doctor_without_resource_includes_manifest_skills_and_hooks() {
+    let fixture = configured_fixture();
+    let (code, stdout, _) = run(&fixture, &["doctor", "--format", "json"]);
+    let diagnostics: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    let diagnostics = diagnostics.as_array().unwrap();
+
+    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(diagnostics[0]["resource"], "manifest");
+    let resources = diagnostics
+        .iter()
+        .skip(1)
+        .map(|diagnostic| diagnostic["resource"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(resources.contains(&"skills"), "{stdout}");
+    assert!(resources.contains(&"hooks"), "{stdout}");
+    assert!(
+        resources
+            .iter()
+            .all(|resource| matches!(*resource, "skills" | "hooks")),
+        "{stdout}"
+    );
+}
+
+#[test]
+fn doctor_without_resource_stops_after_an_invalid_manifest() {
+    let fixture = Fixture::new();
+    fixture.write_home(
+        ".arnes.yaml",
+        &MANIFEST.replacen("version: 1", "version: 2", 1),
+    );
+
+    let (code, stdout, stderr) = run(&fixture, &["doctor"]);
+
+    assert_eq!(code, 2);
+    assert_eq!(
+        stdout,
+        "Manifest\n✓ 0 healthy\n\nerror manifest: version: unsupported version 2; expected 1\n"
+    );
+    assert!(stderr.is_empty());
 }
