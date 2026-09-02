@@ -365,6 +365,13 @@ external:
         agent: codex,
         scope: user,
         origin: plugin,
+        plugin: semctx-control@semctx-stable,
+        slug: semctx-control,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
         plugin: superpowers@openai-curated,
         slug: brainstorming,
       }
@@ -458,13 +465,6 @@ external:
         origin: plugin,
         plugin: superpowers@openai-curated,
         slug: writing-skills,
-      }
-    - {
-        agent: codex,
-        scope: user,
-        origin: plugin,
-        plugin: semctx-control@semctx-stable,
-        slug: semctx-control,
       }
 mcp:
   - name: apple-notes
