@@ -40,19 +40,11 @@ project instructions are discoverable.
    compensating rule. Fix an owned defect instead of teaching the harness its workaround.
 5. If the result is not `harness-gap`, stop. Return the existing `skip` with the reason and next
    diagnostic action; do not read the reference or registry.
-6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md), then
-   inspect the named registry before proposing a rule. Classify the registry cause after
-   `harness-gap`, search for a matching source or invariant, and return exactly `skip`, `link`, or
-   `propose` using the required report, even when a neighboring rule exists or sources are missing.
-7. For `propose`, include the trigger, desired behavior, scope, supporting evidence, counterexample,
-   falsifier, expiry condition, and the cheapest behavioral trial that could disprove the candidate.
-   Keep every proposal session-local until explicit approval. Use `skill-manager` for a skill change
-   and `agent-instructions` for instruction discovery or deployment changes.
-8. After explicit approval, declare the surface, Claude, Codex, and Cursor consumers, and the
-   appropriate oracle. Run the registry CLI immediately before the report; state only that it
-   accepted the snapshot read in that execution environment, not a durable validity guarantee.
-9. Promote only after the trial changes the target behavior in three independent sessions without a
-   contradictory result. Roll back on two failed trials, one safety regression, or a user veto.
+6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md) and
+   execute its single authoritative JSON contract in the declared order. Treat every set as closed,
+   every boolean or required field as non-negotiable, and any conflicting prose as invalid. The
+   contract governs registry lookup, cause classification, evidence, decision, approval, control,
+   consumers, oracle, routes, CLI report, proposal, lifecycle, retirement, and report fields.
 
 ## Gotchas
 
