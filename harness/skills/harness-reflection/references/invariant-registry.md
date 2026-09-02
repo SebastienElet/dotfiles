@@ -33,14 +33,19 @@
   ],
   "decisionBranches": {
     "skip": ["render-report"],
-    "link": ["hold-session-local", "render-report"],
-    "propose": ["hold-session-local", "render-report"]
+    "link": ["hold-session-local", "await-explicit-approval"],
+    "propose": ["hold-session-local", "await-explicit-approval"]
+  },
+  "approvalBranches": {
+    "absent": ["render-report-without-mutation"],
+    "granted": ["execute-approved-mutation-order"]
   },
   "approvedMutationOrder": [
-    "require-approval",
     "select-control-surface",
     "declare-consumers",
-    "require-oracle",
+    "require-control-oracle",
+    "mutate-selected-control-surface",
+    "mutate-registry",
     "run-cli",
     "render-report"
   ],
@@ -67,6 +72,12 @@
     "missingEvidenceWorkflow": ["choose-skip", "render-report"],
     "presentEvidenceWorkflow": ["classify-registry-cause", "choose-decision"],
     "promotionThreshold": "two-distinct-pull-requests-or-high-severity",
+    "prFeedbackBoundary": {
+      "input": "provided-factual-report-only",
+      "directForgeIngestion": "forbidden",
+      "historicalReconstruction": "forbidden",
+      "collectionRole": "none"
+    },
     "syntheticSources": "forbidden"
   },
   "approval": {
@@ -81,6 +92,14 @@
       "project-local-contract"
     ],
     "enforceable": ["hook", "permission", "lint", "type", "architectural-test"],
+    "probabilisticPromotion": {
+      "protocol": "controlled-marginal-ablation",
+      "conditions": ["with-exact-candidate-text", "without-candidate-text"],
+      "controlledConstants": ["scenarios", "environments", "replicates"],
+      "observableDelta": "required",
+      "withOnlyRuns": "never-sufficient",
+      "activationMeasurementForConditionalSkill": "required"
+    },
     "selectionRequiredAfterApproval": true
   },
   "consumers": {
@@ -90,7 +109,7 @@
   "oracle": {
     "requiredAfterApproval": true,
     "enforceable": "executable-failure-path-and-test-path",
-    "probabilistic": "behavioral-trial-with-environment",
+    "probabilistic": "controlled-marginal-ablation-with-observable-delta",
     "inapplicable": "reason-required"
   },
   "routes": {
@@ -105,7 +124,18 @@
   },
   "retirement": {
     "requiredFields": ["retiredAt", "reason"],
-    "optionalFields": ["replacedBy"]
+    "optionalFields": ["replacedBy"],
+    "workflowOrder": [
+      "require-approval",
+      "lookup-existing-invariant",
+      "preserve-history",
+      "set-retired-at",
+      "set-retirement-reason",
+      "handle-optional-replaced-by",
+      "mutate-registry",
+      "run-cli",
+      "render-report"
+    ]
   },
   "proposal": {
     "requiredFields": [
@@ -120,7 +150,8 @@
     ]
   },
   "lifecycle": {
-    "promotion": "three-independent-sessions-without-contradictory-result",
+    "promotion": "control-kind-specific-green-oracle-required",
+    "independentWithOnlySessions": "never-sufficient-for-probabilistic-control",
     "rollback": ["two-failed-trials", "one-safety-regression", "user-veto"]
   },
   "report": {

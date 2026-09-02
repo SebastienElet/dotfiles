@@ -4,6 +4,7 @@ import type {
   RegistryDiagnostic,
   ValidationOptions,
 } from "./invariant-registry-schema.ts";
+import { marginalAblationDiagnostics } from "./invariant-registry-ablation-policy.ts";
 import { oracleDiagnostics } from "./invariant-registry-oracle-policy.ts";
 import { pullRequestIdentity } from "./invariant-registry-source.ts";
 
@@ -178,6 +179,7 @@ const validateInvariantRegistry = (
     return [
       ...promotionDiagnostics(record, path),
       ...surfaceDiagnostics(record, path),
+      ...marginalAblationDiagnostics(record, path),
       ...lifecycleDiagnostics(record, path, ids),
       ...oracleDiagnostics(record, path, options),
     ];

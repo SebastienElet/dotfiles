@@ -1,3 +1,15 @@
+import {
+  approvalBranchesSchema,
+  approvedMutationOrderSchema,
+  controlsSchema,
+  decisionBranchesSchema,
+  diagnosticSchema,
+  harnessGapWorkflowOrderSchema,
+  initialWorkflowOrderSchema,
+  lifecycleSchema,
+  oracleSchema,
+  retirementSchema,
+} from "./harness-reflection-contract-workflow-schema.ts";
 import { z } from "zod";
 
 const registryClassSchema = z.enum([
@@ -8,70 +20,16 @@ const registryClassSchema = z.enum([
   "judgment",
 ]);
 const decisionSchema = z.enum(["skip", "link", "propose"]);
-const probabilisticSurfaceSchema = z.enum([
-  "always-loaded-instruction",
-  "conditional-skill",
-  "project-local-contract",
-]);
-const enforceableSurfaceSchema = z.enum([
-  "hook",
-  "permission",
-  "lint",
-  "type",
-  "architectural-test",
-]);
+
 const harnessReflectionContractSchema = z
   .object({
     version: z.literal(1),
-    initialWorkflowOrder: z.tuple([
-      z.literal("identify-equivalent-failure"),
-      z.literal("preserve-factual-evidence"),
-      z.literal("inspect-current-guidance"),
-      z.literal("classify-diagnostic-cause"),
-      z.literal("gate-registry-access"),
-    ]),
-    diagnostic: z
-      .object({
-        classes: z.tuple([
-          z.literal("task-specific"),
-          z.literal("owned-defect"),
-          z.literal("external-transient"),
-          z.literal("missing-capability"),
-          z.literal("harness-gap"),
-        ]),
-        harnessGap: z.literal("execute-harness-gap-workflow"),
-        other: z.literal("skip-with-reason-and-next-diagnostic-action"),
-        registryAccessForOther: z.literal("forbidden"),
-      })
-      .strict(),
-    harnessGapWorkflowOrder: z.tuple([
-      z.literal("read-authoritative-reference"),
-      z.literal("search-registry"),
-      z.literal("record-registry-lookup"),
-      z.literal("evaluate-concrete-evidence"),
-      z.literal("branch-on-evidence"),
-    ]),
-    decisionBranches: z
-      .object({
-        skip: z.tuple([z.literal("render-report")]),
-        link: z.tuple([
-          z.literal("hold-session-local"),
-          z.literal("render-report"),
-        ]),
-        propose: z.tuple([
-          z.literal("hold-session-local"),
-          z.literal("render-report"),
-        ]),
-      })
-      .strict(),
-    approvedMutationOrder: z.tuple([
-      z.literal("require-approval"),
-      z.literal("select-control-surface"),
-      z.literal("declare-consumers"),
-      z.literal("require-oracle"),
-      z.literal("run-cli"),
-      z.literal("render-report"),
-    ]),
+    initialWorkflowOrder: initialWorkflowOrderSchema,
+    diagnostic: diagnosticSchema,
+    harnessGapWorkflowOrder: harnessGapWorkflowOrderSchema,
+    decisionBranches: decisionBranchesSchema,
+    approvalBranches: approvalBranchesSchema,
+    approvedMutationOrder: approvedMutationOrderSchema,
     registry: z
       .object({
         path: z.literal("harness/invariants/registry.json"),
@@ -112,6 +70,14 @@ const harnessReflectionContractSchema = z
         promotionThreshold: z.literal(
           "two-distinct-pull-requests-or-high-severity",
         ),
+        prFeedbackBoundary: z
+          .object({
+            input: z.literal("provided-factual-report-only"),
+            directForgeIngestion: z.literal("forbidden"),
+            historicalReconstruction: z.literal("forbidden"),
+            collectionRole: z.literal("none"),
+          })
+          .strict(),
         syntheticSources: z.literal("forbidden"),
       })
       .strict(),
@@ -122,23 +88,7 @@ const harnessReflectionContractSchema = z
         timePressureBypass: z.literal(false),
       })
       .strict(),
-    controls: z
-      .object({
-        probabilistic: z.tuple([
-          probabilisticSurfaceSchema.extract(["always-loaded-instruction"]),
-          probabilisticSurfaceSchema.extract(["conditional-skill"]),
-          probabilisticSurfaceSchema.extract(["project-local-contract"]),
-        ]),
-        enforceable: z.tuple([
-          enforceableSurfaceSchema.extract(["hook"]),
-          enforceableSurfaceSchema.extract(["permission"]),
-          enforceableSurfaceSchema.extract(["lint"]),
-          enforceableSurfaceSchema.extract(["type"]),
-          enforceableSurfaceSchema.extract(["architectural-test"]),
-        ]),
-        selectionRequiredAfterApproval: z.literal(true),
-      })
-      .strict(),
+    controls: controlsSchema,
     consumers: z
       .object({
         required: z.tuple([
@@ -151,14 +101,7 @@ const harnessReflectionContractSchema = z
         ),
       })
       .strict(),
-    oracle: z
-      .object({
-        requiredAfterApproval: z.literal(true),
-        enforceable: z.literal("executable-failure-path-and-test-path"),
-        probabilistic: z.literal("behavioral-trial-with-environment"),
-        inapplicable: z.literal("reason-required"),
-      })
-      .strict(),
+    oracle: oracleSchema,
     routes: z
       .object({
         skillChange: z.literal("skill-manager"),
@@ -173,12 +116,7 @@ const harnessReflectionContractSchema = z
         durableValidityClaim: z.literal(false),
       })
       .strict(),
-    retirement: z
-      .object({
-        requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
-        optionalFields: z.tuple([z.literal("replacedBy")]),
-      })
-      .strict(),
+    retirement: retirementSchema,
     proposal: z
       .object({
         requiredFields: z.tuple([
@@ -193,18 +131,7 @@ const harnessReflectionContractSchema = z
         ]),
       })
       .strict(),
-    lifecycle: z
-      .object({
-        promotion: z.literal(
-          "three-independent-sessions-without-contradictory-result",
-        ),
-        rollback: z.tuple([
-          z.literal("two-failed-trials"),
-          z.literal("one-safety-regression"),
-          z.literal("user-veto"),
-        ]),
-      })
-      .strict(),
+    lifecycle: lifecycleSchema,
     report: z
       .object({
         appliesToDecisions: z.tuple([

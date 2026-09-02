@@ -60,6 +60,37 @@ const oracleSchema = z
     testPath: semanticStringSchema,
   })
   .strict();
+const ablationConditionSchema = z
+  .object({
+    scenarios: z.array(semanticStringSchema).min(1),
+    environments: z.array(semanticStringSchema).min(1),
+    replicates: z.number().int().positive(),
+    outcomes: z.array(semanticStringSchema).min(1),
+  })
+  .strict();
+const activationMeasurementSchema = z
+  .object({
+    activated: z.number().int().nonnegative(),
+    total: z.number().int().positive(),
+  })
+  .strict()
+  .refine(({ activated, total }) => activated <= total);
+const marginalAblationSchema = z
+  .object({
+    protocol: z.literal("controlled-marginal-ablation"),
+    candidateTextExact: semanticStringSchema,
+    with: ablationConditionSchema,
+    without: ablationConditionSchema,
+    observableDelta: semanticStringSchema,
+    conditionalSkillActivation: z
+      .object({
+        with: activationMeasurementSchema,
+        without: activationMeasurementSchema,
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
 const consumersSchema = z
   .object({
     claude: consumerSchema,
@@ -102,6 +133,7 @@ const invariantSchema = z
     ]),
     approval: approvalSchema.optional(),
     oracle: oracleSchema.optional(),
+    marginalAblation: marginalAblationSchema.optional(),
     consumers: consumersSchema,
     verification: verificationSchema,
     retirement: retirementSchema.optional(),

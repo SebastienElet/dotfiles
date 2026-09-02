@@ -3,11 +3,13 @@ import {
   candidate,
   diagnosticCodes,
   firstPullRequest,
+  marginalAblation,
   registry,
   secondPullRequest,
   source,
   validateInvariantRegistry,
   validationOptions,
+  verifiedVerification,
 } from "./invariant-registry-test-support.ts";
 import { expect, test } from "bun:test";
 
@@ -59,6 +61,143 @@ test("accepts one high-severity PR after explicit approval", () => {
   );
 
   expect(diagnostics).toEqual([]);
+});
+
+test("rejects active probabilistic controls without marginal ablation", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        controlKind: "probabilistic",
+        oracle: undefined,
+        surface: "always-loaded-instruction",
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain("missing-marginal-ablation");
+});
+
+test("accepts active probabilistic controls after controlled ablation", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        controlKind: "probabilistic",
+        marginalAblation,
+        oracle: undefined,
+        surface: "always-loaded-instruction",
+        verification: verifiedVerification,
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnostics).toEqual([]);
+});
+
+test("rejects unverified probabilistic ablation", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        controlKind: "probabilistic",
+        marginalAblation,
+        oracle: undefined,
+        surface: "always-loaded-instruction",
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain(
+    "unverified-marginal-ablation",
+  );
+});
+
+const ablationCases = [
+  {
+    name: "different scenarios",
+    ablation: {
+      ...marginalAblation,
+      without: { ...marginalAblation.without, scenarios: ["other scenario"] },
+    },
+    code: "uncontrolled-marginal-ablation",
+  },
+  {
+    name: "with-only outcome",
+    ablation: {
+      ...marginalAblation,
+      without: {
+        ...marginalAblation.without,
+        outcomes: marginalAblation.with.outcomes,
+      },
+    },
+    code: "missing-observable-delta",
+  },
+] as const;
+for (const testCase of ablationCases) {
+  test(`rejects probabilistic ablation with ${testCase.name}`, () => {
+    const diagnostics = validateInvariantRegistry(
+      registry(
+        active({
+          controlKind: "probabilistic",
+          marginalAblation: testCase.ablation,
+          oracle: undefined,
+          surface: "always-loaded-instruction",
+          verification: verifiedVerification,
+        }),
+      ),
+      validationOptions(),
+    );
+
+    expect(diagnosticCodes(diagnostics)).toContain(testCase.code);
+  });
+}
+
+test("rejects incomplete ablation replicate outcomes", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        controlKind: "probabilistic",
+        marginalAblation: {
+          ...marginalAblation,
+          with: { ...marginalAblation.with, outcomes: ["pass"] },
+        },
+        oracle: undefined,
+        surface: "always-loaded-instruction",
+        verification: verifiedVerification,
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain(
+    "incomplete-ablation-replicates",
+  );
+});
+
+test("requires effective activation measurement for conditional skills", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        controlKind: "probabilistic",
+        marginalAblation: {
+          ...marginalAblation,
+          conditionalSkillActivation: {
+            with: { activated: 0, total: 6 },
+            without: { activated: 0, total: 6 },
+          },
+        },
+        oracle: undefined,
+        surface: "conditional-skill",
+        verification: verifiedVerification,
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain(
+    "ineffective-activation-measurement",
+  );
 });
 
 test("normalizes GitHub pull request URLs before counting promotion evidence", () => {

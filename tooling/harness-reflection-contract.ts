@@ -1,9 +1,11 @@
 import { duplicateJsonObjectKeys } from "./harness-reflection-contract-json-keys.ts";
 import { harnessReflectionContractSchema } from "./harness-reflection-contract-schema.ts";
+import { promotionResultsFindings } from "./harness-reflection-promotion-results.ts";
 import { resolve } from "node:path";
 
 type HarnessReflectionSources = Readonly<{
   evals: unknown;
+  promotionResults: unknown;
   reference: string;
   skill: string;
 }>;
@@ -31,7 +33,7 @@ const expectedReferenceWrapper = `# Invariant Registry
 \`\`\`
 `;
 const expectedSkillSurfaceDigest =
-  "d09bc819ed0f219163ad5baf67fc64b30d7023e2e3c2a4b3a846b2a1bdcfc0e7";
+  "35fe7117cb5e8e560916289b0561440f29f318f517912e81548b60250e30de68";
 const linkQuery =
   "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
 const stylisticQuery =
@@ -47,6 +49,9 @@ const loadHarnessReflectionSources = async (
   return {
     evals: await Bun.file(
       resolve(skillRoot, "evals/trigger-queries.json"),
+    ).json(),
+    promotionResults: await Bun.file(
+      resolve(skillRoot, "evals/promotion-workflow-results.json"),
     ).json(),
     reference: await Bun.file(
       resolve(skillRoot, "references/invariant-registry.md"),
@@ -161,6 +166,11 @@ const validateHarnessReflectionContract = (
   ...skillSurfaceFindings(sources.skill),
   ...authoritativeContractFindings(sources.reference),
   ...evalFindings(parseEvals(sources.evals)),
+  ...promotionResultsFindings(
+    sources.promotionResults,
+    sources.skill,
+    sources.reference,
+  ),
 ];
 
 export {

@@ -13,6 +13,31 @@ type ReviewSource = Readonly<{
 
 const firstPullRequest = "206";
 const secondPullRequest = "207";
+const verifiedVerification = {
+  state: "verified",
+  lastRun: {
+    outcome: "passed",
+    ranAt: "2026-09-02T00:00:00.000Z",
+    environment: "controlled marginal ablation on macOS and Linux",
+  },
+};
+const marginalAblation = {
+  protocol: "controlled-marginal-ablation",
+  candidateTextExact: "Always validate external input before domain use.",
+  with: {
+    scenarios: ["invalid boundary value"],
+    environments: ["macOS", "Linux"],
+    replicates: 3,
+    outcomes: ["pass", "pass", "pass", "pass", "pass", "pass"],
+  },
+  without: {
+    scenarios: ["invalid boundary value"],
+    environments: ["macOS", "Linux"],
+    replicates: 3,
+    outcomes: ["fail", "fail", "fail", "fail", "fail", "fail"],
+  },
+  observableDelta: "Invalid input rejection changed from 0/3 to 3/3.",
+};
 
 function source(pullRequestNumber: string): ReviewSource {
   return {
@@ -91,10 +116,12 @@ export {
   candidate,
   diagnosticCodes,
   firstPullRequest,
+  marginalAblation,
   registry,
   secondPullRequest,
   source,
   type TestInvariant,
   validationOptions,
+  verifiedVerification,
 };
 export { validateInvariantRegistry } from "./invariant-registry-contract.ts";
