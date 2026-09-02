@@ -3,11 +3,33 @@ import {
   parseInvariantRegistry,
   validateInvariantRegistry,
 } from "./invariant-registry-contract.ts";
-import { existsSync } from "node:fs";
+import { ZodError } from "zod";
+import { realpath } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 
 const argumentOffset = 2;
 const repositoryRoot = resolve(import.meta.dir, "..");
 const defaultRegistryPath = "harness/invariants/registry.json";
+
+const isOutside = (root: string, path: string): boolean => {
+  const pathFromRoot = relative(root, path);
+  return (
+    pathFromRoot === ".." ||
+    pathFromRoot.startsWith(`..${sep}`) ||
+    isAbsolute(pathFromRoot)
+  );
+};
+
+const isMissingPathError = (error: unknown): boolean =>
+  error instanceof Error && Reflect.get(error, "code") === "ENOENT";
+
+const resolveRepositoryRoot = async (): Promise<string> => {
+  try {
+    return await realpath(repositoryRoot);
+  } catch {
+    throw new Error("unable to resolve invariant registry root");
+  }
+};
 
 const readInvariantRegistryBytes = async (
   path: string,
@@ -37,7 +59,7 @@ const loadInvariantRegistry = async (path: string): Promise<unknown> => {
   }
 };
 
-const resolveRegistryPath = (path: string): string => {
+const resolveRegistryPath = (root: string, path: string): string => {
   const windowsPath = win32.normalize(path);
   if (
     isAbsolute(path) ||
@@ -47,16 +69,54 @@ const resolveRegistryPath = (path: string): string => {
   ) {
     throw new Error("invariant registry path must stay within the repository");
   }
-  const resolvedPath = resolve(repositoryRoot, path);
-  const pathFromRoot = relative(repositoryRoot, resolvedPath);
-  if (
-    pathFromRoot === ".." ||
-    pathFromRoot.startsWith(`..${sep}`) ||
-    isAbsolute(pathFromRoot)
-  ) {
+  const resolvedPath = resolve(root, path);
+  if (isOutside(root, resolvedPath)) {
     throw new Error("invariant registry path must stay within the repository");
   }
   return resolvedPath;
+};
+
+const resolveExistingRegistryPath = async (path: string): Promise<string> => {
+  try {
+    return await realpath(path);
+  } catch {
+    throw new Error("unable to read invariant registry");
+  }
+};
+
+const resolveRegistryTarget = async (
+  root: string,
+  path: string,
+): Promise<string> => {
+  const target = await resolveExistingRegistryPath(path);
+  if (isOutside(root, target)) {
+    throw new Error("invariant registry path must stay within the repository");
+  }
+  return target;
+};
+
+const oraclePathExists = (root: string, path: string): boolean => {
+  try {
+    return !isOutside(root, realpathSync(path));
+  } catch (error) {
+    if (isMissingPathError(error)) {
+      return false;
+    }
+    throw new Error("Oracle test path could not be checked.", { cause: error });
+  }
+};
+
+const parseRegistry = (
+  input: unknown,
+): ReturnType<typeof parseInvariantRegistry> => {
+  try {
+    return parseInvariantRegistry(input);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new TypeError("invalid invariant registry", { cause: error });
+    }
+    throw error;
+  }
 };
 
 const main = async (): Promise<number> => {
@@ -65,14 +125,15 @@ const main = async (): Promise<number> => {
     throw new Error("Usage: invariant-registry-cli [registry-path]");
   }
   const displayPath = cliArguments[0] ?? defaultRegistryPath;
-  const registryPath = resolveRegistryPath(displayPath);
-  const registry = parseInvariantRegistry(
-    await loadInvariantRegistry(registryPath),
+  const root = await resolveRepositoryRoot();
+  const registryPath = await resolveRegistryTarget(
+    root,
+    resolveRegistryPath(root, displayPath),
   );
+  const registry = parseRegistry(await loadInvariantRegistry(registryPath));
   const diagnostics = validateInvariantRegistry(registry, {
-    pathExists: (testPath): boolean =>
-      existsSync(resolve(repositoryRoot, testPath)),
-    repositoryRoot,
+    pathExists: (testPath): boolean => oraclePathExists(root, testPath),
+    repositoryRoot: root,
   });
   if (diagnostics.length > 0) {
     throw new Error(

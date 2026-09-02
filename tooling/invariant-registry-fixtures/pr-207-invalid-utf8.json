@@ -2,8 +2,8 @@
   "version": 1,
   "invariants": [
     {
-      "id": "reject-invalid-utf8-registry-input",
-      "statement": "Invalid UTF-8 registry input fails before JSON parsing.",
+      "id": "reject-invalid-utf8-measurement-output",
+      "statement": "The historical repository measurement consumer rejects invalid UTF-8 output.",
       "lifecycle": "retired",
       "controlKind": "enforceable",
       "causeClass": "blind-spot",
@@ -19,11 +19,6 @@
         "exceptions": []
       },
       "surface": "architectural-test",
-      "oracle": {
-        "name": "registry-input-utf8",
-        "failurePath": "Invalid UTF-8 registry input fails before JSON parsing.",
-        "testPath": "tooling/invariant-registry-cli.test.ts"
-      },
       "consumers": {
         "claude": {
           "state": "unsupported",
