@@ -128,15 +128,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - run: npm install --global cspell
+      - run: npm install --global cspell@10.2.0 @cspell/dict-fr-fr@2.3.2
 
       - name: Check configuration and user dictionary
         run: |
           set -euo pipefail
           test_home=$(mktemp -d)
           HOME="$test_home" make DOTFILES_PATH="$GITHUB_WORKSPACE" "$test_home/cspell.json" "$test_home/.config/cspell/user.txt"
-          trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
+          HOME="$test_home" cspell link add @cspell/dict-fr-fr
+          trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone vient)
           printf '%s\n' "$trace"
+          printf '%s\n' "$trace" | grep -F "@cspell/dict-fr-fr"
           printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
           HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
             home/cspell.json \

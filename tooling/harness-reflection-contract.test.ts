@@ -9,6 +9,12 @@ import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 const lintWorkflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
+const cspellInstallCommand =
+  "npm install --global cspell@10.2.0 @cspell/dict-fr-fr@2.3.2";
+const cspellDictionaryLinkCommand =
+  'HOME="$test_home" cspell link add @cspell/dict-fr-fr';
+const cspellTraceCommand =
+  'trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone vient)';
 const cspellLintCommandStart =
   'HOME="$test_home" cspell lint --config "$test_home/cspell.json" \\';
 const contractFinding =
@@ -40,11 +46,22 @@ test("routes factual PR evidence through the named registry", async () => {
 
 test("checks invariant registry sources with CSpell", async () => {
   const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const cspellLintCommand = lintWorkflow.slice(
-    lintWorkflow.indexOf(cspellLintCommandStart),
+  const cspellInstallIndex = lintWorkflow.indexOf(cspellInstallCommand);
+  const cspellDictionaryLinkIndex = lintWorkflow.indexOf(
+    cspellDictionaryLinkCommand,
   );
+  const cspellTraceIndex = lintWorkflow.indexOf(cspellTraceCommand);
+  const cspellLintIndex = lintWorkflow.indexOf(cspellLintCommandStart);
+  const cspellLintCommand = lintWorkflow.slice(cspellLintIndex);
 
-  expect(lintWorkflow).toContain(cspellLintCommandStart);
+  expect(cspellInstallIndex).toBeGreaterThan(-1);
+  expect(cspellDictionaryLinkIndex).toBeGreaterThan(cspellInstallIndex);
+  expect(cspellTraceIndex).toBeGreaterThan(cspellDictionaryLinkIndex);
+  expect(cspellLintIndex).toBeGreaterThan(cspellTraceIndex);
+  expect(lintWorkflow).toContain('grep -F "@cspell/dict-fr-fr"');
+  expect(lintWorkflow).toContain(
+    'grep -F "$test_home/.config/cspell/user.txt"',
+  );
   for (const path of invariantRegistryCspellPaths) {
     expect(cspellLintCommand).toContain(path);
   }
