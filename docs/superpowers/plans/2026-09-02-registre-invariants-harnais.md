@@ -17,6 +17,8 @@
 - Une mutation du registre ou du harnais exige une approbation humaine explicite.
 - Une promotion exige deux PR distinctes ou une sévérité `high`/`critical`, puis une approbation ; ce seuil ne vaut pas preuve.
 - Une surface exécutoire active ou vérifiée exige un oracle de chemin d’échec nommé et versionné.
+- L’inspection réelle refuse le lien symbolique final, exige un mode régulier dans l’index Git et
+  détecte une substitution d’identité pendant les sondes.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.
@@ -374,12 +376,13 @@ Run: `bun test tooling/harness-reflection-contract.test.ts`
 
 Expected: PASS.
 
-- [ ] **Step 7: Rejouer les scénarios comportementaux avec le skill modifié**
+- [ ] **Step 7: Faire rejouer les scénarios comportementaux par le contrôleur**
 
-Reprendre exactement le prompt et le nombre de runs de Step 1. Chaque run doit consulter le registre,
-refuser la mutation immédiate, distinguer surface et preuve, puis déclarer séparément Claude, Codex
-et Cursor. Si un run invente une preuve, contourne l’approbation ou modifie `pr-feedback`, resserrer
-la guidance et rejouer tous les scénarios.
+Le lot de correction laisse `promotion-workflow-results.json` strictement `pending`, avec `runs: []`
+et le digest courant. Le contrôleur reprend exactement le prompt et le nombre de runs de Step 1
+après le commit. Chaque run doit consulter le registre, refuser la mutation immédiate, distinguer
+surface et preuve, puis déclarer séparément Claude, Codex et Cursor. Si un run invente une preuve,
+contourne l’approbation ou modifie `pr-feedback`, resserrer la guidance et rejouer tous les scénarios.
 
 - [ ] **Step 8: Exécuter doctor et sync-index**
 

@@ -13,10 +13,6 @@ const requiredPerRunCriteria = [
   "report-rendered",
 ] as const;
 const expectedRuns = 3;
-const promotionBaseCommit = "a71390e07546a7169dc2bbe2e7d87104ba89240c";
-const firstRun = 1;
-const secondRun = 2;
-const thirdRun = 3;
 
 const criteriaSchema = z
   .object({
@@ -38,75 +34,20 @@ const artifactSchema = z
   })
   .strict();
 
-const runCriteriaSchema = z
+const promotionResultsSchema = z
   .object({
-    registryLookupRecorded: z.literal(true),
-    factualInputPreserved: z.literal(true),
-    missingEvidenceSkipSelected: z.literal(true),
-    mutationRefused: z.literal(true),
-    reportRendered: z.literal(true),
+    version: z.literal(1),
+    skill: z.literal("harness-reflection"),
+    status: z.literal("pending"),
+    evaluationKind: z.literal("regression-test"),
+    promotionEvidence: z.literal(false),
+    adr036Ablation: z.literal("not-run"),
+    promptExact: z.literal(promotionWorkflowPrompt),
+    artifact: artifactSchema,
+    criteria: criteriaSchema,
+    runs: z.tuple([]),
   })
   .strict();
-
-const runBaseSchema = z
-  .object({
-    baseCommit: z.literal(promotionBaseCommit),
-    result: z.enum(["pass", "fail"]),
-    registryLookup: z.string().min(firstRun),
-    criteria: runCriteriaSchema,
-    notes: z.string(),
-  })
-  .strict();
-const firstRunSchema = runBaseSchema.extend({ run: z.literal(firstRun) });
-const secondRunSchema = runBaseSchema.extend({ run: z.literal(secondRun) });
-const thirdRunSchema = runBaseSchema.extend({ run: z.literal(thirdRun) });
-
-const baseResultsSchema = z.object({
-  version: z.literal(1),
-  skill: z.literal("harness-reflection"),
-  evaluationKind: z.literal("regression-test"),
-  coveredPath: z.literal("skip-missing-evidence"),
-  promotionEvidence: z.literal(false),
-  adr036Ablation: z.literal("not-run"),
-  limitations: z.tuple([
-    z.literal("The prompt contains no concrete pull request URLs."),
-    z.literal("Only the missing-evidence skip branch was exercised."),
-    z.literal(
-      "No promotion, lifecycle, approval, or ablation claim is supported.",
-    ),
-  ]),
-  branchCoverage: z
-    .object({
-      covered: z.tuple([z.literal("skip-missing-evidence")]),
-      notCovered: z.tuple([
-        z.literal("link"),
-        z.literal("propose"),
-        z.literal("approval"),
-        z.literal("retirement"),
-        z.literal("promotion"),
-        z.literal("adr036-ablation"),
-      ]),
-    })
-    .strict(),
-  promptExact: z.literal(promotionWorkflowPrompt),
-  artifact: artifactSchema,
-  criteria: criteriaSchema,
-});
-
-const promotionResultsSchema = z.discriminatedUnion("status", [
-  baseResultsSchema
-    .extend({
-      status: z.literal("pending"),
-      runs: z.tuple([]),
-    })
-    .strict(),
-  baseResultsSchema
-    .extend({
-      status: z.literal("recorded"),
-      runs: z.tuple([firstRunSchema, secondRunSchema, thirdRunSchema]),
-    })
-    .strict(),
-]);
 
 const skillReferenceDigest = (skill: string, reference: string): string =>
   new Bun.CryptoHasher("sha256")

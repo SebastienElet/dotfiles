@@ -180,44 +180,65 @@ test("makes history-preserving retirement reachable", async () => {
   const contract = await authoritativeContract();
   const retirement = nestedRecord(contract, "retirement");
 
-  expect(Reflect.get(retirement, "workflowOrder")).toEqual([
-    "require-approval",
-    "lookup-existing-invariant",
-    "preserve-history",
-    "set-retired-at",
-    "set-retirement-reason",
-    "handle-optional-replaced-by",
-    "mutate-registry",
-    "run-cli",
-    "render-report",
-  ]);
+  expect(retirement).toEqual({
+    requiredFields: ["retiredAt", "reason"],
+    optionalFields: ["replacedBy"],
+    prepareOrder: [
+      "require-approval",
+      "lookup-existing-invariant",
+      "prepare-retired-registry-copy",
+      "preserve-history-in-prepared-registry",
+      "set-retired-at-in-prepared-registry",
+      "set-retirement-reason-in-prepared-registry",
+      "handle-optional-replaced-by-in-prepared-registry",
+      "prepare-selected-control-surface-copy-if-touched",
+    ],
+    validationOrder: [
+      "validate-prepared-selected-control-surface-if-touched",
+      "validate-prepared-retired-registry-with-cli-on-temporary-copy",
+    ],
+    applyOrder: [
+      "apply-retirement-surface-and-registry-as-coherent-change",
+      "validate-applied-coherent-change",
+    ],
+    onAnyError: ["restore-all-touched-files", "report-failure"],
+    successOrder: ["render-report"],
+  });
 });
 
-test.each(["preserve-history", "mutate-registry"] as const)(
-  "rejects retirement without %s",
-  async (step) => {
-    const sources = await loadHarnessReflectionSources(repositoryRoot);
-    const mutant = contractMutant(
-      sources,
-      ["retirement"],
-      (retirement): void => {
-        const order = Reflect.get(retirement, "workflowOrder");
-        if (!Array.isArray(order)) {
-          throw new TypeError("retirement workflow missing");
-        }
-        Reflect.set(
-          retirement,
-          "workflowOrder",
-          order.filter((candidate) => candidate !== step),
-        );
-      },
-    );
-
-    expect(validateHarnessReflectionContract(mutant)).toContain(
-      contractFinding,
-    );
+test.each([
+  {
+    name: "prepared surface copy when touched",
+    key: "prepareOrder",
+    value: ["prepare-retired-registry-copy"],
   },
-);
+  {
+    name: "temporary CLI prevalidation",
+    key: "validationOrder",
+    value: ["validate-prepared-selected-control-surface-if-touched"],
+  },
+  {
+    name: "all-file compensation",
+    key: "onAnyError",
+    value: ["report-failure"],
+  },
+  {
+    name: "coherent apply",
+    key: "applyOrder",
+    value: [
+      "apply-selected-control-surface",
+      "apply-registry",
+      "validate-applied-coherent-change",
+    ],
+  },
+] as const)("rejects retirement without $name", async (testCase) => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  const mutant = contractMutant(sources, ["retirement"], (retirement): void => {
+    Reflect.set(retirement, testCase.key, testCase.value);
+  });
+
+  expect(validateHarnessReflectionContract(mutant)).toContain(contractFinding);
+});
 
 test("closes the factual pr-feedback input boundary", async () => {
   const contract = await authoritativeContract();

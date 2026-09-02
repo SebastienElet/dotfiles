@@ -57,6 +57,7 @@ Chaque invariant enregistre également :
   `blind-spot` et `judgment` ;
 - une sévérité et des sources de revue dans une union fermée GitHub/Bitbucket Cloud ; chaque
   occurrence sépare l’identité canonique de la PR de l’URL immuable du commentaire ou de la revue ;
+  Bitbucket Cloud accepte le lien HTML de commentaire `/_/diff#comment-ID` exposé par l’API ;
 - un périmètre `cross-project` ou `project-local`, avec des exceptions structurées et justifiées ;
 - une surface parmi instruction toujours chargée, skill conditionnel, hook, permission, lint, type,
   test architectural ou contrat local ;
@@ -82,7 +83,8 @@ parsing Zod, les règles sémantiques refusent notamment :
 - la promotion d’un `judgment` en contrôle ;
 - une surface et un `controlKind` incompatibles ;
 - un contrôle exécutoire actif ou vérifié sans oracle nommé, sans fichier de test régulier suivi et
-  découvert, ou avec une invocation différente de celle mesurée ;
+  découvert ou, lorsque `verification.state` vaut `verified`, avec une invocation différente de
+  celle mesurée ;
 - un état `verified` sans mesure verte, environnement et date ;
 - un invariant `retired` sans raison et date, une retraite sur un autre cycle de vie, ou un graphe
   de remplacement cyclique ou à cible inconnue ;
@@ -106,7 +108,9 @@ preuve de l’oracle.
    tous les fichiers touchés ;
 6. exige le test du chemin d’échec avant tout contrôle exécutoire ;
 7. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
-8. retire un invariant en conservant son historique, ses exceptions et son remplacement éventuel.
+8. retire un invariant en conservant son historique, ses exceptions et son remplacement éventuel,
+   avec les mêmes copies préparées, validation préalable par la CLI, application cohérente et
+   compensation de tous les fichiers touchés.
 
 La recherche préalable et l’unicité des sources empêchent une répétition de créer silencieusement
 un second invariant. Les changements de skills et d’instructions continuent d’être routés vers
@@ -118,9 +122,10 @@ Le point d’entrée supporté est une commande de validation en lecture seule c
 registre canonique. Il accepte un chemin explicite pour les fixtures, parse le JSON une fois à la
 frontière, produit des diagnostics stables avec le chemin du champ concerné et retourne un statut
 non nul pour tout fichier absent, JSON invalide, schéma inconnu, règle sémantique violée ou oracle
-non régulier, non suivi, non découvert ou introuvable. L’inspection locale utilise les chemins réels,
-les métadonnées du système de fichiers et l’index Git ; la politique pure reçoit ce résultat par
-injection.
+non régulier, non suivi, non découvert ou introuvable. L’inspection locale refuse le lien symbolique
+final, ouvre le fichier sans le suivre, compare son identité avant et après les sondes, confine son
+chemin réel et exige un mode de fichier régulier dans l’index Git ; la politique pure reçoit ce
+résultat par injection.
 
 Il ne télécharge aucune preuve, n’exécute aucun oracle et ne réécrit jamais le JSON. Les références
 distantes sont des identifiants traçables ; leur disponibilité réseau n’est pas confondue avec la
@@ -138,7 +143,8 @@ Les tests Bun invoquent le module réel et le point d’entrée livré. Ils couv
 - vérification avec et sans mesure verte et environnement ;
 - exceptions, retraite discriminée et graphe de remplacement acyclique ;
 - présence séparée de Claude, Codex et Cursor, y compris un cas `unsupported` ;
-- fichier absent, JSON invalide, version inconnue et chemin d’oracle absent.
+- fichier absent, JSON invalide, version inconnue, chemin d’oracle absent, lien symbolique final,
+  mode d’index non régulier et substitution pendant les sondes.
 
 Deux fixtures historiques exercent le flux sans inscrire automatiquement un nouvel invariant réel :
 
@@ -168,7 +174,8 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - Le seuil deux PR ou sévérité forte et tous les refus ci-dessus sont prouvés par des tests du vrai
   validateur.
 - Aucun contrôle exécutoire actif ou vérifié n’existe sans oracle de chemin d’échec versionné,
-  suivi, découvert et lié à son invocation mesurée.
+  suivi et découvert ; lorsque `verification.state` vaut `verified`, l’oracle est lié exactement à
+  son invocation mesurée.
 - Une occurrence de preuve répétée est refusée globalement ; plusieurs occurrences distinctes de la
   même PR restent autorisées et ne comptent que pour une PR.
 - Exceptions et retraite conservent l’historique au lieu de supprimer la trace.

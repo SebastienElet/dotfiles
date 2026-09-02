@@ -92,7 +92,20 @@ test("rejects the PR 206 fixture when its active oracle resolves outside", async
 
   expect(outcome.exitCode).not.toBe(0);
   expect(outcome.stdout).toBe("");
-  expect(outcome.stderr).toContain("Oracle test path does not exist");
+  expect(outcome.stderr).toContain("regular file");
+});
+
+test("rejects an oracle symlink to an internal tracked test", async () => {
+  const oraclePath = await createLinkedOracle(
+    fixturePath("../git-main-branch-entry.test.ts"),
+  );
+  const path = await mutatedFixture(pr206Fixture, (source) =>
+    source.replaceAll("tooling/git-main-branch-entry.test.ts", oraclePath),
+  );
+  const outcome = await runRegistryCli(path);
+
+  expect(outcome.exitCode).not.toBe(0);
+  expect(outcome.stderr).toContain("regular file");
 });
 
 test.each([

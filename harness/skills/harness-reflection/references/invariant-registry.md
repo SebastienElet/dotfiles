@@ -135,17 +135,26 @@
   "retirement": {
     "requiredFields": ["retiredAt", "reason"],
     "optionalFields": ["replacedBy"],
-    "workflowOrder": [
+    "prepareOrder": [
       "require-approval",
       "lookup-existing-invariant",
-      "preserve-history",
-      "set-retired-at",
-      "set-retirement-reason",
-      "handle-optional-replaced-by",
-      "mutate-registry",
-      "run-cli",
-      "render-report"
-    ]
+      "prepare-retired-registry-copy",
+      "preserve-history-in-prepared-registry",
+      "set-retired-at-in-prepared-registry",
+      "set-retirement-reason-in-prepared-registry",
+      "handle-optional-replaced-by-in-prepared-registry",
+      "prepare-selected-control-surface-copy-if-touched"
+    ],
+    "validationOrder": [
+      "validate-prepared-selected-control-surface-if-touched",
+      "validate-prepared-retired-registry-with-cli-on-temporary-copy"
+    ],
+    "applyOrder": [
+      "apply-retirement-surface-and-registry-as-coherent-change",
+      "validate-applied-coherent-change"
+    ],
+    "onAnyError": ["restore-all-touched-files", "report-failure"],
+    "successOrder": ["render-report"]
   },
   "proposal": {
     "requiredFields": [

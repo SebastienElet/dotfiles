@@ -1,9 +1,20 @@
+import {
+  type FileSnapshot,
+  inspectOracleWithProbes,
+} from "./invariant-registry-oracle-inspection.ts";
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  lstatSync,
+  openSync,
+  realpathSync,
+} from "node:fs";
 import { isAbsolute, relative, resolve, sep, win32 } from "node:path";
 import {
   parseInvariantRegistry,
   validateInvariantRegistry,
 } from "./invariant-registry-contract.ts";
-import { realpathSync, statSync } from "node:fs";
 import type { OracleInspection } from "./invariant-registry-contract.ts";
 import { ZodError } from "zod";
 import { realpath } from "node:fs/promises";
@@ -11,7 +22,6 @@ import { realpath } from "node:fs/promises";
 const argumentOffset = 2;
 const repositoryRoot = resolve(import.meta.dir, "..");
 const defaultRegistryPath = "harness/invariants/registry.json";
-const oracleInvocationLength = 3;
 
 const isOutside = (root: string, path: string): boolean => {
   const pathFromRoot = relative(root, path);
@@ -97,16 +107,63 @@ const resolveRegistryTarget = async (
   return target;
 };
 
-const gitTracksPath = (root: string, path: string): boolean =>
-  Bun.spawnSync([
+const parseGitIndexMode = (
+  output: string,
+  path: string,
+): string | undefined => {
+  if (output === "") {
+    return undefined;
+  }
+  const match =
+    /^(?<mode>[0-9]{6}) [0-9a-f]{40,64} 0\t(?<path>[^\n]+)\n?$/u.exec(output);
+  if (match?.groups?.path !== path) {
+    throw new Error("Git index oracle probe was malformed.");
+  }
+  return match.groups.mode;
+};
+
+const gitIndexMode = (root: string, path: string): string | undefined => {
+  const result = Bun.spawnSync([
     "git",
     "-C",
     root,
     "ls-files",
-    "--error-unmatch",
+    "-s",
     "--",
-    relative(root, path),
-  ]).exitCode === 0;
+    path,
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error("Git index oracle probe failed.");
+  }
+  const output = new TextDecoder("utf-8", { fatal: true }).decode(
+    result.stdout,
+  );
+  return parseGitIndexMode(output, path);
+};
+
+const fileSnapshot = (path: string): FileSnapshot => {
+  try {
+    const stats = lstatSync(path, { bigint: true });
+    return stats.isFile()
+      ? { device: stats.dev, inode: stats.ino, kind: "regular-file" }
+      : { kind: stats.isSymbolicLink() ? "symlink" : "non-regular" };
+  } catch (error) {
+    if (isMissingPathError(error)) {
+      return { kind: "missing" };
+    }
+    throw error;
+  }
+};
+
+const descriptorSnapshot = (descriptor: number): FileSnapshot => {
+  const stats = fstatSync(descriptor, { bigint: true });
+  return stats.isFile()
+    ? { device: stats.dev, inode: stats.ino, kind: "regular-file" }
+    : { kind: "non-regular" };
+};
+
+const openNoFollow = (path: string): number =>
+  openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
 
 const inspectOracle = (
   root: string,
@@ -114,22 +171,17 @@ const inspectOracle = (
   invocation: readonly string[],
 ): OracleInspection => {
   try {
-    const target = realpathSync(path);
-    if (isOutside(root, target)) {
-      return { discovered: false, kind: "missing", tracked: false };
-    }
-    if (!statSync(target).isFile()) {
-      return { discovered: false, kind: "non-regular", tracked: false };
-    }
-    const tracked = gitTracksPath(root, path);
-    const repositoryPath = relative(root, path);
-    const discovered =
-      repositoryPath.endsWith(".test.ts") &&
-      invocation.length === oracleInvocationLength &&
-      invocation[0] === "bun" &&
-      invocation[1] === "test" &&
-      invocation[2] === repositoryPath;
-    return { discovered, kind: "regular-file", tracked };
+    return inspectOracleWithProbes(
+      { invocation, path, root },
+      {
+        close: closeSync,
+        fstat: descriptorSnapshot,
+        gitIndexMode,
+        lstat: fileSnapshot,
+        openNoFollow,
+        realpath: realpathSync,
+      },
+    );
   } catch (error) {
     if (isMissingPathError(error)) {
       return { discovered: false, kind: "missing", tracked: false };

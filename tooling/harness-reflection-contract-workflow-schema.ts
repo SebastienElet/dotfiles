@@ -131,17 +131,31 @@ const retirementSchema = z
   .object({
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
     optionalFields: z.tuple([z.literal("replacedBy")]),
-    workflowOrder: z.tuple([
+    prepareOrder: z.tuple([
       z.literal("require-approval"),
       z.literal("lookup-existing-invariant"),
-      z.literal("preserve-history"),
-      z.literal("set-retired-at"),
-      z.literal("set-retirement-reason"),
-      z.literal("handle-optional-replaced-by"),
-      z.literal("mutate-registry"),
-      z.literal("run-cli"),
-      z.literal("render-report"),
+      z.literal("prepare-retired-registry-copy"),
+      z.literal("preserve-history-in-prepared-registry"),
+      z.literal("set-retired-at-in-prepared-registry"),
+      z.literal("set-retirement-reason-in-prepared-registry"),
+      z.literal("handle-optional-replaced-by-in-prepared-registry"),
+      z.literal("prepare-selected-control-surface-copy-if-touched"),
     ]),
+    validationOrder: z.tuple([
+      z.literal("validate-prepared-selected-control-surface-if-touched"),
+      z.literal(
+        "validate-prepared-retired-registry-with-cli-on-temporary-copy",
+      ),
+    ]),
+    applyOrder: z.tuple([
+      z.literal("apply-retirement-surface-and-registry-as-coherent-change"),
+      z.literal("validate-applied-coherent-change"),
+    ]),
+    onAnyError: z.tuple([
+      z.literal("restore-all-touched-files"),
+      z.literal("report-failure"),
+    ]),
+    successOrder: z.tuple([z.literal("render-report")]),
   })
   .strict();
 

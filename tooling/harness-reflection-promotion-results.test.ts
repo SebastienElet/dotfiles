@@ -12,92 +12,28 @@ const resultsPath = resolve(
   "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
 );
 const sha256HexLength = 64;
-const promotionBaseCommit = "a71390e07546a7169dc2bbe2e7d87104ba89240c";
-type RecordedPromotionResults = Extract<
-  ReturnType<typeof promotionResultsSchema.parse>,
-  { status: "recorded" }
->;
+test("keeps the unevaluated workflow strictly pending", async () => {
+  const results = promotionResultsSchema.parse(
+    await Bun.file(resultsPath).json(),
+  );
 
-const recordedRuns = (value: unknown): RecordedPromotionResults["runs"] => {
-  const parsed = promotionResultsSchema.parse(value);
-  if (parsed.status !== "recorded") {
-    throw new TypeError("three recorded evaluation runs missing");
-  }
-  return parsed.runs;
-};
-
-test("records three skip-path regression evaluations without promotion evidence", async () => {
-  const results: unknown = await Bun.file(resultsPath).json();
-
-  expect(results).toMatchObject({
-    adr036Ablation: "not-run",
-    coveredPath: "skip-missing-evidence",
-    evaluationKind: "regression-test",
-    promotionEvidence: false,
-    skill: "harness-reflection",
-    status: "recorded",
-    version: 1,
-  });
-  expect(results).toMatchObject({
-    runs: [
-      {
-        baseCommit: promotionBaseCommit,
-        criteria: {
-          registryLookupRecorded: true,
-          factualInputPreserved: true,
-          missingEvidenceSkipSelected: true,
-          mutationRefused: true,
-          reportRendered: true,
-        },
-        result: "pass",
-      },
-      {
-        baseCommit: promotionBaseCommit,
-        criteria: {
-          registryLookupRecorded: true,
-          factualInputPreserved: true,
-          missingEvidenceSkipSelected: true,
-          mutationRefused: true,
-          reportRendered: true,
-        },
-        result: "pass",
-      },
-      {
-        baseCommit: promotionBaseCommit,
-        criteria: {
-          registryLookupRecorded: true,
-          factualInputPreserved: true,
-          missingEvidenceSkipSelected: true,
-          mutationRefused: true,
-          reportRendered: true,
-        },
-        result: "pass",
-      },
-    ],
-  });
-});
-
-test("states uncovered promotion and lifecycle branches", async () => {
-  const results: unknown = await Bun.file(resultsPath).json();
-
-  expect(results).toMatchObject({
-    branchCoverage: {
-      covered: ["skip-missing-evidence"],
-      notCovered: [
-        "link",
-        "propose",
-        "approval",
-        "retirement",
-        "promotion",
-        "adr036-ablation",
-      ],
-    },
-    limitations: [
-      "The prompt contains no concrete pull request URLs.",
-      "Only the missing-evidence skip branch was exercised.",
-      "No promotion, lifecycle, approval, or ablation claim is supported.",
-    ],
-  });
+  expect(results.status).toBe("pending");
+  expect(results.runs).toEqual([]);
+  expect(results.promotionEvidence).toBe(false);
+  expect(results.adr036Ablation).toBe("not-run");
+  expect(results.artifact.skillReference).toHaveLength(sha256HexLength);
+  expect(Object.keys(results).toSorted()).toEqual([
+    "adr036Ablation",
+    "artifact",
+    "criteria",
+    "evaluationKind",
+    "promotionEvidence",
+    "promptExact",
+    "runs",
+    "skill",
+    "status",
+    "version",
+  ]);
 });
 
 test.each([
@@ -112,7 +48,10 @@ test.each([
   ],
   ["inexact prompt", { promptExact: "changed prompt" }],
   ["weakened criteria", { criteria: { expectedRuns: 3, requiredPerRun: [] } }],
-  ["recorded without three runs", { status: "recorded", runs: [] }],
+  ["non-pending status", { status: "complete" }],
+  ["run provenance", { baseCommit: "untrusted" }],
+  ["claimed branch coverage", { coveredPath: "skip-missing-evidence" }],
+  ["claimed run", { runs: [{ run: 1, result: "pass" }] }],
 ] as const)("rejects promotion results with %s", async (_name, patch) => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   const promotionResults = structuredClone(sources.promotionResults);
@@ -120,47 +59,6 @@ test.each([
     throw new TypeError("promotion results missing");
   }
   Object.assign(promotionResults, patch);
-
-  expect(
-    validateHarnessReflectionContract({ ...sources, promotionResults }),
-  ).not.toEqual([]);
-});
-
-test("rejects a recorded evaluation with one missing criterion", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const [firstRun, secondRun, thirdRun] = recordedRuns(
-    sources.promotionResults,
-  );
-  const promotionResults = {
-    ...promotionResultsSchema.parse(sources.promotionResults),
-    runs: [
-      firstRun,
-      secondRun,
-      {
-        ...thirdRun,
-        criteria: { ...thirdRun.criteria, reportRendered: false },
-      },
-    ],
-  };
-
-  expect(
-    validateHarnessReflectionContract({ ...sources, promotionResults }),
-  ).not.toEqual([]);
-});
-
-test("rejects a recorded evaluation from a different base commit", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const [firstRun, secondRun, thirdRun] = recordedRuns(
-    sources.promotionResults,
-  );
-  const promotionResults = {
-    ...promotionResultsSchema.parse(sources.promotionResults),
-    runs: [
-      firstRun,
-      { ...secondRun, baseCommit: "0".repeat(promotionBaseCommit.length) },
-      thirdRun,
-    ],
-  };
 
   expect(
     validateHarnessReflectionContract({ ...sources, promotionResults }),
