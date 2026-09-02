@@ -30,3 +30,10 @@ tasks:
       - "@group(rust)"
     options:
       mutex: agent-handoff-cargo-target
+  build-release:
+    command: cargo build --release
+    inputs:
+      - "@group(rust)"
+    options:
+      cache: false
+      mutex: agent-handoff-cargo-target
