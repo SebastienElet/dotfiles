@@ -31,7 +31,7 @@ const expectedReferenceWrapper = `# Invariant Registry
 \`\`\`
 `;
 const expectedSkillSurfaceDigest =
-  "79af2a93643c0861cc7854cba74fdfc484f7a8fc90b4d039f1aca5ba4ce52d01";
+  "d09bc819ed0f219163ad5baf67fc64b30d7023e2e3c2a4b3a846b2a1bdcfc0e7";
 const linkQuery =
   "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
 const stylisticQuery =

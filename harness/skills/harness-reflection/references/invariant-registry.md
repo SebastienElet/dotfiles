@@ -20,14 +20,16 @@
       "missing-capability",
       "harness-gap"
     ],
-    "harnessGap": "continue-with-registry-workflow",
+    "harnessGap": "execute-harness-gap-workflow",
     "other": "skip-with-reason-and-next-diagnostic-action",
     "registryAccessForOther": "forbidden"
   },
-  "registryWorkflowOrder": [
+  "harnessGapWorkflowOrder": [
+    "read-authoritative-reference",
     "search-registry",
-    "classify-registry-cause",
-    "choose-decision"
+    "record-registry-lookup",
+    "evaluate-concrete-evidence",
+    "branch-on-evidence"
   ],
   "decisionBranches": {
     "skip": ["render-report"],
@@ -60,7 +62,10 @@
   "evidence": {
     "factualPrFeedback": "immutable",
     "concretePrUrls": "required",
+    "evaluationTiming": "after-registry-lookup-recorded",
     "missingEvidenceDecision": "skip",
+    "missingEvidenceWorkflow": ["choose-skip", "render-report"],
+    "presentEvidenceWorkflow": ["classify-registry-cause", "choose-decision"],
     "promotionThreshold": "two-distinct-pull-requests-or-high-severity",
     "syntheticSources": "forbidden"
   },
@@ -120,6 +125,7 @@
   },
   "report": {
     "appliesToDecisions": ["skip", "link", "propose"],
+    "registryLookupAfterHarnessGap": "required-even-when-evidence-missing",
     "requiredFields": [
       "registry-lookup",
       "decision-and-reason",

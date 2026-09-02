@@ -28,8 +28,10 @@ project instructions are discoverable.
 ## Steps
 
 1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
-2. Execute its single authoritative JSON contract exactly as structured. Stop with a finding when
-   the block is missing, malformed, duplicated, or contradicted; never supplement it from prose.
+2. Execute `initialWorkflowOrder` exactly as structured.
+3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder` and its selected
+   branch exactly. Never add, omit, reorder, or short-circuit steps. Stop with a finding when the
+   block is missing, malformed, duplicated, or contradicted; never supplement it from prose.
 
 ## Gotchas
 

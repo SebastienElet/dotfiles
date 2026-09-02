@@ -20,33 +20,15 @@ const enforceableSurfaceSchema = z.enum([
   "type",
   "architectural-test",
 ]);
-const workflowStepSchema = z.enum([
-  "identify-equivalent-failure",
-  "preserve-factual-evidence",
-  "inspect-current-guidance",
-  "classify-diagnostic-cause",
-  "gate-registry-access",
-  "search-registry",
-  "classify-registry-cause",
-  "choose-decision",
-  "require-approval",
-  "select-control-surface",
-  "declare-consumers",
-  "require-oracle",
-  "run-cli",
-  "render-report",
-  "hold-session-local",
-]);
-
 const harnessReflectionContractSchema = z
   .object({
     version: z.literal(1),
     initialWorkflowOrder: z.tuple([
-      workflowStepSchema.extract(["identify-equivalent-failure"]),
-      workflowStepSchema.extract(["preserve-factual-evidence"]),
-      workflowStepSchema.extract(["inspect-current-guidance"]),
-      workflowStepSchema.extract(["classify-diagnostic-cause"]),
-      workflowStepSchema.extract(["gate-registry-access"]),
+      z.literal("identify-equivalent-failure"),
+      z.literal("preserve-factual-evidence"),
+      z.literal("inspect-current-guidance"),
+      z.literal("classify-diagnostic-cause"),
+      z.literal("gate-registry-access"),
     ]),
     diagnostic: z
       .object({
@@ -57,36 +39,38 @@ const harnessReflectionContractSchema = z
           z.literal("missing-capability"),
           z.literal("harness-gap"),
         ]),
-        harnessGap: z.literal("continue-with-registry-workflow"),
+        harnessGap: z.literal("execute-harness-gap-workflow"),
         other: z.literal("skip-with-reason-and-next-diagnostic-action"),
         registryAccessForOther: z.literal("forbidden"),
       })
       .strict(),
-    registryWorkflowOrder: z.tuple([
-      workflowStepSchema.extract(["search-registry"]),
-      workflowStepSchema.extract(["classify-registry-cause"]),
-      workflowStepSchema.extract(["choose-decision"]),
+    harnessGapWorkflowOrder: z.tuple([
+      z.literal("read-authoritative-reference"),
+      z.literal("search-registry"),
+      z.literal("record-registry-lookup"),
+      z.literal("evaluate-concrete-evidence"),
+      z.literal("branch-on-evidence"),
     ]),
     decisionBranches: z
       .object({
-        skip: z.tuple([workflowStepSchema.extract(["render-report"])]),
+        skip: z.tuple([z.literal("render-report")]),
         link: z.tuple([
-          workflowStepSchema.extract(["hold-session-local"]),
-          workflowStepSchema.extract(["render-report"]),
+          z.literal("hold-session-local"),
+          z.literal("render-report"),
         ]),
         propose: z.tuple([
-          workflowStepSchema.extract(["hold-session-local"]),
-          workflowStepSchema.extract(["render-report"]),
+          z.literal("hold-session-local"),
+          z.literal("render-report"),
         ]),
       })
       .strict(),
     approvedMutationOrder: z.tuple([
-      workflowStepSchema.extract(["require-approval"]),
-      workflowStepSchema.extract(["select-control-surface"]),
-      workflowStepSchema.extract(["declare-consumers"]),
-      workflowStepSchema.extract(["require-oracle"]),
-      workflowStepSchema.extract(["run-cli"]),
-      workflowStepSchema.extract(["render-report"]),
+      z.literal("require-approval"),
+      z.literal("select-control-surface"),
+      z.literal("declare-consumers"),
+      z.literal("require-oracle"),
+      z.literal("run-cli"),
+      z.literal("render-report"),
     ]),
     registry: z
       .object({
@@ -115,7 +99,16 @@ const harnessReflectionContractSchema = z
       .object({
         factualPrFeedback: z.literal("immutable"),
         concretePrUrls: z.literal("required"),
+        evaluationTiming: z.literal("after-registry-lookup-recorded"),
         missingEvidenceDecision: z.literal("skip"),
+        missingEvidenceWorkflow: z.tuple([
+          z.literal("choose-skip"),
+          z.literal("render-report"),
+        ]),
+        presentEvidenceWorkflow: z.tuple([
+          z.literal("classify-registry-cause"),
+          z.literal("choose-decision"),
+        ]),
         promotionThreshold: z.literal(
           "two-distinct-pull-requests-or-high-severity",
         ),
@@ -219,6 +212,9 @@ const harnessReflectionContractSchema = z
           decisionSchema.extract(["link"]),
           decisionSchema.extract(["propose"]),
         ]),
+        registryLookupAfterHarnessGap: z.literal(
+          "required-even-when-evidence-missing",
+        ),
         requiredFields: z.tuple([
           z.literal("registry-lookup"),
           z.literal("decision-and-reason"),
