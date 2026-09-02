@@ -11,6 +11,14 @@ agents:
     scopes: [user, project]
   - id: codex
     scopes: [user, project]
+statuslines:
+  - agent: codex
+    scope: user
+    items:
+      - model-with-reasoning
+      - current-dir
+      - context-used
+      - context-window-size
 resources:
   - id: claude-user-instructions
     kind: instructions
