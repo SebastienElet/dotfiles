@@ -14,8 +14,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-        with:
-          moon-version: 2.5.3
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json
