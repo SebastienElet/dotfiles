@@ -5,12 +5,45 @@ type HarnessReflectionSources = Readonly<{
   reference: string;
   skill: string;
 }>;
-type EvalQuery = Readonly<{ query: string; shouldActivate: boolean }>;
+type EvalQuery = Readonly<{
+  query: string;
+  shouldActivate: boolean;
+}>;
 type EvalSources = Readonly<{
   queries: readonly EvalQuery[];
+  slug?: unknown;
   valid: boolean;
   version?: unknown;
 }>;
+
+const expectedSets = {
+  Decisions: ["skip", "link", "propose"],
+  "Registry classes": [
+    "not-applied",
+    "not-loaded",
+    "unknown",
+    "blind-spot",
+    "judgment",
+  ],
+  "Control kinds": ["probabilistic", "enforceable"],
+  "Probabilistic surfaces": [
+    "always-loaded-instruction",
+    "conditional-skill",
+    "project-local-contract",
+  ],
+  "Enforceable surfaces": [
+    "hook",
+    "permission",
+    "lint",
+    "type",
+    "architectural-test",
+  ],
+} as const;
+
+const linkQuery =
+  "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
+const stylisticQuery =
+  "J'ai une préférence stylistique isolée pour ce nommage, change-le";
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null;
@@ -30,119 +63,124 @@ const loadHarnessReflectionSources = async (
   };
 };
 
-const containsAll = (source: string, terms: readonly string[]): boolean =>
-  terms.every((term) => source.includes(term));
+const normalize = (source: string): string => source.replaceAll(/\s+/gu, " ");
 
-const normalizeWhitespace = (source: string): string =>
-  source.replaceAll(/\s+/gu, " ");
+const codeValues = (source: string): readonly string[] => {
+  const pattern = /`(?<value>[^`]+)`/gu;
+  const values: string[] = [];
+  for (
+    let match = pattern.exec(source);
+    match !== null;
+    match = pattern.exec(source)
+  ) {
+    values.push(match.groups?.value ?? "");
+  }
+  return values;
+};
 
-const ordered = (source: string, terms: readonly string[]): boolean =>
-  terms.reduce((lastIndex, term) => {
-    const index = source.indexOf(term, lastIndex + 1);
-    return index === -1 ? Number.POSITIVE_INFINITY : index;
-  }, -1) !== Number.POSITIVE_INFINITY;
+const sameSet = (
+  actual: readonly string[],
+  expected: readonly string[],
+): boolean =>
+  actual.length === expected.length &&
+  actual.every((value) => expected.includes(value)) &&
+  new Set(actual).size === actual.length;
 
-const skillFindings = (skill: string): readonly string[] => {
-  const normalizedSkill = normalizeWhitespace(skill);
-  const diagnostics = [
-    "task-specific",
-    "owned-defect",
-    "external-transient",
-    "missing-capability",
-    "harness-gap",
-  ];
-  const flow = [
+const tableValue = (source: string, name: string): string | undefined =>
+  source
+    .split("\n")
+    .find((line) => line.startsWith(`| ${name} |`))
+    ?.split("|")[2]
+    ?.trim();
+
+const setFinding = (name: string): string => {
+  if (name === "Decisions") {
+    return "guidance closes the decision set";
+  }
+  if (name === "Registry classes") {
+    return "guidance closes the registry-class set";
+  }
+  return "guidance closes compatible control surfaces";
+};
+
+const setFindings = (reference: string): readonly string[] =>
+  Object.entries(expectedSets).flatMap(
+    ([name, expected]: readonly [string, readonly string[]]) =>
+      sameSet(codeValues(tableValue(reference, name) ?? ""), expected)
+        ? []
+        : [setFinding(name)],
+  );
+
+const flowFindings = (skill: string, reference: string): readonly string[] => {
+  const section =
+    /3\. Classify the cause as[\s\S]*?`harness-gap`/u.exec(skill)?.[0] ?? "";
+  const diagnostics = codeValues(section);
+  const skillFlow = [
     "3. Classify the cause as",
     "5. If the result is not `harness-gap`",
     "6. For `harness-gap`, read",
     "inspect the named registry",
-    "return exactly `skip`, `link`, or\n   `propose`",
+    "return exactly `skip`, `link`, or",
   ];
+  const ordered = skillFlow.every(
+    (marker, index) =>
+      index === 0 ||
+      skill.indexOf(marker) > skill.indexOf(skillFlow[index - 1] ?? ""),
+  );
   return [
-    ...(containsAll(skill, diagnostics)
+    ...(sameSet(diagnostics, [
+      "task-specific",
+      "owned-defect",
+      "external-transient",
+      "missing-capability",
+      "harness-gap",
+    ])
       ? []
       : ["skill flow preserves the diagnostic class and harness-gap gate"]),
-    ...(ordered(skill, flow)
+    ...(ordered &&
+    reference.indexOf("Search the registry") <
+      reference.indexOf("Classify the registry cause") &&
+    reference.indexOf("Classify the registry cause") <
+      reference.indexOf("Return exactly one decision:")
       ? []
       : ["skill flow is ordered from diagnosis to registry decision"]),
-    ...(normalizedSkill.includes("reason and next diagnostic action") &&
-    normalizedSkill.includes("do not read the reference or registry")
+    ...(normalize(skill).includes("reason and next diagnostic action") &&
+    normalize(skill).includes("do not read the reference or registry")
       ? []
       : ["non-harness-gap stops with the diagnostic skip"]),
-    ...(containsAll(skill, [
-      "pr-feedback",
-      "skill-manager",
-      "agent-instructions",
-    ])
-      ? []
-      : ["skill preserves factual PR feedback and downstream routing"]),
   ];
 };
 
-const referenceFindings = (reference: string): readonly string[] => {
-  const normalizedReference = normalizeWhitespace(reference);
-  const classes = [
-    "not-applied",
-    "not-loaded",
-    "unknown",
-    "blind-spot",
-    "judgment",
-  ];
-  const lifecycleStates = [
-    "a candidate with measured or verified verification",
-    "a retired record without retirement",
-    "unknown replacement",
-  ];
-  return [
-    ...(containsAll(reference, classes)
-      ? []
-      : ["reference names every registry cause class"]),
-    ...(ordered(reference, [
-      "Search the registry",
-      "Classify the registry cause",
-      "Return exactly one decision:",
-    ])
-      ? []
-      : ["reference orders lookup, registry classification, and decision"]),
-    ...(reference.includes("Return exactly one decision:")
-      ? []
-      : ["reference returns exactly skip, link, or propose"]),
-    ...(containsAll(normalizedReference, [
-      "duplicate record",
-      "two distinct PR URLs",
-      "valid PR evidence",
-      "Missing concrete PR evidence requires `skip`",
-      "retiredAt",
-      "replacedBy",
-      "explicit approval",
-      "factual `pr-feedback`",
-      "harness/invariants/registry.json",
-      "bun tooling/invariant-registry-cli.ts",
-      ...lifecycleStates,
-    ])
-      ? []
-      : [
-          "reference governs evidence, deduplication, approval, and lifecycle states",
-        ]),
-  ];
-};
-
-const reportFindings = (reference: string): readonly string[] =>
-  containsAll(reference, [
-    "## Required report",
-    "Registry lookup",
-    "Decision and reason",
-    "`controlKind` and surface",
-    "Sources and evidence",
-    "Executable oracle",
-    "probabilistic behavioral trial",
-    "Approval",
-    "Claude: `supported` or `unsupported`",
-    "Codex: `supported` or `unsupported`",
-    "Cursor: `supported` or `unsupported`",
-  ])
+const semanticFindings = (
+  reference: string,
+  skill: string,
+): readonly string[] => [
+  ...(tableValue(reference, "Evidence policy") ===
+  "concrete PR URLs required; missing evidence returns `skip`"
     ? []
-    : ["reference requires the complete harness-gap decision report"];
+    : ["reference requires concrete evidence before propose"]),
+  ...(tableValue(reference, "CLI report claim") ===
+  "CLI accepted snapshot read in execution environment"
+    ? []
+    : ["reference limits the CLI claim to its execution snapshot"]),
+  ...(normalize(skill).includes(
+    "accepted the snapshot read in that execution environment",
+  ) && !normalize(skill).includes("presenting the change as valid")
+    ? []
+    : ["skill limits the CLI claim to its execution snapshot"]),
+  ...(normalize(reference).includes(
+    "a candidate with measured or verified verification",
+  ) &&
+  normalize(reference).includes("a retired record without retirement") &&
+  normalize(reference).includes("unknown replacement")
+    ? []
+    : ["reference names invalid lifecycle state combinations"]),
+  ...(normalize(reference).includes("duplicate record") &&
+  normalize(reference).includes("explicit approval") &&
+  normalize(reference).includes("factual `pr-feedback`")
+    ? []
+    : ["reference preserves deduplication, approval, and factual feedback"]),
+];
 
 const parseEvals = (value: unknown): EvalSources => {
   if (!isRecord(value) || !Array.isArray(value.queries)) {
@@ -158,25 +196,25 @@ const parseEvals = (value: unknown): EvalSources => {
   );
   return {
     queries,
-    valid:
-      typeof value.version === "string" &&
-      queries.length === value.queries.length,
+    slug: value.skill,
+    valid: queries.length === value.queries.length,
     version: value.version,
   };
 };
 
 const evalFindings = (evals: EvalSources): readonly string[] => [
   ...(evals.valid ? [] : ["evals have valid structured queries"]),
+  ...(evals.slug === "harness-reflection"
+    ? []
+    : ["evals use the harness-reflection slug"]),
   ...(evals.version === "1.1" ? [] : ["evals use version 1.1"]),
   ...(evals.queries.some(
-    ({ query, shouldActivate }) =>
-      shouldActivate && query.includes("invariant existant"),
+    ({ query, shouldActivate }) => shouldActivate && query === linkQuery,
   )
     ? []
-    : ["evals contain a registry-link case"]),
+    : ["evals reject an incorrect registry-link query"]),
   ...(evals.queries.some(
-    ({ query, shouldActivate }) =>
-      !shouldActivate && query.includes("stylistique"),
+    ({ query, shouldActivate }) => !shouldActivate && query === stylisticQuery,
   )
     ? []
     : ["evals reject an isolated stylistic preference"]),
@@ -185,9 +223,9 @@ const evalFindings = (evals: EvalSources): readonly string[] => [
 const validateHarnessReflectionContract = (
   sources: HarnessReflectionSources,
 ): readonly string[] => [
-  ...skillFindings(sources.skill),
-  ...referenceFindings(sources.reference),
-  ...reportFindings(sources.reference),
+  ...flowFindings(sources.skill, sources.reference),
+  ...setFindings(sources.reference),
+  ...semanticFindings(sources.reference, sources.skill),
   ...evalFindings(parseEvals(sources.evals)),
 ];
 

@@ -20,7 +20,20 @@ for factual `pr-feedback` evidence.
 4. Keep `link` and `propose` session-local until explicit approval. No time pressure authorizes a
    registry, skill, instruction, or `pr-feedback` mutation.
 5. After explicit approval, validate the chosen surface, all three consumers, and the oracle. Run
-   `bun tooling/invariant-registry-cli.ts` before reporting the registry valid.
+   `bun tooling/invariant-registry-cli.ts` immediately before the report. State only that the CLI
+   accepted the snapshot it read in that execution environment; do not claim durable validity.
+
+## Contract sets
+
+| Set | Values |
+| --- | --- |
+| Decisions | `skip`, `link`, `propose` |
+| Registry classes | `not-applied`, `not-loaded`, `unknown`, `blind-spot`, `judgment` |
+| Control kinds | `probabilistic`, `enforceable` |
+| Probabilistic surfaces | `always-loaded-instruction`, `conditional-skill`, `project-local-contract` |
+| Enforceable surfaces | `hook`, `permission`, `lint`, `type`, `architectural-test` |
+| Evidence policy | concrete PR URLs required; missing evidence returns `skip` |
+| CLI report claim | CLI accepted snapshot read in execution environment |
 
 ## Required report
 

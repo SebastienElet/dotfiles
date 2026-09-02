@@ -49,7 +49,8 @@ project instructions are discoverable.
    Keep every proposal session-local until explicit approval. Use `skill-manager` for a skill change
    and `agent-instructions` for instruction discovery or deployment changes.
 8. After explicit approval, declare the surface, Claude, Codex, and Cursor consumers, and the
-   appropriate oracle. Validate the registry with its CLI before presenting the change as valid.
+   appropriate oracle. Run the registry CLI immediately before the report; state only that it
+   accepted the snapshot read in that execution environment, not a durable validity guarantee.
 9. Promote only after the trial changes the target behavior in three independent sessions without a
    contradictory result. Roll back on two failed trials, one safety regression, or a user veto.
 
