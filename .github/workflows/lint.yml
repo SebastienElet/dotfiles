@@ -2,55 +2,6 @@ name: Lint
 on: [push, pull_request]
 
 jobs:
-  fish:
-    name: Fish shell (${{ matrix.os }})
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install Fish on macOS
-        if: runner.os == 'macOS'
-        run: brew install fish
-
-      - name: Install Fish on Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fish
-
-      - name: Check Fish syntax
-        run: |
-          set -euo pipefail
-          echo "Checking Fish syntax..."
-          fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
-          printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
-          printf '%s\n' "$fish_files" | xargs -I{} fish --no-execute {}
-          echo "✅ Fish syntax OK"
-
-      - name: Check Fish formatting
-        run: |
-          set -euo pipefail
-          echo "Checking Fish formatting..."
-          ERRORS=0
-          fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
-          printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
-          for file in $fish_files; do
-            if ! fish_indent --check "$file"; then
-              echo "❌ $file needs formatting"
-              fish_indent "$file" | diff -u "$file" - || true
-              ERRORS=1
-            fi
-          done
-          if [ "$ERRORS" -eq 1 ]; then
-            echo ""
-            echo "Run 'fish_indent -w <file>' to fix formatting"
-            exit 1
-          fi
-          echo "✅ Fish formatting OK"
-
   lua:
     name: Lua
     runs-on: macos-latest

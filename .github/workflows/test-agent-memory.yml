@@ -18,8 +18,6 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-        with:
-          moon-version: 2.5.3
       - run: >-
           moon ci tooling/agent-memory:fmt tooling/agent-memory:clippy
           tooling/agent-memory:test
