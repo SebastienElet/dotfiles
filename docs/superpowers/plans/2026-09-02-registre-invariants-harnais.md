@@ -257,8 +257,8 @@ La fixture PR 206 représente un invariant exécutoire `active`, sévérité `hi
 Son oracle cible `tooling/git-main-branch-entry.test.ts` et le chemin d’échec « rejected fetch URL
 userinfo never reaches stderr ». La fixture PR 207 représente le cycle `retired`, conserve sa preuve
 `https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825`, sa dernière mesure et la
-raison de retraite du consommateur CodeGraph ; l’ancien oracle peut être conservé sans être présenté
-comme encore exécutable.
+raison de retraite du consommateur historique de mesure du dépôt ; l’ancien oracle peut être
+conservé sans être présenté comme encore exécutable.
 
 - [ ] **Step 6: Tester les fixtures par le vrai point d’entrée**
 
