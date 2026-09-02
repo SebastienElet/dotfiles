@@ -23,6 +23,17 @@ fileGroups:
     - "**/*.json"
     - "!home/.config/nvim/lazy-lock.json"
     - "!home/.config/nvim/lazyvim.json"
+  fishGate:
+    - home/.config/fish/**/*.fish
+    - moon.yml
+    - .moon/workspace.yml
+    - .github/workflows/test-fish.yml
+  fishBehaviorDependencies:
+    - .gitignore
+    - tooling/git-main-branch
+    - tooling/git-main-branch-*.ts
+    - package.json
+    - bun.lock
 
 tasks:
   typescript-lint:
@@ -51,3 +62,53 @@ tasks:
     inputs:
       - "@group(prettierFiles)"
       - bun.lock
+  fish-setup:
+    script: |
+      set -euo pipefail
+      if command -v fish > /dev/null; then
+        exit 0
+      fi
+      case "$(uname -s)" in
+        Darwin) brew install fish ;;
+        Linux)
+          sudo apt-get update
+          sudo apt-get install -y fish
+          ;;
+        *) printf 'Fish gates do not support this operating system\n' >&2; exit 1 ;;
+      esac
+    toolchains: system
+    options:
+      cache: false
+  fish-syntax:
+    script: |
+      set -euo pipefail
+      fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
+      printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
+      printf '%s\n' "$fish_files" | xargs -I{} fish --no-execute {}
+    deps: [fish-setup]
+    inputs: ["@group(fishGate)"]
+    tags: [fish]
+    toolchains: system
+  fish-format:
+    script: |
+      set -euo pipefail
+      fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
+      printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
+      for file in $fish_files; do
+        fish_indent --check "$file"
+      done
+    deps: [fish-setup]
+    inputs: ["@group(fishGate)"]
+    tags: [fish]
+    toolchains: system
+  fish-test:
+    script: |
+      set -euo pipefail
+      fish --no-config home/.config/fish/tests/git_cleanup_test.fish
+      fish --no-config home/.config/fish/tests/git_main_branch_test.fish
+      fish --no-config home/.config/fish/tests/path_test.fish
+      fish --no-config home/.config/fish/tests/runtime_state_test.fish
+    deps: [fish-setup]
+    inputs: ["@group(fishGate)", "@group(fishBehaviorDependencies)"]
+    tags: [fish]
+    toolchains: system
