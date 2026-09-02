@@ -6,7 +6,7 @@ for factual `pr-feedback` evidence.
 
 ## Workflow
 
-1. Preserve each `pr-feedback` occurrence as factual evidence. Search the registry by source and
+1. Preserve each factual `pr-feedback` occurrence as evidence. Search the registry by source and
    behavior before drafting a candidate.
 2. Classify the registry cause as `not-applied`, `not-loaded`, `unknown`, `blind-spot`, or
    `judgment`. `judgment` may inform a `skip`, but cannot become a control.
@@ -14,7 +14,9 @@ for factual `pr-feedback` evidence.
    - `skip` when the evidence is insufficient, the cause is not reusable, or the class is `judgment`;
    - `link` when the finding belongs to an existing invariant and should add a source without a
      duplicate record;
-   - `propose` when no invariant matches and two distinct PRs or high severity supports a candidate.
+   - `propose` only when no invariant matches, valid PR evidence supports the candidate, and two
+     distinct PR URLs or high severity meets the threshold. Missing concrete PR evidence requires
+     `skip`, even when an alleged threshold claims two PRs.
 4. Keep `link` and `propose` session-local until explicit approval. No time pressure authorizes a
    registry, skill, instruction, or `pr-feedback` mutation.
 5. After explicit approval, validate the chosen surface, all three consumers, and the oracle. Run
@@ -22,14 +24,14 @@ for factual `pr-feedback` evidence.
 
 ## Required report
 
-Every `skip`, `link`, or `propose` returns this structure, including when a neighboring rule exists
-or sources are missing. A non-`harness-gap` `skip` marks registry-only fields `not applicable` and
-justifies that state.
+Every `skip`, `link`, or `propose` after `harness-gap` returns this structure, including when a
+neighboring rule exists or sources are missing.
 
 - Registry lookup: source and invariant searched, with the result, including an empty registry.
 - Decision and reason: exactly `skip`, `link`, or `propose`, plus the factual reason.
 - `controlKind` and surface: existing or envisaged values, or `not applicable` with a reason.
-- Sources and evidence: retained PR evidence and missing proof, without altering `pr-feedback`.
+- Sources and evidence: valid PR URLs, retained evidence, and missing proof, without altering
+  `pr-feedback`.
 - Oracle: an Executable oracle for enforceable control, a probabilistic behavioral trial for
   probabilistic control, or `not applicable` with a reason.
 - Approval: explicit approval status; absent approval keeps the result session-local.
@@ -66,6 +68,8 @@ its declared failure path. A retired invariant records `retiredAt`, reason, and,
 
 ## CLI diagnostics
 
-The CLI rejects invalid lifecycle transitions, missing approval, insufficient evidence, promotion of
-`judgment`, incompatible surfaces, and missing or unsafe oracle paths. Resolve diagnostics in the
-record or return `skip`; do not bypass them by weakening the validator or reclassifying evidence.
+The CLI rejects invalid current state combinations: a candidate with measured or verified
+verification, a retired record without retirement, an unknown replacement, missing approval,
+insufficient evidence, promotion of `judgment`, incompatible surfaces, and missing or unsafe oracle
+paths. Resolve diagnostics in the record or return `skip`; do not bypass them by weakening the
+validator or reclassifying evidence.

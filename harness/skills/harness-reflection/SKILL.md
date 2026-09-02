@@ -38,8 +38,8 @@ project instructions are discoverable.
    sequence, avoidance rule, or routing decision could plausibly change the outcome.
 4. Check current instructions, skills, ADRs, and official dependency behavior before proposing a
    compensating rule. Fix an owned defect instead of teaching the harness its workaround.
-5. If the result is not `harness-gap`, return `skip` using the required report in the reference;
-   mark the registry lookup, control kind, surface, and oracle as `not applicable` with their reason.
+5. If the result is not `harness-gap`, stop. Return the existing `skip` with the reason and next
+   diagnostic action; do not read the reference or registry.
 6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md), then
    inspect the named registry before proposing a rule. Classify the registry cause after
    `harness-gap`, search for a matching source or invariant, and return exactly `skip`, `link`, or
