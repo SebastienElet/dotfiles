@@ -39,9 +39,17 @@ impl Fixture {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
+        self.command_from(&self.repository, args)
+    }
+
+    pub fn command_from<I, S>(&self, directory: &Path, args: I) -> Output
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
         Command::new(env!("CARGO_BIN_EXE_arnes"))
             .args(args)
-            .current_dir(&self.repository)
+            .current_dir(directory)
             .env_clear()
             .env("HOME", &self.home)
             .env("PATH", self.home.join("bin"))
