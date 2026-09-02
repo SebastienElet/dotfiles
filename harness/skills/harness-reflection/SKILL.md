@@ -38,12 +38,12 @@ project instructions are discoverable.
    sequence, avoidance rule, or routing decision could plausibly change the outcome.
 4. Check current instructions, skills, ADRs, and official dependency behavior before proposing a
    compensating rule. Fix an owned defect instead of teaching the harness its workaround.
-5. If the result is not `harness-gap`, return `skip` with the reason and next diagnostic action; do
-   not enter the registry flow.
+5. If the result is not `harness-gap`, return `skip` using the required report in the reference;
+   mark the registry lookup, control kind, surface, and oracle as `not applicable` with their reason.
 6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md), then
    inspect the named registry before proposing a rule. Classify the registry cause after
    `harness-gap`, search for a matching source or invariant, and return exactly `skip`, `link`, or
-   `propose`.
+   `propose` using the required report, even when a neighboring rule exists or sources are missing.
 7. For `propose`, include the trigger, desired behavior, scope, supporting evidence, counterexample,
    falsifier, expiry condition, and the cheapest behavioral trial that could disprove the candidate.
    Keep every proposal session-local until explicit approval. Use `skill-manager` for a skill change

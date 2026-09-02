@@ -20,6 +20,24 @@ for factual `pr-feedback` evidence.
 5. After explicit approval, validate the chosen surface, all three consumers, and the oracle. Run
    `bun tooling/invariant-registry-cli.ts` before reporting the registry valid.
 
+## Required report
+
+Every `skip`, `link`, or `propose` returns this structure, including when a neighboring rule exists
+or sources are missing. A non-`harness-gap` `skip` marks registry-only fields `not applicable` and
+justifies that state.
+
+- Registry lookup: source and invariant searched, with the result, including an empty registry.
+- Decision and reason: exactly `skip`, `link`, or `propose`, plus the factual reason.
+- `controlKind` and surface: existing or envisaged values, or `not applicable` with a reason.
+- Sources and evidence: retained PR evidence and missing proof, without altering `pr-feedback`.
+- Oracle: an Executable oracle for enforceable control, a probabilistic behavioral trial for
+  probabilistic control, or `not applicable` with a reason.
+- Approval: explicit approval status; absent approval keeps the result session-local.
+- Consumers:
+  - Claude: `supported` or `unsupported`, with its mechanism or reason.
+  - Codex: `supported` or `unsupported`, with its mechanism or reason.
+  - Cursor: `supported` or `unsupported`, with its mechanism or reason.
+
 ## Candidate model
 
 Describe a proposal with its invariant statement, `controlKind`, cause class, severity, factual
