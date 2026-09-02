@@ -38,10 +38,17 @@ if (mode === "ln") {
     process.exit(commandFailureExitCode);
   }
   const functions = join(required("HOME"), ".config", "fish", "functions");
+  const bindings = join(functions, "fzf_configure_bindings.fish");
+  const wrapper = join(functions, "_fzf_wrapper.fish");
+  const conflict = [bindings, wrapper].find((path) => existsSync(path));
+  if (conflict !== undefined) {
+    process.stderr.write(`conflicting file: ${conflict}\n`);
+    process.exit(commandFailureExitCode);
+  }
   mkdirSync(join(pluginConfiguration, ".."), { recursive: true });
   mkdirSync(functions, { recursive: true });
   writeFileSync(pluginConfiguration, "");
-  writeFileSync(join(functions, "fzf_configure_bindings.fish"), "");
+  writeFileSync(bindings, "");
 } else if (mode === "fish-empty") {
   process.exit(0);
 } else {

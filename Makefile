@@ -85,9 +85,26 @@ fish: starship ~/.config/fish ~/.config/fish/functions/fzf_configure_bindings.fi
 ~/.config/fish: ${DOTFILES_PATH}/home/.config/fish FORCE | ~/.config
 	@${CREATE_SYMLINK}
 ~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
-	@if [ ! -e "$@" ]; then \
-		if ! ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' || [ ! -e "$@" ]; then \
-			echo "Error: Fisher did not install $@" >&2; \
+	@if [ ! -e "$@" ] || [ ! -e "$(HOME)/.config/fish/conf.d/fzf.fish" ]; then \
+		backup=$$(mktemp -d) || exit 1; \
+		for path in "$(HOME)/.config/fish/functions"/_fzf*.fish; do \
+			if [ -e "$$path" ]; then \
+				mkdir -p "$$backup/functions"; \
+				mv "$$path" "$$backup/functions/"; \
+			fi; \
+		done; \
+		for file in functions/fzf_configure_bindings.fish completions/fzf_configure_bindings.fish conf.d/fzf.fish; do \
+			if [ -e "$(HOME)/.config/fish/$$file" ]; then \
+				mkdir -p "$$backup/$${file%/*}"; \
+				mv "$(HOME)/.config/fish/$$file" "$$backup/$$file"; \
+			fi; \
+		done; \
+		if ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' && [ -e "$@" ] && [ -e "$(HOME)/.config/fish/conf.d/fzf.fish" ]; then \
+			rm -rf "$$backup"; \
+		else \
+			cp -R "$$backup/." "$(HOME)/.config/fish/"; \
+			rm -rf "$$backup"; \
+			echo "Error: Fisher did not install $@ and $(HOME)/.config/fish/conf.d/fzf.fish" >&2; \
 			exit 1; \
 		fi; \
 	fi
