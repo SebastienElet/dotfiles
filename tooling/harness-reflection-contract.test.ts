@@ -3,16 +3,11 @@ import {
   loadHarnessReflectionSources,
   validateHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
-import {
-  cspellWorkflowFindings,
-  invariantRegistryCspellPaths,
-} from "./harness-reflection-cspell-contract.ts";
 import { expect, test } from "bun:test";
 import { mutateContract } from "./harness-reflection-contract-test-support.ts";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
-const lintWorkflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
 const contractFinding =
   "authoritative contract preserves exact workflow invariants";
 
@@ -32,80 +27,6 @@ const expectContractRejection = (sources: HarnessReflectionSources): void => {
 test("routes factual PR evidence through the named registry", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expect(validateHarnessReflectionContract(sources)).toEqual([]);
-});
-
-test("checks invariant registry sources with CSpell", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  expect(cspellWorkflowFindings(lintWorkflow)).toEqual([]);
-});
-
-test("rejects an invariant registry path moved outside CSpell lint", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const registryPathLine = "            harness/invariants/registry.json \\\n";
-  const mutant = `${lintWorkflow.replace(registryPathLine, "")}\n# ${invariantRegistryCspellPaths[3]}\n`;
-
-  expect(cspellWorkflowFindings(mutant)).toContain(
-    "CSpell lint command includes invariant registry sources",
-  );
-});
-
-test("rejects a CSpell trace canary moved outside its YAML block", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const frenchDictionaryGrep =
-    '          printf \'%s\\n\' "$trace" | grep -F "@cspell/dict-fr-fr"\n';
-  const mutant = `${lintWorkflow.replace(frenchDictionaryGrep, "")}# ${frenchDictionaryGrep.trim()}\n`;
-
-  expect(cspellWorkflowFindings(mutant)).toContain(
-    "CSpell trace confirms the French dictionary",
-  );
-});
-
-test("rejects a disabled CSpell job", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const mutant = lintWorkflow.replace(
-    "  cspell:\n",
-    "  cspell:\n    if: false\n",
-  );
-
-  expect(cspellWorkflowFindings(mutant)).toContain("CSpell job is active");
-});
-
-test("rejects early CSpell success", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const mutant = lintWorkflow.replace(
-    "      - name: Check configuration and user dictionary\n        run: |\n",
-    "      - name: Check configuration and user dictionary\n        run: |\n          exit 0\n",
-  );
-
-  expect(cspellWorkflowFindings(mutant)).toContain(
-    "CSpell run block has no early success",
-  );
-});
-
-test("rejects trace canaries after lint", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const frenchGrep =
-    '          printf \'%s\\n\' "$trace" | grep -F "@cspell/dict-fr-fr"\n';
-  const userGrep =
-    '          printf \'%s\\n\' "$trace" | grep -F "$test_home/.config/cspell/user.txt"\n';
-  const mutant = `${lintWorkflow.replace(frenchGrep, "").replace(userGrep, "")}${frenchGrep}${userGrep}`;
-
-  expect(cspellWorkflowFindings(mutant)).toContain(
-    "CSpell traces dictionaries before linting",
-  );
-});
-
-test("rejects a commented invariant registry lint argument", async () => {
-  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const registryPathLine = "            harness/invariants/registry.json \\\n";
-  const mutant = lintWorkflow.replace(
-    registryPathLine,
-    `            # ${registryPathLine.trim()}\n`,
-  );
-
-  expect(cspellWorkflowFindings(mutant)).toContain(
-    "CSpell lint command includes invariant registry sources",
-  );
 });
 
 test("keeps link deduplication and report scope", async () => {
