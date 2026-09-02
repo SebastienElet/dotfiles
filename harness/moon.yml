@@ -1,0 +1,29 @@
+language: typescript
+layer: configuration
+
+taskOptions:
+  cache: false
+  runFromWorkspaceRoot: true
+  runInCI: false
+
+tasks:
+  install:
+    description: Install every declared harness capability
+    command: noop
+    deps:
+      - ~:semctx-install
+  semctx-install:
+    description: Install or update Semctx plugins for detected agent hosts
+    command: bun run semctx install --host auto --skip-setup --json
+    options:
+      mutex: harness-mutation
+      outputStyle: stream
+  semctx-setup:
+    description: Initialize Semctx in the current Git repository
+    command: bun run semctx setup --polyglot --json
+    options:
+      mutex: harness-mutation
+      outputStyle: stream
+  semctx-status:
+    description: Inspect local Semctx plugin delivery without network attestation
+    command: bun run semctx plugin-status --host auto --json

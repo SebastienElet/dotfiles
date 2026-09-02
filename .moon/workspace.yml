@@ -1,5 +1,6 @@
 projects:
   repository: .
+  harness: harness
   tooling/agent-handoff: tooling/agent-handoff
   tooling/agent-memory: tooling/agent-memory
   tooling/arnes: tooling/arnes
