@@ -167,7 +167,7 @@ tasks:
       outputStyle: stream
   semctx-status:
     description: Inspect local Semctx plugin delivery without network attestation
-    command: bun run semctx plugin-status --host auto --json
+    command: bun run semctx install --host auto --skip-setup --dry-run --json
 ```
 
 Le mutex commun empêche l'installation machine et l'initialisation du dépôt de muter simultanément des états Semctx ; le diagnostic reste indépendant et en lecture seule.

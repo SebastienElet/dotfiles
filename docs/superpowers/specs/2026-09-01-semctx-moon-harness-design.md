@@ -55,8 +55,9 @@ preuve négative.
 ### `harness:semctx-status`
 
 Exécute le diagnostic local de livraison des plugins en JSON. Il ne modifie rien et n'effectue pas
-d'attestation réseau implicite. La tâche reste non cachée, car son résultat dépend de l'état du
-poste hors du graphe Moon.
+d'attestation réseau implicite. Elle utilise `bun run semctx install --host auto --skip-setup
+--dry-run --json` pour produire ce rapport en lecture seule. La tâche reste non cachée, car son
+résultat dépend de l'état du poste hors du graphe Moon.
 
 ## Migration du canal local
 

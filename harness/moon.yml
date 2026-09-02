@@ -26,4 +26,4 @@ tasks:
       outputStyle: stream
   semctx-status:
     description: Inspect local Semctx plugin delivery without network attestation
-    command: bun run semctx plugin-status --host auto --json
+    command: bun run semctx install --host auto --skip-setup --dry-run --json
