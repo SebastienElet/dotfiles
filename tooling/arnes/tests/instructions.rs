@@ -88,6 +88,7 @@ fn undeclared_filtered_combinations_are_unsupported() {
 fn codex_generated_content_must_match_declared_composition() {
     let fixture = configured_fixture();
     fixture.write_home(".codex/AGENTS.md", "rules\nsoul\nold user\n");
+    let before = fixture.snapshot();
     let (code, stdout, _) = run(
         &fixture,
         &[
@@ -102,6 +103,7 @@ fn codex_generated_content_must_match_declared_composition() {
 
     assert_eq!(code, 1);
     assert!(stdout.contains("generated file ~/.codex/AGENTS.md is stale"));
+    assert_eq!(fixture.snapshot(), before);
 }
 
 #[test]
