@@ -16,6 +16,7 @@ agents:
     user_config:
       model: gpt-5.6-sol
       effort: medium
+      context_window: 512000
 skills:
   - slug: agent-instructions
     installations:
