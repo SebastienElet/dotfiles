@@ -17,6 +17,8 @@ import {
 } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep, win32 } from "node:path";
 import { createMutationLock } from "./harness-reflection-mutation-lock.ts";
+import { replaceMatchingFiles } from "./harness-reflection-mutation-staged-files.ts";
+import { resolveSupportedTarget } from "./harness-reflection-mutation-surfaces.ts";
 import { validateInvariantRegistryText } from "./invariant-registry-repository-validator.ts";
 
 const approvedSurfaceCount = 1;
@@ -108,16 +110,26 @@ const readFile = (repositoryRoot: string, path: string): string | undefined => {
 const validateSurfaces = (
   repositoryRoot: string,
   files: readonly PreparedFile[],
-  kind: "approved-mutation" | "retirement",
+  transition: Parameters<
+    MutationWorkflowAdapter["validatePreparedSurfaces"]
+  >[1],
 ): void => {
+  const { kind, target } = transition;
   if (
     (kind === "approved-mutation" && files.length !== approvedSurfaceCount) ||
     (kind === "retirement" && files.length > maximumRetirementSurfaceCount)
   ) {
     throw new Error("prepared-surface-count-invalid");
   }
+  if (files.length === 0) {
+    return;
+  }
+  const supportedTarget = resolveSupportedTarget(target);
   for (const file of files) {
     resolveMutationPath(repositoryRoot, file.path);
+    if (file.path !== supportedTarget.path) {
+      throw new Error("unsupported-control-surface");
+    }
     if (kind === "approved-mutation" && file.contents.trim() === "") {
       throw new Error("prepared-surface-empty");
     }
@@ -131,6 +143,27 @@ const createRepositoryMutationAdapter = (
   const repositoryRoot = realpathSync(root);
   const lock = createMutationLock(repositoryRoot);
   return {
+    applyMatchingBatch: (snapshots, onAttempt) => {
+      if (!lock.isHeld()) {
+        throw new Error("mutation-lock-required");
+      }
+      const changes = snapshots.map(({ before, contents, path }) => ({
+        expected: before,
+        replacement: contents,
+        target: resolveMutationPath(repositoryRoot, path),
+      }));
+      return replaceMatchingFiles(
+        changes,
+        (index) => {
+          const snapshot = snapshots[index];
+          if (snapshot === undefined) {
+            throw new Error("staged-snapshot-missing");
+          }
+          onAttempt(snapshot);
+        },
+        options,
+      );
+    },
     replaceMatching: (path, expected, replacement) => {
       if (!lock.isHeld()) {
         throw new Error("mutation-lock-required");
@@ -142,8 +175,8 @@ const createRepositoryMutationAdapter = (
     withMutationLock: lock.withLock,
     validatePreparedRegistry: (contents) =>
       validateInvariantRegistryText(contents, repositoryRoot),
-    validatePreparedSurfaces: (files, kind) => {
-      validateSurfaces(repositoryRoot, files, kind);
+    validatePreparedSurfaces: (files, transition) => {
+      validateSurfaces(repositoryRoot, files, transition);
     },
   };
 };

@@ -3,18 +3,20 @@ import type {
   InvariantRegistry,
 } from "./invariant-registry-contract.ts";
 import type {
+  MutationTransition,
   MutationWorkflowCoreInput,
   WorkflowApproval,
 } from "./harness-reflection-mutation-workflow-types.ts";
+import { isDeepStrictEqual } from "node:util";
 import { validateApprovedRegistryDelta } from "./harness-reflection-mutation-authorization.ts";
 
-const withoutRetirement = (
+const withoutRetirementChanges = (
   record: Readonly<InvariantRecord>,
 ): Readonly<Record<string, unknown>> =>
   Object.fromEntries(
     Object.entries(record).filter(
       (entry: readonly [string, unknown]) =>
-        !["lifecycle", "retirement"].includes(entry[0]),
+        !["approval", "lifecycle", "retirement"].includes(entry[0]),
     ),
   );
 
@@ -22,8 +24,10 @@ const preservesRetirementHistory = (
   current: InvariantRecord,
   proposed: InvariantRecord,
 ): boolean =>
-  JSON.stringify(withoutRetirement(current)) ===
-  JSON.stringify(withoutRetirement(proposed));
+  isDeepStrictEqual(
+    withoutRetirementChanges(current),
+    withoutRetirementChanges(proposed),
+  );
 
 const approvalMatches = (
   registry: InvariantRegistry,
@@ -39,25 +43,63 @@ const approvalMatches = (
   );
 };
 
-const validateRetirement = (
+const deriveTransition = (
   input: MutationWorkflowCoreInput,
   current: InvariantRegistry,
   proposed: InvariantRegistry,
-): void => {
-  if (input.kind !== "retirement") {
-    return;
-  }
+): MutationTransition => {
   const currentTarget = current.invariants.find(
     ({ id }) => id === input.targetInvariantId,
   );
   const proposedTarget = proposed.invariants.find(
     ({ id }) => id === input.targetInvariantId,
   );
+  if (proposedTarget === undefined || currentTarget?.lifecycle === "retired") {
+    throw new Error("lifecycle-transition-invalid");
+  }
+  if (currentTarget === undefined) {
+    if (proposedTarget.lifecycle === "retired") {
+      throw new Error("lifecycle-transition-invalid");
+    }
+    return { kind: "approved-mutation", target: proposedTarget };
+  }
+  if (
+    currentTarget.lifecycle === "active" &&
+    proposedTarget.lifecycle === "retired"
+  ) {
+    return { kind: "retirement", target: proposedTarget };
+  }
+  if (
+    proposedTarget.lifecycle === "retired" ||
+    (currentTarget.lifecycle === "active" &&
+      proposedTarget.lifecycle === "candidate")
+  ) {
+    throw new Error("lifecycle-transition-invalid");
+  }
+  if (
+    currentTarget.lifecycle !== proposedTarget.lifecycle &&
+    (currentTarget.lifecycle !== "candidate" ||
+      proposedTarget.lifecycle !== "active")
+  ) {
+    throw new Error("lifecycle-transition-invalid");
+  }
+  return { kind: "approved-mutation", target: proposedTarget };
+};
+
+const validateHistoricalFields = (
+  transition: MutationTransition,
+  current: InvariantRegistry,
+  targetInvariantId: string,
+): void => {
+  if (transition.kind !== "retirement") {
+    return;
+  }
+  const currentTarget = current.invariants.find(
+    ({ id }) => id === targetInvariantId,
+  );
   if (
     currentTarget === undefined ||
-    currentTarget.lifecycle === "retired" ||
-    proposedTarget?.lifecycle !== "retired" ||
-    !preservesRetirementHistory(currentTarget, proposedTarget)
+    !preservesRetirementHistory(currentTarget, transition.target)
   ) {
     throw new Error("retirement-history-changed");
   }
@@ -70,14 +112,24 @@ const validateTransition = (
     proposed: InvariantRegistry;
   }>,
   approval: WorkflowApproval,
-): void => {
+): MutationTransition => {
   validateApprovedRegistryDelta(input, registries, approval);
   if (
     !approvalMatches(registries.proposed, input.targetInvariantId, approval)
   ) {
     throw new Error("prepared-registry-approval-mismatch");
   }
-  validateRetirement(input, registries.current, registries.proposed);
+  const transition = deriveTransition(
+    input,
+    registries.current,
+    registries.proposed,
+  );
+  validateHistoricalFields(
+    transition,
+    registries.current,
+    input.targetInvariantId,
+  );
+  return transition;
 };
 
 export { validateTransition };

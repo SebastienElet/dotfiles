@@ -34,9 +34,11 @@ un agent de promouvoir seul une préférence isolée ni étendre la topologie g�
 - `harness/invariants/registry.json` devient l’unique source versionnée des invariants personnels.
 - Un validateur TypeScript avec Zod vérifie la structure et les transitions représentées dans le
   registre. Il ne modifie jamais le registre et ne constitue pas une approbation.
-- Le champ `approval` consigne l’approbation fournie par le contexte humain au workflow. Ni le
-  registre ni la CLI n’authentifient l’identité de `approvedBy` et ce champ n’est pas une preuve
-  autonome ; l’entrée du workflow refuse une approbation auto-déclarée par l’agent.
+- Le champ `approval` consigne une attestation transmise après l’approbation fournie dans le contexte
+  humain. Ni le registre, ni la CLI, ni l’entrée du workflow n’authentifient son origine ou l’identité
+  de `approvedBy`, et ce champ n’est pas une preuve autonome. Le skill interdit procéduralement à
+  l’agent de fabriquer cette attestation ; l’absence d’approbation est représentée par le scénario
+  `skip`, dont l’exécution reste `pending` après cette modification du skill et de sa référence.
 - Git conserve l’historique et la revue des mutations. Arnes continue seulement à distribuer le
   skill existant ; son manifeste et ses adaptateurs ne sont pas étendus.
 
@@ -81,7 +83,7 @@ Le parseur rejette les valeurs inconnues au lieu de leur donner une valeur plaus
 parsing Zod, les règles sémantiques refusent notamment :
 
 - deux invariants portant le même identifiant ou réutilisant la même occurrence de preuve ;
-- une promotion `active` sans approbation enregistrée depuis le contexte humain du workflow ;
+- une promotion `active` sans attestation d’approbation enregistrée ;
 - une promotion ordinaire sans sources provenant d’au moins deux PR distinctes ;
 - une promotion sur une seule PR sans sévérité forte établie ;
 - la promotion d’un `judgment` en contrôle ;
@@ -108,22 +110,23 @@ approbation.
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
 3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ;
 4. prépare en session la surface et le registre, capture leurs préimages et construit un manifeste
-   fermé qui contient le mode, les chemins cibles exacts, chaque contenu initial et remplacement exact, et
-   le delta avant/après du seul invariant ciblé ;
+   fermé qui contient les chemins cibles exacts, chaque contenu initial et remplacement exact, et le
+   delta avant/après du seul invariant ciblé ; le type de mutation est dérivé de cette transition ;
 5. présente ce manifeste au contexte humain avant l’approbation, sans prétendre authentifier la
-   personne, puis transmet à l’API la requête structurée inchangée ; l’auto-assertion de l’agent reste
-   refusée ;
+   personne, puis transmet à l’API la requête structurée et l’attestation inchangées ; le code en
+   vérifie la cohérence exacte sans pouvoir distinguer une origine humaine d’une fabrication ;
 6. avant toute mutation cible, exige l’égalité exacte avec le manifeste, prend le verrou coopératif
    possédé par l’adaptateur, revalide les préimages et refuse tout autre chemin ou delta d’invariant ;
-7. valide la surface et le registre via le même schéma et la même politique que la CLI, prépare les
-   remplacements dans le répertoire de chaque cible et renomme atomiquement chaque fichier ; une
-   erreur déclenche une réconciliation, puis une compensation best-effort seulement si le contenu
-   courant correspond encore à la copie appliquée ;
+7. valide la surface et le registre via le même schéma et la même politique que la CLI, prépare tous
+   les remplacements dans le répertoire de leur cible, revalide toutes les préimages sous verrou puis
+   renomme atomiquement chaque fichier ; une erreur déclenche une réconciliation, puis une compensation
+   best-effort seulement si le contenu courant correspond encore à la copie appliquée ;
 8. exige le test du chemin d’échec avant tout contrôle exécutoire ;
 9. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
 10. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
-    et exceptions ; seuls `lifecycle` et `retirement` peuvent changer, avec les mêmes copies préparées,
-    validations possédées, écritures conditionnelles et compensation best-effort.
+    et exceptions ; seuls `approval`, `lifecycle` et `retirement` peuvent changer, la nouvelle
+    attestation devant correspondre exactement au registre et au manifeste, avec les mêmes copies
+    préparées, validations possédées, écritures conditionnelles et compensation best-effort.
 
 Le verrou est un fichier créé avec `O_EXCL`, acquis et supprimé par l’adaptateur possédé. La garantie
 de concurrence couvre uniquement les mutations qui passent par cet adaptateur coopératif ; les
@@ -206,9 +209,11 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - Une occurrence de preuve répétée est refusée globalement ; plusieurs occurrences distinctes de la
   même PR restent autorisées et ne comptent que pour une PR.
 - Exceptions et retraite conservent l’historique au lieu de supprimer la trace.
-- L’approbation enregistrée est une assertion du contexte humain, non une identité authentifiée ;
-  le manifeste exact est présenté avant cette entrée, la requête, les préimages, remplacements et le
-  seul delta d’invariant ciblé doivent lui correspondre, et une auto-assertion de l’agent est refusée.
+- L’approbation enregistrée est une attestation non authentifiée ; le manifeste exact est présenté
+  au contexte humain avant cette entrée, et la requête, les préimages, remplacements et le seul delta
+  d’invariant ciblé doivent lui correspondre. L’interdiction d’auto-assertion est procédurale dans le
+  skill ; le scénario sans approbation reste défini comme `skip`, sans résultat comportemental courant
+  tant que les evals `pending` n’ont pas été rejouées.
 - Le verrou coopératif sérialise les appels de l’adaptateur possédé, qui revalide les préimages sous
   verrou et remplace chaque cible par un temporaire de même répertoire suivi d’un renommage ; les
   écrivains non coopératifs et l’atomicité multi-fichier restent hors garantie.

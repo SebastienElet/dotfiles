@@ -41,15 +41,9 @@
     "granted": ["execute-approved-compensated-mutation"]
   },
   "workflowRoutes": {
-    "approvedMutation": {
+    "mutation": {
       "module": "tooling/harness-reflection-mutation-workflow.ts",
-      "export": "executeHarnessMutationWorkflow",
-      "mode": "approved-mutation"
-    },
-    "retirement": {
-      "module": "tooling/harness-reflection-mutation-workflow.ts",
-      "export": "executeHarnessMutationWorkflow",
-      "mode": "retirement"
+      "export": "executeHarnessMutationWorkflow"
     }
   },
   "mutationExecution": {
@@ -59,8 +53,8 @@
     "interruptionLimit": "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
     "crashRecovery": "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
     "applyOrder": [
-      "stage-each-replacement-in-same-directory",
-      "revalidate-current-file-under-cooperative-lock",
+      "stage-all-replacements-in-same-directories",
+      "revalidate-all-current-files-under-cooperative-lock",
       "atomically-rename-each-file",
       "validate-applied-coherent-change"
     ],
@@ -75,8 +69,8 @@
   "approvedMutation": {
     "execution": "mutationExecution",
     "prepareOrder": [
-      "select-control-surface",
-      "declare-consumers",
+      "select-supported-control-surface-and-exact-path",
+      "declare-supported-consumer-mechanisms",
       "require-control-oracle",
       "prepare-selected-control-surface",
       "prepare-registry",
@@ -91,7 +85,7 @@
       "validate-prepared-selected-control-surface-with-owned-adapter",
       "validate-prepared-registry-with-owned-schema-and-policy",
       "validate-only-approved-target-registry-delta",
-      "validate-persisted-approval-matches-human-context"
+      "validate-persisted-approval-matches-accepted-attestation"
     ]
   },
   "registry": {
@@ -131,18 +125,19 @@
     "manifestRequired": true,
     "manifestTiming": "present-exact-manifest-before-approval",
     "manifestContents": [
-      "kind",
       "exact-paths",
       "exact-preimages",
       "exact-replacements",
       "target-invariant-id",
       "exact-target-before-and-after"
     ],
-    "timePressureBypass": false,
-    "inputSource": "human-context",
+    "transitionKind": "derived-from-exact-target-before-and-after",
+    "proceduralPrecondition": "contextual-human-approval-before-attestation",
+    "codeAcceptance": "exact-approval-attestation-without-origin-authentication",
     "authentication": "not-performed",
-    "registryRecordMeaning": "provided-context-not-independent-proof",
-    "agentSelfAssertion": "forbidden"
+    "registryRecordMeaning": "recorded-attestation-not-independent-proof",
+    "agentSelfAssertion": "procedurally-forbidden-not-machine-detectable",
+    "timePressureBypass": false
   },
   "controls": {
     "probabilistic": [
@@ -163,7 +158,32 @@
   },
   "consumers": {
     "required": ["claude", "codex", "cursor"],
-    "declaration": "independent-supported-mechanism-or-unsupported-reason"
+    "declaration": "independent-supported-mechanism-or-unsupported-reason",
+    "supportedMechanisms": {
+      "claude": ["claude-global-instruction", "claude-user-skill"],
+      "codex": ["codex-global-instruction", "codex-user-skill"],
+      "cursor": ["cursor-user-skill"]
+    },
+    "mutationTargets": {
+      "alwaysLoadedInstruction": {
+        "surface": "always-loaded-instruction",
+        "path": "harness/AGENTS.md",
+        "consumers": {
+          "claude": "claude-global-instruction",
+          "codex": "codex-global-instruction",
+          "cursor": "unsupported"
+        }
+      },
+      "conditionalSkill": {
+        "surface": "conditional-skill",
+        "path": "harness/skills/harness-reflection/SKILL.md",
+        "consumers": {
+          "claude": "claude-user-skill",
+          "codex": "codex-user-skill",
+          "cursor": "cursor-user-skill"
+        }
+      }
+    }
   },
   "oracle": {
     "requiredAfterApproval": true,
@@ -188,10 +208,11 @@
     "prepareOrder": [
       "lookup-existing-invariant",
       "prepare-retired-registry-copy",
-      "preserve-complete-record-history-in-prepared-registry",
+      "preserve-historical-fields-in-prepared-registry",
       "set-retired-at-in-prepared-registry",
       "set-retirement-reason-in-prepared-registry",
       "handle-optional-replaced-by-in-prepared-registry",
+      "record-new-approval-attestation-in-prepared-registry",
       "prepare-selected-control-surface-copy-if-touched",
       "capture-all-file-preimages-for-approval",
       "construct-exact-retirement-manifest",
@@ -201,11 +222,11 @@
       "validate-request-equals-approved-manifest",
       "acquire-owned-cooperative-lock",
       "revalidate-approved-preimages-under-lock",
-      "validate-complete-record-history-unchanged",
+      "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
       "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
       "validate-prepared-retired-registry-with-owned-schema-and-policy",
       "validate-only-approved-target-registry-delta",
-      "validate-persisted-approval-matches-human-context"
+      "validate-persisted-approval-matches-accepted-attestation"
     ]
   },
   "proposal": {
@@ -223,6 +244,15 @@
   "lifecycle": {
     "promotion": "control-kind-specific-green-oracle-required",
     "independentWithOnlySessions": "never-sufficient-for-probabilistic-control",
+    "allowedTransitions": [
+      "new-to-candidate",
+      "new-to-active",
+      "candidate-to-candidate",
+      "candidate-to-active",
+      "active-to-active",
+      "active-to-retired"
+    ],
+    "retiredTerminal": true,
     "rollback": ["two-failed-trials", "one-safety-regression", "user-veto"]
   },
   "report": {

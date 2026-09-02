@@ -29,7 +29,6 @@ const validateApprovedFileRequest = (
 ): void => {
   const { manifest } = approval;
   const matches =
-    manifest.kind === input.kind &&
     manifest.registryDelta.targetInvariantId === input.targetInvariantId &&
     manifest.files.length === input.preparedFiles.length &&
     manifest.files.every((file, index) => {

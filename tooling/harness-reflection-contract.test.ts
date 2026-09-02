@@ -201,10 +201,10 @@ test("rejects removal of the skill router", async () => {
 
 test.each([
   [
-    "retirement executable route",
+    "derived executable route",
     {
       key: "module",
-      path: ["workflowRoutes", "retirement"],
+      path: ["workflowRoutes", "mutation"],
       value: "missing.ts",
     },
   ],

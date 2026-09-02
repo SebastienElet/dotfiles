@@ -3,6 +3,10 @@ import type {
   MutationWorkflowCoreInput,
 } from "./harness-reflection-mutation-workflow-types.ts";
 import { join, resolve } from "node:path";
+import {
+  marginalAblation,
+  verifiedVerification,
+} from "./invariant-registry-test-support.ts";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import {
   parseMutationManifest,
@@ -14,7 +18,7 @@ import { tmpdir } from "node:os";
 
 const sourceRepositoryRoot = resolve(import.meta.dir, "..");
 const registryPath = "harness/invariants/registry.json";
-const surfacePath = "surface.md";
+const surfacePath = "harness/AGENTS.md";
 const approvedAt = "2026-09-02T00:00:00.000Z";
 const temporaryRoots: string[] = [];
 
@@ -35,6 +39,40 @@ const temporaryRoot = async (): Promise<string> => {
   return root;
 };
 
+const supportedRecord = (record: InvariantRecord): InvariantRecord => {
+  const { oracle: _oracle, ...recordWithoutOracle } = record;
+  const [supported] = parseInvariantRegistry({
+    invariants: [
+      {
+        ...recordWithoutOracle,
+        consumers: {
+          claude: {
+            mechanism: "claude-global-instruction",
+            state: "supported",
+          },
+          codex: {
+            mechanism: "codex-global-instruction",
+            state: "supported",
+          },
+          cursor: {
+            reason: "No managed instruction surface.",
+            state: "unsupported",
+          },
+        },
+        controlKind: "probabilistic",
+        marginalAblation,
+        surface: "always-loaded-instruction",
+        verification: verifiedVerification,
+      },
+    ],
+    version: 1,
+  }).invariants;
+  if (supported === undefined) {
+    throw new Error("supported-active-registry-fixture-empty");
+  }
+  return supported;
+};
+
 const registryPair = async (): Promise<RegistryPair> => {
   const active = await readFile(
     join(
@@ -47,10 +85,11 @@ const registryPair = async (): Promise<RegistryPair> => {
   if (activeRecord === undefined) {
     throw new Error("active-registry-fixture-empty");
   }
+  const supportedActiveRecord = supportedRecord(activeRecord);
   const retired = JSON.stringify({
     invariants: [
       {
-        ...activeRecord,
+        ...supportedActiveRecord,
         lifecycle: "retired",
         retirement: { reason: "Superseded.", retiredAt: approvedAt },
       },
@@ -64,8 +103,8 @@ const registryPair = async (): Promise<RegistryPair> => {
     throw new Error("retired-registry-fixture-empty");
   }
   return {
-    active,
-    activeRecord,
+    active: JSON.stringify({ invariants: [supportedActiveRecord], version: 1 }),
+    activeRecord: supportedActiveRecord,
     retired,
     retiredRecord,
   };
@@ -109,7 +148,6 @@ const approvedManifest = (
   const registryAfter = options.registryAfter ?? pair.retiredRecord;
   const surfaceReplacement = options.surfaceReplacement ?? "new surface";
   return parseMutationManifest({
-    kind: "retirement",
     files: [
       {
         path: surfacePath,
@@ -139,9 +177,7 @@ const mutationInput = (
       approvedAt,
       approvedBy: "Sebastien",
       manifest,
-      source: "human-context",
     },
-    kind: "retirement",
     preparedFiles,
     registryPath,
     targetInvariantId: "prevent-fetch-url-secret-redaction",

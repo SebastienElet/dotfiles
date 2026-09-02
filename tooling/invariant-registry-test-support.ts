@@ -74,8 +74,8 @@ function candidate(overrides: TestInvariant = {}): TestInvariant {
     scope: { kind: "cross-project", exceptions: [] },
     surface: "always-loaded-instruction",
     consumers: {
-      claude: { state: "supported", mechanism: "always-loaded-instruction" },
-      codex: { state: "supported", mechanism: "always-loaded-instruction" },
+      claude: { state: "supported", mechanism: "claude-global-instruction" },
+      codex: { state: "supported", mechanism: "codex-global-instruction" },
       cursor: {
         state: "unsupported",
         reason: "No managed instruction surface.",

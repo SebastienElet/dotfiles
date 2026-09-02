@@ -57,8 +57,8 @@ const mutationExecutionContract = {
     "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
   crashRecovery: "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
   applyOrder: [
-    "stage-each-replacement-in-same-directory",
-    "revalidate-current-file-under-cooperative-lock",
+    "stage-all-replacements-in-same-directories",
+    "revalidate-all-current-files-under-cooperative-lock",
     "atomically-rename-each-file",
     "validate-applied-coherent-change",
   ],
@@ -74,8 +74,8 @@ const mutationExecutionContract = {
 const approvedMutationContract = {
   execution: "mutationExecution",
   prepareOrder: [
-    "select-control-surface",
-    "declare-consumers",
+    "select-supported-control-surface-and-exact-path",
+    "declare-supported-consumer-mechanisms",
     "require-control-oracle",
     "prepare-selected-control-surface",
     "prepare-registry",
@@ -90,7 +90,7 @@ const approvedMutationContract = {
     "validate-prepared-selected-control-surface-with-owned-adapter",
     "validate-prepared-registry-with-owned-schema-and-policy",
     "validate-only-approved-target-registry-delta",
-    "validate-persisted-approval-matches-human-context",
+    "validate-persisted-approval-matches-accepted-attestation",
   ],
 } as const;
 
@@ -101,10 +101,11 @@ const retirementContract = {
   prepareOrder: [
     "lookup-existing-invariant",
     "prepare-retired-registry-copy",
-    "preserve-complete-record-history-in-prepared-registry",
+    "preserve-historical-fields-in-prepared-registry",
     "set-retired-at-in-prepared-registry",
     "set-retirement-reason-in-prepared-registry",
     "handle-optional-replaced-by-in-prepared-registry",
+    "record-new-approval-attestation-in-prepared-registry",
     "prepare-selected-control-surface-copy-if-touched",
     "capture-all-file-preimages-for-approval",
     "construct-exact-retirement-manifest",
@@ -114,11 +115,11 @@ const retirementContract = {
     "validate-request-equals-approved-manifest",
     "acquire-owned-cooperative-lock",
     "revalidate-approved-preimages-under-lock",
-    "validate-complete-record-history-unchanged",
+    "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
     "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
     "validate-prepared-retired-registry-with-owned-schema-and-policy",
     "validate-only-approved-target-registry-delta",
-    "validate-persisted-approval-matches-human-context",
+    "validate-persisted-approval-matches-accepted-attestation",
   ],
 } as const;
 

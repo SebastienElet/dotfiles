@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 import {
   link,
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
@@ -11,7 +12,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import type { MutationWorkflowAdapter } from "./harness-reflection-mutation-workflow-types.ts";
+import { candidate } from "./invariant-registry-test-support.ts";
 import { createRepositoryMutationAdapter } from "./harness-reflection-mutation-filesystem.ts";
+import { parseInvariantRegistry } from "./invariant-registry-contract.ts";
 import { pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 
@@ -64,7 +67,16 @@ test("replaces only matching content while the adapter lock is held", async () =
 
 test("validates registry JSON and surface shape inside the repository", async () => {
   const root = await temporaryRoot();
+  await mkdir(join(root, "harness"));
   const adapter = createRepositoryMutationAdapter(root);
+  const [target] = parseInvariantRegistry({
+    invariants: [candidate()],
+    version: 1,
+  }).invariants;
+  if (target === undefined) {
+    throw new Error("mutation-target-missing");
+  }
+  const transition = { kind: "approved-mutation", target } as const;
 
   expect(
     adapter.validatePreparedRegistry(
@@ -73,13 +85,13 @@ test("validates registry JSON and surface shape inside the repository", async ()
   ).toEqual({ invariants: [], version: 1 });
   expect(() =>
     adapter.validatePreparedSurfaces(
-      [{ contents: "surface", path: "surface.md" }],
-      "approved-mutation",
+      [{ contents: "surface", path: "harness/AGENTS.md" }],
+      transition,
     ),
   ).not.toThrow();
-  expect(() =>
-    adapter.validatePreparedSurfaces([], "approved-mutation"),
-  ).toThrow("prepared-surface-count-invalid");
+  expect(() => adapter.validatePreparedSurfaces([], transition)).toThrow(
+    "prepared-surface-count-invalid",
+  );
 });
 
 test("refuses a final surface symlink", async () => {

@@ -16,7 +16,6 @@ const approvedAt = "2026-09-02T00:00:00.000Z";
 const reviewerApproval: Omit<WorkflowApproval, "manifest"> = {
   approvedAt,
   approvedBy: "Reviewer",
-  source: "human-context",
 };
 type RetirementRegistryPair = Readonly<{
   current: string;
@@ -73,22 +72,42 @@ const memoryAdapter = (
   ) => void,
 ): MemoryAdapter => {
   const contents = new Map(Object.entries(initial));
+  const replaceMatching: MutationWorkflowAdapter["replaceMatching"] = (
+    path,
+    expected,
+    replacement,
+  ) => {
+    beforeReplace?.(path, expected, replacement);
+    if (contents.get(path) !== expected) {
+      return false;
+    }
+    if (replacement === undefined) {
+      contents.delete(path);
+    } else {
+      contents.set(path, replacement);
+    }
+    return true;
+  };
   return {
-    contents,
-    withMutationLock: withMemoryLock,
-    read: (path) => contents.get(path),
-    replaceMatching: (path, expected, replacement) => {
-      beforeReplace?.(path, expected, replacement);
-      if (contents.get(path) !== expected) {
-        return false;
-      }
-      if (replacement === undefined) {
-        contents.delete(path);
-      } else {
-        contents.set(path, replacement);
+    applyMatchingBatch: async (snapshots, onAttempt) => {
+      for (const snapshot of snapshots) {
+        onAttempt(snapshot);
+        if (
+          !(await replaceMatching(
+            snapshot.path,
+            snapshot.before,
+            snapshot.contents,
+          ))
+        ) {
+          return false;
+        }
       }
       return true;
     },
+    contents,
+    withMutationLock: withMemoryLock,
+    read: (path) => contents.get(path),
+    replaceMatching,
     validatePreparedRegistry: (value) =>
       parseInvariantRegistry(JSON.parse(value)),
     validatePreparedSurfaces: () => Promise.resolve(),
@@ -121,7 +140,6 @@ const retirementInput = (
         },
         { path: registryPath, preimage: current, replacement: retired },
       ],
-      kind: "retirement",
       registryDelta: {
         after: retiredRecord,
         before: currentRecord,
@@ -130,7 +148,6 @@ const retirementInput = (
     }),
   };
   return {
-    kind: "retirement",
     preparedFiles: [
       { contents: "new surface", path: "surface.md" },
       { contents: retired, path: registryPath },

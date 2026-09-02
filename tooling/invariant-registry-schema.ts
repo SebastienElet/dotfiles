@@ -1,3 +1,8 @@
+import {
+  claudeConsumerMechanisms,
+  codexConsumerMechanisms,
+  cursorConsumerMechanisms,
+} from "./invariant-registry-consumers.ts";
 import { sourceSchema } from "./invariant-registry-source.ts";
 import { z } from "zod";
 
@@ -34,17 +39,38 @@ const verificationSchema = z.discriminatedUnion("state", [
     })
     .strict(),
 ]);
-const consumerSchema = z.discriminatedUnion("state", [
+const unsupportedConsumerSchema = z
+  .object({ state: z.literal("unsupported"), reason: semanticStringSchema })
+  .strict();
+const claudeConsumerSchema = z.discriminatedUnion("state", [
   z
     .object({
       state: z.literal("supported"),
-      mechanism: semanticStringSchema,
+      mechanism: z.enum(claudeConsumerMechanisms),
       lastVerifiedEnvironment: semanticStringSchema.optional(),
     })
     .strict(),
+  unsupportedConsumerSchema,
+]);
+const codexConsumerSchema = z.discriminatedUnion("state", [
   z
-    .object({ state: z.literal("unsupported"), reason: semanticStringSchema })
+    .object({
+      state: z.literal("supported"),
+      mechanism: z.enum(codexConsumerMechanisms),
+      lastVerifiedEnvironment: semanticStringSchema.optional(),
+    })
     .strict(),
+  unsupportedConsumerSchema,
+]);
+const cursorConsumerSchema = z.discriminatedUnion("state", [
+  z
+    .object({
+      state: z.literal("supported"),
+      mechanism: z.enum(cursorConsumerMechanisms),
+      lastVerifiedEnvironment: semanticStringSchema.optional(),
+    })
+    .strict(),
+  unsupportedConsumerSchema,
 ]);
 const scopeExceptionSchema = z
   .object({
@@ -102,9 +128,9 @@ const marginalAblationSchema = z
   .strict();
 const consumersSchema = z
   .object({
-    claude: consumerSchema,
-    codex: consumerSchema,
-    cursor: consumerSchema,
+    claude: claudeConsumerSchema,
+    codex: codexConsumerSchema,
+    cursor: cursorConsumerSchema,
   })
   .strict();
 const retirementSchema = z

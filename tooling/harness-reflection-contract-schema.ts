@@ -1,17 +1,23 @@
 import {
   approvalBranchesSchema,
   approvedMutationSchema,
-  controlsSchema,
   decisionBranchesSchema,
   diagnosticSchema,
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
-  lifecycleSchema,
   mutationExecutionSchema,
-  oracleSchema,
   retirementSchema,
   workflowRoutesSchema,
 } from "./harness-reflection-contract-workflow-schema.ts";
+import {
+  approvalContractSchema,
+  consumersContractSchema,
+} from "./harness-reflection-contract-approval-schema.ts";
+import {
+  controlsSchema,
+  lifecycleSchema,
+  oracleSchema,
+} from "./harness-reflection-contract-control-schema.ts";
 import { z } from "zod";
 
 const registryClassSchema = z.enum([
@@ -85,42 +91,9 @@ const harnessReflectionContractSchema = z
         syntheticSources: z.literal("forbidden"),
       })
       .strict(),
-    approval: z
-      .object({
-        requiredBeforeMutation: z.literal(true),
-        preApprovalState: z.literal("session-local"),
-        manifestRequired: z.literal(true),
-        manifestTiming: z.literal("present-exact-manifest-before-approval"),
-        manifestContents: z.tuple([
-          z.literal("kind"),
-          z.literal("exact-paths"),
-          z.literal("exact-preimages"),
-          z.literal("exact-replacements"),
-          z.literal("target-invariant-id"),
-          z.literal("exact-target-before-and-after"),
-        ]),
-        timePressureBypass: z.literal(false),
-        inputSource: z.literal("human-context"),
-        authentication: z.literal("not-performed"),
-        registryRecordMeaning: z.literal(
-          "provided-context-not-independent-proof",
-        ),
-        agentSelfAssertion: z.literal("forbidden"),
-      })
-      .strict(),
+    approval: approvalContractSchema,
     controls: controlsSchema,
-    consumers: z
-      .object({
-        required: z.tuple([
-          z.literal("claude"),
-          z.literal("codex"),
-          z.literal("cursor"),
-        ]),
-        declaration: z.literal(
-          "independent-supported-mechanism-or-unsupported-reason",
-        ),
-      })
-      .strict(),
+    consumers: consumersContractSchema,
     oracle: oracleSchema,
     routes: z
       .object({

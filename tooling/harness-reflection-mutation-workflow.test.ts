@@ -42,16 +42,13 @@ const invalidRegistryRequest = async (): Promise<HarnessMutationRequest> => {
             replacement: "not-json",
           },
         ],
-        kind: "approved-mutation",
         registryDelta: {
           after: null,
           before: null,
           targetInvariantId: "prevent-secret-leaks",
         },
       },
-      source: "human-context",
     },
-    kind: "approved-mutation",
     preparedFiles: [
       { contents: "new surface", path: surfacePath },
       { contents: "not-json", path: registryPath },
@@ -63,7 +60,7 @@ const invalidRegistryRequest = async (): Promise<HarnessMutationRequest> => {
 test("resolves and invokes the production workflow through the skill route", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   const contract = parseHarnessReflectionContract(sources.reference);
-  const route = contract.workflowRoutes.retirement;
+  const route = contract.workflowRoutes.mutation;
   const workflowModule: unknown = await import(
     resolve(repositoryRoot, route.module)
   );

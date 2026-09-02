@@ -1,4 +1,7 @@
-import type { InvariantRegistry } from "./invariant-registry-contract.ts";
+import type {
+  InvariantRecord,
+  InvariantRegistry,
+} from "./invariant-registry-contract.ts";
 import { z } from "zod";
 
 type MaybePromise<Value> = Value | Promise<Value>;
@@ -16,7 +19,6 @@ const registryRecordValueSchema = z.record(z.string(), z.json());
 const approvedMutationManifestSchema = z
   .object({
     files: z.array(approvedFileMutationSchema).min(1),
-    kind: z.enum(["approved-mutation", "retirement"]),
     registryDelta: z
       .object({
         after: registryRecordValueSchema.nullable(),
@@ -28,15 +30,13 @@ const approvedMutationManifestSchema = z
   .strict();
 const workflowApprovalSchema = z
   .object({
-    approvedAt: z.string(),
-    approvedBy: z.string(),
+    approvedAt: z.iso.datetime(),
+    approvedBy: z.string().regex(/\S/u),
     manifest: approvedMutationManifestSchema,
-    source: z.enum(["human-context", "agent-self-asserted"]),
   })
   .strict();
 const harnessMutationRequestShape = {
   approval: workflowApprovalSchema.optional(),
-  kind: z.enum(["approved-mutation", "retirement"]),
   preparedFiles: z.array(preparedFileSchema),
   targetInvariantId: z.string(),
 };
@@ -56,6 +56,11 @@ type WorkflowApproval = DeepReadonly<z.output<typeof workflowApprovalSchema>>;
 type MutationManifest = WorkflowApproval["manifest"];
 type PreparedFile = DeepReadonly<z.output<typeof preparedFileSchema>>;
 type PreparedSnapshot = PreparedFile & Readonly<{ before: string | undefined }>;
+type MutationKind = "approved-mutation" | "retirement";
+type MutationTransition = Readonly<{
+  kind: MutationKind;
+  target: InvariantRecord;
+}>;
 type HarnessMutationRequest = DeepReadonly<
   z.output<typeof harnessMutationRequestSchema>
 >;
@@ -71,6 +76,10 @@ type MutationWorkflowResult = Readonly<{
   unresolvedPaths: readonly string[];
 }>;
 type MutationWorkflowAdapter = Readonly<{
+  applyMatchingBatch: (
+    snapshots: readonly PreparedSnapshot[],
+    onAttempt: (snapshot: PreparedSnapshot) => void,
+  ) => MaybePromise<boolean>;
   replaceMatching: (
     path: string,
     expected: string | undefined,
@@ -83,7 +92,7 @@ type MutationWorkflowAdapter = Readonly<{
   validatePreparedRegistry: (contents: string) => InvariantRegistry;
   validatePreparedSurfaces: (
     files: readonly PreparedFile[],
-    kind: HarnessMutationRequest["kind"],
+    transition: MutationTransition,
   ) => MaybePromise<void>;
 }>;
 type MutationWorkflowCoreInput = HarnessMutationRequest &
@@ -98,7 +107,9 @@ const parseMutationManifest = (input: unknown): MutationManifest =>
 
 export type {
   HarnessMutationRequest,
+  MutationKind,
   MutationManifest,
+  MutationTransition,
   MutationWorkflowAdapter,
   MutationWorkflowCoreInput,
   MutationWorkflowResult,

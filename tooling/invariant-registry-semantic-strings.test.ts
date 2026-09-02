@@ -25,10 +25,13 @@ const retirement = {
   reason: "Superseded by a stronger invariant.",
 };
 
-function supportedConsumer(overrides: TestInvariant = {}): TestInvariant {
+function supportedConsumer(
+  mechanism: string,
+  overrides: TestInvariant = {},
+): TestInvariant {
   return {
     state: "supported",
-    mechanism: "always-loaded-instruction",
+    mechanism,
     ...overrides,
   };
 }
@@ -43,8 +46,8 @@ function unsupportedConsumer(overrides: TestInvariant = {}): TestInvariant {
 
 function consumers(overrides: TestInvariant = {}): TestInvariant {
   return {
-    claude: supportedConsumer(),
-    codex: supportedConsumer(),
+    claude: supportedConsumer("claude-global-instruction"),
+    codex: supportedConsumer("codex-global-instruction"),
     cursor: unsupportedConsumer(),
     ...overrides,
   };
@@ -70,7 +73,7 @@ const blankSemanticFields: SemanticFieldCase[] = [
     name: "consumer mechanism",
     overrides: {
       consumers: consumers({
-        claude: supportedConsumer({ mechanism: " \t" }),
+        claude: supportedConsumer(" \t"),
       }),
     },
   },
@@ -78,7 +81,9 @@ const blankSemanticFields: SemanticFieldCase[] = [
     name: "consumer verification environment",
     overrides: {
       consumers: consumers({
-        claude: supportedConsumer({ lastVerifiedEnvironment: " \t" }),
+        claude: supportedConsumer("claude-global-instruction", {
+          lastVerifiedEnvironment: " \t",
+        }),
       }),
     },
   },

@@ -10,13 +10,13 @@ import {
   surfacePath,
   temporaryRoot,
 } from "./harness-reflection-mutation-production-test-support.ts";
+import { dirname, join } from "node:path";
+import { readdirSync, renameSync } from "node:fs";
 import type { MutationWorkflowCoreInput } from "./harness-reflection-mutation-workflow-types.ts";
 import type { RegistryPair } from "./harness-reflection-mutation-production-test-support.ts";
 import { createRepositoryMutationAdapter } from "./harness-reflection-mutation-filesystem.ts";
 import { executeHarnessMutationWorkflowCore } from "./harness-reflection-mutation-workflow-core.ts";
-import { join } from "node:path";
 import { readFile } from "node:fs/promises";
-import { renameSync } from "node:fs";
 
 afterEach(cleanupTemporaryRoots);
 
@@ -118,4 +118,37 @@ test("compensates an error on the second file with the production adapter", asyn
   expect(result.unresolvedPaths).toEqual([]);
   expect(await readFile(join(root, surfacePath), "utf8")).toBe("old surface");
   expect(await readFile(join(root, registryPath), "utf8")).toBe(pair.active);
+});
+
+test("stages every replacement before the first rename", async () => {
+  const root = await temporaryRoot();
+  const pair = await registryPair();
+  await initializeRepository(root, pair.active);
+  let firstRenameObserved = false;
+  let allTemporariesPresent = false;
+  const adapter = createRepositoryMutationAdapter(root, {
+    renameFile: (source, target) => {
+      if (!firstRenameObserved) {
+        firstRenameObserved = true;
+        allTemporariesPresent = [surfacePath, registryPath].every((path) =>
+          readdirSync(dirname(join(root, path))).some((entry) =>
+            entry.endsWith(".tmp"),
+          ),
+        );
+      }
+      renameSync(source, target);
+    },
+  });
+
+  const result = await executeHarnessMutationWorkflowCore(
+    mutationInput(approvedManifest(pair), [
+      { contents: "new surface", path: surfacePath },
+      { contents: pair.retired, path: registryPath },
+    ]),
+    adapter,
+  );
+
+  expect(result.status).toBe("succeeded");
+  expect(firstRenameObserved).toBe(true);
+  expect(allTemporariesPresent).toBe(true);
 });

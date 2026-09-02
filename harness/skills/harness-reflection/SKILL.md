@@ -31,13 +31,14 @@ project instructions are discoverable.
 2. Execute `initialWorkflowOrder` exactly as structured.
 3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder` and its selected
    decision and approval branches. Present the prepared exact manifest for contextual human
-   approval, then resolve `workflowRoutes.approvedMutation`, load its named module and export, and
-   execute its mode with only the unchanged structured request. The export owns manifest validation,
-   cooperative locking, and same-directory atomic replacement.
-4. For retirement, resolve `workflowRoutes.retirement`, load its named module and export, then
-   execute its mode with only the structured request. Never inject validation or filesystem
-   callbacks, add, omit, reorder, or short-circuit steps. Stop with a finding when a route is
-   missing, malformed, unresolved, duplicated, or contradicted; never supplement it from prose.
+   approval, then resolve `workflowRoutes.mutation`, load its named module and export, and execute it
+   with the unchanged structured request and exact approval attestation. The export verifies exact
+   consistency without authenticating who supplied the attestation, derives the lifecycle transition,
+   and owns cooperative locking and same-directory replacement.
+4. For retirement, use the same `workflowRoutes.mutation` export with only the structured request.
+   Never inject validation or filesystem callbacks, add, omit, reorder, or short-circuit steps. Stop
+   with a finding when the route is missing, malformed, unresolved, duplicated, or contradicted;
+   never supplement it from prose.
 
 ## Gotchas
 

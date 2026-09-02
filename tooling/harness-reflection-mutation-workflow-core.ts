@@ -1,4 +1,5 @@
 import type {
+  MutationTransition,
   MutationWorkflowAdapter,
   MutationWorkflowCoreInput,
   MutationWorkflowResult,
@@ -19,6 +20,13 @@ import { validateTransition } from "./harness-reflection-mutation-transition.ts"
 type PreparedWorkflow = Readonly<{
   events: readonly string[];
   snapshots: readonly PreparedSnapshot[];
+  transition: MutationTransition;
+}>;
+type AppliedValidation = Readonly<{
+  adapter: MutationWorkflowAdapter;
+  input: MutationWorkflowCoreInput;
+  snapshots: readonly PreparedSnapshot[];
+  transition: MutationTransition;
 }>;
 
 const rejected = (
@@ -47,10 +55,9 @@ const capturePreimages = async (
 };
 
 const validateApplied = async (
-  input: MutationWorkflowCoreInput,
-  adapter: MutationWorkflowAdapter,
-  snapshots: readonly PreparedSnapshot[],
+  validation: AppliedValidation,
 ): Promise<void> => {
+  const { adapter, input, snapshots, transition } = validation;
   for (const snapshot of snapshots) {
     if (!(await readMatches(adapter, snapshot.path, snapshot.contents))) {
       throw new Error("applied-content-mismatch");
@@ -63,7 +70,7 @@ const validateApplied = async (
   adapter.validatePreparedRegistry(registry.contents);
   await adapter.validatePreparedSurfaces(
     snapshots.filter(({ path }) => path !== input.registryPath),
-    input.kind,
+    transition,
   );
 };
 
@@ -75,27 +82,32 @@ const applySnapshots = async (
   const { events, snapshots } = prepared;
   const attempted: PreparedSnapshot[] = [];
   const applyingEvents = [...events, "apply-started"];
-  for (const snapshot of snapshots) {
-    attempted.push(snapshot);
-    try {
-      if (
-        !(await adapter.replaceMatching(
-          snapshot.path,
-          snapshot.before,
-          snapshot.contents,
-        ))
-      ) {
-        return await compensate(adapter, attempted, [
-          ...applyingEvents,
-          "apply-conflict",
-        ]);
-      }
-    } catch {
-      return compensate(adapter, attempted, [...applyingEvents, "apply-error"]);
+  try {
+    if (
+      !(await adapter.applyMatchingBatch(snapshots, (snapshot) => {
+        attempted.push(snapshot);
+      }))
+    ) {
+      return attempted.length === 0
+        ? rejected(
+            [...applyingEvents, "apply-conflict"],
+            "preimage-conflict-before-rename",
+          )
+        : await compensate(adapter, attempted, [
+            ...applyingEvents,
+            "apply-conflict",
+          ]);
     }
+  } catch {
+    return compensate(adapter, attempted, [...applyingEvents, "apply-error"]);
   }
   try {
-    await validateApplied(input, adapter, snapshots);
+    await validateApplied({
+      adapter,
+      input,
+      snapshots,
+      transition: prepared.transition,
+    });
   } catch {
     return compensate(adapter, attempted, [
       ...applyingEvents,
@@ -124,10 +136,14 @@ const prepareWorkflow = async (
     const surfaces = snapshots.filter(
       ({ path }) => path !== input.registryPath,
     );
-    await adapter.validatePreparedSurfaces(surfaces, input.kind);
     const current = adapter.validatePreparedRegistry(registry.before);
     const proposed = adapter.validatePreparedRegistry(registry.contents);
-    validateTransition(input, { current, proposed }, approval);
+    const transition = validateTransition(
+      input,
+      { current, proposed },
+      approval,
+    );
+    await adapter.validatePreparedSurfaces(surfaces, transition);
     return {
       events: [
         "approval-accepted",
@@ -136,6 +152,7 @@ const prepareWorkflow = async (
         "prepared-registry-validated",
       ],
       snapshots,
+      transition,
     };
   } catch (error) {
     return rejected(
@@ -164,12 +181,8 @@ const executeHarnessMutationWorkflowCore = async (
     return rejected([], "mutation-request-invalid");
   }
   const { approval } = input;
-  if (
-    approval?.source !== "human-context" ||
-    approval.approvedBy.trim() === "" ||
-    !Number.isFinite(Date.parse(approval.approvedAt))
-  ) {
-    return rejected([], "human-context-approval-required");
+  if (approval === undefined) {
+    return rejected([], "approval-attestation-required");
   }
   try {
     validateApprovedFileRequest(input, approval);
@@ -193,6 +206,7 @@ const executeHarnessMutationWorkflowCore = async (
       return applySnapshots(input, adapter, {
         events: [...prepared.events, "preimages-confirmed"],
         snapshots: prepared.snapshots,
+        transition: prepared.transition,
       });
     });
   } catch (error) {

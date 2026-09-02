@@ -17,13 +17,20 @@ test("reconciles a replacement that writes before throwing", async () => {
   let threwAfterWrite = false;
   const adapter: MutationWorkflowAdapter = {
     ...base,
-    replaceMatching: async (path, expected, replacement) => {
-      const applied = await base.replaceMatching(path, expected, replacement);
-      if (!threwAfterWrite && path === "surface.md" && applied) {
-        threwAfterWrite = true;
-        throw new Error("ambiguous-write");
+    applyMatchingBatch: async (snapshots, onAttempt) => {
+      for (const snapshot of snapshots) {
+        onAttempt(snapshot);
+        const applied = await base.replaceMatching(
+          snapshot.path,
+          snapshot.before,
+          snapshot.contents,
+        );
+        if (!threwAfterWrite && snapshot.path === "surface.md" && applied) {
+          threwAfterWrite = true;
+          throw new Error("ambiguous-write");
+        }
       }
-      return applied;
+      return true;
     },
   };
 

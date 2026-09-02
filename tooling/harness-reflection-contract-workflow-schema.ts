@@ -54,18 +54,10 @@ const approvalBranchesSchema = z
 
 const workflowRoutesSchema = z
   .object({
-    approvedMutation: z
+    mutation: z
       .object({
         module: z.literal("tooling/harness-reflection-mutation-workflow.ts"),
         export: z.literal("executeHarnessMutationWorkflow"),
-        mode: z.literal("approved-mutation"),
-      })
-      .strict(),
-    retirement: z
-      .object({
-        module: z.literal("tooling/harness-reflection-mutation-workflow.ts"),
-        export: z.literal("executeHarnessMutationWorkflow"),
-        mode: z.literal("retirement"),
       })
       .strict(),
   })
@@ -84,8 +76,8 @@ const mutationExecutionShape = {
     "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
   ),
   applyOrder: z.tuple([
-    z.literal("stage-each-replacement-in-same-directory"),
-    z.literal("revalidate-current-file-under-cooperative-lock"),
+    z.literal("stage-all-replacements-in-same-directories"),
+    z.literal("revalidate-all-current-files-under-cooperative-lock"),
     z.literal("atomically-rename-each-file"),
     z.literal("validate-applied-coherent-change"),
   ]),
@@ -105,8 +97,8 @@ const approvedMutationSchema = z
   .object({
     execution: z.literal("mutationExecution"),
     prepareOrder: z.tuple([
-      z.literal("select-control-surface"),
-      z.literal("declare-consumers"),
+      z.literal("select-supported-control-surface-and-exact-path"),
+      z.literal("declare-supported-consumer-mechanisms"),
       z.literal("require-control-oracle"),
       z.literal("prepare-selected-control-surface"),
       z.literal("prepare-registry"),
@@ -123,56 +115,8 @@ const approvedMutationSchema = z
       ),
       z.literal("validate-prepared-registry-with-owned-schema-and-policy"),
       z.literal("validate-only-approved-target-registry-delta"),
-      z.literal("validate-persisted-approval-matches-human-context"),
+      z.literal("validate-persisted-approval-matches-accepted-attestation"),
     ]),
-  })
-  .strict();
-
-const probabilisticPromotionSchema = z
-  .object({
-    protocol: z.literal("controlled-marginal-ablation"),
-    conditions: z.tuple([
-      z.literal("with-exact-candidate-text"),
-      z.literal("without-candidate-text"),
-    ]),
-    controlledConstants: z.tuple([
-      z.literal("scenarios"),
-      z.literal("environments"),
-      z.literal("replicates"),
-    ]),
-    observableDelta: z.literal("required"),
-    withOnlyRuns: z.literal("never-sufficient"),
-    activationMeasurementForConditionalSkill: z.literal("required"),
-  })
-  .strict();
-
-const controlsSchema = z
-  .object({
-    probabilistic: z.tuple([
-      z.literal("always-loaded-instruction"),
-      z.literal("conditional-skill"),
-      z.literal("project-local-contract"),
-    ]),
-    enforceable: z.tuple([
-      z.literal("hook"),
-      z.literal("permission"),
-      z.literal("lint"),
-      z.literal("type"),
-      z.literal("architectural-test"),
-    ]),
-    probabilisticPromotion: probabilisticPromotionSchema,
-    selectionRequiredAfterApproval: z.literal(true),
-  })
-  .strict();
-
-const oracleSchema = z
-  .object({
-    requiredAfterApproval: z.literal(true),
-    enforceable: z.literal("executable-failure-path-and-test-path"),
-    probabilistic: z.literal(
-      "controlled-marginal-ablation-with-observable-delta",
-    ),
-    inapplicable: z.literal("reason-required"),
   })
   .strict();
 
@@ -184,10 +128,11 @@ const retirementSchema = z
     prepareOrder: z.tuple([
       z.literal("lookup-existing-invariant"),
       z.literal("prepare-retired-registry-copy"),
-      z.literal("preserve-complete-record-history-in-prepared-registry"),
+      z.literal("preserve-historical-fields-in-prepared-registry"),
       z.literal("set-retired-at-in-prepared-registry"),
       z.literal("set-retirement-reason-in-prepared-registry"),
       z.literal("handle-optional-replaced-by-in-prepared-registry"),
+      z.literal("record-new-approval-attestation-in-prepared-registry"),
       z.literal("prepare-selected-control-surface-copy-if-touched"),
       z.literal("capture-all-file-preimages-for-approval"),
       z.literal("construct-exact-retirement-manifest"),
@@ -197,7 +142,9 @@ const retirementSchema = z
       z.literal("validate-request-equals-approved-manifest"),
       z.literal("acquire-owned-cooperative-lock"),
       z.literal("revalidate-approved-preimages-under-lock"),
-      z.literal("validate-complete-record-history-unchanged"),
+      z.literal(
+        "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
+      ),
       z.literal(
         "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
       ),
@@ -205,21 +152,7 @@ const retirementSchema = z
         "validate-prepared-retired-registry-with-owned-schema-and-policy",
       ),
       z.literal("validate-only-approved-target-registry-delta"),
-      z.literal("validate-persisted-approval-matches-human-context"),
-    ]),
-  })
-  .strict();
-
-const lifecycleSchema = z
-  .object({
-    promotion: z.literal("control-kind-specific-green-oracle-required"),
-    independentWithOnlySessions: z.literal(
-      "never-sufficient-for-probabilistic-control",
-    ),
-    rollback: z.tuple([
-      z.literal("two-failed-trials"),
-      z.literal("one-safety-regression"),
-      z.literal("user-veto"),
+      z.literal("validate-persisted-approval-matches-accepted-attestation"),
     ]),
   })
   .strict();
@@ -227,14 +160,11 @@ const lifecycleSchema = z
 export {
   approvalBranchesSchema,
   approvedMutationSchema,
-  controlsSchema,
   decisionBranchesSchema,
   diagnosticSchema,
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
-  lifecycleSchema,
   mutationExecutionSchema,
-  oracleSchema,
   retirementSchema,
   workflowRoutesSchema,
 };
