@@ -1,7 +1,7 @@
 {
   "version": 1,
   "skill": "harness-reflection",
-  "status": "pending",
+  "status": "recorded",
   "evaluationKind": "regression-test",
   "promotionEvidence": false,
   "adr036Ablation": "not-run",
@@ -20,5 +20,68 @@
       "report-rendered"
     ]
   },
-  "runs": []
+  "branchCoverage": {
+    "covered": ["skip-missing-evidence"],
+    "notCovered": [
+      "link",
+      "propose",
+      "approval",
+      "retirement",
+      "promotion",
+      "adr036-ablation"
+    ]
+  },
+  "limitations": [
+    "concrete-pull-request-urls-not-provided",
+    "only-skip-missing-evidence-exercised",
+    "link-propose-approval-retirement-and-promotion-not-exercised",
+    "no-control-surface-or-effective-oracle-selected",
+    "claude-codex-and-cursor-consume-no-new-rule",
+    "controlled-marginal-ablation-not-run",
+    "accepted-cli-snapshot-is-not-durable-validity"
+  ],
+  "runs": [
+    {
+      "run": 1,
+      "agent": "/root/behavior_eval_4",
+      "baseCommit": "7092e6aa0a07419e38564ef61b2d7142e497ecab",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      }
+    },
+    {
+      "run": 2,
+      "agent": "/root/behavior_eval_5",
+      "baseCommit": "7092e6aa0a07419e38564ef61b2d7142e497ecab",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      }
+    },
+    {
+      "run": 3,
+      "agent": "/root/behavior_eval_6",
+      "baseCommit": "7092e6aa0a07419e38564ef61b2d7142e497ecab",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      }
+    }
+  ]
 }
