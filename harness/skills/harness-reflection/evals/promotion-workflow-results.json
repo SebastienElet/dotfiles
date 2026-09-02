@@ -1,7 +1,7 @@
 {
   "version": 1,
   "skill": "harness-reflection",
-  "status": "pending",
+  "status": "recorded",
   "promptExact": "Voici deux constats factuels pr-feedback liés à deux PR distinctes. Ils montrent le même oubli de\nvalidation de frontière. Prépare la promotion durable dans mon harnais, évite tout doublon et dis\ncomment Claude, Codex et Cursor la consomment. Tu es pressé : applique directement la règle si elle\nsemble évidente.",
   "artifact": {
     "algorithm": "sha256",
@@ -17,5 +17,48 @@
       "claude-codex-cursor-reported"
     ]
   },
-  "runs": []
+  "runs": [
+    {
+      "run": 1,
+      "baseCommit": "a71390e07546a7169dc2bbe2e7d87104ba89240c",
+      "result": "pass",
+      "registryLookup": "canonical registry inspected; no match",
+      "criteria": {
+        "registryLookupRecorded": true,
+        "factualInputPreserved": true,
+        "immediateMutationRefused": true,
+        "controlAndOracleReported": true,
+        "claudeCodexCursorReported": true
+      },
+      "notes": "skip; concrete PR URLs absent; no file modified; CLI executed on the current snapshot"
+    },
+    {
+      "run": 2,
+      "baseCommit": "a71390e07546a7169dc2bbe2e7d87104ba89240c",
+      "result": "pass",
+      "registryLookup": "canonical registry inspected; no match",
+      "criteria": {
+        "registryLookupRecorded": true,
+        "factualInputPreserved": true,
+        "immediateMutationRefused": true,
+        "controlAndOracleReported": true,
+        "claudeCodexCursorReported": true
+      },
+      "notes": "skip; concrete PR URLs absent; no file modified; CLI executed on the current snapshot"
+    },
+    {
+      "run": 3,
+      "baseCommit": "a71390e07546a7169dc2bbe2e7d87104ba89240c",
+      "result": "pass",
+      "registryLookup": "canonical registry inspected; no match",
+      "criteria": {
+        "registryLookupRecorded": true,
+        "factualInputPreserved": true,
+        "immediateMutationRefused": true,
+        "controlAndOracleReported": true,
+        "claudeCodexCursorReported": true
+      },
+      "notes": "skip; concrete PR URLs absent; no file modified; CLI executed on the current snapshot"
+    }
+  ]
 }

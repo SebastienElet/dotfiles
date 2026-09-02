@@ -13,6 +13,7 @@ const requiredPerRunCriteria = [
   "claude-codex-cursor-reported",
 ] as const;
 const expectedRuns = 3;
+const promotionBaseCommit = "a71390e07546a7169dc2bbe2e7d87104ba89240c";
 const firstRun = 1;
 const secondRun = 2;
 const thirdRun = 3;
@@ -39,16 +40,17 @@ const artifactSchema = z
 
 const runCriteriaSchema = z
   .object({
-    registryLookupRecorded: z.boolean(),
-    factualInputPreserved: z.boolean(),
-    immediateMutationRefused: z.boolean(),
-    controlAndOracleReported: z.boolean(),
-    claudeCodexCursorReported: z.boolean(),
+    registryLookupRecorded: z.literal(true),
+    factualInputPreserved: z.literal(true),
+    immediateMutationRefused: z.literal(true),
+    controlAndOracleReported: z.literal(true),
+    claudeCodexCursorReported: z.literal(true),
   })
   .strict();
 
 const runBaseSchema = z
   .object({
+    baseCommit: z.literal(promotionBaseCommit),
     result: z.enum(["pass", "fail"]),
     registryLookup: z.string().min(firstRun),
     criteria: runCriteriaSchema,
