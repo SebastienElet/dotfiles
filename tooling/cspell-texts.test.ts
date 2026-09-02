@@ -1,5 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -43,9 +51,10 @@ process.exit(${exitCode});
 const runGate = async (
   path: string,
   recordPath: string,
+  scriptPath: string = entrypoint,
 ): Promise<GateOutcome> => {
   const child = Bun.spawn(
-    [process.execPath, entrypoint, "fixture-config.json"],
+    [process.execPath, scriptPath, "fixture-config.json"],
     {
       env: {
         ...process.env,
@@ -108,4 +117,21 @@ test("fails closed when CSpell cannot be executed", async () => {
 
   expect(outcome.exitCode).not.toBe(0);
   expect(outcome.stderr).toContain("unable to execute CSpell");
+});
+
+test("runs from a clean checkout without project packages installed", async () => {
+  const directory = await temporaryDirectory();
+  const binDirectory = join(directory, "bin");
+  await mkdir(binDirectory);
+  await fakeCspell(binDirectory, 0);
+  const copiedEntrypoint = join(directory, "cspell-texts.ts");
+  await copyFile(entrypoint, copiedEntrypoint);
+
+  const outcome = await runGate(
+    binDirectory,
+    join(directory, "argv.json"),
+    copiedEntrypoint,
+  );
+
+  expect(outcome).toEqual({ exitCode: 0, stderr: "", stdout: "" });
 });

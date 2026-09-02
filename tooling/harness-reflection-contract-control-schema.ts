@@ -33,13 +33,13 @@ const controlsSchema = z
       z.literal("architectural-test"),
     ]),
     probabilisticPromotion: probabilisticPromotionSchema,
-    selectionRequiredAfterApproval: z.literal(true),
+    selectionRequiredBeforeApproval: z.literal(true),
   })
   .strict();
 
 const oracleSchema = z
   .object({
-    requiredAfterApproval: z.literal(true),
+    requiredBeforeApproval: z.literal(true),
     enforceable: z.literal("executable-failure-path-and-test-path"),
     probabilistic: z.literal(
       "controlled-marginal-ablation-with-observable-delta",

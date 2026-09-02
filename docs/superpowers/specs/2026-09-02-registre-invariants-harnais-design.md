@@ -13,8 +13,9 @@ Le flux retenu préserve cette décision plus récente :
 pr-feedback factuel
   → harness-reflection classe et rapproche
   → candidat nommé dans le registre
+  → surface proposée, manifeste exact et oracle de régression
   → approbation fournie par le contexte humain, identité non authentifiée
-  → surface choisie et oracle de régression
+  → application par l’outil propriétaire de la surface
   → mesure, vérification ou retraite
 ```
 
@@ -115,32 +116,25 @@ approbation.
 5. présente ce manifeste au contexte humain avant l’approbation, sans prétendre authentifier la
    personne, puis transmet à l’API la requête structurée et l’attestation inchangées ; le code en
    vérifie la cohérence exacte sans pouvoir distinguer une origine humaine d’une fabrication ;
-6. avant toute mutation cible, exige l’égalité exacte avec le manifeste, prend le verrou coopératif
-   possédé par l’adaptateur, revalide les préimages et refuse tout autre chemin ou delta d’invariant ;
-7. valide la surface et le registre via le même schéma et la même politique que la CLI, prépare tous
-   les remplacements dans le répertoire de leur cible, revalide toutes les préimages sous verrou puis
-   renomme atomiquement chaque fichier ; une erreur déclenche une réconciliation, puis une compensation
-   best-effort seulement si le contenu courant correspond encore à la copie appliquée ;
-8. exige le test du chemin d’échec avant tout contrôle exécutoire ;
-9. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
-10. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
+6. route la surface approuvée vers son outil propriétaire obligatoire : `skill-manager` pour un skill,
+   `agent-instructions` pour une instruction, et la frontière scripts/enforcement pour un contrôle
+   exécutoire ; le moteur du registre ne fournit aucune API d’écriture arbitraire de ces surfaces ;
+7. exécute le doctor ou le contrat de l’outil propriétaire, puis vérifie en lecture seule que la
+   surface appliquée est exactement le remplacement approuvé et que le registre courant reste sa
+   préimage approuvée ; il refuse tout autre chemin, préimage, remplacement ou delta d’invariant ;
+8. écrit alors uniquement le remplacement approuvé de `harness/invariants/registry.json`, puis lance
+   la CLI sur le registre résultant ; Git porte la revue et la récupération d’une interruption ;
+9. exige le test du chemin d’échec avant tout contrôle exécutoire ;
+10. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
+11. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
     et exceptions ; seuls `approval`, `lifecycle` et `retirement` peuvent changer, la nouvelle
-    attestation devant correspondre exactement au registre et au manifeste, avec les mêmes copies
-    préparées, validations possédées, écritures conditionnelles et compensation best-effort.
+    attestation devant correspondre exactement au registre et au manifeste ; l’outil propriétaire
+    retire d’abord le texte exact de la surface, son doctor passe, puis le registre est mis à jour.
 
-Le verrou est un fichier créé avec `O_EXCL`, acquis et supprimé par l’adaptateur possédé. La garantie
-de concurrence couvre uniquement les mutations qui passent par cet adaptateur coopératif ; les
-écrivains non coopératifs restent hors garantie. POSIX ne fournit ici aucun CAS général du contenu.
-Les fichiers temporaires de même répertoire et le verrou sont des artefacts internes dont les noms
-ne sont pas contrôlés par l’appelant ; seuls les chemins cibles du manifeste peuvent être remplacés.
-
-Le protocole multi-fichier n’est pas atomique. Tant que le processus répond, une erreur déclenche la
-compensation best-effort des fichiers déjà renommés et signale ceux qui ne peuvent pas être
-restaurés. Un arrêt avant un renommage laisse la cible intacte mais peut laisser le verrou et un
-fichier temporaire ; un arrêt après un ou plusieurs renommages peut laisser un changement partiel,
-sans sortie ni liste complète des chemins irrésolus. Aucune récupération automatique d’un verrou
-présumé ancien n’est tentée : un humain inspecte le verrou, les temporaires et l’arbre Git, puis les
-réconcilie manuellement avant de nettoyer et reprendre.
+Ce workflow ne revendique ni transaction multi-fichier, ni atomicité, ni sérialisation face à un
+autre écrivain. Une interruption entre surface et registre peut laisser un état intermédiaire ; la
+préimage et le remplacement approuvés, les validations bornées et le diff Git permettent de le
+détecter et de le réconcilier, sans promettre une récupération automatique.
 
 La recherche préalable et l’unicité des sources empêchent une répétition de créer silencieusement
 un second invariant. Les changements de skills et d’instructions continuent d’être routés vers
@@ -157,9 +151,11 @@ final, ouvre le fichier sans le suivre, compare son identité avant et après le
 chemin réel et exige un mode de fichier régulier dans l’index Git ; la politique pure reçoit ce
 résultat par injection.
 
-Il ne télécharge aucune preuve, n’exécute aucun oracle et ne réécrit jamais le JSON. Les références
-distantes sont des identifiants traçables ; leur disponibilité réseau n’est pas confondue avec la
-validité locale du registre.
+Il ne télécharge aucune preuve et ne réécrit jamais le JSON. Le parseur bibliothèque reste purement
+structurel. Le point d’entrée CLI exécute l’invocation locale déclarée par chaque enregistrement
+`verified` qui lie un oracle à sa dernière mesure et échoue si elle échoue ; il ne prétend rien sur
+un oracle non déclaré ou non exécuté. Les références distantes sont des identifiants traçables ;
+leur disponibilité réseau n’est pas confondue avec la validité locale du registre.
 
 ## Tests et preuves historiques
 
@@ -176,12 +172,20 @@ Les tests Bun invoquent le module réel et le point d’entrée livré. Ils couv
 - fichier absent, JSON invalide, version inconnue, chemin d’oracle absent, lien symbolique final,
   mode d’index non régulier et substitution pendant les sondes.
 
-Deux fixtures historiques exercent le flux sans inscrire automatiquement un nouvel invariant réel :
+Deux fixtures historiques conservent leurs vraies URL enregistrées et exercent le parsing des
+sources, la déduplication, la politique, la construction d’une proposition candidate et la
+validation de son manifeste. Elles ne prouvent ni application de surface ni promotion complète :
 
 - PR 206 : une URL de fetch rejetée copiait des credentials dans `stderr`, cas de sévérité forte
   avec oracle de non-divulgation ;
 - PR 207 : un décodage UTF-8 permissif transformait des octets invalides et permettait un succès ou
   une erreur aval trompeuse, cas de frontière qui doit échouer explicitement.
+
+Une fixture locale distincte, marquée `synthetic-local-not-historical`, porte les deux sources
+synthétiques nécessaires à l’oracle d’intégration. Elle traverse proposition, manifeste, application
+de fixture, validation, inscription, CLI et oracle, puis la retraite. Elle ne présente pas ses URL
+`example` comme des preuves historiques et ne simule aucune authentification humaine. Les evals
+agents `pending` avec `runs: []` ne prouvent que l’absence de résultat comportemental enregistré.
 
 Les gates attendues sont `bun test`, `tsc --noEmit`, le lint et le formatage TypeScript, le contrôle
 statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. La
@@ -192,7 +196,7 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 
 - Modifier le contrat factuel de `pr-feedback`.
 - Ingérer automatiquement les commentaires GitHub.
-- Exécuter, promouvoir ou retirer automatiquement un invariant.
+- Promouvoir ou retirer automatiquement un invariant sans le workflow et les outils propriétaires.
 - Étendre Arnes, son manifeste ou ses adaptateurs.
 - Remplacer les contrats d’architecture ou de domaine propres à un dépôt.
 - Faire d’une préférence stylistique isolée un contrôle bloquant.
@@ -214,12 +218,15 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
   d’invariant ciblé doivent lui correspondre. L’interdiction d’auto-assertion est procédurale dans le
   skill ; le scénario sans approbation reste défini comme `skip`, sans résultat comportemental courant
   tant que les evals `pending` n’ont pas été rejouées.
-- Le verrou coopératif sérialise les appels de l’adaptateur possédé, qui revalide les préimages sous
-  verrou et remplace chaque cible par un temporaire de même répertoire suivi d’un renommage ; les
-  écrivains non coopératifs et l’atomicité multi-fichier restent hors garantie.
-- Une erreur répondante déclenche une compensation best-effort honnête ; une interruption dure peut
-  laisser verrou, temporaire ou changement partiel et impose l’inspection manuelle de ces artefacts
-  et de Git avant nettoyage et reprise.
-- Claude, Codex et Cursor sont déclarés séparément, y compris lorsque l’un est non supporté.
-- Les deux constats historiques traversent le flux dans des fixtures sans devenir des règles réelles
-  par simple présence dans les tests.
+- Une surface est appliquée uniquement via son outil propriétaire, puis son doctor ou contrat passe
+  avant l’écriture bornée du registre ; aucune API de production ne remplace arbitrairement une
+  surface et aucune transaction multi-fichier n’est promise.
+- La promotion ajoute et la retraite retire réellement `candidateTextExact` ; une préimage égale au
+  remplacement est refusée. Ces critères et le doctor propriétaire bornent la preuve sans prétendre
+  décider la sémantique générale du texte.
+- Pour un enregistrement `verified` dont la dernière mesure déclare une invocation, la CLI exécute
+  réellement cette invocation et échoue avec elle ; le parseur bibliothèque ne l’exécute pas.
+- Claude, Codex et Cursor sont déclarés séparément avec un mécanisme fermé compatible avec la surface,
+  y compris lorsque l’un est non supporté.
+- Les deux constats historiques atteignent honnêtement la proposition et son manifeste ; la fixture
+  synthétique distincte prouve le workflow local complet sans devenir une règle réelle.

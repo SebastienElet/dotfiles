@@ -12,11 +12,10 @@ const requiredPerRunCriteria = [
   "mutation-refused",
   "report-rendered",
 ] as const;
-const expectedRuns = 3;
-const evaluatedCommit = "86941ff547dfc6e3bfe32301449f6f791529c124";
-const runOne = 1;
-const runTwo = 2;
-const runThree = 3;
+const expectedReplayRuns = 3;
+const firstRun = 1;
+const secondRun = 2;
+const thirdRun = 3;
 
 const runCriteriaSchema = z
   .object({
@@ -28,89 +27,111 @@ const runCriteriaSchema = z
   })
   .strict();
 
-const recordedRunSchema = z
+const replayRunSchema = z
   .object({
-    baseCommit: z.literal(evaluatedCommit),
+    agent: z.string().regex(/\S/u),
+    baseCommit: z.string().regex(/^[0-9a-f]{40,64}$/u),
     result: z.literal("pass"),
     coveredPath: z.literal("skip-missing-evidence"),
     criteria: runCriteriaSchema,
   })
   .strict();
-const criteriaSchema = z
+
+const commonShape = {
+  version: z.literal(1),
+  skill: z.literal("harness-reflection"),
+  evaluationKind: z.literal("regression-test"),
+  promotionEvidence: z.literal(false),
+  adr036Ablation: z.literal("not-run"),
+  promptExact: z.literal(promotionWorkflowPrompt),
+  artifact: z
+    .object({
+      algorithm: z.literal("sha256"),
+      skillReference: z.string().regex(/^[0-9a-f]{64}$/u),
+    })
+    .strict(),
+  criteria: z
+    .object({
+      expectedRuns: z.literal(expectedReplayRuns),
+      requiredPerRun: z.tuple([
+        z.literal(requiredPerRunCriteria[0]),
+        z.literal(requiredPerRunCriteria[1]),
+        z.literal(requiredPerRunCriteria[2]),
+        z.literal(requiredPerRunCriteria[3]),
+        z.literal(requiredPerRunCriteria[4]),
+      ]),
+    })
+    .strict(),
+};
+
+const pendingResultsSchema = z
   .object({
-    expectedRuns: z.literal(expectedRuns),
-    requiredPerRun: z.tuple([
-      z.literal(requiredPerRunCriteria[0]),
-      z.literal(requiredPerRunCriteria[1]),
-      z.literal(requiredPerRunCriteria[2]),
-      z.literal(requiredPerRunCriteria[3]),
-      z.literal(requiredPerRunCriteria[4]),
+    ...commonShape,
+    status: z.literal("pending"),
+    branchCoverage: z
+      .object({
+        covered: z.tuple([]),
+        notCovered: z.tuple([
+          z.literal("skip-missing-evidence"),
+          z.literal("link"),
+          z.literal("propose"),
+          z.literal("approval"),
+          z.literal("retirement"),
+          z.literal("promotion"),
+          z.literal("adr036-ablation"),
+        ]),
+      })
+      .strict(),
+    limitations: z.tuple([
+      z.literal("current-artifact-not-replayed"),
+      z.literal("no-current-behavioral-evidence"),
+      z.literal("link-propose-approval-retirement-and-promotion-not-exercised"),
+      z.literal("controlled-marginal-ablation-not-run"),
+      z.literal("accepted-cli-snapshot-is-not-durable-validity"),
     ]),
+    runs: z.tuple([]),
   })
   .strict();
 
-const artifactSchema = z
+const recordedResultsSchema = z
   .object({
-    algorithm: z.literal("sha256"),
-    skillReference: z.string().regex(/^[0-9a-f]{64}$/u),
-  })
-  .strict();
-
-const branchCoverageSchema = z
-  .object({
-    covered: z.tuple([z.literal("skip-missing-evidence")]),
-    notCovered: z.tuple([
-      z.literal("link"),
-      z.literal("propose"),
-      z.literal("approval"),
-      z.literal("retirement"),
-      z.literal("promotion"),
-      z.literal("adr036-ablation"),
-    ]),
-  })
-  .strict();
-
-const limitationsSchema = z.tuple([
-  z.literal("concrete-pull-request-urls-not-provided"),
-  z.literal("only-skip-missing-evidence-exercised"),
-  z.literal("link-propose-approval-retirement-and-promotion-not-exercised"),
-  z.literal("no-mutation-manifest-or-approval-produced"),
-  z.literal("no-control-surface-or-effective-oracle-selected"),
-  z.literal("claude-codex-and-cursor-consume-no-new-rule"),
-  z.literal("controlled-marginal-ablation-not-run"),
-  z.literal("accepted-cli-snapshot-is-not-durable-validity"),
-]);
-
-const promotionResultsSchema = z
-  .object({
-    version: z.literal(1),
-    skill: z.literal("harness-reflection"),
+    ...commonShape,
     status: z.literal("recorded"),
-    evaluationKind: z.literal("regression-test"),
-    promotionEvidence: z.literal(false),
-    adr036Ablation: z.literal("not-run"),
-    promptExact: z.literal(promotionWorkflowPrompt),
-    artifact: artifactSchema,
-    criteria: criteriaSchema,
-    branchCoverage: branchCoverageSchema,
-    limitations: limitationsSchema,
+    branchCoverage: z
+      .object({
+        covered: z.tuple([z.literal("skip-missing-evidence")]),
+        notCovered: z.tuple([
+          z.literal("link"),
+          z.literal("propose"),
+          z.literal("approval"),
+          z.literal("retirement"),
+          z.literal("promotion"),
+          z.literal("adr036-ablation"),
+        ]),
+      })
+      .strict(),
+    limitations: z.tuple([
+      z.literal("concrete-pull-request-urls-not-provided"),
+      z.literal("only-skip-missing-evidence-exercised"),
+      z.literal("link-propose-approval-retirement-and-promotion-not-exercised"),
+      z.literal("no-mutation-manifest-or-approval-produced"),
+      z.literal("no-control-surface-or-effective-oracle-selected"),
+      z.literal("claude-codex-and-cursor-consume-no-new-rule"),
+      z.literal("controlled-marginal-ablation-not-run"),
+      z.literal("accepted-cli-snapshot-is-not-durable-validity"),
+    ]),
     runs: z.tuple([
-      recordedRunSchema.extend({
-        run: z.literal(runOne),
-        agent: z.literal("/root/behavior_eval_13"),
-      }),
-      recordedRunSchema.extend({
-        run: z.literal(runTwo),
-        agent: z.literal("/root/behavior_eval_14"),
-      }),
-      recordedRunSchema.extend({
-        run: z.literal(runThree),
-        agent: z.literal("/root/repo_readiness"),
-        evaluation: z.literal("behavior_eval_15"),
-      }),
+      replayRunSchema.extend({ run: z.literal(firstRun) }),
+      replayRunSchema.extend({ run: z.literal(secondRun) }),
+      replayRunSchema.extend({ run: z.literal(thirdRun) }),
     ]),
   })
   .strict();
+
+const promotionResultsSchema = z.discriminatedUnion("status", [
+  pendingResultsSchema,
+  recordedResultsSchema,
+]);
 
 const skillReferenceDigest = (skill: string, reference: string): string =>
   new Bun.CryptoHasher("sha256")

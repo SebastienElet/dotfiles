@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 const cspellTextPaths = [
   "home/cspell.json",
   "home/.config/cspell/user.txt",
@@ -13,6 +11,7 @@ const cspellTextPaths = [
   "docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md",
   "tooling/invariant-registry-fixtures/pr-206-secret-redaction.json",
   "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
+  "tooling/invariant-registry-fixtures/synthetic-local-workflow.json",
   ".agents/skills/scripts/SKILL.md",
   "harness/skills/agent-instructions/SKILL.md",
   "harness/skills/agent-instructions/references/maintenance.md",
@@ -54,19 +53,22 @@ const cspellTextPaths = [
   "tooling/apple-notes*.ts",
 ] as const;
 
-const argumentsSchema = z.tuple([z.string().regex(/\S/u)]);
 const usageErrorExitCode = 2;
 const cliArgumentOffset = 2;
 
 const runCspellTextGate = async (argumentsValue: unknown): Promise<number> => {
-  const parsed = argumentsSchema.safeParse(argumentsValue);
-  if (!parsed.success) {
+  if (
+    !Array.isArray(argumentsValue) ||
+    argumentsValue.length !== 1 ||
+    typeof argumentsValue[0] !== "string" ||
+    !/\S/u.test(argumentsValue[0])
+  ) {
     process.stderr.write("CSpell config path required\n");
     return usageErrorExitCode;
   }
   try {
     const child = Bun.spawn(
-      ["cspell", "lint", "--config", parsed.data[0], ...cspellTextPaths],
+      ["cspell", "lint", "--config", argumentsValue[0], ...cspellTextPaths],
       { stderr: "inherit", stdout: "inherit" },
     );
     return await child.exited;

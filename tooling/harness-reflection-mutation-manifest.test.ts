@@ -1,175 +1,135 @@
 import { expect, test } from "bun:test";
-import {
-  memoryAdapter,
-  registryPath,
-  retirementInput,
-  retirementRegistryPair,
-} from "./harness-reflection-mutation-workflow-test-support.ts";
-import type { MutationWorkflowCoreInput } from "./harness-reflection-mutation-workflow-types.ts";
-import { executeHarnessMutationWorkflowCore } from "./harness-reflection-mutation-workflow-core.ts";
+import { promotionRequest } from "./harness-reflection-mutation-test-support.ts";
+import { validateApprovedHarnessMutation } from "./harness-reflection-mutation-validation.ts";
 
-const execute = (
-  input: MutationWorkflowCoreInput,
-): ReturnType<typeof executeHarnessMutationWorkflowCore> => {
-  const pair = retirementRegistryPair();
-  return executeHarnessMutationWorkflowCore(
-    input,
-    memoryAdapter({
-      [registryPath]: pair.current,
-      "surface.md": "old surface",
-    }),
-  );
+type ManifestFile = ReturnType<
+  typeof promotionRequest
+>["approval"]["manifest"]["files"][number];
+
+const manifestFiles = (
+  request: Readonly<ReturnType<typeof promotionRequest>>,
+): Readonly<{ registry: ManifestFile; surface: ManifestFile }> => {
+  const [surface, registry] = request.approval.manifest.files;
+  if (surface === undefined || registry === undefined) {
+    throw new Error("manifest-files-missing");
+  }
+  return { registry, surface };
 };
 
-test("refuses a manifest path different from the request", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-  const [surface, registry] = manifest.files;
-  if (surface === undefined || registry === undefined) {
-    throw new Error("manifest-files-missing");
-  }
+test("refuses a manifest path different from the request", () => {
+  const request = promotionRequest();
+  const { registry, surface } = manifestFiles(request);
 
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        files: [{ ...surface, path: "other.md" }, registry],
-      },
-    },
-  });
-
-  expect(result.reason).toBe("approved-manifest-request-mismatch");
-});
-
-test("refuses a manifest replacement different from the request", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-  const [surface, registry] = manifest.files;
-  if (surface === undefined || registry === undefined) {
-    throw new Error("manifest-files-missing");
-  }
-
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        files: [{ ...surface, replacement: "different surface" }, registry],
-      },
-    },
-  });
-
-  expect(result.reason).toBe("approved-manifest-request-mismatch");
-});
-
-test("refuses a manifest preimage different from the target", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-  const [surface, registry] = manifest.files;
-  if (surface === undefined || registry === undefined) {
-    throw new Error("manifest-files-missing");
-  }
-
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        files: [{ ...surface, preimage: "different surface" }, registry],
-      },
-    },
-  });
-
-  expect(result.reason).toBe("approved-manifest-preimage-mismatch");
-});
-
-test("refuses a manifest registry delta with a different before record", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        registryDelta: { ...manifest.registryDelta, before: null },
-      },
-    },
-  });
-
-  expect(result.reason).toBe("approved-registry-delta-mismatch");
-});
-
-test("refuses a manifest registry delta with a different after record", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        registryDelta: { ...manifest.registryDelta, after: null },
-      },
-    },
-  });
-
-  expect(result.reason).toBe("approved-registry-delta-mismatch");
-});
-
-test("refuses a manifest whose registry delta has equal records", async () => {
-  const pair = retirementRegistryPair();
-  const input = retirementInput(pair.current, pair.current);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("manifest-missing");
-  }
-  const { manifest } = approval;
-
-  const result = await execute({
-    ...input,
-    approval: {
-      ...approval,
-      manifest: {
-        ...manifest,
-        registryDelta: {
-          ...manifest.registryDelta,
-          after: manifest.registryDelta.before,
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          files: [{ ...surface, path: "other.md" }, registry],
         },
       },
-    },
-  });
+    }),
+  ).toThrow("approved-manifest-request-mismatch");
+});
 
-  expect(result.reason).toBe("approved-registry-delta-mismatch");
+test("refuses a manifest replacement different from the request", () => {
+  const request = promotionRequest();
+  const { registry, surface } = manifestFiles(request);
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          files: [
+            { ...surface, replacement: "Different guidance.\n" },
+            registry,
+          ],
+        },
+      },
+    }),
+  ).toThrow("approved-manifest-request-mismatch");
+});
+
+test("refuses a manifest preimage different from the request", () => {
+  const request = promotionRequest();
+  const { registry, surface } = manifestFiles(request);
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          files: [{ ...surface, preimage: "Different preimage.\n" }, registry],
+        },
+      },
+    }),
+  ).toThrow("approved-manifest-request-mismatch");
+});
+
+test("refuses a manifest registry delta with a different before record", () => {
+  const request = promotionRequest();
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          registryDelta: {
+            ...request.approval.manifest.registryDelta,
+            before: null,
+          },
+        },
+      },
+    }),
+  ).toThrow("approved-registry-delta-mismatch");
+});
+
+test("refuses a manifest registry delta with a different after record", () => {
+  const request = promotionRequest();
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          registryDelta: {
+            ...request.approval.manifest.registryDelta,
+            after: null,
+          },
+        },
+      },
+    }),
+  ).toThrow("approved-registry-delta-mismatch");
+});
+
+test("refuses a manifest whose registry delta has equal records", () => {
+  const request = promotionRequest();
+  const { before } = request.approval.manifest.registryDelta;
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: {
+        ...request.approval,
+        manifest: {
+          ...request.approval.manifest,
+          registryDelta: {
+            ...request.approval.manifest.registryDelta,
+            after: before,
+          },
+        },
+      },
+    }),
+  ).toThrow("approved-registry-delta-mismatch");
 });

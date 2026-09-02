@@ -159,7 +159,7 @@ test.each([
   ["skill-manager route", { key: "skillChange", path: ["routes"] }],
   ["agent-instructions route", { key: "instructionChange", path: ["routes"] }],
   ["three consumers", { key: "required", path: ["consumers"] }],
-  ["oracle requirement", { key: "requiredAfterApproval", path: ["oracle"] }],
+  ["oracle requirement", { key: "requiredBeforeApproval", path: ["oracle"] }],
   ["retirement fields", { key: "requiredFields", path: ["retirement"] }],
 ] as const)("rejects removal of %s", async (_name, mutation) => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
@@ -201,16 +201,20 @@ test("rejects removal of the skill router", async () => {
 
 test.each([
   [
-    "derived executable route",
+    "read-only validation route",
     {
       key: "module",
-      path: ["workflowRoutes", "mutation"],
+      path: ["workflowRoutes", "manifestValidation"],
       value: "missing.ts",
     },
   ],
   [
-    "non-atomic compensation guarantee",
-    { key: "guarantee", path: ["approvedMutation"], value: "atomic" },
+    "read-only validation boundary",
+    {
+      key: "behavior",
+      path: ["manifestValidation"],
+      value: "write-surface",
+    },
   ],
   [
     "approval authentication limit",
@@ -219,9 +223,9 @@ test.each([
   [
     "retirement source preservation",
     {
-      key: "validationOrder",
+      key: "historicalFields",
       path: ["retirement"],
-      value: ["validate-prepared-retired-registry-with-cli-on-temporary-copy"],
+      value: "sources-may-change",
     },
   ],
 ] as const)("rejects mutation of %s", async (_name, mutation) => {

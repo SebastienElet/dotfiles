@@ -33,60 +33,82 @@
   ],
   "decisionBranches": {
     "skip": ["render-report"],
-    "link": ["hold-session-local", "await-explicit-approval"],
-    "propose": ["hold-session-local", "await-explicit-approval"]
+    "link": [
+      "prepare-link-proposal",
+      "prepare-exact-registry-diff",
+      "await-exact-manifest-approval"
+    ],
+    "propose": [
+      "select-and-propose-control-surface",
+      "prepare-exact-surface-and-registry-diff",
+      "await-exact-manifest-approval"
+    ]
   },
   "approvalBranches": {
     "absent": ["render-report-without-mutation"],
-    "granted": ["execute-approved-compensated-mutation"]
+    "granted": ["execute-approved-change-order"]
   },
   "workflowRoutes": {
-    "mutation": {
-      "module": "tooling/harness-reflection-mutation-workflow.ts",
-      "export": "executeHarnessMutationWorkflow"
+    "manifestValidation": {
+      "module": "tooling/harness-reflection-mutation-validation.ts",
+      "export": "validateAppliedHarnessMutation"
+    },
+    "registryValidation": {
+      "command": "bun tooling/invariant-registry-cli.ts"
     }
   },
-  "mutationExecution": {
-    "guarantee": "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
-    "concurrencyScope": "mutations-through-owned-adapter-only",
-    "nonCooperativeWriters": "outside-guarantee",
-    "interruptionLimit": "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
-    "crashRecovery": "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
-    "applyOrder": [
-      "stage-all-replacements-in-same-directories",
-      "revalidate-all-current-files-under-cooperative-lock",
-      "atomically-rename-each-file",
-      "validate-applied-coherent-change"
+  "approvedChangeOrder": {
+    "registryOnly": [
+      "prepare-link-proposal",
+      "prepare-exact-registry-diff",
+      "present-exact-manifest-for-contextual-human-approval",
+      "validate-approved-manifest",
+      "write-approved-registry-replacement-only",
+      "run-registry-cli-and-declared-oracles",
+      "render-report"
     ],
-    "onAnyError": [
-      "reconcile-ambiguous-file-outcome",
-      "compensate-applied-files-with-atomic-replacement-when-still-matching",
-      "report-unresolved-files",
-      "report-failure"
-    ],
-    "successOrder": ["render-report"]
-  },
-  "approvedMutation": {
-    "execution": "mutationExecution",
-    "prepareOrder": [
-      "select-supported-control-surface-and-exact-path",
-      "declare-supported-consumer-mechanisms",
-      "require-control-oracle",
-      "prepare-selected-control-surface",
-      "prepare-registry",
-      "capture-all-file-preimages-for-approval",
-      "construct-exact-mutation-manifest",
-      "await-human-context-approval-for-exact-manifest"
-    ],
-    "validationOrder": [
-      "validate-request-equals-approved-manifest",
-      "acquire-owned-cooperative-lock",
-      "revalidate-approved-preimages-under-lock",
-      "validate-prepared-selected-control-surface-with-owned-adapter",
-      "validate-prepared-registry-with-owned-schema-and-policy",
-      "validate-only-approved-target-registry-delta",
-      "validate-persisted-approval-matches-accepted-attestation"
+    "surfaceAndRegistry": [
+      "select-and-propose-control-surface",
+      "prepare-exact-surface-and-registry-diff",
+      "present-exact-manifest-for-contextual-human-approval",
+      "apply-surface-with-required-owner",
+      "run-required-owner-doctor-and-contracts",
+      "validate-approved-manifest-and-applied-surface",
+      "write-approved-registry-replacement-only",
+      "run-registry-cli-and-declared-oracles",
+      "render-report"
     ]
+  },
+  "surfaceOwners": {
+    "always-loaded-instruction": {
+      "owner": "agent-instructions",
+      "path": "harness/AGENTS.md",
+      "verification": "agent-instructions-contracts"
+    },
+    "conditional-skill": {
+      "owner": "skill-manager",
+      "path": "harness/skills/harness-reflection/SKILL.md",
+      "verification": "skill-manager-doctor-and-contracts"
+    }
+  },
+  "externalControlRoutes": {
+    "application": "owner-specific-exact-diff-and-contract-before-registry-recording",
+    "genericManifestValidator": "not-applicable",
+    "surfaces": {
+      "hook": ["scripts", "enforcement-code"],
+      "permission": ["enforcement-code"],
+      "lint": ["scripts", "enforcement-code"],
+      "type": ["enforcement-code"],
+      "architectural-test": ["enforcement-code"]
+    }
+  },
+  "manifestValidation": {
+    "appliesTo": ["always-loaded-instruction", "conditional-skill"],
+    "behavior": "read-only-no-file-writes",
+    "candidateTextRule": "exactly-added-for-promotion-and-removed-for-retirement",
+    "noOpRule": "every-approved-replacement-differs-from-preimage",
+    "semanticClaim": "exact-text-presence-and-absence-plus-owner-doctor-only",
+    "transitionKind": "derived-from-before-and-after"
   },
   "registry": {
     "path": "harness/invariants/registry.json",
@@ -117,7 +139,8 @@
       "historicalReconstruction": "forbidden",
       "collectionRole": "none"
     },
-    "syntheticSources": "forbidden"
+    "historicalFixtureCoverage": "dedup-policy-proposal-and-manifest-validation",
+    "syntheticFixtures": "local-only-explicitly-not-historical-evidence"
   },
   "approval": {
     "requiredBeforeMutation": true,
@@ -154,7 +177,7 @@
       "withOnlyRuns": "never-sufficient",
       "activationMeasurementForConditionalSkill": "required"
     },
-    "selectionRequiredAfterApproval": true
+    "selectionRequiredBeforeApproval": true
   },
   "consumers": {
     "required": ["claude", "codex", "cursor"],
@@ -186,7 +209,7 @@
     }
   },
   "oracle": {
-    "requiredAfterApproval": true,
+    "requiredBeforeApproval": true,
     "enforceable": "executable-failure-path-and-test-path",
     "probabilistic": "controlled-marginal-ablation-with-observable-delta",
     "inapplicable": "reason-required"
@@ -199,35 +222,16 @@
     "command": "bun tooling/invariant-registry-cli.ts",
     "timing": "immediately-before-report",
     "claim": "accepted-snapshot-read-in-execution-environment",
-    "durableValidityClaim": false
+    "durableValidityClaim": false,
+    "libraryValidation": "structural-and-repository-policy-without-oracle-execution",
+    "executableValidation": "runs-declared-oracles-for-verified-records-that-declare-one"
   },
   "retirement": {
-    "execution": "mutationExecution",
-    "requiredFields": ["retiredAt", "reason"],
+    "approval": "new-exact-attestation-recorded",
+    "historicalFields": "unchanged-except-approval-lifecycle-and-retirement",
     "optionalFields": ["replacedBy"],
-    "prepareOrder": [
-      "lookup-existing-invariant",
-      "prepare-retired-registry-copy",
-      "preserve-historical-fields-in-prepared-registry",
-      "set-retired-at-in-prepared-registry",
-      "set-retirement-reason-in-prepared-registry",
-      "handle-optional-replaced-by-in-prepared-registry",
-      "record-new-approval-attestation-in-prepared-registry",
-      "prepare-selected-control-surface-copy-if-touched",
-      "capture-all-file-preimages-for-approval",
-      "construct-exact-retirement-manifest",
-      "await-human-context-approval-for-exact-manifest"
-    ],
-    "validationOrder": [
-      "validate-request-equals-approved-manifest",
-      "acquire-owned-cooperative-lock",
-      "revalidate-approved-preimages-under-lock",
-      "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
-      "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
-      "validate-prepared-retired-registry-with-owned-schema-and-policy",
-      "validate-only-approved-target-registry-delta",
-      "validate-persisted-approval-matches-accepted-attestation"
-    ]
+    "requiredFields": ["retiredAt", "reason"],
+    "surfaceText": "exact-candidate-text-removed-by-required-owner"
   },
   "proposal": {
     "requiredFields": [

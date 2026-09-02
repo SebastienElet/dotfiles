@@ -1,12 +1,12 @@
 import type {
+  HarnessMutationRequest,
+  MutationTransition,
+  WorkflowApproval,
+} from "./harness-reflection-mutation-workflow-types.ts";
+import type {
   InvariantRecord,
   InvariantRegistry,
 } from "./invariant-registry-contract.ts";
-import type {
-  MutationTransition,
-  MutationWorkflowCoreInput,
-  WorkflowApproval,
-} from "./harness-reflection-mutation-workflow-types.ts";
 import { isDeepStrictEqual } from "node:util";
 import { validateApprovedRegistryDelta } from "./harness-reflection-mutation-authorization.ts";
 
@@ -43,25 +43,47 @@ const approvalMatches = (
   );
 };
 
+const transitionRecords = (
+  input: HarnessMutationRequest,
+  current: InvariantRegistry,
+  proposed: InvariantRegistry,
+): Readonly<{
+  currentTarget: InvariantRecord | undefined;
+  proposedTarget: InvariantRecord | undefined;
+}> => ({
+  currentTarget: current.invariants.find(
+    ({ id }) => id === input.targetInvariantId,
+  ),
+  proposedTarget: proposed.invariants.find(
+    ({ id }) => id === input.targetInvariantId,
+  ),
+});
+
+const newTransition = (target: InvariantRecord): MutationTransition => {
+  if (target.lifecycle === "retired") {
+    throw new Error("lifecycle-transition-invalid");
+  }
+  return {
+    kind: target.lifecycle === "active" ? "promotion" : "record-update",
+    target,
+  };
+};
+
 const deriveTransition = (
-  input: MutationWorkflowCoreInput,
+  input: HarnessMutationRequest,
   current: InvariantRegistry,
   proposed: InvariantRegistry,
 ): MutationTransition => {
-  const currentTarget = current.invariants.find(
-    ({ id }) => id === input.targetInvariantId,
-  );
-  const proposedTarget = proposed.invariants.find(
-    ({ id }) => id === input.targetInvariantId,
+  const { currentTarget, proposedTarget } = transitionRecords(
+    input,
+    current,
+    proposed,
   );
   if (proposedTarget === undefined || currentTarget?.lifecycle === "retired") {
     throw new Error("lifecycle-transition-invalid");
   }
   if (currentTarget === undefined) {
-    if (proposedTarget.lifecycle === "retired") {
-      throw new Error("lifecycle-transition-invalid");
-    }
-    return { kind: "approved-mutation", target: proposedTarget };
+    return newTransition(proposedTarget);
   }
   if (
     currentTarget.lifecycle === "active" &&
@@ -83,7 +105,14 @@ const deriveTransition = (
   ) {
     throw new Error("lifecycle-transition-invalid");
   }
-  return { kind: "approved-mutation", target: proposedTarget };
+  return {
+    kind:
+      currentTarget.lifecycle === "candidate" &&
+      proposedTarget.lifecycle === "active"
+        ? "promotion"
+        : "record-update",
+    target: proposedTarget,
+  };
 };
 
 const validateHistoricalFields = (
@@ -106,7 +135,7 @@ const validateHistoricalFields = (
 };
 
 const validateTransition = (
-  input: MutationWorkflowCoreInput,
+  input: HarnessMutationRequest,
   registries: Readonly<{
     current: InvariantRegistry;
     proposed: InvariantRegistry;

@@ -33,14 +33,17 @@ test("records approval attestations without claiming origin authentication", asy
   });
 });
 
-test("routes every lifecycle transition through one derived workflow", async () => {
+test("routes lifecycle validation without exposing a surface writer", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   const contract = parseHarnessReflectionContract(sources.reference);
 
   expect(contract.workflowRoutes).toEqual({
-    mutation: {
-      export: "executeHarnessMutationWorkflow",
-      module: "tooling/harness-reflection-mutation-workflow.ts",
+    manifestValidation: {
+      export: "validateAppliedHarnessMutation",
+      module: "tooling/harness-reflection-mutation-validation.ts",
+    },
+    registryValidation: {
+      command: "bun tooling/invariant-registry-cli.ts",
     },
   });
   expect(contract.lifecycle).toEqual({

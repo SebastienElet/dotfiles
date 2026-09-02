@@ -1,201 +1,211 @@
-import {
-  approvedAt,
-  memoryAdapter,
-  registryPath,
-  retirementInput,
-  retirementRegistryPair,
-} from "./harness-reflection-mutation-workflow-test-support.ts";
 import { expect, test } from "bun:test";
 import {
-  firstPullRequest,
-  secondPullRequest,
-  source,
-} from "./invariant-registry-test-support.ts";
-import { executeHarnessMutationWorkflowCore } from "./harness-reflection-mutation-workflow-core.ts";
+  promotionApproval,
+  retirementRequest,
+} from "./harness-reflection-mutation-test-support.ts";
+import type { InvariantRecord } from "./invariant-registry-contract.ts";
+import { validateApprovedHarnessMutation } from "./harness-reflection-mutation-validation.ts";
 
-test("refuses retirement when any historical source is removed", async () => {
-  const pair = retirementRegistryPair({
-    sources: [source(firstPullRequest), source(secondPullRequest)],
-  });
-  const proposed = retirementRegistryPair({
-    sources: [source(firstPullRequest)],
-  }).retired;
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.current, proposed),
-    adapter,
-  );
-
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("retirement-history-changed");
-  expect(adapter.contents.get(registryPath)).toBe(pair.current);
-});
-
-test("refuses retirement when a scope exception is removed", async () => {
-  const pair = retirementRegistryPair({
-    scope: {
-      exceptions: [{ paths: ["legacy/**"], reason: "Legacy boundary." }],
-      kind: "cross-project",
+const withRetiredRecord = (
+  request: Readonly<ReturnType<typeof retirementRequest>>,
+  after: InvariantRecord,
+): ReturnType<typeof retirementRequest> => {
+  const [surface, registry] = request.approval.manifest.files;
+  const [surfacePrepared, registryPrepared] = request.preparedFiles;
+  if (
+    surface === undefined ||
+    registry === undefined ||
+    surfacePrepared === undefined ||
+    registryPrepared === undefined
+  ) {
+    throw new Error("retirement-files-missing");
+  }
+  const replacement = JSON.stringify({ invariants: [after], version: 1 });
+  return {
+    ...request,
+    approval: {
+      ...request.approval,
+      manifest: {
+        files: [surface, { ...registry, replacement }],
+        registryDelta: {
+          ...request.approval.manifest.registryDelta,
+          after,
+        },
+      },
     },
-  });
-  const proposed = pair.retired.replace(
-    '"exceptions":[{"paths":["legacy/**"],"reason":"Legacy boundary."}]',
-    '"exceptions":[]',
-  );
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.current, proposed),
-    adapter,
-  );
-
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("retirement-history-changed");
-  expect(adapter.contents.get(registryPath)).toBe(pair.current);
-});
-
-test("refuses a caller-supplied mutation kind", async () => {
-  const currentPair = retirementRegistryPair({
-    sources: [source(firstPullRequest), source(secondPullRequest)],
-  });
-  const proposed = retirementRegistryPair({
-    sources: [source(firstPullRequest)],
-  }).retired;
-  const adapter = memoryAdapter({
-    [registryPath]: currentPair.current,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    Object.assign(retirementInput(currentPair.current, proposed), {
-      kind: "approved-mutation",
-    }),
-    adapter,
-  );
-
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("mutation-request-invalid");
-  expect(adapter.contents.get(registryPath)).toBe(currentPair.current);
-});
-
-test("accepts retirement with a newly recorded approval attestation", async () => {
-  const pair = retirementRegistryPair();
-  const secondApprovalAt = "2026-09-03T00:00:00.000Z";
-  const retired = pair.retired
-    .replace('"approvedBy":"Reviewer"', '"approvedBy":"Second reviewer"')
-    .replaceAll("2026-09-02T00:00:00.000Z", secondApprovalAt);
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.current, retired, {
-      approval: {
-        approvedAt: secondApprovalAt,
-        approvedBy: "Second reviewer",
-      },
-    }),
-    adapter,
-  );
-
-  expect(result.status).toBe("succeeded");
-  expect(adapter.contents.get(registryPath)).toBe(retired);
-});
-
-test("refuses reactivation of a retired invariant", async () => {
-  const pair = retirementRegistryPair();
-  const adapter = memoryAdapter({
-    [registryPath]: pair.retired,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.retired, pair.current),
-    adapter,
-  );
-
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("lifecycle-transition-invalid");
-  expect(adapter.contents.get(registryPath)).toBe(pair.retired);
-});
-
-test("refuses a persisted approval different from the accepted context", async () => {
-  const pair = retirementRegistryPair();
-  const persisted = pair.retired.replaceAll("Reviewer", "Mallory");
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-
-  const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.current, persisted, {
-      approval: {
-        approvedAt,
-        approvedBy: "Alice",
-      },
-    }),
-    adapter,
-  );
-
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("prepared-registry-approval-mismatch");
-  expect(adapter.contents.get(registryPath)).toBe(pair.current);
-});
-
-test("accepts an approval attestation without machine provenance", async () => {
-  const pair = retirementRegistryPair();
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("approval-attestation-missing");
-  }
-  expect("source" in approval).toBe(false);
-
-  const result = await executeHarnessMutationWorkflowCore(
-    { ...input, approval },
-    adapter,
-  );
-
-  expect(result.status).toBe("succeeded");
-  expect(adapter.contents.get(registryPath)).toBe(pair.retired);
-});
-
-test("refuses a caller-supplied approval provenance field", async () => {
-  const pair = retirementRegistryPair();
-  const adapter = memoryAdapter({
-    [registryPath]: pair.current,
-    "surface.md": "old surface",
-  });
-  const input = retirementInput(pair.current, pair.retired);
-  const { approval } = input;
-  if (approval === undefined) {
-    throw new Error("approval-attestation-missing");
-  }
-  const approvalWithProvenance = {
-    ...approval,
-    claimedOrigin: "human",
+    preparedFiles: [
+      surfacePrepared,
+      { ...registryPrepared, contents: replacement },
+    ],
   };
-  const result = await executeHarnessMutationWorkflowCore(
-    {
-      ...input,
-      approval: approvalWithProvenance,
-    },
-    adapter,
-  );
+};
 
-  expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("mutation-request-invalid");
-  expect(adapter.contents.get(registryPath)).toBe(pair.current);
+test("refuses retirement when a historical source is removed", () => {
+  const request = retirementRequest();
+  const { after } = request.approval.manifest.registryDelta;
+  if (after === null || !Array.isArray(after.sources)) {
+    throw new Error("retirement-record-missing");
+  }
+
+  const { sources } = after;
+
+  expect(() =>
+    validateApprovedHarnessMutation(
+      withRetiredRecord(request, { ...after, sources: sources.slice(1) }),
+    ),
+  ).toThrow("retirement-history-changed");
+});
+
+test("refuses retirement when a scope exception is removed", () => {
+  const request = retirementRequest();
+  const { after, before } = request.approval.manifest.registryDelta;
+  if (before === null || after === null) {
+    throw new Error("retirement-record-missing");
+  }
+  const exception = { paths: ["legacy/**"], reason: "Legacy boundary." };
+  const changedBefore = {
+    ...before,
+    scope: { exceptions: [exception], kind: "cross-project" as const },
+  };
+  const changedAfter = {
+    ...after,
+    scope: { exceptions: [], kind: "cross-project" as const },
+  };
+  const changed = withRetiredRecord(request, changedAfter);
+  const [surface, registry] = changed.approval.manifest.files;
+  if (surface === undefined || registry === undefined) {
+    throw new Error("retirement-files-missing");
+  }
+  const preimage = JSON.stringify({ invariants: [changedBefore], version: 1 });
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...changed,
+      approval: {
+        ...changed.approval,
+        manifest: {
+          ...changed.approval.manifest,
+          files: [surface, { ...registry, preimage }],
+          registryDelta: {
+            ...changed.approval.manifest.registryDelta,
+            before: changedBefore,
+          },
+        },
+      },
+      preparedFiles: [
+        changed.preparedFiles[0],
+        { ...changed.preparedFiles[1], preimage },
+      ],
+    }),
+  ).toThrow("retirement-history-changed");
+});
+
+test("derives retirement kind and rejects a caller-supplied kind", () => {
+  expect(validateApprovedHarnessMutation(retirementRequest()).kind).toBe(
+    "retirement",
+  );
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...retirementRequest(),
+      kind: "record-update",
+    }),
+  ).toThrow("mutation-request-invalid");
+});
+
+test("accepts retirement with its newly recorded approval attestation", () => {
+  const request = retirementRequest();
+  const result = validateApprovedHarnessMutation(request);
+
+  expect(result.target.approval).toEqual({
+    approvedAt: request.approval.approvedAt,
+    approvedBy: request.approval.approvedBy,
+  });
+});
+
+test("refuses reactivation of a retired invariant", () => {
+  const retirement = retirementRequest();
+  const { after: retired, before: active } =
+    retirement.approval.manifest.registryDelta;
+  if (retired === null || active === null) {
+    throw new Error("retirement-record-missing");
+  }
+  const registryBefore = JSON.stringify({ invariants: [retired], version: 1 });
+  const registryAfter = JSON.stringify({ invariants: [active], version: 1 });
+  const files = [
+    {
+      path: "harness/AGENTS.md",
+      preimage: "Replacement guidance.\n",
+      replacement: "Always validate external input before domain use.",
+    },
+    {
+      path: "harness/invariants/registry.json",
+      preimage: registryBefore,
+      replacement: registryAfter,
+    },
+  ] as const;
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      approval: {
+        ...promotionApproval,
+        manifest: {
+          files,
+          registryDelta: {
+            after: active,
+            before: retired,
+            targetInvariantId: active.id,
+          },
+        },
+      },
+      preparedFiles: files.map(
+        ({
+          path,
+          preimage,
+          replacement,
+        }: Readonly<(typeof files)[number]>) => ({
+          contents: replacement,
+          path,
+          preimage,
+        }),
+      ),
+      targetInvariantId: active.id,
+    }),
+  ).toThrow("lifecycle-transition-invalid");
+});
+
+test("refuses a persisted approval different from the accepted attestation", () => {
+  const request = retirementRequest();
+  const { after } = request.approval.manifest.registryDelta;
+  if (after === null) {
+    throw new Error("retirement-record-missing");
+  }
+
+  expect(() =>
+    validateApprovedHarnessMutation(
+      withRetiredRecord(request, {
+        ...after,
+        approval: {
+          approvedAt: request.approval.approvedAt,
+          approvedBy: "Mallory",
+        },
+      }),
+    ),
+  ).toThrow("prepared-registry-approval-mismatch");
+});
+
+test("accepts an attestation without machine provenance", () => {
+  const request = retirementRequest();
+  expect("source" in request.approval).toBeFalse();
+  expect(validateApprovedHarnessMutation(request).kind).toBe("retirement");
+});
+
+test("refuses caller-supplied approval provenance", () => {
+  const request = retirementRequest();
+
+  expect(() =>
+    validateApprovedHarnessMutation({
+      ...request,
+      approval: { ...request.approval, claimedOrigin: "human" },
+    }),
+  ).toThrow("mutation-request-invalid");
 });

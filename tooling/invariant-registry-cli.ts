@@ -4,6 +4,7 @@ import {
   validateInvariantRegistryText,
 } from "./invariant-registry-repository-validator.ts";
 import { realpath } from "node:fs/promises";
+import { runVerifiedInvariantOracles } from "./invariant-registry-runtime-oracles.ts";
 
 const argumentOffset = 2;
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -95,10 +96,11 @@ const main = async (): Promise<number> => {
     root,
     resolveRegistryPath(root, displayPath),
   );
-  validateInvariantRegistryText(
+  const registry = validateInvariantRegistryText(
     await decodeInvariantRegistry(registryPath),
     root,
   );
+  await runVerifiedInvariantOracles(registry, root);
   process.stdout.write(`Invariant registry passed: ${displayPath}\n`);
   return 0;
 };

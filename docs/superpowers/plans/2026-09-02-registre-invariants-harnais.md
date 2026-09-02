@@ -4,7 +4,7 @@
 
 **Goal:** Ajouter un registre versionné et fail-closed qui relie les constats de revue aux invariants personnels, à leur surface et à leur oracle sans modifier le contrat factuel de `pr-feedback`.
 
-**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement. Il prépare un manifeste fermé des chemins, préimages, remplacements et du seul delta d’invariant ciblé, puis le présente au contexte humain avant l’approbation sans authentifier `approvedBy`. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; une CLI de lecture seule applique aussi les contrôles dépendant du dépôt, notamment l’existence des oracles actifs. L’API publique refuse toute requête différente du manifeste avant une mutation cible ; son adaptateur possédé sérialise ses propres appels par verrou `O_EXCL`, revalide les préimages sous verrou, remplace chaque fichier par temporaire de même répertoire et renommage atomique, puis compense best-effort sans revendiquer l’atomicité multi-fichier ni couvrir les écrivains non coopératifs.
+**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement. Il prépare un manifeste fermé des chemins, préimages, remplacements et du seul delta d’invariant ciblé, puis le présente au contexte humain avant l’approbation sans authentifier `approvedBy`. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; le point d’entrée CLI applique les contrôles dépendant du dépôt et exécute l’invocation déclarée des enregistrements `verified`. Une surface approuvée est appliquée uniquement par son outil propriétaire, son doctor ou contrat passe, puis un validateur borné vérifie la copie appliquée avant l’écriture exacte du registre. Aucun moteur générique d’écriture de surface, transaction multi-fichier ou garantie de concurrence n’est fourni.
 
 **Tech Stack:** Bun 1.4, TypeScript 7 strict, Zod 4, `bun:test`, Markdown et JSON versionnés.
 
@@ -14,19 +14,19 @@
 
 - `pr-feedback` reste factuel, en lecture seule, sans classification ni proposition.
 - Le registre canonique est `harness/invariants/registry.json` et son schéma porte `version: 1`.
-- Une mutation du registre ou du harnais exige une approbation fournie par l’entrée humaine du
-  workflow sur son manifeste exact ; une auto-assertion de l’agent est refusée, mais l’identité
-  n’est pas authentifiée.
+- Une mutation du registre ou du harnais exige une approbation fournie par le contexte humain après
+  présentation de la proposition et de son manifeste exact. Le code accepte une attestation et en
+  vérifie la cohérence ; il ne peut authentifier ni son origine humaine ni `approvedBy`.
 - Une promotion exige deux PR distinctes ou une sévérité `high`/`critical`, puis une approbation ; ce seuil ne vaut pas preuve.
 - Une surface exécutoire active ou vérifiée exige un oracle de chemin d’échec nommé et versionné.
 - L’inspection réelle refuse le lien symbolique final, exige un mode régulier dans l’index Git et
   détecte une substitution d’identité pendant les sondes.
-- Les mutations revalident toutes les préimages sous le verrou coopératif de l’adaptateur, valident
-  les copies préparées et remplacent chaque cible par temporaire de même répertoire et renommage ;
-  la compensation reste best-effort et l’atomicité multi-fichier n’est pas revendiquée.
-- La garantie de concurrence exclut les écrivains non coopératifs. Une interruption dure peut
-  laisser verrou, temporaire ou changement partiel sans sortie et impose leur inspection avec Git,
-  puis un nettoyage et une reprise manuels.
+- `skill-manager` possède toute modification de skill, `agent-instructions` toute modification
+  d’instruction, et la frontière scripts/enforcement tout contrôle exécutoire. Le registre ne fournit
+  aucune API d’écriture arbitraire de ces surfaces.
+- Après le doctor ou contrat propriétaire, la validation bornée exige le remplacement exact de la
+  surface, la préimage exacte du registre et le delta exact avant d’écrire seulement le registre.
+  Git révèle un état intermédiaire ; aucune transaction ou récupération automatique n’est promise.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.
@@ -193,14 +193,17 @@ git commit -m "feat(harness): validate named invariant records"
 - Create: `harness/invariants/registry.json`
 - Create: `tooling/invariant-registry-cli.ts`
 - Create: `tooling/invariant-registry-cli.test.ts`
+- Create: `tooling/invariant-registry-runtime-oracles.ts`
 - Create: `tooling/invariant-registry-fixtures/pr-206-secret-redaction.json`
 - Create: `tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json`
+- Create: `tooling/invariant-registry-fixtures/synthetic-local-workflow.json`
 
 **Interfaces:**
 
 - Consumes: `parseInvariantRegistry` et `validateInvariantRegistry` de Task 1.
 - Produces: `loadInvariantRegistry(path: string): Promise<unknown>`.
-- Entry point: `bun tooling/invariant-registry-cli.ts [registry-path]`.
+- Entry point: `bun tooling/invariant-registry-cli.ts [registry-path]`, qui exécute aussi l’invocation
+  liée à la dernière mesure de chaque enregistrement `verified` et échoue avec elle.
 - Default input: `<repository-root>/harness/invariants/registry.json` où le repository root est
   dérivé de `import.meta.dir`, pas du répertoire courant.
 
@@ -247,8 +250,9 @@ Aucun invariant réel n’est créé par cette issue : les preuves historiques r
 
 Lire des octets, décoder avec `new TextDecoder("utf-8", { fatal: true })`, parser `JSON.parse` une
 fois, appliquer le schéma puis la politique. Écrire uniquement le succès sur stdout ; toute erreur
-va sur stderr avec statut non nul. Utiliser `existsSync(resolve(repositoryRoot, testPath))` pour le
-contrôle d’oracle et refuser un chemin absolu ou sortant du dépôt.
+va sur stderr avec statut non nul. Inspecter l’oracle comme fichier régulier, suivi et découvert dans
+le dépôt, puis exécuter exactement l’invocation mesurée quand l’état vaut `verified`. Le parseur
+bibliothèque reste structurel et ne lance aucun processus.
 
 - [ ] **Step 5: Ajouter les deux fixtures historiques**
 
@@ -267,11 +271,18 @@ credentials never reach stderr ». La fixture PR 207 représente le cycle `retir
 raison de retraite du consommateur historique de mesure du dépôt ; l’ancien oracle peut être
 conservé sans être présenté comme encore exécutable.
 
-- [ ] **Step 6: Tester les fixtures par le vrai point d’entrée**
+- [ ] **Step 6: Tester les fixtures et borner leur preuve**
 
 Ajouter deux tests qui lancent la CLI sur chaque fixture et exigent statut 0. Muter ensuite chaque
 fixture dans un répertoire temporaire pour prouver : oracle actif absent refusé pour PR 206 ; retraite
 sans raison refusée pour PR 207.
+
+Faire ensuite traverser à leurs URL réellement enregistrées le parsing de source, la déduplication,
+la politique, la proposition candidate et son manifeste. Ces fixtures historiques ne prouvent pas
+l’application d’une surface ni une promotion complète. Pour cette preuve, utiliser une fixture locale
+séparée, marquée `synthetic-local-not-historical`, et un oracle local qui lit le registre et la surface
+du répertoire temporaire. Prouver promotion, CLI/oracle, retrait de surface, refus si le registre n’est
+pas retiré, puis registre retiré exact. Ne simuler aucune authentification humaine.
 
 - [ ] **Step 7: Vérifier le GREEN de la CLI**
 
@@ -357,12 +368,15 @@ Sinon :
 2. rechercher une source ou un invariant existant avant de proposer ;
 3. retourner exactement `skip`, `link` ou `propose` ;
 4. appliquer le seuil deux PR ou sévérité forte ;
-5. garder toute mutation session-local, préparer son manifeste exact et le présenter au contexte
-   humain avant l’entrée d’approbation ;
-6. après cette entrée non authentifiée, exiger l’égalité de la requête avec le manifeste, la surface,
-   les trois consommateurs et l’oracle approprié ;
-7. vérifier avec la CLI avant de présenter le changement comme valide ;
-8. conserver les règles actuelles de trial, rollback et routage.
+5. sélectionner et proposer la surface, l’oracle et les trois consommateurs, puis préparer le
+   manifeste exact et le présenter au contexte humain avant l’entrée d’approbation ;
+6. après cette attestation non authentifiée, exiger l’égalité de la requête avec le manifeste et
+   dériver le type de mutation de la transition de cycle de vie ;
+7. router l’application vers `skill-manager`, `agent-instructions` ou scripts/enforcement selon la
+   surface, puis exécuter le doctor ou contrat propriétaire ;
+8. vérifier en lecture seule le remplacement exact de la surface et la préimage du registre, écrire
+   uniquement le registre, puis exécuter sa CLI ;
+9. conserver les règles actuelles de trial et rollback sans revendiquer une transaction générique.
 
 Déplacer le modèle détaillé, la matrice des surfaces, les champs de retraite et les diagnostics CLI
 dans `references/invariant-registry.md` afin de garder `SKILL.md` sous 500 lignes.
@@ -416,7 +430,9 @@ git commit -m "feat(harness): govern named invariant promotion"
 
 **Files:**
 
-- Modify: `.github/workflows/lint.yml`
+- Create: `tooling/cspell-texts.ts`
+- Create: `tooling/cspell-texts.test.ts`
+- Verify call site: `.github/workflows/lint.yml`
 - Verify unchanged: `.github/workflows/test-typescript.yml`
 - Verify unchanged: `home/.arnes.yaml`
 - Verify unchanged: `Makefile`
@@ -426,14 +442,14 @@ git commit -m "feat(harness): govern named invariant promotion"
 
 - Consumes: tous les nouveaux `.ts` par les globs existants du lint, du formatage, du typecheck et de
   `bun test`.
-- Adds to CSpell: le skill, sa référence, ses evals, le relevé de régression, le registre, la
-  conception, le plan et les deux fixtures.
+- Owns CSpell paths in one TypeScript source: le skill, sa référence, ses evals, le relevé de
+  régression, le registre, la conception, le plan et les fixtures.
 - Preserves: les projections existantes de `harness-reflection` vers Claude, Codex et Cursor.
 
 - [ ] **Step 1: Écrire le RED de couverture CI**
 
-Étendre `tooling/harness-reflection-contract.test.ts` pour lire `.github/workflows/lint.yml` et exiger
-ces chemins :
+Écrire un test fonctionnel du point d’entrée possédé qui exige les chemins structurants sans parser
+le YAML CI, propage l’échec réel de CSpell et échoue si le binaire est absent :
 
 ```text
 harness/skills/harness-reflection/SKILL.md
@@ -446,27 +462,29 @@ harness/invariants/registry.json
 
 Run: `bun test tooling/harness-reflection-contract.test.ts`
 
-Expected: FAIL parce que CSpell ne couvre encore aucun de ces chemins.
+Expected: FAIL parce que le point d’entrée possédé n’existe pas encore.
 
-- [ ] **Step 3: Ajouter les chemins à la gate CSpell**
+- [ ] **Step 3: Ajouter le point d’entrée autonome de CSpell**
 
-Modifier uniquement la liste explicite `cspell lint` dans `.github/workflows/lint.yml`. Ne pas ajouter
-de job, de dépendance ou de script parallèle : les workflows TypeScript existants découvrent déjà les
-fichiers `.ts` suivis et exécutent tous les tests Bun.
+Déclarer la liste une seule fois dans `tooling/cspell-texts.ts` et lancer le vrai binaire `cspell` en
+propageant son statut. Le script utilise uniquement Bun et la bibliothèque standard afin de fonctionner
+dans un checkout vierge avant installation des packages du projet. La CI appelle ce point d’entrée ;
+elle ne duplique ni n’analyse sa liste de chemins dans le YAML et conserve les versions épinglées de
+CSpell et du dictionnaire français.
 
 - [ ] **Step 4: Vérifier le GREEN CI et les projections**
 
 Run:
 
 ```bash
-bun test tooling/harness-reflection-contract.test.ts tooling/deployment-links.test.ts
+bun test tooling/cspell-texts.test.ts tooling/harness-reflection-contract.test.ts tooling/deployment-links.test.ts
 make -n codex
 make -n claude-code
 make -n cursor
 ```
 
-Expected: tests PASS ; les dry-runs montrent les trois liens existants vers
-`harness/skills/harness-reflection`, sans nouvelle ressource Arnes.
+Expected: tests PASS, dont la copie isolée du script sans `node_modules` ; les dry-runs montrent les
+trois liens existants vers `harness/skills/harness-reflection`, sans nouvelle ressource Arnes.
 
 - [ ] **Step 5: Vérifier qu’aucune topologie n’a changé**
 
@@ -481,7 +499,7 @@ Expected: aucune différence.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add .github/workflows/lint.yml tooling/harness-reflection-contract.test.ts
+git add .github/workflows/lint.yml tooling/cspell-texts.ts tooling/cspell-texts.test.ts tooling/harness-reflection-contract.test.ts
 git commit -m "ci(harness): check invariant registry sources"
 ```
 
@@ -510,7 +528,7 @@ aucun outil global et n’ajoute aucune dépendance.
 Run:
 
 ```bash
-bun --config=/dev/null --no-env-file test tooling/invariant-registry-contract.test.ts tooling/invariant-registry-cli.test.ts tooling/harness-reflection-contract.test.ts tooling/deployment-links.test.ts
+bun --config=/dev/null --no-env-file test tooling/invariant-registry-contract.test.ts tooling/invariant-registry-cli-entry.test.ts tooling/invariant-registry-cli-runtime.test.ts tooling/harness-reflection-contract.test.ts tooling/harness-reflection-mutation-integration.test.ts tooling/deployment-links.test.ts tooling/cspell-texts.test.ts
 bun --config=/dev/null --no-env-file tooling/invariant-registry-cli.ts
 ```
 
@@ -534,7 +552,7 @@ Run:
 
 ```bash
 prettier --check docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md harness/skills/harness-reflection/SKILL.md harness/skills/harness-reflection/references/invariant-registry.md harness/skills/harness-reflection/evals/trigger-queries.json harness/invariants/registry.json .github/workflows/lint.yml
-cspell lint --config home/cspell.json harness/skills/harness-reflection/SKILL.md harness/skills/harness-reflection/references/invariant-registry.md harness/skills/harness-reflection/evals/trigger-queries.json harness/invariants/registry.json
+bun --no-env-file tooling/cspell-texts.ts home/cspell.json
 git diff --check
 ```
 
@@ -556,8 +574,8 @@ wc -l tooling/invariant-registry-contract.ts tooling/invariant-registry-cli.ts t
 rg -n '^\s*//|/\*' tooling/invariant-registry-contract.ts tooling/invariant-registry-cli.ts tooling/invariant-registry-contract.test.ts tooling/invariant-registry-cli.test.ts tooling/harness-reflection-contract.test.ts
 ```
 
-Expected: fonctions de production sous 50 lignes et fichiers manuels sous 250 lignes, ou justification
-explicite dans la livraison ; aucun commentaire ajouté.
+Expected: fonctions de production sous 50 lignes et fichiers de production ou test manuels sous 250
+lignes, ou justification explicite dans la livraison ; aucun commentaire ajouté.
 
 - [ ] **Step 7: Vérifier le diff et le contrat de conception**
 

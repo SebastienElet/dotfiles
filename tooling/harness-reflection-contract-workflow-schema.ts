@@ -35,12 +35,14 @@ const decisionBranchesSchema = z
   .object({
     skip: z.tuple([z.literal("render-report")]),
     link: z.tuple([
-      z.literal("hold-session-local"),
-      z.literal("await-explicit-approval"),
+      z.literal("prepare-link-proposal"),
+      z.literal("prepare-exact-registry-diff"),
+      z.literal("await-exact-manifest-approval"),
     ]),
     propose: z.tuple([
-      z.literal("hold-session-local"),
-      z.literal("await-explicit-approval"),
+      z.literal("select-and-propose-control-surface"),
+      z.literal("prepare-exact-surface-and-registry-diff"),
+      z.literal("await-exact-manifest-approval"),
     ]),
   })
   .strict();
@@ -48,123 +50,128 @@ const decisionBranchesSchema = z
 const approvalBranchesSchema = z
   .object({
     absent: z.tuple([z.literal("render-report-without-mutation")]),
-    granted: z.tuple([z.literal("execute-approved-compensated-mutation")]),
+    granted: z.tuple([z.literal("execute-approved-change-order")]),
   })
   .strict();
 
 const workflowRoutesSchema = z
   .object({
-    mutation: z
+    manifestValidation: z
       .object({
-        module: z.literal("tooling/harness-reflection-mutation-workflow.ts"),
-        export: z.literal("executeHarnessMutationWorkflow"),
+        module: z.literal("tooling/harness-reflection-mutation-validation.ts"),
+        export: z.literal("validateAppliedHarnessMutation"),
+      })
+      .strict(),
+    registryValidation: z
+      .object({
+        command: z.literal("bun tooling/invariant-registry-cli.ts"),
       })
       .strict(),
   })
   .strict();
 
-const mutationExecutionShape = {
-  guarantee: z.literal(
-    "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
-  ),
-  concurrencyScope: z.literal("mutations-through-owned-adapter-only"),
-  nonCooperativeWriters: z.literal("outside-guarantee"),
-  interruptionLimit: z.literal(
-    "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
-  ),
-  crashRecovery: z.literal(
-    "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
-  ),
-  applyOrder: z.tuple([
-    z.literal("stage-all-replacements-in-same-directories"),
-    z.literal("revalidate-all-current-files-under-cooperative-lock"),
-    z.literal("atomically-rename-each-file"),
-    z.literal("validate-applied-coherent-change"),
-  ]),
-  onAnyError: z.tuple([
-    z.literal("reconcile-ambiguous-file-outcome"),
-    z.literal(
-      "compensate-applied-files-with-atomic-replacement-when-still-matching",
-    ),
-    z.literal("report-unresolved-files"),
-    z.literal("report-failure"),
-  ]),
-  successOrder: z.tuple([z.literal("render-report")]),
-};
-const mutationExecutionSchema = z.object(mutationExecutionShape).strict();
-
-const approvedMutationSchema = z
+const approvedChangeOrderSchema = z
   .object({
-    execution: z.literal("mutationExecution"),
-    prepareOrder: z.tuple([
-      z.literal("select-supported-control-surface-and-exact-path"),
-      z.literal("declare-supported-consumer-mechanisms"),
-      z.literal("require-control-oracle"),
-      z.literal("prepare-selected-control-surface"),
-      z.literal("prepare-registry"),
-      z.literal("capture-all-file-preimages-for-approval"),
-      z.literal("construct-exact-mutation-manifest"),
-      z.literal("await-human-context-approval-for-exact-manifest"),
+    registryOnly: z.tuple([
+      z.literal("prepare-link-proposal"),
+      z.literal("prepare-exact-registry-diff"),
+      z.literal("present-exact-manifest-for-contextual-human-approval"),
+      z.literal("validate-approved-manifest"),
+      z.literal("write-approved-registry-replacement-only"),
+      z.literal("run-registry-cli-and-declared-oracles"),
+      z.literal("render-report"),
     ]),
-    validationOrder: z.tuple([
-      z.literal("validate-request-equals-approved-manifest"),
-      z.literal("acquire-owned-cooperative-lock"),
-      z.literal("revalidate-approved-preimages-under-lock"),
-      z.literal(
-        "validate-prepared-selected-control-surface-with-owned-adapter",
-      ),
-      z.literal("validate-prepared-registry-with-owned-schema-and-policy"),
-      z.literal("validate-only-approved-target-registry-delta"),
-      z.literal("validate-persisted-approval-matches-accepted-attestation"),
+    surfaceAndRegistry: z.tuple([
+      z.literal("select-and-propose-control-surface"),
+      z.literal("prepare-exact-surface-and-registry-diff"),
+      z.literal("present-exact-manifest-for-contextual-human-approval"),
+      z.literal("apply-surface-with-required-owner"),
+      z.literal("run-required-owner-doctor-and-contracts"),
+      z.literal("validate-approved-manifest-and-applied-surface"),
+      z.literal("write-approved-registry-replacement-only"),
+      z.literal("run-registry-cli-and-declared-oracles"),
+      z.literal("render-report"),
     ]),
+  })
+  .strict();
+
+const surfaceOwnersSchema = z
+  .object({
+    "always-loaded-instruction": z
+      .object({
+        owner: z.literal("agent-instructions"),
+        path: z.literal("harness/AGENTS.md"),
+        verification: z.literal("agent-instructions-contracts"),
+      })
+      .strict(),
+    "conditional-skill": z
+      .object({
+        owner: z.literal("skill-manager"),
+        path: z.literal("harness/skills/harness-reflection/SKILL.md"),
+        verification: z.literal("skill-manager-doctor-and-contracts"),
+      })
+      .strict(),
+  })
+  .strict();
+
+const externalControlRoutesSchema = z
+  .object({
+    application: z.literal(
+      "owner-specific-exact-diff-and-contract-before-registry-recording",
+    ),
+    genericManifestValidator: z.literal("not-applicable"),
+    surfaces: z
+      .object({
+        hook: z.tuple([z.literal("scripts"), z.literal("enforcement-code")]),
+        permission: z.tuple([z.literal("enforcement-code")]),
+        lint: z.tuple([z.literal("scripts"), z.literal("enforcement-code")]),
+        type: z.tuple([z.literal("enforcement-code")]),
+        "architectural-test": z.tuple([z.literal("enforcement-code")]),
+      })
+      .strict(),
+  })
+  .strict();
+
+const manifestValidationSchema = z
+  .object({
+    appliesTo: z.tuple([
+      z.literal("always-loaded-instruction"),
+      z.literal("conditional-skill"),
+    ]),
+    behavior: z.literal("read-only-no-file-writes"),
+    candidateTextRule: z.literal(
+      "exactly-added-for-promotion-and-removed-for-retirement",
+    ),
+    noOpRule: z.literal("every-approved-replacement-differs-from-preimage"),
+    semanticClaim: z.literal(
+      "exact-text-presence-and-absence-plus-owner-doctor-only",
+    ),
+    transitionKind: z.literal("derived-from-before-and-after"),
   })
   .strict();
 
 const retirementSchema = z
   .object({
-    execution: z.literal("mutationExecution"),
-    requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
+    approval: z.literal("new-exact-attestation-recorded"),
+    historicalFields: z.literal(
+      "unchanged-except-approval-lifecycle-and-retirement",
+    ),
     optionalFields: z.tuple([z.literal("replacedBy")]),
-    prepareOrder: z.tuple([
-      z.literal("lookup-existing-invariant"),
-      z.literal("prepare-retired-registry-copy"),
-      z.literal("preserve-historical-fields-in-prepared-registry"),
-      z.literal("set-retired-at-in-prepared-registry"),
-      z.literal("set-retirement-reason-in-prepared-registry"),
-      z.literal("handle-optional-replaced-by-in-prepared-registry"),
-      z.literal("record-new-approval-attestation-in-prepared-registry"),
-      z.literal("prepare-selected-control-surface-copy-if-touched"),
-      z.literal("capture-all-file-preimages-for-approval"),
-      z.literal("construct-exact-retirement-manifest"),
-      z.literal("await-human-context-approval-for-exact-manifest"),
-    ]),
-    validationOrder: z.tuple([
-      z.literal("validate-request-equals-approved-manifest"),
-      z.literal("acquire-owned-cooperative-lock"),
-      z.literal("revalidate-approved-preimages-under-lock"),
-      z.literal(
-        "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
-      ),
-      z.literal(
-        "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
-      ),
-      z.literal(
-        "validate-prepared-retired-registry-with-owned-schema-and-policy",
-      ),
-      z.literal("validate-only-approved-target-registry-delta"),
-      z.literal("validate-persisted-approval-matches-accepted-attestation"),
-    ]),
+    requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
+    surfaceText: z.literal("exact-candidate-text-removed-by-required-owner"),
   })
   .strict();
 
 export {
   approvalBranchesSchema,
-  approvedMutationSchema,
+  approvedChangeOrderSchema,
   decisionBranchesSchema,
   diagnosticSchema,
+  externalControlRoutesSchema,
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
-  mutationExecutionSchema,
+  manifestValidationSchema,
   retirementSchema,
+  surfaceOwnersSchema,
   workflowRoutesSchema,
 };

@@ -14,7 +14,8 @@ metadata:
 ## Overview
 
 Route repeated-failure analysis through one executable contract. The contract owns the diagnostic,
-registry, approval, verification, and lifecycle workflow; this file only activates and routes it.
+proposal, approval record, owner routing, registry, verification, and lifecycle workflow; this file
+only activates and routes it.
 
 ## Usage
 
@@ -29,16 +30,20 @@ project instructions are discoverable.
 
 1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
 2. Execute `initialWorkflowOrder` exactly as structured.
-3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder` and its selected
-   decision and approval branches. Present the prepared exact manifest for contextual human
-   approval, then resolve `workflowRoutes.mutation`, load its named module and export, and execute it
-   with the unchanged structured request and exact approval attestation. The export verifies exact
-   consistency without authenticating who supplied the attestation, derives the lifecycle transition,
-   and owns cooperative locking and same-directory replacement.
-4. For retirement, use the same `workflowRoutes.mutation` export with only the structured request.
-   Never inject validation or filesystem callbacks, add, omit, reorder, or short-circuit steps. Stop
-   with a finding when the route is missing, malformed, unresolved, duplicated, or contradicted;
-   never supplement it from prose.
+3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder`, then prepare the
+   selected branch's proposal and exact manifest before requesting contextual human approval. The
+   approval record is an attestation whose origin the code cannot authenticate.
+4. For a surface change, resolve the exact `surfaceOwners` entry, use its required skill, and run its
+   named doctor and contracts. Then resolve `workflowRoutes.manifestValidation`; its export only
+   checks the exact manifest and the already-applied surface snapshot. Write only the approved
+   registry replacement after that check, then run `workflowRoutes.registryValidation`.
+5. For an enforceable control, use the exact `externalControlRoutes` entry and its separate owner
+   workflow. Present that owner-specific exact diff for approval, run its contracts, and record the
+   registry only afterward; the generic manifest validator does not accept those implementation paths.
+6. For retirement, remove the exact candidate text through the same required surface owner, record
+   the new exact approval attestation, preserve the historical fields, and follow the same validation
+   and registry-only order. Stop with a finding when a route or owner is missing, malformed,
+   unresolved, duplicated, or contradicted; never supplement it from prose.
 
 ## Gotchas
 
@@ -47,9 +52,12 @@ project instructions are discoverable.
   block for domain decisions.
 - **Continuing after invalid input** — a parse failure silently disables policy; return the validator
   finding instead of choosing a fallback.
+- **Treating validation as application** — the manifest export writes no surface; apply through the
+  required owner before validating its resulting snapshot.
 
 ## Constraints
 
 - Keep the authoritative JSON block as the sole source of domain workflow rules.
 - Keep this skill as a router; do not restate contract decisions, classes, thresholds, or gates here.
 - Refuse the workflow when the authoritative block or its non-contractual surface is invalid.
+- Never use the manifest validator as a surface writer or claim it authenticates an approval origin.

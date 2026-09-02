@@ -1,12 +1,11 @@
 import type {
+  HarnessMutationRequest,
+  WorkflowApproval,
+} from "./harness-reflection-mutation-workflow-types.ts";
+import type {
   InvariantRecord,
   InvariantRegistry,
 } from "./invariant-registry-contract.ts";
-import type {
-  MutationWorkflowCoreInput,
-  PreparedSnapshot,
-  WorkflowApproval,
-} from "./harness-reflection-mutation-workflow-types.ts";
 import { isDeepStrictEqual } from "node:util";
 
 type RegistryPair = Readonly<{
@@ -24,7 +23,7 @@ const recordsExceptTarget = (
   registry.invariants.filter(({ id }) => id !== targetInvariantId);
 
 const validateApprovedFileRequest = (
-  input: MutationWorkflowCoreInput,
+  input: HarnessMutationRequest,
   approval: WorkflowApproval,
 ): void => {
   const { manifest } = approval;
@@ -34,7 +33,9 @@ const validateApprovedFileRequest = (
     manifest.files.every((file, index) => {
       const prepared = input.preparedFiles[index];
       return (
-        prepared?.path === file.path && prepared.contents === file.replacement
+        prepared?.path === file.path &&
+        prepared.contents === file.replacement &&
+        prepared.preimage === file.preimage
       );
     });
   if (!matches) {
@@ -42,24 +43,8 @@ const validateApprovedFileRequest = (
   }
 };
 
-const validateApprovedPreimages = (
-  snapshots: readonly PreparedSnapshot[],
-  approval: WorkflowApproval,
-): void => {
-  const matches = snapshots.every((snapshot, index) => {
-    const approved = approval.manifest.files[index];
-    return (
-      approved?.path === snapshot.path &&
-      (approved.preimage ?? undefined) === snapshot.before
-    );
-  });
-  if (!matches) {
-    throw new Error("approved-manifest-preimage-mismatch");
-  }
-};
-
 const validateApprovedRegistryDelta = (
-  input: MutationWorkflowCoreInput,
+  input: HarnessMutationRequest,
   registries: RegistryPair,
   approval: WorkflowApproval,
 ): void => {
@@ -85,8 +70,4 @@ const validateApprovedRegistryDelta = (
   }
 };
 
-export {
-  validateApprovedFileRequest,
-  validateApprovedPreimages,
-  validateApprovedRegistryDelta,
-};
+export { validateApprovedFileRequest, validateApprovedRegistryDelta };

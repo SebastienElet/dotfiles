@@ -1,4 +1,4 @@
-import { isAbsolute, relative, sep } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { OracleInspection } from "./invariant-registry-contract.ts";
 
 type FileSnapshot =
@@ -75,7 +75,7 @@ const inspectOpenedOracle = (context: OpenedInspection): OracleInspection => {
     request.invocation.length === oracleInvocationLength &&
     request.invocation[0] === "bun" &&
     request.invocation[1] === "test" &&
-    request.invocation[2] === repositoryPath;
+    resolve(request.root, request.invocation[2] ?? "") === request.path;
   return { discovered, kind: "regular-file", tracked };
 };
 

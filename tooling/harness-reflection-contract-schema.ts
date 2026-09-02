@@ -1,12 +1,14 @@
 import {
   approvalBranchesSchema,
-  approvedMutationSchema,
+  approvedChangeOrderSchema,
   decisionBranchesSchema,
   diagnosticSchema,
+  externalControlRoutesSchema,
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
-  mutationExecutionSchema,
+  manifestValidationSchema,
   retirementSchema,
+  surfaceOwnersSchema,
   workflowRoutesSchema,
 } from "./harness-reflection-contract-workflow-schema.ts";
 import {
@@ -38,8 +40,10 @@ const harnessReflectionContractSchema = z
     decisionBranches: decisionBranchesSchema,
     approvalBranches: approvalBranchesSchema,
     workflowRoutes: workflowRoutesSchema,
-    mutationExecution: mutationExecutionSchema,
-    approvedMutation: approvedMutationSchema,
+    approvedChangeOrder: approvedChangeOrderSchema,
+    surfaceOwners: surfaceOwnersSchema,
+    externalControlRoutes: externalControlRoutesSchema,
+    manifestValidation: manifestValidationSchema,
     registry: z
       .object({
         path: z.literal("harness/invariants/registry.json"),
@@ -88,7 +92,12 @@ const harnessReflectionContractSchema = z
             collectionRole: z.literal("none"),
           })
           .strict(),
-        syntheticSources: z.literal("forbidden"),
+        historicalFixtureCoverage: z.literal(
+          "dedup-policy-proposal-and-manifest-validation",
+        ),
+        syntheticFixtures: z.literal(
+          "local-only-explicitly-not-historical-evidence",
+        ),
       })
       .strict(),
     approval: approvalContractSchema,
@@ -107,6 +116,12 @@ const harnessReflectionContractSchema = z
         timing: z.literal("immediately-before-report"),
         claim: z.literal("accepted-snapshot-read-in-execution-environment"),
         durableValidityClaim: z.literal(false),
+        libraryValidation: z.literal(
+          "structural-and-repository-policy-without-oracle-execution",
+        ),
+        executableValidation: z.literal(
+          "runs-declared-oracles-for-verified-records-that-declare-one",
+        ),
       })
       .strict(),
     retirement: retirementSchema,

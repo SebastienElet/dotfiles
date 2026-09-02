@@ -1,4 +1,10 @@
-import { candidate, registry } from "./invariant-registry-test-support.ts";
+import {
+  candidate,
+  diagnosticCodes,
+  registry,
+  validateInvariantRegistry,
+  validationOptions,
+} from "./invariant-registry-test-support.ts";
 import { expect, test } from "bun:test";
 
 const defaultConsumers = {
@@ -37,4 +43,23 @@ test("rejects a consumer mechanism owned by another agent", () => {
       }),
     ),
   ).toThrow();
+});
+
+test("rejects Cursor user-skill support for an always-loaded instruction", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      candidate({
+        consumers: {
+          ...defaultConsumers,
+          cursor: {
+            state: "supported",
+            mechanism: "cursor-user-skill",
+          },
+        },
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain("consumer-surface-mismatch");
 });

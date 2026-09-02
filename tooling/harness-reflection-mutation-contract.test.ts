@@ -1,6 +1,7 @@
 import {
   type HarnessReflectionSources,
   loadHarnessReflectionSources,
+  parseHarnessReflectionContract,
   validateHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
 import { expect, test } from "bun:test";
@@ -10,8 +11,6 @@ import { resolve } from "node:path";
 const repositoryRoot = resolve(import.meta.dir, "..");
 const contractFinding =
   "authoritative contract preserves exact workflow invariants";
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const contractMutant = (
   sources: HarnessReflectionSources,
@@ -22,204 +21,108 @@ const contractMutant = (
   reference: mutateContract(sources.reference, path, mutate),
 });
 
-const authoritativeContract = async (): Promise<
-  Readonly<Record<string, unknown>>
-> => {
-  const { reference } = await loadHarnessReflectionSources(repositoryRoot);
-  const json = /```json\n(?<json>[\s\S]*?)\n```/u.exec(reference)?.groups?.json;
-  if (json === undefined) {
-    throw new Error("authoritative contract missing");
-  }
-  const parsed: unknown = JSON.parse(json);
-  if (!isRecord(parsed)) {
-    throw new TypeError("authoritative contract is not an object");
-  }
-  return parsed;
-};
+test("orders proposal and exact approval before owner application", async () => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  const contract = parseHarnessReflectionContract(sources.reference);
 
-const nestedRecord = (
-  source: Readonly<Record<string, unknown>>,
-  key: string,
-): Readonly<Record<string, unknown>> => {
-  const value = Reflect.get(source, key);
-  if (!isRecord(value)) {
-    throw new TypeError(`contract object missing: ${key}`);
-  }
-  return value;
-};
-
-const mutationExecutionContract = {
-  guarantee:
-    "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
-  concurrencyScope: "mutations-through-owned-adapter-only",
-  nonCooperativeWriters: "outside-guarantee",
-  interruptionLimit:
-    "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
-  crashRecovery: "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
-  applyOrder: [
-    "stage-all-replacements-in-same-directories",
-    "revalidate-all-current-files-under-cooperative-lock",
-    "atomically-rename-each-file",
-    "validate-applied-coherent-change",
-  ],
-  onAnyError: [
-    "reconcile-ambiguous-file-outcome",
-    "compensate-applied-files-with-atomic-replacement-when-still-matching",
-    "report-unresolved-files",
-    "report-failure",
-  ],
-  successOrder: ["render-report"],
-} as const;
-
-const approvedMutationContract = {
-  execution: "mutationExecution",
-  prepareOrder: [
-    "select-supported-control-surface-and-exact-path",
-    "declare-supported-consumer-mechanisms",
-    "require-control-oracle",
-    "prepare-selected-control-surface",
-    "prepare-registry",
-    "capture-all-file-preimages-for-approval",
-    "construct-exact-mutation-manifest",
-    "await-human-context-approval-for-exact-manifest",
-  ],
-  validationOrder: [
-    "validate-request-equals-approved-manifest",
-    "acquire-owned-cooperative-lock",
-    "revalidate-approved-preimages-under-lock",
-    "validate-prepared-selected-control-surface-with-owned-adapter",
-    "validate-prepared-registry-with-owned-schema-and-policy",
-    "validate-only-approved-target-registry-delta",
-    "validate-persisted-approval-matches-accepted-attestation",
-  ],
-} as const;
-
-const retirementContract = {
-  execution: "mutationExecution",
-  requiredFields: ["retiredAt", "reason"],
-  optionalFields: ["replacedBy"],
-  prepareOrder: [
-    "lookup-existing-invariant",
-    "prepare-retired-registry-copy",
-    "preserve-historical-fields-in-prepared-registry",
-    "set-retired-at-in-prepared-registry",
-    "set-retirement-reason-in-prepared-registry",
-    "handle-optional-replaced-by-in-prepared-registry",
-    "record-new-approval-attestation-in-prepared-registry",
-    "prepare-selected-control-surface-copy-if-touched",
-    "capture-all-file-preimages-for-approval",
-    "construct-exact-retirement-manifest",
-    "await-human-context-approval-for-exact-manifest",
-  ],
-  validationOrder: [
-    "validate-request-equals-approved-manifest",
-    "acquire-owned-cooperative-lock",
-    "revalidate-approved-preimages-under-lock",
-    "validate-historical-fields-unchanged-except-approval-lifecycle-and-retirement",
-    "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
-    "validate-prepared-retired-registry-with-owned-schema-and-policy",
-    "validate-only-approved-target-registry-delta",
-    "validate-persisted-approval-matches-accepted-attestation",
-  ],
-} as const;
-
-test("owns validation, approval matching and compensated mutation", async () => {
-  const contract = await authoritativeContract();
-
-  expect(Reflect.get(contract, "decisionBranches")).toEqual({
-    link: ["hold-session-local", "await-explicit-approval"],
-    propose: ["hold-session-local", "await-explicit-approval"],
+  expect(contract.decisionBranches).toEqual({
+    link: [
+      "prepare-link-proposal",
+      "prepare-exact-registry-diff",
+      "await-exact-manifest-approval",
+    ],
+    propose: [
+      "select-and-propose-control-surface",
+      "prepare-exact-surface-and-registry-diff",
+      "await-exact-manifest-approval",
+    ],
     skip: ["render-report"],
   });
-  expect(Reflect.get(contract, "approvalBranches")).toEqual({
-    absent: ["render-report-without-mutation"],
-    granted: ["execute-approved-compensated-mutation"],
-  });
-  expect(Reflect.get(contract, "mutationExecution")).toEqual(
-    mutationExecutionContract,
-  );
-  expect(Reflect.get(contract, "approvedMutation")).toEqual(
-    approvedMutationContract,
+  expect(
+    contract.approvedChangeOrder.surfaceAndRegistry.indexOf(
+      "present-exact-manifest-for-contextual-human-approval",
+    ),
+  ).toBeLessThan(
+    contract.approvedChangeOrder.surfaceAndRegistry.indexOf(
+      "apply-surface-with-required-owner",
+    ),
   );
 });
 
-test("preserves the complete record history during retirement", async () => {
-  const contract = await authoritativeContract();
-  const retirement = nestedRecord(contract, "retirement");
+test("limits manifest validation to exact text and owner doctors", async () => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  const contract = parseHarnessReflectionContract(sources.reference);
 
-  expect(retirement).toEqual(retirementContract);
+  expect(contract.manifestValidation).toEqual({
+    appliesTo: ["always-loaded-instruction", "conditional-skill"],
+    behavior: "read-only-no-file-writes",
+    candidateTextRule: "exactly-added-for-promotion-and-removed-for-retirement",
+    noOpRule: "every-approved-replacement-differs-from-preimage",
+    semanticClaim: "exact-text-presence-and-absence-plus-owner-doctor-only",
+    transitionKind: "derived-from-before-and-after",
+  });
+  expect(contract.retirement).toEqual({
+    approval: "new-exact-attestation-recorded",
+    historicalFields: "unchanged-except-approval-lifecycle-and-retirement",
+    optionalFields: ["replacedBy"],
+    requiredFields: ["retiredAt", "reason"],
+    surfaceText: "exact-candidate-text-removed-by-required-owner",
+  });
 });
 
 test.each([
   {
-    name: "link approval route",
-    path: ["decisionBranches"],
-    key: "link",
-    value: ["hold-session-local"],
+    key: "behavior",
+    name: "surface writer",
+    path: ["manifestValidation"],
+    value: "writes-approved-files",
   },
   {
-    name: "granted approval route",
-    path: ["approvalBranches"],
-    key: "granted",
-    value: ["render-report-without-mutation"],
+    key: "candidateTextRule",
+    name: "unbound candidate text",
+    path: ["manifestValidation"],
+    value: "candidate-text-recorded-only",
   },
   {
-    name: "absence refusal",
-    path: ["approvalBranches"],
-    key: "absent",
-    value: ["execute-approved-compensated-mutation"],
-  },
-  {
-    name: "owned registry validation",
-    path: ["approvedMutation"],
-    key: "validationOrder",
-    value: ["validate-prepared-selected-control-surface-with-owned-adapter"],
-  },
-  {
-    name: "approval matching",
-    path: ["approvedMutation"],
-    key: "validationOrder",
+    key: "surfaceAndRegistry",
+    name: "application before approval",
+    path: ["approvedChangeOrder"],
     value: [
-      "validate-prepared-selected-control-surface-with-owned-adapter",
-      "validate-prepared-registry-with-owned-schema-and-policy",
+      "apply-surface-with-required-owner",
+      "present-exact-manifest-for-contextual-human-approval",
     ],
   },
   {
-    name: "complete retirement history",
+    key: "always-loaded-instruction",
+    name: "missing instruction owner",
+    path: ["surfaceOwners"],
+    value: undefined,
+  },
+  {
+    key: "historicalFields",
+    name: "mutable retirement history",
     path: ["retirement"],
-    key: "validationOrder",
-    value: ["validate-all-source-history-unchanged"],
+    value: "sources-may-change",
   },
-  {
-    name: "ambiguous outcome reconciliation",
-    path: ["mutationExecution"],
-    key: "onAnyError",
-    value: [
-      "compensate-applied-files-with-unchecked-write",
-      "report-unresolved-files",
-      "report-failure",
-    ],
-  },
-  {
-    name: "same-directory atomic replacement",
-    path: ["mutationExecution"],
-    key: "applyOrder",
-    value: [
-      "apply-selected-control-surface",
-      "apply-registry",
-      "validate-applied-coherent-change",
-    ],
-  },
-  {
-    name: "hard interruption limit",
-    path: ["mutationExecution"],
-    key: "interruptionLimit",
-    value: "process-interruption-may-leave-partial-change",
-  },
-] as const)("rejects a mutation contract without $name", async (testCase) => {
+] as const)("rejects a contract with $name", async (testCase) => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   const mutant = contractMutant(sources, testCase.path, (target): void => {
-    Reflect.set(target, testCase.key, testCase.value);
+    if (testCase.value === undefined) {
+      Reflect.deleteProperty(target, testCase.key);
+    } else {
+      Reflect.set(target, testCase.key, testCase.value);
+    }
+  });
+
+  expect(validateHarnessReflectionContract(mutant)).toContain(contractFinding);
+});
+
+test("rejects reintroduction of a generic mutation execution contract", async () => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  const mutant = contractMutant(sources, [], (contract): void => {
+    Reflect.set(contract, "mutationExecution", {
+      guarantee: "atomic-surface-and-registry-write",
+    });
   });
 
   expect(validateHarnessReflectionContract(mutant)).toContain(contractFinding);

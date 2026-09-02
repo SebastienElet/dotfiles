@@ -12,68 +12,78 @@ const resultsPath = resolve(
   "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
 );
 const sha256HexLength = 64;
-const evaluatedCommit = "86941ff547dfc6e3bfe32301449f6f791529c124";
-type PromotionResults = ReturnType<typeof promotionResultsSchema.parse>;
-const expectedRunIdentities = [
-  "/root/behavior_eval_13",
-  "/root/behavior_eval_14",
-  "/root/repo_readiness round behavior_eval_15",
-];
-const expectedNotCovered: PromotionResults["branchCoverage"]["notCovered"] = [
-  "link",
-  "propose",
-  "approval",
-  "retirement",
-  "promotion",
-  "adr036-ablation",
-];
-const expectedLimitations: PromotionResults["limitations"] = [
-  "concrete-pull-request-urls-not-provided",
-  "only-skip-missing-evidence-exercised",
-  "link-propose-approval-retirement-and-promotion-not-exercised",
-  "no-mutation-manifest-or-approval-produced",
-  "no-control-surface-or-effective-oracle-selected",
-  "claude-codex-and-cursor-consume-no-new-rule",
-  "controlled-marginal-ablation-not-run",
-  "accepted-cli-snapshot-is-not-durable-validity",
-];
-test("records exactly three successful skip-only workflow evaluations", async () => {
+const sha1HexLength = 40;
+const expectedReplayRuns = 3;
+const firstReplayRun = 1;
+const secondReplayRun = 2;
+const replayRunNumbers = [
+  firstReplayRun,
+  secondReplayRun,
+  expectedReplayRuns,
+] as const;
+
+test("records changed skill artifacts as pending until replay", async () => {
   const results = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
 
-  expect(results.status).toBe("recorded");
-  expect(
-    results.runs.map((run) =>
-      "evaluation" in run ? `${run.agent} round ${run.evaluation}` : run.agent,
-    ),
-  ).toEqual(expectedRunIdentities);
-  expect(results.runs.every((run) => run.baseCommit === evaluatedCommit)).toBe(
-    true,
-  );
-  expect(
-    results.runs.every((run) => Object.values(run.criteria).every(Boolean)),
-  ).toBe(true);
-  expect(results.branchCoverage.covered).toEqual(["skip-missing-evidence"]);
-  expect(results.branchCoverage.notCovered).toEqual(expectedNotCovered);
-  expect(results.limitations).toEqual(expectedLimitations);
+  expect(results.status).toBe("pending");
+  expect(results.runs).toEqual([]);
+  expect(results.branchCoverage.covered).toEqual([]);
   expect(results.promotionEvidence).toBe(false);
   expect(results.adr036Ablation).toBe("not-run");
   expect(results.artifact.skillReference).toHaveLength(sha256HexLength);
-  expect(Object.keys(results).toSorted()).toEqual([
-    "adr036Ablation",
-    "artifact",
-    "branchCoverage",
-    "criteria",
-    "evaluationKind",
-    "limitations",
-    "promotionEvidence",
-    "promptExact",
-    "runs",
-    "skill",
-    "status",
-    "version",
-  ]);
+});
+
+test("allows the artifact to become recorded only with three replay runs", async () => {
+  const pending: unknown = await Bun.file(resultsPath).json();
+  if (typeof pending !== "object" || pending === null) {
+    throw new TypeError("pending-results-missing");
+  }
+  const criteria = {
+    "factual-input-preserved": true,
+    "missing-evidence-skip-selected": true,
+    "mutation-refused": true,
+    "registry-lookup-recorded": true,
+    "report-rendered": true,
+  };
+  const runs = replayRunNumbers.map((run) => ({
+    agent: `/root/replay_${run}`,
+    baseCommit: "a".repeat(sha1HexLength),
+    coveredPath: "skip-missing-evidence",
+    criteria,
+    result: "pass",
+    run,
+  }));
+
+  expect(
+    promotionResultsSchema.safeParse({
+      ...pending,
+      branchCoverage: {
+        covered: ["skip-missing-evidence"],
+        notCovered: [
+          "link",
+          "propose",
+          "approval",
+          "retirement",
+          "promotion",
+          "adr036-ablation",
+        ],
+      },
+      limitations: [
+        "concrete-pull-request-urls-not-provided",
+        "only-skip-missing-evidence-exercised",
+        "link-propose-approval-retirement-and-promotion-not-exercised",
+        "no-mutation-manifest-or-approval-produced",
+        "no-control-surface-or-effective-oracle-selected",
+        "claude-codex-and-cursor-consume-no-new-rule",
+        "controlled-marginal-ablation-not-run",
+        "accepted-cli-snapshot-is-not-durable-validity",
+      ],
+      runs,
+      status: "recorded",
+    }).success,
+  ).toBeTrue();
 });
 
 test.each([
@@ -87,8 +97,11 @@ test.each([
     },
   ],
   ["inexact prompt", { promptExact: "changed prompt" }],
-  ["weakened criteria", { criteria: { expectedRuns: 3, requiredPerRun: [] } }],
-  ["non-recorded status", { status: "pending" }],
+  [
+    "weakened criteria",
+    { criteria: { expectedRuns: expectedReplayRuns, requiredPerRun: [] } },
+  ],
+  ["recorded without replay runs", { status: "recorded" }],
   ["top-level run provenance", { baseCommit: "untrusted" }],
   ["top-level covered path", { coveredPath: "skip-missing-evidence" }],
 ] as const)("rejects promotion results with %s", async (_name, patch) => {
@@ -104,7 +117,7 @@ test.each([
   ).not.toEqual([]);
 });
 
-test("rejects broader branch coverage or weakened limitations", async () => {
+test("rejects pending results with runs or claimed branch coverage", async () => {
   const results = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
@@ -112,46 +125,16 @@ test("rejects broader branch coverage or weakened limitations", async () => {
   expect(
     promotionResultsSchema.safeParse({
       ...results,
-      branchCoverage: { ...results.branchCoverage, covered: ["link"] },
+      runs: [{ result: "pass" }],
     }).success,
-  ).toBe(false);
-  expect(
-    promotionResultsSchema.safeParse({ ...results, limitations: [] }).success,
-  ).toBe(false);
+  ).toBeFalse();
   expect(
     promotionResultsSchema.safeParse({
       ...results,
-      runs: [...results.runs, results.runs[0]],
+      branchCoverage: {
+        ...results.branchCoverage,
+        covered: ["skip-missing-evidence"],
+      },
     }).success,
-  ).toBe(false);
-});
-
-test("rejects changed provenance or one failed criterion", async () => {
-  const results = promotionResultsSchema.parse(
-    await Bun.file(resultsPath).json(),
-  );
-
-  expect(
-    promotionResultsSchema.safeParse({
-      ...results,
-      runs: [
-        { ...results.runs[0], baseCommit: "untrusted" },
-        results.runs[1],
-        results.runs[2],
-      ],
-    }).success,
-  ).toBe(false);
-  expect(
-    promotionResultsSchema.safeParse({
-      ...results,
-      runs: [
-        {
-          ...results.runs[0],
-          criteria: { ...results.runs[0].criteria, "mutation-refused": false },
-        },
-        results.runs[1],
-        results.runs[2],
-      ],
-    }).success,
-  ).toBe(false);
+  ).toBeFalse();
 });

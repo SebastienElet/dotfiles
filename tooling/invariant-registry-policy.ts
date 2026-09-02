@@ -8,6 +8,7 @@ import {
   evidenceOccurrenceIdentity,
   pullRequestIdentity,
 } from "./invariant-registry-source.ts";
+import { consumerSurfaceDiagnostics } from "./harness-reflection-mutation-surfaces.ts";
 import { marginalAblationDiagnostics } from "./invariant-registry-ablation-policy.ts";
 import { oracleDiagnostics } from "./invariant-registry-oracle-policy.ts";
 
@@ -207,6 +208,7 @@ const validateInvariantRegistry = (
     return [
       ...promotionDiagnostics(record, path),
       ...surfaceDiagnostics(record, path),
+      ...consumerSurfaceDiagnostics(record, path),
       ...marginalAblationDiagnostics(record, path),
       ...lifecycleDiagnostics(record, path, ids),
       ...oracleDiagnostics(record, path, options),

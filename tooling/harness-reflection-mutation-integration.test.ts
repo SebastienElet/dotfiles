@@ -1,91 +1,205 @@
+import {
+  type InvariantRecord,
+  type InvariantRegistry,
+  parseInvariantRegistry,
+  validateInvariantRegistry,
+} from "./invariant-registry-contract.ts";
 import { afterEach, expect, test } from "bun:test";
 import {
-  cleanup as cleanupCli,
-  runRegistryCli,
-} from "./invariant-registry-cli.test-support.ts";
-import { join, relative, resolve } from "node:path";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import {
-  oraclePath,
-  promotionFixture,
-  promotionRequest,
-  registryPath,
-  retirementFixture,
-  retirementRequest,
-  surfacePath,
+  applySyntheticSurface,
+  cleanup,
+  initializeFixture,
+  readFixtureState,
+  recordSyntheticRegistry,
+  retirementRequestFrom,
+  runFixtureCli,
+  syntheticPromotionRequest,
+  validateAppliedFixture,
 } from "./harness-reflection-mutation-integration-test-support.ts";
-import { createRepositoryMutationAdapter } from "./harness-reflection-mutation-filesystem.ts";
-import { executeHarnessMutationWorkflowCore } from "./harness-reflection-mutation-workflow-core.ts";
+import { readFile } from "node:fs/promises";
+import { sourceSchema } from "./invariant-registry-source.ts";
+import { validateApprovedHarnessMutation } from "./harness-reflection-mutation-validation.ts";
+import { validationOptions } from "./invariant-registry-test-support.ts";
 
-const repositoryRoot = resolve(import.meta.dir, "..");
-const fixtureRoot = join(repositoryRoot, "tooling/invariant-registry-fixtures");
-const temporaryRoots: string[] = [];
+const fixturePath = (name: string): string =>
+  `${import.meta.dir}/invariant-registry-fixtures/${name}`;
 
-const initializeFixture = async (registry: string): Promise<string> => {
-  const root = await mkdtemp(join(fixtureRoot, ".workflow-"));
-  temporaryRoots.push(root);
-  await mkdir(join(root, "harness/invariants"), { recursive: true });
-  await mkdir(join(root, "tooling"), { recursive: true });
-  await writeFile(join(root, registryPath), registry, "utf8");
-  await writeFile(join(root, surfacePath), "old guidance", "utf8");
-  await writeFile(
-    join(root, oraclePath),
-    await readFile(join(repositoryRoot, oraclePath), "utf8"),
-    "utf8",
-  );
-  expect(Bun.spawnSync(["git", "-C", root, "init", "--quiet"]).exitCode).toBe(
-    0,
-  );
-  expect(Bun.spawnSync(["git", "-C", root, "add", oraclePath]).exitCode).toBe(
-    0,
-  );
-  return root;
+type SyntheticRequest = ReturnType<typeof syntheticPromotionRequest>;
+
+const readFixtureRegistry = async (name: string): Promise<InvariantRegistry> =>
+  parseInvariantRegistry(JSON.parse(await readFile(fixturePath(name), "utf8")));
+
+const proposalRecord = (
+  historical: InvariantRecord,
+  approvedAt: string,
+): InvariantRecord => {
+  const withoutRetirement = { ...historical };
+  Reflect.deleteProperty(withoutRetirement, "retirement");
+  const [candidate] = parseInvariantRegistry({
+    version: 1,
+    invariants: [
+      {
+        ...withoutRetirement,
+        approval: { approvedAt, approvedBy: "test-attestation" },
+        lifecycle: "candidate",
+        verification: { state: "unverified" },
+      },
+    ],
+  }).invariants;
+  if (candidate === undefined) {
+    throw new TypeError("fixture-candidate-missing");
+  }
+  return candidate;
 };
 
-const verifyCliAndOracle = async (root: string): Promise<void> => {
-  const cliPath = relative(repositoryRoot, join(root, registryPath));
-  expect(await runRegistryCli(cliPath)).toEqual({
-    exitCode: 0,
-    stderr: "",
-    stdout: `Invariant registry passed: ${cliPath}\n`,
+const proposalRequest = (after: InvariantRecord): unknown => {
+  const beforeRegistry = JSON.stringify({ invariants: [], version: 1 });
+  const afterRegistry = JSON.stringify({ invariants: [after], version: 1 });
+  const registryFile = {
+    path: "harness/invariants/registry.json",
+    preimage: beforeRegistry,
+    replacement: afterRegistry,
+  };
+  return {
+    approval: {
+      ...after.approval,
+      manifest: {
+        files: [registryFile],
+        registryDelta: {
+          after,
+          before: null,
+          targetInvariantId: after.id,
+        },
+      },
+    },
+    preparedFiles: [
+      {
+        contents: registryFile.replacement,
+        path: registryFile.path,
+        preimage: registryFile.preimage,
+      },
+    ],
+    targetInvariantId: after.id,
+  };
+};
+
+const requiredManifestFile = (
+  request: Readonly<SyntheticRequest>,
+  path: string,
+): SyntheticRequest["approval"]["manifest"]["files"][number] => {
+  const file = request.approval.manifest.files.find(
+    (candidate) => candidate.path === path,
+  );
+  if (file === undefined) {
+    throw new TypeError("fixture-manifest-file-missing");
+  }
+  return file;
+};
+
+const assertCliPassed = async (root: string): Promise<void> => {
+  const outcome = await runFixtureCli(root);
+  expect(outcome.exitCode).toBe(0);
+  expect(outcome.stdout).toContain("Invariant registry passed");
+};
+
+const promoteFixture = async (
+  root: string,
+  request: Readonly<SyntheticRequest>,
+): Promise<void> => {
+  await applySyntheticSurface(root, request);
+  await validateAppliedFixture(root, request);
+  await recordSyntheticRegistry(root, request);
+  await assertCliPassed(root);
+};
+
+const retireFixture = async (
+  root: string,
+  promotion: Readonly<SyntheticRequest>,
+): Promise<SyntheticRequest> => {
+  const retirement = retirementRequestFrom(promotion);
+  await applySyntheticSurface(root, retirement);
+  await validateAppliedFixture(root, retirement);
+  const incomplete = await runFixtureCli(root);
+  expect(incomplete.exitCode).not.toBe(0);
+  expect(incomplete.stderr).toContain("declared oracle failed");
+  await recordSyntheticRegistry(root, retirement);
+  await assertCliPassed(root);
+  return retirement;
+};
+
+const expectFixtureState = async (
+  root: string,
+  request: Readonly<SyntheticRequest>,
+  lifecycle: "active" | "retired",
+): Promise<void> => {
+  const state = await readFixtureState(root);
+  const registry = requiredManifestFile(
+    request,
+    "harness/invariants/registry.json",
+  );
+  const surface = requiredManifestFile(request, "harness/AGENTS.md");
+  expect(state.source).toBe(registry.replacement);
+  expect(state.surface).toBe(surface.replacement);
+  expect(state.registry.invariants[0]?.lifecycle).toBe(lifecycle);
+};
+
+afterEach(cleanup);
+
+test("historical PR 206 and PR 207 fixtures reach distinct candidate proposals", async () => {
+  const [pr206, pr207] = await Promise.all([
+    readFixtureRegistry("pr-206-secret-redaction.json"),
+    readFixtureRegistry("pr-207-invalid-utf8.json"),
+  ]);
+  const [pr206Record] = pr206.invariants;
+  const [pr207Record] = pr207.invariants;
+  if (pr206Record === undefined || pr207Record === undefined) {
+    throw new TypeError("historical-fixture-record-missing");
+  }
+  expect(pr206Record.sources[0]).toEqual({
+    provider: "github",
+    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/206",
+    evidenceUrl:
+      "https://github.com/SebastienElet/dotfiles/pull/206#issuecomment-5388129552",
   });
+  expect(pr207Record.sources[0]).toEqual({
+    provider: "github",
+    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/207",
+    evidenceUrl:
+      "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825",
+  });
+  const candidates = [
+    proposalRecord(pr206Record, "2026-09-03T10:00:00.000Z"),
+    proposalRecord(pr207Record, "2026-09-03T10:01:00.000Z"),
+  ];
   expect(
-    Bun.spawnSync(["bun", "test", oraclePath], { cwd: repositoryRoot })
-      .exitCode,
-  ).toBe(0);
-};
-
-afterEach(async () => {
-  await cleanupCli();
-  await Promise.all(
-    temporaryRoots
-      .splice(0)
-      .map((root) => rm(root, { force: true, recursive: true })),
-  );
+    candidates.map(
+      (record) => validateApprovedHarnessMutation(proposalRequest(record)).kind,
+    ),
+  ).toEqual(["record-update", "record-update"]);
+  expect(
+    validateInvariantRegistry(
+      parseInvariantRegistry({ invariants: candidates, version: 1 }),
+      validationOptions(),
+    ),
+  ).toEqual([]);
 });
 
-test("runs approved promotion, production mutation, CLI oracle and retirement", async () => {
-  const promotion = promotionFixture();
-  const root = await initializeFixture(promotion.candidateRegistry);
-  const promoted = await executeHarnessMutationWorkflowCore(
-    promotionRequest(promotion),
-    createRepositoryMutationAdapter(root),
+test("synthetic local fixture completes promotion and retirement", async () => {
+  const sourceFixture: unknown = JSON.parse(
+    await readFile(fixturePath("synthetic-local-workflow.json"), "utf8"),
   );
-  expect(promoted.status).toBe("succeeded");
-  await verifyCliAndOracle(root);
-
-  const retirement = retirementFixture(promotion);
-  const retired = await executeHarnessMutationWorkflowCore(
-    retirementRequest(promotion, retirement),
-    createRepositoryMutationAdapter(root),
+  if (typeof sourceFixture !== "object" || sourceFixture === null) {
+    throw new TypeError("synthetic-source-fixture-missing");
+  }
+  expect(Reflect.get(sourceFixture, "evidenceKind")).toBe(
+    "synthetic-local-not-historical",
   );
-  expect(retired.status).toBe("succeeded");
-  await verifyCliAndOracle(root);
-  expect(retirement.record.sources).toEqual(promotion.activeRecord.sources);
-  expect(retirement.record.scope.exceptions).toEqual(
-    promotion.activeRecord.scope.exceptions,
+  const request = syntheticPromotionRequest(
+    sourceSchema.array().parse(Reflect.get(sourceFixture, "sources")),
   );
-  expect(
-    JSON.parse(await readFile(join(repositoryRoot, registryPath), "utf8")),
-  ).toEqual({ invariants: [], version: 1 });
+  const root = await initializeFixture(request);
+  await promoteFixture(root, request);
+  await expectFixtureState(root, request, "active");
+  const retirement = await retireFixture(root, request);
+  await expectFixtureState(root, retirement, "retired");
 });

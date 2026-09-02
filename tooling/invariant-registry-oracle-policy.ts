@@ -168,7 +168,7 @@ const configuredOracleDiagnostics = (
       diagnostic(
         "missing-oracle",
         `${path}.oracle`,
-        "Enforceable active or verified invariants require an oracle.",
+        "An executable oracle requirement or measurement requires an oracle.",
       ),
     ];
   }
@@ -198,8 +198,11 @@ const oracleDiagnostics = (
   options: ValidationOptions,
 ): readonly RegistryDiagnostic[] => {
   const required =
-    record.controlKind === "enforceable" &&
-    (record.lifecycle === "active" || record.verification.state === "verified");
+    (record.controlKind === "enforceable" &&
+      (record.lifecycle === "active" ||
+        record.verification.state === "verified")) ||
+    (record.verification.state === "verified" &&
+      record.verification.lastRun.oracle !== undefined);
   return required ? configuredOracleDiagnostics(record, path, options) : [];
 };
 
