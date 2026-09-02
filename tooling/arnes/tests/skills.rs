@@ -3,6 +3,10 @@ pub mod skill_support;
 pub mod support;
 
 use skill_support::{MANIFEST, configured_fixture, run};
+use std::fs;
+use std::os::unix::fs::symlink;
+use std::path::Path;
+use std::process::Command;
 use support::Fixture;
 
 #[test]
@@ -17,6 +21,66 @@ fn user_scope_is_default_for_declared_skills() {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
     assert!(stderr.is_empty());
+}
+
+#[test]
+fn user_skill_targets_from_the_deployed_checkout_are_healthy_from_a_worktree() {
+    let fixture = configured_fixture();
+    fixture.write_repository("home/.arnes.yaml", MANIFEST);
+    fs::remove_file(fixture.home().join(".arnes.yaml")).unwrap();
+    symlink(
+        fixture.repository().join("home/.arnes.yaml"),
+        fixture.home().join(".arnes.yaml"),
+    )
+    .unwrap();
+    let worktree = fixture.repository().parent().unwrap().join("worktree");
+    create_worktree(fixture.repository(), &worktree);
+    let before = fixture.snapshot();
+
+    let output = fixture.command_from(
+        &worktree,
+        ["doctor", "skills", "--agent", "codex", "--scope", "user"],
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    assert!(output.status.success(), "{stdout}");
+    assert!(stdout.contains("✓ 1 healthy"), "{stdout}");
+    assert_eq!(fixture.snapshot(), before);
+}
+
+fn create_worktree(repository: &Path, worktree: &Path) {
+    for arguments in [
+        vec!["init", "--quiet"],
+        vec!["add", "."],
+        vec![
+            "-c",
+            "user.name=Arnes Test",
+            "-c",
+            "user.email=arnes@example.invalid",
+            "commit",
+            "--quiet",
+            "-m",
+            "fixture",
+        ],
+    ] {
+        assert!(
+            Command::new("git")
+                .args(arguments)
+                .current_dir(repository)
+                .status()
+                .unwrap()
+                .success()
+        );
+    }
+    assert!(
+        Command::new("git")
+            .args(["worktree", "add", "--quiet", "--detach"])
+            .arg(worktree)
+            .current_dir(repository)
+            .status()
+            .unwrap()
+            .success()
+    );
 }
 
 #[test]

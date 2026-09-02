@@ -15,12 +15,17 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
         resource.scope,
         label(resource.scope, &installed)
     );
-    let source = roots.repository().join(resource.source).join(name);
+    let source_root = match resource.scope {
+        Scope::User => roots.deployment_repository(),
+        Scope::Project => roots.repository(),
+    };
+    let source = source_root.join(resource.source).join(name);
     let destination = destination(roots, resource.scope, &installed);
     let human = ProjectionHuman::new(name, label(resource.scope, &installed));
     match expected_link(
         roots,
         resource.scope,
+        source_root,
         &source,
         &destination,
         &subject,
@@ -53,6 +58,7 @@ pub fn root(
     expected_link(
         roots,
         resource.scope,
+        roots.repository(),
         &source,
         &destination,
         &subject,
@@ -121,12 +127,13 @@ impl ProjectionHuman {
 fn expected_link(
     roots: &Roots,
     scope: Scope,
+    source_root: &Path,
     source: &Path,
     destination: &Path,
     subject: &str,
     human: &ProjectionHuman,
 ) -> Result<(), Diagnostic> {
-    let expected = source_directory(source, roots.repository(), subject)?;
+    let expected = source_directory(source, source_root, subject)?;
     let boundary = match scope {
         Scope::User => roots.home(),
         Scope::Project => roots.repository(),
