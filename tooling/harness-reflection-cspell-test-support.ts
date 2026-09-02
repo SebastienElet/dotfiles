@@ -98,11 +98,12 @@ const extractCspellLintArgv = (job: string): readonly string[] => {
 
 const cspellGateIsFailClosed = (job: string): boolean => {
   const lines = commandLines(job);
+  const lintArgv = extractCspellLintArgv(job);
   return (
     job.includes("runs-on: ubuntu-latest") &&
     lines[0] === "set -euo pipefail" &&
-    extractCspellLintArgv(job).slice(0, commandNameAndVerbLength).join(" ") ===
-      "cspell lint"
+    lintArgv.slice(0, commandNameAndVerbLength).join(" ") === "cspell lint" &&
+    !lintArgv.some((argument) => ["||", "&&", ";"].includes(argument))
   );
 };
 

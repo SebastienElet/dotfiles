@@ -1,30 +1,18 @@
+import type { InvariantRegistry } from "./invariant-registry-contract.ts";
+
 type MaybePromise<Value> = Value | Promise<Value>;
-type MutationFileAccess = Readonly<{
-  compareAndSwap: (
-    path: string,
-    expected: string | undefined,
-    replacement: string | undefined,
-  ) => boolean | Promise<boolean>;
-  read: (path: string) => string | undefined | Promise<string | undefined>;
-}>;
 type WorkflowApproval = Readonly<{
   approvedAt: string;
   approvedBy: string;
   source: "human-context" | "agent-self-asserted";
 }>;
 type PreparedFile = Readonly<{ contents: string; path: string }>;
-type MutationWorkflowInput = Readonly<{
+type PreparedSnapshot = PreparedFile & Readonly<{ before: string | undefined }>;
+type HarnessMutationRequest = Readonly<{
   approval: WorkflowApproval | undefined;
-  files: MutationFileAccess;
   kind: "approved-mutation" | "retirement";
   preparedFiles: readonly PreparedFile[];
-  registryPath: string;
-  retirementInvariantId?: string;
-  validateAppliedChange: () => MaybePromise<void>;
-  validatePreparedRegistry: (contents: string) => MaybePromise<void>;
-  validatePreparedSurfaces: (
-    files: readonly PreparedFile[],
-  ) => MaybePromise<void>;
+  targetInvariantId: string;
 }>;
 type MutationWorkflowStatus =
   | "succeeded"
@@ -37,10 +25,28 @@ type MutationWorkflowResult = Readonly<{
   status: MutationWorkflowStatus;
   unresolvedPaths: readonly string[];
 }>;
+type MutationWorkflowAdapter = Readonly<{
+  compareAndSwap: (
+    path: string,
+    expected: string | undefined,
+    replacement: string | undefined,
+  ) => MaybePromise<boolean>;
+  read: (path: string) => MaybePromise<string | undefined>;
+  validatePreparedRegistry: (contents: string) => InvariantRegistry;
+  validatePreparedSurfaces: (
+    files: readonly PreparedFile[],
+    kind: HarnessMutationRequest["kind"],
+  ) => MaybePromise<void>;
+}>;
+type MutationWorkflowCoreInput = HarnessMutationRequest &
+  Readonly<{ registryPath: string }>;
 
 export type {
-  MutationFileAccess,
-  MutationWorkflowInput,
+  HarnessMutationRequest,
+  MutationWorkflowAdapter,
+  MutationWorkflowCoreInput,
   MutationWorkflowResult,
   PreparedFile,
+  PreparedSnapshot,
+  WorkflowApproval,
 };

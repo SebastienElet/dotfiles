@@ -51,6 +51,9 @@ test("keeps the CSpell lint command fail-closed", async () => {
   expect(
     cspellGateIsFailClosed(job.replace("set -euo pipefail", "set +e")),
   ).toBe(false);
+  expect(cspellGateIsFailClosed(job.replace(" \\\n", " || true \\\n"))).toBe(
+    false,
+  );
 });
 
 test("owns the CSpell config argv before every promised text", async () => {

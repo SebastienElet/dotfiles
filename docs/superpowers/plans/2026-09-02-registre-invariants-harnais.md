@@ -4,7 +4,7 @@
 
 **Goal:** Ajouter un registre versionné et fail-closed qui relie les constats de revue aux invariants personnels, à leur surface et à leur oracle sans modifier le contrat factuel de `pr-feedback`.
 
-**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement et approbation fournie par le contexte humain. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; une CLI de lecture seule applique aussi les contrôles dépendant du dépôt, notamment l’existence des oracles actifs. Le registre consigne cette approbation sans authentifier `approvedBy`. Les écritures multi-fichiers utilisent préimages, CAS et compensation best-effort sans revendiquer l’atomicité.
+**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement et approbation fournie par le contexte humain. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; une CLI de lecture seule applique aussi les contrôles dépendant du dépôt, notamment l’existence des oracles actifs. Le registre consigne cette approbation sans authentifier `approvedBy`. L’API publique de mutation n’accepte que les copies préparées et l’approbation ; son adaptateur possédé valide et applique par préimages, CAS et compensation best-effort sans revendiquer l’atomicité.
 
 **Tech Stack:** Bun 1.4, TypeScript 7 strict, Zod 4, `bun:test`, Markdown et JSON versionnés.
 
@@ -21,8 +21,9 @@
 - L’inspection réelle refuse le lien symbolique final, exige un mode régulier dans l’index Git et
   détecte une substitution d’identité pendant les sondes.
 - Les mutations capturent toutes les préimages, valident les copies préparées, appliquent chaque
-  fichier par CAS et compensent best-effort ; une interruption ou une concurrence peut laisser des
-  chemins explicitement signalés à réconcilier.
+  fichier par CAS et compensent best-effort ; une concurrence répondante produit des chemins
+  explicitement signalés, tandis qu’une interruption dure ne garantit ni compensation ni sortie et
+  impose une inspection Git avant reprise.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.

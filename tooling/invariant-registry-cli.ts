@@ -62,14 +62,16 @@ const decodeInvariantRegistry = async (path: string): Promise<string> => {
   }
 };
 
-const loadInvariantRegistry = async (path: string): Promise<unknown> => {
-  const source = await decodeInvariantRegistry(path);
+const parseInvariantRegistryJson = (source: string): unknown => {
   try {
     return JSON.parse(source);
   } catch {
     throw new Error("invariant registry must be valid JSON");
   }
 };
+
+const loadInvariantRegistry = async (path: string): Promise<unknown> =>
+  parseInvariantRegistryJson(await decodeInvariantRegistry(path));
 
 const resolveRegistryPath = (root: string, path: string): string => {
   const windowsPath = win32.normalize(path);
@@ -209,6 +211,24 @@ const parseRegistry = (
   }
 };
 
+const validateInvariantRegistryText = (
+  source: string,
+  root: string,
+): ReturnType<typeof parseInvariantRegistry> => {
+  const registry = parseRegistry(parseInvariantRegistryJson(source));
+  const diagnostics = validateInvariantRegistry(registry, {
+    inspectOracle: (testPath, invocation): OracleInspection =>
+      inspectOracle(root, testPath, invocation),
+    repositoryRoot: root,
+  });
+  if (diagnostics.length > 0) {
+    throw new Error(
+      diagnostics.map(({ path, message }) => `${path}: ${message}`).join("\n"),
+    );
+  }
+  return registry;
+};
+
 const main = async (): Promise<number> => {
   const cliArguments = Bun.argv.slice(argumentOffset);
   if (cliArguments.length > 1) {
@@ -220,17 +240,10 @@ const main = async (): Promise<number> => {
     root,
     resolveRegistryPath(root, displayPath),
   );
-  const registry = parseRegistry(await loadInvariantRegistry(registryPath));
-  const diagnostics = validateInvariantRegistry(registry, {
-    inspectOracle: (testPath, invocation): OracleInspection =>
-      inspectOracle(root, testPath, invocation),
-    repositoryRoot: root,
-  });
-  if (diagnostics.length > 0) {
-    throw new Error(
-      diagnostics.map(({ path, message }) => `${path}: ${message}`).join("\n"),
-    );
-  }
+  validateInvariantRegistryText(
+    await decodeInvariantRegistry(registryPath),
+    root,
+  );
   process.stdout.write(`Invariant registry passed: ${displayPath}\n`);
   return 0;
 };
@@ -246,4 +259,4 @@ if (import.meta.main) {
   }
 }
 
-export { loadInvariantRegistry };
+export { loadInvariantRegistry, validateInvariantRegistryText };

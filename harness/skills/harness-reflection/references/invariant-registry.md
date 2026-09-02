@@ -54,7 +54,8 @@
   },
   "approvedMutation": {
     "guarantee": "best-effort-compensation-not-atomic",
-    "interruptionLimit": "process-interruption-may-leave-partial-change",
+    "interruptionLimit": "hard-interruption-has-no-output-or-recovery-guarantee",
+    "crashRecovery": "inspect-git-and-reconcile-before-retry",
     "prepareOrder": [
       "select-control-surface",
       "declare-consumers",
@@ -64,8 +65,9 @@
       "capture-all-file-preimages"
     ],
     "validationOrder": [
-      "validate-prepared-selected-control-surface",
-      "validate-prepared-registry-with-cli-on-temporary-copy"
+      "validate-prepared-selected-control-surface-with-owned-adapter",
+      "validate-prepared-registry-with-owned-schema-and-policy",
+      "validate-persisted-approval-matches-human-context"
     ],
     "applyOrder": [
       "confirm-all-file-preimages",
@@ -73,6 +75,7 @@
       "validate-applied-coherent-change"
     ],
     "onAnyError": [
+      "reconcile-ambiguous-file-outcome",
       "compensate-applied-files-with-compare-and-swap",
       "report-unresolved-files",
       "report-failure"
@@ -158,14 +161,15 @@
   },
   "retirement": {
     "guarantee": "best-effort-compensation-not-atomic",
-    "interruptionLimit": "process-interruption-may-leave-partial-change",
+    "interruptionLimit": "hard-interruption-has-no-output-or-recovery-guarantee",
+    "crashRecovery": "inspect-git-and-reconcile-before-retry",
     "requiredFields": ["retiredAt", "reason"],
     "optionalFields": ["replacedBy"],
     "prepareOrder": [
       "require-approval",
       "lookup-existing-invariant",
       "prepare-retired-registry-copy",
-      "preserve-all-source-history-in-prepared-registry",
+      "preserve-complete-record-history-in-prepared-registry",
       "set-retired-at-in-prepared-registry",
       "set-retirement-reason-in-prepared-registry",
       "handle-optional-replaced-by-in-prepared-registry",
@@ -173,9 +177,10 @@
       "capture-all-file-preimages"
     ],
     "validationOrder": [
-      "validate-all-source-history-unchanged",
-      "validate-prepared-selected-control-surface-if-touched",
-      "validate-prepared-retired-registry-with-cli-on-temporary-copy"
+      "validate-complete-record-history-unchanged",
+      "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
+      "validate-prepared-retired-registry-with-owned-schema-and-policy",
+      "validate-persisted-approval-matches-human-context"
     ],
     "applyOrder": [
       "confirm-all-file-preimages",
@@ -183,6 +188,7 @@
       "validate-applied-coherent-change"
     ],
     "onAnyError": [
+      "reconcile-ambiguous-file-outcome",
       "compensate-applied-files-with-compare-and-swap",
       "report-unresolved-files",
       "report-failure"

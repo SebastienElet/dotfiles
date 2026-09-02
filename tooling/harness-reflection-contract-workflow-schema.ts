@@ -75,8 +75,9 @@ const approvedMutationSchema = z
   .object({
     guarantee: z.literal("best-effort-compensation-not-atomic"),
     interruptionLimit: z.literal(
-      "process-interruption-may-leave-partial-change",
+      "hard-interruption-has-no-output-or-recovery-guarantee",
     ),
+    crashRecovery: z.literal("inspect-git-and-reconcile-before-retry"),
     prepareOrder: z.tuple([
       z.literal("select-control-surface"),
       z.literal("declare-consumers"),
@@ -86,8 +87,11 @@ const approvedMutationSchema = z
       z.literal("capture-all-file-preimages"),
     ]),
     validationOrder: z.tuple([
-      z.literal("validate-prepared-selected-control-surface"),
-      z.literal("validate-prepared-registry-with-cli-on-temporary-copy"),
+      z.literal(
+        "validate-prepared-selected-control-surface-with-owned-adapter",
+      ),
+      z.literal("validate-prepared-registry-with-owned-schema-and-policy"),
+      z.literal("validate-persisted-approval-matches-human-context"),
     ]),
     applyOrder: z.tuple([
       z.literal("confirm-all-file-preimages"),
@@ -95,6 +99,7 @@ const approvedMutationSchema = z
       z.literal("validate-applied-coherent-change"),
     ]),
     onAnyError: z.tuple([
+      z.literal("reconcile-ambiguous-file-outcome"),
       z.literal("compensate-applied-files-with-compare-and-swap"),
       z.literal("report-unresolved-files"),
       z.literal("report-failure"),
@@ -155,15 +160,16 @@ const retirementSchema = z
   .object({
     guarantee: z.literal("best-effort-compensation-not-atomic"),
     interruptionLimit: z.literal(
-      "process-interruption-may-leave-partial-change",
+      "hard-interruption-has-no-output-or-recovery-guarantee",
     ),
+    crashRecovery: z.literal("inspect-git-and-reconcile-before-retry"),
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
     optionalFields: z.tuple([z.literal("replacedBy")]),
     prepareOrder: z.tuple([
       z.literal("require-approval"),
       z.literal("lookup-existing-invariant"),
       z.literal("prepare-retired-registry-copy"),
-      z.literal("preserve-all-source-history-in-prepared-registry"),
+      z.literal("preserve-complete-record-history-in-prepared-registry"),
       z.literal("set-retired-at-in-prepared-registry"),
       z.literal("set-retirement-reason-in-prepared-registry"),
       z.literal("handle-optional-replaced-by-in-prepared-registry"),
@@ -171,11 +177,14 @@ const retirementSchema = z
       z.literal("capture-all-file-preimages"),
     ]),
     validationOrder: z.tuple([
-      z.literal("validate-all-source-history-unchanged"),
-      z.literal("validate-prepared-selected-control-surface-if-touched"),
+      z.literal("validate-complete-record-history-unchanged"),
       z.literal(
-        "validate-prepared-retired-registry-with-cli-on-temporary-copy",
+        "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
       ),
+      z.literal(
+        "validate-prepared-retired-registry-with-owned-schema-and-policy",
+      ),
+      z.literal("validate-persisted-approval-matches-human-context"),
     ]),
     applyOrder: z.tuple([
       z.literal("confirm-all-file-preimages"),
@@ -183,6 +192,7 @@ const retirementSchema = z
       z.literal("validate-applied-coherent-change"),
     ]),
     onAnyError: z.tuple([
+      z.literal("reconcile-ambiguous-file-outcome"),
       z.literal("compensate-applied-files-with-compare-and-swap"),
       z.literal("report-unresolved-files"),
       z.literal("report-failure"),
