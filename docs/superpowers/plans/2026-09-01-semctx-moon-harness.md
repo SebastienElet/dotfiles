@@ -318,7 +318,7 @@ git commit -m "chore(arnes): allow Semctx plugins"
 Run:
 
 ```bash
-git diff --check HEAD~3..HEAD
+git diff --check 540653025faf1cdb98f9bc136acb5e2cbe88c26e..HEAD
 bun run prettier --check package.json .moon/workspace.yml harness/moon.yml home/.arnes.yaml
 ```
 
