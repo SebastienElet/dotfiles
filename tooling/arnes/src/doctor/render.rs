@@ -2,11 +2,17 @@ use crate::cli::Resource;
 use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, Report};
 use arnes::manifest::{Agent, Scope};
 
-const DEFAULT_RESOURCES: [Resource; 4] = [
+const DEFAULT_RESOURCES: [Resource; 10] = [
     Resource::Manifest,
+    Resource::Config,
+    Resource::Instructions,
     Resource::Skills,
+    Resource::Prompts,
+    Resource::Commands,
+    Resource::Rules,
     Resource::Hooks,
     Resource::Mcp,
+    Resource::Statusline,
 ];
 
 pub(super) fn human(
@@ -34,7 +40,7 @@ pub(super) fn human(
         if !output.is_empty() {
             output.push_str("\n\n");
         }
-        let section_scope = if section == Resource::Mcp {
+        let section_scope = if matches!(section, Resource::Mcp | Resource::Statusline) {
             scope
         } else {
             scope.or(Some(Scope::User))

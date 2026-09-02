@@ -129,3 +129,28 @@ fn rules_doctor_is_read_only() {
     assert_eq!(code, 0);
     assert_eq!(fixture.snapshot(), before);
 }
+
+#[test]
+fn default_doctor_reuses_filtered_rule_diagnostics() {
+    let fixture = configured_fixture();
+    let (_, direct, _) = run(
+        &fixture,
+        &[
+            "doctor", "rules", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let (_, aggregate, _) = run(
+        &fixture,
+        &[
+            "doctor", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let direct: Vec<serde_json::Value> = serde_json::from_str(&direct).unwrap();
+    let aggregate: Vec<serde_json::Value> = serde_json::from_str(&aggregate).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "rules")
+        .collect::<Vec<_>>();
+
+    assert_eq!(aggregate, direct);
+}

@@ -239,3 +239,28 @@ fn crlf_frontmatter_is_supported() {
     assert!(stdout.contains("healthy     deploy · current"));
     assert!(stderr.is_empty());
 }
+
+#[test]
+fn default_doctor_reuses_filtered_command_diagnostics() {
+    let fixture = configured_fixture();
+    let (_, direct, _) = run(
+        &fixture,
+        &[
+            "doctor", "commands", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let (_, aggregate, _) = run(
+        &fixture,
+        &[
+            "doctor", "--agent", "claude", "--scope", "user", "--format", "json",
+        ],
+    );
+    let direct: Vec<serde_json::Value> = serde_json::from_str(&direct).unwrap();
+    let aggregate: Vec<serde_json::Value> = serde_json::from_str(&aggregate).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "commands")
+        .collect::<Vec<_>>();
+
+    assert_eq!(aggregate, direct);
+}

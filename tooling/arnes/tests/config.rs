@@ -262,6 +262,31 @@ fn config_doctor_is_read_only() {
     assert_eq!(fixture.snapshot(), before);
 }
 
+#[test]
+fn default_doctor_reuses_filtered_config_diagnostics() {
+    let fixture = configured_fixture();
+    let (_, direct, _) = run(
+        &fixture,
+        &[
+            "doctor", "config", "--agent", "codex", "--scope", "user", "--format", "json",
+        ],
+    );
+    let (_, aggregate, _) = run(
+        &fixture,
+        &[
+            "doctor", "--agent", "codex", "--scope", "user", "--format", "json",
+        ],
+    );
+    let direct: Vec<serde_json::Value> = serde_json::from_str(&direct).unwrap();
+    let aggregate: Vec<serde_json::Value> = serde_json::from_str(&aggregate).unwrap();
+    let aggregate = aggregate
+        .into_iter()
+        .filter(|diagnostic| diagnostic["resource"] == "config")
+        .collect::<Vec<_>>();
+
+    assert_eq!(aggregate, direct);
+}
+
 fn set_mode(path: &std::path::Path, mode: u32) {
     let mut permissions = fs::metadata(path).unwrap().permissions();
     permissions.set_mode(mode);
