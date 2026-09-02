@@ -132,10 +132,12 @@ external:
       origin: system
       location: { root: home, path: .codex/skills/.system }
   plugins:
+    - { agent: claude, scope: user, id: semctx@semctx-stable }
     - { agent: claude, scope: user, id: superpowers@claude-plugins-official }
     - { agent: cursor, scope: user, id: superpowers }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
     - { agent: codex, scope: user, id: github@openai-curated }
+    - { agent: codex, scope: user, id: semctx-control@semctx-stable }
     - { agent: codex, scope: user, id: superpowers@openai-curated }
   skills:
     - agent: codex
@@ -146,6 +148,27 @@ external:
         agent: claude,
         scope: user,
         origin: plugin,
+        plugin: semctx@semctx-stable,
+        slug: semctx-control,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: semctx@semctx-stable,
+        slug: semctx-semantic,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: semctx@semctx-stable,
+        slug: semctx-verify,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
         plugin: superpowers@claude-plugins-official,
         slug: brainstorming,
       }
@@ -435,6 +458,13 @@ external:
         origin: plugin,
         plugin: superpowers@openai-curated,
         slug: writing-skills,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
+        plugin: semctx-control@semctx-stable,
+        slug: semctx-control,
       }
 mcp:
   - name: apple-notes
