@@ -1,11 +1,14 @@
 import { sourceSchema } from "./invariant-registry-source.ts";
 import { z } from "zod";
 
+const semanticStringSchema = z
+  .string()
+  .regex(/\S/u, "Must contain a non-whitespace character.");
 const measurementSchema = z
   .object({
     outcome: z.enum(["passed", "failed"]),
     ranAt: z.iso.datetime(),
-    environment: z.string().min(1),
+    environment: semanticStringSchema,
   })
   .strict();
 const verifiedMeasurementSchema = measurementSchema.extend({
@@ -27,18 +30,18 @@ const consumerSchema = z.discriminatedUnion("state", [
   z
     .object({
       state: z.literal("supported"),
-      mechanism: z.string().min(1),
-      lastVerifiedEnvironment: z.string().min(1).optional(),
+      mechanism: semanticStringSchema,
+      lastVerifiedEnvironment: semanticStringSchema.optional(),
     })
     .strict(),
   z
-    .object({ state: z.literal("unsupported"), reason: z.string().min(1) })
+    .object({ state: z.literal("unsupported"), reason: semanticStringSchema })
     .strict(),
 ]);
 const scopeExceptionSchema = z
   .object({
-    paths: z.array(z.string().min(1)).min(1),
-    reason: z.string().min(1),
+    paths: z.array(semanticStringSchema).min(1),
+    reason: semanticStringSchema,
   })
   .strict();
 const scopeSchema = z
@@ -48,13 +51,13 @@ const scopeSchema = z
   })
   .strict();
 const approvalSchema = z
-  .object({ approvedBy: z.string().min(1), approvedAt: z.iso.datetime() })
+  .object({ approvedBy: semanticStringSchema, approvedAt: z.iso.datetime() })
   .strict();
 const oracleSchema = z
   .object({
-    name: z.string().min(1),
-    failurePath: z.string().min(1),
-    testPath: z.string().min(1),
+    name: semanticStringSchema,
+    failurePath: semanticStringSchema,
+    testPath: semanticStringSchema,
   })
   .strict();
 const consumersSchema = z
@@ -67,14 +70,14 @@ const consumersSchema = z
 const retirementSchema = z
   .object({
     retiredAt: z.iso.datetime(),
-    reason: z.string().min(1),
-    replacedBy: z.string().min(1).optional(),
+    reason: semanticStringSchema,
+    replacedBy: semanticStringSchema.optional(),
   })
   .strict();
 const invariantSchema = z
   .object({
-    id: z.string().min(1),
-    statement: z.string().min(1),
+    id: semanticStringSchema,
+    statement: semanticStringSchema,
     lifecycle: z.enum(["candidate", "active", "retired"]),
     controlKind: z.enum(["probabilistic", "enforceable"]),
     causeClass: z.enum([
