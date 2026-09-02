@@ -9,7 +9,6 @@ fileGroups:
     - benches/**/*
     - /.cargo/**/*
     - /.github/workflows/test-arnes.yml
-    - /.moon/**/*
   repositoryTests:
     - /Makefile
     - /home/.arnes.yaml

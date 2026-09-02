@@ -8,7 +8,6 @@ fileGroups:
     - benches/**/*
     - /.cargo/**/*
     - /.github/workflows/test-agent-memory.yml
-    - /.moon/**/*
 
 tasks:
   fmt:
@@ -37,5 +36,7 @@ tasks:
     command: cargo build --release
     inputs:
       - "@group(rust)"
+    outputs:
+      - target/release/agent-memory
     options:
-      cache: false
+      mutex: agent-memory-cargo-target

@@ -8,7 +8,6 @@ fileGroups:
     - benches/**/*
     - /.cargo/**/*
     - /.github/workflows/test-agent-handoff.yml
-    - /.moon/**/*
 
 env:
   RUSTFLAGS: -Funsafe-code
@@ -34,6 +33,7 @@ tasks:
     command: cargo build --release
     inputs:
       - "@group(rust)"
+    outputs:
+      - target/release/agent-handoff
     options:
-      cache: false
       mutex: agent-handoff-cargo-target
