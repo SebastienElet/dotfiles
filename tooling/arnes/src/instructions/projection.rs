@@ -31,25 +31,40 @@ pub fn diagnose(
     resources: &[InstructionResource<'_>],
     projection: Projection,
 ) -> Diagnostic {
-    let source = roots.repository().join(resource.source);
+    let source_root = match resource.scope {
+        Scope::User => roots.deployment_repository(),
+        Scope::Project => roots.repository(),
+    };
+    let source = source_root.join(resource.source);
     let destination = destination(roots, resource);
     let subject = format!(
         "{} {} instructions {}",
         resource.agent, resource.scope, resource.id
     );
-    let source_contents = match includes::read_regular(&source, roots.repository()) {
+    let source_contents = match includes::read_regular(&source, source_root) {
         Ok(contents) => contents,
         Err(error) => return source_diagnostic(&subject, error),
     };
 
     match projection {
-        Projection::Link => {
-            diagnose_link(roots, resource, resources, &source, &destination, &subject)
-        }
+        Projection::Link => diagnose_link(
+            roots,
+            resource,
+            resources,
+            source_root,
+            &source,
+            &destination,
+            &subject,
+        ),
         Projection::Include => diagnose_include(roots, &source, &destination, &subject),
-        Projection::Generated => {
-            diagnose_generated(roots, &source, &destination, &source_contents, &subject)
-        }
+        Projection::Generated => diagnose_generated(
+            roots,
+            source_root,
+            &source,
+            &destination,
+            &source_contents,
+            &subject,
+        ),
     }
 }
 
@@ -57,6 +72,7 @@ fn diagnose_link(
     roots: &Roots,
     resource: &InstructionResource<'_>,
     resources: &[InstructionResource<'_>],
+    source_root: &Path,
     source: &Path,
     destination: &Path,
     subject: &str,
@@ -67,10 +83,10 @@ fn diagnose_link(
     let aliases = resources.iter().map(|candidate| {
         (
             roots.home().join(candidate.destination),
-            roots.repository().join(candidate.source),
+            source_root.join(candidate.source),
         )
     });
-    let resolver = Resolver::with_aliases(roots.home(), roots.repository(), aliases);
+    let resolver = Resolver::with_aliases(roots.home(), source_root, aliases);
     match resolver.walk(destination) {
         Ok(_) => healthy(subject, destination_label(resource)),
         Err(error) => include_diagnostic(subject, error, State::Error),
@@ -98,6 +114,7 @@ fn diagnose_include(roots: &Roots, source: &Path, destination: &Path, subject: &
 
 fn diagnose_generated(
     roots: &Roots,
+    source_root: &Path,
     source: &Path,
     destination: &Path,
     source_contents: &str,
@@ -106,13 +123,13 @@ fn diagnose_generated(
     if let Err(diagnostic) = expected_file(destination, roots.home(), subject) {
         return diagnostic;
     }
-    let resolver = Resolver::new(roots.repository());
+    let resolver = Resolver::new(source_root);
     if let Err(error) = resolver.walk(source) {
         return include_diagnostic(subject, error, State::Error);
     }
     let mut expected = includes::without_leading_imports(source_contents);
     for include in includes::leading_imports(source_contents) {
-        let path = match resolver.resolve(source.parent().unwrap_or(roots.repository()), &include) {
+        let path = match resolver.resolve(source.parent().unwrap_or(source_root), &include) {
             Ok(path) => path,
             Err(error) => return include_diagnostic(subject, error, State::Error),
         };
