@@ -8,8 +8,17 @@ import { mutateContract } from "./harness-reflection-contract-test-support.ts";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
+const lintWorkflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
+const cspellLintCommandStart =
+  'HOME="$test_home" cspell lint --config "$test_home/cspell.json" \\';
 const contractFinding =
   "authoritative contract preserves exact workflow invariants";
+const invariantRegistryCspellPaths = [
+  "harness/skills/harness-reflection/SKILL.md",
+  "harness/skills/harness-reflection/references/invariant-registry.md",
+  "harness/skills/harness-reflection/evals/trigger-queries.json",
+  "harness/invariants/registry.json",
+] as const;
 
 const contractMutant = (
   sources: HarnessReflectionSources,
@@ -27,6 +36,18 @@ const expectContractRejection = (sources: HarnessReflectionSources): void => {
 test("routes factual PR evidence through the named registry", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expect(validateHarnessReflectionContract(sources)).toEqual([]);
+});
+
+test("checks invariant registry sources with CSpell", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const cspellLintCommand = lintWorkflow.slice(
+    lintWorkflow.indexOf(cspellLintCommandStart),
+  );
+
+  expect(lintWorkflow).toContain(cspellLintCommandStart);
+  for (const path of invariantRegistryCspellPaths) {
+    expect(cspellLintCommand).toContain(path);
+  }
 });
 
 test("keeps link deduplication and report scope", async () => {

@@ -142,6 +142,10 @@ jobs:
             home/cspell.json \
             home/.config/cspell/user.txt \
             harness/AGENTS.md \
+            harness/skills/harness-reflection/SKILL.md \
+            harness/skills/harness-reflection/references/invariant-registry.md \
+            harness/skills/harness-reflection/evals/trigger-queries.json \
+            harness/invariants/registry.json \
             .agents/skills/scripts/SKILL.md \
             harness/skills/agent-instructions/SKILL.md \
             harness/skills/agent-instructions/references/maintenance.md \
