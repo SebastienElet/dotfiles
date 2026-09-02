@@ -78,11 +78,7 @@ Définir des schémas `.strict()` et des unions discriminées pour :
 type Lifecycle = "candidate" | "active" | "retired";
 type ControlKind = "probabilistic" | "enforceable";
 type CauseClass =
-  | "not-applied"
-  | "not-loaded"
-  | "unknown"
-  | "blind-spot"
-  | "judgment";
+  "not-applied" | "not-loaded" | "unknown" | "blind-spot" | "judgment";
 type Severity = "low" | "medium" | "high" | "critical";
 type Verification =
   | Readonly<{ state: "unverified" }>
