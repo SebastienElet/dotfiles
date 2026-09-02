@@ -60,6 +60,54 @@ test("rejects a CSpell trace canary moved outside its YAML block", async () => {
   );
 });
 
+test("rejects a disabled CSpell job", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const mutant = lintWorkflow.replace(
+    "  cspell:\n",
+    "  cspell:\n    if: false\n",
+  );
+
+  expect(cspellWorkflowFindings(mutant)).toContain("CSpell job is active");
+});
+
+test("rejects early CSpell success", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const mutant = lintWorkflow.replace(
+    "      - name: Check configuration and user dictionary\n        run: |\n",
+    "      - name: Check configuration and user dictionary\n        run: |\n          exit 0\n",
+  );
+
+  expect(cspellWorkflowFindings(mutant)).toContain(
+    "CSpell run block has no early success",
+  );
+});
+
+test("rejects trace canaries after lint", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const frenchGrep =
+    '          printf \'%s\\n\' "$trace" | grep -F "@cspell/dict-fr-fr"\n';
+  const userGrep =
+    '          printf \'%s\\n\' "$trace" | grep -F "$test_home/.config/cspell/user.txt"\n';
+  const mutant = `${lintWorkflow.replace(frenchGrep, "").replace(userGrep, "")}${frenchGrep}${userGrep}`;
+
+  expect(cspellWorkflowFindings(mutant)).toContain(
+    "CSpell traces dictionaries before linting",
+  );
+});
+
+test("rejects a commented invariant registry lint argument", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const registryPathLine = "            harness/invariants/registry.json \\\n";
+  const mutant = lintWorkflow.replace(
+    registryPathLine,
+    `            # ${registryPathLine.trim()}\n`,
+  );
+
+  expect(cspellWorkflowFindings(mutant)).toContain(
+    "CSpell lint command includes invariant registry sources",
+  );
+});
+
 test("keeps link deduplication and report scope", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(

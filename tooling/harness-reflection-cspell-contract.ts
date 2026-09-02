@@ -6,8 +6,11 @@ const cspellTraceCommand =
   'trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone vient)';
 const cspellRunBlockStart =
   "      - name: Check configuration and user dictionary\n        run: |\n";
+const cspellJobStart = "  cspell:\n";
 const cspellLintCommandStart =
   'HOME="$test_home" cspell lint --config "$test_home/cspell.json" \\';
+const frenchDictionaryGrep = String.raw`printf '%s\n' "$trace" | grep -F "@cspell/dict-fr-fr"`;
+const userDictionaryGrep = String.raw`printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"`;
 const invariantRegistryCspellPaths = [
   "harness/skills/harness-reflection/SKILL.md",
   "harness/skills/harness-reflection/references/invariant-registry.md",
@@ -34,6 +37,46 @@ const extractCspellRunBlock = (workflow: string): string | undefined => {
   return block.length === 0 ? undefined : block.join("\n");
 };
 
+const extractCspellJob = (workflow: string): string | undefined => {
+  const start = workflow.indexOf(cspellJobStart);
+  if (start === -1 || workflow.includes(cspellJobStart, start + 1)) {
+    return undefined;
+  }
+  const remaining = workflow.slice(start + cspellJobStart.length);
+  const nextJob = remaining.search(/^ {2}[a-z][\w-]*:\n/mu);
+  return remaining.slice(0, nextJob === -1 ? undefined : nextJob);
+};
+
+const executableRunLines = (runBlock: string): string[] =>
+  runBlock
+    .split("\n")
+    .filter((line) => line.trim() !== "" && !line.trimStart().startsWith("#"));
+
+const cspellOrderFindings = (
+  commands: readonly string[],
+): readonly string[] => {
+  const install = commands.indexOf(cspellInstallCommand);
+  const link = commands.indexOf(cspellDictionaryLinkCommand);
+  const trace = commands.indexOf(cspellTraceCommand);
+  const frenchGrep = commands.indexOf(frenchDictionaryGrep);
+  const userGrep = commands.indexOf(userDictionaryGrep);
+  const lint = commands.indexOf(cspellLintCommandStart);
+  return [
+    ...(install === -1 ? ["CSpell installs the French dictionary"] : []),
+    ...(link > install
+      ? []
+      : ["CSpell links the French dictionary after installation"]),
+    ...(trace > link ? [] : ["CSpell traces the linked dictionaries"]),
+    ...(frenchGrep > trace
+      ? []
+      : ["CSpell trace confirms the French dictionary"]),
+    ...(userGrep > frenchGrep
+      ? []
+      : ["CSpell trace confirms the user dictionary"]),
+    ...(lint > userGrep ? [] : ["CSpell traces dictionaries before linting"]),
+  ];
+};
+
 const extractCspellLintCommand = (runBlock: string): string | undefined => {
   const lines = runBlock.split("\n");
   const start = lines.indexOf(cspellLintCommandStart);
@@ -49,6 +92,9 @@ const extractCspellLintCommand = (runBlock: string): string | undefined => {
     if (index > start && !line.startsWith("  ")) {
       return undefined;
     }
+    if (line.trimStart().startsWith("#")) {
+      return undefined;
+    }
     command.push(line);
     if (!line.endsWith("\\")) {
       return command.join("\n");
@@ -58,37 +104,23 @@ const extractCspellLintCommand = (runBlock: string): string | undefined => {
 };
 
 const cspellWorkflowFindings = (workflow: string): readonly string[] => {
+  const job = extractCspellJob(workflow);
   const runBlock = extractCspellRunBlock(workflow);
-  if (runBlock === undefined) {
-    return ["CSpell has one explicit YAML run block"];
+  if (job === undefined || runBlock === undefined) {
+    return ["CSpell has one active YAML job and run block"];
   }
-  const cspellInstallIndex = runBlock.indexOf(cspellInstallCommand);
-  const cspellDictionaryLinkIndex = runBlock.indexOf(
-    cspellDictionaryLinkCommand,
-  );
-  const cspellTraceIndex = runBlock.indexOf(cspellTraceCommand);
-  const cspellLintIndex = runBlock.indexOf(cspellLintCommandStart);
+  const commands = executableRunLines(runBlock);
   const cspellLintCommand = extractCspellLintCommand(runBlock);
 
   return [
-    ...(cspellInstallIndex === -1
-      ? ["CSpell installs the French dictionary"]
+    ...(job.includes("    if: false\n") ||
+    /^ {4}if: \$\{\{ false \}\}$/mu.test(job)
+      ? ["CSpell job is active"]
       : []),
-    ...(cspellDictionaryLinkIndex > cspellInstallIndex
-      ? []
-      : ["CSpell links the French dictionary after installation"]),
-    ...(cspellTraceIndex > cspellDictionaryLinkIndex
-      ? []
-      : ["CSpell traces the linked dictionaries"]),
-    ...(cspellLintIndex > cspellTraceIndex
-      ? []
-      : ["CSpell lints after tracing dictionaries"]),
-    ...(runBlock.includes('grep -F "@cspell/dict-fr-fr"')
-      ? []
-      : ["CSpell trace confirms the French dictionary"]),
-    ...(runBlock.includes('grep -F "$test_home/.config/cspell/user.txt"')
-      ? []
-      : ["CSpell trace confirms the user dictionary"]),
+    ...cspellOrderFindings(commands),
+    ...(commands.some((command) => command.trim() === "exit 0")
+      ? ["CSpell run block has no early success"]
+      : []),
     ...(cspellLintCommand !== undefined &&
     invariantRegistryCspellPaths.every((path) =>
       cspellLintCommand.includes(path),
