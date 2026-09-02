@@ -3,28 +3,18 @@ import {
   loadHarnessReflectionSources,
   validateHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
+import {
+  cspellWorkflowFindings,
+  invariantRegistryCspellPaths,
+} from "./harness-reflection-cspell-contract.ts";
 import { expect, test } from "bun:test";
 import { mutateContract } from "./harness-reflection-contract-test-support.ts";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 const lintWorkflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
-const cspellInstallCommand =
-  "npm install --global cspell@10.2.0 @cspell/dict-fr-fr@2.3.2";
-const cspellDictionaryLinkCommand =
-  'HOME="$test_home" cspell link add @cspell/dict-fr-fr';
-const cspellTraceCommand =
-  'trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone vient)';
-const cspellLintCommandStart =
-  'HOME="$test_home" cspell lint --config "$test_home/cspell.json" \\';
 const contractFinding =
   "authoritative contract preserves exact workflow invariants";
-const invariantRegistryCspellPaths = [
-  "harness/skills/harness-reflection/SKILL.md",
-  "harness/skills/harness-reflection/references/invariant-registry.md",
-  "harness/skills/harness-reflection/evals/trigger-queries.json",
-  "harness/invariants/registry.json",
-] as const;
 
 const contractMutant = (
   sources: HarnessReflectionSources,
@@ -46,25 +36,28 @@ test("routes factual PR evidence through the named registry", async () => {
 
 test("checks invariant registry sources with CSpell", async () => {
   const lintWorkflow = await Bun.file(lintWorkflowPath).text();
-  const cspellInstallIndex = lintWorkflow.indexOf(cspellInstallCommand);
-  const cspellDictionaryLinkIndex = lintWorkflow.indexOf(
-    cspellDictionaryLinkCommand,
-  );
-  const cspellTraceIndex = lintWorkflow.indexOf(cspellTraceCommand);
-  const cspellLintIndex = lintWorkflow.indexOf(cspellLintCommandStart);
-  const cspellLintCommand = lintWorkflow.slice(cspellLintIndex);
+  expect(cspellWorkflowFindings(lintWorkflow)).toEqual([]);
+});
 
-  expect(cspellInstallIndex).toBeGreaterThan(-1);
-  expect(cspellDictionaryLinkIndex).toBeGreaterThan(cspellInstallIndex);
-  expect(cspellTraceIndex).toBeGreaterThan(cspellDictionaryLinkIndex);
-  expect(cspellLintIndex).toBeGreaterThan(cspellTraceIndex);
-  expect(lintWorkflow).toContain('grep -F "@cspell/dict-fr-fr"');
-  expect(lintWorkflow).toContain(
-    'grep -F "$test_home/.config/cspell/user.txt"',
+test("rejects an invariant registry path moved outside CSpell lint", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const registryPathLine = "            harness/invariants/registry.json \\\n";
+  const mutant = `${lintWorkflow.replace(registryPathLine, "")}\n# ${invariantRegistryCspellPaths[3]}\n`;
+
+  expect(cspellWorkflowFindings(mutant)).toContain(
+    "CSpell lint command includes invariant registry sources",
   );
-  for (const path of invariantRegistryCspellPaths) {
-    expect(cspellLintCommand).toContain(path);
-  }
+});
+
+test("rejects a CSpell trace canary moved outside its YAML block", async () => {
+  const lintWorkflow = await Bun.file(lintWorkflowPath).text();
+  const frenchDictionaryGrep =
+    '          printf \'%s\\n\' "$trace" | grep -F "@cspell/dict-fr-fr"\n';
+  const mutant = `${lintWorkflow.replace(frenchDictionaryGrep, "")}# ${frenchDictionaryGrep.trim()}\n`;
+
+  expect(cspellWorkflowFindings(mutant)).toContain(
+    "CSpell trace confirms the French dictionary",
+  );
 });
 
 test("keeps link deduplication and report scope", async () => {
