@@ -93,7 +93,7 @@ test.each([
   expect(validateHarnessReflectionContract(mutant)).toContain(contractFinding);
 });
 
-test("makes approved link and propose registry mutation reachable", async () => {
+test("makes approved link and propose atomic mutation reachable", async () => {
   const contract = await authoritativeContract();
 
   expect(Reflect.get(contract, "decisionBranches")).toEqual({
@@ -103,17 +103,27 @@ test("makes approved link and propose registry mutation reachable", async () => 
   });
   expect(Reflect.get(contract, "approvalBranches")).toEqual({
     absent: ["render-report-without-mutation"],
-    granted: ["execute-approved-mutation-order"],
+    granted: ["execute-approved-atomic-mutation"],
   });
-  expect(Reflect.get(contract, "approvedMutationOrder")).toEqual([
-    "select-control-surface",
-    "declare-consumers",
-    "require-control-oracle",
-    "mutate-selected-control-surface",
-    "mutate-registry",
-    "run-cli",
-    "render-report",
-  ]);
+  expect(Reflect.get(contract, "approvedMutation")).toEqual({
+    applyOrder: [
+      "apply-selected-control-surface-and-registry-as-coherent-change",
+      "validate-applied-coherent-change",
+    ],
+    onAnyError: ["restore-all-touched-files", "report-failure"],
+    prepareOrder: [
+      "select-control-surface",
+      "declare-consumers",
+      "require-control-oracle",
+      "prepare-selected-control-surface",
+      "prepare-registry",
+    ],
+    validationOrder: [
+      "validate-prepared-selected-control-surface",
+      "validate-prepared-registry-with-cli-on-temporary-copy",
+    ],
+    successOrder: ["render-report"],
+  });
 });
 
 test.each([
@@ -136,29 +146,25 @@ test.each([
     value: ["execute-approved-mutation-order"],
   },
   {
-    name: "removes the registry mutation",
-    path: [],
-    key: "approvedMutationOrder",
-    value: [
-      "select-control-surface",
-      "declare-consumers",
-      "require-control-oracle",
-      "mutate-selected-control-surface",
-      "run-cli",
-      "render-report",
-    ],
+    name: "skips prepared registry CLI prevalidation",
+    path: ["approvedMutation"],
+    key: "validationOrder",
+    value: ["validate-prepared-selected-control-surface"],
   },
   {
-    name: "removes the selected surface mutation",
-    path: [],
-    key: "approvedMutationOrder",
+    name: "fails to compensate every touched file",
+    path: ["approvedMutation"],
+    key: "onAnyError",
+    value: ["report-failure"],
+  },
+  {
+    name: "applies the surface and registry separately",
+    path: ["approvedMutation"],
+    key: "applyOrder",
     value: [
-      "select-control-surface",
-      "declare-consumers",
-      "require-control-oracle",
-      "mutate-registry",
-      "run-cli",
-      "render-report",
+      "apply-selected-control-surface",
+      "apply-registry",
+      "validate-applied-coherent-change",
     ],
   },
 ] as const)("rejects a workflow graph that $name", async (testCase) => {

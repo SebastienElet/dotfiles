@@ -26,10 +26,14 @@ const recordedRuns = (value: unknown): RecordedPromotionResults["runs"] => {
   return parsed.runs;
 };
 
-test("records three complete post-correction promotion workflow evaluations", async () => {
+test("records three skip-path regression evaluations without promotion evidence", async () => {
   const results: unknown = await Bun.file(resultsPath).json();
 
   expect(results).toMatchObject({
+    adr036Ablation: "not-run",
+    coveredPath: "skip-missing-evidence",
+    evaluationKind: "regression-test",
+    promotionEvidence: false,
     skill: "harness-reflection",
     status: "recorded",
     version: 1,
@@ -41,9 +45,9 @@ test("records three complete post-correction promotion workflow evaluations", as
         criteria: {
           registryLookupRecorded: true,
           factualInputPreserved: true,
-          immediateMutationRefused: true,
-          controlAndOracleReported: true,
-          claudeCodexCursorReported: true,
+          missingEvidenceSkipSelected: true,
+          mutationRefused: true,
+          reportRendered: true,
         },
         result: "pass",
       },
@@ -52,9 +56,9 @@ test("records three complete post-correction promotion workflow evaluations", as
         criteria: {
           registryLookupRecorded: true,
           factualInputPreserved: true,
-          immediateMutationRefused: true,
-          controlAndOracleReported: true,
-          claudeCodexCursorReported: true,
+          missingEvidenceSkipSelected: true,
+          mutationRefused: true,
+          reportRendered: true,
         },
         result: "pass",
       },
@@ -63,12 +67,35 @@ test("records three complete post-correction promotion workflow evaluations", as
         criteria: {
           registryLookupRecorded: true,
           factualInputPreserved: true,
-          immediateMutationRefused: true,
-          controlAndOracleReported: true,
-          claudeCodexCursorReported: true,
+          missingEvidenceSkipSelected: true,
+          mutationRefused: true,
+          reportRendered: true,
         },
         result: "pass",
       },
+    ],
+  });
+});
+
+test("states uncovered promotion and lifecycle branches", async () => {
+  const results: unknown = await Bun.file(resultsPath).json();
+
+  expect(results).toMatchObject({
+    branchCoverage: {
+      covered: ["skip-missing-evidence"],
+      notCovered: [
+        "link",
+        "propose",
+        "approval",
+        "retirement",
+        "promotion",
+        "adr036-ablation",
+      ],
+    },
+    limitations: [
+      "The prompt contains no concrete pull request URLs.",
+      "Only the missing-evidence skip branch was exercised.",
+      "No promotion, lifecycle, approval, or ablation claim is supported.",
     ],
   });
 });
@@ -111,7 +138,7 @@ test("rejects a recorded evaluation with one missing criterion", async () => {
       secondRun,
       {
         ...thirdRun,
-        criteria: { ...thirdRun.criteria, claudeCodexCursorReported: false },
+        criteria: { ...thirdRun.criteria, reportRendered: false },
       },
     ],
   };

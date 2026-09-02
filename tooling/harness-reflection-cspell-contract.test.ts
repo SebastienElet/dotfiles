@@ -10,9 +10,9 @@ import { resolve } from "node:path";
 const repositoryRoot = resolve(import.meta.dir, "..");
 const workflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
 const expectedCspellJobSha256 =
-  "325e779d8583df4408c4a618f25a7c2e42702fe4d1dfd6fcf7626191b848f13f";
+  "589fb007030cd172c8fe33084a28f6e630d455d193054c39bfde76fe9f9e25b7";
 const expectedSuccessfulCallLogSha256 =
-  "008cae927f8148f190afab900a009527c31d5cdb15f1e848b0d3fb438ed04c38";
+  "2bcdbb09425a62d876cd324a72039cbd22dcfcd349208b5bd37753ca5b0ed567";
 const failingLintStatus = 17;
 
 test("pins the complete CSpell job", async () => {
@@ -53,6 +53,19 @@ test("executes the nominal CSpell block with exact argv", async () => {
   expect(sha256(result.normalizedCallLog)).toBe(
     expectedSuccessfulCallLogSha256,
   );
+});
+
+test.each([
+  "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
+  "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
+  "docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md",
+  "tooling/invariant-registry-fixtures/pr-206-secret-redaction.json",
+  "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
+] as const)("executes CSpell on promised text %s", async (path) => {
+  const workflow = await readFile(workflowPath, "utf8");
+  const result = await runCspellGate(extractCspellJob(workflow));
+
+  expect(result.normalizedCallLog).toContain(`\t${path}`);
 });
 
 test("propagates a CSpell lint failure", async () => {

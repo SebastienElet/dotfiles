@@ -4,9 +4,12 @@ import type {
   RegistryDiagnostic,
   ValidationOptions,
 } from "./invariant-registry-schema.ts";
+import {
+  evidenceOccurrenceIdentity,
+  pullRequestIdentity,
+} from "./invariant-registry-source.ts";
 import { marginalAblationDiagnostics } from "./invariant-registry-ablation-policy.ts";
 import { oracleDiagnostics } from "./invariant-registry-oracle-policy.ts";
-import { pullRequestIdentity } from "./invariant-registry-source.ts";
 
 type InvariantIds = Readonly<{ has: (id: string) => boolean }>;
 
@@ -34,9 +37,7 @@ const promotionDiagnostics = (
   if (record.lifecycle !== "active") {
     return [];
   }
-  const pullRequestIdentities = record.sources.map(({ pullRequestUrl }) =>
-    pullRequestIdentity(pullRequestUrl),
-  );
+  const pullRequestIdentities = record.sources.map(pullRequestIdentity);
   const enoughEvidence =
     new Set(pullRequestIdentities).size >= promotionThreshold ||
     ["high", "critical"].includes(record.severity);
@@ -101,16 +102,8 @@ const lifecycleDiagnostics = (
         ),
       ]
     : []),
-  ...(record.lifecycle === "retired" && record.retirement === undefined
-    ? [
-        diagnostic(
-          "missing-retirement",
-          `${path}.retirement`,
-          "Retired invariants require a date and reason.",
-        ),
-      ]
-    : []),
-  ...(record.retirement?.replacedBy !== undefined &&
+  ...(record.lifecycle === "retired" &&
+  record.retirement.replacedBy !== undefined &&
   !ids.has(record.retirement.replacedBy)
     ? [
         diagnostic(
@@ -120,7 +113,8 @@ const lifecycleDiagnostics = (
         ),
       ]
     : []),
-  ...(record.retirement?.replacedBy === record.id
+  ...(record.lifecycle === "retired" &&
+  record.retirement.replacedBy === record.id
     ? [
         diagnostic(
           "self-replacement",
@@ -134,22 +128,22 @@ const lifecycleDiagnostics = (
 const uniquenessDiagnostics = (
   registry: InvariantRegistry,
 ): readonly RegistryDiagnostic[] => {
-  const sourcePaths = new Map<string, string>();
+  const evidencePaths = new Map<string, string>();
   return registry.invariants.flatMap((record, index) => {
     const path = `invariants.${index}`;
     const duplicateId =
       registry.invariants.findIndex(({ id }) => id === record.id) !== index;
     const sourceDiagnostics = record.sources.flatMap((source, sourceIndex) => {
-      const sourcePath = `${path}.sources.${sourceIndex}.pullRequestUrl`;
-      const identity = pullRequestIdentity(source.pullRequestUrl);
-      const duplicate = sourcePaths.has(identity);
-      sourcePaths.set(identity, sourcePath);
+      const sourcePath = `${path}.sources.${sourceIndex}.evidenceUrl`;
+      const identity = evidenceOccurrenceIdentity(source);
+      const duplicate = evidencePaths.has(identity);
+      evidencePaths.set(identity, sourcePath);
       return duplicate
         ? [
             diagnostic(
-              "duplicate-source",
+              "duplicate-evidence",
               sourcePath,
-              "Review source is already assigned to an invariant.",
+              "Review evidence is already assigned to an invariant.",
             ),
           ]
         : [];
@@ -169,6 +163,40 @@ const uniquenessDiagnostics = (
   });
 };
 
+const replacementCycleDiagnostics = (
+  registry: InvariantRegistry,
+): readonly RegistryDiagnostic[] => {
+  const replacements = new Map(
+    registry.invariants.flatMap((record) =>
+      record.lifecycle === "retired" &&
+      record.retirement.replacedBy !== undefined
+        ? [[record.id, record.retirement.replacedBy] as const]
+        : [],
+    ),
+  );
+  return registry.invariants.flatMap((record, index) => {
+    if (record.lifecycle !== "retired") {
+      return [];
+    }
+    const visited = new Set([record.id]);
+    let replacement = record.retirement.replacedBy;
+    while (replacement !== undefined && replacements.has(replacement)) {
+      if (visited.has(replacement)) {
+        return [
+          diagnostic(
+            "replacement-cycle",
+            `invariants.${index}.retirement.replacedBy`,
+            "Replacement graph must be acyclic.",
+          ),
+        ];
+      }
+      visited.add(replacement);
+      replacement = replacements.get(replacement);
+    }
+    return [];
+  });
+};
+
 const validateInvariantRegistry = (
   registry: InvariantRegistry,
   options: ValidationOptions,
@@ -184,7 +212,11 @@ const validateInvariantRegistry = (
       ...oracleDiagnostics(record, path, options),
     ];
   });
-  return [...uniquenessDiagnostics(registry), ...recordDiagnostics];
+  return [
+    ...uniquenessDiagnostics(registry),
+    ...replacementCycleDiagnostics(registry),
+    ...recordDiagnostics,
+  ];
 };
 
 export { validateInvariantRegistry };

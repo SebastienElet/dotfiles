@@ -3,6 +3,7 @@ import {
   cleanup,
   createExternalFile,
   createLinkedOracle,
+  createUntrackedOracle,
   fixturePath,
   mutatedFixture,
   readRegistry,
@@ -43,6 +44,7 @@ test("locks the PR 206 fixture to its historical structured value", async () => 
         lifecycle: "active",
         oracle: {
           failurePath: "rejected fetch URL userinfo never reaches stderr",
+          invocation: ["bun", "test", "tooling/git-main-branch-entry.test.ts"],
           name: "fetch-url-userinfo-redaction",
           testPath: "tooling/git-main-branch-entry.test.ts",
         },
@@ -52,6 +54,7 @@ test("locks the PR 206 fixture to its historical structured value", async () => 
           {
             evidenceUrl:
               "https://github.com/SebastienElet/dotfiles/pull/206#issuecomment-5388129552",
+            provider: "github",
             pullRequestUrl:
               "https://github.com/SebastienElet/dotfiles/pull/206",
           },
@@ -92,6 +95,33 @@ test("rejects the PR 206 fixture when its active oracle resolves outside", async
   expect(outcome.stderr).toContain("Oracle test path does not exist");
 });
 
+test.each([
+  ["directory", "tooling", "regular file"],
+  ["non-test file", "package.json", "discovered by the test suite"],
+] as const)(
+  "rejects a PR 206 oracle backed by a %s",
+  async (_name, oraclePath, diagnostic) => {
+    const path = await mutatedFixture(pr206Fixture, (source) =>
+      source.replaceAll("tooling/git-main-branch-entry.test.ts", oraclePath),
+    );
+    const outcome = await runRegistryCli(path);
+
+    expect(outcome.exitCode).not.toBe(0);
+    expect(outcome.stderr).toContain(diagnostic);
+  },
+);
+
+test("rejects a PR 206 oracle that is not tracked by Git", async () => {
+  const oraclePath = await createUntrackedOracle();
+  const path = await mutatedFixture(pr206Fixture, (source) =>
+    source.replaceAll("tooling/git-main-branch-entry.test.ts", oraclePath),
+  );
+  const outcome = await runRegistryCli(path);
+
+  expect(outcome.exitCode).not.toBe(0);
+  expect(outcome.stderr).toContain("tracked by Git");
+});
+
 test("validates the retired PR 207 fixture", async () => {
   const outcome = await runRegistryCli(
     "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
@@ -125,6 +155,7 @@ test("locks the PR 207 fixture to its historical structured value", async () => 
           {
             evidenceUrl:
               "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825",
+            provider: "github",
             pullRequestUrl:
               "https://github.com/SebastienElet/dotfiles/pull/207",
           },

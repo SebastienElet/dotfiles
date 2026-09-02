@@ -10,6 +10,7 @@
       "severity": "high",
       "sources": [
         {
+          "provider": "github",
           "pullRequestUrl": "https://github.com/SebastienElet/dotfiles/pull/207",
           "evidenceUrl": "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825"
         }

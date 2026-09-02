@@ -3,6 +3,8 @@ import {
   candidate,
   diagnosticCodes,
   registry,
+  secondPullRequest,
+  source,
   validateInvariantRegistry,
   validationOptions,
 } from "./invariant-registry-test-support.ts";
@@ -43,13 +45,25 @@ test("rejects verified measurements that are not green during parsing", () => {
 });
 
 test("rejects retired invariants without a retirement record", () => {
-  const diagnostics = validateInvariantRegistry(
-    registry(candidate({ lifecycle: "retired" })),
-    validationOptions(),
-  );
-
-  expect(diagnosticCodes(diagnostics)).toContain("missing-retirement");
+  expect(() => registry(candidate({ lifecycle: "retired" }))).toThrow();
 });
+
+test.each(["candidate", "active"] as const)(
+  "rejects retirement metadata on a %s invariant",
+  (lifecycle) => {
+    expect(() =>
+      registry(
+        candidate({
+          lifecycle,
+          retirement: {
+            retiredAt: "2026-09-02T00:00:00.000Z",
+            reason: "Invalid early retirement metadata.",
+          },
+        }),
+      ),
+    ).toThrow();
+  },
+);
 
 test("rejects replacements that do not identify an invariant", () => {
   const diagnostics = validateInvariantRegistry(
@@ -89,4 +103,33 @@ test("rejects replacements that identify the retired invariant itself", () => {
     path: "invariants.0.retirement.replacedBy",
     message: "Replacement invariant cannot be itself.",
   });
+});
+
+test("rejects a replacement cycle", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      candidate({
+        id: "first-invariant",
+        lifecycle: "retired",
+        retirement: {
+          retiredAt: "2026-09-02T00:00:00.000Z",
+          reason: "Replaced.",
+          replacedBy: "second-invariant",
+        },
+      }),
+      candidate({
+        id: "second-invariant",
+        lifecycle: "retired",
+        retirement: {
+          retiredAt: "2026-09-02T00:00:00.000Z",
+          reason: "Replaced.",
+          replacedBy: "first-invariant",
+        },
+        sources: [source(secondPullRequest)],
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain("replacement-cycle");
 });

@@ -85,12 +85,7 @@ test("separates decision reporting from approved mutation work", async () => {
       [],
       (contract: Readonly<Record<string, unknown>>): void => {
         Reflect.set(contract, "approvedMutationOrder", [
-          "select-control-surface",
-          "require-approval",
-          "declare-consumers",
-          "require-oracle",
-          "run-cli",
-          "render-report",
+          "mutate-before-approval",
         ]);
       },
     ),

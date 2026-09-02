@@ -200,7 +200,7 @@ test("requires effective activation measurement for conditional skills", () => {
   );
 });
 
-test("normalizes GitHub pull request URLs before counting promotion evidence", () => {
+test("counts two comments on one GitHub pull request as one pull request", () => {
   const canonicalSource = source(firstPullRequest);
   const diagnostics = validateInvariantRegistry(
     registry(
@@ -209,6 +209,8 @@ test("normalizes GitHub pull request URLs before counting promotion evidence", (
           canonicalSource,
           {
             ...canonicalSource,
+            evidenceUrl:
+              "https://github.com/sebastienelet/DOTFILES/pull/206#pullrequestreview-207",
             pullRequestUrl:
               "https://github.com/sebastienelet/DOTFILES/pull/206/",
           },
@@ -223,6 +225,7 @@ test("normalizes GitHub pull request URLs before counting promotion evidence", (
     path: "invariants.0.sources",
     message: "Active invariants require two pull requests or high severity.",
   });
+  expect(diagnosticCodes(diagnostics)).not.toContain("duplicate-evidence");
 });
 
 test("rejects incompatible control surfaces", () => {

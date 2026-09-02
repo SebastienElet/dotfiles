@@ -57,6 +57,17 @@ const createRegistry = async (contents: string): Promise<string> => {
   return relative(repositoryRoot, path);
 };
 
+const createUntrackedOracle = async (): Promise<string> => {
+  const directory = await mkdtemp(join(fixtureDirectory, fixturePrefix));
+  temporaryDirectories.push(directory);
+  const path = join(directory, "untracked.test.ts");
+  await writeFile(
+    path,
+    'import { test } from "bun:test";\ntest("oracle", () => {});\n',
+  );
+  return relative(repositoryRoot, path);
+};
+
 const createExternalFile = async (
   name: string,
   contents: string,
@@ -101,6 +112,7 @@ export {
   createLinkedOracle,
   createLinkedRegistry,
   createRegistry,
+  createUntrackedOracle,
   fixturePath,
   mutatedFixture,
   readRegistry,

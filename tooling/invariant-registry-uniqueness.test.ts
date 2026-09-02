@@ -19,25 +19,47 @@ test("rejects duplicate identifiers", () => {
   expect(diagnosticCodes(diagnostics)).toContain("duplicate-id");
 });
 
-test("rejects review sources shared by multiple invariants", () => {
+test("rejects evidence occurrences shared by multiple invariants", () => {
   const diagnostics = validateInvariantRegistry(
     registry(candidate(), candidate({ id: "different-invariant" })),
     validationOptions(),
   );
 
-  expect(diagnosticCodes(diagnostics)).toContain("duplicate-source");
+  expect(diagnosticCodes(diagnostics)).toContain("duplicate-evidence");
 });
 
-test("normalizes GitHub pull request URLs before source deduplication", () => {
+test("allows two evidence occurrences from one pull request", () => {
   const canonicalSource = source(firstPullRequest);
   const diagnostics = validateInvariantRegistry(
     registry(
-      candidate(),
+      candidate({
+        sources: [
+          canonicalSource,
+          {
+            ...canonicalSource,
+            evidenceUrl: `${canonicalSource.pullRequestUrl}#pullrequestreview-207`,
+          },
+        ],
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnostics).toEqual([]);
+});
+
+test("normalizes evidence identity before global deduplication", () => {
+  const canonicalSource = source(firstPullRequest);
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      candidate({ sources: [canonicalSource] }),
       candidate({
         id: "different-invariant",
         sources: [
           {
             ...canonicalSource,
+            evidenceUrl:
+              "https://github.com/sebastienelet/DOTFILES/pull/206#issuecomment-206",
             pullRequestUrl:
               "https://github.com/sebastienelet/DOTFILES/pull/206/",
           },
@@ -48,8 +70,8 @@ test("normalizes GitHub pull request URLs before source deduplication", () => {
   );
 
   expect(diagnostics).toContainEqual({
-    code: "duplicate-source",
-    path: "invariants.1.sources.0.pullRequestUrl",
-    message: "Review source is already assigned to an invariant.",
+    code: "duplicate-evidence",
+    path: "invariants.1.sources.0.evidenceUrl",
+    message: "Review evidence is already assigned to an invariant.",
   });
 });

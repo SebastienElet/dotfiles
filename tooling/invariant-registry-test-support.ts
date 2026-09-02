@@ -1,5 +1,6 @@
 import {
   type InvariantRegistry,
+  type OracleInspection,
   type RegistryDiagnostic,
   type ValidationOptions,
   parseInvariantRegistry,
@@ -7,6 +8,7 @@ import {
 
 type TestInvariant = Readonly<Record<string, unknown>>;
 type ReviewSource = Readonly<{
+  provider: "github";
   pullRequestUrl: string;
   evidenceUrl: string;
 }>;
@@ -20,6 +22,12 @@ const verifiedVerification = {
     ranAt: "2026-09-02T00:00:00.000Z",
     environment: "controlled marginal ablation on macOS and Linux",
   },
+};
+const oracle = {
+  name: "fetch-url-redaction",
+  failurePath: "Rejected URLs do not expose credentials.",
+  testPath: "tooling/fetch-url-redaction.test.ts",
+  invocation: ["bun", "test", "tooling/fetch-url-redaction.test.ts"],
 };
 const marginalAblation = {
   protocol: "controlled-marginal-ablation",
@@ -41,8 +49,9 @@ const marginalAblation = {
 
 function source(pullRequestNumber: string): ReviewSource {
   return {
+    provider: "github",
     pullRequestUrl: `https://github.com/SebastienElet/dotfiles/pull/${pullRequestNumber}`,
-    evidenceUrl: `https://github.com/SebastienElet/dotfiles/pull/${pullRequestNumber}#review`,
+    evidenceUrl: `https://github.com/SebastienElet/dotfiles/pull/${pullRequestNumber}#issuecomment-${pullRequestNumber}`,
   };
 }
 
@@ -56,6 +65,7 @@ function candidate(overrides: TestInvariant = {}): TestInvariant {
     severity: "medium",
     sources: [
       {
+        provider: "github",
         pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/206",
         evidenceUrl:
           "https://github.com/SebastienElet/dotfiles/pull/206#issuecomment-5388129552",
@@ -86,9 +96,7 @@ function active(overrides: TestInvariant = {}): TestInvariant {
       approvedAt: "2026-09-02T00:00:00.000Z",
     },
     oracle: {
-      name: "fetch-url-redaction",
-      failurePath: "Rejected URLs do not expose credentials.",
-      testPath: "tooling/fetch-url-redaction.test.ts",
+      ...oracle,
     },
     sources: [source(firstPullRequest), source(secondPullRequest)],
     ...overrides,
@@ -100,9 +108,15 @@ function registry(...invariants: readonly TestInvariant[]): InvariantRegistry {
 }
 
 function validationOptions(
-  pathExists: ValidationOptions["pathExists"] = (): boolean => true,
+  inspectOracle: ValidationOptions["inspectOracle"] = (
+    _path,
+  ): OracleInspection => ({
+    discovered: true,
+    kind: "regular-file",
+    tracked: true,
+  }),
 ): ValidationOptions {
-  return { repositoryRoot: "/repository", pathExists };
+  return { inspectOracle, repositoryRoot: "/repository" };
 }
 
 function diagnosticCodes(
@@ -117,6 +131,7 @@ export {
   diagnosticCodes,
   firstPullRequest,
   marginalAblation,
+  oracle,
   registry,
   secondPullRequest,
   source,

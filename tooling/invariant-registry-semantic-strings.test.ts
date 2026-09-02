@@ -18,6 +18,7 @@ const oracle = {
   name: "fetch-url-redaction",
   failurePath: "Rejected URLs do not expose credentials.",
   testPath: "tooling/fetch-url-redaction.test.ts",
+  invocation: ["bun", "test", "tooling/fetch-url-redaction.test.ts"],
 };
 const retirement = {
   retiredAt: "2026-09-02T00:00:00.000Z",

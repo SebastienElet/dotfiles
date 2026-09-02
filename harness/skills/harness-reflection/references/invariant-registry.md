@@ -38,17 +38,27 @@
   },
   "approvalBranches": {
     "absent": ["render-report-without-mutation"],
-    "granted": ["execute-approved-mutation-order"]
+    "granted": ["execute-approved-atomic-mutation"]
   },
-  "approvedMutationOrder": [
-    "select-control-surface",
-    "declare-consumers",
-    "require-control-oracle",
-    "mutate-selected-control-surface",
-    "mutate-registry",
-    "run-cli",
-    "render-report"
-  ],
+  "approvedMutation": {
+    "prepareOrder": [
+      "select-control-surface",
+      "declare-consumers",
+      "require-control-oracle",
+      "prepare-selected-control-surface",
+      "prepare-registry"
+    ],
+    "validationOrder": [
+      "validate-prepared-selected-control-surface",
+      "validate-prepared-registry-with-cli-on-temporary-copy"
+    ],
+    "applyOrder": [
+      "apply-selected-control-surface-and-registry-as-coherent-change",
+      "validate-applied-coherent-change"
+    ],
+    "onAnyError": ["restore-all-touched-files", "report-failure"],
+    "successOrder": ["render-report"]
+  },
   "registry": {
     "path": "harness/invariants/registry.json",
     "classes": [

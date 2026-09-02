@@ -103,3 +103,72 @@ test("normalizes a trailing slash on a canonical pull request URL", () => {
 
   expect(parsed.invariants[0]?.sources[0]?.pullRequestUrl).toBe(canonicalUrl);
 });
+
+test("accepts canonical Bitbucket Cloud pull request comment evidence", () => {
+  const parsed = parseInvariantRegistry({
+    version: 1,
+    invariants: [
+      candidate({
+        sources: [
+          {
+            provider: "bitbucket-cloud",
+            pullRequestUrl:
+              "https://bitbucket.org/acme/widgets/pull-requests/42/",
+            evidenceUrl:
+              "https://bitbucket.org/acme/widgets/pull-requests/42/comments/73",
+          },
+        ],
+      }),
+    ],
+  });
+
+  expect(parsed.invariants[0]?.sources[0]).toEqual({
+    provider: "bitbucket-cloud",
+    pullRequestUrl: "https://bitbucket.org/acme/widgets/pull-requests/42",
+    evidenceUrl:
+      "https://bitbucket.org/acme/widgets/pull-requests/42/comments/73",
+  });
+});
+
+test.each([
+  {
+    name: "provider domain",
+    source: {
+      provider: "github",
+      pullRequestUrl: "https://example.com/acme/widgets/pull/42",
+      evidenceUrl: "https://github.com/acme/widgets/pull/42#issuecomment-73",
+    },
+  },
+  {
+    name: "evidence repository",
+    source: {
+      provider: "github",
+      pullRequestUrl: "https://github.com/acme/widgets/pull/42",
+      evidenceUrl: "https://github.com/acme/other/pull/42#issuecomment-73",
+    },
+  },
+  {
+    name: "evidence pull request",
+    source: {
+      provider: "bitbucket-cloud",
+      pullRequestUrl: "https://bitbucket.org/acme/widgets/pull-requests/42",
+      evidenceUrl:
+        "https://bitbucket.org/acme/widgets/pull-requests/41/comments/73",
+    },
+  },
+  {
+    name: "unstable evidence location",
+    source: {
+      provider: "github",
+      pullRequestUrl: "https://github.com/acme/widgets/pull/42",
+      evidenceUrl: "https://github.com/acme/widgets/pull/42/files",
+    },
+  },
+] as const)("rejects a source with incoherent $name", (testCase) => {
+  expect(() =>
+    parseInvariantRegistry({
+      version: 1,
+      invariants: [candidate({ sources: [testCase.source] })],
+    }),
+  ).toThrow();
+});

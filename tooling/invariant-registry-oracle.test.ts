@@ -3,6 +3,7 @@ import {
   candidate,
   diagnosticCodes,
   firstPullRequest,
+  oracle,
   registry,
   source,
   validateInvariantRegistry,
@@ -10,17 +11,17 @@ import {
 } from "./invariant-registry-test-support.ts";
 import { expect, test } from "bun:test";
 
-const oracle = {
-  name: "fetch-url-redaction",
-  failurePath: "Rejected URLs do not expose credentials.",
-  testPath: "tooling/fetch-url-redaction.test.ts",
-};
 const verifiedVerification = {
   state: "verified",
   lastRun: {
     outcome: "passed",
     ranAt: "2026-09-02T00:00:00.000Z",
     environment: "macOS",
+    oracle: {
+      name: oracle.name,
+      invocation: oracle.invocation,
+      testPath: oracle.testPath,
+    },
   },
 };
 
@@ -36,7 +37,11 @@ test("rejects active enforceable invariants without an oracle", () => {
 test("rejects active enforceable invariants when the oracle path is absent", () => {
   const diagnostics = validateInvariantRegistry(
     registry(active()),
-    validationOptions((): boolean => false),
+    validationOptions(() => ({
+      discovered: false,
+      kind: "missing",
+      tracked: false,
+    })),
   );
 
   expect(diagnosticCodes(diagnostics)).toContain("missing-oracle-path");
@@ -53,9 +58,9 @@ test("checks an enforceable verified oracle path", () => {
         oracle,
       }),
     ),
-    validationOptions((path): boolean => {
+    validationOptions((path) => {
       paths.push(path);
-      return true;
+      return { discovered: true, kind: "regular-file", tracked: true };
     }),
   );
 
@@ -66,9 +71,9 @@ test("does not query an oracle path for a candidate", () => {
   let pathChecked = false;
   validateInvariantRegistry(
     registry(candidate({ controlKind: "enforceable", surface: "hook" })),
-    validationOptions((): boolean => {
+    validationOptions(() => {
       pathChecked = true;
-      return true;
+      return { discovered: true, kind: "regular-file", tracked: true };
     }),
   );
 
@@ -92,9 +97,9 @@ test.each([
         oracle: { ...oracle, testPath: testCase.testPath },
       }),
     ),
-    validationOptions((): boolean => {
+    validationOptions(() => {
       pathChecked = true;
-      return true;
+      return { discovered: true, kind: "regular-file", tracked: true };
     }),
   );
 
@@ -127,7 +132,7 @@ test("translates oracle path check failures without dropping diagnostics", () =>
         oracle,
       }),
     ),
-    validationOptions((): boolean => {
+    validationOptions(() => {
       throw new Error("filesystem unavailable");
     }),
   );
@@ -149,4 +154,85 @@ test("translates oracle path check failures without dropping diagnostics", () =>
       message: "Oracle test path could not be checked.",
     },
   ]);
+});
+
+test.each([
+  {
+    code: "non-regular-oracle-path",
+    inspection: { discovered: false, kind: "non-regular", tracked: true },
+    name: "directory",
+  },
+  {
+    code: "untracked-oracle-path",
+    inspection: { discovered: true, kind: "regular-file", tracked: false },
+    name: "untracked file",
+  },
+  {
+    code: "undiscovered-oracle-path",
+    inspection: { discovered: false, kind: "regular-file", tracked: true },
+    name: "non-test file",
+  },
+] as const)("rejects an oracle backed by a $name", (testCase) => {
+  const diagnostics = validateInvariantRegistry(
+    registry(active()),
+    validationOptions(() => testCase.inspection),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain(testCase.code);
+});
+
+test.each([
+  {
+    name: "oracle name",
+    measurement: { name: "different-oracle" },
+  },
+  {
+    name: "test path",
+    measurement: { testPath: "tooling/different.test.ts" },
+  },
+  {
+    name: "invocation",
+    measurement: { invocation: ["bun", "test", "tooling/different.test.ts"] },
+  },
+] as const)(
+  "rejects verified measurement for a different $name",
+  (testCase) => {
+    const diagnostics = validateInvariantRegistry(
+      registry(
+        active({
+          verification: {
+            ...verifiedVerification,
+            lastRun: {
+              ...verifiedVerification.lastRun,
+              oracle: {
+                ...verifiedVerification.lastRun.oracle,
+                ...testCase.measurement,
+              },
+            },
+          },
+        }),
+      ),
+      validationOptions(),
+    );
+
+    expect(diagnosticCodes(diagnostics)).toContain(
+      "oracle-measurement-mismatch",
+    );
+  },
+);
+
+test("rejects an invocation that does not run the declared oracle path", () => {
+  const diagnostics = validateInvariantRegistry(
+    registry(
+      active({
+        oracle: {
+          ...oracle,
+          invocation: ["bun", "test", "tooling/different.test.ts"],
+        },
+      }),
+    ),
+    validationOptions(),
+  );
+
+  expect(diagnosticCodes(diagnostics)).toContain("invalid-oracle-invocation");
 });

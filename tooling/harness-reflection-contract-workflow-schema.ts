@@ -48,19 +48,36 @@ const decisionBranchesSchema = z
 const approvalBranchesSchema = z
   .object({
     absent: z.tuple([z.literal("render-report-without-mutation")]),
-    granted: z.tuple([z.literal("execute-approved-mutation-order")]),
+    granted: z.tuple([z.literal("execute-approved-atomic-mutation")]),
   })
   .strict();
 
-const approvedMutationOrderSchema = z.tuple([
-  z.literal("select-control-surface"),
-  z.literal("declare-consumers"),
-  z.literal("require-control-oracle"),
-  z.literal("mutate-selected-control-surface"),
-  z.literal("mutate-registry"),
-  z.literal("run-cli"),
-  z.literal("render-report"),
-]);
+const approvedMutationSchema = z
+  .object({
+    prepareOrder: z.tuple([
+      z.literal("select-control-surface"),
+      z.literal("declare-consumers"),
+      z.literal("require-control-oracle"),
+      z.literal("prepare-selected-control-surface"),
+      z.literal("prepare-registry"),
+    ]),
+    validationOrder: z.tuple([
+      z.literal("validate-prepared-selected-control-surface"),
+      z.literal("validate-prepared-registry-with-cli-on-temporary-copy"),
+    ]),
+    applyOrder: z.tuple([
+      z.literal(
+        "apply-selected-control-surface-and-registry-as-coherent-change",
+      ),
+      z.literal("validate-applied-coherent-change"),
+    ]),
+    onAnyError: z.tuple([
+      z.literal("restore-all-touched-files"),
+      z.literal("report-failure"),
+    ]),
+    successOrder: z.tuple([z.literal("render-report")]),
+  })
+  .strict();
 
 const probabilisticPromotionSchema = z
   .object({
@@ -144,7 +161,7 @@ const lifecycleSchema = z
 
 export {
   approvalBranchesSchema,
-  approvedMutationOrderSchema,
+  approvedMutationSchema,
   controlsSchema,
   decisionBranchesSchema,
   diagnosticSchema,

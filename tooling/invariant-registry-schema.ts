@@ -9,6 +9,14 @@ const measurementSchema = z
     outcome: z.enum(["passed", "failed"]),
     ranAt: z.iso.datetime(),
     environment: semanticStringSchema,
+    oracle: z
+      .object({
+        name: semanticStringSchema,
+        testPath: semanticStringSchema,
+        invocation: z.array(semanticStringSchema).min(1),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 const verifiedMeasurementSchema = measurementSchema.extend({
@@ -58,6 +66,7 @@ const oracleSchema = z
     name: semanticStringSchema,
     failurePath: semanticStringSchema,
     testPath: semanticStringSchema,
+    invocation: z.array(semanticStringSchema).min(1),
   })
   .strict();
 const ablationConditionSchema = z
@@ -105,40 +114,47 @@ const retirementSchema = z
     replacedBy: semanticStringSchema.optional(),
   })
   .strict();
-const invariantSchema = z
-  .object({
-    id: semanticStringSchema,
-    statement: semanticStringSchema,
-    lifecycle: z.enum(["candidate", "active", "retired"]),
-    controlKind: z.enum(["probabilistic", "enforceable"]),
-    causeClass: z.enum([
-      "not-applied",
-      "not-loaded",
-      "unknown",
-      "blind-spot",
-      "judgment",
-    ]),
-    severity: z.enum(["low", "medium", "high", "critical"]),
-    sources: z.array(sourceSchema).min(1),
-    scope: scopeSchema,
-    surface: z.enum([
-      "always-loaded-instruction",
-      "conditional-skill",
-      "project-local-contract",
-      "hook",
-      "permission",
-      "lint",
-      "type",
-      "architectural-test",
-    ]),
-    approval: approvalSchema.optional(),
-    oracle: oracleSchema.optional(),
-    marginalAblation: marginalAblationSchema.optional(),
-    consumers: consumersSchema,
-    verification: verificationSchema,
-    retirement: retirementSchema.optional(),
-  })
-  .strict();
+const invariantShape = {
+  id: semanticStringSchema,
+  statement: semanticStringSchema,
+  controlKind: z.enum(["probabilistic", "enforceable"]),
+  causeClass: z.enum([
+    "not-applied",
+    "not-loaded",
+    "unknown",
+    "blind-spot",
+    "judgment",
+  ]),
+  severity: z.enum(["low", "medium", "high", "critical"]),
+  sources: z.array(sourceSchema).min(1),
+  scope: scopeSchema,
+  surface: z.enum([
+    "always-loaded-instruction",
+    "conditional-skill",
+    "project-local-contract",
+    "hook",
+    "permission",
+    "lint",
+    "type",
+    "architectural-test",
+  ]),
+  approval: approvalSchema.optional(),
+  oracle: oracleSchema.optional(),
+  marginalAblation: marginalAblationSchema.optional(),
+  consumers: consumersSchema,
+  verification: verificationSchema,
+};
+const invariantSchema = z.discriminatedUnion("lifecycle", [
+  z.object({ ...invariantShape, lifecycle: z.literal("candidate") }).strict(),
+  z.object({ ...invariantShape, lifecycle: z.literal("active") }).strict(),
+  z
+    .object({
+      ...invariantShape,
+      lifecycle: z.literal("retired"),
+      retirement: retirementSchema,
+    })
+    .strict(),
+]);
 const registrySchema = z
   .object({ version: z.literal(1), invariants: z.array(invariantSchema) })
   .strict();
@@ -155,9 +171,17 @@ type RegistryDiagnostic = Readonly<{
   path: string;
   message: string;
 }>;
+type OracleInspection = Readonly<{
+  discovered: boolean;
+  kind: "missing" | "non-regular" | "regular-file";
+  tracked: boolean;
+}>;
 type ValidationOptions = Readonly<{
   repositoryRoot: string;
-  pathExists: (path: string) => boolean;
+  inspectOracle: (
+    path: string,
+    invocation: readonly string[],
+  ) => OracleInspection;
 }>;
 
 const parseInvariantRegistry = (input: unknown): InvariantRegistry =>
@@ -167,6 +191,7 @@ export {
   parseInvariantRegistry,
   type InvariantRecord,
   type InvariantRegistry,
+  type OracleInspection,
   type RegistryDiagnostic,
   type ValidationOptions,
 };

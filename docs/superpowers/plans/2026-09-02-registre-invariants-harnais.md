@@ -35,7 +35,8 @@
 - Produces: `InvariantRegistry`, `InvariantRecord`, `RegistryDiagnostic`.
 - Produces: `parseInvariantRegistry(input: unknown): InvariantRegistry`.
 - Produces: `validateInvariantRegistry(registry: InvariantRegistry, options: ValidationOptions): readonly RegistryDiagnostic[]`.
-- `ValidationOptions` consumes `repositoryRoot: string` and `pathExists(path: string): boolean`, afin de garder la politique testable sans accès disque implicite.
+- `ValidationOptions` consomme `repositoryRoot: string` et une inspection d’oracle injectée, afin de
+  garder la politique testable sans accès disque ou Git implicite.
 
 - [ ] **Step 1: Écrire les premiers tests RED du schéma fermé**
 
@@ -156,11 +157,11 @@ Expected: FAIL avec des tableaux de diagnostics vides pour les cas encore non co
 - [ ] **Step 7: Implémenter la politique sémantique minimale**
 
 Retourner des diagnostics stables `{ code, path, message }` sans lever d’exception après parsing.
-Calculer les PR distinctes depuis le champ canonique `pullRequestUrl`, imposer les règles de
-promotion, vérifier la matrice surface/contrôle, puis appeler `pathExists` seulement pour l’oracle
+Calculer les PR distinctes depuis l’identité canonique forge, imposer les règles de promotion,
+vérifier la matrice surface/contrôle, puis appeler l’inspection injectée seulement pour l’oracle
 d’un invariant exécutoire `active` ou `verified`.
 
-- [ ] **Step 8: Vérifier le GREEN et refactorer**
+- [ ] **Step 8: Vérifier le GREEN et remanier**
 
 Run: `bun test tooling/invariant-registry-contract.test.ts`
 
@@ -251,7 +252,7 @@ La fixture PR 206 représente un invariant exécutoire `active`, sévérité `hi
 ```
 
 Son oracle cible `tooling/git-main-branch-entry.test.ts` et le chemin d’échec « rejected fetch URL
-userinfo never reaches stderr ». La fixture PR 207 représente le cycle `retired`, conserve sa preuve
+credentials never reach stderr ». La fixture PR 207 représente le cycle `retired`, conserve sa preuve
 `https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825`, sa dernière mesure et la
 raison de retraite du consommateur historique de mesure du dépôt ; l’ancien oracle peut être
 conservé sans être présenté comme encore exécutable.
@@ -411,7 +412,8 @@ git commit -m "feat(harness): govern named invariant promotion"
 
 - Consumes: tous les nouveaux `.ts` par les globs existants du lint, du formatage, du typecheck et de
   `bun test`.
-- Adds to CSpell: le skill, sa référence, ses evals et le registre.
+- Adds to CSpell: le skill, sa référence, ses evals, le relevé de régression, le registre, la
+  conception, le plan et les deux fixtures.
 - Preserves: les projections existantes de `harness-reflection` vers Claude, Codex et Cursor.
 
 - [ ] **Step 1: Écrire le RED de couverture CI**

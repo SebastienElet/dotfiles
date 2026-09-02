@@ -1,6 +1,6 @@
 import {
   approvalBranchesSchema,
-  approvedMutationOrderSchema,
+  approvedMutationSchema,
   controlsSchema,
   decisionBranchesSchema,
   diagnosticSchema,
@@ -29,7 +29,7 @@ const harnessReflectionContractSchema = z
     harnessGapWorkflowOrder: harnessGapWorkflowOrderSchema,
     decisionBranches: decisionBranchesSchema,
     approvalBranches: approvalBranchesSchema,
-    approvedMutationOrder: approvedMutationOrderSchema,
+    approvedMutation: approvedMutationSchema,
     registry: z
       .object({
         path: z.literal("harness/invariants/registry.json"),

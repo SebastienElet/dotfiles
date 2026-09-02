@@ -55,17 +55,18 @@ Chaque invariant enregistre également :
 
 - une formulation actionnable et une classe de cause parmi `not-applied`, `not-loaded`, `unknown`,
   `blind-spot` et `judgment` ;
-- une sévérité, des sources de revue identifiant leur PR et une URL ou référence immuable ;
+- une sévérité et des sources de revue dans une union fermée GitHub/Bitbucket Cloud ; chaque
+  occurrence sépare l’identité canonique de la PR de l’URL immuable du commentaire ou de la revue ;
 - un périmètre `cross-project` ou `project-local`, avec des exceptions structurées et justifiées ;
 - une surface parmi instruction toujours chargée, skill conditionnel, hook, permission, lint, type,
   test architectural ou contrat local ;
-- pour une surface exécutoire, un oracle nommé qui cible le chemin d’échec et un chemin de test
-  versionné ;
+- pour une surface exécutoire, un oracle nommé qui cible le chemin d’échec, un fichier de test
+  régulier suivi par Git et découvert par la suite, ainsi que son invocation exacte ;
 - pour chaque agent `claude`, `codex` et `cursor`, un statut `supported` ou `unsupported`, son
   mécanisme ou sa raison, et le dernier environnement vérifié lorsqu’il existe ;
 - pour un invariant retiré, la date, la raison et éventuellement l’identifiant qui le remplace.
 
-Les surfaces instructionnelles et les skills sont probabilistes. Hooks, permissions, lint, types et
+Les surfaces d’instruction et les skills sont probabilistes. Hooks, permissions, lint, types et
 tests architecturaux sont exécutoires seulement si le mécanisme choisi refuse effectivement le
 chemin dangereux ; un contrat local en prose reste probabiliste.
 
@@ -74,16 +75,17 @@ chemin dangereux ; un contrat local en prose reste probabiliste.
 Le parseur rejette les valeurs inconnues au lieu de leur donner une valeur plausible. Après le
 parsing Zod, les règles sémantiques refusent notamment :
 
-- deux invariants portant le même identifiant ou la même source de revue ;
+- deux invariants portant le même identifiant ou réutilisant la même occurrence de preuve ;
 - une promotion `active` sans approbation humaine explicite ;
 - une promotion ordinaire sans sources provenant d’au moins deux PR distinctes ;
 - une promotion sur une seule PR sans sévérité forte établie ;
 - la promotion d’un `judgment` en contrôle ;
 - une surface et un `controlKind` incompatibles ;
-- un contrôle exécutoire actif ou vérifié sans oracle de chemin d’échec nommé et fichier de test
-  existant ;
+- un contrôle exécutoire actif ou vérifié sans oracle nommé, sans fichier de test régulier suivi et
+  découvert, ou avec une invocation différente de celle mesurée ;
 - un état `verified` sans mesure verte, environnement et date ;
-- un invariant `retired` sans raison et date ;
+- un invariant `retired` sans raison et date, une retraite sur un autre cycle de vie, ou un graphe
+  de remplacement cyclique ou à cible inconnue ;
 - une déclaration de consommation qui omet un des trois agents ou présente un comportement non
   supporté comme supporté.
 
@@ -99,7 +101,9 @@ preuve de l’oracle.
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
 3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ;
 4. conserve le candidat dans la session jusqu’à approbation explicite ;
-5. après approbation, modifie le registre et la surface choisie dans le même changement cohérent ;
+5. après approbation, prépare la surface et le registre, valide d’abord les deux — le registre via la CLI
+   sur une copie temporaire — puis les applique comme un changement cohérent ; toute erreur restaure
+   tous les fichiers touchés ;
 6. exige le test du chemin d’échec avant tout contrôle exécutoire ;
 7. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
 8. retire un invariant en conservant son historique, ses exceptions et son remplacement éventuel.
@@ -114,7 +118,9 @@ Le point d’entrée supporté est une commande de validation en lecture seule c
 registre canonique. Il accepte un chemin explicite pour les fixtures, parse le JSON une fois à la
 frontière, produit des diagnostics stables avec le chemin du champ concerné et retourne un statut
 non nul pour tout fichier absent, JSON invalide, schéma inconnu, règle sémantique violée ou oracle
-introuvable.
+non régulier, non suivi, non découvert ou introuvable. L’inspection locale utilise les chemins réels,
+les métadonnées du système de fichiers et l’index Git ; la politique pure reçoit ce résultat par
+injection.
 
 Il ne télécharge aucune preuve, n’exécute aucun oracle et ne réécrit jamais le JSON. Les références
 distantes sont des identifiants traçables ; leur disponibilité réseau n’est pas confondue avec la
@@ -126,11 +132,11 @@ Les tests Bun invoquent le module réel et le point d’entrée livré. Ils couv
 
 - parsing valide et erreurs Zod lisibles ;
 - seuil de deux PR, exception de sévérité forte et refus d’une occurrence isolée ordinaire ;
-- déduplication d’une source déjà liée ;
+- déduplication globale d’une occurrence de preuve, sans confondre plusieurs commentaires d’une PR ;
 - distinction probabiliste/exécutoire ;
 - refus d’un contrôle exécutoire sans oracle de chemin d’échec ;
 - vérification avec et sans mesure verte et environnement ;
-- exceptions, retraite et remplacement ;
+- exceptions, retraite discriminée et graphe de remplacement acyclique ;
 - présence séparée de Claude, Codex et Cursor, y compris un cas `unsupported` ;
 - fichier absent, JSON invalide, version inconnue et chemin d’oracle absent.
 
@@ -142,9 +148,9 @@ Deux fixtures historiques exercent le flux sans inscrire automatiquement un nouv
   une erreur aval trompeuse, cas de frontière qui doit échouer explicitement.
 
 Les gates attendues sont `bun test`, `tsc --noEmit`, le lint et le formatage TypeScript, le contrôle
-statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. Les
-tests locaux nomment macOS comme environnement exercé ; GitHub Actions reste l’oracle pour Ubuntu et
-macOS hébergé.
+statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. La
+suite complète est exercée localement sur macOS. Le workflow TypeScript actuel de GitHub Actions
+l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendiquée pour cette suite.
 
 ## Non-objectifs
 
@@ -161,8 +167,10 @@ macOS hébergé.
 - `harness-reflection` consomme le relevé factuel sans reconstruire l’historique de revue.
 - Le seuil deux PR ou sévérité forte et tous les refus ci-dessus sont prouvés par des tests du vrai
   validateur.
-- Aucun contrôle exécutoire actif ou vérifié n’existe sans oracle de chemin d’échec versionné.
-- Une source répétée se rattache à un invariant existant ou est refusée comme doublon.
+- Aucun contrôle exécutoire actif ou vérifié n’existe sans oracle de chemin d’échec versionné,
+  suivi, découvert et lié à son invocation mesurée.
+- Une occurrence de preuve répétée est refusée globalement ; plusieurs occurrences distinctes de la
+  même PR restent autorisées et ne comptent que pour une PR.
 - Exceptions et retraite conservent l’historique au lieu de supprimer la trace.
 - Claude, Codex et Cursor sont déclarés séparément, y compris lorsque l’un est non supporté.
 - Les deux constats historiques traversent le flux dans des fixtures sans devenir des règles réelles

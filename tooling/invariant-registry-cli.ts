@@ -3,13 +3,15 @@ import {
   parseInvariantRegistry,
   validateInvariantRegistry,
 } from "./invariant-registry-contract.ts";
+import { realpathSync, statSync } from "node:fs";
+import type { OracleInspection } from "./invariant-registry-contract.ts";
 import { ZodError } from "zod";
 import { realpath } from "node:fs/promises";
-import { realpathSync } from "node:fs";
 
 const argumentOffset = 2;
 const repositoryRoot = resolve(import.meta.dir, "..");
 const defaultRegistryPath = "harness/invariants/registry.json";
+const oracleInvocationLength = 3;
 
 const isOutside = (root: string, path: string): boolean => {
   const pathFromRoot = relative(root, path);
@@ -95,12 +97,42 @@ const resolveRegistryTarget = async (
   return target;
 };
 
-const oraclePathExists = (root: string, path: string): boolean => {
+const gitTracksPath = (root: string, path: string): boolean =>
+  Bun.spawnSync([
+    "git",
+    "-C",
+    root,
+    "ls-files",
+    "--error-unmatch",
+    "--",
+    relative(root, path),
+  ]).exitCode === 0;
+
+const inspectOracle = (
+  root: string,
+  path: string,
+  invocation: readonly string[],
+): OracleInspection => {
   try {
-    return !isOutside(root, realpathSync(path));
+    const target = realpathSync(path);
+    if (isOutside(root, target)) {
+      return { discovered: false, kind: "missing", tracked: false };
+    }
+    if (!statSync(target).isFile()) {
+      return { discovered: false, kind: "non-regular", tracked: false };
+    }
+    const tracked = gitTracksPath(root, path);
+    const repositoryPath = relative(root, path);
+    const discovered =
+      repositoryPath.endsWith(".test.ts") &&
+      invocation.length === oracleInvocationLength &&
+      invocation[0] === "bun" &&
+      invocation[1] === "test" &&
+      invocation[2] === repositoryPath;
+    return { discovered, kind: "regular-file", tracked };
   } catch (error) {
     if (isMissingPathError(error)) {
-      return false;
+      return { discovered: false, kind: "missing", tracked: false };
     }
     throw new Error("Oracle test path could not be checked.", { cause: error });
   }
@@ -132,7 +164,8 @@ const main = async (): Promise<number> => {
   );
   const registry = parseRegistry(await loadInvariantRegistry(registryPath));
   const diagnostics = validateInvariantRegistry(registry, {
-    pathExists: (testPath): boolean => oraclePathExists(root, testPath),
+    inspectOracle: (testPath, invocation): OracleInspection =>
+      inspectOracle(root, testPath, invocation),
     repositoryRoot: root,
   });
   if (diagnostics.length > 0) {
