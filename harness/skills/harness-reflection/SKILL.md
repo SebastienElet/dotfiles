@@ -13,60 +13,34 @@ metadata:
 
 ## Overview
 
-Stop unproductive retry loops and turn them into one falsifiable learning candidate. Recurrence is
-a signal to investigate, never proof that a permanent rule is correct. The skill may propose a
-harness change, but promotion remains versioned, evidence-gated, and human-approved.
+Route repeated-failure analysis through one executable contract. The contract owns the diagnostic,
+registry, approval, verification, and lifecycle workflow; this file only activates and routes it.
 
 ## Usage
 
-Use after a second materially equivalent failure, after a recovery that repeats an earlier failure,
-or when reviewing what the harness should learn from a completed task. Do not activate for one
-ordinary command error that immediately reveals its correction.
+Use after a second materially equivalent failure, after a recovery repeats an earlier failure, or
+when reviewing what the harness should learn from completed work. Do not activate for one ordinary
+error whose correction is already known.
 
 Example: two agents independently omit the same required validation even though the applicable
 project instructions are discoverable.
 
 ## Steps
 
-1. Name the repeated observable outcome, the intended outcome, and why the attempts are materially
-   equivalent. Stop repeating the unchanged approach.
-2. Preserve the smallest useful evidence: failing command or factual `pr-feedback` finding, relevant
-   environment, agent, repository, harness fingerprint when available, and the recovery that
-   succeeded or failed. Do not interpret, rewrite, or mutate `pr-feedback` evidence.
-3. Classify the cause as `task-specific`, `owned-defect`, `external-transient`, `missing-capability`,
-   or `harness-gap`. Choose `harness-gap` only when a reusable instruction, skill, tool preference,
-   sequence, avoidance rule, or routing decision could plausibly change the outcome.
-4. Check current instructions, skills, ADRs, and official dependency behavior before proposing a
-   compensating rule. Fix an owned defect instead of teaching the harness its workaround.
-5. If the result is not `harness-gap`, stop. Return the existing `skip` with the reason and next
-   diagnostic action; do not read the reference or registry.
-6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md) and
-   execute its single authoritative JSON contract in the declared order. Treat every set as closed,
-   every boolean or required field as non-negotiable, and any conflicting prose as invalid. The
-   contract governs registry lookup, cause classification, evidence, decision, approval, control,
-   consumers, oracle, routes, CLI report, proposal, lifecycle, retirement, and report fields.
+1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
+2. Execute its single authoritative JSON contract exactly as structured. Stop with a finding when
+   the block is missing, malformed, duplicated, or contradicted; never supplement it from prose.
 
 ## Gotchas
 
-- **Counting unrelated failures** — a flaky network request and a wrong repository assumption do
-  not form a pattern; compare observable outcome, cause, and recovery before reflecting.
-- **Learning from recurrence alone** — repeated mistakes can share one bad premise; require a
-  falsifiable behavioral trial before promotion.
-- **Encoding an owned defect** — a workaround becomes permanent policy; fix the defect or record a
-  focused issue instead.
-- **Writing broad instructions first** — every future task pays the context cost; prefer the
-  narrowest existing skill or tool boundary proven by the trial.
-- **Duplicating a named invariant** — the evidence splits across records; inspect the registry and
-  return `link` when the source belongs to an existing invariant.
+- **Skipping the contract** — the registry flow loses its gates; load the reference before deciding.
+- **Treating prose as authority** — summaries can drift from executable fields; use only the JSON
+  block for domain decisions.
+- **Continuing after invalid input** — a parse failure silently disables policy; return the validator
+  finding instead of choosing a fallback.
 
 ## Constraints
 
-- Never edit instructions, skills, hooks, repository files, or harness state without explicit user
-  approval of the proposed trial or change.
-- Never let a learned rule modify its own evaluator, evidence threshold, promotion policy, or
-  authority.
-- Never include secrets, credentials, private prompt content, or raw transcripts in a candidate.
-- Never claim that activation scenarios or repeated failures prove improvement; name the behavioral
-  oracle and the environment in which it ran.
-- Keep candidates scoped per agent unless cross-agent trials independently support shared behavior.
-- Never promote or mutate the registry without explicit approval, even under time pressure.
+- Keep the authoritative JSON block as the sole source of domain workflow rules.
+- Keep this skill as a router; do not restate contract decisions, classes, thresholds, or gates here.
+- Refuse the workflow when the authoritative block or its non-contractual surface is invalid.

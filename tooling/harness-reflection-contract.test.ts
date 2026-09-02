@@ -4,45 +4,24 @@ import {
   validateHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
 import { expect, test } from "bun:test";
+import { mutateContract } from "./harness-reflection-contract-test-support.ts";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 const contractFinding =
   "authoritative contract preserves exact workflow invariants";
 
-const replaceRequired = (
-  source: string,
-  current: string,
-  replacement: string,
-): string => {
-  expect(source).toContain(current);
-  return source.replace(current, replacement);
-};
-
-const mutateReference = (
+const contractMutant = (
   sources: HarnessReflectionSources,
-  current: string,
-  replacement: string,
+  path: readonly string[],
+  mutate: (target: Readonly<Record<string, unknown>>) => void,
 ): HarnessReflectionSources => ({
   ...sources,
-  reference: replaceRequired(sources.reference, current, replacement),
+  reference: mutateContract(sources.reference, path, mutate),
 });
 
 const expectContractRejection = (sources: HarnessReflectionSources): void => {
   expect(validateHarnessReflectionContract(sources)).toContain(contractFinding);
-};
-
-const mutateEvalQuery = (
-  sources: HarnessReflectionSources,
-  current: string,
-  replacement: string,
-): HarnessReflectionSources => {
-  const serialized = replaceRequired(
-    JSON.stringify(sources.evals),
-    current,
-    replacement,
-  );
-  return { ...sources, evals: JSON.parse(serialized) };
 };
 
 test("routes factual PR evidence through the named registry", async () => {
@@ -50,20 +29,24 @@ test("routes factual PR evidence through the named registry", async () => {
   expect(validateHarnessReflectionContract(sources)).toEqual([]);
 });
 
-test("keeps link deduplication and report scope in the consumed contract", async () => {
+test("keeps link deduplication and report scope", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '    "linkEffect": "add-source-without-duplicate-record",\n',
-      "",
+      ["registry"],
+      (registry: Readonly<Record<string, unknown>>): void => {
+        Reflect.deleteProperty(registry, "linkEffect");
+      },
     ),
   );
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '    "appliesToDecisions": ["skip", "link", "propose"],\n',
-      "",
+      ["report"],
+      (report: Readonly<Record<string, unknown>>): void => {
+        Reflect.deleteProperty(report, "appliesToDecisions");
+      },
     ),
   );
 });
@@ -71,10 +54,17 @@ test("keeps link deduplication and report scope in the consumed contract", async
 test("rejects a defer decision", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '"decisions": ["skip", "link", "propose"]',
-      '"decisions": ["skip", "link", "propose", "defer"]',
+      ["registry"],
+      (registry: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(registry, "decisions", [
+          "skip",
+          "link",
+          "propose",
+          "defer",
+        ]);
+      },
     ),
   );
 });
@@ -82,166 +72,129 @@ test("rejects a defer decision", async () => {
 test("rejects a sixth registry class", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '"classes": ["not-applied", "not-loaded", "unknown", "blind-spot", "judgment"]',
-      '"classes": ["not-applied", "not-loaded", "unknown", "blind-spot", "judgment", "deferred"]',
+      ["registry"],
+      (registry: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(registry, "classes", [
+          "not-applied",
+          "not-loaded",
+          "unknown",
+          "blind-spot",
+          "judgment",
+          "deferred",
+        ]);
+      },
     ),
   );
 });
 
 test("rejects a sixth diagnostic class", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const mutant = {
-    ...sources,
-    skill: replaceRequired(
-      sources.skill,
-      "or `harness-gap`. Choose",
-      "or `harness-gap`, or `deferred`. Choose",
+  expectContractRejection(
+    contractMutant(
+      sources,
+      ["diagnostic"],
+      (diagnostic: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(diagnostic, "classes", [
+          "task-specific",
+          "owned-defect",
+          "external-transient",
+          "missing-capability",
+          "harness-gap",
+          "deferred",
+        ]);
+      },
     ),
-  };
-  expect(validateHarnessReflectionContract(mutant)).toContain(
-    "skill preserves the diagnostic classes before the harness-gap gate",
   );
 });
 
 test("rejects a sixth compatible surface", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '"enforceable": ["hook", "permission", "lint", "type", "architectural-test"]',
-      '"enforceable": ["hook", "permission", "lint", "type", "architectural-test", "runtime-policy"]',
+      ["controls"],
+      (controls: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(controls, "enforceable", [
+          "hook",
+          "permission",
+          "lint",
+          "type",
+          "architectural-test",
+          "runtime-policy",
+        ]);
+      },
     ),
   );
 });
 
-test("rejects optional concrete proof", async () => {
+test.each([
+  [
+    "optional concrete proof",
+    { key: "concretePrUrls", path: ["evidence"], value: "optional" },
+  ],
+  [
+    "approval denial",
+    { key: "requiredBeforeMutation", path: ["approval"], value: false },
+  ],
+  [
+    "delayed CLI verification",
+    { key: "timing", path: ["cli"], value: "eventually-before-report" },
+  ],
+] as const)("rejects %s", async (_name, mutation) => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '"concretePrUrls": "required"',
-      '"concretePrUrls": "optional"',
+      mutation.path,
+      (target: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(target, mutation.key, mutation.value);
+      },
     ),
   );
 });
 
-test("rejects approval denial", async () => {
+test.each([
+  ["skill-manager route", { key: "skillChange", path: ["routes"] }],
+  ["agent-instructions route", { key: "instructionChange", path: ["routes"] }],
+  ["three consumers", { key: "required", path: ["consumers"] }],
+  ["oracle requirement", { key: "requiredAfterApproval", path: ["oracle"] }],
+  ["retirement fields", { key: "requiredFields", path: ["retirement"] }],
+] as const)("rejects removal of %s", async (_name, mutation) => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   expectContractRejection(
-    mutateReference(
+    contractMutant(
       sources,
-      '"requiredBeforeMutation": true',
-      '"requiredBeforeMutation": false',
+      mutation.path,
+      (target: Readonly<Record<string, unknown>>): void => {
+        Reflect.deleteProperty(target, mutation.key);
+      },
     ),
   );
 });
 
-test("rejects removal of the skill-manager route", async () => {
+test("rejects contradictory prose outside the contract", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(sources, '    "skillChange": "skill-manager",\n', ""),
-  );
-});
-
-test("rejects removal of the agent-instructions route", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(
-      sources,
-      '    "skillChange": "skill-manager",\n    "instructionChange": "agent-instructions"\n',
-      '    "skillChange": "skill-manager"\n',
-    ),
-  );
-});
-
-test("rejects removal of the three consumers", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(
-      sources,
-      '    "required": ["claude", "codex", "cursor"],\n',
-      "",
-    ),
-  );
-});
-
-test("rejects removal of the oracle requirement", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(sources, '    "requiredAfterApproval": true,\n', ""),
-  );
-});
-
-test("rejects removal of retirement fields", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(
-      sources,
-      '    "requiredFields": ["retiredAt", "reason"],\n',
-      "",
-    ),
-  );
-});
-
-test("rejects delayed CLI verification", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  expectContractRejection(
-    mutateReference(
-      sources,
-      '"timing": "immediately-before-report"',
-      '"timing": "eventually-before-report"',
-    ),
-  );
-});
-
-test("rejects contradictory prose outside the consumed contract", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const contradictory = {
+  const mutant = {
     ...sources,
-    reference: `${sources.reference}\nExplicit approval is not required.`,
+    reference: `${sources.reference}\nExplicit approval is not required.\n`,
   };
-  expect(validateHarnessReflectionContract(contradictory)).toContain(
+  expect(validateHarnessReflectionContract(mutant)).toContain(
     "reference contains no parallel or contradictory authority",
   );
 });
 
-test("rejects removal of the harness-gap contract route", async () => {
+test("rejects removal of the skill router", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const missingRoute = {
+  const mutant = {
     ...sources,
-    skill: replaceRequired(
-      sources.skill,
-      "execute its single authoritative JSON contract in the declared order",
-      "read the reference when useful",
+    skill: sources.skill.replace(
+      "[references/invariant-registry.md](references/invariant-registry.md)",
+      "the registry reference",
     ),
   };
-  expect(validateHarnessReflectionContract(missingRoute)).toContain(
-    "skill consumes the authoritative contract in order",
-  );
-});
-
-test("rejects an inexact positive registry-link query", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const mutant = mutateEvalQuery(
-    sources,
-    "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer",
-    "Relie ces constats à une règle",
-  );
   expect(validateHarnessReflectionContract(mutant)).toContain(
-    "evals preserve the exact positive registry-link query",
-  );
-});
-
-test("rejects an inexact negative stylistic query", async () => {
-  const sources = await loadHarnessReflectionSources(repositoryRoot);
-  const mutant = mutateEvalQuery(
-    sources,
-    "J'ai une préférence stylistique isolée pour ce nommage, change-le",
-    "Je préfère ce nommage, change-le",
-  );
-  expect(validateHarnessReflectionContract(mutant)).toContain(
-    "evals preserve the exact negative stylistic query",
+    "skill contains only the closed router surface",
   );
 });

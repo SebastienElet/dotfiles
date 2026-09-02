@@ -21,7 +21,11 @@ const enforceableSurfaceSchema = z.enum([
   "architectural-test",
 ]);
 const workflowStepSchema = z.enum([
+  "identify-equivalent-failure",
   "preserve-factual-evidence",
+  "inspect-current-guidance",
+  "classify-diagnostic-cause",
+  "gate-registry-access",
   "search-registry",
   "classify-registry-cause",
   "choose-decision",
@@ -37,8 +41,28 @@ const workflowStepSchema = z.enum([
 const harnessReflectionContractSchema = z
   .object({
     version: z.literal(1),
-    workflowOrder: z.tuple([
+    initialWorkflowOrder: z.tuple([
+      workflowStepSchema.extract(["identify-equivalent-failure"]),
       workflowStepSchema.extract(["preserve-factual-evidence"]),
+      workflowStepSchema.extract(["inspect-current-guidance"]),
+      workflowStepSchema.extract(["classify-diagnostic-cause"]),
+      workflowStepSchema.extract(["gate-registry-access"]),
+    ]),
+    diagnostic: z
+      .object({
+        classes: z.tuple([
+          z.literal("task-specific"),
+          z.literal("owned-defect"),
+          z.literal("external-transient"),
+          z.literal("missing-capability"),
+          z.literal("harness-gap"),
+        ]),
+        harnessGap: z.literal("continue-with-registry-workflow"),
+        other: z.literal("skip-with-reason-and-next-diagnostic-action"),
+        registryAccessForOther: z.literal("forbidden"),
+      })
+      .strict(),
+    registryWorkflowOrder: z.tuple([
       workflowStepSchema.extract(["search-registry"]),
       workflowStepSchema.extract(["classify-registry-cause"]),
       workflowStepSchema.extract(["choose-decision"]),

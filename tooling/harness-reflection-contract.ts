@@ -1,3 +1,4 @@
+import { duplicateJsonObjectKeys } from "./harness-reflection-contract-json-keys.ts";
 import { harnessReflectionContractSchema } from "./harness-reflection-contract-schema.ts";
 import { resolve } from "node:path";
 
@@ -23,17 +24,14 @@ type ContractBlock = Readonly<{
 
 const expectedReferenceWrapper = `# Invariant Registry
 
-Use this reference only after the diagnostic class is \`harness-gap\`. The canonical registry remains
-the source of truth for named invariant records. The JSON block below is the sole authority for the
-reflection workflow; execute its \`workflowOrder\` literally and reject prose or data that contradicts
-any closed value.
-
 ## Authoritative workflow contract
 
 \`\`\`json
 {{contract}}
 \`\`\`
 `;
+const expectedSkillSurfaceDigest =
+  "79af2a93643c0861cc7854cba74fdfc484f7a8fc90b4d039f1aca5ba4ce52d01";
 const linkQuery =
   "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
 const stylisticQuery =
@@ -56,29 +54,6 @@ const loadHarnessReflectionSources = async (
     skill: await Bun.file(resolve(skillRoot, "SKILL.md")).text(),
   };
 };
-
-const codeValues = (source: string): readonly string[] => {
-  const values: string[] = [];
-  const pattern = /`(?<value>[^`]+)`/gu;
-  for (
-    let match = pattern.exec(source);
-    match !== null;
-    match = pattern.exec(source)
-  ) {
-    values.push(match.groups?.value ?? "");
-  }
-  return values;
-};
-
-const sameValues = (
-  actual: readonly string[],
-  expected: readonly string[],
-): boolean =>
-  actual.length === expected.length &&
-  actual.every((value, index) => value === expected[index]);
-
-const normalizeWhitespace = (source: string): string =>
-  source.replaceAll(/\s+/gu, " ");
 
 const extractContractBlock = (reference: string): ContractBlock => {
   const matches = [...reference.matchAll(/```json\n(?<json>[\s\S]*?)\n```/gu)];
@@ -103,6 +78,9 @@ const authoritativeContractFindings = (
   if (block.json === undefined) {
     return ["reference has one authoritative JSON contract"];
   }
+  if (duplicateJsonObjectKeys(block.json).length > 0) {
+    return ["authoritative contract has unique JSON object keys"];
+  }
   let parsed: unknown = undefined;
   try {
     parsed = JSON.parse(block.json);
@@ -119,46 +97,11 @@ const authoritativeContractFindings = (
   ];
 };
 
-const skillFlowFindings = (skill: string): readonly string[] => {
-  const diagnosticSection =
-    /3\. Classify the cause as[\s\S]*?or `harness-gap`\./u.exec(skill)?.[0] ??
-    "";
-  const expectedDiagnostics = [
-    "task-specific",
-    "owned-defect",
-    "external-transient",
-    "missing-capability",
-    "harness-gap",
-  ];
-  const markers = [
-    "2. Preserve the smallest useful evidence:",
-    "3. Classify the cause as",
-    "5. If the result is not `harness-gap`",
-    "6. For `harness-gap`, read",
-    "execute its single authoritative JSON contract in the declared order",
-  ];
-  const ordered = markers.every(
-    (marker, index) =>
-      index === 0 ||
-      skill.indexOf(marker) > skill.indexOf(markers[index - 1] ?? ""),
-  );
-  return [
-    ...(sameValues(codeValues(diagnosticSection), expectedDiagnostics)
-      ? []
-      : ["skill preserves the diagnostic classes before the harness-gap gate"]),
-    ...(ordered ? [] : ["skill consumes the authoritative contract in order"]),
-    ...(normalizeWhitespace(skill).includes(
-      "reason and next diagnostic action",
-    ) && skill.includes("do not read the reference or registry")
-      ? []
-      : ["non-harness-gap stops before registry access"]),
-    ...(skill.includes(
-      "[references/invariant-registry.md](references/invariant-registry.md)",
-    )
-      ? []
-      : ["skill routes harness-gap to the registry reference"]),
-  ];
-};
+const skillSurfaceFindings = (skill: string): readonly string[] =>
+  new Bun.CryptoHasher("sha256").update(skill).digest("hex") ===
+  expectedSkillSurfaceDigest
+    ? []
+    : ["skill contains only the closed router surface"];
 
 const parseEvals = (value: unknown): EvalSources => {
   if (!isRecord(value) || !Array.isArray(value.queries)) {
@@ -190,12 +133,20 @@ const exactQuery = (
       candidate.query === query && candidate.shouldActivate === shouldActivate,
   ).length === 1;
 
+const uniqueEvalQueries = (evals: EvalSources): boolean => {
+  const queryTexts = evals.queries.map(({ query }) => query);
+  return new Set(queryTexts).size === queryTexts.length;
+};
+
 const evalFindings = (evals: EvalSources): readonly string[] => [
   ...(evals.valid ? [] : ["evals have valid structured queries"]),
   ...(evals.slug === "harness-reflection"
     ? []
     : ["evals use the harness-reflection slug"]),
   ...(evals.version === "1.1" ? [] : ["evals use version 1.1"]),
+  ...(uniqueEvalQueries(evals)
+    ? []
+    : ["eval queries have unique text and polarity"]),
   ...(exactQuery(evals, linkQuery, true)
     ? []
     : ["evals preserve the exact positive registry-link query"]),
@@ -207,7 +158,7 @@ const evalFindings = (evals: EvalSources): readonly string[] => [
 const validateHarnessReflectionContract = (
   sources: HarnessReflectionSources,
 ): readonly string[] => [
-  ...skillFlowFindings(sources.skill),
+  ...skillSurfaceFindings(sources.skill),
   ...authoritativeContractFindings(sources.reference),
   ...evalFindings(parseEvals(sources.evals)),
 ];

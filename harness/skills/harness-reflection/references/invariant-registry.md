@@ -1,17 +1,30 @@
 # Invariant Registry
 
-Use this reference only after the diagnostic class is `harness-gap`. The canonical registry remains
-the source of truth for named invariant records. The JSON block below is the sole authority for the
-reflection workflow; execute its `workflowOrder` literally and reject prose or data that contradicts
-any closed value.
-
 ## Authoritative workflow contract
 
 ```json
 {
   "version": 1,
-  "workflowOrder": [
+  "initialWorkflowOrder": [
+    "identify-equivalent-failure",
     "preserve-factual-evidence",
+    "inspect-current-guidance",
+    "classify-diagnostic-cause",
+    "gate-registry-access"
+  ],
+  "diagnostic": {
+    "classes": [
+      "task-specific",
+      "owned-defect",
+      "external-transient",
+      "missing-capability",
+      "harness-gap"
+    ],
+    "harnessGap": "continue-with-registry-workflow",
+    "other": "skip-with-reason-and-next-diagnostic-action",
+    "registryAccessForOther": "forbidden"
+  },
+  "registryWorkflowOrder": [
     "search-registry",
     "classify-registry-cause",
     "choose-decision"
@@ -31,7 +44,13 @@ any closed value.
   ],
   "registry": {
     "path": "harness/invariants/registry.json",
-    "classes": ["not-applied", "not-loaded", "unknown", "blind-spot", "judgment"],
+    "classes": [
+      "not-applied",
+      "not-loaded",
+      "unknown",
+      "blind-spot",
+      "judgment"
+    ],
     "decisions": ["skip", "link", "propose"],
     "judgmentDecision": "skip",
     "existingInvariantDecision": "link",
@@ -51,7 +70,11 @@ any closed value.
     "timePressureBypass": false
   },
   "controls": {
-    "probabilistic": ["always-loaded-instruction", "conditional-skill", "project-local-contract"],
+    "probabilistic": [
+      "always-loaded-instruction",
+      "conditional-skill",
+      "project-local-contract"
+    ],
     "enforceable": ["hook", "permission", "lint", "type", "architectural-test"],
     "selectionRequiredAfterApproval": true
   },

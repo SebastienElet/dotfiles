@@ -3,6 +3,7 @@ import {
   loadHarnessReflectionSources,
   validateHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
+import { mutateContract } from "./harness-reflection-contract-test-support.ts";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -11,21 +12,31 @@ test("separates decision reporting from approved mutation work", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
   const skipContinuesIntoMutation = {
     ...sources,
-    reference: sources.reference.replace(
-      '"skip": ["render-report"]',
-      '"skip": ["require-approval", "render-report"]',
+    reference: mutateContract(
+      sources.reference,
+      ["decisionBranches"],
+      (branches: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(branches, "skip", ["require-approval", "render-report"]);
+      },
     ),
   };
   const mutationBeforeApproval = {
     ...sources,
-    reference: sources.reference.replace(
-      '"approvedMutationOrder": [\n    "require-approval",\n    "select-control-surface",',
-      '"approvedMutationOrder": [\n    "select-control-surface",\n    "require-approval",',
+    reference: mutateContract(
+      sources.reference,
+      [],
+      (contract: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(contract, "approvedMutationOrder", [
+          "select-control-surface",
+          "require-approval",
+          "declare-consumers",
+          "require-oracle",
+          "run-cli",
+          "render-report",
+        ]);
+      },
     ),
   };
-
-  expect(skipContinuesIntoMutation.reference).not.toBe(sources.reference);
-  expect(mutationBeforeApproval.reference).not.toBe(sources.reference);
   expect(
     validateHarnessReflectionContract(skipContinuesIntoMutation),
   ).toContain("authoritative contract preserves exact workflow invariants");
