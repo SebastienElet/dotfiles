@@ -30,21 +30,27 @@ project instructions are discoverable.
 
 1. Name the repeated observable outcome, the intended outcome, and why the attempts are materially
    equivalent. Stop repeating the unchanged approach.
-2. Preserve the smallest useful evidence: failing command or review finding, relevant environment,
-   agent, repository, harness fingerprint when available, and the recovery that succeeded or failed.
+2. Preserve the smallest useful evidence: failing command or factual `pr-feedback` finding, relevant
+   environment, agent, repository, harness fingerprint when available, and the recovery that
+   succeeded or failed. Do not interpret, rewrite, or mutate `pr-feedback` evidence.
 3. Classify the cause as `task-specific`, `owned-defect`, `external-transient`, `missing-capability`,
    or `harness-gap`. Choose `harness-gap` only when a reusable instruction, skill, tool preference,
    sequence, avoidance rule, or routing decision could plausibly change the outcome.
 4. Check current instructions, skills, ADRs, and official dependency behavior before proposing a
    compensating rule. Fix an owned defect instead of teaching the harness its workaround.
-5. Return exactly one decision: `skip`, with the reason and next diagnostic action; or `propose`,
-   with one candidate type from `verification-reminder`, `tool-preference`, `sequence-recipe`,
-   `playbook-recipe`, `avoid-strategy`, or `subagent-routing`.
-6. For `propose`, include the trigger, desired behavior, scope, supporting evidence, counterexample,
+5. If the result is not `harness-gap`, return `skip` with the reason and next diagnostic action; do
+   not enter the registry flow.
+6. For `harness-gap`, read [references/invariant-registry.md](references/invariant-registry.md), then
+   inspect the named registry before proposing a rule. Classify the registry cause after
+   `harness-gap`, search for a matching source or invariant, and return exactly `skip`, `link`, or
+   `propose`.
+7. For `propose`, include the trigger, desired behavior, scope, supporting evidence, counterexample,
    falsifier, expiry condition, and the cheapest behavioral trial that could disprove the candidate.
-7. Keep the candidate session-local until the user approves a trial. Use `skill-manager` for a skill
-   change and `agent-instructions` for instruction discovery or deployment changes.
-8. Promote only after the trial changes the target behavior in three independent sessions without a
+   Keep every proposal session-local until explicit approval. Use `skill-manager` for a skill change
+   and `agent-instructions` for instruction discovery or deployment changes.
+8. After explicit approval, declare the surface, Claude, Codex, and Cursor consumers, and the
+   appropriate oracle. Validate the registry with its CLI before presenting the change as valid.
+9. Promote only after the trial changes the target behavior in three independent sessions without a
    contradictory result. Roll back on two failed trials, one safety regression, or a user veto.
 
 ## Gotchas
@@ -57,6 +63,8 @@ project instructions are discoverable.
   focused issue instead.
 - **Writing broad instructions first** — every future task pays the context cost; prefer the
   narrowest existing skill or tool boundary proven by the trial.
+- **Duplicating a named invariant** — the evidence splits across records; inspect the registry and
+  return `link` when the source belongs to an existing invariant.
 
 ## Constraints
 
@@ -68,3 +76,4 @@ project instructions are discoverable.
 - Never claim that activation scenarios or repeated failures prove improvement; name the behavioral
   oracle and the environment in which it ran.
 - Keep candidates scoped per agent unless cross-agent trials independently support shared behavior.
+- Never promote or mutate the registry without explicit approval, even under time pressure.
