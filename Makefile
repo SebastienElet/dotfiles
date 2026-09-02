@@ -156,6 +156,14 @@ ${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/releas
 .PHONY: agent-handoff
 agent-handoff: ${LOCAL_BIN}/agent-handoff
 
+~/.claude/hooks: | ~/.claude
+	mkdir -p $@
+~/.claude/hooks/agent_handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff FORCE | ~/.claude/hooks
+	@if [ -L "$@" ] && [ "$$(readlink "$@")" = "$<" ]; then exit 0; fi; \
+	if [ -L "$@" ] && [ "$$(readlink "$@")" = "${DOTFILES_PATH}/tooling/agent-handoff" ]; then ln -sfn "$<" "$@"; exit 0; fi; \
+	if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and is not the expected symbolic link" >&2; exit 1; fi; \
+	echo "ln -s $< $@"; ln -s "$<" "$@"
+
 ${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory: \
 	${DOTFILES_PATH}/tooling/agent-memory/Cargo.lock \
 	${DOTFILES_PATH}/tooling/agent-memory/Cargo.toml \
@@ -283,7 +291,7 @@ ${LOCAL_BIN}/claude:
 	@${CREATE_SYMLINK}
 
 .PHONY: claude-code-hooks
-claude-code-hooks: arnes agent-memory agent-handoff
+claude-code-hooks: arnes agent-memory agent-handoff ~/.claude/hooks/agent_handoff
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent claude --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent claude
 
 .PHONY: hunspell
