@@ -288,8 +288,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 # Codex ignores AGENTS.md @import directives, so the sources are assembled
 # here instead of symlinked. Written to a temporary path then moved, so an
 # existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md FORCE | ~/.codex
-	@expected="$@.expected.$$$$"; trap 'rm -f "$$expected"' EXIT; grep -v '^@' "$<" | cat - "${DOTFILES_PATH}/harness/SOUL.md" "${DOTFILES_PATH}/harness/USER.md" > "$$expected"; if [ -f "$@" ] && [ ! -L "$@" ] && cmp -s "$$expected" "$@"; then exit 0; fi; if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and does not contain the expected instructions" >&2; exit 1; fi; echo "mv $$expected $@"; mv "$$expected" "$@"; trap - EXIT
+~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md | ~/.codex
+	@expected="$@.expected.$$$$"; trap 'rm -f "$$expected"' EXIT; grep -v '^@' "$<" | cat - "${DOTFILES_PATH}/harness/SOUL.md" "${DOTFILES_PATH}/harness/USER.md" > "$$expected"; echo "mv $$expected $@"; mv "$$expected" "$@"; trap - EXIT
 ~/.codex/agents:
 	mkdir -p $@
 ~/.codex/agents/design-claim-auditor.toml: ${DOTFILES_PATH}/home/.codex/agents/design-claim-auditor.toml FORCE | ~/.codex/agents
