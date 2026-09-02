@@ -13,7 +13,7 @@
         "oxlint": "1.80.0",
         "oxlint-tsgolint": "7.0.2001",
         "prettier": "3.9.6",
-        "semctx": "0.1.17",
+        "semctx": "0.1.18",
         "typescript": "7.0.2",
       },
     },
@@ -161,7 +161,7 @@
 
     "prettier": ["prettier@3.9.6", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g=="],
 
-    "semctx": ["semctx@0.1.17", "", { "bin": { "semctx": "dist/index.js" } }, "sha512-8W6Le+OHNR3C16Yju5EIx9UGmeYuT0yO1QtxtvZjWHAk7CkX9Rdb2KcMP5k0YNvmAtXxmqJ2vXdG4sSBo0GNug=="],
+    "semctx": ["semctx@0.1.18", "", { "bin": { "semctx": "dist/index.js" } }, "sha512-3XDQP6xZdbN6brVm8j66/43pAwpm8SmsxS/44Xsn8LG05AQcaRCTDBMVqlDW7cHGwUE5jqEdGWnQQ2TZfc1Pxg=="],
 
     "tinypool": ["tinypool@2.1.0", "", {}, "sha512-Pugqs6M0m7Lv1I7FtxN4aoyToKg1C4tu+/381vH35y8oENM/Ai7f7C4StcoK4/+BSw9ebcS8jRiVrORFKCALLw=="],
 

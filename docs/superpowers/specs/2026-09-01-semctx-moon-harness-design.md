@@ -55,9 +55,9 @@ preuve négative.
 ### `harness:semctx-status`
 
 Exécute le diagnostic local de livraison des plugins en JSON. Il ne modifie rien et n'effectue pas
-d'attestation réseau implicite. Elle utilise `bun run semctx install --host auto --skip-setup
---dry-run --json` pour produire ce rapport en lecture seule. La tâche reste non cachée, car son
-résultat dépend de l'état du poste hors du graphe Moon.
+d'attestation réseau implicite. Elle utilise `bun run semctx plugin-status --host auto --json` pour
+produire ce rapport en lecture seule. La tâche reste non cachée, car son résultat dépend de l'état
+du poste hors du graphe Moon.
 
 ## Migration du canal local
 
@@ -89,8 +89,9 @@ La modification est vérifiée sans installer réellement de plugin depuis le wo
 2. résolution du projet et des quatre tâches par Moon ;
 3. inspection du graphe de dépendances de `harness:install` ;
 4. `semctx install --host auto --skip-setup --dry-run --json` ;
-5. Arnes Doctor sur les plugins, skills et MCP déclarés ;
-6. formatage YAML/Markdown et gates TypeScript existantes affectées par le lockfile.
+5. `semctx plugin-status --host auto --json` ;
+6. Arnes Doctor sur les plugins, skills et MCP déclarés ;
+7. formatage YAML/Markdown et gates TypeScript existantes affectées par le lockfile.
 
 L'installation réelle est exécutée depuis le checkout canonique seulement après la migration
 explicite de la marketplace locale. L'initialisation `.semctx/` constitue une action séparée et

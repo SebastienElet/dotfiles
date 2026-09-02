@@ -6,7 +6,7 @@
 
 **Architecture:** Le projet Bun racine verrouille le CLI `semctx` ; un projet Moon dédié sous `harness/` expose l'installation machine, l'initialisation de dépôt et le diagnostic comme trois effets distincts. Arnes autorise et observe les plugins et skills externes installés, sans devenir leur installateur.
 
-**Tech Stack:** Bun 1.4.0, semctx 0.1.17, Moon 2.5.3, YAML, Arnes/Rust
+**Tech Stack:** Bun 1.4.0, semctx 0.1.18, Moon 2.5.3, YAML, Arnes/Rust
 
 **Spec:** `docs/superpowers/specs/2026-09-01-semctx-moon-harness-design.md`
 
@@ -41,7 +41,7 @@
 **Interfaces:**
 
 - Consumes: la toolchain Bun 1.4.0 définie par `packageManager` et `.moon/toolchains.yml`.
-- Produces: le binaire local `semctx` en version exacte `0.1.17`, résolu par `bun run semctx`.
+- Produces: le binaire local `semctx` en version exacte `0.1.18`, résolu par `bun run semctx`.
 
 - [ ] **Step 1: Établir l'absence initiale du binaire projet**
 
@@ -65,7 +65,7 @@ Dans `package.json`, ajouter `semctx` aux `devDependencies` en conservant l'ordr
     "oxlint": "1.80.0",
     "oxlint-tsgolint": "7.0.2001",
     "prettier": "3.9.6",
-    "semctx": "0.1.17",
+    "semctx": "0.1.18",
     "typescript": "7.0.2"
   }
 }
@@ -79,7 +79,7 @@ Run:
 bun install --ignore-scripts --config=/dev/null --no-env-file
 ```
 
-Expected: `bun.lock` contient la résolution de `semctx@0.1.17`; aucun script de paquet n'est exécuté.
+Expected: `bun.lock` contient la résolution de `semctx@0.1.18`; aucun script de paquet n'est exécuté.
 
 - [ ] **Step 4: Vérifier la résolution et le gel**
 
@@ -91,7 +91,7 @@ bun install --frozen-lockfile --ignore-scripts --config=/dev/null --no-env-file
 bun run prettier --check package.json
 ```
 
-Expected: la première commande affiche `0.1.17`; l'installation gelée et Prettier réussissent.
+Expected: la première commande affiche `0.1.18`; l'installation gelée et Prettier réussissent.
 
 - [ ] **Step 5: Committer la toolchain verrouillée**
 
@@ -167,7 +167,7 @@ tasks:
       outputStyle: stream
   semctx-status:
     description: Inspect local Semctx plugin delivery without network attestation
-    command: bun run semctx install --host auto --skip-setup --dry-run --json
+    command: bun run semctx plugin-status --host auto --json
 ```
 
 Le mutex commun empêche l'installation machine et l'initialisation du dépôt de muter simultanément des états Semctx ; le diagnostic reste indépendant et en lecture seule.
@@ -377,7 +377,7 @@ Après intégration des commits dans le checkout canonique :
 2. Présenter les identifiants et sources exacts de la marketplace locale à retirer, puis demander une autorisation explicite.
 3. Après autorisation, retirer uniquement le plugin et la marketplace Semctx locaux observés ; ne jamais coder ces commandes dans Moon.
 4. Exécuter `moon run harness:install` depuis le checkout canonique.
-5. Exiger `ok: true` et, pour chaque hôte détecté, un plugin installé, activé et à la version `0.1.17` avant de déclarer l'installation convergée.
+5. Exiger `ok: true` et, pour chaque hôte détecté, un plugin installé, activé et à la version `0.1.18` avant de déclarer l'installation convergée.
 6. Ouvrir une nouvelle tâche Codex ou recharger les plugins Claude Code selon les actions retournées par Semctx.
 7. Exécuter `moon run harness:semctx-status`; rapporter séparément delivery, activation de session et toute preuve absente.
 8. Exécuter `moon run harness:semctx-setup` seulement sur demande explicite d'initialiser le dépôt courant, puis vérifier séparément binding, freshness, coverage et diagnostics workspace.
