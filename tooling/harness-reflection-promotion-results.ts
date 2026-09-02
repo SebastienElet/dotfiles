@@ -13,6 +13,29 @@ const requiredPerRunCriteria = [
   "report-rendered",
 ] as const;
 const expectedRuns = 3;
+const evaluatedCommit = "86941ff547dfc6e3bfe32301449f6f791529c124";
+const runOne = 1;
+const runTwo = 2;
+const runThree = 3;
+
+const runCriteriaSchema = z
+  .object({
+    "registry-lookup-recorded": z.literal(true),
+    "factual-input-preserved": z.literal(true),
+    "missing-evidence-skip-selected": z.literal(true),
+    "mutation-refused": z.literal(true),
+    "report-rendered": z.literal(true),
+  })
+  .strict();
+
+const recordedRunSchema = z
+  .object({
+    baseCommit: z.literal(evaluatedCommit),
+    result: z.literal("pass"),
+    coveredPath: z.literal("skip-missing-evidence"),
+    criteria: runCriteriaSchema,
+  })
+  .strict();
 const criteriaSchema = z
   .object({
     expectedRuns: z.literal(expectedRuns),
@@ -35,9 +58,8 @@ const artifactSchema = z
 
 const branchCoverageSchema = z
   .object({
-    covered: z.tuple([]),
+    covered: z.tuple([z.literal("skip-missing-evidence")]),
     notCovered: z.tuple([
-      z.literal("skip-missing-evidence"),
       z.literal("link"),
       z.literal("propose"),
       z.literal("approval"),
@@ -49,9 +71,12 @@ const branchCoverageSchema = z
   .strict();
 
 const limitationsSchema = z.tuple([
-  z.literal("evaluation-invalidated-by-skill-or-reference-change"),
-  z.literal("no-current-agent-workflow-runs"),
-  z.literal("no-current-behavioral-branch-coverage"),
+  z.literal("concrete-pull-request-urls-not-provided"),
+  z.literal("only-skip-missing-evidence-exercised"),
+  z.literal("link-propose-approval-retirement-and-promotion-not-exercised"),
+  z.literal("no-mutation-manifest-or-approval-produced"),
+  z.literal("no-control-surface-or-effective-oracle-selected"),
+  z.literal("claude-codex-and-cursor-consume-no-new-rule"),
   z.literal("controlled-marginal-ablation-not-run"),
   z.literal("accepted-cli-snapshot-is-not-durable-validity"),
 ]);
@@ -60,7 +85,7 @@ const promotionResultsSchema = z
   .object({
     version: z.literal(1),
     skill: z.literal("harness-reflection"),
-    status: z.literal("pending"),
+    status: z.literal("recorded"),
     evaluationKind: z.literal("regression-test"),
     promotionEvidence: z.literal(false),
     adr036Ablation: z.literal("not-run"),
@@ -69,7 +94,21 @@ const promotionResultsSchema = z
     criteria: criteriaSchema,
     branchCoverage: branchCoverageSchema,
     limitations: limitationsSchema,
-    runs: z.tuple([]),
+    runs: z.tuple([
+      recordedRunSchema.extend({
+        run: z.literal(runOne),
+        agent: z.literal("/root/behavior_eval_13"),
+      }),
+      recordedRunSchema.extend({
+        run: z.literal(runTwo),
+        agent: z.literal("/root/behavior_eval_14"),
+      }),
+      recordedRunSchema.extend({
+        run: z.literal(runThree),
+        agent: z.literal("/root/repo_readiness"),
+        evaluation: z.literal("behavior_eval_15"),
+      }),
+    ]),
   })
   .strict();
 
