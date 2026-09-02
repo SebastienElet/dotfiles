@@ -1,5 +1,8 @@
+import {
+  type HarnessReflectionContract,
+  harnessReflectionContractSchema,
+} from "./harness-reflection-contract-schema.ts";
 import { duplicateJsonObjectKeys } from "./harness-reflection-contract-json-keys.ts";
-import { harnessReflectionContractSchema } from "./harness-reflection-contract-schema.ts";
 import { promotionResultsFindings } from "./harness-reflection-promotion-results.ts";
 import { resolve } from "node:path";
 
@@ -33,7 +36,7 @@ const expectedReferenceWrapper = `# Invariant Registry
 \`\`\`
 `;
 const expectedSkillSurfaceDigest =
-  "35fe7117cb5e8e560916289b0561440f29f318f517912e81548b60250e30de68";
+  "3f45c8c6f1c2e44ee5c2be1776024c614c64ff249f41e39ea2edb37d3587dab6";
 const linkQuery =
   "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
 const stylisticQuery =
@@ -100,6 +103,19 @@ const authoritativeContractFindings = (
       ? []
       : ["authoritative contract preserves exact workflow invariants"]),
   ];
+};
+
+const parseHarnessReflectionContract = (
+  reference: string,
+): HarnessReflectionContract => {
+  const block = extractContractBlock(reference);
+  if (
+    block.json === undefined ||
+    duplicateJsonObjectKeys(block.json).length > 0
+  ) {
+    throw new TypeError("invalid harness reflection contract");
+  }
+  return harnessReflectionContractSchema.parse(JSON.parse(block.json));
 };
 
 const skillSurfaceFindings = (skill: string): readonly string[] =>
@@ -175,6 +191,7 @@ const validateHarnessReflectionContract = (
 
 export {
   loadHarnessReflectionSources,
+  parseHarnessReflectionContract,
   validateHarnessReflectionContract,
   type HarnessReflectionSources,
 };

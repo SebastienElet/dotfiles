@@ -13,7 +13,7 @@ Le flux retenu préserve cette décision plus récente :
 pr-feedback factuel
   → harness-reflection classe et rapproche
   → candidat nommé dans le registre
-  → approbation humaine explicite
+  → approbation fournie par le contexte humain, identité non authentifiée
   → surface choisie et oracle de régression
   → mesure, vérification ou retraite
 ```
@@ -34,6 +34,9 @@ un agent de promouvoir seul une préférence isolée ni étendre la topologie g�
 - `harness/invariants/registry.json` devient l’unique source versionnée des invariants personnels.
 - Un validateur TypeScript avec Zod vérifie la structure et les transitions représentées dans le
   registre. Il ne modifie jamais le registre et ne constitue pas une approbation.
+- Le champ `approval` consigne l’approbation fournie par le contexte humain au workflow. Ni le
+  registre ni la CLI n’authentifient l’identité de `approvedBy` et ce champ n’est pas une preuve
+  autonome ; l’entrée du workflow refuse une approbation auto-déclarée par l’agent.
 - Git conserve l’historique et la revue des mutations. Arnes continue seulement à distribuer le
   skill existant ; son manifeste et ses adaptateurs ne sont pas étendus.
 
@@ -57,7 +60,8 @@ Chaque invariant enregistre également :
   `blind-spot` et `judgment` ;
 - une sévérité et des sources de revue dans une union fermée GitHub/Bitbucket Cloud ; chaque
   occurrence sépare l’identité canonique de la PR de l’URL immuable du commentaire ou de la revue ;
-  Bitbucket Cloud accepte le lien HTML de commentaire `/_/diff#comment-ID` exposé par l’API ;
+  GitHub accepte aussi l’ancre inline `#discussion-diff-ID` ; Bitbucket Cloud accepte le lien HTML
+  de commentaire `/_/diff#comment-ID` exposé par l’API ;
 - un périmètre `cross-project` ou `project-local`, avec des exceptions structurées et justifiées ;
 - une surface parmi instruction toujours chargée, skill conditionnel, hook, permission, lint, type,
   test architectural ou contrat local ;
@@ -77,7 +81,7 @@ Le parseur rejette les valeurs inconnues au lieu de leur donner une valeur plaus
 parsing Zod, les règles sémantiques refusent notamment :
 
 - deux invariants portant le même identifiant ou réutilisant la même occurrence de preuve ;
-- une promotion `active` sans approbation humaine explicite ;
+- une promotion `active` sans approbation enregistrée depuis le contexte humain du workflow ;
 - une promotion ordinaire sans sources provenant d’au moins deux PR distinctes ;
 - une promotion sur une seule PR sans sévérité forte établie ;
 - la promotion d’un `judgment` en contrôle ;
@@ -92,8 +96,9 @@ parsing Zod, les règles sémantiques refusent notamment :
   supporté comme supporté.
 
 Un candidat peut rester incomplet tant que ses inconnues sont explicites. Le seuil de deux PR ou de
-sévérité forte autorise la proposition de promotion ; il ne remplace ni l’approbation humaine ni la
-preuve de l’oracle.
+sévérité forte autorise la proposition de promotion ; il ne remplace ni l’approbation fournie par
+le contexte humain ni la preuve de l’oracle. Le validateur structurel ne sait pas authentifier cette
+approbation.
 
 ## Workflow de `harness-reflection`
 
@@ -102,15 +107,21 @@ preuve de l’oracle.
 1. vérifie les preuves et classe la cause sans modifier le rapport source ;
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
 3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ;
-4. conserve le candidat dans la session jusqu’à approbation explicite ;
-5. après approbation, prépare la surface et le registre, valide d’abord les deux — le registre via la CLI
-   sur une copie temporaire — puis les applique comme un changement cohérent ; toute erreur restaure
-   tous les fichiers touchés ;
+4. conserve le candidat dans la session jusqu’à ce que l’entrée du workflow fournisse l’approbation
+   issue du contexte humain ;
+5. après cette entrée, capture les préimages, prépare la surface et le registre, puis valide les deux
+   — le registre via la CLI sur une copie temporaire — avant des écritures par comparaison et échange
+   fichier par fichier ; une erreur déclenche une compensation conditionnelle sur les préimages, et
+   tout fichier impossible à restaurer est signalé ;
 6. exige le test du chemin d’échec avant tout contrôle exécutoire ;
 7. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
-8. retire un invariant en conservant son historique, ses exceptions et son remplacement éventuel,
-   avec les mêmes copies préparées, validation préalable par la CLI, application cohérente et
-   compensation de tous les fichiers touchés.
+8. retire un invariant seulement si toutes ses sources restent identiques, en conservant ses
+   exceptions et son remplacement éventuel, avec les mêmes copies préparées, validation préalable
+   par la CLI, écritures conditionnelles et compensation best-effort.
+
+Le protocole multi-fichier n’est pas atomique. Une concurrence est détectée par comparaison des
+préimages et CAS ; une interruption du processus peut laisser un changement partiel. La sortie
+énumère alors les chemins non restaurés afin qu’un humain les réconcilie avec Git avant reprise.
 
 La recherche préalable et l’unicité des sources empêchent une répétition de créer silencieusement
 un second invariant. Les changements de skills et d’instructions continuent d’être routés vers
@@ -179,6 +190,10 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - Une occurrence de preuve répétée est refusée globalement ; plusieurs occurrences distinctes de la
   même PR restent autorisées et ne comptent que pour une PR.
 - Exceptions et retraite conservent l’historique au lieu de supprimer la trace.
+- L’approbation enregistrée est une assertion du contexte humain, non une identité authentifiée ;
+  aucune mutation ne démarre sans cette entrée et une auto-assertion de l’agent est refusée.
+- Le workflow multi-fichier est compensé best-effort avec préimages et CAS, sans revendication
+  d’atomicité ; les interruptions et restaurations incomplètes sont des limites explicites.
 - Claude, Codex et Cursor sont déclarés séparément, y compris lorsque l’un est non supporté.
 - Les deux constats historiques traversent le flux dans des fixtures sans devenir des règles réelles
   par simple présence dans les tests.

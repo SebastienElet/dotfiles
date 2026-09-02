@@ -38,25 +38,45 @@
   },
   "approvalBranches": {
     "absent": ["render-report-without-mutation"],
-    "granted": ["execute-approved-atomic-mutation"]
+    "granted": ["execute-approved-compensated-mutation"]
+  },
+  "workflowRoutes": {
+    "approvedMutation": {
+      "module": "tooling/harness-reflection-mutation-workflow.ts",
+      "export": "executeHarnessMutationWorkflow",
+      "mode": "approved-mutation"
+    },
+    "retirement": {
+      "module": "tooling/harness-reflection-mutation-workflow.ts",
+      "export": "executeHarnessMutationWorkflow",
+      "mode": "retirement"
+    }
   },
   "approvedMutation": {
+    "guarantee": "best-effort-compensation-not-atomic",
+    "interruptionLimit": "process-interruption-may-leave-partial-change",
     "prepareOrder": [
       "select-control-surface",
       "declare-consumers",
       "require-control-oracle",
       "prepare-selected-control-surface",
-      "prepare-registry"
+      "prepare-registry",
+      "capture-all-file-preimages"
     ],
     "validationOrder": [
       "validate-prepared-selected-control-surface",
       "validate-prepared-registry-with-cli-on-temporary-copy"
     ],
     "applyOrder": [
-      "apply-selected-control-surface-and-registry-as-coherent-change",
+      "confirm-all-file-preimages",
+      "apply-each-file-with-compare-and-swap",
       "validate-applied-coherent-change"
     ],
-    "onAnyError": ["restore-all-touched-files", "report-failure"],
+    "onAnyError": [
+      "compensate-applied-files-with-compare-and-swap",
+      "report-unresolved-files",
+      "report-failure"
+    ],
     "successOrder": ["render-report"]
   },
   "registry": {
@@ -93,7 +113,11 @@
   "approval": {
     "requiredBeforeMutation": true,
     "preApprovalState": "session-local",
-    "timePressureBypass": false
+    "timePressureBypass": false,
+    "inputSource": "human-context",
+    "authentication": "not-performed",
+    "registryRecordMeaning": "provided-context-not-independent-proof",
+    "agentSelfAssertion": "forbidden"
   },
   "controls": {
     "probabilistic": [
@@ -133,27 +157,36 @@
     "durableValidityClaim": false
   },
   "retirement": {
+    "guarantee": "best-effort-compensation-not-atomic",
+    "interruptionLimit": "process-interruption-may-leave-partial-change",
     "requiredFields": ["retiredAt", "reason"],
     "optionalFields": ["replacedBy"],
     "prepareOrder": [
       "require-approval",
       "lookup-existing-invariant",
       "prepare-retired-registry-copy",
-      "preserve-history-in-prepared-registry",
+      "preserve-all-source-history-in-prepared-registry",
       "set-retired-at-in-prepared-registry",
       "set-retirement-reason-in-prepared-registry",
       "handle-optional-replaced-by-in-prepared-registry",
-      "prepare-selected-control-surface-copy-if-touched"
+      "prepare-selected-control-surface-copy-if-touched",
+      "capture-all-file-preimages"
     ],
     "validationOrder": [
+      "validate-all-source-history-unchanged",
       "validate-prepared-selected-control-surface-if-touched",
       "validate-prepared-retired-registry-with-cli-on-temporary-copy"
     ],
     "applyOrder": [
-      "apply-retirement-surface-and-registry-as-coherent-change",
+      "confirm-all-file-preimages",
+      "apply-each-file-with-compare-and-swap",
       "validate-applied-coherent-change"
     ],
-    "onAnyError": ["restore-all-touched-files", "report-failure"],
+    "onAnyError": [
+      "compensate-applied-files-with-compare-and-swap",
+      "report-unresolved-files",
+      "report-failure"
+    ],
     "successOrder": ["render-report"]
   },
   "proposal": {

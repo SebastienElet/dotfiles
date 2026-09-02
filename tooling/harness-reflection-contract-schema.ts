@@ -9,6 +9,7 @@ import {
   lifecycleSchema,
   oracleSchema,
   retirementSchema,
+  workflowRoutesSchema,
 } from "./harness-reflection-contract-workflow-schema.ts";
 import { z } from "zod";
 
@@ -29,6 +30,7 @@ const harnessReflectionContractSchema = z
     harnessGapWorkflowOrder: harnessGapWorkflowOrderSchema,
     decisionBranches: decisionBranchesSchema,
     approvalBranches: approvalBranchesSchema,
+    workflowRoutes: workflowRoutesSchema,
     approvedMutation: approvedMutationSchema,
     registry: z
       .object({
@@ -86,6 +88,12 @@ const harnessReflectionContractSchema = z
         requiredBeforeMutation: z.literal(true),
         preApprovalState: z.literal("session-local"),
         timePressureBypass: z.literal(false),
+        inputSource: z.literal("human-context"),
+        authentication: z.literal("not-performed"),
+        registryRecordMeaning: z.literal(
+          "provided-context-not-independent-proof",
+        ),
+        agentSelfAssertion: z.literal("forbidden"),
       })
       .strict(),
     controls: controlsSchema,

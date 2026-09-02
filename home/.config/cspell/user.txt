@@ -19,6 +19,8 @@ mkfifo
 osascript
 pagelen
 pathspecs
+preimages
+préimages
 pullrequests
 renameat
 renamex

@@ -198,3 +198,41 @@ test("rejects removal of the skill router", async () => {
     "skill contains only the closed router surface",
   );
 });
+
+test.each([
+  [
+    "retirement executable route",
+    {
+      key: "module",
+      path: ["workflowRoutes", "retirement"],
+      value: "missing.ts",
+    },
+  ],
+  [
+    "non-atomic compensation guarantee",
+    { key: "guarantee", path: ["approvedMutation"], value: "atomic" },
+  ],
+  [
+    "approval authentication limit",
+    { key: "authentication", path: ["approval"], value: "authenticated" },
+  ],
+  [
+    "retirement source preservation",
+    {
+      key: "validationOrder",
+      path: ["retirement"],
+      value: ["validate-prepared-retired-registry-with-cli-on-temporary-copy"],
+    },
+  ],
+] as const)("rejects mutation of %s", async (_name, mutation) => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  expectContractRejection(
+    contractMutant(
+      sources,
+      mutation.path,
+      (target: Readonly<Record<string, unknown>>): void => {
+        Reflect.set(target, mutation.key, mutation.value);
+      },
+    ),
+  );
+});

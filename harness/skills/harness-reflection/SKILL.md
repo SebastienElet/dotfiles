@@ -30,10 +30,12 @@ project instructions are discoverable.
 1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
 2. Execute `initialWorkflowOrder` exactly as structured.
 3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder` and its selected
-   decision and approval branches through their referenced order until a report is rendered.
-4. For retirement, execute `retirement.workflowOrder`. Never add, omit, reorder, or short-circuit
-   steps. Stop with a finding when the block is missing, malformed, duplicated, or contradicted;
-   never supplement it from prose.
+   decision and approval branches. After contextual human approval, resolve
+   `workflowRoutes.approvedMutation`, load its named module and export, then execute its mode.
+4. For retirement, resolve `workflowRoutes.retirement`, load its named module and export, then
+   execute its mode. Never add, omit, reorder, or short-circuit steps. Stop with a finding when a
+   route is missing, malformed, unresolved, duplicated, or contradicted; never supplement it from
+   prose.
 
 ## Gotchas
 

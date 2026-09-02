@@ -201,5 +201,7 @@ test("rejects the PR 207 fixture without a retirement reason", async () => {
 
   expect(outcome.exitCode).not.toBe(0);
   expect(outcome.stdout).toBe("");
-  expect(outcome.stderr).toContain("invalid invariant registry");
+  expect(outcome.stderr).toBe(
+    "invariant-registry: invariants.0.retirement.reason: Invalid value.\n",
+  );
 });

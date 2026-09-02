@@ -26,11 +26,20 @@ const pathSegments = (url: ParsedUrl): readonly string[] => {
   return segments.at(-1) === "" ? segments.slice(0, -1) : segments;
 };
 
+const hasRawDotSegment = (value: string): boolean => {
+  const rawPath = /^https:\/\/[^/?#]+(?<path>\/[^?#]*)?/u.exec(value)?.groups
+    ?.path;
+  return (
+    rawPath?.split("/").some((segment) => [".", ".."].includes(segment)) ??
+    false
+  );
+};
+
 const parseUrl = (value: string, provider: Provider): ParsedUrl | undefined => {
   const domain = providerDomain(provider);
   const authority = /^https:\/\/(?<authority>[^/?#]+)/u.exec(value)?.groups
     ?.authority;
-  if (authority !== domain || value.includes("%")) {
+  if (authority !== domain || value.includes("%") || hasRawDotSegment(value)) {
     return undefined;
   }
   try {
@@ -82,7 +91,7 @@ const parsePullRequest = (
 };
 
 const githubEvidence = (url: ParsedUrl): string | undefined =>
-  /^#(?<occurrence>(?:issuecomment|pullrequestreview)-[1-9][0-9]*|discussion_r[1-9][0-9]*)$/u.exec(
+  /^#(?<occurrence>(?:issuecomment|pullrequestreview)-[1-9][0-9]*|discussion_r[1-9][0-9]*|discussion-diff-[1-9][0-9]*)$/u.exec(
     url.hash,
   )?.groups?.occurrence;
 
@@ -136,7 +145,10 @@ const parseEvidence = (
     return undefined;
   }
   return {
-    canonicalUrl: value.endsWith("/") ? value.slice(0, -1) : value,
+    canonicalUrl:
+      provider === "github"
+        ? `https://github.com/${owner}/${repository}/pull/${number}#${occurrence}`
+        : `https://bitbucket.org/${owner}/${repository}/pull-requests/${number}/_/diff#${occurrence}`,
     number,
     occurrence,
     owner,

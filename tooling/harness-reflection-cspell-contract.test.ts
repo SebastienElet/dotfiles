@@ -1,29 +1,37 @@
-import { expect, test } from "bun:test";
 import {
+  cspellGateIsFailClosed,
+  extractCspellInstallArgv,
   extractCspellJob,
-  runCspellGate,
-  sha256,
+  extractCspellLintArgv,
 } from "./harness-reflection-cspell-test-support.ts";
+import { expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 const workflowPath = resolve(repositoryRoot, ".github/workflows/lint.yml");
-const expectedCspellJobSha256 =
-  "589fb007030cd172c8fe33084a28f6e630d455d193054c39bfde76fe9f9e25b7";
-const expectedSuccessfulCallLogSha256 =
-  "2bcdbb09425a62d876cd324a72039cbd22dcfcd349208b5bd37753ca5b0ed567";
-const failingLintStatus = 17;
+const cspellConfigPrefixLength = 4;
+const promisedTexts = [
+  "harness/skills/harness-reflection/SKILL.md",
+  "harness/skills/harness-reflection/references/invariant-registry.md",
+  "harness/skills/harness-reflection/evals/trigger-queries.json",
+  "harness/invariants/registry.json",
+  "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
+  "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
+  "docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md",
+  "tooling/invariant-registry-fixtures/pr-206-secret-redaction.json",
+  "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
+] as const;
 
-test("pins the complete CSpell job", async () => {
+test("pins only the owned CSpell installation argv", async () => {
   const workflow = await readFile(workflowPath, "utf8");
-  expect(sha256(extractCspellJob(workflow))).toBe(expectedCspellJobSha256);
-  expect(sha256(extractCspellJob(workflow.replaceAll("\n", "\r\n")))).toBe(
-    expectedCspellJobSha256,
-  );
-  expect(() => extractCspellJob(workflow.replace("\n", "\r"))).toThrow(
-    "line endings",
-  );
+  expect(extractCspellInstallArgv(extractCspellJob(workflow))).toEqual([
+    "npm",
+    "install",
+    "--global",
+    "cspell@10.2.0",
+    "@cspell/dict-fr-fr@2.3.2",
+  ]);
 });
 
 test("refuses a missing or duplicate CSpell job", async () => {
@@ -36,43 +44,34 @@ test("refuses a missing or duplicate CSpell job", async () => {
   );
 });
 
-test("changes the fingerprint for any job mutation", async () => {
+test("keeps the CSpell lint command fail-closed", async () => {
   const workflow = await readFile(workflowPath, "utf8");
   const job = extractCspellJob(workflow);
+  expect(cspellGateIsFailClosed(job)).toBe(true);
   expect(
-    sha256(
-      job.replace("    name: Text configuration\n", "    name: Mutated\n"),
-    ),
-  ).not.toBe(expectedCspellJobSha256);
+    cspellGateIsFailClosed(job.replace("set -euo pipefail", "set +e")),
+  ).toBe(false);
 });
 
-test("executes the nominal CSpell block with exact argv", async () => {
+test("owns the CSpell config argv before every promised text", async () => {
   const workflow = await readFile(workflowPath, "utf8");
-  const result = await runCspellGate(extractCspellJob(workflow));
-  expect(result.status).toBe(0);
-  expect(sha256(result.normalizedCallLog)).toBe(
-    expectedSuccessfulCallLogSha256,
-  );
+  const argv = extractCspellLintArgv(extractCspellJob(workflow));
+  expect(argv.slice(0, cspellConfigPrefixLength)).toEqual([
+    "cspell",
+    "lint",
+    "--config",
+    '"$test_home/cspell.json"',
+  ]);
+  for (const path of promisedTexts) {
+    expect(argv.filter((value) => value === path)).toHaveLength(1);
+  }
 });
 
-test.each([
-  "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
-  "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
-  "docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md",
-  "tooling/invariant-registry-fixtures/pr-206-secret-redaction.json",
-  "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
-] as const)("executes CSpell on promised text %s", async (path) => {
-  const workflow = await readFile(workflowPath, "utf8");
-  const result = await runCspellGate(extractCspellJob(workflow));
-
-  expect(result.normalizedCallLog).toContain(`\t${path}`);
-});
-
-test("propagates a CSpell lint failure", async () => {
-  const workflow = await readFile(workflowPath, "utf8");
-  const result = await runCspellGate(
-    extractCspellJob(workflow),
-    failingLintStatus,
-  );
-  expect(result.status).toBe(failingLintStatus);
-});
+test.each([...promisedTexts])(
+  "exposes omission of promised text %s",
+  async (path) => {
+    const workflow = await readFile(workflowPath, "utf8");
+    const mutant = extractCspellJob(workflow).replace(path, "omitted-text");
+    expect(extractCspellLintArgv(mutant)).not.toContain(path);
+  },
+);

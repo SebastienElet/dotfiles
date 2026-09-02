@@ -35,11 +35,6 @@ test("locks the canonical registry to its empty structured value", async () => {
 test.each([
   ["missing file", "missing.json", "unable to read invariant registry"],
   ["invalid JSON", "{", "valid JSON"],
-  [
-    "unknown version",
-    '{"version":2,"invariants":[]}',
-    "invalid invariant registry",
-  ],
 ] as const)("fails closed for %s", async (_name, contents, diagnostic) => {
   const path =
     contents === "missing.json" ? contents : await createRegistry(contents);
@@ -48,6 +43,15 @@ test.each([
   expect(outcome.exitCode).not.toBe(0);
   expect(outcome.stdout).toBe("");
   expect(outcome.stderr).toContain(diagnostic);
+});
+
+test("reports the exact schema path for an unknown version", async () => {
+  const path = await createRegistry('{"version":2,"invariants":[]}');
+  const outcome = await runRegistryCli(path);
+
+  expect(outcome.exitCode).not.toBe(0);
+  expect(outcome.stdout).toBe("");
+  expect(outcome.stderr).toBe("invariant-registry: version: Invalid value.\n");
 });
 
 test("fails closed for invalid UTF-8", async () => {
@@ -89,7 +93,7 @@ test("sanitizes schema failures from registry stderr", async () => {
 
   expect(outcome.exitCode).not.toBe(0);
   expect(outcome.stdout).toBe("");
-  expect(outcome.stderr).toContain("invalid invariant registry");
+  expect(outcome.stderr).toBe("invariant-registry: registry: Invalid value.\n");
   expect(outcome.stderr).not.toContain(secretField);
   expect(outcome.stderr).not.toContain(secretValue);
 });

@@ -48,31 +48,55 @@ const decisionBranchesSchema = z
 const approvalBranchesSchema = z
   .object({
     absent: z.tuple([z.literal("render-report-without-mutation")]),
-    granted: z.tuple([z.literal("execute-approved-atomic-mutation")]),
+    granted: z.tuple([z.literal("execute-approved-compensated-mutation")]),
+  })
+  .strict();
+
+const workflowRoutesSchema = z
+  .object({
+    approvedMutation: z
+      .object({
+        module: z.literal("tooling/harness-reflection-mutation-workflow.ts"),
+        export: z.literal("executeHarnessMutationWorkflow"),
+        mode: z.literal("approved-mutation"),
+      })
+      .strict(),
+    retirement: z
+      .object({
+        module: z.literal("tooling/harness-reflection-mutation-workflow.ts"),
+        export: z.literal("executeHarnessMutationWorkflow"),
+        mode: z.literal("retirement"),
+      })
+      .strict(),
   })
   .strict();
 
 const approvedMutationSchema = z
   .object({
+    guarantee: z.literal("best-effort-compensation-not-atomic"),
+    interruptionLimit: z.literal(
+      "process-interruption-may-leave-partial-change",
+    ),
     prepareOrder: z.tuple([
       z.literal("select-control-surface"),
       z.literal("declare-consumers"),
       z.literal("require-control-oracle"),
       z.literal("prepare-selected-control-surface"),
       z.literal("prepare-registry"),
+      z.literal("capture-all-file-preimages"),
     ]),
     validationOrder: z.tuple([
       z.literal("validate-prepared-selected-control-surface"),
       z.literal("validate-prepared-registry-with-cli-on-temporary-copy"),
     ]),
     applyOrder: z.tuple([
-      z.literal(
-        "apply-selected-control-surface-and-registry-as-coherent-change",
-      ),
+      z.literal("confirm-all-file-preimages"),
+      z.literal("apply-each-file-with-compare-and-swap"),
       z.literal("validate-applied-coherent-change"),
     ]),
     onAnyError: z.tuple([
-      z.literal("restore-all-touched-files"),
+      z.literal("compensate-applied-files-with-compare-and-swap"),
+      z.literal("report-unresolved-files"),
       z.literal("report-failure"),
     ]),
     successOrder: z.tuple([z.literal("render-report")]),
@@ -129,30 +153,38 @@ const oracleSchema = z
 
 const retirementSchema = z
   .object({
+    guarantee: z.literal("best-effort-compensation-not-atomic"),
+    interruptionLimit: z.literal(
+      "process-interruption-may-leave-partial-change",
+    ),
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
     optionalFields: z.tuple([z.literal("replacedBy")]),
     prepareOrder: z.tuple([
       z.literal("require-approval"),
       z.literal("lookup-existing-invariant"),
       z.literal("prepare-retired-registry-copy"),
-      z.literal("preserve-history-in-prepared-registry"),
+      z.literal("preserve-all-source-history-in-prepared-registry"),
       z.literal("set-retired-at-in-prepared-registry"),
       z.literal("set-retirement-reason-in-prepared-registry"),
       z.literal("handle-optional-replaced-by-in-prepared-registry"),
       z.literal("prepare-selected-control-surface-copy-if-touched"),
+      z.literal("capture-all-file-preimages"),
     ]),
     validationOrder: z.tuple([
+      z.literal("validate-all-source-history-unchanged"),
       z.literal("validate-prepared-selected-control-surface-if-touched"),
       z.literal(
         "validate-prepared-retired-registry-with-cli-on-temporary-copy",
       ),
     ]),
     applyOrder: z.tuple([
-      z.literal("apply-retirement-surface-and-registry-as-coherent-change"),
+      z.literal("confirm-all-file-preimages"),
+      z.literal("apply-each-file-with-compare-and-swap"),
       z.literal("validate-applied-coherent-change"),
     ]),
     onAnyError: z.tuple([
-      z.literal("restore-all-touched-files"),
+      z.literal("compensate-applied-files-with-compare-and-swap"),
+      z.literal("report-unresolved-files"),
       z.literal("report-failure"),
     ]),
     successOrder: z.tuple([z.literal("render-report")]),
@@ -184,4 +216,5 @@ export {
   lifecycleSchema,
   oracleSchema,
   retirementSchema,
+  workflowRoutesSchema,
 };

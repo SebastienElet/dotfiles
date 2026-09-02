@@ -197,7 +197,13 @@ const parseRegistry = (
     return parseInvariantRegistry(input);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new TypeError("invalid invariant registry", { cause: error });
+      const diagnostics: string[] = [];
+      for (const issue of error.issues) {
+        diagnostics.push(
+          `${issue.path.join(".") || "registry"}: Invalid value.`,
+        );
+      }
+      throw new TypeError(diagnostics.join("\n"), { cause: error });
     }
     throw error;
   }

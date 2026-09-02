@@ -93,7 +93,7 @@ test.each([
   expect(validateHarnessReflectionContract(mutant)).toContain(contractFinding);
 });
 
-test("makes approved link and propose atomic mutation reachable", async () => {
+test("makes approved link and propose compensated mutation reachable", async () => {
   const contract = await authoritativeContract();
 
   expect(Reflect.get(contract, "decisionBranches")).toEqual({
@@ -103,20 +103,28 @@ test("makes approved link and propose atomic mutation reachable", async () => {
   });
   expect(Reflect.get(contract, "approvalBranches")).toEqual({
     absent: ["render-report-without-mutation"],
-    granted: ["execute-approved-atomic-mutation"],
+    granted: ["execute-approved-compensated-mutation"],
   });
   expect(Reflect.get(contract, "approvedMutation")).toEqual({
+    guarantee: "best-effort-compensation-not-atomic",
+    interruptionLimit: "process-interruption-may-leave-partial-change",
     applyOrder: [
-      "apply-selected-control-surface-and-registry-as-coherent-change",
+      "confirm-all-file-preimages",
+      "apply-each-file-with-compare-and-swap",
       "validate-applied-coherent-change",
     ],
-    onAnyError: ["restore-all-touched-files", "report-failure"],
+    onAnyError: [
+      "compensate-applied-files-with-compare-and-swap",
+      "report-unresolved-files",
+      "report-failure",
+    ],
     prepareOrder: [
       "select-control-surface",
       "declare-consumers",
       "require-control-oracle",
       "prepare-selected-control-surface",
       "prepare-registry",
+      "capture-all-file-preimages",
     ],
     validationOrder: [
       "validate-prepared-selected-control-surface",
@@ -152,13 +160,13 @@ test.each([
     value: ["validate-prepared-selected-control-surface"],
   },
   {
-    name: "fails to compensate every touched file",
+    name: "fails to compensate applied files with CAS",
     path: ["approvedMutation"],
     key: "onAnyError",
     value: ["report-failure"],
   },
   {
-    name: "applies the surface and registry separately",
+    name: "applies files without CAS",
     path: ["approvedMutation"],
     key: "applyOrder",
     value: [
@@ -181,27 +189,36 @@ test("makes history-preserving retirement reachable", async () => {
   const retirement = nestedRecord(contract, "retirement");
 
   expect(retirement).toEqual({
+    guarantee: "best-effort-compensation-not-atomic",
+    interruptionLimit: "process-interruption-may-leave-partial-change",
     requiredFields: ["retiredAt", "reason"],
     optionalFields: ["replacedBy"],
     prepareOrder: [
       "require-approval",
       "lookup-existing-invariant",
       "prepare-retired-registry-copy",
-      "preserve-history-in-prepared-registry",
+      "preserve-all-source-history-in-prepared-registry",
       "set-retired-at-in-prepared-registry",
       "set-retirement-reason-in-prepared-registry",
       "handle-optional-replaced-by-in-prepared-registry",
       "prepare-selected-control-surface-copy-if-touched",
+      "capture-all-file-preimages",
     ],
     validationOrder: [
+      "validate-all-source-history-unchanged",
       "validate-prepared-selected-control-surface-if-touched",
       "validate-prepared-retired-registry-with-cli-on-temporary-copy",
     ],
     applyOrder: [
-      "apply-retirement-surface-and-registry-as-coherent-change",
+      "confirm-all-file-preimages",
+      "apply-each-file-with-compare-and-swap",
       "validate-applied-coherent-change",
     ],
-    onAnyError: ["restore-all-touched-files", "report-failure"],
+    onAnyError: [
+      "compensate-applied-files-with-compare-and-swap",
+      "report-unresolved-files",
+      "report-failure",
+    ],
     successOrder: ["render-report"],
   });
 });
@@ -218,12 +235,12 @@ test.each([
     value: ["validate-prepared-selected-control-surface-if-touched"],
   },
   {
-    name: "all-file compensation",
+    name: "best-effort CAS compensation",
     key: "onAnyError",
     value: ["report-failure"],
   },
   {
-    name: "coherent apply",
+    name: "per-file CAS apply",
     key: "applyOrder",
     value: [
       "apply-selected-control-surface",
