@@ -4,7 +4,8 @@ import type {
   RegistryDiagnostic,
   ValidationOptions,
 } from "./invariant-registry-schema.ts";
-import { join } from "node:path";
+import { oracleDiagnostics } from "./invariant-registry-oracle-policy.ts";
+import { pullRequestIdentity } from "./invariant-registry-source.ts";
 
 type InvariantIds = Readonly<{ has: (id: string) => boolean }>;
 
@@ -25,14 +26,6 @@ const diagnostic = (
   message,
 });
 
-const canonicalPullRequestUrl = (pullRequestUrl: string): string => {
-  const url = new URL(pullRequestUrl);
-  const path = url.pathname.endsWith("/")
-    ? url.pathname.slice(0, -1)
-    : url.pathname;
-  return `${url.origin}${path}`;
-};
-
 const promotionDiagnostics = (
   record: InvariantRecord,
   path: string,
@@ -40,11 +33,11 @@ const promotionDiagnostics = (
   if (record.lifecycle !== "active") {
     return [];
   }
-  const pullRequestUrls = record.sources.map(({ pullRequestUrl }) =>
-    canonicalPullRequestUrl(pullRequestUrl),
+  const pullRequestIdentities = record.sources.map(({ pullRequestUrl }) =>
+    pullRequestIdentity(pullRequestUrl),
   );
   const enoughEvidence =
-    new Set(pullRequestUrls).size >= promotionThreshold ||
+    new Set(pullRequestIdentities).size >= promotionThreshold ||
     ["high", "critical"].includes(record.severity);
   return [
     ...(record.approval === undefined
@@ -75,39 +68,6 @@ const promotionDiagnostics = (
           ),
         ]),
   ];
-};
-
-const oracleDiagnostics = (
-  record: InvariantRecord,
-  path: string,
-  options: ValidationOptions,
-): readonly RegistryDiagnostic[] => {
-  const required =
-    record.controlKind === "enforceable" &&
-    (record.lifecycle === "active" || record.verification.state === "verified");
-  if (required) {
-    if (record.oracle === undefined) {
-      return [
-        diagnostic(
-          "missing-oracle",
-          `${path}.oracle`,
-          "Enforceable active or verified invariants require an oracle.",
-        ),
-      ];
-    }
-    return options.pathExists(
-      join(options.repositoryRoot, record.oracle.testPath),
-    )
-      ? []
-      : [
-          diagnostic(
-            "missing-oracle-path",
-            `${path}.oracle.testPath`,
-            "Oracle test path does not exist.",
-          ),
-        ];
-  }
-  return [];
 };
 
 const surfaceDiagnostics = (
@@ -180,7 +140,7 @@ const uniquenessDiagnostics = (
       registry.invariants.findIndex(({ id }) => id === record.id) !== index;
     const sourceDiagnostics = record.sources.flatMap((source, sourceIndex) => {
       const sourcePath = `${path}.sources.${sourceIndex}.pullRequestUrl`;
-      const identity = canonicalPullRequestUrl(source.pullRequestUrl);
+      const identity = pullRequestIdentity(source.pullRequestUrl);
       const duplicate = sourcePaths.has(identity);
       sourcePaths.set(identity, sourcePath);
       return duplicate

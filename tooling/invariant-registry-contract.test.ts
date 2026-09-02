@@ -6,6 +6,8 @@ import {
 import {
   type TestInvariant,
   candidate,
+  firstPullRequest,
+  source,
 } from "./invariant-registry-test-support.ts";
 import { expect, expectTypeOf, test } from "bun:test";
 
@@ -61,4 +63,43 @@ test("requires separate Claude, Codex and Cursor declarations", () => {
       invariants: [{ ...candidate(), consumers }],
     }),
   ).toThrow();
+});
+
+test.each([
+  "http://github.com/SebastienElet/dotfiles/pull/206",
+  "https://example.com/SebastienElet/dotfiles/pull/206",
+  "https://github.com/SebastienElet/dotfiles/pull/206/files",
+  "https://github.com/SebastienElet/dotfiles/issues/206",
+  "https://github.com/SebastienElet/dotfiles/pull/0206",
+  "https://github.com/SebastienElet/dotfiles/pull/206?diff=split",
+] as const)(
+  "rejects non-canonical pull request URL %s",
+  (pullRequestUrl): void => {
+    expect(() =>
+      parseInvariantRegistry({
+        version: 1,
+        invariants: [
+          candidate({
+            sources: [{ ...source(firstPullRequest), pullRequestUrl }],
+          }),
+        ],
+      }),
+    ).toThrow();
+  },
+);
+
+test("normalizes a trailing slash on a canonical pull request URL", () => {
+  const canonicalUrl = source(firstPullRequest).pullRequestUrl;
+  const parsed = parseInvariantRegistry({
+    version: 1,
+    invariants: [
+      candidate({
+        sources: [
+          { ...source(firstPullRequest), pullRequestUrl: `${canonicalUrl}/` },
+        ],
+      }),
+    ],
+  });
+
+  expect(parsed.invariants[0]?.sources[0]?.pullRequestUrl).toBe(canonicalUrl);
 });

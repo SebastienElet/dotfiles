@@ -16,20 +16,6 @@ const measuredVerification = {
     environment: "macOS",
   },
 };
-const verifiedVerification = {
-  state: "verified",
-  lastRun: {
-    outcome: "passed",
-    ranAt: "2026-09-02T00:00:00.000Z",
-    environment: "macOS",
-  },
-};
-const oracle = {
-  name: "fetch-url-redaction",
-  failurePath: "Rejected URLs do not expose credentials.",
-  testPath: "tooling/fetch-url-redaction.test.ts",
-};
-
 test("rejects candidates that have already been measured", () => {
   const diagnostics = validateInvariantRegistry(
     registry(candidate({ verification: measuredVerification })),
@@ -37,57 +23,6 @@ test("rejects candidates that have already been measured", () => {
   );
 
   expect(diagnosticCodes(diagnostics)).toContain("candidate-measured");
-});
-
-test("rejects active enforceable invariants without an oracle", () => {
-  const diagnostics = validateInvariantRegistry(
-    registry(active({ oracle: undefined })),
-    validationOptions(),
-  );
-
-  expect(diagnosticCodes(diagnostics)).toContain("missing-oracle");
-});
-
-test("rejects active enforceable invariants when the oracle path is absent", () => {
-  const diagnostics = validateInvariantRegistry(
-    registry(active()),
-    validationOptions((): boolean => false),
-  );
-
-  expect(diagnosticCodes(diagnostics)).toContain("missing-oracle-path");
-});
-
-test("checks an enforceable verified oracle path", () => {
-  const paths: string[] = [];
-  validateInvariantRegistry(
-    registry(
-      candidate({
-        controlKind: "enforceable",
-        surface: "hook",
-        verification: verifiedVerification,
-        oracle,
-      }),
-    ),
-    validationOptions((path): boolean => {
-      paths.push(path);
-      return true;
-    }),
-  );
-
-  expect(paths).toEqual(["/repository/tooling/fetch-url-redaction.test.ts"]);
-});
-
-test("does not query an oracle path for a candidate", () => {
-  let pathChecked = false;
-  validateInvariantRegistry(
-    registry(candidate({ controlKind: "enforceable", surface: "hook" })),
-    validationOptions((): boolean => {
-      pathChecked = true;
-      return true;
-    }),
-  );
-
-  expect(pathChecked).toBeFalse();
 });
 
 test("rejects verified measurements that are not green during parsing", () => {

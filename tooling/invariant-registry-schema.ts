@@ -1,3 +1,4 @@
+import { sourceSchema } from "./invariant-registry-source.ts";
 import { z } from "zod";
 
 const measurementSchema = z
@@ -34,9 +35,6 @@ const consumerSchema = z.discriminatedUnion("state", [
     .object({ state: z.literal("unsupported"), reason: z.string().min(1) })
     .strict(),
 ]);
-const sourceSchema = z
-  .object({ pullRequestUrl: z.url(), evidenceUrl: z.url() })
-  .strict();
 const scopeExceptionSchema = z
   .object({
     paths: z.array(z.string().min(1)).min(1),

@@ -38,7 +38,8 @@ test("normalizes GitHub pull request URLs before source deduplication", () => {
         sources: [
           {
             ...canonicalSource,
-            pullRequestUrl: `${canonicalSource.pullRequestUrl}/`,
+            pullRequestUrl:
+              "https://github.com/sebastienelet/DOTFILES/pull/206/",
           },
         ],
       }),

@@ -70,7 +70,8 @@ test("normalizes GitHub pull request URLs before counting promotion evidence", (
           canonicalSource,
           {
             ...canonicalSource,
-            pullRequestUrl: `${canonicalSource.pullRequestUrl}/`,
+            pullRequestUrl:
+              "https://github.com/sebastienelet/DOTFILES/pull/206/",
           },
         ],
       }),
