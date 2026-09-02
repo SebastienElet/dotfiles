@@ -2,7 +2,7 @@ use super::*;
 use crate::memory::process::deadline::cleanup::SystemGroupController;
 use crate::memory::process::deadline::readers::{ReaderPipe, ReaderSpawner, ReaderState};
 use rustix::process::{
-    Pid, Signal, WaitOptions, kill_process, kill_process_group, test_kill_process, waitpid,
+    Pid, Signal, WaitOptions, kill_process_group, test_kill_process_group, waitpid,
 };
 use std::io;
 use std::os::unix::process::CommandExt;
@@ -265,14 +265,11 @@ fn successful_command() -> Command {
 
 #[test]
 fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_group_kill() {
-    let fixture = tempfile::tempdir().unwrap();
-    let state = fixture.path().join("descendant-pid");
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let mut command = Command::new("sh");
     command
-        .args(["-c", "sleep 5 & printf '%s' \"$!\" > \"$1\"", "sh"])
-        .arg(&state)
+        .args(["-c", "sleep 5 &"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
@@ -285,18 +282,9 @@ fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_gro
         &FailingGroupController,
     )
     .unwrap_err();
-    let pid = std::fs::read_to_string(state)
-        .unwrap()
-        .trim()
-        .parse::<i32>()
-        .unwrap();
-    let pid = Pid::from_raw(pid).unwrap();
-    let alive = test_kill_process(pid).is_ok();
-    if alive {
-        kill_process(pid, Signal::KILL).unwrap();
-    }
 
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
     assert!(started.elapsed() < Duration::from_millis(250));
-    assert!(alive);
+    assert_child_reaped(spawner.pid());
+    assert!(test_kill_process_group(spawner.pid()).is_ok());
 }
