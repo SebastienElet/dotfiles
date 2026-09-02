@@ -25,6 +25,4 @@ node_modules/
 
 # Git worktrees
 .worktrees/
-.semctx/*
-!.semctx/semantic/
-!.semctx/config.json
+.semctx/
