@@ -107,26 +107,37 @@ approbation.
 1. vérifie les preuves et classe la cause sans modifier le rapport source ;
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
 3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ;
-4. conserve le candidat dans la session jusqu’à ce que l’entrée du workflow fournisse l’approbation
-   issue du contexte humain ;
-5. après cette entrée, capture les préimages, prépare la surface et le registre, puis appelle l’API
-   de mutation avec ces seules données ; son adaptateur possédé valide la surface et le registre via
-   le même schéma et la même politique que la CLI avant des écritures par comparaison et échange
-   fichier par fichier ; une erreur déclenche une réconciliation de toute écriture ambiguë, puis une
-   compensation conditionnelle sur les préimages, et tout fichier impossible à restaurer est
-   signalé ;
-6. exige le test du chemin d’échec avant tout contrôle exécutoire ;
-7. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
-8. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
-   et exceptions ; seuls `lifecycle` et `retirement` peuvent changer, avec les mêmes copies préparées,
-   validations possédées, écritures conditionnelles et compensation best-effort.
+4. prépare en session la surface et le registre, capture leurs préimages et construit un manifeste
+   fermé qui contient le mode, les chemins cibles exacts, chaque contenu initial et remplacement exact, et
+   le delta avant/après du seul invariant ciblé ;
+5. présente ce manifeste au contexte humain avant l’approbation, sans prétendre authentifier la
+   personne, puis transmet à l’API la requête structurée inchangée ; l’auto-assertion de l’agent reste
+   refusée ;
+6. avant toute mutation cible, exige l’égalité exacte avec le manifeste, prend le verrou coopératif
+   possédé par l’adaptateur, revalide les préimages et refuse tout autre chemin ou delta d’invariant ;
+7. valide la surface et le registre via le même schéma et la même politique que la CLI, prépare les
+   remplacements dans le répertoire de chaque cible et renomme atomiquement chaque fichier ; une
+   erreur déclenche une réconciliation, puis une compensation best-effort seulement si le contenu
+   courant correspond encore à la copie appliquée ;
+8. exige le test du chemin d’échec avant tout contrôle exécutoire ;
+9. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
+10. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
+    et exceptions ; seuls `lifecycle` et `retirement` peuvent changer, avec les mêmes copies préparées,
+    validations possédées, écritures conditionnelles et compensation best-effort.
 
-Le protocole multi-fichier n’est pas atomique. Une concurrence est détectée par comparaison des
-préimages et CAS ; tant que le processus répond, une écriture qui réussit puis lève est relue et
-restaurée si son contenu correspond à la copie préparée, sinon son chemin reste irrésolu. Une
-interruption dure peut laisser un changement partiel et ne garantit ni compensation, ni sortie, ni
-liste complète des chemins irrésolus. Après un tel arrêt, un humain inspecte et réconcilie l’arbre
-Git avant toute reprise.
+Le verrou est un fichier créé avec `O_EXCL`, acquis et supprimé par l’adaptateur possédé. La garantie
+de concurrence couvre uniquement les mutations qui passent par cet adaptateur coopératif ; les
+écrivains non coopératifs restent hors garantie. POSIX ne fournit ici aucun CAS général du contenu.
+Les fichiers temporaires de même répertoire et le verrou sont des artefacts internes dont les noms
+ne sont pas contrôlés par l’appelant ; seuls les chemins cibles du manifeste peuvent être remplacés.
+
+Le protocole multi-fichier n’est pas atomique. Tant que le processus répond, une erreur déclenche la
+compensation best-effort des fichiers déjà renommés et signale ceux qui ne peuvent pas être
+restaurés. Un arrêt avant un renommage laisse la cible intacte mais peut laisser le verrou et un
+fichier temporaire ; un arrêt après un ou plusieurs renommages peut laisser un changement partiel,
+sans sortie ni liste complète des chemins irrésolus. Aucune récupération automatique d’un verrou
+présumé ancien n’est tentée : un humain inspecte le verrou, les temporaires et l’arbre Git, puis les
+réconcilie manuellement avant de nettoyer et reprendre.
 
 La recherche préalable et l’unicité des sources empêchent une répétition de créer silencieusement
 un second invariant. Les changements de skills et d’instructions continuent d’être routés vers
@@ -196,11 +207,14 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
   même PR restent autorisées et ne comptent que pour une PR.
 - Exceptions et retraite conservent l’historique au lieu de supprimer la trace.
 - L’approbation enregistrée est une assertion du contexte humain, non une identité authentifiée ;
-  aucune mutation ne démarre sans cette entrée, l’approbation enregistrée doit lui correspondre
-  exactement et une auto-assertion de l’agent est refusée.
-- Le workflow multi-fichier est compensé best-effort avec préimages et CAS, sans revendication
-  d’atomicité ; une interruption dure ne garantit ni compensation ni diagnostic et impose une
-  réconciliation Git manuelle avant reprise.
+  le manifeste exact est présenté avant cette entrée, la requête, les préimages, remplacements et le
+  seul delta d’invariant ciblé doivent lui correspondre, et une auto-assertion de l’agent est refusée.
+- Le verrou coopératif sérialise les appels de l’adaptateur possédé, qui revalide les préimages sous
+  verrou et remplace chaque cible par un temporaire de même répertoire suivi d’un renommage ; les
+  écrivains non coopératifs et l’atomicité multi-fichier restent hors garantie.
+- Une erreur répondante déclenche une compensation best-effort honnête ; une interruption dure peut
+  laisser verrou, temporaire ou changement partiel et impose l’inspection manuelle de ces artefacts
+  et de Git avant nettoyage et reprise.
 - Claude, Codex et Cursor sont déclarés séparément, y compris lorsque l’un est non supporté.
 - Les deux constats historiques traversent le flux dans des fixtures sans devenir des règles réelles
   par simple présence dans les tests.

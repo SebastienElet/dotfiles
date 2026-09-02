@@ -1,3 +1,7 @@
+import {
+  type AtomicFileOptions,
+  replaceMatchingFile,
+} from "./harness-reflection-mutation-atomic-file.ts";
 import type {
   MutationWorkflowAdapter,
   PreparedFile,
@@ -6,22 +10,18 @@ import {
   closeSync,
   constants,
   fstatSync,
-  fsyncSync,
-  ftruncateSync,
   lstatSync,
   openSync,
   readFileSync,
   realpathSync,
-  unlinkSync,
-  writeFileSync,
-  writeSync,
 } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep, win32 } from "node:path";
-import { validateInvariantRegistryText } from "./invariant-registry-cli.ts";
+import { createMutationLock } from "./harness-reflection-mutation-lock.ts";
+import { validateInvariantRegistryText } from "./invariant-registry-repository-validator.ts";
 
 const approvedSurfaceCount = 1;
 const maximumRetirementSurfaceCount = 1;
-const newFileMode = 0o600;
+type RepositoryMutationAdapterOptions = AtomicFileOptions;
 
 const isOutside = (root: string, path: string): boolean => {
   const fromRoot = relative(root, path);
@@ -54,6 +54,9 @@ const resolveMutationPath = (repositoryRoot: string, path: string): string => {
     if (!metadata.isFile() || metadata.isSymbolicLink()) {
       throw new Error("mutation-path-not-regular-file");
     }
+    if (metadata.nlink > 1) {
+      throw new Error("mutation-path-hard-linked");
+    }
     if (isOutside(repositoryRoot, realpathSync(target))) {
       throw new Error("mutation-path-outside-repository");
     }
@@ -69,6 +72,9 @@ const readDescriptor = (descriptor: number): string => {
   const metadata = fstatSync(descriptor);
   if (!metadata.isFile()) {
     throw new Error("mutation-path-not-regular-file");
+  }
+  if (metadata.nlink > 1) {
+    throw new Error("mutation-path-hard-linked");
   }
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(
@@ -99,89 +105,6 @@ const readFile = (repositoryRoot: string, path: string): string | undefined => {
   }
 };
 
-const createFile = (
-  target: string,
-  replacement: string | undefined,
-): boolean => {
-  if (replacement === undefined) {
-    return true;
-  }
-  try {
-    const descriptor = openSync(
-      target,
-      constants.O_CREAT |
-        constants.O_EXCL |
-        constants.O_WRONLY |
-        constants.O_NOFOLLOW,
-      newFileMode,
-    );
-    try {
-      writeFileSync(descriptor, replacement, "utf8");
-      fsyncSync(descriptor);
-      return true;
-    } finally {
-      closeSync(descriptor);
-    }
-  } catch (error) {
-    if (errorCodeIs(error, "EEXIST")) {
-      return false;
-    }
-    throw error;
-  }
-};
-
-const removeOpenedFile = (target: string, descriptor: number): boolean => {
-  const opened = fstatSync(descriptor, { bigint: true });
-  closeSync(descriptor);
-  const current = lstatSync(target, { bigint: true });
-  if (
-    !current.isFile() ||
-    current.isSymbolicLink() ||
-    opened.dev !== current.dev ||
-    opened.ino !== current.ino
-  ) {
-    return false;
-  }
-  unlinkSync(target);
-  return true;
-};
-
-const replaceFile = (
-  target: string,
-  expected: string,
-  replacement: string | undefined,
-): boolean => {
-  try {
-    const descriptor = openSync(
-      target,
-      constants.O_RDWR | constants.O_NOFOLLOW,
-    );
-    let open = true;
-    try {
-      if (readDescriptor(descriptor) !== expected) {
-        return false;
-      }
-      if (replacement === undefined) {
-        open = false;
-        return removeOpenedFile(target, descriptor);
-      }
-      ftruncateSync(descriptor, 0);
-      writeSync(descriptor, replacement, 0, "utf8");
-      fsyncSync(descriptor);
-      return true;
-    } finally {
-      if (open) {
-        closeSync(descriptor);
-      }
-    }
-  } catch (error) {
-    if (errorCodeIs(error, "ENOENT")) {
-      return false;
-    }
-    throw error;
-  }
-};
-
 const validateSurfaces = (
   repositoryRoot: string,
   files: readonly PreparedFile[],
@@ -203,16 +126,20 @@ const validateSurfaces = (
 
 const createRepositoryMutationAdapter = (
   root: string,
+  options: RepositoryMutationAdapterOptions = {},
 ): MutationWorkflowAdapter => {
   const repositoryRoot = realpathSync(root);
+  const lock = createMutationLock(repositoryRoot);
   return {
-    compareAndSwap: (path, expected, replacement) => {
+    replaceMatching: (path, expected, replacement) => {
+      if (!lock.isHeld()) {
+        throw new Error("mutation-lock-required");
+      }
       const target = resolveMutationPath(repositoryRoot, path);
-      return expected === undefined
-        ? createFile(target, replacement)
-        : replaceFile(target, expected, replacement);
+      return replaceMatchingFile(target, { expected, replacement }, options);
     },
     read: (path) => readFile(repositoryRoot, path),
+    withMutationLock: lock.withLock,
     validatePreparedRegistry: (contents) =>
       validateInvariantRegistryText(contents, repositoryRoot),
     validatePreparedSurfaces: (files, kind) => {
@@ -221,4 +148,7 @@ const createRepositoryMutationAdapter = (
   };
 };
 
-export { createRepositoryMutationAdapter };
+export {
+  createRepositoryMutationAdapter,
+  type RepositoryMutationAdapterOptions,
+};

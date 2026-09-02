@@ -9,10 +9,11 @@ import {
   source,
 } from "./invariant-registry-test-support.ts";
 import { parseInvariantRegistry } from "./invariant-registry-contract.ts";
+import { parseMutationManifest } from "./harness-reflection-mutation-workflow-types.ts";
 
 const registryPath = "harness/invariants/registry.json";
 const approvedAt = "2026-09-02T00:00:00.000Z";
-const reviewerApproval: WorkflowApproval = {
+const reviewerApproval: Omit<WorkflowApproval, "manifest"> = {
   approvedAt,
   approvedBy: "Reviewer",
   source: "human-context",
@@ -24,6 +25,18 @@ type RetirementRegistryPair = Readonly<{
 }>;
 type MemoryAdapter = MutationWorkflowAdapter &
   Readonly<{ contents: Map<string, string> }>;
+type RetirementInputOverrides = Omit<
+  Partial<MutationWorkflowCoreInput>,
+  "approval"
+> &
+  Readonly<{ approval?: Partial<WorkflowApproval> }>;
+
+const withMemoryLock: MutationWorkflowAdapter["withMutationLock"] = async (
+  action,
+) => {
+  const value = await action();
+  return value;
+};
 
 const retirementRegistryPair = (
   recordOverrides: Readonly<Record<string, unknown>> = {},
@@ -53,7 +66,7 @@ const retirementRegistryPair = (
 
 const memoryAdapter = (
   initial: Readonly<Record<string, string>>,
-  beforeCompare?: (
+  beforeReplace?: (
     path: string,
     expected: string | undefined,
     replacement: string | undefined,
@@ -62,9 +75,10 @@ const memoryAdapter = (
   const contents = new Map(Object.entries(initial));
   return {
     contents,
+    withMutationLock: withMemoryLock,
     read: (path) => contents.get(path),
-    compareAndSwap: (path, expected, replacement) => {
-      beforeCompare?.(path, expected, replacement);
+    replaceMatching: (path, expected, replacement) => {
+      beforeReplace?.(path, expected, replacement);
       if (contents.get(path) !== expected) {
         return false;
       }
@@ -82,19 +96,51 @@ const memoryAdapter = (
 };
 
 const retirementInput = (
+  current: string,
   retired: string,
-  overrides: Partial<MutationWorkflowCoreInput> = {},
-): MutationWorkflowCoreInput => ({
-  approval: reviewerApproval,
-  kind: "retirement",
-  preparedFiles: [
-    { contents: "new surface", path: "surface.md" },
-    { contents: retired, path: registryPath },
-  ],
-  registryPath,
-  targetInvariantId: "prevent-secret-leaks",
-  ...overrides,
-});
+  overrides: RetirementInputOverrides = {},
+): MutationWorkflowCoreInput => {
+  const [currentRecord] = parseInvariantRegistry(
+    JSON.parse(current),
+  ).invariants;
+  const [retiredRecord] = parseInvariantRegistry(
+    JSON.parse(retired),
+  ).invariants;
+  if (currentRecord === undefined || retiredRecord === undefined) {
+    throw new Error("retirement-registry-target-missing");
+  }
+  const approval: WorkflowApproval = {
+    ...reviewerApproval,
+    ...overrides.approval,
+    manifest: parseMutationManifest({
+      files: [
+        {
+          path: "surface.md",
+          preimage: "old surface",
+          replacement: "new surface",
+        },
+        { path: registryPath, preimage: current, replacement: retired },
+      ],
+      kind: "retirement",
+      registryDelta: {
+        after: retiredRecord,
+        before: currentRecord,
+        targetInvariantId: "prevent-secret-leaks",
+      },
+    }),
+  };
+  return {
+    kind: "retirement",
+    preparedFiles: [
+      { contents: "new surface", path: "surface.md" },
+      { contents: retired, path: registryPath },
+    ],
+    registryPath,
+    targetInvariantId: "prevent-secret-leaks",
+    ...overrides,
+    approval,
+  };
+};
 
 export {
   approvedAt,

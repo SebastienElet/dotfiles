@@ -16,19 +16,49 @@ const surfacePath =
   "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md";
 const approvedAt = "2026-09-02T00:00:00.000Z";
 
-const invalidRegistryRequest = (): HarnessMutationRequest => ({
-  approval: {
-    approvedAt,
-    approvedBy: "Reviewer",
-    source: "human-context",
-  },
-  kind: "approved-mutation",
-  preparedFiles: [
-    { contents: "new surface", path: surfacePath },
-    { contents: "not-json", path: registryPath },
-  ],
-  targetInvariantId: "prevent-secret-leaks",
-});
+const invalidRegistryRequest = async (): Promise<HarnessMutationRequest> => {
+  const surfaceBefore = await readFile(
+    resolve(repositoryRoot, surfacePath),
+    "utf8",
+  );
+  const registryBefore = await readFile(
+    resolve(repositoryRoot, registryPath),
+    "utf8",
+  );
+  return {
+    approval: {
+      approvedAt,
+      approvedBy: "Reviewer",
+      manifest: {
+        files: [
+          {
+            path: surfacePath,
+            preimage: surfaceBefore,
+            replacement: "new surface",
+          },
+          {
+            path: registryPath,
+            preimage: registryBefore,
+            replacement: "not-json",
+          },
+        ],
+        kind: "approved-mutation",
+        registryDelta: {
+          after: null,
+          before: null,
+          targetInvariantId: "prevent-secret-leaks",
+        },
+      },
+      source: "human-context",
+    },
+    kind: "approved-mutation",
+    preparedFiles: [
+      { contents: "new surface", path: surfacePath },
+      { contents: "not-json", path: registryPath },
+    ],
+    targetInvariantId: "prevent-secret-leaks",
+  };
+};
 
 test("resolves and invokes the production workflow through the skill route", async () => {
   const sources = await loadHarnessReflectionSources(repositoryRoot);
@@ -45,7 +75,9 @@ test("resolves and invokes the production workflow through the skill route", asy
   if (routedWorkflow !== executeHarnessMutationWorkflow) {
     throw new TypeError("retirement-route-unresolved");
   }
-  const result = await executeHarnessMutationWorkflow(invalidRegistryRequest());
+  const result = await executeHarnessMutationWorkflow(
+    await invalidRegistryRequest(),
+  );
   expect(result.status).toBe("rejected");
 });
 
@@ -61,8 +93,8 @@ test("rejects malformed prepared registry without writing any file", async () =>
 
   let injectedCalls = 0;
   const unsafeRequest = {
-    ...invalidRegistryRequest(),
-    compareAndSwap: (): boolean => {
+    ...(await invalidRegistryRequest()),
+    replaceMatching: (): boolean => {
       injectedCalls += 1;
       return true;
     },
@@ -78,7 +110,7 @@ test("rejects malformed prepared registry without writing any file", async () =>
   const result = await executeHarnessMutationWorkflow(unsafeRequest);
 
   expect(result.status).toBe("rejected");
-  expect(result.reason).toBe("invariant registry must be valid JSON");
+  expect(result.reason).toBe("mutation-request-invalid");
   expect(injectedCalls).toBe(0);
   expect(await readFile(resolve(repositoryRoot, surfacePath), "utf8")).toBe(
     surfaceBefore,

@@ -26,7 +26,7 @@ test("refuses retirement when any historical source is removed", async () => {
   });
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(proposed),
+    retirementInput(pair.current, proposed),
     adapter,
   );
 
@@ -52,7 +52,7 @@ test("refuses retirement when a scope exception is removed", async () => {
   });
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(proposed),
+    retirementInput(pair.current, proposed),
     adapter,
   );
 
@@ -70,7 +70,7 @@ test("refuses a persisted approval different from the accepted context", async (
   });
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(persisted, {
+    retirementInput(pair.current, persisted, {
       approval: {
         approvedAt,
         approvedBy: "Alice",
@@ -102,7 +102,7 @@ test("refuses an agent self-asserted approval before reading files", async () =>
   };
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.retired, {
+    retirementInput(pair.current, pair.retired, {
       approval: {
         approvedAt,
         approvedBy: "agent",

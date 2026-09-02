@@ -7,6 +7,7 @@ import {
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
   lifecycleSchema,
+  mutationExecutionSchema,
   oracleSchema,
   retirementSchema,
   workflowRoutesSchema,
@@ -31,6 +32,7 @@ const harnessReflectionContractSchema = z
     decisionBranches: decisionBranchesSchema,
     approvalBranches: approvalBranchesSchema,
     workflowRoutes: workflowRoutesSchema,
+    mutationExecution: mutationExecutionSchema,
     approvedMutation: approvedMutationSchema,
     registry: z
       .object({
@@ -87,6 +89,16 @@ const harnessReflectionContractSchema = z
       .object({
         requiredBeforeMutation: z.literal(true),
         preApprovalState: z.literal("session-local"),
+        manifestRequired: z.literal(true),
+        manifestTiming: z.literal("present-exact-manifest-before-approval"),
+        manifestContents: z.tuple([
+          z.literal("kind"),
+          z.literal("exact-paths"),
+          z.literal("exact-preimages"),
+          z.literal("exact-replacements"),
+          z.literal("target-invariant-id"),
+          z.literal("exact-target-before-and-after"),
+        ]),
         timePressureBypass: z.literal(false),
         inputSource: z.literal("human-context"),
         authentication: z.literal("not-performed"),

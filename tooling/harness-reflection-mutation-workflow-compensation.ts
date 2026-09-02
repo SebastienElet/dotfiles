@@ -27,7 +27,7 @@ const restoreSnapshot = async (
     return false;
   }
   try {
-    await adapter.compareAndSwap(
+    await adapter.replaceMatching(
       snapshot.path,
       snapshot.contents,
       snapshot.before,

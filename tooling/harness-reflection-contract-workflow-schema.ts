@@ -71,40 +71,60 @@ const workflowRoutesSchema = z
   })
   .strict();
 
+const mutationExecutionShape = {
+  guarantee: z.literal(
+    "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
+  ),
+  concurrencyScope: z.literal("mutations-through-owned-adapter-only"),
+  nonCooperativeWriters: z.literal("outside-guarantee"),
+  interruptionLimit: z.literal(
+    "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
+  ),
+  crashRecovery: z.literal(
+    "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
+  ),
+  applyOrder: z.tuple([
+    z.literal("stage-each-replacement-in-same-directory"),
+    z.literal("revalidate-current-file-under-cooperative-lock"),
+    z.literal("atomically-rename-each-file"),
+    z.literal("validate-applied-coherent-change"),
+  ]),
+  onAnyError: z.tuple([
+    z.literal("reconcile-ambiguous-file-outcome"),
+    z.literal(
+      "compensate-applied-files-with-atomic-replacement-when-still-matching",
+    ),
+    z.literal("report-unresolved-files"),
+    z.literal("report-failure"),
+  ]),
+  successOrder: z.tuple([z.literal("render-report")]),
+};
+const mutationExecutionSchema = z.object(mutationExecutionShape).strict();
+
 const approvedMutationSchema = z
   .object({
-    guarantee: z.literal("best-effort-compensation-not-atomic"),
-    interruptionLimit: z.literal(
-      "hard-interruption-has-no-output-or-recovery-guarantee",
-    ),
-    crashRecovery: z.literal("inspect-git-and-reconcile-before-retry"),
+    execution: z.literal("mutationExecution"),
     prepareOrder: z.tuple([
       z.literal("select-control-surface"),
       z.literal("declare-consumers"),
       z.literal("require-control-oracle"),
       z.literal("prepare-selected-control-surface"),
       z.literal("prepare-registry"),
-      z.literal("capture-all-file-preimages"),
+      z.literal("capture-all-file-preimages-for-approval"),
+      z.literal("construct-exact-mutation-manifest"),
+      z.literal("await-human-context-approval-for-exact-manifest"),
     ]),
     validationOrder: z.tuple([
+      z.literal("validate-request-equals-approved-manifest"),
+      z.literal("acquire-owned-cooperative-lock"),
+      z.literal("revalidate-approved-preimages-under-lock"),
       z.literal(
         "validate-prepared-selected-control-surface-with-owned-adapter",
       ),
       z.literal("validate-prepared-registry-with-owned-schema-and-policy"),
+      z.literal("validate-only-approved-target-registry-delta"),
       z.literal("validate-persisted-approval-matches-human-context"),
     ]),
-    applyOrder: z.tuple([
-      z.literal("confirm-all-file-preimages"),
-      z.literal("apply-each-file-with-compare-and-swap"),
-      z.literal("validate-applied-coherent-change"),
-    ]),
-    onAnyError: z.tuple([
-      z.literal("reconcile-ambiguous-file-outcome"),
-      z.literal("compensate-applied-files-with-compare-and-swap"),
-      z.literal("report-unresolved-files"),
-      z.literal("report-failure"),
-    ]),
-    successOrder: z.tuple([z.literal("render-report")]),
   })
   .strict();
 
@@ -158,15 +178,10 @@ const oracleSchema = z
 
 const retirementSchema = z
   .object({
-    guarantee: z.literal("best-effort-compensation-not-atomic"),
-    interruptionLimit: z.literal(
-      "hard-interruption-has-no-output-or-recovery-guarantee",
-    ),
-    crashRecovery: z.literal("inspect-git-and-reconcile-before-retry"),
+    execution: z.literal("mutationExecution"),
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
     optionalFields: z.tuple([z.literal("replacedBy")]),
     prepareOrder: z.tuple([
-      z.literal("require-approval"),
       z.literal("lookup-existing-invariant"),
       z.literal("prepare-retired-registry-copy"),
       z.literal("preserve-complete-record-history-in-prepared-registry"),
@@ -174,9 +189,14 @@ const retirementSchema = z
       z.literal("set-retirement-reason-in-prepared-registry"),
       z.literal("handle-optional-replaced-by-in-prepared-registry"),
       z.literal("prepare-selected-control-surface-copy-if-touched"),
-      z.literal("capture-all-file-preimages"),
+      z.literal("capture-all-file-preimages-for-approval"),
+      z.literal("construct-exact-retirement-manifest"),
+      z.literal("await-human-context-approval-for-exact-manifest"),
     ]),
     validationOrder: z.tuple([
+      z.literal("validate-request-equals-approved-manifest"),
+      z.literal("acquire-owned-cooperative-lock"),
+      z.literal("revalidate-approved-preimages-under-lock"),
       z.literal("validate-complete-record-history-unchanged"),
       z.literal(
         "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
@@ -184,20 +204,9 @@ const retirementSchema = z
       z.literal(
         "validate-prepared-retired-registry-with-owned-schema-and-policy",
       ),
+      z.literal("validate-only-approved-target-registry-delta"),
       z.literal("validate-persisted-approval-matches-human-context"),
     ]),
-    applyOrder: z.tuple([
-      z.literal("confirm-all-file-preimages"),
-      z.literal("apply-each-file-with-compare-and-swap"),
-      z.literal("validate-applied-coherent-change"),
-    ]),
-    onAnyError: z.tuple([
-      z.literal("reconcile-ambiguous-file-outcome"),
-      z.literal("compensate-applied-files-with-compare-and-swap"),
-      z.literal("report-unresolved-files"),
-      z.literal("report-failure"),
-    ]),
-    successOrder: z.tuple([z.literal("render-report")]),
   })
   .strict();
 
@@ -224,6 +233,7 @@ export {
   harnessGapWorkflowOrderSchema,
   initialWorkflowOrderSchema,
   lifecycleSchema,
+  mutationExecutionSchema,
   oracleSchema,
   retirementSchema,
   workflowRoutesSchema,

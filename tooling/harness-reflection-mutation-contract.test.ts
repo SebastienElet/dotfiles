@@ -48,6 +48,80 @@ const nestedRecord = (
   return value;
 };
 
+const mutationExecutionContract = {
+  guarantee:
+    "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
+  concurrencyScope: "mutations-through-owned-adapter-only",
+  nonCooperativeWriters: "outside-guarantee",
+  interruptionLimit:
+    "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
+  crashRecovery: "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
+  applyOrder: [
+    "stage-each-replacement-in-same-directory",
+    "revalidate-current-file-under-cooperative-lock",
+    "atomically-rename-each-file",
+    "validate-applied-coherent-change",
+  ],
+  onAnyError: [
+    "reconcile-ambiguous-file-outcome",
+    "compensate-applied-files-with-atomic-replacement-when-still-matching",
+    "report-unresolved-files",
+    "report-failure",
+  ],
+  successOrder: ["render-report"],
+} as const;
+
+const approvedMutationContract = {
+  execution: "mutationExecution",
+  prepareOrder: [
+    "select-control-surface",
+    "declare-consumers",
+    "require-control-oracle",
+    "prepare-selected-control-surface",
+    "prepare-registry",
+    "capture-all-file-preimages-for-approval",
+    "construct-exact-mutation-manifest",
+    "await-human-context-approval-for-exact-manifest",
+  ],
+  validationOrder: [
+    "validate-request-equals-approved-manifest",
+    "acquire-owned-cooperative-lock",
+    "revalidate-approved-preimages-under-lock",
+    "validate-prepared-selected-control-surface-with-owned-adapter",
+    "validate-prepared-registry-with-owned-schema-and-policy",
+    "validate-only-approved-target-registry-delta",
+    "validate-persisted-approval-matches-human-context",
+  ],
+} as const;
+
+const retirementContract = {
+  execution: "mutationExecution",
+  requiredFields: ["retiredAt", "reason"],
+  optionalFields: ["replacedBy"],
+  prepareOrder: [
+    "lookup-existing-invariant",
+    "prepare-retired-registry-copy",
+    "preserve-complete-record-history-in-prepared-registry",
+    "set-retired-at-in-prepared-registry",
+    "set-retirement-reason-in-prepared-registry",
+    "handle-optional-replaced-by-in-prepared-registry",
+    "prepare-selected-control-surface-copy-if-touched",
+    "capture-all-file-preimages-for-approval",
+    "construct-exact-retirement-manifest",
+    "await-human-context-approval-for-exact-manifest",
+  ],
+  validationOrder: [
+    "validate-request-equals-approved-manifest",
+    "acquire-owned-cooperative-lock",
+    "revalidate-approved-preimages-under-lock",
+    "validate-complete-record-history-unchanged",
+    "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
+    "validate-prepared-retired-registry-with-owned-schema-and-policy",
+    "validate-only-approved-target-registry-delta",
+    "validate-persisted-approval-matches-human-context",
+  ],
+} as const;
+
 test("owns validation, approval matching and compensated mutation", async () => {
   const contract = await authoritativeContract();
 
@@ -60,78 +134,19 @@ test("owns validation, approval matching and compensated mutation", async () => 
     absent: ["render-report-without-mutation"],
     granted: ["execute-approved-compensated-mutation"],
   });
-  expect(Reflect.get(contract, "approvedMutation")).toEqual({
-    guarantee: "best-effort-compensation-not-atomic",
-    interruptionLimit: "hard-interruption-has-no-output-or-recovery-guarantee",
-    crashRecovery: "inspect-git-and-reconcile-before-retry",
-    applyOrder: [
-      "confirm-all-file-preimages",
-      "apply-each-file-with-compare-and-swap",
-      "validate-applied-coherent-change",
-    ],
-    onAnyError: [
-      "reconcile-ambiguous-file-outcome",
-      "compensate-applied-files-with-compare-and-swap",
-      "report-unresolved-files",
-      "report-failure",
-    ],
-    prepareOrder: [
-      "select-control-surface",
-      "declare-consumers",
-      "require-control-oracle",
-      "prepare-selected-control-surface",
-      "prepare-registry",
-      "capture-all-file-preimages",
-    ],
-    validationOrder: [
-      "validate-prepared-selected-control-surface-with-owned-adapter",
-      "validate-prepared-registry-with-owned-schema-and-policy",
-      "validate-persisted-approval-matches-human-context",
-    ],
-    successOrder: ["render-report"],
-  });
+  expect(Reflect.get(contract, "mutationExecution")).toEqual(
+    mutationExecutionContract,
+  );
+  expect(Reflect.get(contract, "approvedMutation")).toEqual(
+    approvedMutationContract,
+  );
 });
 
 test("preserves the complete record history during retirement", async () => {
   const contract = await authoritativeContract();
   const retirement = nestedRecord(contract, "retirement");
 
-  expect(retirement).toEqual({
-    guarantee: "best-effort-compensation-not-atomic",
-    interruptionLimit: "hard-interruption-has-no-output-or-recovery-guarantee",
-    crashRecovery: "inspect-git-and-reconcile-before-retry",
-    requiredFields: ["retiredAt", "reason"],
-    optionalFields: ["replacedBy"],
-    prepareOrder: [
-      "require-approval",
-      "lookup-existing-invariant",
-      "prepare-retired-registry-copy",
-      "preserve-complete-record-history-in-prepared-registry",
-      "set-retired-at-in-prepared-registry",
-      "set-retirement-reason-in-prepared-registry",
-      "handle-optional-replaced-by-in-prepared-registry",
-      "prepare-selected-control-surface-copy-if-touched",
-      "capture-all-file-preimages",
-    ],
-    validationOrder: [
-      "validate-complete-record-history-unchanged",
-      "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
-      "validate-prepared-retired-registry-with-owned-schema-and-policy",
-      "validate-persisted-approval-matches-human-context",
-    ],
-    applyOrder: [
-      "confirm-all-file-preimages",
-      "apply-each-file-with-compare-and-swap",
-      "validate-applied-coherent-change",
-    ],
-    onAnyError: [
-      "reconcile-ambiguous-file-outcome",
-      "compensate-applied-files-with-compare-and-swap",
-      "report-unresolved-files",
-      "report-failure",
-    ],
-    successOrder: ["render-report"],
-  });
+  expect(retirement).toEqual(retirementContract);
 });
 
 test.each([
@@ -176,17 +191,17 @@ test.each([
   },
   {
     name: "ambiguous outcome reconciliation",
-    path: ["retirement"],
+    path: ["mutationExecution"],
     key: "onAnyError",
     value: [
-      "compensate-applied-files-with-compare-and-swap",
+      "compensate-applied-files-with-unchecked-write",
       "report-unresolved-files",
       "report-failure",
     ],
   },
   {
-    name: "per-file compare-and-swap",
-    path: ["approvedMutation"],
+    name: "same-directory atomic replacement",
+    path: ["mutationExecution"],
     key: "applyOrder",
     value: [
       "apply-selected-control-surface",
@@ -196,7 +211,7 @@ test.each([
   },
   {
     name: "hard interruption limit",
-    path: ["retirement"],
+    path: ["mutationExecution"],
     key: "interruptionLimit",
     value: "process-interruption-may-leave-partial-change",
   },

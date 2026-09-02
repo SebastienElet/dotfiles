@@ -30,9 +30,10 @@ project instructions are discoverable.
 1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
 2. Execute `initialWorkflowOrder` exactly as structured.
 3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder` and its selected
-   decision and approval branches. After contextual human approval, resolve
-   `workflowRoutes.approvedMutation`, load its named module and export, then execute its mode with
-   only the structured request; the export owns validation and filesystem compare-and-swap.
+   decision and approval branches. Present the prepared exact manifest for contextual human
+   approval, then resolve `workflowRoutes.approvedMutation`, load its named module and export, and
+   execute its mode with only the unchanged structured request. The export owns manifest validation,
+   cooperative locking, and same-directory atomic replacement.
 4. For retirement, resolve `workflowRoutes.retirement`, load its named module and export, then
    execute its mode with only the structured request. Never inject validation or filesystem
    callbacks, add, omit, reorder, or short-circuit steps. Stop with a finding when a route is

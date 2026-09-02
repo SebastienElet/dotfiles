@@ -8,7 +8,7 @@ import {
 import type { MutationWorkflowAdapter } from "./harness-reflection-mutation-workflow-types.ts";
 import { executeHarnessMutationWorkflowCore } from "./harness-reflection-mutation-workflow-core.ts";
 
-test("reconciles a CAS that writes before throwing", async () => {
+test("reconciles a replacement that writes before throwing", async () => {
   const pair = retirementRegistryPair();
   const base = memoryAdapter({
     [registryPath]: pair.current,
@@ -17,8 +17,8 @@ test("reconciles a CAS that writes before throwing", async () => {
   let threwAfterWrite = false;
   const adapter: MutationWorkflowAdapter = {
     ...base,
-    compareAndSwap: async (path, expected, replacement) => {
-      const applied = await base.compareAndSwap(path, expected, replacement);
+    replaceMatching: async (path, expected, replacement) => {
+      const applied = await base.replaceMatching(path, expected, replacement);
       if (!threwAfterWrite && path === "surface.md" && applied) {
         threwAfterWrite = true;
         throw new Error("ambiguous-write");
@@ -28,7 +28,7 @@ test("reconciles a CAS that writes before throwing", async () => {
   };
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.retired),
+    retirementInput(pair.current, pair.retired),
     adapter,
   );
 
@@ -57,7 +57,7 @@ test("reports every path that cannot be restored", async () => {
   );
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.retired),
+    retirementInput(pair.current, pair.retired),
     adapter,
   );
 
@@ -85,7 +85,7 @@ test("compensates files changed before applied validation fails", async () => {
   };
 
   const result = await executeHarnessMutationWorkflowCore(
-    retirementInput(pair.retired),
+    retirementInput(pair.current, pair.retired),
     adapter,
   );
 

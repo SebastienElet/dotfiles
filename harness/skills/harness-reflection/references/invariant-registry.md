@@ -52,35 +52,47 @@
       "mode": "retirement"
     }
   },
+  "mutationExecution": {
+    "guarantee": "cooperative-adapter-lock-with-best-effort-multi-file-compensation-not-atomic",
+    "concurrencyScope": "mutations-through-owned-adapter-only",
+    "nonCooperativeWriters": "outside-guarantee",
+    "interruptionLimit": "hard-interruption-may-leave-lock-temp-or-partial-multi-file-change-without-output",
+    "crashRecovery": "inspect-lock-temp-and-git-before-manual-cleanup-and-retry",
+    "applyOrder": [
+      "stage-each-replacement-in-same-directory",
+      "revalidate-current-file-under-cooperative-lock",
+      "atomically-rename-each-file",
+      "validate-applied-coherent-change"
+    ],
+    "onAnyError": [
+      "reconcile-ambiguous-file-outcome",
+      "compensate-applied-files-with-atomic-replacement-when-still-matching",
+      "report-unresolved-files",
+      "report-failure"
+    ],
+    "successOrder": ["render-report"]
+  },
   "approvedMutation": {
-    "guarantee": "best-effort-compensation-not-atomic",
-    "interruptionLimit": "hard-interruption-has-no-output-or-recovery-guarantee",
-    "crashRecovery": "inspect-git-and-reconcile-before-retry",
+    "execution": "mutationExecution",
     "prepareOrder": [
       "select-control-surface",
       "declare-consumers",
       "require-control-oracle",
       "prepare-selected-control-surface",
       "prepare-registry",
-      "capture-all-file-preimages"
+      "capture-all-file-preimages-for-approval",
+      "construct-exact-mutation-manifest",
+      "await-human-context-approval-for-exact-manifest"
     ],
     "validationOrder": [
+      "validate-request-equals-approved-manifest",
+      "acquire-owned-cooperative-lock",
+      "revalidate-approved-preimages-under-lock",
       "validate-prepared-selected-control-surface-with-owned-adapter",
       "validate-prepared-registry-with-owned-schema-and-policy",
+      "validate-only-approved-target-registry-delta",
       "validate-persisted-approval-matches-human-context"
-    ],
-    "applyOrder": [
-      "confirm-all-file-preimages",
-      "apply-each-file-with-compare-and-swap",
-      "validate-applied-coherent-change"
-    ],
-    "onAnyError": [
-      "reconcile-ambiguous-file-outcome",
-      "compensate-applied-files-with-compare-and-swap",
-      "report-unresolved-files",
-      "report-failure"
-    ],
-    "successOrder": ["render-report"]
+    ]
   },
   "registry": {
     "path": "harness/invariants/registry.json",
@@ -116,6 +128,16 @@
   "approval": {
     "requiredBeforeMutation": true,
     "preApprovalState": "session-local",
+    "manifestRequired": true,
+    "manifestTiming": "present-exact-manifest-before-approval",
+    "manifestContents": [
+      "kind",
+      "exact-paths",
+      "exact-preimages",
+      "exact-replacements",
+      "target-invariant-id",
+      "exact-target-before-and-after"
+    ],
     "timePressureBypass": false,
     "inputSource": "human-context",
     "authentication": "not-performed",
@@ -160,13 +182,10 @@
     "durableValidityClaim": false
   },
   "retirement": {
-    "guarantee": "best-effort-compensation-not-atomic",
-    "interruptionLimit": "hard-interruption-has-no-output-or-recovery-guarantee",
-    "crashRecovery": "inspect-git-and-reconcile-before-retry",
+    "execution": "mutationExecution",
     "requiredFields": ["retiredAt", "reason"],
     "optionalFields": ["replacedBy"],
     "prepareOrder": [
-      "require-approval",
       "lookup-existing-invariant",
       "prepare-retired-registry-copy",
       "preserve-complete-record-history-in-prepared-registry",
@@ -174,26 +193,20 @@
       "set-retirement-reason-in-prepared-registry",
       "handle-optional-replaced-by-in-prepared-registry",
       "prepare-selected-control-surface-copy-if-touched",
-      "capture-all-file-preimages"
+      "capture-all-file-preimages-for-approval",
+      "construct-exact-retirement-manifest",
+      "await-human-context-approval-for-exact-manifest"
     ],
     "validationOrder": [
+      "validate-request-equals-approved-manifest",
+      "acquire-owned-cooperative-lock",
+      "revalidate-approved-preimages-under-lock",
       "validate-complete-record-history-unchanged",
       "validate-prepared-selected-control-surface-if-touched-with-owned-adapter",
       "validate-prepared-retired-registry-with-owned-schema-and-policy",
+      "validate-only-approved-target-registry-delta",
       "validate-persisted-approval-matches-human-context"
-    ],
-    "applyOrder": [
-      "confirm-all-file-preimages",
-      "apply-each-file-with-compare-and-swap",
-      "validate-applied-coherent-change"
-    ],
-    "onAnyError": [
-      "reconcile-ambiguous-file-outcome",
-      "compensate-applied-files-with-compare-and-swap",
-      "report-unresolved-files",
-      "report-failure"
-    ],
-    "successOrder": ["render-report"]
+    ]
   },
   "proposal": {
     "requiredFields": [

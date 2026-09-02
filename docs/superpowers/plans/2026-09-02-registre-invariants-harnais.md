@@ -4,7 +4,7 @@
 
 **Goal:** Ajouter un registre versionné et fail-closed qui relie les constats de revue aux invariants personnels, à leur surface et à leur oracle sans modifier le contrat factuel de `pr-feedback`.
 
-**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement et approbation fournie par le contexte humain. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; une CLI de lecture seule applique aussi les contrôles dépendant du dépôt, notamment l’existence des oracles actifs. Le registre consigne cette approbation sans authentifier `approvedBy`. L’API publique de mutation n’accepte que les copies préparées et l’approbation ; son adaptateur possédé valide et applique par préimages, CAS et compensation best-effort sans revendiquer l’atomicité.
+**Architecture:** `harness-reflection` reste le propriétaire aval et propose les mutations après rapprochement. Il prépare un manifeste fermé des chemins, préimages, remplacements et du seul delta d’invariant ciblé, puis le présente au contexte humain avant l’approbation sans authentifier `approvedBy`. `harness/invariants/registry.json` est parsé une fois par Zod, puis contrôlé par une politique TypeScript pure ; une CLI de lecture seule applique aussi les contrôles dépendant du dépôt, notamment l’existence des oracles actifs. L’API publique refuse toute requête différente du manifeste avant une mutation cible ; son adaptateur possédé sérialise ses propres appels par verrou `O_EXCL`, revalide les préimages sous verrou, remplace chaque fichier par temporaire de même répertoire et renommage atomique, puis compense best-effort sans revendiquer l’atomicité multi-fichier ni couvrir les écrivains non coopératifs.
 
 **Tech Stack:** Bun 1.4, TypeScript 7 strict, Zod 4, `bun:test`, Markdown et JSON versionnés.
 
@@ -15,15 +15,18 @@
 - `pr-feedback` reste factuel, en lecture seule, sans classification ni proposition.
 - Le registre canonique est `harness/invariants/registry.json` et son schéma porte `version: 1`.
 - Une mutation du registre ou du harnais exige une approbation fournie par l’entrée humaine du
-  workflow ; une auto-assertion de l’agent est refusée, mais l’identité n’est pas authentifiée.
+  workflow sur son manifeste exact ; une auto-assertion de l’agent est refusée, mais l’identité
+  n’est pas authentifiée.
 - Une promotion exige deux PR distinctes ou une sévérité `high`/`critical`, puis une approbation ; ce seuil ne vaut pas preuve.
 - Une surface exécutoire active ou vérifiée exige un oracle de chemin d’échec nommé et versionné.
 - L’inspection réelle refuse le lien symbolique final, exige un mode régulier dans l’index Git et
   détecte une substitution d’identité pendant les sondes.
-- Les mutations capturent toutes les préimages, valident les copies préparées, appliquent chaque
-  fichier par CAS et compensent best-effort ; une concurrence répondante produit des chemins
-  explicitement signalés, tandis qu’une interruption dure ne garantit ni compensation ni sortie et
-  impose une inspection Git avant reprise.
+- Les mutations revalident toutes les préimages sous le verrou coopératif de l’adaptateur, valident
+  les copies préparées et remplacent chaque cible par temporaire de même répertoire et renommage ;
+  la compensation reste best-effort et l’atomicité multi-fichier n’est pas revendiquée.
+- La garantie de concurrence exclut les écrivains non coopératifs. Une interruption dure peut
+  laisser verrou, temporaire ou changement partiel sans sortie et impose leur inspection avec Git,
+  puis un nettoyage et une reprise manuels.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.
@@ -354,9 +357,10 @@ Sinon :
 2. rechercher une source ou un invariant existant avant de proposer ;
 3. retourner exactement `skip`, `link` ou `propose` ;
 4. appliquer le seuil deux PR ou sévérité forte ;
-5. garder toute mutation session-local jusqu’à l’entrée d’approbation du contexte humain ;
-6. après cette entrée non authentifiée par la CLI, exiger la surface, les trois consommateurs et
-   l’oracle approprié ;
+5. garder toute mutation session-local, préparer son manifeste exact et le présenter au contexte
+   humain avant l’entrée d’approbation ;
+6. après cette entrée non authentifiée, exiger l’égalité de la requête avec le manifeste, la surface,
+   les trois consommateurs et l’oracle approprié ;
 7. vérifier avec la CLI avant de présenter le changement comme valide ;
 8. conserver les règles actuelles de trial, rollback et routage.
 

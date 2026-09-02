@@ -1,8 +1,4 @@
 import type {
-  InvariantRecord,
-  InvariantRegistry,
-} from "./invariant-registry-contract.ts";
-import type {
   MutationWorkflowAdapter,
   MutationWorkflowCoreInput,
   MutationWorkflowResult,
@@ -13,6 +9,12 @@ import {
   compensate,
   readMatches,
 } from "./harness-reflection-mutation-workflow-compensation.ts";
+import {
+  validateApprovedFileRequest,
+  validateApprovedPreimages,
+} from "./harness-reflection-mutation-authorization.ts";
+import { parseMutationWorkflowCoreInput } from "./harness-reflection-mutation-workflow-types.ts";
+import { validateTransition } from "./harness-reflection-mutation-transition.ts";
 
 type PreparedWorkflow = Readonly<{
   events: readonly string[];
@@ -42,68 +44,6 @@ const capturePreimages = async (
     snapshots.push({ ...file, before: await adapter.read(file.path) });
   }
   return snapshots;
-};
-
-const withoutRetirement = (
-  record: Readonly<InvariantRecord>,
-): Readonly<Record<string, unknown>> =>
-  Object.fromEntries(
-    Object.entries(record).filter(
-      (entry: readonly [string, unknown]) =>
-        !["lifecycle", "retirement"].includes(entry[0]),
-    ),
-  );
-
-const preservesRetirementHistory = (
-  current: InvariantRecord,
-  proposed: InvariantRecord,
-): boolean =>
-  JSON.stringify(withoutRetirement(current)) ===
-  JSON.stringify(withoutRetirement(proposed));
-
-const approvalMatches = (
-  registry: InvariantRegistry,
-  targetInvariantId: string,
-  approval: WorkflowApproval,
-): boolean => {
-  const persisted = registry.invariants.find(
-    ({ id }) => id === targetInvariantId,
-  )?.approval;
-  return (
-    persisted?.approvedBy === approval.approvedBy &&
-    persisted.approvedAt === approval.approvedAt
-  );
-};
-
-const validateTransition = (
-  input: MutationWorkflowCoreInput,
-  registries: Readonly<{
-    current: InvariantRegistry;
-    proposed: InvariantRegistry;
-  }>,
-  approval: WorkflowApproval,
-): void => {
-  const { current, proposed } = registries;
-  if (!approvalMatches(proposed, input.targetInvariantId, approval)) {
-    throw new Error("prepared-registry-approval-mismatch");
-  }
-  if (input.kind !== "retirement") {
-    return;
-  }
-  const currentTarget = current.invariants.find(
-    ({ id }) => id === input.targetInvariantId,
-  );
-  const proposedTarget = proposed.invariants.find(
-    ({ id }) => id === input.targetInvariantId,
-  );
-  if (
-    currentTarget === undefined ||
-    currentTarget.lifecycle === "retired" ||
-    proposedTarget?.lifecycle !== "retired" ||
-    !preservesRetirementHistory(currentTarget, proposedTarget)
-  ) {
-    throw new Error("retirement-history-changed");
-  }
 };
 
 const validateApplied = async (
@@ -139,7 +79,7 @@ const applySnapshots = async (
     attempted.push(snapshot);
     try {
       if (
-        !(await adapter.compareAndSwap(
+        !(await adapter.replaceMatching(
           snapshot.path,
           snapshot.before,
           snapshot.contents,
@@ -176,6 +116,7 @@ const prepareWorkflow = async (
 ): Promise<MutationWorkflowResult | PreparedWorkflow> => {
   try {
     const snapshots = await capturePreimages(input, adapter);
+    validateApprovedPreimages(snapshots, approval);
     const registry = snapshots.find(({ path }) => path === input.registryPath);
     if (registry?.before === undefined) {
       return rejected(["approval-accepted"], "prepared-registry-required");
@@ -204,10 +145,24 @@ const prepareWorkflow = async (
   }
 };
 
+const parseInput = (
+  rawInput: MutationWorkflowCoreInput,
+): MutationWorkflowCoreInput | undefined => {
+  try {
+    return parseMutationWorkflowCoreInput(rawInput);
+  } catch {
+    return undefined;
+  }
+};
+
 const executeHarnessMutationWorkflowCore = async (
-  input: MutationWorkflowCoreInput,
+  rawInput: MutationWorkflowCoreInput,
   adapter: MutationWorkflowAdapter,
 ): Promise<MutationWorkflowResult> => {
+  const input = parseInput(rawInput);
+  if (input === undefined) {
+    return rejected([], "mutation-request-invalid");
+  }
   const { approval } = input;
   if (
     approval?.source !== "human-context" ||
@@ -216,19 +171,36 @@ const executeHarnessMutationWorkflowCore = async (
   ) {
     return rejected([], "human-context-approval-required");
   }
-  const prepared = await prepareWorkflow(input, adapter, approval);
-  if ("status" in prepared) {
-    return prepared;
+  try {
+    validateApprovedFileRequest(input, approval);
+  } catch (error) {
+    return rejected(
+      ["approval-accepted"],
+      error instanceof Error ? error.message : "approved-manifest-invalid",
+    );
   }
-  for (const snapshot of prepared.snapshots) {
-    if (!(await readMatches(adapter, snapshot.path, snapshot.before))) {
-      return rejected(prepared.events, "preimage-conflict-before-apply");
-    }
+  try {
+    return await adapter.withMutationLock(async () => {
+      const prepared = await prepareWorkflow(input, adapter, approval);
+      if ("status" in prepared) {
+        return prepared;
+      }
+      for (const snapshot of prepared.snapshots) {
+        if (!(await readMatches(adapter, snapshot.path, snapshot.before))) {
+          return rejected(prepared.events, "preimage-conflict-before-apply");
+        }
+      }
+      return applySnapshots(input, adapter, {
+        events: [...prepared.events, "preimages-confirmed"],
+        snapshots: prepared.snapshots,
+      });
+    });
+  } catch (error) {
+    return rejected(
+      [],
+      error instanceof Error ? error.message : "mutation-lock-failed",
+    );
   }
-  return applySnapshots(input, adapter, {
-    events: [...prepared.events, "preimages-confirmed"],
-    snapshots: prepared.snapshots,
-  });
 };
 
 export { executeHarnessMutationWorkflowCore };
