@@ -69,9 +69,10 @@ Escalate only when the previous tier fails; never start above the first tier:
   the intended change to Git's index with explicit pathspecs and stop if staging fails. Do not use
   a broad untracked-file scan to compensate: these gates may deliberately discover inputs from the
   index, so a pre-staging run is not evidence for the eventual commit.
-- **Check that the barrier covers what changed.** Before saying "green", confirm a linter
-  and a test actually run on the extensions you touched. If nothing covers them, that gap
-  is the first thing to fix — not a reason to claim green.
+- **Check that the barrier covers what changed.** Before saying "green", confirm a relevant oracle
+  covers the behavior you changed. For declarative configuration interpreted by an external tool,
+  its native syntax or schema validation, dry-run, or public execution is coverage; never add a
+  mirror test merely to cover the file extension.
 - **Treat hooks as advisory.** A hook that can be bypassed is not the final barrier; verify the
   indexed change with the repository checks and require the remote CI before merge.
 - **Name the environment.** Every piece of evidence states where it was produced and is
@@ -80,7 +81,8 @@ Escalate only when the previous tier fails; never start above the first tier:
 - **No guarantee without a green oracle.** A capability a contract offers — sealing, a
   retention field, logical archiving, link revocation — is a proof structure, not the
   guarantee. State what is held today, and gate every promise on a named end-to-end
-  check that runs.
+  check that runs. This requirement never authorizes a mirror gate; weaken the claim when no
+  behaviorally relevant oracle exists.
 
 ## Code Style
 

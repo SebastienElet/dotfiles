@@ -55,11 +55,16 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   aucun oracle ne peut détecter une erreur réelle. Une configuration portant un invariant de sécurité
   ou de compatibilité reste testée par son comportement. Choisir l'oracle le moins coûteux qui prouve
   réellement l'invariant : unitaire si possible, intégration dès que la preuve appartient à la DB,
-  une transaction, un mapping ORM, un protocole ou autre composant. Une gate explicitement demandée
-  reste une exigence à implémenter. Sans exigence explicite, n'ajouter une gate que si elle apporte un
-  oracle durable sur du code ou un invariant possédé, après inventaire des oracles existants ; l'absence
-  de test dédié ne suffit pas. Ne pas créer de suite miroir pour un Makefile déjà couvert par un smoke
-  test, pour le comportement interne d'un outil externe tel que Moon, ni pour tester la CI elle-même.
+  une transaction, un mapping ORM, un protocole ou autre composant. Une gate directement demandée par
+  l'utilisateur ou une autorité externe reste une exigence à implémenter. Un plan, une spécification,
+  une ADR ou une revue produits par un agent dans le même flux ne rendent pas une gate « explicitement
+  demandée » : sa valeur doit rester démontrée indépendamment. Sans exigence explicite, n'ajouter une
+  gate que si elle apporte un oracle durable sur du code ou un invariant possédé, après inventaire des
+  oracles existants ; l'absence de test dédié ne suffit pas. Pour une configuration déclarative
+  interprétée par un outil externe, préférer sa validation native et l'exécution du point d'entrée
+  public. Ne jamais analyser de nouveau la déclaration pour réaffirmer son contenu, le graphe ou les options de
+  l'outil : si aucune panne possédée n'est observable au-delà, ne pas créer de test. Cela vaut notamment
+  pour un Makefile déjà couvert par un smoke test, le comportement interne de Moon et la CI elle-même.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
@@ -169,6 +174,8 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 ## Review
 
 - Garder les retours courts, hiérarchisés et centrés sur la PR.
+- Une revue demande la suppression d'une gate qui recopie une déclaration ou teste un outil externe ;
+  elle ne demande jamais d'étendre ses assertions pour la rendre plus exhaustive.
 - **Style non bloquant.** Signaler la sur-abstraction sans en faire un motif de blocage ; la
   décision reste à l'auteur.
 - Un constat important peut devenir une issue. S'il est simple et déjà compris, le reviewer
