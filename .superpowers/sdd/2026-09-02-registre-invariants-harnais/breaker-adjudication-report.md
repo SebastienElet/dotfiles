@@ -9,6 +9,7 @@
 - Final local adjudication base: `ec8e469072d9d0eab8df94c6eb69d0fa169bdd21`
 - Conditional-skill adjudication base: `c5c4f15105819489243239285c530dcc7481ac68`
 - Make-resolution adjudication base: `cae5a80bc77d49da464dfaa68348b6fc30d2e46c`
+- Pure-manifest security adjudication base: `fa0474f3cdb326b76f11ac0ce77eeb48e2a6266d`
 - Final commit: reported with delivery because a commit cannot contain its own identifier
 
 ## Result
@@ -85,9 +86,12 @@ Consumer mechanisms are closed per agent in the registry schema. Policy and CLI 
 nonexistent adapter, a mechanism owned by another agent, Cursor user-skill support on an
 always-loaded instruction, and user-skill declarations on an architectural test. For a conditional
 skill they additionally reject an absent, non-regular, untracked, self-targeting, malformed, or
-non-triggerable target, plus a consumer without both its Arnes declaration and a Make-resolved
-per-agent route whose first prerequisite is the expected skill directory. The route catalog is
-type-exhaustive over the schema enum and every route has at least one owner.
+non-triggerable target, plus a consumer without both its Arnes declaration and an exact canonical
+per-agent route with the expected skill-directory prerequisite. Deployment validation now admits
+only the byte-exact canonical Makefile, then checks each declared route and its
+Claude/Codex/Cursor aggregate membership with pure string structure. No Make parser, evaluator,
+recipe, output, or marker is invoked or trusted. The route catalog is type-exhaustive over the
+schema enum and every route has at least one owner.
 Manifest tests reject `README.md`, `package.json`, production validator code, and the registry
 reference before any write can occur.
 
@@ -135,8 +139,8 @@ of the path list exists.
 CI still installs the exact `cspell@10.2.0` and `@cspell/dict-fr-fr@2.3.2` pins, links the French and
 user dictionaries, and always invokes the owned entry point. The final gate used an isolated config
 that imports that exact installed French dictionary and the canonical repository user dictionary.
-The domain term `triggerable` and the Make control tokens used by deployment inspection are
-recorded in that canonical user dictionary.
+The domain term `triggerable` and the fixture keyword `ifeq` are recorded in that canonical user
+dictionary.
 
 ## RED and mutant evidence
 
@@ -160,8 +164,9 @@ The resulting oracles now reject:
 - a conditional skill without its exact existing target file, a target pointing at the closed
   router, invalid or non-triggerable frontmatter, untracked or non-regular target bytes, or missing
   Arnes declaration;
-- an inactive, missing, or source-mismatched per-agent Make deployment route even when matching rule
-  text remains present;
+- an altered Makefile byte, inactive or missing route, wrong source, removed aggregate dependency,
+  falsified output marker, target-specific `MAKE` or `SHELL` override, missing Arnes mapping, or
+  duplicate Arnes installation; malicious fixtures create no marker;
 - either exact contradictory append, `Ignore workflowRoutes...` or `Skip registry...`, to the
   byte-closed skill router;
 - omission of the exact `project-local-contract` owner, path, or resolved target;
@@ -188,15 +193,25 @@ and Actionlint 1.7.12.
 - `bun run format:typescript:check`: passed.
 - CI-equivalent CSpell entry point with both dictionaries: passed.
 - Actionlint on `.github/workflows/lint.yml`: passed.
-- `make -n codex`, `make -n claude-code`, and `make -n cursor`: passed.
+- Canonical Makefile SHA-256 and pure route-plus-aggregate manifest tests: passed.
 - The global Oxlint `max-lines-per-function` rule covered every changed production TypeScript file:
   passed.
 - `git diff --check`: passed.
 
 Every changed production and test TypeScript file remains below the 250-line review trigger. The
 size gate derives its inputs from the changed TypeScript files rather than naming a largest file or
-recording a count that becomes stale. The longer changed files are plans or the progressively
-disclosed skill reference, not production or test code.
+recording a count that becomes stale. Four cohesive written artifacts exceed the trigger:
+
+| Artifact                                      | Lines | Cohesion justification |
+| --------------------------------------------- | ----: | ---------------------- |
+| breaker adjudication report                   |   282 | one audit chain joining rulings, executed evidence, preserved scope, and limits |
+| design specification                          |   264 | one domain contract, only fourteen lines beyond the trigger |
+| implementation plan                           |   605 | one chronological execution record whose checkpoints depend on earlier decisions |
+| progressively disclosed registry reference    |   305 | one canonical protocol routed by the skill and independently bound to its evaluation state |
+
+Splitting these artifacts would fragment either audit traceability, architectural authority,
+execution chronology, or the routed protocol. The router and reference remain byte-identical in
+this security correction; no size-driven edit resets their evaluation state.
 
 ## Skill doctor and evaluation state
 
@@ -252,11 +267,11 @@ router/reference change must update the local router digest and reset the artifa
 - The bounded transition validator cannot create a target absent from the before registry. A new
   candidate is a structurally validated proposal until a separate reviewed registry workflow owns
   its first insertion.
-- Conditional-skill inspection proves that the repository-owned Makefile resolves each exact
-  per-agent target through the expected skill-directory prerequisite. It does not prove that a
-  user-home symlink currently exists. Make evaluation is fail-closed, uses a neutralized
-  environment, rejects known parse-time and dry-run execution primitives, and bounds runtime and
-  output; it is not a sandbox for an arbitrary Makefile.
+- Conditional-skill inspection proves only that the repository Makefile bytes equal SHA-256
+  `92561b1c29588f1d6f16038b79d8e98260278a154cf300bffbcce36ddf8e76a6` and that its exact known
+  template declares each target route and corresponding agent aggregate dependency. This is a
+  closed deployment-manifest barrier, not proof that a user-home symlink currently exists. The
+  validator never executes or evaluates the Makefile and never trusts its output.
 - Verification was executed on local macOS only. No Linux or hosted run is claimed.
 - Independent `design-claim-auditor` execution was unavailable because this adjudication explicitly
   prohibited subagents. The design-claim contract test passed in the full suite; this is not an

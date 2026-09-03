@@ -2,14 +2,21 @@ import type {
   ConsumerName,
   SkillTargetInspection,
 } from "./invariant-registry-validation-options.ts";
+import {
+  type MakefileSnapshot,
+  inspectCanonicalMakefileDeployments,
+} from "./invariant-registry-skill-target-deployment-manifest.ts";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { inspectSkillFrontmatter } from "./invariant-registry-skill-target-frontmatter.ts";
-import { makeResolvesSkillDeployment } from "./invariant-registry-skill-target-make.ts";
 import { z } from "zod";
 
 const consumerNames = ["claude", "codex", "cursor"] as const;
 const maxSkillNameLength = 64;
+type SkillInstallationSet = Readonly<{
+  installations: readonly Readonly<{ agent: ConsumerName }>[];
+}>;
 const skillNameSchema = z
   .string()
   .min(1)
@@ -22,20 +29,23 @@ const installationSchema = z
   })
   .strict()
   .readonly();
+const skillDeploymentSchema = z
+  .object({
+    slug: skillNameSchema,
+    installations: z.array(installationSchema).min(1).readonly(),
+  })
+  .strict()
+  .refine((skill: SkillInstallationSet): boolean => {
+    const agents = skill.installations.map(
+      (installation) => installation.agent,
+    );
+    return new Set(agents).size === agents.length;
+  }, "Duplicate agent installation")
+  .readonly();
 const deploymentManifestSchema = z
   .looseObject({
     version: z.literal(1),
-    skills: z
-      .array(
-        z
-          .object({
-            slug: skillNameSchema,
-            installations: z.array(installationSchema).min(1).readonly(),
-          })
-          .strict()
-          .readonly(),
-      )
-      .readonly(),
+    skills: z.array(skillDeploymentSchema).readonly(),
   })
   .readonly();
 
@@ -72,6 +82,19 @@ const readDeploymentInput = (root: string): unknown => {
   }
 };
 
+const readMakefileSnapshot = (root: string): MakefileSnapshot | undefined => {
+  try {
+    const bytes = readFileSync(resolve(root, "Makefile"));
+    const source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return {
+      lines: source.split("\n"),
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+    };
+  } catch {
+    return undefined;
+  }
+};
+
 const inspectDeployment = (
   root: string,
   slug: string,
@@ -93,13 +116,20 @@ const inspectDeployment = (
   const declaredFor = match.installations.map(
     (installation) => installation.agent,
   );
-  const installedFor = declaredFor.filter((agent) =>
-    makeResolvesSkillDeployment({ agent, root, slug }),
+  const makefile = readMakefileSnapshot(root);
+  if (makefile === undefined) {
+    return { deploymentManifestValid: false, installedFor: [] };
+  }
+  const installedFor = inspectCanonicalMakefileDeployments(
+    makefile,
+    slug,
+    declaredFor,
   );
+  if (installedFor === undefined) {
+    return { deploymentManifestValid: false, installedFor: [] };
+  }
   return {
-    deploymentManifestValid:
-      new Set(declaredFor).size === declaredFor.length &&
-      installedFor.length === declaredFor.length,
+    deploymentManifestValid: true,
     installedFor,
   };
 };
