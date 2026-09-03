@@ -3,6 +3,11 @@ import {
   inspectOracleWithProbes,
 } from "./invariant-registry-oracle-inspection.ts";
 import {
+  type OracleInspection,
+  parseInvariantRegistry,
+  validateInvariantRegistry,
+} from "./invariant-registry-contract.ts";
+import {
   closeSync,
   constants,
   fstatSync,
@@ -10,12 +15,8 @@ import {
   openSync,
   realpathSync,
 } from "node:fs";
-import {
-  parseInvariantRegistry,
-  validateInvariantRegistry,
-} from "./invariant-registry-contract.ts";
-import type { OracleInspection } from "./invariant-registry-contract.ts";
 import { ZodError } from "zod";
+import { inspectSkillTarget } from "./invariant-registry-skill-target-inspection.ts";
 
 const isMissingPathError = (error: unknown): boolean =>
   error instanceof Error && Reflect.get(error, "code") === "ENOENT";
@@ -138,6 +139,7 @@ const validateInvariantRegistryText = (
   const diagnostics = validateInvariantRegistry(registry, {
     inspectOracle: (testPath, invocation): OracleInspection =>
       inspectOracle(root, testPath, invocation),
+    inspectSkillTarget: (targetPath) => inspectSkillTarget(root, targetPath),
     repositoryRoot: root,
   });
   if (diagnostics.length > 0) {

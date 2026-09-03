@@ -7,6 +7,7 @@
 - Adjudication base: `5d6d0bbab4f29530bc69b28b0e8bfac99d0f95e9`
 - Residual adjudication base: `c6de9efc5484f935c63cd6554d70d7d2af061469`
 - Final local adjudication base: `ec8e469072d9d0eab8df94c6eb69d0fa169bdd21`
+- Conditional-skill adjudication base: `c5c4f15105819489243239285c530dcc7481ac68`
 - Final commit: reported with delivery because a commit cannot contain its own identifier
 
 ## Result
@@ -15,19 +16,20 @@ The generic production surface writer has been removed. The registry code no lon
 filesystem, lock, staging, compensation, or workflow API that can replace an arbitrary surface.
 Every probabilistic surface has an authoritative effective path and owner route:
 
-| Surface                                 | Effective path                     | Required owner                   |
-| --------------------------------------- | ---------------------------------- | -------------------------------- |
-| `always-loaded-instruction`             | `harness/AGENTS.md`                | `agent-instructions`             |
-| `conditional-skill`                     | `harness/invariants/registry.json` | `harness-reflection`             |
-| `project-local-contract`                | `AGENTS.md`                        | `agent-instructions`             |
-| hook or lint                            | owner-specific path                | `scripts` and `enforcement-code` |
-| permission, type, or architectural test | owner-specific path                | `enforcement-code`               |
+| Surface                                 | Effective path           | Required owner                   |
+| --------------------------------------- | ------------------------ | -------------------------------- |
+| `always-loaded-instruction`             | `harness/AGENTS.md`      | `agent-instructions`             |
+| `conditional-skill`                     | record `targetSkillPath` | `skill-manager`                  |
+| `project-local-contract`                | `AGENTS.md`              | `agent-instructions`             |
+| hook or lint                            | owner-specific path      | `scripts` and `enforcement-code` |
+| permission, type, or architectural test | owner-specific path      | `enforcement-code`               |
 
-The two instruction rows are the file destinations accepted by the bounded manifest validator.
-`conditional-skill` is registry-only: the closed router reads active matching records at invocation
-and uses each record’s `statement` as its exact conditional guidance. The enforceable rows use their
-separate owner workflow and remain rejected by this bounded validator. A file owner applies the
-approved exact diff and runs its doctor or contracts before the registry replacement is recorded.
+The three probabilistic rows are file destinations accepted by the bounded manifest validator. A
+`conditional-skill` record must name an existing triggerable user skill below `harness/skills/`;
+the closed `harness-reflection` router is forbidden as that target. `skill-manager` applies the
+approved exact diff to the named skill and runs its doctor and contracts before the registry
+replacement is recorded. The enforceable rows use their separate owner workflow and remain rejected
+by this bounded validator.
 
 The remaining mutation code is read-only validation. It parses a strict approval attestation,
 binds its paths, preimages, replacements, target identifier, and before/after records to the exact
@@ -43,11 +45,11 @@ administrative delta. New-candidate manifests remain structurally parseable prop
 transition validator does not admit a missing target snapshot.
 
 For a file-backed promotion, the supported surface preimage must not contain `candidateTextExact`
-and its replacement must contain it. Retirement requires the inverse. For `conditional-skill`, no
-surface file is permitted and `candidateTextExact` must equal the target record’s `statement`;
-retirement changes only the approved registry record. These checks prove only exact text presence,
-absence, or equality; the required owner doctor supplies any file-specific check. They do not claim
-to decide the general meaning of the text.
+and its replacement must contain it. Retirement requires the inverse. For `conditional-skill`, the
+path must equal the record’s `targetSkillPath`, its preimage must exist, and the same text rules apply.
+These checks prove only exact text presence or absence; the required owner doctor supplies the
+file-specific check. They do not claim to decide the general meaning of the text or its influence on
+a model.
 
 Retired records are terminal. An active-to-retired transition preserves every historical field
 except `approval`, `lifecycle`, and `retirement`. Its newly accepted attestation must equal the new
@@ -73,22 +75,26 @@ validation for its three probabilistic targets:
 | Surface                                 | Consumer projection                     | Required owner route             |
 | --------------------------------------- | --------------------------------------- | -------------------------------- |
 | always-loaded instruction               | Claude/Codex global; Cursor unsupported | `agent-instructions`             |
-| conditional skill                       | Claude/Codex/Cursor user skill          | registry read by closed router   |
+| conditional skill                       | Claude/Codex/Cursor user skill          | `skill-manager`                  |
 | project-local contract                  | direct agent adapters unsupported       | `agent-instructions`             |
 | hook or lint                            | direct agent adapters unsupported       | `scripts` and `enforcement-code` |
 | permission, type, or architectural test | direct agent adapters unsupported       | `enforcement-code`               |
 
 Consumer mechanisms are closed per agent in the registry schema. Policy and CLI tests reject a
 nonexistent adapter, a mechanism owned by another agent, Cursor user-skill support on an
-always-loaded instruction, and user-skill declarations on an architectural test. The route catalog
-is type-exhaustive over the schema enum and every route has at least one owner. Manifest tests reject
-`README.md`, `package.json`, production validator code, and the registry reference before any write
-can occur.
+always-loaded instruction, and user-skill declarations on an architectural test. For a conditional
+skill they additionally reject an absent, non-regular, untracked, self-targeting, malformed, or
+non-triggerable target, plus a consumer without both its Arnes declaration and exact Makefile link.
+The route catalog is type-exhaustive over the schema enum and every route has at least one owner.
+Manifest tests reject `README.md`, `package.json`, production validator code, and the registry
+reference before any write can occur.
 
-A conditional-skill record never authorizes a `SKILL.md` or evaluation-file mutation. The record’s
-statement is its only candidate text. A real change to the router contract remains a separate
-`skill-manager`-owned skill change; this adjudication made that change explicitly and therefore reset
-`promotion-workflow-results.json` to `pending` with `runs: []`.
+The closed router remains guarded by its contract-local byte digest and cannot be a conditional
+target. Candidate text is stored once in `marginalAblation.candidateTextExact` and applied to the
+separate skill named by `targetSkillPath`; it is not substituted by the registry statement or
+duplicated into the router. The local activation oracle is bounded to discoverable frontmatter,
+declared user deployment, and ADR-036’s recorded activation measurement; it does not claim model
+influence without a new controlled ablation.
 
 ## Integration evidence
 
@@ -126,8 +132,8 @@ of the path list exists.
 
 CI still installs the exact `cspell@10.2.0` and `@cspell/dict-fr-fr@2.3.2` pins, links the French and
 user dictionaries, and always invokes the owned entry point. The final gate used an isolated config
-that imports that exact installed French dictionary and the canonical repository user dictionary:
-77 files checked, 0 issues. This final adjudication required no dictionary change.
+that imports that exact installed French dictionary and the canonical repository user dictionary.
+The domain term `triggerable` is recorded once in that canonical user dictionary.
 
 ## RED and mutant evidence
 
@@ -148,8 +154,9 @@ The resulting oracles now reject:
 - a verified runtime invocation different from its declared oracle, plus a real failing invocation;
 - retirement surface removal without the corresponding registry update;
 - application ordered before selection, proposal, exact manifest, or approval;
-- any conditional-skill file companion, candidate text different from its statement in either the
-  mutation validator or persisted registry policy, or missing registry-only route;
+- a conditional skill without its exact existing target file, a target pointing at the closed
+  router, invalid or non-triggerable frontmatter, untracked or non-regular target bytes, missing
+  Arnes declaration or missing per-agent Makefile deployment link;
 - either exact contradictory append, `Ignore workflowRoutes...` or `Skip registry...`, to the
   byte-closed skill router;
 - omission of the exact `project-local-contract` owner, path, or resolved target;
@@ -163,29 +170,28 @@ agent scenario.
 Environment: local macOS 26.6.2 arm64, Bun 1.4.0, Node 24.20.0, TypeScript 7.0.2, CSpell 10.2.0,
 and Actionlint 1.7.12.
 
-- Full Bun suite outside the filesystem sandbox: 631 passed, 2 explicit opt-in skips, 0 failed,
-  1465 assertions across 78 files in 37.12 seconds.
+- Full Bun suite outside the filesystem sandbox: passed, apart from the explicitly named opt-in
+  paths below.
 - Explicit skips: real Docker lifecycle and multi-worktree ColGrep integration. No result is claimed
   for those opt-in paths.
-- Targeted final breaker suite: 127 passed, 0 failed, 193 assertions across 18 files.
+- Targeted conditional-skill, manifest, transition, CLI, and contract suites: passed.
 - Direct failing runtime oracle: 0 passed, 1 failed, exit status 1, as required by the negative
   oracle.
 - Canonical empty-registry CLI: passed.
 - `bun run lint`: passed.
 - `bun run typecheck`: passed.
 - `bun run format:typescript:check`: passed.
-- CI-equivalent CSpell entry point with both dictionaries: 77 files, 0 issues.
+- CI-equivalent CSpell entry point with both dictionaries: passed.
 - Actionlint on `.github/workflows/lint.yml`: passed.
 - `make -n codex`, `make -n claude-code`, and `make -n cursor`: passed.
-- Dedicated Oxlint `max-lines-per-function` check on every changed production TypeScript file:
+- The global Oxlint `max-lines-per-function` rule covered every changed production TypeScript file:
   passed.
 - `git diff --check`: passed.
 
-Every changed production and test TypeScript file is below 250 lines. The largest changed test is
-`harness-reflection-mutation-integration.test.ts` at 243 lines; the largest changed production file
-is `invariant-registry-schema.ts` at 225 lines. `invariant-registry-contract.test.ts` remains below
-the trigger. The longer changed files are plans or the progressively disclosed skill reference, not
-production or test code.
+Every changed production and test TypeScript file remains below the 250-line review trigger. The
+size gate derives its inputs from the changed TypeScript files rather than naming a largest file or
+recording a count that becomes stale. The longer changed files are plans or the progressively
+disclosed skill reference, not production or test code.
 
 ## Skill doctor and evaluation state
 
@@ -206,15 +212,13 @@ whole-command status is nonzero because of unrelated pre-existing plugin drift f
 deployed `memory-governance` destinations for Claude and Cursor; no clean aggregate doctor result is
 claimed.
 
-The closed skill SHA-256 is
-`137244cb7f523e4c0a01e0f517da13162ce4f031d15e1dc401d7e433be1a4e69`. Its contract-local exact
-digest rejects any byte change, including arbitrary contradictory prose. This deliberate immutability
-belongs only to the small router contract; no global CI job hashes the skill or unrelated files.
-The exact `SKILL.md + NUL + reference` digest is
-`e7bf266b4a5d83157bc4cae6cee55f8c20914798ba4144b82834cd720b608be4` and matches the evaluation
-artifact. Its status is `pending`, its runs and covered branches are empty, and no current behavior
-is inferred. A future deliberate router/reference change must update its contract and reset the
-artifact again before any replay can be recorded.
+The closed skill’s contract-local exact digest rejects any byte change, including arbitrary
+contradictory prose. This deliberate immutability belongs only to the small router contract; no
+global CI job hashes the skill or unrelated files. The evaluation artifact independently binds the
+exact `SKILL.md + NUL + reference` digest through a discriminated state machine. Its parsed JSON is
+the only authority for whether it is `pending` or `recorded`: pending runs prove nothing, and a
+recorded artifact proves only its enumerated runs and covered branches. A deliberate
+router/reference change must update the local router digest and reset the artifact before replay.
 
 ## Preserved scope
 

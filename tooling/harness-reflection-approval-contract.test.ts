@@ -84,8 +84,10 @@ test("binds mutable surfaces to exact paths and consumer adapters", async () => 
           codex: "codex-user-skill",
           cursor: "cursor-user-skill",
         },
-        path: "harness/invariants/registry.json",
+        pathFromRecord: "targetSkillPath",
         surface: "conditional-skill",
+        targetRequirement:
+          "existing-triggerable-user-skill-deployed-to-declared-consumers",
       },
       projectLocalContract: {
         consumers: {

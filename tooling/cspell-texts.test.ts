@@ -93,6 +93,7 @@ test("runs the real CSpell command over the owned text surface", async () => {
   expect(argv).toBeArray();
   expect(argv).toContain("harness/skills/harness-reflection/SKILL.md");
   expect(argv).toContain("harness/invariants/registry.json");
+  expect(argv).toContain("tooling/invariant-registry-skill-target*.ts");
   expect(argv).toContain(
     "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
   );

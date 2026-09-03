@@ -28,6 +28,7 @@ pullrequests
 renameat
 renamex
 scrapling
+triggerable
 unmatch
 wezterm
 wikilinks

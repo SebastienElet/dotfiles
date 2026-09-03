@@ -9,6 +9,13 @@ import {
 } from "./invariant-registry-test-support.ts";
 import { expect, expectTypeOf, test } from "bun:test";
 
+const conditionalSkillConsumers = {
+  claude: { state: "supported", mechanism: "claude-user-skill" },
+  codex: { state: "supported", mechanism: "codex-user-skill" },
+  cursor: { state: "supported", mechanism: "cursor-user-skill" },
+} as const;
+const targetSkillPath = "harness/skills/enforcement-code/SKILL.md";
+
 expectTypeOf<InvariantRegistry["invariants"]>().not.toExtend<
   InvariantRecord[]
 >();
@@ -24,6 +31,17 @@ expectTypeOf<
 expectTypeOf<InvariantRecord["consumers"]>().toEqualTypeOf<
   Readonly<InvariantRecord["consumers"]>
 >();
+expectTypeOf<
+  Extract<InvariantRecord, { surface: "conditional-skill" }>
+>().toExtend<Readonly<{ targetSkillPath: string }>>();
+expectTypeOf<
+  "targetSkillPath" extends keyof Extract<
+    InvariantRecord,
+    { surface: Exclude<InvariantRecord["surface"], "conditional-skill"> }
+  >
+    ? true
+    : false
+>().toEqualTypeOf<false>();
 
 test("rejects unknown registry versions", () => {
   expect(() =>
@@ -62,3 +80,61 @@ test("requires separate Claude, Codex and Cursor declarations", () => {
     }),
   ).toThrow();
 });
+
+test("requires an explicit target only for conditional skills", () => {
+  expect(() =>
+    parseInvariantRegistry({
+      version: 1,
+      invariants: [
+        {
+          ...candidate(),
+          consumers: conditionalSkillConsumers,
+          surface: "conditional-skill",
+        },
+      ],
+    }),
+  ).toThrow();
+  expect(() =>
+    parseInvariantRegistry({
+      version: 1,
+      invariants: [
+        {
+          ...candidate(),
+          consumers: conditionalSkillConsumers,
+          surface: "conditional-skill",
+          targetSkillPath,
+        },
+      ],
+    }),
+  ).not.toThrow();
+  expect(() =>
+    parseInvariantRegistry({
+      version: 1,
+      invariants: [{ ...candidate(), targetSkillPath }],
+    }),
+  ).toThrow();
+});
+
+test.each([
+  "../harness/skills/enforcement-code/SKILL.md",
+  "/harness/skills/enforcement-code/SKILL.md",
+  "harness/skills/enforcement-code/README.md",
+  "harness/skills/Enforcement-Code/SKILL.md",
+] as const)(
+  "rejects conditional target outside the user-skill shape: %s",
+  (path) => {
+    expect(() =>
+      parseInvariantRegistry({
+        version: 1,
+        invariants: [
+          {
+            ...candidate(),
+            consumers: conditionalSkillConsumers,
+            surface: "conditional-skill",
+            targetSkillPath: path,
+          },
+        ],
+      }),
+    ).toThrow();
+  },
+);

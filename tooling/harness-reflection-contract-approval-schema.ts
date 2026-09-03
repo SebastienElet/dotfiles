@@ -63,7 +63,10 @@ const mutationTargetsSchema = z
     conditionalSkill: z
       .object({
         surface: z.literal("conditional-skill"),
-        path: z.literal("harness/invariants/registry.json"),
+        pathFromRecord: z.literal("targetSkillPath"),
+        targetRequirement: z.literal(
+          "existing-triggerable-user-skill-deployed-to-declared-consumers",
+        ),
         consumers: z
           .object({
             claude: z.literal("claude-user-skill"),

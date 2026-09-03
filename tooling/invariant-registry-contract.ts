@@ -6,5 +6,6 @@ export {
   type InvariantRegistry,
   type OracleInspection,
   type RegistryDiagnostic,
+  type SkillTargetInspection,
   type ValidationOptions,
 } from "./invariant-registry-schema.ts";

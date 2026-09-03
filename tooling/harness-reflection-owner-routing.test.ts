@@ -23,9 +23,9 @@ const expectedSurfaceOwners: Contract["surfaceOwners"] = {
     verification: "agent-instructions-contracts",
   },
   "conditional-skill": {
-    owner: "harness-reflection",
-    path: "harness/invariants/registry.json",
-    verification: "registry-cli-and-declared-oracles",
+    owner: "skill-manager",
+    pathFromRecord: "targetSkillPath",
+    verification: "skill-manager-doctor-and-contracts",
   },
   "project-local-contract": {
     owner: "agent-instructions",
@@ -186,5 +186,32 @@ test("resolves the exact project-local instruction target", () => {
     consumers: {},
     owner: "agent-instructions",
     path: "AGENTS.md",
+  });
+});
+
+test("resolves a conditional skill target from its strict record field", () => {
+  const [record] = registry(
+    candidate({
+      consumers: {
+        claude: { mechanism: "claude-user-skill", state: "supported" },
+        codex: { mechanism: "codex-user-skill", state: "supported" },
+        cursor: { mechanism: "cursor-user-skill", state: "supported" },
+      },
+      surface: "conditional-skill",
+      targetSkillPath: "harness/skills/enforcement-code/SKILL.md",
+    }),
+  ).invariants;
+  if (record === undefined) {
+    throw new Error("conditional-record-missing");
+  }
+
+  expect(resolveSupportedTarget(record)).toEqual({
+    consumers: {
+      claude: "claude-user-skill",
+      codex: "codex-user-skill",
+      cursor: "cursor-user-skill",
+    },
+    owner: "skill-manager",
+    path: "harness/skills/enforcement-code/SKILL.md",
   });
 });

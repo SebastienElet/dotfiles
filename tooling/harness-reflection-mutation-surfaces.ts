@@ -14,11 +14,11 @@ type TargetConsumers = Readonly<{
 type SurfaceOwner =
   | "agent-instructions"
   | "enforcement-code"
-  | "harness-reflection"
+  | "skill-manager"
   | "scripts";
 type SupportedTarget = Readonly<{
   consumers: TargetConsumers;
-  owner: Extract<SurfaceOwner, "agent-instructions">;
+  owner: Extract<SurfaceOwner, "agent-instructions" | "skill-manager">;
   path: string;
 }>;
 type SurfaceRoute = Readonly<{
@@ -52,7 +52,7 @@ const surfaceRoutes: Readonly<
       codex: "codex-user-skill",
       cursor: "cursor-user-skill",
     },
-    owners: ["harness-reflection"],
+    owners: ["skill-manager"],
   },
   "project-local-contract": {
     consumers: noAgentConsumers,
@@ -116,9 +116,20 @@ const consumerSurfaceDiagnostics = (
 };
 
 const resolveSupportedTarget = (record: InvariantRecord): SupportedTarget => {
-  const { target } = surfaceRoutes[record.surface];
+  const route = surfaceRoutes[record.surface];
+  const target =
+    record.surface === "conditional-skill"
+      ? {
+          consumers: route.consumers,
+          owner: "skill-manager" as const,
+          path: record.targetSkillPath,
+        }
+      : route.target;
   if (target === undefined) {
     throw new Error("unsupported-control-surface");
+  }
+  if (target.path === "harness/skills/harness-reflection/SKILL.md") {
+    throw new Error("conditional-skill-self-target");
   }
   for (const consumerName of ["claude", "codex", "cursor"] as const) {
     if (

@@ -60,13 +60,17 @@ test("limits manifest validation to exact text and owner doctors", async () => {
       "project-local-contract",
     ],
     behavior: "read-only-no-file-writes",
-    candidateTextRule:
-      "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
-    fileSurfaces: ["always-loaded-instruction", "project-local-contract"],
+    candidateTextRule: "file-surfaces-add-or-remove-exact-text",
+    conditionalSkillTarget:
+      "existing-triggerable-user-skill-deployed-to-declared-consumers",
+    fileSurfaces: [
+      "always-loaded-instruction",
+      "conditional-skill",
+      "project-local-contract",
+    ],
     noOpRule: "every-approved-replacement-differs-from-preimage",
-    registrySurfaces: ["conditional-skill"],
-    semanticClaim:
-      "exact-file-text-or-registry-statement-plus-owner-doctor-only",
+    registrySurfaces: [],
+    semanticClaim: "exact-file-text-plus-owner-doctor-only",
     transitionKind: "derived-from-before-and-after",
   });
   expect(contract.retirement).toEqual({
@@ -74,7 +78,7 @@ test("limits manifest validation to exact text and owner doctors", async () => {
     historicalFields: "unchanged-except-approval-lifecycle-and-retirement",
     optionalFields: ["replacedBy"],
     requiredFields: ["retiredAt", "reason"],
-    surfaceText: "file-surface-text-removed-or-registry-surface-retired",
+    surfaceText: "file-surface-text-removed",
   });
 });
 
@@ -103,6 +107,12 @@ test.each([
   {
     key: "always-loaded-instruction",
     name: "missing instruction owner",
+    path: ["surfaceOwners"],
+    value: undefined,
+  },
+  {
+    key: "conditional-skill",
+    name: "missing conditional skill owner",
     path: ["surfaceOwners"],
     value: undefined,
   },

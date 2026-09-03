@@ -8,6 +8,7 @@ import {
   evidenceOccurrenceIdentity,
   pullRequestIdentity,
 } from "./invariant-registry-source.ts";
+import { conditionalSkillTargetDiagnostics } from "./invariant-registry-skill-target-policy.ts";
 import { consumerSurfaceDiagnostics } from "./harness-reflection-mutation-surfaces.ts";
 import { marginalAblationDiagnostics } from "./invariant-registry-ablation-policy.ts";
 import { oracleDiagnostics } from "./invariant-registry-oracle-policy.ts";
@@ -209,6 +210,7 @@ const validateInvariantRegistry = (
       ...promotionDiagnostics(record, path),
       ...surfaceDiagnostics(record, path),
       ...consumerSurfaceDiagnostics(record, path),
+      ...conditionalSkillTargetDiagnostics(record, path, options),
       ...marginalAblationDiagnostics(record, path),
       ...lifecycleDiagnostics(record, path, ids),
       ...oracleDiagnostics(record, path, options),

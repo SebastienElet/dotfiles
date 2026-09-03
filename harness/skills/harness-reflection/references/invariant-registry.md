@@ -86,9 +86,9 @@
       "verification": "agent-instructions-contracts"
     },
     "conditional-skill": {
-      "owner": "harness-reflection",
-      "path": "harness/invariants/registry.json",
-      "verification": "registry-cli-and-declared-oracles"
+      "owner": "skill-manager",
+      "pathFromRecord": "targetSkillPath",
+      "verification": "skill-manager-doctor-and-contracts"
     },
     "project-local-contract": {
       "owner": "agent-instructions",
@@ -114,11 +114,16 @@
       "project-local-contract"
     ],
     "behavior": "read-only-no-file-writes",
-    "candidateTextRule": "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
-    "fileSurfaces": ["always-loaded-instruction", "project-local-contract"],
+    "candidateTextRule": "file-surfaces-add-or-remove-exact-text",
+    "fileSurfaces": [
+      "always-loaded-instruction",
+      "conditional-skill",
+      "project-local-contract"
+    ],
+    "conditionalSkillTarget": "existing-triggerable-user-skill-deployed-to-declared-consumers",
     "noOpRule": "every-approved-replacement-differs-from-preimage",
-    "registrySurfaces": ["conditional-skill"],
-    "semanticClaim": "exact-file-text-or-registry-statement-plus-owner-doctor-only",
+    "registrySurfaces": [],
+    "semanticClaim": "exact-file-text-plus-owner-doctor-only",
     "transitionKind": "derived-from-before-and-after"
   },
   "registry": {
@@ -210,7 +215,8 @@
       },
       "conditionalSkill": {
         "surface": "conditional-skill",
-        "path": "harness/invariants/registry.json",
+        "pathFromRecord": "targetSkillPath",
+        "targetRequirement": "existing-triggerable-user-skill-deployed-to-declared-consumers",
         "consumers": {
           "claude": "claude-user-skill",
           "codex": "codex-user-skill",
@@ -251,7 +257,7 @@
     "historicalFields": "unchanged-except-approval-lifecycle-and-retirement",
     "optionalFields": ["replacedBy"],
     "requiredFields": ["retiredAt", "reason"],
-    "surfaceText": "file-surface-text-removed-or-registry-surface-retired"
+    "surfaceText": "file-surface-text-removed"
   },
   "proposal": {
     "requiredFields": [

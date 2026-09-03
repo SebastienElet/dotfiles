@@ -106,9 +106,9 @@ const surfaceOwnersSchema = z
       .strict(),
     "conditional-skill": z
       .object({
-        owner: z.literal("harness-reflection"),
-        path: z.literal("harness/invariants/registry.json"),
-        verification: z.literal("registry-cli-and-declared-oracles"),
+        owner: z.literal("skill-manager"),
+        pathFromRecord: z.literal("targetSkillPath"),
+        verification: z.literal("skill-manager-doctor-and-contracts"),
       })
       .strict(),
     "project-local-contract": z
@@ -147,18 +147,18 @@ const manifestValidationSchema = z
       z.literal("project-local-contract"),
     ]),
     behavior: z.literal("read-only-no-file-writes"),
-    candidateTextRule: z.literal(
-      "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
-    ),
+    candidateTextRule: z.literal("file-surfaces-add-or-remove-exact-text"),
     fileSurfaces: z.tuple([
       z.literal("always-loaded-instruction"),
+      z.literal("conditional-skill"),
       z.literal("project-local-contract"),
     ]),
-    noOpRule: z.literal("every-approved-replacement-differs-from-preimage"),
-    registrySurfaces: z.tuple([z.literal("conditional-skill")]),
-    semanticClaim: z.literal(
-      "exact-file-text-or-registry-statement-plus-owner-doctor-only",
+    conditionalSkillTarget: z.literal(
+      "existing-triggerable-user-skill-deployed-to-declared-consumers",
     ),
+    noOpRule: z.literal("every-approved-replacement-differs-from-preimage"),
+    registrySurfaces: z.tuple([]),
+    semanticClaim: z.literal("exact-file-text-plus-owner-doctor-only"),
     transitionKind: z.literal("derived-from-before-and-after"),
   })
   .strict();
@@ -171,9 +171,7 @@ const retirementSchema = z
     ),
     optionalFields: z.tuple([z.literal("replacedBy")]),
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
-    surfaceText: z.literal(
-      "file-surface-text-removed-or-registry-surface-retired",
-    ),
+    surfaceText: z.literal("file-surface-text-removed"),
   })
   .strict();
 

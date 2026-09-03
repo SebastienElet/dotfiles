@@ -19,6 +19,13 @@ const invariantSurfaces = [
   "type",
   "architectural-test",
 ] as const;
+const invariantSurfaceSchema = z.enum(invariantSurfaces);
+const nonConditionalSurfaceSchema = invariantSurfaceSchema.exclude([
+  "conditional-skill",
+]);
+const targetSkillPathSchema = z
+  .string()
+  .regex(/^harness\/skills\/[a-z0-9]+(?:-[a-z0-9]+)*\/SKILL\.md$/u);
 const measurementSchema = z
   .object({
     outcome: z.enum(["passed", "failed"]),
@@ -164,23 +171,34 @@ const invariantShape = {
   severity: z.enum(["low", "medium", "high", "critical"]),
   sources: z.array(sourceSchema).min(1),
   scope: scopeSchema,
-  surface: z.enum(invariantSurfaces),
   approval: approvalSchema.optional(),
   oracle: oracleSchema.optional(),
   marginalAblation: marginalAblationSchema.optional(),
   consumers: consumersSchema,
   verification: verificationSchema,
 };
-const invariantSchema = z.discriminatedUnion("lifecycle", [
-  z.object({ ...invariantShape, lifecycle: z.literal("candidate") }).strict(),
-  z.object({ ...invariantShape, lifecycle: z.literal("active") }).strict(),
-  z
-    .object({
-      ...invariantShape,
-      lifecycle: z.literal("retired"),
-      retirement: retirementSchema,
-    })
-    .strict(),
+const lifecycleSchemas = <Shape extends z.ZodRawShape>(shape: Shape) =>
+  [
+    z.object({ ...shape, lifecycle: z.literal("candidate") }).strict(),
+    z.object({ ...shape, lifecycle: z.literal("active") }).strict(),
+    z
+      .object({
+        ...shape,
+        lifecycle: z.literal("retired"),
+        retirement: retirementSchema,
+      })
+      .strict(),
+  ] as const;
+const invariantSchema = z.union([
+  ...lifecycleSchemas({
+    ...invariantShape,
+    surface: z.literal("conditional-skill"),
+    targetSkillPath: targetSkillPathSchema,
+  }),
+  ...lifecycleSchemas({
+    ...invariantShape,
+    surface: nonConditionalSurfaceSchema,
+  }),
 ]);
 const registrySchema = z
   .object({ version: z.literal(1), invariants: z.array(invariantSchema) })
@@ -198,19 +216,6 @@ type RegistryDiagnostic = Readonly<{
   path: string;
   message: string;
 }>;
-type OracleInspection = Readonly<{
-  discovered: boolean;
-  kind: "missing" | "non-regular" | "regular-file";
-  tracked: boolean;
-}>;
-type ValidationOptions = Readonly<{
-  repositoryRoot: string;
-  inspectOracle: (
-    path: string,
-    invocation: readonly string[],
-  ) => OracleInspection;
-}>;
-
 const parseInvariantRegistry = (input: unknown): InvariantRegistry =>
   registrySchema.parse(input);
 
@@ -219,7 +224,10 @@ export {
   parseInvariantRegistry,
   type InvariantRecord,
   type InvariantRegistry,
-  type OracleInspection,
   type RegistryDiagnostic,
-  type ValidationOptions,
 };
+export type {
+  OracleInspection,
+  SkillTargetInspection,
+  ValidationOptions,
+} from "./invariant-registry-validation-options.ts";

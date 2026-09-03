@@ -59,19 +59,6 @@ const exactCandidateText = (transition: MutationTransition): string => {
   return text;
 };
 
-const validateConditionalSkillChange = (
-  surfaces: readonly ApprovedFile[],
-  transition: MutationTransition,
-  candidateText: string,
-): void => {
-  if (surfaces.length > 0) {
-    throw new Error("conditional-skill-registry-only");
-  }
-  if (transition.target.statement !== candidateText) {
-    throw new Error("conditional-skill-statement-mismatch");
-  }
-};
-
 const validateFileSurfaceChange = (
   surfaces: readonly ApprovedFile[],
   transition: MutationTransition,
@@ -85,6 +72,12 @@ const validateFileSurfaceChange = (
   }
   if (surfaces.length !== 1) {
     throw new Error("approved-surface-required");
+  }
+  if (
+    transition.target.surface === "conditional-skill" &&
+    surface.preimage === null
+  ) {
+    throw new Error("conditional-skill-target-must-exist");
   }
   const preimageHasText = surface.preimage?.includes(candidateText) ?? false;
   const replacementHasText = surface.replacement.includes(candidateText);
@@ -117,10 +110,6 @@ const validateSurfaceChange = (
     return;
   }
   const candidateText = exactCandidateText(transition);
-  if (transition.target.surface === "conditional-skill") {
-    validateConditionalSkillChange(surfaces, transition, candidateText);
-    return;
-  }
   validateFileSurfaceChange(surfaces, transition, candidateText);
 };
 

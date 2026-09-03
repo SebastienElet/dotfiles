@@ -14,7 +14,11 @@ const cliFiles = [
   "invariant-registry-repository-validator.ts",
   "invariant-registry-runtime-oracles.ts",
   "invariant-registry-schema.ts",
+  "invariant-registry-skill-target-frontmatter.ts",
+  "invariant-registry-skill-target-inspection.ts",
+  "invariant-registry-skill-target-policy.ts",
   "invariant-registry-source.ts",
+  "invariant-registry-validation-options.ts",
   "invariant-registry-workflow-state-oracle.ts",
 ] as const;
 

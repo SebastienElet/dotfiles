@@ -30,9 +30,11 @@
 - Un lien exige exactement une cible dans l’état avant et après, conserve tous les champs métier et
   les sources existantes, puis ajoute au moins une source canonique distincte. La nouvelle attestation
   exacte est son seul autre delta admis.
-- `conditional-skill` est registry-only : le routeur fermé lit directement les records actifs et
-  utilise leur `statement` comme texte conditionnel exact sans modifier `SKILL.md`. Une modification
-  du routeur lui-même reste possédée par `skill-manager` et remet son artefact à `pending`.
+- `conditional-skill` exige un `targetSkillPath` vers une skill user existante et déclenchable,
+  distincte du routeur fermé. `skill-manager` applique `candidateTextExact` à ce fichier exact ; la
+  policy vérifie le frontmatter, le suivi Git, la déclaration Arnes et les liens user des trois
+  consommateurs. Sans cible adaptée, sélectionner une instruction toujours chargée ou ouvrir une
+  issue dédiée pour créer une skill.
 - `project-local-contract` cible exactement `AGENTS.md` via `agent-instructions` ; ses trois mécanismes
   consommateurs restent déclarés `unsupported` tant qu’aucun adaptateur distinct n’existe.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
@@ -380,10 +382,10 @@ Sinon :
    manifeste exact et le présenter au contexte humain avant l’entrée d’approbation ;
 6. après cette attestation non authentifiée, exiger l’égalité de la requête avec le manifeste et
    dériver le type de mutation de la transition de cycle de vie ;
-7. pour `conditional-skill`, ne préparer que le record registry dont `statement` égale
-   `candidateTextExact`, sans mutation ni reset-eval compagnon de `SKILL.md` ; pour une surface
-   fichier, router l’application vers `agent-instructions` ou scripts/enforcement, puis exécuter le
-   doctor ou contrat propriétaire ;
+7. pour `conditional-skill`, exiger une skill user existante nommée par `targetSkillPath`, préparer
+   son remplacement exact avec `candidateTextExact`, puis router son application et son doctor vers
+   `skill-manager` ; pour les autres surfaces fichier, utiliser `agent-instructions` ou la frontière
+   scripts/enforcement ; le routeur `harness-reflection` ne peut jamais être la cible ;
 8. vérifier en lecture seule le remplacement exact de toute surface fichier et la préimage du registre, écrire
    uniquement le registre, puis exécuter sa CLI ;
 9. conserver les règles actuelles de trial et rollback sans revendiquer une transaction générique.
@@ -413,9 +415,10 @@ Expected: PASS.
 
 - [ ] **Step 7: Faire rejouer les scénarios comportementaux par le contrôleur**
 
-Le changement final du routeur et de la référence remet l’artefact à `pending`, avec `runs: []` et
-aucune branche couverte. Un replay futur devra partir du nouveau digest et exécuter le prompt exact ;
-aucune couverture antérieure ne se transfère.
+Tout changement final du routeur ou de la référence remet d’abord l’artefact à `pending`, avec
+`runs: []` et aucune branche couverte. L’artefact validé reste ensuite l’autorité : `pending` ne
+prouve aucun chemin, tandis que `recorded` ne prouve que ses runs et branches déclarés. Un replay
+part d’un digest exact et aucune couverture antérieure ne se transfère.
 
 - [ ] **Step 8: Exécuter doctor et sync-index**
 
@@ -588,8 +591,9 @@ lignes, ou justification explicite dans la livraison ; aucun commentaire ajouté
 - [ ] **Step 7: Vérifier le diff et le contrat de conception**
 
 Comparer `git diff origin/main...HEAD` à chaque critère de la spec. Confirmer explicitement que
-`pr-feedback`, Arnes, `home/.arnes.yaml` et le `Makefile` sont inchangés ; qu’aucun invariant réel
-n’a été promu ; et que les deux fixtures historiques sont des preuves de test seulement.
+`pr-feedback`, Arnes, `home/.arnes.yaml` et le `Makefile` sont inchangés ; que leurs déclarations et
+liens existants servent seulement d’oracle local de déploiement ; qu’aucun invariant réel n’a été
+promu ; et que les deux fixtures historiques sont des preuves de test seulement.
 
 - [ ] **Step 8: Commit final uniquement si une correction de gate reste nécessaire**
 

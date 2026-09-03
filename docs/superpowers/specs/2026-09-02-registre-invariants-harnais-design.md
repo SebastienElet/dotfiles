@@ -38,9 +38,10 @@ un agent de promouvoir seul une préférence isolée ni étendre la topologie g�
 - Le champ `approval` consigne une attestation transmise après l’approbation fournie dans le contexte
   humain. Ni le registre, ni la CLI, ni l’entrée du workflow n’authentifient son origine ou l’identité
   de `approvedBy`, et ce champ n’est pas une preuve autonome. Le skill interdit procéduralement à
-  l’agent de fabriquer cette attestation. Le changement du routeur et de sa référence a remis
-  l’artefact comportemental à `pending` avec `runs: []`. Il ne prouve donc actuellement aucun chemin
-  comportemental ; les replays antérieurs ne se transfèrent pas au nouveau digest.
+  l’agent de fabriquer cette attestation. L’artefact comportemental lié au digest du routeur et de
+  sa référence est l’autorité de son propre état : `pending` porte zéro run et zéro couverture,
+  tandis que `recorded` porte les trois replays et les seules branches qu’ils ont exercées. Les
+  replays d’un autre digest ne se transfèrent jamais.
 - Git conserve l’historique et la revue des mutations. Arnes continue seulement à distribuer le
   skill existant ; son manifeste et ses adaptateurs ne sont pas étendus.
 
@@ -70,6 +71,8 @@ Chaque invariant enregistre également :
 - un périmètre `cross-project` ou `project-local`, avec des exceptions structurées et justifiées ;
 - une surface parmi instruction toujours chargée, skill conditionnel, hook, permission, lint, type,
   test architectural ou contrat local ;
+- pour un skill conditionnel, un `targetSkillPath` strict vers le `SKILL.md` d’une skill user
+  existante sous `harness/skills/`, distincte du routeur `harness-reflection` ;
 - pour une surface exécutoire, un oracle nommé qui cible le chemin d’échec, un fichier de test
   régulier suivi par Git et découvert par la suite, ainsi que son invocation exacte ;
 - pour chaque agent `claude`, `codex` et `cursor`, un statut `supported` ou `unsupported`, son
@@ -99,7 +102,9 @@ parsing Zod, les règles sémantiques refusent notamment :
   de remplacement cyclique ou à cible inconnue ;
 - une déclaration de consommation qui omet un des trois agents ou présente un comportement non
   supporté comme supporté ;
-- un `conditional-skill` actif dont `candidateTextExact` diffère de son `statement` canonique.
+- un `conditional-skill` sans cible régulière suivie, sans frontmatter portable dont le nom
+  correspond au répertoire et dont la description permet la découverte implicite, ou sans
+  déclaration et lien de déploiement user cohérents pour chaque consommateur annoncé.
 
 Un candidat peut rester incomplet tant que ses inconnues sont explicites. Le seuil de deux PR ou de
 sévérité forte autorise la proposition de promotion ; il ne remplace ni l’approbation fournie par
@@ -121,15 +126,14 @@ approbation.
 5. présente ce manifeste au contexte humain avant l’approbation, sans prétendre authentifier la
    personne, puis transmet à l’API la requête structurée et l’attestation inchangées ; le code en
    vérifie la cohérence exacte sans pouvoir distinguer une origine humaine d’une fabrication ;
-6. pour `conditional-skill`, conserve `SKILL.md` comme routeur fermé et immuable : son invocation lit
-   directement les enregistrements actifs de cette surface dans le registre et utilise leur
-   `statement` comme texte conditionnel exact, sans le dupliquer dans le skill ; le manifeste est
-   donc registry-only ;
-7. pour une surface fichier, route la mutation approuvée vers son outil propriétaire obligatoire :
-   `agent-instructions` pour `harness/AGENTS.md` ou le contrat local exact `AGENTS.md`, et la frontière
-   scripts/enforcement pour un contrôle exécutoire ; une modification réelle du routeur reste une
-   modification de skill distincte, possédée par `skill-manager`, et invalide son artefact
-   comportemental ; le moteur du registre ne fournit aucune API d’écriture arbitraire ;
+6. pour `conditional-skill`, résout `targetSkillPath` vers une skill user existante, déclenchable et
+   réellement déclarée puis liée aux consommateurs annoncés ; il interdit le routeur fermé
+   `harness-reflection` comme cible et refuse la promotion lorsqu’aucune skill existante ne convient ;
+7. route la mutation approuvée vers son outil propriétaire obligatoire : `skill-manager` pour le
+   fichier exact d’un skill conditionnel, `agent-instructions` pour `harness/AGENTS.md` ou le contrat
+   local exact `AGENTS.md`, et la frontière scripts/enforcement pour un contrôle exécutoire ; créer
+   une nouvelle skill exige une issue dédiée hors de ce workflow ; le moteur du registre ne fournit
+   aucune API d’écriture arbitraire ;
 8. exécute le doctor ou le contrat de l’outil propriétaire, puis vérifie en lecture seule que la
    surface appliquée est exactement le remplacement approuvé et que le registre courant reste sa
    préimage approuvée ; il refuse tout autre chemin, préimage, remplacement ou delta d’invariant ;
@@ -140,8 +144,7 @@ approbation.
 12. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
     et exceptions ; seuls `approval`, `lifecycle` et `retirement` peuvent changer, la nouvelle
     attestation devant correspondre exactement au registre et au manifeste ; l’outil propriétaire
-    retire d’abord le texte exact d’une surface fichier, tandis qu’un `conditional-skill` est retiré
-    uniquement dans le registre, puis le registre est mis à jour.
+    retire d’abord le texte exact de la surface fichier, puis le registre est mis à jour.
 
 Le validateur borné de transition accepte un lien seulement de `candidate` vers `candidate` ou
 d’`active` vers `active`. Les sources canoniques existantes restent dans leur ordre, au moins une
@@ -167,10 +170,12 @@ Le point d’entrée supporté est une commande de validation en lecture seule c
 registre canonique. Il accepte un chemin explicite pour les fixtures, parse le JSON une fois à la
 frontière, produit des diagnostics stables avec le chemin du champ concerné et retourne un statut
 non nul pour tout fichier absent, JSON invalide, schéma inconnu, règle sémantique violée ou oracle
-non régulier, non suivi, non découvert ou introuvable. L’inspection locale refuse le lien symbolique
-final, ouvre le fichier sans le suivre, compare son identité avant et après les sondes, confine son
-chemin réel et exige un mode de fichier régulier dans l’index Git ; la politique pure reçoit ce
-résultat par injection.
+non régulier, non suivi, non découvert ou introuvable. L’inspection locale de l’oracle refuse le lien
+symbolique final, ouvre le fichier sans le suivre, compare son identité avant et après les sondes,
+confine son chemin réel et exige un mode de fichier régulier dans l’index Git. L’inspection d’une
+cible skill exige aussi le chemin user canonique, le frontmatter déclenchable, la déclaration Arnes
+et le lien Makefile exact pour chaque consommateur. La politique pure reçoit ces résultats par
+injection.
 
 Il ne télécharge aucune preuve et ne réécrit jamais le JSON. Le parseur bibliothèque reste purement
 structurel. Le point d’entrée CLI exécute l’invocation locale déclarée par chaque enregistrement
@@ -190,6 +195,8 @@ Les tests Bun invoquent le module réel et le point d’entrée livré. Ils couv
 - vérification avec et sans mesure verte et environnement ;
 - exceptions, retraite discriminée et graphe de remplacement acyclique ;
 - présence séparée de Claude, Codex et Cursor, y compris un cas `unsupported` ;
+- cible conditionnelle absente, lien symbolique, fichier non suivi, mauvais nom de frontmatter,
+  description non déclenchable et déploiement user annoncé sans projection réelle ;
 - fichier absent, JSON invalide, version inconnue, chemin d’oracle absent, lien symbolique final,
   mode d’index non régulier et substitution pendant les sondes.
 
@@ -205,9 +212,9 @@ validation de son manifeste. Elles ne prouvent ni application de surface ni prom
 Une fixture locale distincte, marquée `synthetic-local-not-historical`, porte les deux sources
 synthétiques nécessaires à l’oracle d’intégration. Elle traverse proposition, manifeste, application
 de fixture, validation, inscription, CLI et oracle, puis la retraite. Elle ne présente pas ses URL
-`example` comme des preuves historiques et ne simule aucune authentification humaine. L’artefact
-agent actuel est `pending` avec `runs: []` après le changement du routeur et ne prouve aucun
-comportement courant. Les replays du digest antérieur ne sont pas attribués à cet artefact.
+`example` comme des preuves historiques et ne simule aucune authentification humaine. Pour les
+replays agent, seul l’état validé dans `promotion-workflow-results.json` fait foi : `pending` ne
+prouve aucun comportement, et `recorded` ne prouve que les branches et critères portés par ses runs.
 
 Les gates attendues sont `bun test`, `tsc --noEmit`, le lint et le formatage TypeScript, le contrôle
 statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. La
@@ -238,16 +245,17 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - L’approbation enregistrée est une attestation non authentifiée ; le manifeste exact est présenté
   au contexte humain avant cette entrée, et la requête, les préimages, remplacements et le seul delta
   d’invariant ciblé doivent lui correspondre. L’interdiction d’auto-assertion est procédurale dans le
-  skill. L’artefact comportemental est `pending` avec `runs: []` après changement du routeur ; aucun
-  chemin comportemental courant n’est présenté comme couvert.
+  skill. La machine d’état de l’artefact comportemental lie toute couverture revendiquée au digest
+  exact et refuse les runs dans l’état `pending`.
 - Une surface est appliquée uniquement via son outil propriétaire, puis son doctor ou contrat passe
   avant l’écriture bornée du registre ; aucune API de production ne remplace arbitrairement une
   surface et aucune transaction multi-fichier n’est promise.
 - Pour une surface fichier, la promotion ajoute et la retraite retire réellement
-  `candidateTextExact`. Pour `conditional-skill`, ce texte égale exactement `statement` dans le
-  registre et la retraite du record suffit ; `SKILL.md` ne change jamais pour porter le candidat.
-  Une préimage égale au remplacement est refusée. Ces critères et le doctor propriétaire bornent la
-  preuve sans prétendre décider la sémantique générale du texte.
+  `candidateTextExact`. Pour `conditional-skill`, le manifeste cible exactement le `SKILL.md`
+  existant désigné par `targetSkillPath`, puis `skill-manager` exécute son doctor ; le routeur
+  `harness-reflection` reste hors cible. Une préimage égale au remplacement est refusée. Ces critères
+  et le doctor propriétaire bornent la preuve sans prétendre décider la sémantique générale du texte
+  ni mesurer son influence sur le modèle.
 - Pour un enregistrement `verified` dont la dernière mesure déclare une invocation, la CLI exécute
   réellement cette invocation et échoue avec elle ; le parseur bibliothèque ne l’exécute pas.
 - Claude, Codex et Cursor sont déclarés séparément avec un mécanisme fermé compatible avec la surface,

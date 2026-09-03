@@ -15,6 +15,7 @@ type ReviewSource = Readonly<{
 
 const firstPullRequest = "206";
 const secondPullRequest = "207";
+const targetSkillPath = "harness/skills/enforcement-code/SKILL.md";
 const verifiedVerification = {
   state: "verified",
   lastRun: {
@@ -56,6 +57,7 @@ function source(pullRequestNumber: string): ReviewSource {
 }
 
 function candidate(overrides: TestInvariant = {}): TestInvariant {
+  const surface = overrides.surface ?? "always-loaded-instruction";
   return {
     id: "prevent-secret-leaks",
     statement: "Rejected fetch URLs never expose credentials.",
@@ -72,7 +74,7 @@ function candidate(overrides: TestInvariant = {}): TestInvariant {
       },
     ],
     scope: { kind: "cross-project", exceptions: [] },
-    surface: "always-loaded-instruction",
+    surface,
     consumers: {
       claude: { state: "supported", mechanism: "claude-global-instruction" },
       codex: { state: "supported", mechanism: "codex-global-instruction" },
@@ -82,6 +84,7 @@ function candidate(overrides: TestInvariant = {}): TestInvariant {
       },
     },
     verification: { state: "unverified" },
+    ...(surface === "conditional-skill" ? { targetSkillPath } : {}),
     ...overrides,
   };
 }
@@ -146,8 +149,23 @@ function validationOptions(
     kind: "regular-file",
     tracked: true,
   }),
+  inspectSkillTarget: ValidationOptions["inspectSkillTarget"] = (
+    _path,
+  ): ReturnType<ValidationOptions["inspectSkillTarget"]> => ({
+    deploymentManifestValid: true,
+    descriptionTriggerable: true,
+    frontmatterValid: true,
+    installedFor: ["claude", "codex", "cursor"],
+    kind: "regular-file",
+    name: "enforcement-code",
+    tracked: true,
+  }),
 ): ValidationOptions {
-  return { inspectOracle, repositoryRoot: "/repository" };
+  return {
+    inspectOracle,
+    inspectSkillTarget,
+    repositoryRoot: "/repository",
+  };
 }
 
 function diagnosticCodes(
@@ -166,8 +184,10 @@ export {
   registry,
   secondPullRequest,
   source,
+  targetSkillPath,
   type TestInvariant,
   validationOptions,
   verifiedVerification,
 };
 export { validateInvariantRegistry } from "./invariant-registry-contract.ts";
+export type { SkillTargetInspection } from "./invariant-registry-contract.ts";
