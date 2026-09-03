@@ -34,7 +34,7 @@ fn active_plugin_uses_codex_selection_and_inventories_skills() {
     fixture.write_home(".arnes.yaml", &manifest(true, true));
     fixture.write_home(
         ".codex/config.toml",
-        "[plugins.\"demo@marketplace\"]\nenabled = true\n",
+        "[plugins.\"demo@marketplace\"]\nenabled = true\n[[skills.config]]\nname = 'review'\nenabled = false\n",
     );
     fixture.write_home(
         ".codex/plugins/cache/marketplace/demo/11c74d6b/.codex-plugin/plugin.json",
