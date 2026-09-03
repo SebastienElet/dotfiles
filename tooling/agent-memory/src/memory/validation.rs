@@ -1,3 +1,5 @@
+mod diagnostics;
+
 use super::error::MemoryError;
 use super::model::{
     AdmissionAuthorization, AdmissionDraft, EntryData, EntryProof, EntryScope, EntrySource,
@@ -18,7 +20,8 @@ pub fn parse_draft(bytes: &[u8]) -> Result<AdmissionDraft, MemoryError> {
     let value = parse_value(input)?;
     validate_schema_version(&value)?;
     validate_source_kinds(&value)?;
-    let raw: RawDraftKind = deserialize(input)?;
+    let raw: RawDraftKind =
+        deserialize(input).map_err(|error| diagnostics::draft_error(value, error))?;
     let (kind, data) = raw.split();
     Ok(AdmissionDraft { kind, data })
 }
@@ -47,9 +50,11 @@ pub fn validate_draft(
         .proof
         .sources
         .into_iter()
-        .map(|source| {
+        .enumerate()
+        .map(|(index, source)| {
             let (kind, locator) = source.split();
-            reject_persisted_text(&locator, "proof.sources.locator")?;
+            reject_persisted_text(&locator, "proof.sources.locator")
+                .map_err(|error| error.at_item(index))?;
             Ok(ValidatedDraftSource::new(kind, locator))
         })
         .collect::<Result<Vec<_>, MemoryError>>()?;
@@ -138,9 +143,11 @@ fn validated_entry_proof(proof: super::model::RawEntryProof) -> Result<EntryProo
     let sources = proof
         .sources
         .into_iter()
-        .map(|source| {
+        .enumerate()
+        .map(|(index, source)| {
             let (kind, locator, fingerprint_value) = source.split();
-            reject_persisted_text(&locator, "proof.sources.locator")?;
+            reject_persisted_text(&locator, "proof.sources.locator")
+                .map_err(|error| error.at_item(index))?;
             Ok(EntrySource::new(
                 kind,
                 locator,
@@ -213,25 +220,16 @@ fn checked_input(bytes: &[u8]) -> Result<&str, MemoryError> {
 fn parse_value(input: &str) -> Result<Value, MemoryError> {
     serde_yaml_ng::from_str(input).map_err(|error| {
         if error.to_string().to_ascii_lowercase().contains("duplicate") {
-            MemoryError::new("duplicate_field", "document")
+            diagnostics::yaml_error("duplicate_field", &error)
         } else {
-            MemoryError::new("malformed_yaml", "document")
+            diagnostics::yaml_error("malformed_yaml", &error)
         }
     })
 }
 
 fn deserialize<T: DeserializeOwned>(input: &str) -> Result<T, MemoryError> {
     let deserializer = serde_yaml_ng::Deserializer::from_str(input);
-    serde_path_to_error::deserialize(deserializer).map_err(|error| {
-        let message = error.inner().to_string().to_ascii_lowercase();
-        if message.contains("unknown field") {
-            MemoryError::new("unknown_field", "document")
-        } else if message.contains("unknown variant") && error.path().to_string().contains("kind") {
-            MemoryError::new("invalid_source_kind", "proof.sources.kind")
-        } else {
-            MemoryError::new("invalid_field", "document")
-        }
-    })
+    serde_path_to_error::deserialize(deserializer).map_err(diagnostics::deserialize_error)
 }
 
 fn validate_schema_version(value: &Value) -> Result<(), MemoryError> {
@@ -258,20 +256,21 @@ fn validate_source_kinds(value: &Value) -> Result<(), MemoryError> {
     else {
         return Ok(());
     };
-    for source in sources {
+    for (index, source) in sources.iter().enumerate() {
         let kind = source
             .as_mapping()
             .and_then(|source| nested(source, "kind"))
             .and_then(Value::as_str)
-            .ok_or_else(|| MemoryError::new("invalid_field", "proof.sources.kind"))?;
+            .ok_or_else(|| {
+                MemoryError::new("invalid_field", "proof.sources.kind").at_item(index)
+            })?;
         if !matches!(
             kind,
             "git-file" | "local-file" | "official-url" | "user-decision"
         ) {
-            return Err(MemoryError::new(
-                "invalid_source_kind",
-                "proof.sources.kind",
-            ));
+            return Err(
+                MemoryError::new("invalid_source_kind", "proof.sources.kind").at_item(index),
+            );
         }
     }
     Ok(())
@@ -339,9 +338,12 @@ fn retrieval_terms(values: Vec<String>) -> Result<Vec<RetrievalTerm>, MemoryErro
     }
     values
         .into_iter()
-        .map(|value| {
-            validate_text(&value, 1, 100, "retrieval_terms")?;
-            reject_persisted_text(&value, "retrieval_terms")?;
+        .enumerate()
+        .map(|(index, value)| {
+            validate_text(&value, 1, 100, "retrieval_terms")
+                .map_err(|error| error.at_item(index))?;
+            reject_persisted_text(&value, "retrieval_terms")
+                .map_err(|error| error.at_item(index))?;
             Ok(RetrievalTerm::from_validated(value))
         })
         .collect()
@@ -469,7 +471,10 @@ fn validate_text(
     if (minimum..=maximum).contains(&length) {
         Ok(())
     } else {
-        Err(MemoryError::new("invalid_field", field))
+        Err(MemoryError::new("invalid_field", field).with_diagnostic(
+            crate::Diagnostic::new("Adjust the string length to the inclusive bounds; length counts Unicode scalar values, not bytes, graphemes or tokens.")
+                .bounds(minimum, maximum, "unicode_scalars"),
+        ))
     }
 }
 
@@ -477,7 +482,10 @@ fn validate_count(count: usize, maximum: usize, field: &'static str) -> Result<(
     if count <= maximum {
         Ok(())
     } else {
-        Err(MemoryError::new("too_many_items", field))
+        Err(MemoryError::new("too_many_items", field).with_diagnostic(
+            crate::Diagnostic::new("Reduce the number of items to the inclusive maximum.")
+                .bounds(1, maximum, "items"),
+        ))
     }
 }
 
@@ -497,15 +505,15 @@ fn validate_scope_source_kinds(
     mut source_kinds: impl Iterator<Item = SourceKind>,
 ) -> Result<(), MemoryError> {
     if user_scope && source_kinds.any(|kind| kind == SourceKind::GitFile) {
-        Err(MemoryError::new("source_invalid", "proof.sources"))
+        Err(MemoryError::new("source_invalid", "proof.sources").with_message("A git-file source requires project scope; user scope cannot contain Git sources. Do not broaden scope without authorization."))
     } else {
         Ok(())
     }
 }
 
 fn reject_sensitive(value: &str, field: &'static str) -> Result<(), MemoryError> {
-    if sensitive::contains_sensitive(value) {
-        Err(MemoryError::new("sensitive_content", field))
+    if let Some(message) = sensitive::rejection_reason(value) {
+        Err(MemoryError::new("sensitive_content", field).with_message(message))
     } else {
         Ok(())
     }

@@ -4,10 +4,18 @@ mod admission_order;
 mod argument_redaction;
 #[path = "memory_cli/canonical_reads.rs"]
 mod canonical_reads;
+#[path = "memory_cli/diagnostics.rs"]
+mod diagnostics;
 #[path = "memory_cli/error_classes.rs"]
 mod error_classes;
+#[path = "memory_cli/schema_diagnostics.rs"]
+mod schema_diagnostics;
+#[path = "memory_cli/source_diagnostics.rs"]
+mod source_diagnostics;
 #[path = "memory_cli/support.rs"]
 mod support;
+#[path = "memory_cli/text_diagnostics.rs"]
+mod text_diagnostics;
 
 use serde_json::Value;
 use support::*;

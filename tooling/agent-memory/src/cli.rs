@@ -61,15 +61,26 @@ fn complete(
 }
 
 fn write_failure(diagnostics: &mut dyn io::Write, failure: CliFailure) -> u8 {
-    let value = json!({"error": {"code": failure.code, "field": failure.field}});
+    let mut error = serde_json::to_value(
+        failure
+            .diagnostic
+            .as_deref()
+            .copied()
+            .unwrap_or_else(|| crate::Diagnostic::for_code(failure.code, failure.field)),
+    )
+    .expect("diagnostics contain only static text and integers");
+    error["code"] = json!(failure.code);
+    error["field"] = json!(failure.field);
+    let value = json!({"error": error});
     write_json(diagnostics, &value).map_or(4, |()| failure.exit)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct CliFailure {
     exit: u8,
     code: &'static str,
     field: &'static str,
+    diagnostic: Option<Box<crate::Diagnostic>>,
 }
 
 impl CliFailure {
@@ -78,6 +89,7 @@ impl CliFailure {
             exit: 2,
             code: "invalid_arguments",
             field: "arguments",
+            diagnostic: None,
         }
     }
 
@@ -86,6 +98,7 @@ impl CliFailure {
             exit: 4,
             code: "evaluation_trace_unavailable",
             field: "trace",
+            diagnostic: None,
         }
     }
 
@@ -99,6 +112,7 @@ impl CliFailure {
             exit,
             code: error.code(),
             field: error.field(),
+            diagnostic: Some(Box::new(error.diagnostic())),
         }
     }
 
@@ -111,6 +125,7 @@ impl CliFailure {
             exit,
             code: error.code(),
             field: error.field(),
+            diagnostic: None,
         }
     }
 }
