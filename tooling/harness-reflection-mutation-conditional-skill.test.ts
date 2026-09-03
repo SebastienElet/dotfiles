@@ -24,7 +24,7 @@ const consumers = {
   },
 };
 
-const conditionalPromotionRecords = () => {
+const conditionalPromotionRecords = (): ReturnType<typeof promotionRecords> => {
   const records = promotionRecords();
   const before = record({
     ...records.before,
@@ -41,7 +41,7 @@ const conditionalPromotionRecords = () => {
   return { after, before };
 };
 
-const conditionalPromotionRequest = () => {
+const conditionalPromotionRequest = (): ReturnType<typeof request> => {
   const records = conditionalPromotionRecords();
   return request({
     after: records.after,
@@ -51,7 +51,7 @@ const conditionalPromotionRequest = () => {
   });
 };
 
-const conditionalRetirementRequest = () => {
+const conditionalRetirementRequest = (): ReturnType<typeof request> => {
   const { after: active } = conditionalPromotionRecords();
   const retired = record({
     ...active,
@@ -71,15 +71,15 @@ const conditionalRetirementRequest = () => {
 };
 
 test("accepts conditional-skill promotion as an exact registry-only change", () => {
-  expect(validateApprovedHarnessMutation(conditionalPromotionRequest()).kind).toBe(
-    "promotion",
-  );
+  expect(
+    validateApprovedHarnessMutation(conditionalPromotionRequest()).kind,
+  ).toBe("promotion");
 });
 
 test("accepts conditional-skill retirement as an exact registry-only change", () => {
-  expect(validateApprovedHarnessMutation(conditionalRetirementRequest()).kind).toBe(
-    "retirement",
-  );
+  expect(
+    validateApprovedHarnessMutation(conditionalRetirementRequest()).kind,
+  ).toBe("retirement");
 });
 
 test("rejects a conditional-skill request that mutates the closed router", () => {
