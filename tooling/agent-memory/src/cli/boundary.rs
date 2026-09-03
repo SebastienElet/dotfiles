@@ -29,7 +29,12 @@ pub(super) fn write_json(output: &mut dyn Write, value: &impl Serialize) -> Resu
 }
 
 fn failure(exit: u8, code: &'static str, field: &'static str) -> CliFailure {
-    CliFailure { exit, code, field }
+    CliFailure {
+        exit,
+        code,
+        field,
+        diagnostic: None,
+    }
 }
 
 #[cfg(test)]

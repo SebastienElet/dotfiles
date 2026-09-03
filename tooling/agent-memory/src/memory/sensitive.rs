@@ -1,12 +1,39 @@
-pub(crate) fn contains_sensitive(value: &str) -> bool {
+pub(crate) fn rejection_reason(value: &str) -> Option<&'static str> {
     let lowercase = value.to_ascii_lowercase();
-    has_private_pem(&lowercase)
-        || has_url_userinfo(&lowercase)
-        || has_authorization_header(&lowercase)
-        || has_secret_assignment(&lowercase)
-        || has_credential_prefix(&lowercase)
-        || has_system_prompt_marker(&lowercase)
-        || has_transcript_block(&lowercase)
+    if has_private_pem(&lowercase) {
+        return Some("Remove the private-key PEM material; retain only a safe durable summary.");
+    }
+    if has_url_userinfo(&lowercase) {
+        return Some(
+            "Remove URL userinfo credentials; retain a safe reference without authentication data.",
+        );
+    }
+    if has_authorization_header(&lowercase) {
+        return Some(
+            "Remove the authorization header; authentication material cannot be persisted.",
+        );
+    }
+    if has_secret_assignment(&lowercase) {
+        return Some(
+            "Remove the secret assignment (password, secret, token, or API key); retain only a safe durable summary.",
+        );
+    }
+    if has_credential_prefix(&lowercase) {
+        return Some(
+            "Remove the credential with a recognized token prefix; do not encode it to evade detection.",
+        );
+    }
+    if has_system_prompt_marker(&lowercase) {
+        return Some(
+            "Remove the private prompt identified by a system-prompt marker; retain only a safe durable summary.",
+        );
+    }
+    if has_transcript_block(&lowercase) {
+        return Some(
+            "Replace the role-prefixed transcript with a safe durable summary; raw conversations cannot be persisted.",
+        );
+    }
+    None
 }
 
 fn has_private_pem(value: &str) -> bool {

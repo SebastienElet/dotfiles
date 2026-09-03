@@ -75,16 +75,16 @@ impl ResolvedDraft {
     }
 
     pub fn recheck_sources(&self, context: &SourceContext<'_>) -> Result<(), MemoryError> {
-        for expected in &self.sources {
+        for (index, expected) in self.sources.iter().enumerate() {
             let actual = match resolve_source(expected.kind, &expected.locator, context) {
                 Ok(actual) => actual,
                 Err(error) if error.class() == super::MemoryErrorClass::Rejection => {
-                    return Err(source_changed());
+                    return Err(source_changed().at_item(index));
                 }
-                Err(error) => return Err(error),
+                Err(error) => return Err(error.at_item(index)),
             };
             if actual.fingerprint != expected.fingerprint {
-                return Err(source_changed());
+                return Err(source_changed().at_item(index));
             }
         }
         Ok(())
@@ -107,13 +107,17 @@ pub fn resolve_sources(
         .iter()
         .any(|source| source.kind() == SourceKind::UserDecision);
     if has_official_url && !has_user_decision {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("An official-url requires a user-decision source recording the user-approved primary domain; do not infer officiality from a successful fetch."));
     }
     let sources = draft
         .proof()
         .sources()
         .iter()
-        .map(|source| resolve_draft_source(source.kind(), source.locator(), context))
+        .enumerate()
+        .map(|(index, source)| {
+            resolve_draft_source(source.kind(), source.locator(), context)
+                .map_err(|error| error.at_item(index))
+        })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(ResolvedDraft { draft, sources })
 }
@@ -165,9 +169,13 @@ fn resolve_draft_git_file(
     let path = resolved_regular_path(&cwd.join(relative))?;
     let worktree = git_worktree(context)?;
     if !cwd.starts_with(&worktree) || !path.starts_with(&worktree) {
-        return Err(source_invalid());
+        return Err(source_invalid()
+            .with_message("The resolved Git source must remain inside the current worktree."));
     }
-    let relative = path.strip_prefix(&worktree).map_err(|_| source_invalid())?;
+    let relative = path.strip_prefix(&worktree).map_err(|_| {
+        source_invalid()
+            .with_message("The resolved Git source must remain inside the current worktree.")
+    })?;
     validate_relative_git_path(relative)?;
     validate_tracked(relative, &worktree, context)?;
     let locator = relative.to_str().ok_or_else(source_unavailable)?.to_owned();
@@ -180,7 +188,8 @@ fn resolve_git_file(locator: &str, context: &SourceContext<'_>) -> Result<Vec<u8
     let worktree = git_worktree(context)?;
     let path = resolved_regular_path(&worktree.join(relative))?;
     if !path.starts_with(&worktree) {
-        return Err(source_invalid());
+        return Err(source_invalid()
+            .with_message("The resolved Git source must remain inside the current worktree."));
     }
     validate_tracked(relative, &worktree, context)?;
     read_bounded_regular_file(&path)
@@ -193,7 +202,7 @@ fn validate_relative_git_path(relative: &Path) -> Result<(), MemoryError> {
             .components()
             .all(|component| matches!(component, Component::Normal(_)))
     {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("Use a nonempty relative Git file path with normal components, without parent traversal or a leading dot component."));
     }
     Ok(())
 }
@@ -223,7 +232,7 @@ fn validate_tracked(
         .map_err(|_| source_unavailable())?;
     if !output.success() {
         return if output.code() == Some(1) {
-            Err(source_invalid())
+            Err(source_invalid().with_message("The Git proof file must be tracked in the current worktree; choose a tracked primary source."))
         } else {
             Err(source_unavailable())
         };
@@ -239,20 +248,28 @@ fn validate_tracked(
 fn resolve_local_file(locator: &str) -> Result<Vec<u8>, MemoryError> {
     let path = Path::new(locator);
     if !path.is_absolute() {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("Use an absolute path for a local-file source."));
     }
     let path = resolved_regular_path(path)?;
     read_bounded_regular_file(&path)
 }
 
 fn resolved_regular_path(path: &Path) -> Result<PathBuf, MemoryError> {
-    let parent = path.parent().ok_or_else(source_invalid)?;
-    let name = path.file_name().ok_or_else(source_invalid)?;
+    let parent = path.parent().ok_or_else(|| {
+        source_invalid()
+            .with_message("Provide a file path with a parent directory and a file name.")
+    })?;
+    let name = path.file_name().ok_or_else(|| {
+        source_invalid()
+            .with_message("Provide a file path with a parent directory and a file name.")
+    })?;
     let parent = parent.canonicalize().map_err(classify_local_error)?;
     let resolved = parent.join(name);
     let metadata = fs::symlink_metadata(&resolved).map_err(classify_local_error)?;
     if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message(
+            "The final source path must be a regular file, not a symlink or directory.",
+        ));
     }
     Ok(resolved)
 }
@@ -267,10 +284,10 @@ fn read_bounded_regular_file(path: &Path) -> Result<Vec<u8>, MemoryError> {
     let mut file = File::from(descriptor);
     let metadata = file.metadata().map_err(|_| source_unavailable())?;
     if !metadata.file_type().is_file() {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("The opened source must be a regular file."));
     }
     if metadata.len() > MAX_SOURCE_BYTES {
-        return Err(source_unavailable());
+        return Err(source_unavailable().with_message("The source body must be at most 1048576 bytes (1 MiB); select a bounded primary source."));
     }
     let mut bytes = Vec::with_capacity(metadata.len() as usize);
     file.by_ref()
@@ -278,7 +295,7 @@ fn read_bounded_regular_file(path: &Path) -> Result<Vec<u8>, MemoryError> {
         .read_to_end(&mut bytes)
         .map_err(|_| source_unavailable())?;
     if bytes.len() as u64 > MAX_SOURCE_BYTES {
-        return Err(source_unavailable());
+        return Err(source_unavailable().with_message("The source body must be at most 1048576 bytes (1 MiB); select a bounded primary source."));
     }
     Ok(bytes)
 }
@@ -287,7 +304,7 @@ fn resolve_official_url(
     locator: &str,
     context: &SourceContext<'_>,
 ) -> Result<Vec<u8>, MemoryError> {
-    let url = validated_https_url(locator).map_err(|_| source_invalid())?;
+    let url = validated_https_url(locator).map_err(|_| source_invalid().with_message("Use an HTTPS URL with a domain name, without credentials, literal IP addresses or fragments."))?;
     let temporary = create_private_temporary(context)?;
     let max_time = curl_max_time(context.curl)?;
     let arguments = curl_arguments(temporary.path(), url.as_str(), &max_time);
@@ -391,13 +408,13 @@ fn validate_curl_result(
     metadata: &CurlMetadata,
 ) -> Result<(), MemoryError> {
     if !allowed_https_url(&metadata.final_url) {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("The final redirected URL must be HTTPS with a domain name, without credentials, literal IP addresses or fragments."));
     }
     if matches!(metadata.status, 404 | 410) && output.code() == Some(22) {
-        return Err(source_invalid());
+        return Err(source_invalid().with_message("The official URL returned HTTP 404 or 410; revalidate the primary reference before replacing it."));
     }
     if !output.success() || !matches!(metadata.status, 200..=299) {
-        return Err(source_unavailable());
+        return Err(source_unavailable().with_message("The HTTPS fetch did not complete with HTTP 2xx within 5 redirects, 5 seconds to connect, 15 seconds total, and 1048576 body bytes; restore access to the primary source."));
     }
     Ok(())
 }
@@ -421,7 +438,7 @@ fn classify_local_error(error: io::Error) -> MemoryError {
 
 fn classify_local_io_kind(kind: io::ErrorKind) -> MemoryError {
     if kind == io::ErrorKind::NotFound {
-        source_invalid()
+        source_invalid().with_message("The proof file or its parent directory does not exist; provide an existing primary source.")
     } else {
         source_unavailable()
     }

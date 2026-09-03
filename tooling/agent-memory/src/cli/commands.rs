@@ -190,5 +190,6 @@ fn output_failure() -> CliFailure {
         exit: 4,
         code: "output_unavailable",
         field: "stdout",
+        diagnostic: None,
     }
 }
