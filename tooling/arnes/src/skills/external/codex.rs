@@ -1,48 +1,21 @@
 use super::model::{Exposure, Plugin, Topology, plugin_diagnostics};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
-use crate::files::paths::{ancestor_within, canonical_within};
 use crate::manifest::{Agent, Manifest, Scope};
-use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 mod command;
+mod config;
 mod resolution;
 mod state;
-
-#[derive(Default, Deserialize)]
-struct Config {
-    #[serde(default)]
-    plugins: BTreeMap<String, PluginConfig>,
-    #[serde(default)]
-    skills: SkillsConfig,
-}
-
-#[derive(Deserialize)]
-struct PluginConfig {
-    enabled: Option<bool>,
-}
-
-#[derive(Default, Deserialize)]
-struct SkillsConfig {
-    #[serde(default)]
-    config: Vec<SkillConfig>,
-}
-
-#[derive(Deserialize)]
-struct SkillConfig {
-    path: PathBuf,
-    enabled: bool,
-}
 
 pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Diagnostic> {
     if scope == Scope::Project {
         return Vec::new();
     }
     let path = roots.home().join(".codex/config.toml");
-    let config = match load(&path, roots.home()) {
+    let config = match config::load(&path, roots.home()) {
         Ok(config) => config,
         Err(detail) => {
             return vec![Diagnostic::new(
@@ -79,7 +52,7 @@ pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Di
 }
 
 fn configured_and_resolved_ids(
-    configured: &BTreeMap<String, PluginConfig>,
+    configured: &BTreeMap<String, config::PluginConfig>,
     resolved: Option<&state::ResolverState>,
 ) -> BTreeSet<String> {
     configured
@@ -122,46 +95,8 @@ fn resolver_failure_diagnostic(detail: &str) -> Diagnostic {
 }
 
 pub(super) fn skill_exposure(roots: &Roots, skill_file: &Path) -> Exposure {
-    let Ok(config) = load(&roots.home().join(".codex/config.toml"), roots.home()) else {
+    let Ok(config) = config::load(&roots.home().join(".codex/config.toml"), roots.home()) else {
         return Exposure::Unknown;
     };
-    let matching = config
-        .skills
-        .config
-        .iter()
-        .filter(|entry| same_path(&entry.path, skill_file))
-        .map(|entry| entry.enabled)
-        .collect::<Vec<_>>();
-    match matching.as_slice() {
-        [] | [true] => Exposure::Enabled,
-        [false] => Exposure::Disabled,
-        _ => Exposure::Unknown,
-    }
-}
-
-fn load(path: &Path, root: &Path) -> Result<Config, &'static str> {
-    match fs::symlink_metadata(path) {
-        Ok(_) if canonical_within(path, root).is_none() => {
-            return Err("config resolves outside HOME");
-        }
-        Ok(_) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return if ancestor_within(path, root) {
-                Ok(Config::default())
-            } else {
-                Err("config parent resolves outside HOME")
-            };
-        }
-        Err(_) => return Err("config metadata could not be read"),
-    }
-    let contents = fs::read_to_string(path).map_err(|_| "config could not be read")?;
-    toml::from_str(&contents).map_err(|_| "config is invalid TOML")
-}
-
-fn same_path(left: &Path, right: &Path) -> bool {
-    left == right
-        || fs::canonicalize(left)
-            .ok()
-            .zip(fs::canonicalize(right).ok())
-            .is_some_and(|(left, right)| left == right)
+    config.skill_exposure(skill_file)
 }
