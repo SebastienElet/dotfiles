@@ -36,6 +36,13 @@ fileGroups:
     - bun.lock
 
 tasks:
+  dependencies:
+    command: bun install --frozen-lockfile
+    inputs:
+      - package.json
+      - bun.lock
+    options:
+      cache: false
   typescript-lint:
     command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
     inputs:
@@ -54,6 +61,14 @@ tasks:
     inputs:
       - "@group(trackedTypeScript)"
       - "@group(typescriptToolchain)"
+  typescript-test:
+    command: bun --config=/dev/null --no-env-file test --timeout 15000
+    inputs:
+      - "@group(trackedTypeScript)"
+      - package.json
+      - bun.lock
+    options:
+      cache: false
   prettier-check:
     command: >-
       bun run prettier --check "**/*.{yml,yaml,md,json}"

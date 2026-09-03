@@ -6,10 +6,18 @@ on:
   pull_request:
 
 jobs:
-  minimal:
-    name: Minimal macOS profile
+  moon-install:
+    name: Disposable macOS Moon install
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
-      - run: make smoke-minimal
+        with:
+          fetch-depth: 0
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+        with:
+          auto-setup: true
+      - name: Install repository dependencies through Moon
+        run: moon exec --ignore-ci-checks repository:dependencies
+      - name: Install workstation through Moon
+        run: moon exec --ignore-ci-checks workstation:install

@@ -4,6 +4,7 @@ projects:
   tooling/agent-handoff: tooling/agent-handoff
   tooling/agent-memory: tooling/agent-memory
   tooling/arnes: tooling/arnes
+  workstation: workstation
 
 vcs:
   defaultBranch: main

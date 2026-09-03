@@ -12,9 +12,17 @@ tasks:
     command: noop
     deps:
       - ~:semctx-install
+  install-hosts:
+    description: Install supported agent hosts through existing leaf recipes
+    command: make claude-code codex
+    options:
+      mutex: harness-mutation
+      os: macos
   semctx-install:
     description: Install or update Semctx plugins for detected agent hosts
     command: bun run semctx install --host auto --skip-setup --json
+    deps:
+      - ~:install-hosts
     options:
       mutex: harness-mutation
       outputStyle: stream
@@ -27,3 +35,11 @@ tasks:
   semctx-status:
     description: Inspect local Semctx plugin delivery without network attestation
     command: bun run semctx plugin-status --host auto --json
+  install-cursor:
+    description: Install Cursor harness through its existing leaf recipe
+    command: make cursor
+    deps:
+      - ~:install
+    options:
+      mutex: harness-mutation
+      os: macos
