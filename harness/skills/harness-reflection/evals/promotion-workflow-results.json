@@ -1,7 +1,7 @@
 {
   "version": 1,
   "skill": "harness-reflection",
-  "status": "pending",
+  "status": "recorded",
   "evaluationKind": "regression-test",
   "promotionEvidence": false,
   "adr036Ablation": "not-run",
@@ -21,9 +21,8 @@
     ]
   },
   "branchCoverage": {
-    "covered": [],
+    "covered": ["skip-missing-evidence"],
     "notCovered": [
-      "skip-missing-evidence",
       "link",
       "propose",
       "approval",
@@ -33,11 +32,61 @@
     ]
   },
   "limitations": [
-    "current-artifact-not-replayed",
-    "no-current-behavioral-evidence",
+    "concrete-pull-request-urls-not-provided",
+    "only-skip-missing-evidence-exercised",
     "link-propose-approval-retirement-and-promotion-not-exercised",
+    "no-mutation-manifest-or-approval-produced",
+    "no-control-surface-or-effective-oracle-selected",
+    "claude-codex-and-cursor-consume-no-new-rule",
+    "future-conditional-skill-is-registry-only-through-user-skills",
     "controlled-marginal-ablation-not-run",
     "accepted-cli-snapshot-is-not-durable-validity"
   ],
-  "runs": []
+  "runs": [
+    {
+      "agent": "/root/behavior_eval_13",
+      "baseCommit": "b1a113cc63df24c25209fe18653eef3d7a529875",
+      "label": "behavior_eval_19",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 1
+    },
+    {
+      "agent": "/root/behavior_eval_14",
+      "baseCommit": "b1a113cc63df24c25209fe18653eef3d7a529875",
+      "label": "behavior_eval_20",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 2
+    },
+    {
+      "agent": "/root/repo_readiness",
+      "baseCommit": "b1a113cc63df24c25209fe18653eef3d7a529875",
+      "label": "behavior_eval_21",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 3
+    }
+  ]
 }

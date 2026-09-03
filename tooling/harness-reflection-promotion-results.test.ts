@@ -14,6 +14,7 @@ const resultsPath = resolve(
 const sha256HexLength = 64;
 const sha1HexLength = 40;
 const expectedReplayRuns = 3;
+const evaluatedCommit = "b1a113cc63df24c25209fe18653eef3d7a529875";
 const firstReplayRun = 1;
 const secondReplayRun = 2;
 const replayRunNumbers = [
@@ -28,17 +29,38 @@ const passingCriteria = {
   "registry-lookup-recorded": true,
   "report-rendered": true,
 } as const;
+const expectedRunProvenance = [
+  ["/root/behavior_eval_13", "behavior_eval_19"],
+  ["/root/behavior_eval_14", "behavior_eval_20"],
+  ["/root/repo_readiness", "behavior_eval_21"],
+] as const;
 
-test("keeps behavior evidence pending after the router contract changes", async () => {
+test("records the three ultimate skip-path behavior evaluations", async () => {
   const results = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
 
-  expect(results.status).toBe("pending");
-  expect(results.runs).toEqual([]);
-  expect(results.branchCoverage.covered).toEqual([]);
+  expect(results.status).toBe("recorded");
+  expect(results.runs).toHaveLength(expectedReplayRuns);
+  expect(
+    results.runs.map(({ agent, baseCommit, criteria, label, result }) => ({
+      agent,
+      baseCommit,
+      criteria,
+      label,
+      result,
+    })),
+  ).toEqual(
+    expectedRunProvenance.map(([agent, label]) => ({
+      agent,
+      baseCommit: evaluatedCommit,
+      criteria: passingCriteria,
+      label,
+      result: "pass",
+    })),
+  );
+  expect(results.branchCoverage.covered).toEqual(["skip-missing-evidence"]);
   expect(results.branchCoverage.notCovered).toEqual([
-    "skip-missing-evidence",
     "link",
     "propose",
     "approval",
@@ -48,6 +70,9 @@ test("keeps behavior evidence pending after the router contract changes", async 
   ]);
   expect(results.promotionEvidence).toBe(false);
   expect(results.adr036Ablation).toBe("not-run");
+  expect(results.limitations).toContain(
+    "future-conditional-skill-is-registry-only-through-user-skills",
+  );
   expect(results.artifact.skillReference).toHaveLength(sha256HexLength);
 });
 
@@ -87,6 +112,7 @@ test("allows the artifact to become recorded only with three replay runs", async
         "no-mutation-manifest-or-approval-produced",
         "no-control-surface-or-effective-oracle-selected",
         "claude-codex-and-cursor-consume-no-new-rule",
+        "future-conditional-skill-is-registry-only-through-user-skills",
         "controlled-marginal-ablation-not-run",
         "accepted-cli-snapshot-is-not-durable-validity",
       ],
@@ -111,7 +137,7 @@ test.each([
     "weakened criteria",
     { criteria: { expectedRuns: expectedReplayRuns, requiredPerRun: [] } },
   ],
-  ["recorded without replay runs", { status: "recorded" }],
+  ["pending with replay runs", { status: "pending" }],
   ["top-level run provenance", { baseCommit: "untrusted" }],
   ["top-level covered path", { coveredPath: "skip-missing-evidence" }],
 ] as const)("rejects promotion results with %s", async (_name, patch) => {
@@ -128,9 +154,28 @@ test.each([
 });
 
 test("rejects pending results with runs or claimed branch coverage", async () => {
-  const results = promotionResultsSchema.parse(
+  const recorded = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
+  const results = promotionResultsSchema.parse({
+    ...recorded,
+    branchCoverage: {
+      covered: [],
+      notCovered: [
+        "skip-missing-evidence",
+        ...recorded.branchCoverage.notCovered,
+      ],
+    },
+    limitations: [
+      "current-artifact-not-replayed",
+      "no-current-behavioral-evidence",
+      "link-propose-approval-retirement-and-promotion-not-exercised",
+      "controlled-marginal-ablation-not-run",
+      "accepted-cli-snapshot-is-not-durable-validity",
+    ],
+    runs: [],
+    status: "pending",
+  });
 
   expect(
     promotionResultsSchema.safeParse({

@@ -118,6 +118,9 @@ const recordedResultsSchema = z
       z.literal("no-mutation-manifest-or-approval-produced"),
       z.literal("no-control-surface-or-effective-oracle-selected"),
       z.literal("claude-codex-and-cursor-consume-no-new-rule"),
+      z.literal(
+        "future-conditional-skill-is-registry-only-through-user-skills",
+      ),
       z.literal("controlled-marginal-ablation-not-run"),
       z.literal("accepted-cli-snapshot-is-not-durable-validity"),
     ]),
