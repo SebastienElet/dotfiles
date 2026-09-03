@@ -7,7 +7,6 @@ import {
   type InvariantRegistry,
   parseInvariantRegistry,
 } from "./invariant-registry-contract.ts";
-import { promotionResultsSchema } from "./harness-reflection-promotion-results.ts";
 import { resolveSupportedTarget } from "./harness-reflection-mutation-surfaces.ts";
 import { validateApprovedFileRequest } from "./harness-reflection-mutation-authorization.ts";
 import { validateTransition } from "./harness-reflection-mutation-transition.ts";
@@ -60,59 +59,33 @@ const exactCandidateText = (transition: MutationTransition): string => {
   return text;
 };
 
-const validateEvaluationReset = (
-  files: readonly ApprovedFile[],
-  path: string | undefined,
+const validateConditionalSkillChange = (
+  surfaces: readonly ApprovedFile[],
+  transition: MutationTransition,
+  candidateText: string,
 ): void => {
-  if (path === undefined) {
-    if (files.length > 0) {
-      throw new Error("approved-surface-required");
-    }
-    return;
+  if (surfaces.length > 0) {
+    throw new Error("conditional-skill-registry-only");
   }
-  const [file] = files;
-  let replacement: unknown = undefined;
-  try {
-    replacement = file === undefined ? undefined : JSON.parse(file.replacement);
-  } catch {
-    throw new Error("skill-evaluation-reset-required");
-  }
-  const parsed = promotionResultsSchema.safeParse(replacement);
-  if (
-    files.length !== 1 ||
-    file?.path !== path ||
-    file.preimage === null ||
-    !parsed.success ||
-    parsed.data.status !== "pending"
-  ) {
-    throw new Error("skill-evaluation-reset-required");
+  if (transition.target.statement !== candidateText) {
+    throw new Error("conditional-skill-statement-mismatch");
   }
 };
 
-const validateSurfaceChange = (
-  input: HarnessMutationRequest,
+const validateFileSurfaceChange = (
+  surfaces: readonly ApprovedFile[],
   transition: MutationTransition,
+  candidateText: string,
 ): void => {
-  const surfaces = input.approval?.manifest.files.filter(
-    ({ path }) => path !== registryPath,
-  );
-  if (transition.kind === "link") {
-    if (surfaces?.length !== 0) {
-      throw new Error("link-surface-forbidden");
-    }
-    return;
-  }
   const target = resolveSupportedTarget(transition.target);
-  const targetSurfaces = surfaces?.filter(({ path }) => path === target.path);
-  const [surface] = targetSurfaces ?? [];
-  if (targetSurfaces?.length !== 1 || surface === undefined) {
+  const targetSurfaces = surfaces.filter(({ path }) => path === target.path);
+  const [surface] = targetSurfaces;
+  if (targetSurfaces.length !== 1 || surface === undefined) {
     throw new Error("unsupported-control-surface");
   }
-  validateEvaluationReset(
-    surfaces?.filter(({ path }) => path !== target.path) ?? [],
-    target.evaluationResetPath,
-  );
-  const candidateText = exactCandidateText(transition);
+  if (surfaces.length !== 1) {
+    throw new Error("approved-surface-required");
+  }
   const preimageHasText = surface.preimage?.includes(candidateText) ?? false;
   const replacementHasText = surface.replacement.includes(candidateText);
   if (
@@ -127,6 +100,28 @@ const validateSurfaceChange = (
   ) {
     throw new Error("retirement-candidate-text-not-removed");
   }
+};
+
+const validateSurfaceChange = (
+  input: HarnessMutationRequest,
+  transition: MutationTransition,
+): void => {
+  const surfaces =
+    input.approval?.manifest.files.filter(
+      ({ path }) => path !== registryPath,
+    ) ?? [];
+  if (transition.kind === "link") {
+    if (surfaces.length > 0) {
+      throw new Error("link-surface-forbidden");
+    }
+    return;
+  }
+  const candidateText = exactCandidateText(transition);
+  if (transition.target.surface === "conditional-skill") {
+    validateConditionalSkillChange(surfaces, transition, candidateText);
+    return;
+  }
+  validateFileSurfaceChange(surfaces, transition, candidateText);
 };
 
 const validateApprovedHarnessMutation = (

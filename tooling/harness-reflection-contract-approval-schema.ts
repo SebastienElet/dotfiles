@@ -63,12 +63,25 @@ const mutationTargetsSchema = z
     conditionalSkill: z
       .object({
         surface: z.literal("conditional-skill"),
-        path: z.literal("harness/skills/harness-reflection/SKILL.md"),
+        path: z.literal("harness/invariants/registry.json"),
         consumers: z
           .object({
             claude: z.literal("claude-user-skill"),
             codex: z.literal("codex-user-skill"),
             cursor: z.literal("cursor-user-skill"),
+          })
+          .strict(),
+      })
+      .strict(),
+    projectLocalContract: z
+      .object({
+        surface: z.literal("project-local-contract"),
+        path: z.literal("AGENTS.md"),
+        consumers: z
+          .object({
+            claude: z.literal("unsupported"),
+            codex: z.literal("unsupported"),
+            cursor: z.literal("unsupported"),
           })
           .strict(),
       })

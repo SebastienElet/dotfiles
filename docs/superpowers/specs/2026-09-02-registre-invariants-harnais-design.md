@@ -38,10 +38,9 @@ un agent de promouvoir seul une préférence isolée ni étendre la topologie g�
 - Le champ `approval` consigne une attestation transmise après l’approbation fournie dans le contexte
   humain. Ni le registre, ni la CLI, ni l’entrée du workflow n’authentifient son origine ou l’identité
   de `approvedBy`, et ce champ n’est pas une preuve autonome. Le skill interdit procéduralement à
-  l’agent de fabriquer cette attestation. L’artefact courant consigne trois replays du seul scénario
-  `skip` sans preuve concrète, sur la source `442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, sous les
-  labels `behavior_eval_16` à `behavior_eval_18`. Il ne prouve aucun chemin de mutation. Un futur
-  changement du digest skill/référence remet cet artefact à `pending` avec `runs: []` avant replay.
+  l’agent de fabriquer cette attestation. Le changement du routeur et de sa référence a remis
+  l’artefact comportemental à `pending` avec `runs: []`. Il ne prouve donc actuellement aucun chemin
+  comportemental ; les replays antérieurs ne se transfèrent pas au nouveau digest.
 - Git conserve l’historique et la revue des mutations. Arnes continue seulement à distribuer le
   skill existant ; son manifeste et ses adaptateurs ne sont pas étendus.
 
@@ -99,7 +98,8 @@ parsing Zod, les règles sémantiques refusent notamment :
 - un invariant `retired` sans raison et date, une retraite sur un autre cycle de vie, ou un graphe
   de remplacement cyclique ou à cible inconnue ;
 - une déclaration de consommation qui omet un des trois agents ou présente un comportement non
-  supporté comme supporté.
+  supporté comme supporté ;
+- un `conditional-skill` actif dont `candidateTextExact` diffère de son `statement` canonique.
 
 Un candidat peut rester incomplet tant que ses inconnues sont explicites. Le seuil de deux PR ou de
 sévérité forte autorise la proposition de promotion ; il ne remplace ni l’approbation fournie par
@@ -114,28 +114,34 @@ approbation.
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
 3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ; pour un
    lien, l’état courant et l’état proposé contiennent chacun exactement une occurrence cible ;
-4. prépare en session la surface et le registre, capture leurs préimages et construit un manifeste
-   fermé qui contient les chemins cibles exacts, chaque contenu initial et remplacement exact, et le
-   delta avant/après du seul invariant ciblé ; le type de mutation est dérivé de cette transition ;
+4. prépare en session le registre et, pour une surface fichier, cette surface ; il capture leurs
+   préimages et construit un manifeste fermé qui contient les chemins cibles exacts, chaque contenu
+   initial et remplacement exact, et le delta avant/après du seul invariant ciblé ; le type de
+   mutation est dérivé de cette transition ;
 5. présente ce manifeste au contexte humain avant l’approbation, sans prétendre authentifier la
    personne, puis transmet à l’API la requête structurée et l’attestation inchangées ; le code en
    vérifie la cohérence exacte sans pouvoir distinguer une origine humaine d’une fabrication ;
-6. route la surface approuvée vers son outil propriétaire obligatoire : `skill-manager` pour un skill,
-   `agent-instructions` pour une instruction, et la frontière scripts/enforcement pour un contrôle
-   exécutoire ; une modification du skill inclut dans le manifeste la remise à `pending` de son
-   artefact d’évaluation, puis les contrats propriétaires vérifient le nouveau digest ; le moteur du
-   registre ne fournit aucune API d’écriture arbitraire de ces surfaces ;
-7. exécute le doctor ou le contrat de l’outil propriétaire, puis vérifie en lecture seule que la
+6. pour `conditional-skill`, conserve `SKILL.md` comme routeur fermé et immuable : son invocation lit
+   directement les enregistrements actifs de cette surface dans le registre et utilise leur
+   `statement` comme texte conditionnel exact, sans le dupliquer dans le skill ; le manifeste est
+   donc registry-only ;
+7. pour une surface fichier, route la mutation approuvée vers son outil propriétaire obligatoire :
+   `agent-instructions` pour `harness/AGENTS.md` ou le contrat local exact `AGENTS.md`, et la frontière
+   scripts/enforcement pour un contrôle exécutoire ; une modification réelle du routeur reste une
+   modification de skill distincte, possédée par `skill-manager`, et invalide son artefact
+   comportemental ; le moteur du registre ne fournit aucune API d’écriture arbitraire ;
+8. exécute le doctor ou le contrat de l’outil propriétaire, puis vérifie en lecture seule que la
    surface appliquée est exactement le remplacement approuvé et que le registre courant reste sa
    préimage approuvée ; il refuse tout autre chemin, préimage, remplacement ou delta d’invariant ;
-8. écrit alors uniquement le remplacement approuvé de `harness/invariants/registry.json`, puis lance
+9. écrit alors uniquement le remplacement approuvé de `harness/invariants/registry.json`, puis lance
    la CLI sur le registre résultant ; Git porte la revue et la récupération d’une interruption ;
-9. exige le test du chemin d’échec avant tout contrôle exécutoire ;
-10. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
-11. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
+10. exige le test du chemin d’échec avant tout contrôle exécutoire ;
+11. ne passe à `verified` qu’avec une exécution verte nommée et son environnement ;
+12. retire un invariant seulement si tous ses champs historiques restent identiques, dont les sources
     et exceptions ; seuls `approval`, `lifecycle` et `retirement` peuvent changer, la nouvelle
     attestation devant correspondre exactement au registre et au manifeste ; l’outil propriétaire
-    retire d’abord le texte exact de la surface, son doctor passe, puis le registre est mis à jour.
+    retire d’abord le texte exact d’une surface fichier, tandis qu’un `conditional-skill` est retiré
+    uniquement dans le registre, puis le registre est mis à jour.
 
 Le validateur borné de transition accepte un lien seulement de `candidate` vers `candidate` ou
 d’`active` vers `active`. Les sources canoniques existantes restent dans leur ordre, au moins une
@@ -150,8 +156,10 @@ préimage et le remplacement approuvés, les validations bornées et le diff Git
 détecter et de le réconcilier, sans promettre une récupération automatique.
 
 La recherche préalable et l’unicité des sources empêchent une répétition de créer silencieusement
-un second invariant. Les changements de skills et d’instructions continuent d’être routés vers
-`skill-manager` et `agent-instructions`.
+un second invariant. Le hash byte-exact du petit routeur est vérifié dans son contrat local afin que
+toute prose contradictoire échoue ; il ne devient pas un hash global des jobs CI. Les changements
+réels de skills et d’instructions continuent d’être routés vers `skill-manager` et
+`agent-instructions`.
 
 ## Entrée et erreurs
 
@@ -198,10 +206,8 @@ Une fixture locale distincte, marquée `synthetic-local-not-historical`, porte l
 synthétiques nécessaires à l’oracle d’intégration. Elle traverse proposition, manifeste, application
 de fixture, validation, inscription, CLI et oracle, puis la retraite. Elle ne présente pas ses URL
 `example` comme des preuves historiques et ne simule aucune authentification humaine. L’artefact
-agent actuellement `recorded` ne couvre que `skip-missing-evidence` ; ses trois runs source
-`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, labels `behavior_eval_16` à `behavior_eval_18`, ne
-prouvent ni `link`, ni proposition, approbation, promotion, retraite ou ablation. Dans un état futur
-`pending` avec `runs: []`, il ne prouverait aucun comportement courant.
+agent actuel est `pending` avec `runs: []` après le changement du routeur et ne prouve aucun
+comportement courant. Les replays du digest antérieur ne sont pas attribués à cet artefact.
 
 Les gates attendues sont `bun test`, `tsc --noEmit`, le lint et le formatage TypeScript, le contrôle
 statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. La
@@ -232,14 +238,16 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - L’approbation enregistrée est une attestation non authentifiée ; le manifeste exact est présenté
   au contexte humain avant cette entrée, et la requête, les préimages, remplacements et le seul delta
   d’invariant ciblé doivent lui correspondre. L’interdiction d’auto-assertion est procédurale dans le
-  skill. Les replays enregistrés couvrent seulement le refus par `skip` lorsque la preuve manque ;
-  les autres branches restent explicitement non couvertes.
+  skill. L’artefact comportemental est `pending` avec `runs: []` après changement du routeur ; aucun
+  chemin comportemental courant n’est présenté comme couvert.
 - Une surface est appliquée uniquement via son outil propriétaire, puis son doctor ou contrat passe
   avant l’écriture bornée du registre ; aucune API de production ne remplace arbitrairement une
   surface et aucune transaction multi-fichier n’est promise.
-- La promotion ajoute et la retraite retire réellement `candidateTextExact` ; une préimage égale au
-  remplacement est refusée. Ces critères et le doctor propriétaire bornent la preuve sans prétendre
-  décider la sémantique générale du texte.
+- Pour une surface fichier, la promotion ajoute et la retraite retire réellement
+  `candidateTextExact`. Pour `conditional-skill`, ce texte égale exactement `statement` dans le
+  registre et la retraite du record suffit ; `SKILL.md` ne change jamais pour porter le candidat.
+  Une préimage égale au remplacement est refusée. Ces critères et le doctor propriétaire bornent la
+  preuve sans prétendre décider la sémantique générale du texte.
 - Pour un enregistrement `verified` dont la dernière mesure déclare une invocation, la CLI exécute
   réellement cette invocation et échoue avec elle ; le parseur bibliothèque ne l’exécute pas.
 - Claude, Codex et Cursor sont déclarés séparément avec un mécanisme fermé compatible avec la surface,

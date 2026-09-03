@@ -1,3 +1,9 @@
+import { candidate, registry } from "./invariant-registry-test-support.ts";
+import {
+  consumerSurfaceDiagnostics,
+  resolveSupportedTarget,
+  surfaceRoutes,
+} from "./harness-reflection-mutation-surfaces.ts";
 import { expect, test } from "bun:test";
 import {
   loadHarnessReflectionSources,
@@ -5,10 +11,11 @@ import {
 } from "./harness-reflection-contract.ts";
 import { invariantSurfaces } from "./invariant-registry-schema.ts";
 import { resolve } from "node:path";
-import { surfaceRoutes } from "./harness-reflection-mutation-surfaces.ts";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 type Contract = ReturnType<typeof parseHarnessReflectionContract>;
+type Surface = keyof typeof surfaceRoutes;
+type RouteOwners = (typeof surfaceRoutes)[Surface]["owners"];
 const expectedSurfaceOwners: Contract["surfaceOwners"] = {
   "always-loaded-instruction": {
     owner: "agent-instructions",
@@ -16,9 +23,14 @@ const expectedSurfaceOwners: Contract["surfaceOwners"] = {
     verification: "agent-instructions-contracts",
   },
   "conditional-skill": {
-    owner: "skill-manager",
-    path: "harness/skills/harness-reflection/SKILL.md",
-    verification: "skill-manager-doctor-and-contracts",
+    owner: "harness-reflection",
+    path: "harness/invariants/registry.json",
+    verification: "registry-cli-and-declared-oracles",
+  },
+  "project-local-contract": {
+    owner: "agent-instructions",
+    path: "AGENTS.md",
+    verification: "agent-instructions-contracts",
   },
 };
 const expectedExternalRoutes: Contract["externalControlRoutes"] = {
@@ -35,7 +47,7 @@ const expectedExternalRoutes: Contract["externalControlRoutes"] = {
 };
 const expectedChangeOrder: Contract["approvedChangeOrder"] = {
   registryOnly: [
-    "prepare-link-proposal",
+    "prepare-registry-only-proposal",
     "prepare-exact-registry-diff",
     "present-exact-manifest-for-contextual-human-approval",
     "validate-approved-manifest",
@@ -45,7 +57,7 @@ const expectedChangeOrder: Contract["approvedChangeOrder"] = {
   ],
   surfaceAndRegistry: [
     "select-and-propose-control-surface",
-    "prepare-exact-surface-and-registry-diff",
+    "prepare-route-specific-exact-manifest",
     "present-exact-manifest-for-contextual-human-approval",
     "apply-surface-with-required-owner",
     "run-required-owner-doctor-and-contracts",
@@ -111,4 +123,68 @@ test("routes every registry surface to at least one real owner", () => {
   expect(surfaceRoutes["project-local-contract"].owners).toEqual([
     "agent-instructions",
   ]);
+});
+
+test("keeps every schema surface aligned across contract and route catalog", async () => {
+  const sources = await loadHarnessReflectionSources(repositoryRoot);
+  const contract = parseHarnessReflectionContract(sources.reference);
+  const contractOwners: Readonly<Partial<Record<Surface, RouteOwners>>> = {
+    "always-loaded-instruction": [
+      contract.surfaceOwners["always-loaded-instruction"].owner,
+    ],
+    "architectural-test":
+      contract.externalControlRoutes.surfaces["architectural-test"],
+    "conditional-skill": [contract.surfaceOwners["conditional-skill"].owner],
+    hook: contract.externalControlRoutes.surfaces.hook,
+    lint: contract.externalControlRoutes.surfaces.lint,
+    permission: contract.externalControlRoutes.surfaces.permission,
+    "project-local-contract": [
+      contract.surfaceOwners["project-local-contract"].owner,
+    ],
+    type: contract.externalControlRoutes.surfaces.type,
+  };
+  const missing = invariantSurfaces.filter(
+    (surface) => contractOwners[surface] === undefined,
+  );
+
+  expect(missing).toEqual([]);
+  for (const surface of invariantSurfaces) {
+    const owners = contractOwners[surface];
+    if (owners === undefined) {
+      throw new Error(`missing-owner-route:${surface}`);
+    }
+    expect(surfaceRoutes[surface].owners).toEqual(owners);
+  }
+});
+
+test("resolves the exact project-local instruction target", () => {
+  const [record] = registry(
+    candidate({
+      consumers: {
+        claude: {
+          reason: "No declared project adapter.",
+          state: "unsupported",
+        },
+        codex: {
+          reason: "No declared project adapter.",
+          state: "unsupported",
+        },
+        cursor: {
+          reason: "No declared project adapter.",
+          state: "unsupported",
+        },
+      },
+      surface: "project-local-contract",
+    }),
+  ).invariants;
+  if (record === undefined) {
+    throw new Error("project-local-record-missing");
+  }
+
+  expect(consumerSurfaceDiagnostics(record, "invariants.0")).toEqual([]);
+  expect(resolveSupportedTarget(record)).toEqual({
+    consumers: {},
+    owner: "agent-instructions",
+    path: "AGENTS.md",
+  });
 });

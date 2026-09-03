@@ -34,13 +34,13 @@
   "decisionBranches": {
     "skip": ["render-report"],
     "link": [
-      "prepare-link-proposal",
+      "prepare-registry-only-proposal",
       "prepare-exact-registry-diff",
       "await-exact-manifest-approval"
     ],
     "propose": [
       "select-and-propose-control-surface",
-      "prepare-exact-surface-and-registry-diff",
+      "prepare-route-specific-exact-manifest",
       "await-exact-manifest-approval"
     ]
   },
@@ -59,7 +59,7 @@
   },
   "approvedChangeOrder": {
     "registryOnly": [
-      "prepare-link-proposal",
+      "prepare-registry-only-proposal",
       "prepare-exact-registry-diff",
       "present-exact-manifest-for-contextual-human-approval",
       "validate-approved-manifest",
@@ -69,7 +69,7 @@
     ],
     "surfaceAndRegistry": [
       "select-and-propose-control-surface",
-      "prepare-exact-surface-and-registry-diff",
+      "prepare-route-specific-exact-manifest",
       "present-exact-manifest-for-contextual-human-approval",
       "apply-surface-with-required-owner",
       "run-required-owner-doctor-and-contracts",
@@ -86,9 +86,14 @@
       "verification": "agent-instructions-contracts"
     },
     "conditional-skill": {
-      "owner": "skill-manager",
-      "path": "harness/skills/harness-reflection/SKILL.md",
-      "verification": "skill-manager-doctor-and-contracts"
+      "owner": "harness-reflection",
+      "path": "harness/invariants/registry.json",
+      "verification": "registry-cli-and-declared-oracles"
+    },
+    "project-local-contract": {
+      "owner": "agent-instructions",
+      "path": "AGENTS.md",
+      "verification": "agent-instructions-contracts"
     }
   },
   "externalControlRoutes": {
@@ -103,11 +108,17 @@
     }
   },
   "manifestValidation": {
-    "appliesTo": ["always-loaded-instruction", "conditional-skill"],
+    "appliesTo": [
+      "always-loaded-instruction",
+      "conditional-skill",
+      "project-local-contract"
+    ],
     "behavior": "read-only-no-file-writes",
-    "candidateTextRule": "exactly-added-for-promotion-and-removed-for-retirement",
+    "candidateTextRule": "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
+    "fileSurfaces": ["always-loaded-instruction", "project-local-contract"],
     "noOpRule": "every-approved-replacement-differs-from-preimage",
-    "semanticClaim": "exact-text-presence-and-absence-plus-owner-doctor-only",
+    "registrySurfaces": ["conditional-skill"],
+    "semanticClaim": "exact-file-text-or-registry-statement-plus-owner-doctor-only",
     "transitionKind": "derived-from-before-and-after"
   },
   "registry": {
@@ -199,11 +210,20 @@
       },
       "conditionalSkill": {
         "surface": "conditional-skill",
-        "path": "harness/skills/harness-reflection/SKILL.md",
+        "path": "harness/invariants/registry.json",
         "consumers": {
           "claude": "claude-user-skill",
           "codex": "codex-user-skill",
           "cursor": "cursor-user-skill"
+        }
+      },
+      "projectLocalContract": {
+        "surface": "project-local-contract",
+        "path": "AGENTS.md",
+        "consumers": {
+          "claude": "unsupported",
+          "codex": "unsupported",
+          "cursor": "unsupported"
         }
       }
     }
@@ -231,7 +251,7 @@
     "historicalFields": "unchanged-except-approval-lifecycle-and-retirement",
     "optionalFields": ["replacedBy"],
     "requiredFields": ["retiredAt", "reason"],
-    "surfaceText": "exact-candidate-text-removed-by-required-owner"
+    "surfaceText": "file-surface-text-removed-or-registry-surface-retired"
   },
   "proposal": {
     "requiredFields": [

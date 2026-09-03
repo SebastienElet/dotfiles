@@ -14,7 +14,6 @@ const resultsPath = resolve(
 const sha256HexLength = 64;
 const sha1HexLength = 40;
 const expectedReplayRuns = 3;
-const evaluatedCommit = "442f7dffa35cfbf03ffec7405b5630ef6a6a5186";
 const firstReplayRun = 1;
 const secondReplayRun = 2;
 const replayRunNumbers = [
@@ -30,39 +29,23 @@ const passingCriteria = {
   "report-rendered": true,
 } as const;
 
-test("records the three exact post-adjudication workflow runs", async () => {
+test("keeps behavior evidence pending after the router contract changes", async () => {
   const results = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
 
-  expect(results.status).toBe("recorded");
-  expect(
-    results.runs.map(({ agent, baseCommit, label }) => ({
-      agent,
-      baseCommit,
-      label,
-    })),
-  ).toEqual([
-    {
-      agent: "/root/behavior_eval_13",
-      baseCommit: evaluatedCommit,
-      label: "behavior_eval_16",
-    },
-    {
-      agent: "/root/behavior_eval_14",
-      baseCommit: evaluatedCommit,
-      label: "behavior_eval_17",
-    },
-    {
-      agent: "/root/repo_readiness",
-      baseCommit: evaluatedCommit,
-      label: "behavior_eval_18",
-    },
+  expect(results.status).toBe("pending");
+  expect(results.runs).toEqual([]);
+  expect(results.branchCoverage.covered).toEqual([]);
+  expect(results.branchCoverage.notCovered).toEqual([
+    "skip-missing-evidence",
+    "link",
+    "propose",
+    "approval",
+    "retirement",
+    "promotion",
+    "adr036-ablation",
   ]);
-  expect(
-    results.runs.every((run) => Object.values(run.criteria).every(Boolean)),
-  ).toBeTrue();
-  expect(results.branchCoverage.covered).toEqual(["skip-missing-evidence"]);
   expect(results.promotionEvidence).toBe(false);
   expect(results.adr036Ablation).toBe("not-run");
   expect(results.artifact.skillReference).toHaveLength(sha256HexLength);
@@ -128,7 +111,7 @@ test.each([
     "weakened criteria",
     { criteria: { expectedRuns: expectedReplayRuns, requiredPerRun: [] } },
   ],
-  ["pending with replay runs", { status: "pending" }],
+  ["recorded without replay runs", { status: "recorded" }],
   ["top-level run provenance", { baseCommit: "untrusted" }],
   ["top-level covered path", { coveredPath: "skip-missing-evidence" }],
 ] as const)("rejects promotion results with %s", async (_name, patch) => {
@@ -145,28 +128,9 @@ test.each([
 });
 
 test("rejects pending results with runs or claimed branch coverage", async () => {
-  const recorded = promotionResultsSchema.parse(
+  const results = promotionResultsSchema.parse(
     await Bun.file(resultsPath).json(),
   );
-  const results = promotionResultsSchema.parse({
-    ...recorded,
-    status: "pending",
-    branchCoverage: {
-      covered: [],
-      notCovered: [
-        "skip-missing-evidence",
-        ...recorded.branchCoverage.notCovered,
-      ],
-    },
-    limitations: [
-      "current-artifact-not-replayed",
-      "no-current-behavioral-evidence",
-      "link-propose-approval-retirement-and-promotion-not-exercised",
-      "controlled-marginal-ablation-not-run",
-      "accepted-cli-snapshot-is-not-durable-validity",
-    ],
-    runs: [],
-  });
 
   expect(
     promotionResultsSchema.safeParse({

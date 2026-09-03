@@ -27,13 +27,13 @@ test("orders proposal and exact approval before owner application", async () => 
 
   expect(contract.decisionBranches).toEqual({
     link: [
-      "prepare-link-proposal",
+      "prepare-registry-only-proposal",
       "prepare-exact-registry-diff",
       "await-exact-manifest-approval",
     ],
     propose: [
       "select-and-propose-control-surface",
-      "prepare-exact-surface-and-registry-diff",
+      "prepare-route-specific-exact-manifest",
       "await-exact-manifest-approval",
     ],
     skip: ["render-report"],
@@ -54,11 +54,19 @@ test("limits manifest validation to exact text and owner doctors", async () => {
   const contract = parseHarnessReflectionContract(sources.reference);
 
   expect(contract.manifestValidation).toEqual({
-    appliesTo: ["always-loaded-instruction", "conditional-skill"],
+    appliesTo: [
+      "always-loaded-instruction",
+      "conditional-skill",
+      "project-local-contract",
+    ],
     behavior: "read-only-no-file-writes",
-    candidateTextRule: "exactly-added-for-promotion-and-removed-for-retirement",
+    candidateTextRule:
+      "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
+    fileSurfaces: ["always-loaded-instruction", "project-local-contract"],
     noOpRule: "every-approved-replacement-differs-from-preimage",
-    semanticClaim: "exact-text-presence-and-absence-plus-owner-doctor-only",
+    registrySurfaces: ["conditional-skill"],
+    semanticClaim:
+      "exact-file-text-or-registry-statement-plus-owner-doctor-only",
     transitionKind: "derived-from-before-and-after",
   });
   expect(contract.retirement).toEqual({
@@ -66,7 +74,7 @@ test("limits manifest validation to exact text and owner doctors", async () => {
     historicalFields: "unchanged-except-approval-lifecycle-and-retirement",
     optionalFields: ["replacedBy"],
     requiredFields: ["retiredAt", "reason"],
-    surfaceText: "exact-candidate-text-removed-by-required-owner",
+    surfaceText: "file-surface-text-removed-or-registry-surface-retired",
   });
 });
 
@@ -95,6 +103,12 @@ test.each([
   {
     key: "always-loaded-instruction",
     name: "missing instruction owner",
+    path: ["surfaceOwners"],
+    value: undefined,
+  },
+  {
+    key: "project-local-contract",
+    name: "missing project-local owner",
     path: ["surfaceOwners"],
     value: undefined,
   },

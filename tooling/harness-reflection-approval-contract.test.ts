@@ -84,8 +84,17 @@ test("binds mutable surfaces to exact paths and consumer adapters", async () => 
           codex: "codex-user-skill",
           cursor: "cursor-user-skill",
         },
-        path: "harness/skills/harness-reflection/SKILL.md",
+        path: "harness/invariants/registry.json",
         surface: "conditional-skill",
+      },
+      projectLocalContract: {
+        consumers: {
+          claude: "unsupported",
+          codex: "unsupported",
+          cursor: "unsupported",
+        },
+        path: "AGENTS.md",
+        surface: "project-local-contract",
       },
     },
     required: ["claude", "codex", "cursor"],

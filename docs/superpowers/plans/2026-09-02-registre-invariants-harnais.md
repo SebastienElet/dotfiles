@@ -30,8 +30,11 @@
 - Un lien exige exactement une cible dans l’état avant et après, conserve tous les champs métier et
   les sources existantes, puis ajoute au moins une source canonique distincte. La nouvelle attestation
   exacte est son seul autre delta admis.
-- Une mutation de `conditional-skill` inclut la remise à `pending`, avec `runs: []`, de l’artefact
-  d’évaluation lié au digest avant que les contrats de `skill-manager` ne passent.
+- `conditional-skill` est registry-only : le routeur fermé lit directement les records actifs et
+  utilise leur `statement` comme texte conditionnel exact sans modifier `SKILL.md`. Une modification
+  du routeur lui-même reste possédée par `skill-manager` et remet son artefact à `pending`.
+- `project-local-contract` cible exactement `AGENTS.md` via `agent-instructions` ; ses trois mécanismes
+  consommateurs restent déclarés `unsupported` tant qu’aucun adaptateur distinct n’existe.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.
@@ -377,9 +380,11 @@ Sinon :
    manifeste exact et le présenter au contexte humain avant l’entrée d’approbation ;
 6. après cette attestation non authentifiée, exiger l’égalité de la requête avec le manifeste et
    dériver le type de mutation de la transition de cycle de vie ;
-7. router l’application vers `skill-manager`, `agent-instructions` ou scripts/enforcement selon la
-   surface, puis exécuter le doctor ou contrat propriétaire ;
-8. vérifier en lecture seule le remplacement exact de la surface et la préimage du registre, écrire
+7. pour `conditional-skill`, ne préparer que le record registry dont `statement` égale
+   `candidateTextExact`, sans mutation ni reset-eval compagnon de `SKILL.md` ; pour une surface
+   fichier, router l’application vers `agent-instructions` ou scripts/enforcement, puis exécuter le
+   doctor ou contrat propriétaire ;
+8. vérifier en lecture seule le remplacement exact de toute surface fichier et la préimage du registre, écrire
    uniquement le registre, puis exécuter sa CLI ;
 9. conserver les règles actuelles de trial et rollback sans revendiquer une transaction générique.
 
@@ -408,12 +413,9 @@ Expected: PASS.
 
 - [ ] **Step 7: Faire rejouer les scénarios comportementaux par le contrôleur**
 
-Le contrôleur a enregistré trois replays de `skip-missing-evidence` depuis la source
-`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, sous les labels `behavior_eval_16`,
-`behavior_eval_17` et `behavior_eval_18`. Chaque run consulte le registre et refuse la mutation sans
-preuve concrète. L’artefact ne couvre ni lien, proposition, approbation, promotion, retraite ou
-ablation. Tout futur changement du digest skill/référence exige de le remettre à `pending`, avec
-`runs: []`, puis de rejouer le prompt exact ; aucune couverture antérieure ne se transfère.
+Le changement final du routeur et de la référence remet l’artefact à `pending`, avec `runs: []` et
+aucune branche couverte. Un replay futur devra partir du nouveau digest et exécuter le prompt exact ;
+aucune couverture antérieure ne se transfère.
 
 - [ ] **Step 8: Exécuter doctor et sync-index**
 

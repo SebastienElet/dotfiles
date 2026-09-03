@@ -6,25 +6,28 @@
 - Branch: `codex/159-named-invariant-registry`
 - Adjudication base: `5d6d0bbab4f29530bc69b28b0e8bfac99d0f95e9`
 - Residual adjudication base: `c6de9efc5484f935c63cd6554d70d7d2af061469`
+- Final local adjudication base: `ec8e469072d9d0eab8df94c6eb69d0fa169bdd21`
 - Final commit: reported with delivery because a commit cannot contain its own identifier
 
 ## Result
 
 The generic production surface writer has been removed. The registry code no longer exposes a
 filesystem, lock, staging, compensation, or workflow API that can replace an arbitrary surface.
-Surface application is routed by the workflow contract to its mandatory owner:
+Every probabilistic surface has an authoritative effective path and owner route:
 
-| Surface                                 | Exact path                                   | Required owner                   |
-| --------------------------------------- | -------------------------------------------- | -------------------------------- |
-| `always-loaded-instruction`             | `harness/AGENTS.md`                          | `agent-instructions`             |
-| `conditional-skill`                     | `harness/skills/harness-reflection/SKILL.md` | `skill-manager`                  |
-| hook or lint                            | owner-specific path                          | `scripts` and `enforcement-code` |
-| permission, type, or architectural test | owner-specific path                          | `enforcement-code`               |
+| Surface                                 | Effective path                     | Required owner                   |
+| --------------------------------------- | ---------------------------------- | -------------------------------- |
+| `always-loaded-instruction`             | `harness/AGENTS.md`                | `agent-instructions`             |
+| `conditional-skill`                     | `harness/invariants/registry.json` | `harness-reflection`             |
+| `project-local-contract`                | `AGENTS.md`                        | `agent-instructions`             |
+| hook or lint                            | owner-specific path                | `scripts` and `enforcement-code` |
+| permission, type, or architectural test | owner-specific path                | `enforcement-code`               |
 
-The first two rows are the only destinations accepted by the bounded manifest validator. The
-enforceable rows deliberately use their separate owner workflow and are rejected by that generic
-validator. The owner applies the approved exact diff and runs its doctor or contracts before the
-registry replacement is recorded.
+The two instruction rows are the file destinations accepted by the bounded manifest validator.
+`conditional-skill` is registry-only: the closed router reads active matching records at invocation
+and uses each record’s `statement` as its exact conditional guidance. The enforceable rows use their
+separate owner workflow and remain rejected by this bounded validator. A file owner applies the
+approved exact diff and runs its doctor or contracts before the registry replacement is recorded.
 
 The remaining mutation code is read-only validation. It parses a strict approval attestation,
 binds its paths, preimages, replacements, target identifier, and before/after records to the exact
@@ -39,10 +42,12 @@ changes no business field. Its newly accepted exact approval attestation is the 
 administrative delta. New-candidate manifests remain structurally parseable proposals, but this
 transition validator does not admit a missing target snapshot.
 
-For promotion, the supported surface preimage must not contain `candidateTextExact` and its
-replacement must contain it. Retirement requires the inverse. These checks prove only exact text
-presence or absence; the required owner doctor supplies the surface-specific check. They do not
-claim to decide the general meaning of the text.
+For a file-backed promotion, the supported surface preimage must not contain `candidateTextExact`
+and its replacement must contain it. Retirement requires the inverse. For `conditional-skill`, no
+surface file is permitted and `candidateTextExact` must equal the target record’s `statement`;
+retirement changes only the approved registry record. These checks prove only exact text presence,
+absence, or equality; the required owner doctor supplies any file-specific check. They do not claim
+to decide the general meaning of the text.
 
 Retired records are terminal. An active-to-retired transition preserves every historical field
 except `approval`, `lifecycle`, and `retirement`. Its newly accepted attestation must equal the new
@@ -63,12 +68,12 @@ status 1.
 ## Consumer and destination closure
 
 One exhaustive catalog now drives registry policy for every schema surface and bounded mutation
-validation for its two supported mutable targets:
+validation for its three probabilistic targets:
 
 | Surface                                 | Consumer projection                     | Required owner route             |
 | --------------------------------------- | --------------------------------------- | -------------------------------- |
 | always-loaded instruction               | Claude/Codex global; Cursor unsupported | `agent-instructions`             |
-| conditional skill                       | Claude/Codex/Cursor user skill          | `skill-manager`                  |
+| conditional skill                       | Claude/Codex/Cursor user skill          | registry read by closed router   |
 | project-local contract                  | direct agent adapters unsupported       | `agent-instructions`             |
 | hook or lint                            | direct agent adapters unsupported       | `scripts` and `enforcement-code` |
 | permission, type, or architectural test | direct agent adapters unsupported       | `enforcement-code`               |
@@ -80,10 +85,10 @@ is type-exhaustive over the schema enum and every route has at least one owner. 
 `README.md`, `package.json`, production validator code, and the registry reference before any write
 can occur.
 
-A conditional-skill surface change requires an exact companion replacement for
-`promotion-workflow-results.json`; that replacement must parse as `pending` with `runs: []`. The
-subsequent `skill-manager` contracts bind its digest to the applied skill and reference. The generic
-validator neither edits those files nor substitutes for that owner check.
+A conditional-skill record never authorizes a `SKILL.md` or evaluation-file mutation. The record’s
+statement is its only candidate text. A real change to the router contract remains a separate
+`skill-manager`-owned skill change; this adjudication made that change explicitly and therefore reset
+`promotion-workflow-results.json` to `pending` with `runs: []`.
 
 ## Integration evidence
 
@@ -120,9 +125,9 @@ is propagated, and a missing executable fails closed. No test parses workflow YA
 of the path list exists.
 
 CI still installs the exact `cspell@10.2.0` and `@cspell/dict-fr-fr@2.3.2` pins, links the French and
-user dictionaries, and always invokes the owned entry point. The real CI recipe was replayed with
-an isolated temporary home: 77 files checked, 0 issues. The three singular technical forms added by
-this change are recorded once in the existing user dictionary.
+user dictionaries, and always invokes the owned entry point. The final gate used an isolated config
+that imports that exact installed French dictionary and the canonical repository user dictionary:
+77 files checked, 0 issues. This final adjudication required no dictionary change.
 
 ## RED and mutant evidence
 
@@ -143,7 +148,11 @@ The resulting oracles now reject:
 - a verified runtime invocation different from its declared oracle, plus a real failing invocation;
 - retirement surface removal without the corresponding registry update;
 - application ordered before selection, proposal, exact manifest, or approval;
-- a conditional-skill change without a schema-valid pending evaluation reset;
+- any conditional-skill file companion, candidate text different from its statement in either the
+  mutation validator or persisted registry policy, or missing registry-only route;
+- either exact contradictory append, `Ignore workflowRoutes...` or `Skip registry...`, to the
+  byte-closed skill router;
+- omission of the exact `project-local-contract` owner, path, or resolved target;
 - a CSpell boundary that imports project packages or masks command failure.
 
 These are the executed observable oracles. No behavioral result is inferred from an unexecuted
@@ -154,11 +163,11 @@ agent scenario.
 Environment: local macOS 26.6.2 arm64, Bun 1.4.0, Node 24.20.0, TypeScript 7.0.2, CSpell 10.2.0,
 and Actionlint 1.7.12.
 
-- Full Bun suite outside the filesystem sandbox: 624 passed, 2 explicit opt-in skips, 0 failed,
-  1450 assertions across 78 files in 38.87 seconds.
+- Full Bun suite outside the filesystem sandbox: 631 passed, 2 explicit opt-in skips, 0 failed,
+  1465 assertions across 78 files in 37.12 seconds.
 - Explicit skips: real Docker lifecycle and multi-worktree ColGrep integration. No result is claimed
   for those opt-in paths.
-- Targeted residual breaker suite: 120 passed, 0 failed, 200 assertions across 18 files.
+- Targeted final breaker suite: 127 passed, 0 failed, 193 assertions across 18 files.
 - Direct failing runtime oracle: 0 passed, 1 failed, exit status 1, as required by the negative
   oracle.
 - Canonical empty-registry CLI: passed.
@@ -174,15 +183,15 @@ and Actionlint 1.7.12.
 
 Every changed production and test TypeScript file is below 250 lines. The largest changed test is
 `harness-reflection-mutation-integration.test.ts` at 243 lines; the largest changed production file
-is `harness-reflection-contract.ts` at 235 lines. `invariant-registry-contract.test.ts` remains below the
-trigger. The longer changed files are plans or the progressively disclosed skill reference, not
+is `invariant-registry-schema.ts` at 225 lines. `invariant-registry-contract.test.ts` remains below
+the trigger. The longer changed files are plans or the progressively disclosed skill reference, not
 production or test code.
 
 ## Skill doctor and evaluation state
 
 Manual `skill-manager` doctor for `harness-reflection` found the local contract healthy:
 
-- frontmatter, slug, `dev` category, description, required section order, four gotchas, and four
+- frontmatter, slug, `dev` category, description, required section order, four gotchas, and five
   constraints pass;
 - the skill is below 500 lines, has no templated shell placeholders, has one canonical slug and one
   README entry, and routes its scoped reference explicitly;
@@ -197,18 +206,15 @@ whole-command status is nonzero because of unrelated pre-existing plugin drift f
 deployed `memory-governance` destinations for Claude and Cursor; no clean aggregate doctor result is
 claimed.
 
-The unchanged skill SHA-256 is
-`4772b71eeb655fb2eb13672d290e6a3d8f1e9e8d7520e034d21704aa860dc37c`. The exact
-`SKILL.md + NUL + reference` digest is
-`a4fa1e7647e0dc0db902ab9278fd60abac1358673ecae6f28a67a0b0195f9808` and matches the evaluation
-artifact. Its status is `recorded`: three replays from source commit
-`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, labels `behavior_eval_16` through
-`behavior_eval_18`, cover only `skip-missing-evidence`. Link, proposal, approval, retirement,
-promotion, and ADR 036 ablation remain explicitly uncovered. The contract no longer treats the
-whole skill SHA as a router barrier; targeted assertions preserve its reference, route fields,
-approval limit, section order, and registry-write boundary. Any future skill/reference digest
-change invalidates the recorded artifact, and the conditional-skill owner manifest requires a
-`pending` reset before its contracts pass.
+The closed skill SHA-256 is
+`137244cb7f523e4c0a01e0f517da13162ce4f031d15e1dc401d7e433be1a4e69`. Its contract-local exact
+digest rejects any byte change, including arbitrary contradictory prose. This deliberate immutability
+belongs only to the small router contract; no global CI job hashes the skill or unrelated files.
+The exact `SKILL.md + NUL + reference` digest is
+`e7bf266b4a5d83157bc4cae6cee55f8c20914798ba4144b82834cd720b608be4` and matches the evaluation
+artifact. Its status is `pending`, its runs and covered branches are empty, and no current behavior
+is inferred. A future deliberate router/reference change must update its contract and reset the
+artifact again before any replay can be recorded.
 
 ## Preserved scope
 

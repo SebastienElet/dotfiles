@@ -14,13 +14,12 @@ type TargetConsumers = Readonly<{
 type SurfaceOwner =
   | "agent-instructions"
   | "enforcement-code"
-  | "scripts"
-  | "skill-manager";
+  | "harness-reflection"
+  | "scripts";
 type SupportedTarget = Readonly<{
   consumers: TargetConsumers;
-  owner: Extract<SurfaceOwner, "agent-instructions" | "skill-manager">;
+  owner: Extract<SurfaceOwner, "agent-instructions">;
   path: string;
-  evaluationResetPath?: string;
 }>;
 type SurfaceRoute = Readonly<{
   consumers: TargetConsumers;
@@ -53,22 +52,16 @@ const surfaceRoutes: Readonly<
       codex: "codex-user-skill",
       cursor: "cursor-user-skill",
     },
-    owners: ["skill-manager"],
-    target: {
-      consumers: {
-        claude: "claude-user-skill",
-        codex: "codex-user-skill",
-        cursor: "cursor-user-skill",
-      },
-      evaluationResetPath:
-        "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
-      owner: "skill-manager",
-      path: "harness/skills/harness-reflection/SKILL.md",
-    },
+    owners: ["harness-reflection"],
   },
   "project-local-contract": {
     consumers: noAgentConsumers,
     owners: ["agent-instructions"],
+    target: {
+      consumers: noAgentConsumers,
+      owner: "agent-instructions",
+      path: "AGENTS.md",
+    },
   },
   hook: {
     consumers: noAgentConsumers,

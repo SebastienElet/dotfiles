@@ -33,17 +33,21 @@ project instructions are discoverable.
 3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder`, then prepare the
    selected branch's proposal and exact manifest before requesting contextual human approval. The
    approval record is an attestation whose origin the code cannot authenticate.
-4. For a surface change, resolve the exact `surfaceOwners` entry, use its required skill, and run its
-   named doctor and contracts. Then resolve `workflowRoutes.manifestValidation`; its export only
-   checks the exact manifest and the already-applied surface snapshot. Write only the approved
-   registry replacement after that check, then run `workflowRoutes.registryValidation`.
-5. For an enforceable control, use the exact `externalControlRoutes` entry and its separate owner
+4. For `conditional-skill`, read active records directly from `registry.path` and use each record's
+   `statement` as its exact conditional guidance during this invocation. Its manifest is registry-only;
+   never modify this file or duplicate the candidate text into it.
+5. For a file-backed surface change, resolve the exact `surfaceOwners` entry, use its required skill,
+   and run its named doctor and contracts. Then resolve `workflowRoutes.manifestValidation`; its
+   export only checks the exact manifest and the already-applied surface snapshot. Write only the
+   approved registry replacement after that check, then run `workflowRoutes.registryValidation`.
+6. For an enforceable control, use the exact `externalControlRoutes` entry and its separate owner
    workflow. Present that owner-specific exact diff for approval, run its contracts, and record the
    registry only afterward; the generic manifest validator does not accept those implementation paths.
-6. For retirement, remove the exact candidate text through the same required surface owner, record
-   the new exact approval attestation, preserve the historical fields, and follow the same validation
-   and registry-only order. Stop with a finding when a route or owner is missing, malformed,
-   unresolved, duplicated, or contradicted; never supplement it from prose.
+7. For retirement, remove the exact candidate text through the required owner for a file-backed
+   surface, or retire the registry-only `conditional-skill` record. Record the new exact approval
+   attestation, preserve the historical fields, and follow the same validation and registry-only order.
+   Stop with a finding when a route or owner is missing, malformed, unresolved, duplicated, or
+   contradicted; never supplement it from prose.
 
 ## Gotchas
 
@@ -59,5 +63,7 @@ project instructions are discoverable.
 
 - Keep the authoritative JSON block as the sole source of domain workflow rules.
 - Keep this skill as a router; do not restate contract decisions, classes, thresholds, or gates here.
+- Keep this closed router byte-stable unless its routing contract changes; a `conditional-skill` record
+  never authorizes modifying it.
 - Refuse the workflow when the authoritative block or its non-contractual surface is invalid.
 - Never use the manifest validator as a surface writer or claim it authenticates an approval origin.

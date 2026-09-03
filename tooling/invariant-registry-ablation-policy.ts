@@ -103,6 +103,16 @@ const promotionStateFindings = (
           "Conditional-skill activation must be measured and improve with the candidate text.",
         ),
       ]),
+  ...(record.surface !== "conditional-skill" ||
+  ablation.candidateTextExact === record.statement
+    ? []
+    : [
+        diagnostic(
+          "conditional-skill-statement-mismatch",
+          `${path}.candidateTextExact`,
+          "Conditional-skill candidate text must equal the registry statement.",
+        ),
+      ]),
 ];
 
 const ablationFindings = (

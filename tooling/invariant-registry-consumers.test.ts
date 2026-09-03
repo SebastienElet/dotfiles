@@ -169,3 +169,38 @@ for (const testCase of probabilisticSurfaceCases) {
     );
   });
 }
+
+test.each([
+  {
+    expected: true,
+    statement: "Different conditional guidance.",
+  },
+  {
+    expected: false,
+    statement: marginalAblation.candidateTextExact,
+  },
+] as const)(
+  "conditional candidate text statement mismatch is $expected",
+  ({ expected, statement }) => {
+    const diagnostics = validateInvariantRegistry(
+      registry(
+        active({
+          consumers: conditionalSkillConsumers,
+          controlKind: "probabilistic",
+          marginalAblation,
+          oracle: undefined,
+          statement,
+          surface: "conditional-skill",
+          verification: verifiedVerification,
+        }),
+      ),
+      validationOptions(),
+    );
+
+    expect(
+      diagnosticCodes(diagnostics).includes(
+        "conditional-skill-statement-mismatch",
+      ),
+    ).toBe(expected);
+  },
+);

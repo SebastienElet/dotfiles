@@ -35,13 +35,13 @@ const decisionBranchesSchema = z
   .object({
     skip: z.tuple([z.literal("render-report")]),
     link: z.tuple([
-      z.literal("prepare-link-proposal"),
+      z.literal("prepare-registry-only-proposal"),
       z.literal("prepare-exact-registry-diff"),
       z.literal("await-exact-manifest-approval"),
     ]),
     propose: z.tuple([
       z.literal("select-and-propose-control-surface"),
-      z.literal("prepare-exact-surface-and-registry-diff"),
+      z.literal("prepare-route-specific-exact-manifest"),
       z.literal("await-exact-manifest-approval"),
     ]),
   })
@@ -73,7 +73,7 @@ const workflowRoutesSchema = z
 const approvedChangeOrderSchema = z
   .object({
     registryOnly: z.tuple([
-      z.literal("prepare-link-proposal"),
+      z.literal("prepare-registry-only-proposal"),
       z.literal("prepare-exact-registry-diff"),
       z.literal("present-exact-manifest-for-contextual-human-approval"),
       z.literal("validate-approved-manifest"),
@@ -83,7 +83,7 @@ const approvedChangeOrderSchema = z
     ]),
     surfaceAndRegistry: z.tuple([
       z.literal("select-and-propose-control-surface"),
-      z.literal("prepare-exact-surface-and-registry-diff"),
+      z.literal("prepare-route-specific-exact-manifest"),
       z.literal("present-exact-manifest-for-contextual-human-approval"),
       z.literal("apply-surface-with-required-owner"),
       z.literal("run-required-owner-doctor-and-contracts"),
@@ -106,9 +106,16 @@ const surfaceOwnersSchema = z
       .strict(),
     "conditional-skill": z
       .object({
-        owner: z.literal("skill-manager"),
-        path: z.literal("harness/skills/harness-reflection/SKILL.md"),
-        verification: z.literal("skill-manager-doctor-and-contracts"),
+        owner: z.literal("harness-reflection"),
+        path: z.literal("harness/invariants/registry.json"),
+        verification: z.literal("registry-cli-and-declared-oracles"),
+      })
+      .strict(),
+    "project-local-contract": z
+      .object({
+        owner: z.literal("agent-instructions"),
+        path: z.literal("AGENTS.md"),
+        verification: z.literal("agent-instructions-contracts"),
       })
       .strict(),
   })
@@ -137,14 +144,20 @@ const manifestValidationSchema = z
     appliesTo: z.tuple([
       z.literal("always-loaded-instruction"),
       z.literal("conditional-skill"),
+      z.literal("project-local-contract"),
     ]),
     behavior: z.literal("read-only-no-file-writes"),
     candidateTextRule: z.literal(
-      "exactly-added-for-promotion-and-removed-for-retirement",
+      "file-surfaces-add-or-remove-exact-text-and-registry-surface-matches-statement",
     ),
+    fileSurfaces: z.tuple([
+      z.literal("always-loaded-instruction"),
+      z.literal("project-local-contract"),
+    ]),
     noOpRule: z.literal("every-approved-replacement-differs-from-preimage"),
+    registrySurfaces: z.tuple([z.literal("conditional-skill")]),
     semanticClaim: z.literal(
-      "exact-text-presence-and-absence-plus-owner-doctor-only",
+      "exact-file-text-or-registry-statement-plus-owner-doctor-only",
     ),
     transitionKind: z.literal("derived-from-before-and-after"),
   })
@@ -158,7 +171,9 @@ const retirementSchema = z
     ),
     optionalFields: z.tuple([z.literal("replacedBy")]),
     requiredFields: z.tuple([z.literal("retiredAt"), z.literal("reason")]),
-    surfaceText: z.literal("exact-candidate-text-removed-by-required-owner"),
+    surfaceText: z.literal(
+      "file-surface-text-removed-or-registry-surface-retired",
+    ),
   })
   .strict();
 
