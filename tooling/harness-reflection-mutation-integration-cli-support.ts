@@ -16,6 +16,7 @@ const cliFiles = [
   "invariant-registry-schema.ts",
   "invariant-registry-skill-target-frontmatter.ts",
   "invariant-registry-skill-target-inspection.ts",
+  "invariant-registry-skill-target-make.ts",
   "invariant-registry-skill-target-policy.ts",
   "invariant-registry-source.ts",
   "invariant-registry-validation-options.ts",

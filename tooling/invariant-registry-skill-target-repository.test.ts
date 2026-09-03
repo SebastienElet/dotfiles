@@ -32,11 +32,13 @@ type ConsumerName = keyof typeof skillDestinations;
 type FixtureOptions = Readonly<{
   category?: string;
   description?: string;
+  inactiveFor?: readonly ConsumerName[];
   installedFor?: readonly ConsumerName[];
   linkedFor?: readonly ConsumerName[];
   name?: string;
   target?: "missing" | "regular" | "symlink";
   tracked?: boolean;
+  wrongSourceFor?: readonly ConsumerName[];
 }>;
 
 const skillSource = (
@@ -61,13 +63,21 @@ skills:
 ${agents.map((agent) => `      - { agent: ${agent}, scope: user }`).join("\n")}
 `;
 
-const makefileSource = (agents: readonly ConsumerName[]): string =>
-  agents
+const makefileSource = (
+  agents: readonly ConsumerName[],
+  inactiveFor: readonly ConsumerName[],
+  wrongSourceFor: readonly ConsumerName[],
+): string =>
+  `FORCE:\n\n${agents
     .map((agent) => {
       const directory = skillDestinations[agent];
-      return `~/${directory}/skills/enforcement-code: \${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/${directory}/skills\n\t@\${CREATE_SYMLINK}\n`;
+      const source = wrongSourceFor.includes(agent)
+        ? `\${DOTFILES_PATH}/harness/skills`
+        : `\${DOTFILES_PATH}/harness/skills/enforcement-code`;
+      const rule = `~/${directory}/skills:\n\tmkdir -p $@\n\n~/${directory}/skills/enforcement-code: ${source} FORCE | ~/${directory}/skills\n\t@\${CREATE_SYMLINK}\n`;
+      return inactiveFor.includes(agent) ? `ifeq (1,0)\n${rule}endif\n` : rule;
     })
-    .join("");
+    .join("\n")}`;
 
 const conditionalRegistryText = (target: string = targetSkillPath): string =>
   JSON.stringify(
@@ -94,7 +104,11 @@ const writeDeploymentFixture = async (
     ),
     writeFile(
       join(root, "Makefile"),
-      makefileSource(options.linkedFor ?? ["claude", "codex", "cursor"]),
+      makefileSource(
+        options.linkedFor ?? ["claude", "codex", "cursor"],
+        options.inactiveFor ?? [],
+        options.wrongSourceFor ?? [],
+      ),
     ),
   ]);
 };
@@ -205,6 +219,16 @@ test.each([
   [
     "missing Cursor deployment link",
     { linkedFor: ["claude", "codex"] },
+    "Declared user-skill consumer has no matching user deployment",
+  ],
+  [
+    "inactive Cursor deployment link",
+    { inactiveFor: ["cursor"] },
+    "Declared user-skill consumer has no matching user deployment",
+  ],
+  [
+    "wrong Cursor deployment source",
+    { wrongSourceFor: ["cursor"] },
     "Declared user-skill consumer has no matching user deployment",
   ],
 ] as const)("rejects %s", async (_name, options, expected) => {

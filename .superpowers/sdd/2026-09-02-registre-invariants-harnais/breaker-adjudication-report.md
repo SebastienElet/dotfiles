@@ -8,6 +8,7 @@
 - Residual adjudication base: `c6de9efc5484f935c63cd6554d70d7d2af061469`
 - Final local adjudication base: `ec8e469072d9d0eab8df94c6eb69d0fa169bdd21`
 - Conditional-skill adjudication base: `c5c4f15105819489243239285c530dcc7481ac68`
+- Make-resolution adjudication base: `cae5a80bc77d49da464dfaa68348b6fc30d2e46c`
 - Final commit: reported with delivery because a commit cannot contain its own identifier
 
 ## Result
@@ -84,8 +85,9 @@ Consumer mechanisms are closed per agent in the registry schema. Policy and CLI 
 nonexistent adapter, a mechanism owned by another agent, Cursor user-skill support on an
 always-loaded instruction, and user-skill declarations on an architectural test. For a conditional
 skill they additionally reject an absent, non-regular, untracked, self-targeting, malformed, or
-non-triggerable target, plus a consumer without both its Arnes declaration and exact Makefile link.
-The route catalog is type-exhaustive over the schema enum and every route has at least one owner.
+non-triggerable target, plus a consumer without both its Arnes declaration and a Make-resolved
+per-agent route whose first prerequisite is the expected skill directory. The route catalog is
+type-exhaustive over the schema enum and every route has at least one owner.
 Manifest tests reject `README.md`, `package.json`, production validator code, and the registry
 reference before any write can occur.
 
@@ -133,7 +135,8 @@ of the path list exists.
 CI still installs the exact `cspell@10.2.0` and `@cspell/dict-fr-fr@2.3.2` pins, links the French and
 user dictionaries, and always invokes the owned entry point. The final gate used an isolated config
 that imports that exact installed French dictionary and the canonical repository user dictionary.
-The domain term `triggerable` is recorded once in that canonical user dictionary.
+The domain term `triggerable` and the Make control tokens used by deployment inspection are
+recorded in that canonical user dictionary.
 
 ## RED and mutant evidence
 
@@ -155,8 +158,10 @@ The resulting oracles now reject:
 - retirement surface removal without the corresponding registry update;
 - application ordered before selection, proposal, exact manifest, or approval;
 - a conditional skill without its exact existing target file, a target pointing at the closed
-  router, invalid or non-triggerable frontmatter, untracked or non-regular target bytes, missing
-  Arnes declaration or missing per-agent Makefile deployment link;
+  router, invalid or non-triggerable frontmatter, untracked or non-regular target bytes, or missing
+  Arnes declaration;
+- an inactive, missing, or source-mismatched per-agent Make deployment route even when matching rule
+  text remains present;
 - either exact contradictory append, `Ignore workflowRoutes...` or `Skip registry...`, to the
   byte-closed skill router;
 - omission of the exact `project-local-contract` owner, path, or resolved target;
@@ -223,9 +228,10 @@ router/reference change must update the local router digest and reset the artifa
 ## Preserved scope
 
 - `harness/invariants/registry.json` remains exactly version 1 with an empty invariant list.
-- `harness/skills/pr-feedback`, `tooling/arnes`, `home/.arnes.yaml`, `Makefile`, and the deployment
-  topology are unchanged.
-- `.github/workflows/lint.yml` is unchanged; its pins and mandatory CSpell call remain intact.
+- `.github/workflows/lint.yml` changed during the adjudication to invoke the owned CSpell entry
+  point; its exact pins and mandatory CSpell call remain intact.
+- The other protected surfaces `harness/skills/pr-feedback`, `tooling/arnes`, `home/.arnes.yaml`,
+  `Makefile`, and the deployment topology remain unchanged.
 - No real invariant was promoted or retired.
 
 ## Limits
@@ -246,6 +252,11 @@ router/reference change must update the local router digest and reset the artifa
 - The bounded transition validator cannot create a target absent from the before registry. A new
   candidate is a structurally validated proposal until a separate reviewed registry workflow owns
   its first insertion.
+- Conditional-skill inspection proves that the repository-owned Makefile resolves each exact
+  per-agent target through the expected skill-directory prerequisite. It does not prove that a
+  user-home symlink currently exists. Make evaluation is fail-closed, uses a neutralized
+  environment, rejects known parse-time and dry-run execution primitives, and bounds runtime and
+  output; it is not a sandbox for an arbitrary Makefile.
 - Verification was executed on local macOS only. No Linux or hosted run is claimed.
 - Independent `design-claim-auditor` execution was unavailable because this adjudication explicitly
   prohibited subagents. The design-claim contract test passed in the full suite; this is not an

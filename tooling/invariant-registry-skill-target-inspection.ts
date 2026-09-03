@@ -5,6 +5,7 @@ import type {
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { inspectSkillFrontmatter } from "./invariant-registry-skill-target-frontmatter.ts";
+import { makeResolvesSkillDeployment } from "./invariant-registry-skill-target-make.ts";
 import { z } from "zod";
 
 const consumerNames = ["claude", "codex", "cursor"] as const;
@@ -42,17 +43,6 @@ type DeploymentInspection = Readonly<{
   deploymentManifestValid: boolean;
   installedFor: readonly ConsumerName[];
 }>;
-type DeploymentSources = Readonly<{
-  input: unknown;
-  makefile: string;
-}>;
-
-const skillDestinations: Readonly<Record<ConsumerName, string>> = {
-  claude: ".claude",
-  codex: ".agents",
-  cursor: ".cursor",
-};
-
 const isMissingPathError = (error: unknown): boolean =>
   error instanceof Error && Reflect.get(error, "code") === "ENOENT";
 
@@ -74,12 +64,9 @@ const parseYaml = (source: string): unknown => {
   }
 };
 
-const readDeploymentSources = (root: string): DeploymentSources | undefined => {
+const readDeploymentInput = (root: string): unknown => {
   try {
-    return {
-      input: parseYaml(decode(resolve(root, "home/.arnes.yaml"))),
-      makefile: decode(resolve(root, "Makefile")),
-    };
+    return parseYaml(decode(resolve(root, "home/.arnes.yaml")));
   } catch {
     return undefined;
   }
@@ -89,11 +76,7 @@ const inspectDeployment = (
   root: string,
   slug: string,
 ): DeploymentInspection => {
-  const sources = readDeploymentSources(root);
-  if (sources === undefined) {
-    return { deploymentManifestValid: false, installedFor: [] };
-  }
-  const parsed = deploymentManifestSchema.safeParse(sources.input);
+  const parsed = deploymentManifestSchema.safeParse(readDeploymentInput(root));
   if (!parsed.success) {
     return { deploymentManifestValid: false, installedFor: [] };
   }
@@ -110,12 +93,9 @@ const inspectDeployment = (
   const declaredFor = match.installations.map(
     (installation) => installation.agent,
   );
-  const hasDeploymentLink = (agent: ConsumerName): boolean => {
-    const destination = skillDestinations[agent];
-    const rule = `~/${destination}/skills/${slug}: \${DOTFILES_PATH}/harness/skills/${slug} FORCE | ~/${destination}/skills\n\t@\${CREATE_SYMLINK}`;
-    return sources.makefile.includes(rule);
-  };
-  const installedFor = declaredFor.filter((agent) => hasDeploymentLink(agent));
+  const installedFor = declaredFor.filter((agent) =>
+    makeResolvesSkillDeployment({ agent, root, slug }),
+  );
   return {
     deploymentManifestValid:
       new Set(declaredFor).size === declaredFor.length &&

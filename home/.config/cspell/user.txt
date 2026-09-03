@@ -13,9 +13,14 @@ evals
 extensionless
 frontmatter
 glab
+GNUMAKEFLAGS
 heredocs
 idempotently
+ifeq
 libc
+MAKEFILES
+MAKEFLAGS
+MFLAGS
 mkfifo
 osascript
 pagelen
@@ -28,6 +33,7 @@ pullrequests
 renameat
 renamex
 scrapling
+sinclude
 triggerable
 unmatch
 wezterm
