@@ -1,0 +1,160 @@
+language: typescript
+layer: configuration
+
+taskOptions:
+  cache: false
+  os: macos
+  runFromWorkspaceRoot: true
+  runInCI: false
+
+tasks:
+  install:
+    description: Install the development workstation
+    command: noop
+    deps:
+      - ~:artifacts-minimal
+      - harness:install
+    options:
+      runDepsInParallel: false
+  install-optional:
+    description: Install the workstation and optional capabilities
+    command: noop
+    deps:
+      - ~:install
+      - ~:optional-artifacts
+    options:
+      runDepsInParallel: false
+  verify:
+    description: Run every repository verification task
+    command: noop
+    deps:
+      - repository:typescript-lint
+      - repository:typescript-typecheck
+      - repository:typescript-format-check
+      - repository:typescript-test
+      - repository:prettier-check
+      - repository:fish-syntax
+      - repository:fish-format
+      - repository:fish-test
+      - tooling/arnes:fmt
+      - tooling/arnes:clippy
+      - tooling/arnes:check
+      - tooling/arnes:test
+      - tooling/agent-memory:fmt
+      - tooling/agent-memory:clippy
+      - tooling/agent-memory:test
+      - tooling/agent-handoff:fmt
+      - tooling/agent-handoff:clippy
+      - tooling/agent-handoff:test
+  bootstrap:
+    command: make bootstrap
+  homebrew:
+    command: make brew
+    deps:
+      - ~:bootstrap
+    options:
+      mutex: homebrew
+  packages-minimal:
+    command: make bundle-minimal
+    deps:
+      - ~:homebrew
+    options:
+      mutex: homebrew
+  artifacts-minimal:
+    command: noop
+    deps:
+      - ~:bat
+      - ~:fish
+      - ~:nvim
+      - ~:wezterm
+      - ~:git-delta
+      - ~:tmux
+      - ~:pnpm
+      - ~:hunspell
+      - ~:colgrep-search
+    options:
+      internal: true
+      runDepsInParallel: false
+  bat:
+    command: make bat
+    deps: [~:packages-minimal]
+  fish:
+    command: make fish
+    deps: [~:packages-minimal]
+  nvim:
+    command: make nvim
+    deps: [~:packages-minimal]
+  wezterm:
+    command: make wezterm
+    deps: [~:packages-minimal]
+  git-delta:
+    command: make git-delta
+    deps: [~:packages-minimal]
+  tmux:
+    command: make tmux
+    deps: [~:packages-minimal]
+  node:
+    command: make node
+    deps: [~:packages-minimal]
+    options:
+      mutex: volta
+  pnpm:
+    command: make pnpm
+    deps: [~:node]
+    options:
+      mutex: volta
+  hunspell:
+    command: make hunspell
+    deps: [~:packages-minimal]
+  colgrep-search:
+    command: make "$HOME/.local/bin/colgrep-search"
+    deps: [~:packages-minimal]
+  packages-optional:
+    command: make bundle-optional
+    deps: [~:packages-minimal]
+    options:
+      mutex: homebrew
+  optional-artifacts:
+    command: noop
+    deps:
+      - ~:packages-optional
+      - ~:cspell
+      - harness:install-cursor
+      - ~:cloakbrowser
+      - ~:scrapling
+      - ~:postgresql
+      - ~:daisydisk
+      - ~:things-3
+    options:
+      internal: true
+      runDepsInParallel: false
+  cspell:
+    command: make cspell
+    deps:
+      - ~:packages-optional
+      - ~:node
+    options:
+      mutex: volta
+  cloakbrowser:
+    command: make cloakbrowser
+    deps: [~:packages-optional]
+    options:
+      mutex: docker
+  scrapling:
+    command: make scrapling
+    deps: [~:packages-optional]
+    options:
+      mutex: docker
+  postgresql:
+    command: make postgresql
+    deps: [~:packages-optional]
+  daisydisk:
+    command: make daisydisk
+    deps: [~:packages-optional]
+  things-3:
+    command: make things-3
+    deps:
+      - ~:packages-optional
+      - ~:node
+    options:
+      mutex: volta
