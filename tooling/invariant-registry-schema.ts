@@ -9,6 +9,16 @@ import { z } from "zod";
 const semanticStringSchema = z
   .string()
   .regex(/\S/u, "Must contain a non-whitespace character.");
+const invariantSurfaces = [
+  "always-loaded-instruction",
+  "conditional-skill",
+  "project-local-contract",
+  "hook",
+  "permission",
+  "lint",
+  "type",
+  "architectural-test",
+] as const;
 const measurementSchema = z
   .object({
     outcome: z.enum(["passed", "failed"]),
@@ -154,16 +164,7 @@ const invariantShape = {
   severity: z.enum(["low", "medium", "high", "critical"]),
   sources: z.array(sourceSchema).min(1),
   scope: scopeSchema,
-  surface: z.enum([
-    "always-loaded-instruction",
-    "conditional-skill",
-    "project-local-contract",
-    "hook",
-    "permission",
-    "lint",
-    "type",
-    "architectural-test",
-  ]),
+  surface: z.enum(invariantSurfaces),
   approval: approvalSchema.optional(),
   oracle: oracleSchema.optional(),
   marginalAblation: marginalAblationSchema.optional(),
@@ -214,6 +215,7 @@ const parseInvariantRegistry = (input: unknown): InvariantRegistry =>
   registrySchema.parse(input);
 
 export {
+  invariantSurfaces,
   parseInvariantRegistry,
   type InvariantRecord,
   type InvariantRegistry,

@@ -1,7 +1,7 @@
 import type {
   InvariantRecord,
   RegistryDiagnostic,
-} from "./invariant-registry-contract.ts";
+} from "./invariant-registry-schema.ts";
 
 type ConsumerName = keyof InvariantRecord["consumers"];
 type SupportedMechanism<Name extends ConsumerName> = Extract<
@@ -11,22 +11,41 @@ type SupportedMechanism<Name extends ConsumerName> = Extract<
 type TargetConsumers = Readonly<{
   [Name in ConsumerName]?: SupportedMechanism<Name>;
 }>;
+type SurfaceOwner =
+  | "agent-instructions"
+  | "enforcement-code"
+  | "scripts"
+  | "skill-manager";
 type SupportedTarget = Readonly<{
   consumers: TargetConsumers;
-  owner: "agent-instructions" | "skill-manager";
+  owner: Extract<SurfaceOwner, "agent-instructions" | "skill-manager">;
   path: string;
+  evaluationResetPath?: string;
+}>;
+type SurfaceRoute = Readonly<{
+  consumers: TargetConsumers;
+  owners: readonly [SurfaceOwner, ...SurfaceOwner[]];
+  target?: SupportedTarget;
 }>;
 
-const supportedTargets: Readonly<
-  Partial<Record<InvariantRecord["surface"], SupportedTarget>>
+const noAgentConsumers = {};
+const surfaceRoutes: Readonly<
+  Record<InvariantRecord["surface"], SurfaceRoute>
 > = {
   "always-loaded-instruction": {
     consumers: {
       claude: "claude-global-instruction",
       codex: "codex-global-instruction",
     },
-    owner: "agent-instructions",
-    path: "harness/AGENTS.md",
+    owners: ["agent-instructions"],
+    target: {
+      consumers: {
+        claude: "claude-global-instruction",
+        codex: "codex-global-instruction",
+      },
+      owner: "agent-instructions",
+      path: "harness/AGENTS.md",
+    },
   },
   "conditional-skill": {
     consumers: {
@@ -34,8 +53,42 @@ const supportedTargets: Readonly<
       codex: "codex-user-skill",
       cursor: "cursor-user-skill",
     },
-    owner: "skill-manager",
-    path: "harness/skills/harness-reflection/SKILL.md",
+    owners: ["skill-manager"],
+    target: {
+      consumers: {
+        claude: "claude-user-skill",
+        codex: "codex-user-skill",
+        cursor: "cursor-user-skill",
+      },
+      evaluationResetPath:
+        "harness/skills/harness-reflection/evals/promotion-workflow-results.json",
+      owner: "skill-manager",
+      path: "harness/skills/harness-reflection/SKILL.md",
+    },
+  },
+  "project-local-contract": {
+    consumers: noAgentConsumers,
+    owners: ["agent-instructions"],
+  },
+  hook: {
+    consumers: noAgentConsumers,
+    owners: ["scripts", "enforcement-code"],
+  },
+  permission: {
+    consumers: noAgentConsumers,
+    owners: ["enforcement-code"],
+  },
+  lint: {
+    consumers: noAgentConsumers,
+    owners: ["scripts", "enforcement-code"],
+  },
+  type: {
+    consumers: noAgentConsumers,
+    owners: ["enforcement-code"],
+  },
+  "architectural-test": {
+    consumers: noAgentConsumers,
+    owners: ["enforcement-code"],
   },
 };
 
@@ -54,12 +107,9 @@ const consumerSurfaceDiagnostics = (
   record: InvariantRecord,
   path: string,
 ): readonly RegistryDiagnostic[] => {
-  const target = supportedTargets[record.surface];
-  if (target === undefined) {
-    return [];
-  }
+  const route = surfaceRoutes[record.surface];
   return (["claude", "codex", "cursor"] as const).flatMap((name) =>
-    consumerMatches(record, name, target.consumers[name])
+    consumerMatches(record, name, route.consumers[name])
       ? []
       : [
           {
@@ -73,17 +123,18 @@ const consumerSurfaceDiagnostics = (
 };
 
 const resolveSupportedTarget = (record: InvariantRecord): SupportedTarget => {
-  const target = supportedTargets[record.surface];
+  const { target } = surfaceRoutes[record.surface];
   if (target === undefined) {
     throw new Error("unsupported-control-surface");
   }
   for (const consumerName of ["claude", "codex", "cursor"] as const) {
-    const expectedMechanism = target.consumers[consumerName];
-    if (!consumerMatches(record, consumerName, expectedMechanism)) {
+    if (
+      !consumerMatches(record, consumerName, target.consumers[consumerName])
+    ) {
       throw new Error("mutation-consumer-surface-mismatch");
     }
   }
   return target;
 };
 
-export { consumerSurfaceDiagnostics, resolveSupportedTarget };
+export { consumerSurfaceDiagnostics, resolveSupportedTarget, surfaceRoutes };

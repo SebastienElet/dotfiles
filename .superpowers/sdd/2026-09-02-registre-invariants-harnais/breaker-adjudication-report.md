@@ -5,6 +5,7 @@
 - Date: 2026-09-03
 - Branch: `codex/159-named-invariant-registry`
 - Adjudication base: `5d6d0bbab4f29530bc69b28b0e8bfac99d0f95e9`
+- Residual adjudication base: `c6de9efc5484f935c63cd6554d70d7d2af061469`
 - Final commit: reported with delivery because a commit cannot contain its own identifier
 
 ## Result
@@ -31,6 +32,13 @@ request, derives the mutation kind from the lifecycle transition, and rejects no
 not authenticate whether an attestation came from a human or whether `approvedBy` identifies that
 person. Contextual human approval remains a procedural skill precondition.
 
+The bounded transition validator requires exactly one target record in both the before and after
+registry snapshots. A link is derived only for `candidate` to `candidate` or `active` to `active`,
+preserves the ordered canonical sources already present, adds at least one distinct source, and
+changes no business field. Its newly accepted exact approval attestation is the only admitted
+administrative delta. New-candidate manifests remain structurally parseable proposals, but this
+transition validator does not admit a missing target snapshot.
+
 For promotion, the supported surface preimage must not contain `candidateTextExact` and its
 replacement must contain it. Retirement requires the inverse. These checks prove only exact text
 presence or absence; the required owner doctor supplies the surface-specific check. They do not
@@ -54,25 +62,37 @@ status 1.
 
 ## Consumer and destination closure
 
-One canonical mapping now drives both mutation validation and registry policy:
+One exhaustive catalog now drives registry policy for every schema surface and bounded mutation
+validation for its two supported mutable targets:
 
-| Surface                   | Claude                      | Codex                      | Cursor              |
-| ------------------------- | --------------------------- | -------------------------- | ------------------- |
-| always-loaded instruction | `claude-global-instruction` | `codex-global-instruction` | unsupported         |
-| conditional skill         | `claude-user-skill`         | `codex-user-skill`         | `cursor-user-skill` |
+| Surface                                 | Consumer projection                     | Required owner route             |
+| --------------------------------------- | --------------------------------------- | -------------------------------- |
+| always-loaded instruction               | Claude/Codex global; Cursor unsupported | `agent-instructions`             |
+| conditional skill                       | Claude/Codex/Cursor user skill          | `skill-manager`                  |
+| project-local contract                  | direct agent adapters unsupported       | `agent-instructions`             |
+| hook or lint                            | direct agent adapters unsupported       | `scripts` and `enforcement-code` |
+| permission, type, or architectural test | direct agent adapters unsupported       | `enforcement-code`               |
 
 Consumer mechanisms are closed per agent in the registry schema. Policy and CLI tests reject a
-nonexistent adapter, a mechanism owned by another agent, and Cursor user-skill support on an
-always-loaded instruction. Manifest tests reject `README.md`, `package.json`, production validator
-code, and the registry reference before any write can occur.
+nonexistent adapter, a mechanism owned by another agent, Cursor user-skill support on an
+always-loaded instruction, and user-skill declarations on an architectural test. The route catalog
+is type-exhaustive over the schema enum and every route has at least one owner. Manifest tests reject
+`README.md`, `package.json`, production validator code, and the registry reference before any write
+can occur.
+
+A conditional-skill surface change requires an exact companion replacement for
+`promotion-workflow-results.json`; that replacement must parse as `pending` with `runs: []`. The
+subsequent `skill-manager` contracts bind its digest to the applied skill and reference. The generic
+validator neither edits those files nor substitutes for that owner check.
 
 ## Integration evidence
 
 The historical PR 206 and PR 207 fixtures retain and assert their recorded GitHub pull-request and
 comment URLs. The integration parses their real stored source values, builds two distinct candidate
-proposals, validates each exact registry manifest, and sends their combined registry through global
-source de-duplication and policy. This covers historical source-to-proposal admission only; it does
-not prove a complete promotion or surface application.
+proposals, structurally parses each exact registry manifest, checks its target and replacement, and
+sends their combined registry through global source de-duplication and policy. This covers
+historical source-to-proposal admission only; the bounded transition validator deliberately requires
+an existing target and these fixtures do not prove a complete promotion or surface application.
 
 A separate fixture is explicitly marked `synthetic-local-not-historical`. In a temporary Git root
 it performs this observable sequence:
@@ -101,7 +121,7 @@ of the path list exists.
 
 CI still installs the exact `cspell@10.2.0` and `@cspell/dict-fr-fr@2.3.2` pins, links the French and
 user dictionaries, and always invokes the owned entry point. The real CI recipe was replayed with
-an isolated temporary home: 76 files checked, 0 issues. The three singular technical forms added by
+an isolated temporary home: 77 files checked, 0 issues. The three singular technical forms added by
 this change are recorded once in the existing user dictionary.
 
 ## RED and mutant evidence
@@ -110,8 +130,11 @@ Tests were introduced against the load-bearing failures before the corresponding
 The resulting oracles now reject:
 
 - an approval record or manifest that does not equal the request;
-- caller-selected mutation kind, retired-to-active, mutable retirement sources or exceptions, and
-  a retirement record that does not contain the new exact attestation;
+- caller-selected mutation kind, retired-to-active, mutable retirement sources or exceptions, a
+  retirement record without its new exact attestation, and before/after registries with zero or two
+  copies of the target;
+- a link that changes statement, scope, severity, an existing source, or any field other than the
+  new exact attestation while adding one or more distinct canonical sources;
 - each isolated manifest mismatch: path, replacement, preimage, delta before, delta after, and an
   equal before/after delta;
 - a no-op surface, absent promotion text, already-present promotion text, retained retirement text,
@@ -120,6 +143,7 @@ The resulting oracles now reject:
 - a verified runtime invocation different from its declared oracle, plus a real failing invocation;
 - retirement surface removal without the corresponding registry update;
 - application ordered before selection, proposal, exact manifest, or approval;
+- a conditional-skill change without a schema-valid pending evaluation reset;
 - a CSpell boundary that imports project packages or masks command failure.
 
 These are the executed observable oracles. No behavioral result is inferred from an unexecuted
@@ -130,18 +154,18 @@ agent scenario.
 Environment: local macOS 26.6.2 arm64, Bun 1.4.0, Node 24.20.0, TypeScript 7.0.2, CSpell 10.2.0,
 and Actionlint 1.7.12.
 
-- Full Bun suite outside the filesystem sandbox: 598 passed, 2 explicit opt-in skips, 0 failed,
-  1401 assertions across 74 files in 38.45 seconds.
+- Full Bun suite outside the filesystem sandbox: 624 passed, 2 explicit opt-in skips, 0 failed,
+  1450 assertions across 78 files in 38.87 seconds.
 - Explicit skips: real Docker lifecycle and multi-worktree ColGrep integration. No result is claimed
   for those opt-in paths.
-- Targeted breaker suite: 75 passed, 0 failed.
+- Targeted residual breaker suite: 120 passed, 0 failed, 200 assertions across 18 files.
 - Direct failing runtime oracle: 0 passed, 1 failed, exit status 1, as required by the negative
   oracle.
 - Canonical empty-registry CLI: passed.
 - `bun run lint`: passed.
 - `bun run typecheck`: passed.
 - `bun run format:typescript:check`: passed.
-- CI-equivalent CSpell entry point with both dictionaries: 76 files, 0 issues.
+- CI-equivalent CSpell entry point with both dictionaries: 77 files, 0 issues.
 - Actionlint on `.github/workflows/lint.yml`: passed.
 - `make -n codex`, `make -n claude-code`, and `make -n cursor`: passed.
 - Dedicated Oxlint `max-lines-per-function` check on every changed production TypeScript file:
@@ -149,8 +173,8 @@ and Actionlint 1.7.12.
 - `git diff --check`: passed.
 
 Every changed production and test TypeScript file is below 250 lines. The largest changed test is
-`harness-reflection-contract.test.ts` at 242 lines; the largest changed production file is
-`invariant-registry-policy.ts` at 224 lines. `invariant-registry-contract.test.ts` remains below the
+`harness-reflection-mutation-integration.test.ts` at 243 lines; the largest changed production file
+is `harness-reflection-contract.ts` at 235 lines. `invariant-registry-contract.test.ts` remains below the
 trigger. The longer changed files are plans or the progressively disclosed skill reference, not
 production or test code.
 
@@ -173,11 +197,18 @@ whole-command status is nonzero because of unrelated pre-existing plugin drift f
 deployed `memory-governance` destinations for Claude and Cursor; no clean aggregate doctor result is
 claimed.
 
-The changed skill SHA-256 is
+The unchanged skill SHA-256 is
 `4772b71eeb655fb2eb13672d290e6a3d8f1e9e8d7520e034d21704aa860dc37c`. The exact
 `SKILL.md + NUL + reference` digest is
 `a4fa1e7647e0dc0db902ab9278fd60abac1358673ecae6f28a67a0b0195f9808` and matches the evaluation
-artifact. Its status is `pending`, `runs` is empty, and no branch is reported as covered.
+artifact. Its status is `recorded`: three replays from source commit
+`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, labels `behavior_eval_16` through
+`behavior_eval_18`, cover only `skip-missing-evidence`. Link, proposal, approval, retirement,
+promotion, and ADR 036 ablation remain explicitly uncovered. The contract no longer treats the
+whole skill SHA as a router barrier; targeted assertions preserve its reference, route fields,
+approval limit, section order, and registry-write boundary. Any future skill/reference digest
+change invalidates the recorded artifact, and the conditional-skill owner manifest requires a
+`pending` reset before its contracts pass.
 
 ## Preserved scope
 
@@ -202,6 +233,9 @@ artifact. Its status is `pending`, `runs` is empty, and no branch is reported as
 - The historical fixtures prove only their named source, de-duplication, policy, proposal, and
   manifest path. The full local sequence uses explicitly synthetic sources and a fixture-only owner
   stand-in.
+- The bounded transition validator cannot create a target absent from the before registry. A new
+  candidate is a structurally validated proposal until a separate reviewed registry workflow owns
+  its first insertion.
 - Verification was executed on local macOS only. No Linux or hosted run is claimed.
 - Independent `design-claim-auditor` execution was unavailable because this adjudication explicitly
   prohibited subagents. The design-claim contract test passed in the full suite; this is not an

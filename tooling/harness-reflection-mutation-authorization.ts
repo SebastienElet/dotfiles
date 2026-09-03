@@ -50,16 +50,21 @@ const validateApprovedRegistryDelta = (
 ): void => {
   const { targetInvariantId } = input;
   const delta = approval.manifest.registryDelta;
-  const currentTarget = registries.current.invariants.find(
+  const currentTargets = registries.current.invariants.filter(
     ({ id }) => id === targetInvariantId,
   );
-  const proposedTarget = registries.proposed.invariants.find(
+  const proposedTargets = registries.proposed.invariants.filter(
     ({ id }) => id === targetInvariantId,
   );
+  if (currentTargets.length !== 1 || proposedTargets.length !== 1) {
+    throw new Error("registry-target-count-invalid");
+  }
+  const [currentTarget] = currentTargets;
+  const [proposedTarget] = proposedTargets;
   const matches =
     registries.current.version === registries.proposed.version &&
-    sameValue(currentTarget ?? null, delta.before) &&
-    sameValue(proposedTarget ?? null, delta.after) &&
+    sameValue(currentTarget, delta.before) &&
+    sameValue(proposedTarget, delta.after) &&
     !sameValue(delta.before, delta.after) &&
     sameValue(
       recordsExceptTarget(registries.current, targetInvariantId),

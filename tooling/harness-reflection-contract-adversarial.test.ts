@@ -91,7 +91,7 @@ test("rejects approval-denying prose added to the skill", async () => {
   };
 
   expect(validateHarnessReflectionContract(mutant)).toContain(
-    "skill contains only the closed router surface",
+    "skill preserves the closed router contract",
   );
 });
 

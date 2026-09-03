@@ -38,13 +38,16 @@ un agent de promouvoir seul une préférence isolée ni étendre la topologie g�
 - Le champ `approval` consigne une attestation transmise après l’approbation fournie dans le contexte
   humain. Ni le registre, ni la CLI, ni l’entrée du workflow n’authentifient son origine ou l’identité
   de `approvedBy`, et ce champ n’est pas une preuve autonome. Le skill interdit procéduralement à
-  l’agent de fabriquer cette attestation ; l’absence d’approbation est représentée par le scénario
-  `skip`, dont l’exécution reste `pending` après cette modification du skill et de sa référence.
+  l’agent de fabriquer cette attestation. L’artefact courant consigne trois replays du seul scénario
+  `skip` sans preuve concrète, sur la source `442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, sous les
+  labels `behavior_eval_16` à `behavior_eval_18`. Il ne prouve aucun chemin de mutation. Un futur
+  changement du digest skill/référence remet cet artefact à `pending` avec `runs: []` avant replay.
 - Git conserve l’historique et la revue des mutations. Arnes continue seulement à distribuer le
   skill existant ; son manifeste et ses adaptateurs ne sont pas étendus.
 
-Cette répartition respecte les ADR 024, 038 et 040 sur la source commune et les frontières du
-harnais, l’ADR 036 sur l’admission comportementale par mesure et l’ADR 041 sur TypeScript pour le
+Cette répartition respecte les ADR 024, 025, 038 et 040 sur la source commune, les instructions
+projet et les frontières du harnais, l’ADR 036 sur l’admission comportementale par mesure et l’ADR
+041 sur TypeScript pour le
 parsing et la politique. `agent-memory` reste hors périmètre conformément à l’ADR 042 : une mémoire
 hors Git n’est ni une autorité de promotion ni un registre versionné.
 
@@ -109,7 +112,8 @@ approbation.
 
 1. vérifie les preuves et classe la cause sans modifier le rapport source ;
 2. recherche d’abord un invariant existant par identifiant, formulation et sources ;
-3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ;
+3. propose soit l’ajout d’une occurrence à cet invariant, soit un unique nouveau candidat ; pour un
+   lien, l’état courant et l’état proposé contiennent chacun exactement une occurrence cible ;
 4. prépare en session la surface et le registre, capture leurs préimages et construit un manifeste
    fermé qui contient les chemins cibles exacts, chaque contenu initial et remplacement exact, et le
    delta avant/après du seul invariant ciblé ; le type de mutation est dérivé de cette transition ;
@@ -118,7 +122,9 @@ approbation.
    vérifie la cohérence exacte sans pouvoir distinguer une origine humaine d’une fabrication ;
 6. route la surface approuvée vers son outil propriétaire obligatoire : `skill-manager` pour un skill,
    `agent-instructions` pour une instruction, et la frontière scripts/enforcement pour un contrôle
-   exécutoire ; le moteur du registre ne fournit aucune API d’écriture arbitraire de ces surfaces ;
+   exécutoire ; une modification du skill inclut dans le manifeste la remise à `pending` de son
+   artefact d’évaluation, puis les contrats propriétaires vérifient le nouveau digest ; le moteur du
+   registre ne fournit aucune API d’écriture arbitraire de ces surfaces ;
 7. exécute le doctor ou le contrat de l’outil propriétaire, puis vérifie en lecture seule que la
    surface appliquée est exactement le remplacement approuvé et que le registre courant reste sa
    préimage approuvée ; il refuse tout autre chemin, préimage, remplacement ou delta d’invariant ;
@@ -130,6 +136,13 @@ approbation.
     et exceptions ; seuls `approval`, `lifecycle` et `retirement` peuvent changer, la nouvelle
     attestation devant correspondre exactement au registre et au manifeste ; l’outil propriétaire
     retire d’abord le texte exact de la surface, son doctor passe, puis le registre est mis à jour.
+
+Le validateur borné de transition accepte un lien seulement de `candidate` vers `candidate` ou
+d’`active` vers `active`. Les sources canoniques existantes restent dans leur ordre, au moins une
+nouvelle occurrence distincte est ajoutée, et aucun champ métier ne change. La nouvelle attestation
+exacte est le seul delta administratif admis. Une proposition de tout nouveau candidat conserve son
+manifeste structurel, mais ne passe pas par cette API de transition, qui exige une cible unique avant
+et après.
 
 Ce workflow ne revendique ni transaction multi-fichier, ni atomicité, ni sérialisation face à un
 autre écrivain. Une interruption entre surface et registre peut laisser un état intermédiaire ; la
@@ -184,8 +197,11 @@ validation de son manifeste. Elles ne prouvent ni application de surface ni prom
 Une fixture locale distincte, marquée `synthetic-local-not-historical`, porte les deux sources
 synthétiques nécessaires à l’oracle d’intégration. Elle traverse proposition, manifeste, application
 de fixture, validation, inscription, CLI et oracle, puis la retraite. Elle ne présente pas ses URL
-`example` comme des preuves historiques et ne simule aucune authentification humaine. Les evals
-agents `pending` avec `runs: []` ne prouvent que l’absence de résultat comportemental enregistré.
+`example` comme des preuves historiques et ne simule aucune authentification humaine. L’artefact
+agent actuellement `recorded` ne couvre que `skip-missing-evidence` ; ses trois runs source
+`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, labels `behavior_eval_16` à `behavior_eval_18`, ne
+prouvent ni `link`, ni proposition, approbation, promotion, retraite ou ablation. Dans un état futur
+`pending` avec `runs: []`, il ne prouverait aucun comportement courant.
 
 Les gates attendues sont `bun test`, `tsc --noEmit`, le lint et le formatage TypeScript, le contrôle
 statique du skill, CSpell sur les nouveaux textes et la vérification des projections existantes. La
@@ -216,8 +232,8 @@ l’exerce sur Ubuntu seulement ; aucune preuve hébergée macOS n’est revendi
 - L’approbation enregistrée est une attestation non authentifiée ; le manifeste exact est présenté
   au contexte humain avant cette entrée, et la requête, les préimages, remplacements et le seul delta
   d’invariant ciblé doivent lui correspondre. L’interdiction d’auto-assertion est procédurale dans le
-  skill ; le scénario sans approbation reste défini comme `skip`, sans résultat comportemental courant
-  tant que les evals `pending` n’ont pas été rejouées.
+  skill. Les replays enregistrés couvrent seulement le refus par `skip` lorsque la preuve manque ;
+  les autres branches restent explicitement non couvertes.
 - Une surface est appliquée uniquement via son outil propriétaire, puis son doctor ou contrat passe
   avant l’écriture bornée du registre ; aucune API de production ne remplace arbitrairement une
   surface et aucune transaction multi-fichier n’est promise.

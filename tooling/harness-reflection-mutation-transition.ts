@@ -7,6 +7,7 @@ import type {
   InvariantRecord,
   InvariantRegistry,
 } from "./invariant-registry-contract.ts";
+import { evidenceOccurrenceIdentity } from "./invariant-registry-source.ts";
 import { isDeepStrictEqual } from "node:util";
 import { validateApprovedRegistryDelta } from "./harness-reflection-mutation-authorization.ts";
 
@@ -59,15 +60,43 @@ const transitionRecords = (
   ),
 });
 
-const newTransition = (target: InvariantRecord): MutationTransition => {
-  if (target.lifecycle === "retired") {
-    throw new Error("lifecycle-transition-invalid");
-  }
-  return {
-    kind: target.lifecycle === "active" ? "promotion" : "record-update",
-    target,
-  };
+const withoutLinkChanges = (
+  record: Readonly<InvariantRecord>,
+): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(
+    Object.entries(record).filter(
+      (entry: readonly [string, unknown]) =>
+        !["approval", "sources"].includes(entry[0]),
+    ),
+  );
+
+const isSourceAddition = (
+  current: InvariantRecord,
+  proposed: InvariantRecord,
+): boolean => {
+  const currentCount = current.sources.length;
+  const identities = proposed.sources.map(evidenceOccurrenceIdentity);
+  return (
+    proposed.sources.length > currentCount &&
+    isDeepStrictEqual(
+      proposed.sources.slice(0, currentCount),
+      current.sources,
+    ) &&
+    new Set(identities).size === identities.length
+  );
 };
+
+const isLinkTransition = (
+  current: InvariantRecord,
+  proposed: InvariantRecord,
+): boolean =>
+  current.lifecycle === proposed.lifecycle &&
+  ["active", "candidate"].includes(current.lifecycle) &&
+  isDeepStrictEqual(
+    withoutLinkChanges(current),
+    withoutLinkChanges(proposed),
+  ) &&
+  isSourceAddition(current, proposed);
 
 const deriveTransition = (
   input: HarnessMutationRequest,
@@ -79,17 +108,23 @@ const deriveTransition = (
     current,
     proposed,
   );
-  if (proposedTarget === undefined || currentTarget?.lifecycle === "retired") {
+  if (proposedTarget === undefined || currentTarget === undefined) {
     throw new Error("lifecycle-transition-invalid");
   }
-  if (currentTarget === undefined) {
-    return newTransition(proposedTarget);
+  if (isLinkTransition(currentTarget, proposedTarget)) {
+    return { kind: "link", target: proposedTarget };
   }
   if (
     currentTarget.lifecycle === "active" &&
     proposedTarget.lifecycle === "retired"
   ) {
     return { kind: "retirement", target: proposedTarget };
+  }
+  if (
+    currentTarget.lifecycle === proposedTarget.lifecycle &&
+    ["active", "candidate"].includes(currentTarget.lifecycle)
+  ) {
+    throw new Error("invalid-link-transition");
   }
   if (
     proposedTarget.lifecycle === "retired" ||
@@ -106,11 +141,7 @@ const deriveTransition = (
     throw new Error("lifecycle-transition-invalid");
   }
   return {
-    kind:
-      currentTarget.lifecycle === "candidate" &&
-      proposedTarget.lifecycle === "active"
-        ? "promotion"
-        : "record-update",
+    kind: "promotion",
     target: proposedTarget,
   };
 };

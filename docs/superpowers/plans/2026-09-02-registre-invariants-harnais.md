@@ -27,6 +27,11 @@
 - Après le doctor ou contrat propriétaire, la validation bornée exige le remplacement exact de la
   surface, la préimage exacte du registre et le delta exact avant d’écrire seulement le registre.
   Git révèle un état intermédiaire ; aucune transaction ou récupération automatique n’est promise.
+- Un lien exige exactement une cible dans l’état avant et après, conserve tous les champs métier et
+  les sources existantes, puis ajoute au moins une source canonique distincte. La nouvelle attestation
+  exacte est son seul autre delta admis.
+- Une mutation de `conditional-skill` inclut la remise à `pending`, avec `runs: []`, de l’artefact
+  d’évaluation lié au digest avant que les contrats de `skill-manager` ne passent.
 - `claude`, `codex` et `cursor` sont déclarés séparément comme `supported` ou `unsupported`.
 - Arnes, `home/.arnes.yaml`, le `Makefile` et les adaptateurs de topologie ne changent pas.
 - Aucun commentaire de code n’est ajouté ; les noms et types doivent porter l’intention.
@@ -403,11 +408,12 @@ Expected: PASS.
 
 - [ ] **Step 7: Faire rejouer les scénarios comportementaux par le contrôleur**
 
-Le lot de correction laisse `promotion-workflow-results.json` strictement `pending`, avec `runs: []`
-et le digest courant. Le contrôleur reprend exactement le prompt et le nombre de runs de Step 1
-après le commit. Chaque run doit consulter le registre, refuser la mutation immédiate, distinguer
-surface et preuve, puis déclarer séparément Claude, Codex et Cursor. Si un run invente une preuve,
-contourne l’approbation ou modifie `pr-feedback`, resserrer la guidance et rejouer tous les scénarios.
+Le contrôleur a enregistré trois replays de `skip-missing-evidence` depuis la source
+`442f7dffa35cfbf03ffec7405b5630ef6a6a5186`, sous les labels `behavior_eval_16`,
+`behavior_eval_17` et `behavior_eval_18`. Chaque run consulte le registre et refuse la mutation sans
+preuve concrète. L’artefact ne couvre ni lien, proposition, approbation, promotion, retraite ou
+ablation. Tout futur changement du digest skill/référence exige de le remettre à `pending`, avec
+`runs: []`, puis de rejouer le prompt exact ; aucune couverture antérieure ne se transfère.
 
 - [ ] **Step 8: Exécuter doctor et sync-index**
 

@@ -35,8 +35,25 @@ const expectedReferenceWrapper = `# Invariant Registry
 {{contract}}
 \`\`\`
 `;
-const expectedSkillSurfaceDigest =
-  "4772b71eeb655fb2eb13672d290e6a3d8f1e9e8d7520e034d21704aa860dc37c";
+const requiredSkillRouterFragments = [
+  "[references/invariant-registry.md](references/invariant-registry.md)",
+  "`initialWorkflowOrder`",
+  "`harnessGapWorkflowOrder`",
+  "`surfaceOwners`",
+  "`workflowRoutes.manifestValidation`",
+  "`workflowRoutes.registryValidation`",
+  "`externalControlRoutes`",
+  "attestation whose origin the code cannot authenticate",
+  "already-applied surface snapshot",
+] as const;
+const skillHeadings = [
+  "# Harness Reflection",
+  "## Overview",
+  "## Usage",
+  "## Steps",
+  "## Gotchas",
+  "## Constraints",
+] as const;
 const linkQuery =
   "Relie ces constats pr-feedback récurrents à l'invariant existant sans le dupliquer";
 const stylisticQuery =
@@ -118,11 +135,32 @@ const parseHarnessReflectionContract = (
   return harnessReflectionContractSchema.parse(JSON.parse(block.json));
 };
 
-const skillSurfaceFindings = (skill: string): readonly string[] =>
-  new Bun.CryptoHasher("sha256").update(skill).digest("hex") ===
-  expectedSkillSurfaceDigest
+const orderedHeadings = (skill: string): boolean => {
+  const positions = skillHeadings.map((heading) => skill.indexOf(heading));
+  return positions.every(
+    (position, index) =>
+      position >= 0 && (index === 0 || position > (positions[index - 1] ?? -1)),
+  );
+};
+
+const skillSurfaceFindings = (skill: string): readonly string[] => {
+  const referenceCount = skill.match(
+    /\[references\/invariant-registry\.md\]\(references\/invariant-registry\.md\)/gu,
+  )?.length;
+  const hasRequiredRoutes = requiredSkillRouterFragments.every((fragment) =>
+    skill.includes(fragment),
+  );
+  const contradictsApproval = /approval is not required/iu.test(skill);
+  const keepsRegistryWriteBoundary =
+    /Write\s+only\s+the\s+approved\s+registry\s+replacement/iu.test(skill);
+  return referenceCount === 1 &&
+    hasRequiredRoutes &&
+    orderedHeadings(skill) &&
+    keepsRegistryWriteBoundary &&
+    !contradictsApproval
     ? []
-    : ["skill contains only the closed router surface"];
+    : ["skill preserves the closed router contract"];
+};
 
 const parseEvals = (value: unknown): EvalSources => {
   if (!isRecord(value) || !Array.isArray(value.queries)) {

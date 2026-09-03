@@ -9,6 +9,7 @@ const cspellTextPaths = [
   "harness/invariants/registry.json",
   "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
   "docs/superpowers/plans/2026-09-02-registre-invariants-harnais.md",
+  ".superpowers/sdd/2026-09-02-registre-invariants-harnais/breaker-adjudication-report.md",
   "tooling/invariant-registry-fixtures/pr-206-secret-redaction.json",
   "tooling/invariant-registry-fixtures/pr-207-invalid-utf8.json",
   "tooling/invariant-registry-fixtures/synthetic-local-workflow.json",

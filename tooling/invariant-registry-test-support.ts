@@ -86,7 +86,37 @@ function candidate(overrides: TestInvariant = {}): TestInvariant {
   };
 }
 
+const activeConsumers = (
+  surface: unknown,
+): Readonly<Record<string, unknown>> | undefined => {
+  if (surface === "always-loaded-instruction") {
+    return undefined;
+  }
+  if (surface === "conditional-skill") {
+    return {
+      claude: { state: "supported", mechanism: "claude-user-skill" },
+      codex: { state: "supported", mechanism: "codex-user-skill" },
+      cursor: { state: "supported", mechanism: "cursor-user-skill" },
+    };
+  }
+  return {
+    claude: {
+      state: "unsupported",
+      reason: "Repository control does not use an agent adapter.",
+    },
+    codex: {
+      state: "unsupported",
+      reason: "Repository control does not use an agent adapter.",
+    },
+    cursor: {
+      state: "unsupported",
+      reason: "Repository control does not use an agent adapter.",
+    },
+  };
+};
+
 function active(overrides: TestInvariant = {}): TestInvariant {
+  const consumers = activeConsumers(overrides.surface ?? "hook");
   return candidate({
     lifecycle: "active",
     controlKind: "enforceable",
@@ -99,6 +129,7 @@ function active(overrides: TestInvariant = {}): TestInvariant {
       ...oracle,
     },
     sources: [source(firstPullRequest), source(secondPullRequest)],
+    ...(consumers === undefined ? {} : { consumers }),
     ...overrides,
   });
 }

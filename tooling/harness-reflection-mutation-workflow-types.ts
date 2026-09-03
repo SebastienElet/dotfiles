@@ -52,7 +52,7 @@ type DeepReadonly<Value> = Value extends readonly (infer Item)[]
 type WorkflowApproval = DeepReadonly<z.output<typeof workflowApprovalSchema>>;
 type MutationManifest = WorkflowApproval["manifest"];
 type PreparedFile = DeepReadonly<z.output<typeof preparedFileSchema>>;
-type MutationKind = "promotion" | "record-update" | "retirement";
+type MutationKind = "link" | "promotion" | "retirement";
 type MutationTransition = Readonly<{
   kind: MutationKind;
   target: InvariantRecord;

@@ -7,6 +7,7 @@ import {
   type InvariantRegistry,
   parseInvariantRegistry,
 } from "./invariant-registry-contract.ts";
+import { promotionResultsSchema } from "./harness-reflection-promotion-results.ts";
 import { resolveSupportedTarget } from "./harness-reflection-mutation-surfaces.ts";
 import { validateApprovedFileRequest } from "./harness-reflection-mutation-authorization.ts";
 import { validateTransition } from "./harness-reflection-mutation-transition.ts";
@@ -59,6 +60,35 @@ const exactCandidateText = (transition: MutationTransition): string => {
   return text;
 };
 
+const validateEvaluationReset = (
+  files: readonly ApprovedFile[],
+  path: string | undefined,
+): void => {
+  if (path === undefined) {
+    if (files.length > 0) {
+      throw new Error("approved-surface-required");
+    }
+    return;
+  }
+  const [file] = files;
+  let replacement: unknown = undefined;
+  try {
+    replacement = file === undefined ? undefined : JSON.parse(file.replacement);
+  } catch {
+    throw new Error("skill-evaluation-reset-required");
+  }
+  const parsed = promotionResultsSchema.safeParse(replacement);
+  if (
+    files.length !== 1 ||
+    file?.path !== path ||
+    file.preimage === null ||
+    !parsed.success ||
+    parsed.data.status !== "pending"
+  ) {
+    throw new Error("skill-evaluation-reset-required");
+  }
+};
+
 const validateSurfaceChange = (
   input: HarnessMutationRequest,
   transition: MutationTransition,
@@ -66,20 +96,22 @@ const validateSurfaceChange = (
   const surfaces = input.approval?.manifest.files.filter(
     ({ path }) => path !== registryPath,
   );
-  if (transition.kind === "record-update") {
+  if (transition.kind === "link") {
     if (surfaces?.length !== 0) {
-      throw new Error("record-update-surface-forbidden");
+      throw new Error("link-surface-forbidden");
     }
     return;
   }
-  if (surfaces?.length !== 1) {
-    throw new Error("approved-surface-required");
-  }
-  const [surface] = surfaces;
   const target = resolveSupportedTarget(transition.target);
-  if (surface === undefined || surface.path !== target.path) {
+  const targetSurfaces = surfaces?.filter(({ path }) => path === target.path);
+  const [surface] = targetSurfaces ?? [];
+  if (targetSurfaces?.length !== 1 || surface === undefined) {
     throw new Error("unsupported-control-surface");
   }
+  validateEvaluationReset(
+    surfaces?.filter(({ path }) => path !== target.path) ?? [],
+    target.evaluationResetPath,
+  );
   const candidateText = exactCandidateText(transition);
   const preimageHasText = surface.preimage?.includes(candidateText) ?? false;
   const replacementHasText = surface.replacement.includes(candidateText);

@@ -16,15 +16,24 @@ import {
   syntheticPromotionRequest,
   validateAppliedFixture,
 } from "./harness-reflection-mutation-integration-test-support.ts";
+import { parseMutationManifest } from "./harness-reflection-mutation-workflow-types.ts";
 import { readFile } from "node:fs/promises";
 import { sourceSchema } from "./invariant-registry-source.ts";
-import { validateApprovedHarnessMutation } from "./harness-reflection-mutation-validation.ts";
 import { validationOptions } from "./invariant-registry-test-support.ts";
 
 const fixturePath = (name: string): string =>
   `${import.meta.dir}/invariant-registry-fixtures/${name}`;
 
 type SyntheticRequest = ReturnType<typeof syntheticPromotionRequest>;
+type CandidateProposal = Readonly<{
+  approval: Readonly<{ manifest: unknown }>;
+  preparedFiles: readonly Readonly<{
+    contents: string;
+    path: string;
+    preimage: string;
+  }>[];
+  targetInvariantId: string;
+}>;
 
 const readFixtureRegistry = async (name: string): Promise<InvariantRegistry> =>
   parseInvariantRegistry(JSON.parse(await readFile(fixturePath(name), "utf8")));
@@ -52,7 +61,7 @@ const proposalRecord = (
   return candidate;
 };
 
-const proposalRequest = (after: InvariantRecord): unknown => {
+const proposalRequest = (after: InvariantRecord): CandidateProposal => {
   const beforeRegistry = JSON.stringify({ invariants: [], version: 1 });
   const afterRegistry = JSON.stringify({ invariants: [after], version: 1 });
   const registryFile = {
@@ -81,6 +90,48 @@ const proposalRequest = (after: InvariantRecord): unknown => {
     ],
     targetInvariantId: after.id,
   };
+};
+
+const expectHistoricalSources = (
+  pr206: InvariantRecord,
+  pr207: InvariantRecord,
+): void => {
+  const [pr206Source] = pr206.sources;
+  const [pr207Source] = pr207.sources;
+  expect(pr206Source).toEqual({
+    provider: "github",
+    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/206",
+    evidenceUrl:
+      "https://github.com/SebastienElet/dotfiles/pull/206#issuecomment-5388129552",
+  });
+  expect(pr207Source).toEqual({
+    provider: "github",
+    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/207",
+    evidenceUrl:
+      "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825",
+  });
+};
+
+const expectCandidateManifest = (candidate: InvariantRecord): void => {
+  const manifest = parseMutationManifest(
+    proposalRequest(candidate).approval.manifest,
+  );
+  const [registryFile] = manifest.files;
+  if (registryFile === undefined) {
+    throw new TypeError("historical-proposal-manifest-missing");
+  }
+  expect(JSON.stringify(manifest.registryDelta.after)).toBe(
+    JSON.stringify(candidate),
+  );
+  expect(manifest.registryDelta.before).toBeNull();
+  expect(manifest.registryDelta.targetInvariantId).toBe(candidate.id);
+  const parsedRegistry = parseInvariantRegistry(
+    JSON.parse(registryFile.replacement),
+  );
+  expect(parsedRegistry.version).toBe(1);
+  expect(JSON.stringify(parsedRegistry.invariants)).toBe(
+    JSON.stringify([candidate]),
+  );
 };
 
 const requiredManifestFile = (
@@ -145,7 +196,7 @@ const expectFixtureState = async (
 
 afterEach(cleanup);
 
-test("historical PR 206 and PR 207 fixtures reach distinct candidate proposals", async () => {
+test("historical PR 206 and PR 207 fixtures reach bound candidate manifests", async () => {
   const [pr206, pr207] = await Promise.all([
     readFixtureRegistry("pr-206-secret-redaction.json"),
     readFixtureRegistry("pr-207-invalid-utf8.json"),
@@ -155,27 +206,14 @@ test("historical PR 206 and PR 207 fixtures reach distinct candidate proposals",
   if (pr206Record === undefined || pr207Record === undefined) {
     throw new TypeError("historical-fixture-record-missing");
   }
-  expect(pr206Record.sources[0]).toEqual({
-    provider: "github",
-    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/206",
-    evidenceUrl:
-      "https://github.com/SebastienElet/dotfiles/pull/206#issuecomment-5388129552",
-  });
-  expect(pr207Record.sources[0]).toEqual({
-    provider: "github",
-    pullRequestUrl: "https://github.com/SebastienElet/dotfiles/pull/207",
-    evidenceUrl:
-      "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825",
-  });
+  expectHistoricalSources(pr206Record, pr207Record);
   const candidates = [
     proposalRecord(pr206Record, "2026-09-03T10:00:00.000Z"),
     proposalRecord(pr207Record, "2026-09-03T10:01:00.000Z"),
   ];
-  expect(
-    candidates.map(
-      (record) => validateApprovedHarnessMutation(proposalRequest(record)).kind,
-    ),
-  ).toEqual(["record-update", "record-update"]);
+  for (const candidate of candidates) {
+    expectCandidateManifest(candidate);
+  }
   expect(
     validateInvariantRegistry(
       parseInvariantRegistry({ invariants: candidates, version: 1 }),

@@ -195,7 +195,7 @@ test("rejects removal of the skill router", async () => {
     ),
   };
   expect(validateHarnessReflectionContract(mutant)).toContain(
-    "skill contains only the closed router surface",
+    "skill preserves the closed router contract",
   );
 });
 

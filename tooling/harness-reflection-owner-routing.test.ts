@@ -3,7 +3,9 @@ import {
   loadHarnessReflectionSources,
   parseHarnessReflectionContract,
 } from "./harness-reflection-contract.ts";
+import { invariantSurfaces } from "./invariant-registry-schema.ts";
 import { resolve } from "node:path";
+import { surfaceRoutes } from "./harness-reflection-mutation-surfaces.ts";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
 type Contract = ReturnType<typeof parseHarnessReflectionContract>;
@@ -99,4 +101,14 @@ test("does not ship the generic surface-writing engine", async () => {
       await Bun.file(resolve(import.meta.dir, module)).exists(),
     ).toBeFalse();
   }
+});
+
+test("routes every registry surface to at least one real owner", () => {
+  expect(Object.keys(surfaceRoutes)).toEqual([...invariantSurfaces]);
+  for (const surface of invariantSurfaces) {
+    expect(surfaceRoutes[surface].owners.length).toBeGreaterThan(0);
+  }
+  expect(surfaceRoutes["project-local-contract"].owners).toEqual([
+    "agent-instructions",
+  ]);
 });

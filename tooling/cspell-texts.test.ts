@@ -96,6 +96,9 @@ test("runs the real CSpell command over the owned text surface", async () => {
   expect(argv).toContain(
     "docs/superpowers/specs/2026-09-02-registre-invariants-harnais-design.md",
   );
+  expect(argv).toContain(
+    ".superpowers/sdd/2026-09-02-registre-invariants-harnais/breaker-adjudication-report.md",
+  );
   expect(
     Array.isArray(argv) ? argv.slice(0, lintArgumentPrefixLength) : [],
   ).toEqual(["lint", "--config", "fixture-config.json"]);

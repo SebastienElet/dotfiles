@@ -1,5 +1,6 @@
 export { validateInvariantRegistry } from "./invariant-registry-policy.ts";
 export {
+  invariantSurfaces,
   parseInvariantRegistry,
   type InvariantRecord,
   type InvariantRegistry,
