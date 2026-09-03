@@ -202,12 +202,12 @@ Every changed production and test TypeScript file remains below the 250-line rev
 size gate derives its inputs from the changed TypeScript files rather than naming a largest file or
 recording a count that becomes stale. Four cohesive written artifacts exceed the trigger:
 
-| Artifact                                      | Lines | Cohesion justification |
-| --------------------------------------------- | ----: | ---------------------- |
-| breaker adjudication report                   |   282 | one audit chain joining rulings, executed evidence, preserved scope, and limits |
-| design specification                          |   264 | one domain contract, only fourteen lines beyond the trigger |
-| implementation plan                           |   605 | one chronological execution record whose checkpoints depend on earlier decisions |
-| progressively disclosed registry reference    |   305 | one canonical protocol routed by the skill and independently bound to its evaluation state |
+| Artifact                                   | Lines | Cohesion justification                                                                     |
+| ------------------------------------------ | ----: | ------------------------------------------------------------------------------------------ |
+| breaker adjudication report                |   282 | one audit chain joining rulings, executed evidence, preserved scope, and limits            |
+| design specification                       |   264 | one domain contract, only fourteen lines beyond the trigger                                |
+| implementation plan                        |   605 | one chronological execution record whose checkpoints depend on earlier decisions           |
+| progressively disclosed registry reference |   305 | one canonical protocol routed by the skill and independently bound to its evaluation state |
 
 Splitting these artifacts would fragment either audit traceability, architectural authority,
 execution chronology, or the routed protocol. The router and reference remain byte-identical in
