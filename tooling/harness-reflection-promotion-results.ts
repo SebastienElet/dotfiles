@@ -31,6 +31,7 @@ const replayRunSchema = z
   .object({
     agent: z.string().regex(/\S/u),
     baseCommit: z.string().regex(/^[0-9a-f]{40,64}$/u),
+    label: z.string().regex(/\S/u),
     result: z.literal("pass"),
     coveredPath: z.literal("skip-missing-evidence"),
     criteria: runCriteriaSchema,
