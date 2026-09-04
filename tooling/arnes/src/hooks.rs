@@ -47,7 +47,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     let handoff_path = handoff_path(roots.home());
     let memory_path = memory_path(roots.home());
     let measurement = measurement_command(&measurement_path, args.agent)?;
-    let handoff_aliases = handoff_aliases(&handoff_path, roots.repository())?;
+    let handoff_aliases = handoff_aliases(&handoff_path, roots.repository(), args.agent)?;
     let memory = memory_command(&memory_path, args.agent)?;
     let memory_event = policy.memory_event;
     if desired.contains(&HookKind::Memory) && (memory.is_none() || memory_event.is_none()) {
@@ -117,12 +117,18 @@ fn memory_path(home: &Path) -> PathBuf {
     home.join(".local/bin/agent-memory")
 }
 
-fn handoff_aliases(command: &Path, repository: &Path) -> Result<Vec<String>, HooksError> {
-    let mut aliases = vec![
-        path_string(command)?,
+fn handoff_aliases(
+    command: &Path,
+    repository: &Path,
+    agent: Agent,
+) -> Result<Vec<String>, HooksError> {
+    let mut aliases = vec![path_string(command)?];
+    aliases
+        .extend((agent == Agent::Claude).then_some("$HOME/.claude/hooks/agent_handoff".to_owned()));
+    aliases.extend([
         path_string(&repository.join("tooling/agent-handoff"))?,
         path_string(&repository.join("scripts/agent_handoff"))?,
-    ];
+    ]);
     let metadata = match fs::symlink_metadata(command) {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(aliases),
@@ -234,6 +240,7 @@ mod tests {
         let aliases = handoff_aliases(
             Path::new("/tmp/home/.local/bin/agent-handoff"),
             Path::new("/tmp/repository"),
+            crate::manifest::Agent::Claude,
         )
         .unwrap();
 
