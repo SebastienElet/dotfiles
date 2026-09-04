@@ -93,7 +93,7 @@ test.each([
   "%s entry point deploys its memory runtime",
   (target, agent, deploysHandoff) => {
     const fixture = createDeploymentFixture(`memory-wiring-${target}`);
-    const handoff = join(fixture.home, ".local", "bin", "agent-handoff");
+    const handoffTarget = "moon exec --quiet agent-handoff:install";
     const expected = `"${fixture.home}/.local/bin/arnes" setup hooks --agent ${agent}`;
 
     installBuildProviders(fixture);
@@ -105,7 +105,7 @@ test.each([
 
     expectSuccess(result);
     expect(result.stdout).toContain("moon exec --quiet agent-memory:install");
-    expect(result.stdout.includes(handoff)).toBe(deploysHandoff);
+    expect(result.stdout.includes(handoffTarget)).toBe(deploysHandoff);
     expect(result.stdout).toContain(expected);
   },
 );
@@ -139,7 +139,7 @@ test("deploys the Cursor memory rule from its canonical source", () => {
 test("keeps memory and handoff runtime targets independent", () => {
   const fixture = createDeploymentFixture("memory-runtime-binaries");
   const memory = join(fixture.home, ".local", "bin", "agent-memory");
-  const handoff = join(fixture.home, ".local", "bin", "agent-handoff");
+  const handoffTarget = "moon exec --quiet agent-handoff:install";
   const result = (target: string): ReturnType<typeof runMake> =>
     runMake(fixture, [target], {
       dryRun: true,
@@ -155,8 +155,8 @@ test("keeps memory and handoff runtime targets independent", () => {
   expect(memoryResult.stdout).toContain(
     "moon exec --quiet agent-memory:install",
   );
-  expect(memoryResult.stdout).not.toContain(handoff);
-  expect(handoffResult.stdout).toContain(handoff);
+  expect(memoryResult.stdout).not.toContain(handoffTarget);
+  expect(handoffResult.stdout).toContain(handoffTarget);
   expect(handoffResult.stdout).not.toContain(memory);
 });
 

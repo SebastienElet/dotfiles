@@ -70,7 +70,15 @@ function copyMoonProjectFixture({
   );
   writeFileSync(
     join(repository, ".moon", "workspace.yml"),
-    `projects:\n  repository: .\n  ${projectId}: tooling/${projectId}\n\ndefaultProject: repository\n\nvcs:\n  defaultBranch: main\n`,
+    `projects:
+  repository: .
+  ${projectId}: tooling/${projectId}
+
+defaultProject: repository
+
+vcs:
+  defaultBranch: main
+`,
   );
   writeFileSync(
     join(repository, "moon.yml"),

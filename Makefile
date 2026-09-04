@@ -129,35 +129,9 @@ ${LOCAL_BIN}/arnes: FORCE
 ${BREW_BIN}/cargo:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) rust
 
-${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
-	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
-	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.toml \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/decision.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/environment.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/error.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/event.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/lib.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/main.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/run.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/state.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/transcript.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli/runtime_parity.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/concurrency.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/decision.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/event.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript/numeric.rs \
-	| ${BREW_BIN}/cargo
-	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
-	test -x "$@"
-	touch "$@"
-${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff | ${LOCAL_BIN}
-	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
-	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
-	test "$$(readlink "$@")" = "$<"
 .PHONY: agent-handoff
-agent-handoff: ${LOCAL_BIN}/agent-handoff
+agent-handoff:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
 
 .PHONY: agent-memory
 agent-memory:
@@ -474,6 +448,7 @@ moon:
 
 .PHONY: clean
 clean:
+	rm -rf ~/.local/bin/agent-handoff
 	rm -rf ~/.local/bin/agent-memory
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
