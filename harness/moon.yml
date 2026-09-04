@@ -13,7 +13,7 @@ tasks:
     deps:
       - arnes:install
     toolchains: system
-  semctx-install:
+  semctx:
     description: Install or update Semctx plugins for detected agent hosts
     command: bun run semctx install --host auto --skip-setup --json
     options:

@@ -43,6 +43,10 @@ Les profils ferment leur entrée standard après l’amorçage. Ils exécutent
 `brew bundle check --quiet --no-upgrade` avant toute installation, afin qu’un passage convergé
 reste silencieux sans demander de mise à niveau globale.
 
+`harness:install` agrège uniquement les capacités du harnais appartenant au profil minimal.
+L'installation de Semctx reste une action explicite via `harness:semctx` et n'est pas une dépendance
+de `repository:install` tant que ses prérequis hôtes ne font pas partie du graphe.
+
 ## Conséquences
 
 - Le socle et les optionnels sont lisibles dans deux manifestes déclaratifs.
