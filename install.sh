@@ -27,8 +27,10 @@ then
   exit 1
 fi
 
-cd 
+set -e
+
+cd "$HOME"
 git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
-make brew
-make minimal </dev/null
+make moon
+make minimal

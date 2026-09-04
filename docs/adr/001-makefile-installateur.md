@@ -1,7 +1,8 @@
-# ADR-001 — Profils hybrides comme installateur de poste
+# ADR-001 — Moon comme orchestrateur du poste
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-09-03
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
@@ -12,15 +13,30 @@ payants et composants dépendants de Docker. La CI devait reconstruire sa porté
 
 ## Décision
 
-Le `Makefile` reste l’orchestrateur public avec deux profils :
+Moon est l'orchestrateur cible unique pour l'installation et les tâches de développement.
+La migration avance par dépendances validées, jusqu'à la suppression du `Makefile`.
+Une tâche migrée appelle directement sa commande d'installation, jamais une cible Make.
+Les tâches d'installation simples résident dans le `moon.yml` racine ; aucun répertoire projet
+n'est créé uniquement pour donner un préfixe à une commande.
+
+La première étape porte `homebrew-install` et `applications-install`, cette dernière dépendant de
+la première. Les `checks` natifs de Moon vérifient l'état installé avant les commandes ; le cache
+de tâches est désactivé, car l'état Homebrew n'est pas un artefact de build du dépôt.
+
+`Brewfile` et `Brewfile.optional` restent les sources canoniques des formules, casks, taps et
+applications Mac App Store. Installer les paquets n'implique pas déployer leurs configurations.
+
+## Transition
+
+Les chemins non encore migrés conservent provisoirement les profils Make historiques :
 
 - `minimal` installe le poste de développement de référence ;
 - `optional` converge d’abord `minimal`, puis installe les composants utilisés hors de ce socle.
 
-`Brewfile` et `Brewfile.optional` sont les sources canoniques des formules, casks, taps et
-applications Mac App Store. Le `Makefile` conserve l’amorçage Homebrew, les installations
-non-Homebrew et les artefacts possédés par le dépôt. `install.sh` et `tooling/upgrade` appellent
-`make minimal` ; aucun alias `all` n’est conservé.
+`install.sh` amorce Moon avant d'appeler `make minimal`. Le profil Make délègue les opérations
+migrées à Moon et conserve les artefacts non encore migrés. L'installation de Moon lui-même reste
+hors de son graphe, car elle doit fonctionner avant que son exécutable soit disponible.
+`tooling/upgrade` utilise encore ce profil de transition.
 
 Les profils ferment leur entrée standard après l’amorçage. Ils exécutent
 `brew bundle check --quiet --no-upgrade` avant toute installation, afin qu’un passage convergé
@@ -30,11 +46,14 @@ reste silencieux sans demander de mise à niveau globale.
 
 - Le socle et les optionnels sont lisibles dans deux manifestes déclaratifs.
 - Les installations spécifiques restent locales au processus ou à l’artefact qu’elles possèdent.
-- Seul le profil minimal reçoit une garantie end-to-end en CI.
-- L’ajout d’un composant Homebrew modifie le Brewfile de son profil, pas une recette Make.
+- Le smoke test macOS existant passe par Moon pour les opérations migrées, puis par les recettes
+  Make restantes ; il vérifie l'état installé et le second passage du profil de transition.
+- L’ajout d’un composant Homebrew modifie le Brewfile de son profil, pas le graphe d'orchestration.
 
 ## Alternatives écartées
 
 - Conserver `all` : sa portée ambiguë est précisément le défaut corrigé.
-- Un script shell impératif : il dupliquerait l’orchestration et les probes de Make et Bundle.
+- Conserver Make derrière Moon : maintient deux graphes pour les mêmes tâches.
+- Créer un projet Moon par commande : ajoute des répertoires sans responsabilité propre.
+- Un script shell orchestrateur : dupliquerait le graphe de Moon.
 - Ansible ou un gestionnaire de dotfiles : disproportionné pour un poste unique.

@@ -10,7 +10,9 @@ DOCKER_UNAVAILABLE_POLICY?=require-docker
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 CREATE_SYMLINK=if [ -L "$@" ] && [ "$$(readlink "$@")" = "$<" ]; then exit 0; fi; if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and is not the expected symbolic link" >&2; exit 1; fi; echo "ln -s $< $@"; ln -s "$<" "$@"
 SKIP_PAID_APPS?=0
+MOON_EXEC?=moon exec --quiet
 export HOMEBREW_NO_ASK:=1
+export PATH:=$(PATH):$(HOME)/.moon/bin:$(BREW_BIN)
 
 .PHONY: usage
 usage:
@@ -27,14 +29,12 @@ bootstrap:
 	@xcode-select --print-path >/dev/null || { echo "Error: Apple Command Line Tools are required" >&2; exit 1; }
 
 .PHONY: minimal
-minimal: bootstrap brew
-	@$(MAKE) --no-print-directory bundle-minimal </dev/null
+minimal: bootstrap
+	@$(MOON_EXEC) install
 	@$(MAKE) --no-print-directory minimal-artifacts </dev/null
 
 .PHONY: optional
-optional: bootstrap
-	@$(MAKE) --no-print-directory brew
-	@$(MAKE) --no-print-directory minimal </dev/null
+optional: minimal
 	@$(MAKE) --no-print-directory bundle-optional </dev/null
 	@$(MAKE) --no-print-directory optional-artifacts </dev/null
 
@@ -55,7 +55,7 @@ smoke-minimal:
 
 .PHONY: bundle-minimal
 bundle-minimal:
-	@brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile"; brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile" </dev/null; }
+	@$(MOON_EXEC) applications-install
 
 .PHONY: bundle-optional
 bundle-optional:
@@ -465,11 +465,8 @@ tmux: ~/.config/tmux/tmux.conf ~/.tmux/plugins/tpm/tpm
 	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 .PHONY: brew
-brew: ${BREW_BIN}/brew
-${BREW_BIN}/brew:
-	curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > /tmp/brew-installer.sh
-	chmod +x /tmp/brew-installer.sh
-	/tmp/brew-installer.sh
+brew:
+	@$(MOON_EXEC) homebrew-install
 
 .PHONY: daisydisk
 daisydisk:
@@ -490,7 +487,9 @@ ${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
 
 .PHONY: moon
 moon:
-	curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+	@set -e; \
+	moon_installer=$$(curl -fsSL --connect-timeout 10 --max-time 60 https://moonrepo.dev/install/moon.sh); \
+	/bin/bash -c "$$moon_installer"
 
 .PHONY: clean
 clean:

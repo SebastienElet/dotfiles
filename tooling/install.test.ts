@@ -55,7 +55,11 @@ function createFixture(gitState: GitState): Fixture {
     "xcode-select",
     `printf 'xcode-select %s\n' "$*" >> "$INSTALL_TEST_TRACE"${gitState === "system-shim" || gitState === "working-without-clt" ? "\nexit 1" : ""}`,
   );
-  installTracedCommand(bin, "make");
+  installCommand(
+    bin,
+    "make",
+    'printf "make %s\\n" "$*" >> "$INSTALL_TEST_TRACE"\nif [ "$1" = moon ]; then exit "$INSTALL_TEST_MOON_STATUS"; fi',
+  );
   if (gitState !== "missing") {
     installCommand(
       bin,
@@ -75,6 +79,7 @@ function createFixture(gitState: GitState): Fixture {
     environment: {
       HOME: home,
       INSTALL_TEST_TRACE: tracePath,
+      INSTALL_TEST_MOON_STATUS: "0",
       PATH: bin,
       ...(gitState === "system-shim" ? { BASH_ENV: bashEnvironment } : {}),
     },
@@ -88,14 +93,6 @@ function installCommand(bin: string, name: string, body: string): void {
   const path = join(bin, name);
   writeFileSync(path, `#!/bin/sh\n${body}\n`);
   chmodSync(path, executableMode);
-}
-
-function installTracedCommand(bin: string, name: string): void {
-  installCommand(
-    bin,
-    name,
-    `printf '${name} %s\n' "$*" >> "$INSTALL_TEST_TRACE"`,
-  );
 }
 
 async function runInstaller(
@@ -178,12 +175,56 @@ test("rejects a third-party Git when developer tools are absent", async () => {
   expect(readTrace(fixture)).toBe("xcode-select --print-path\n");
 });
 
-test("clones and runs make through the shipped entry point when Git works", async () => {
+test("bootstraps Moon before installing the workstation", async () => {
   const fixture = createFixture("working");
   const result = await runInstaller(fixture);
 
   expect(result).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   expect(readTrace(fixture)).toBe(
-    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake brew\nmake minimal\n",
+    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake moon\nmake minimal\n",
   );
+});
+
+test("stops before workstation installation when Moon bootstrap fails", async () => {
+  const fixture = createFixture("working");
+  const bootstrapFailureExitCode = 42;
+  const result = await runInstaller({
+    ...fixture,
+    environment: {
+      ...fixture.environment,
+      INSTALL_TEST_MOON_STATUS: String(bootstrapFailureExitCode),
+    },
+  });
+
+  expect(result.exitCode).toBe(bootstrapFailureExitCode);
+  expect(readTrace(fixture)).toEndWith("make moon\n");
+  expect(readTrace(fixture)).not.toContain("make minimal");
+});
+
+test("stops before Moon bootstrap when cloning fails", async () => {
+  const fixture = createFixture("working");
+  installCommand(
+    fixture.bin,
+    "git",
+    'printf "git %s\\n" "$*" >> "$INSTALL_TEST_TRACE"\nif [ "$1" = clone ]; then exit 1; fi',
+  );
+
+  const result = await runInstaller(fixture);
+
+  expect(result.exitCode).not.toBe(0);
+  expect(readTrace(fixture)).not.toContain("make ");
+});
+
+test("preserves stdin for the Homebrew bootstrap delegated through Moon", async () => {
+  const fixture = createFixture("working");
+  installCommand(
+    fixture.bin,
+    "make",
+    String.raw`if [ "$1" = minimal ]; then IFS= read -r answer || exit 1; printf "answer %s\n" "$answer" >> "$INSTALL_TEST_TRACE"; fi`,
+  );
+
+  const result = await runInstaller(fixture, "y\n");
+
+  expect(result.exitCode).toBe(0);
+  expect(readTrace(fixture)).toEndWith("answer y\n");
 });

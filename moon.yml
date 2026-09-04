@@ -36,6 +36,49 @@ fileGroups:
     - bun.lock
 
 tasks:
+  install:
+    description: Install the workstation
+    command: noop
+    deps:
+      - applications-install
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+  homebrew-install:
+    description: Install Homebrew
+    script: |
+      set -e
+      homebrew_installer=$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+      /bin/bash -c "$homebrew_installer"
+    checks:
+      - check: condition
+        script: command -v brew
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
+    toolchains: system
+    options:
+      cache: false
+      interactive: true
+      os: macos
+      runInCI: false
+  applications-install:
+    description: Install the minimal Brewfile
+    command: brew bundle install --no-upgrade --file Brewfile
+    deps:
+      - homebrew-install
+    checks:
+      - check: condition
+        script: brew bundle check --quiet --no-upgrade --file Brewfile
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
   typescript-lint:
     command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
     inputs:
