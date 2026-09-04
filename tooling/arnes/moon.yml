@@ -18,6 +18,50 @@ env:
   RUSTFLAGS: -Funsafe-code
 
 tasks:
+  install:
+    description: Install the Arnes executable and manifest
+    command: noop
+    deps:
+      - binary
+      - manifest
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  build:
+    command: cargo build --quiet --release --locked
+    deps:
+      - repository:rust
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
+    toolchains: system
+    options:
+      cache: false
+      mutex: arnes-cargo-target
+      runInCI: false
+  binary:
+    script: |
+      set -e
+      mkdir -p "$HOME/.local/bin"
+      ln -s "$projectRoot/target/release/arnes" "$HOME/.local/bin/arnes"
+    deps:
+      - build
+    checks:
+      - check: condition
+        script: test -e "$HOME/.local/bin/arnes" || test -L "$HOME/.local/bin/arnes"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  manifest:
+    command: ln -s "$workspaceRoot/home/.arnes.yaml" "$HOME/.arnes.yaml"
+    checks:
+      - check: condition
+        script: test -e "$HOME/.arnes.yaml" || test -L "$HOME/.arnes.yaml"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
   fmt:
     command: cargo fmt --check
     inputs:

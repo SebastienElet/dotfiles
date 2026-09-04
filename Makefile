@@ -116,15 +116,18 @@ wezterm: ~/.config/wezterm/wezterm.lua
 ~/.config/wezterm/wezterm.lua: ${DOTFILES_PATH}/home/.config/wezterm/wezterm.lua FORCE | ~/.config/wezterm
 	@${CREATE_SYMLINK}
 
-~/.arnes.yaml: ${DOTFILES_PATH}/home/.arnes.yaml FORCE
-	@${CREATE_SYMLINK}
+~/.arnes.yaml: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:manifest
 
 .PHONY: arnes
-arnes: ~/.arnes.yaml ${LOCAL_BIN}/arnes
+arnes:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:install
 
-${LOCAL_BIN}/arnes: ${DOTFILES_PATH}/tooling/arnes/Cargo.toml FORCE | ${LOCAL_BIN}
-	@cd ${DOTFILES_PATH}/tooling/arnes && ${BREW_BIN}/cargo build --quiet --release
-	@source_path="${DOTFILES_PATH}/tooling/arnes/target/release/arnes"; if [ -L "$@" ] && [ "$$(readlink "$@")" = "$$source_path" ]; then exit 0; fi; if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and is not the expected symbolic link" >&2; exit 1; fi; echo "ln -s $$source_path $@"; ln -s "$$source_path" "$@"
+${LOCAL_BIN}/arnes: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:binary
+
+${BREW_BIN}/cargo:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) rust
 
 ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
 	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
@@ -466,7 +469,7 @@ tmux: ~/.config/tmux/tmux.conf ~/.tmux/plugins/tpm/tpm
 
 .PHONY: brew
 brew:
-	@$(MOON_EXEC) homebrew-install
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) homebrew
 
 .PHONY: daisydisk
 daisydisk:

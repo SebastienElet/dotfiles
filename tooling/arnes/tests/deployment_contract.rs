@@ -1,5 +1,13 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+
+fn moon_home() -> PathBuf {
+    std::env::var_os("MOON_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("XDG_DATA_HOME").map(|path| PathBuf::from(path).join("moon")))
+        .or_else(|| std::env::var_os("HOME").map(|path| PathBuf::from(path).join(".moon")))
+        .expect("Moon tests require HOME, XDG_DATA_HOME, or MOON_HOME")
+}
 
 fn output_text(output: &Output) -> String {
     format!(
@@ -26,6 +34,7 @@ fn make_deployments_satisfy_instruction_rule_and_skill_doctors() {
         .arg(&claude_rule)
         .arg(&codex_skill)
         .env("HOME", home.path())
+        .env("MOON_HOME", moon_home())
         .current_dir(&repository)
         .output()
         .unwrap();

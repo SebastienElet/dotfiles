@@ -41,12 +41,13 @@ tasks:
     command: noop
     deps:
       - applications-install
+      - harness:install
     toolchains: system
     options:
       cache: false
       os: macos
       runInCI: false
-  homebrew-install:
+  homebrew:
     description: Install Homebrew
     script: |
       set -e
@@ -61,13 +62,14 @@ tasks:
     options:
       cache: false
       interactive: true
+      mutex: homebrew
       os: macos
       runInCI: false
   applications-install:
     description: Install the minimal Brewfile
     command: brew bundle install --no-upgrade --file Brewfile
     deps:
-      - homebrew-install
+      - homebrew
     checks:
       - check: condition
         script: brew bundle check --quiet --no-upgrade --file Brewfile
@@ -77,6 +79,24 @@ tasks:
     toolchains: system
     options:
       cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+  rust:
+    description: Install Rust and Cargo with Homebrew
+    command: brew install rust
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: brew list --formula --versions rust
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
       os: macos
       runInCI: false
   typescript-lint:

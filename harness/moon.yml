@@ -8,10 +8,11 @@ taskOptions:
 
 tasks:
   install:
-    description: Install every declared harness capability
+    description: Install migrated harness capabilities
     command: noop
     deps:
-      - ~:semctx-install
+      - arnes:install
+    toolchains: system
   semctx-install:
     description: Install or update Semctx plugins for detected agent hosts
     command: bun run semctx install --host auto --skip-setup --json

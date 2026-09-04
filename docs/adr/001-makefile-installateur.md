@@ -19,12 +19,13 @@ Une tâche migrée appelle directement sa commande d'installation, jamais une ci
 Les tâches d'installation simples résident dans le `moon.yml` racine ; aucun répertoire projet
 n'est créé uniquement pour donner un préfixe à une commande.
 
-La première étape porte `homebrew-install` et `applications-install`, cette dernière dépendant de
+La première étape porte `homebrew` et `applications-install`, cette dernière dépendant de
 la première. Les `checks` natifs de Moon vérifient l'état installé avant les commandes ; le cache
 de tâches est désactivé, car l'état Homebrew n'est pas un artefact de build du dépôt.
 
-`Brewfile` et `Brewfile.optional` restent les sources canoniques des formules, casks, taps et
-applications Mac App Store. Installer les paquets n'implique pas déployer leurs configurations.
+`Brewfile` et `Brewfile.optional` restent les sources canoniques des paquets non migrés. Une formule
+migrée vers une tâche Moon autonome quitte son Brewfile selon l'ADR-002. Installer les paquets
+n'implique pas déployer leurs configurations.
 
 ## Transition
 
@@ -48,7 +49,8 @@ reste silencieux sans demander de mise à niveau globale.
 - Les installations spécifiques restent locales au processus ou à l’artefact qu’elles possèdent.
 - Le smoke test macOS existant passe par Moon pour les opérations migrées, puis par les recettes
   Make restantes ; il vérifie l'état installé et le second passage du profil de transition.
-- L’ajout d’un composant Homebrew modifie le Brewfile de son profil, pas le graphe d'orchestration.
+- L'ajout d'un composant Homebrew modifie le Brewfile de son profil, sauf décision explicite de
+  migrer son installation vers une tâche Moon autonome.
 
 ## Alternatives écartées
 
