@@ -55,16 +55,21 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   aucun oracle ne peut détecter une erreur réelle. Une configuration portant un invariant de sécurité
   ou de compatibilité reste testée par son comportement. Choisir l'oracle le moins coûteux qui prouve
   réellement l'invariant : unitaire si possible, intégration dès que la preuve appartient à la DB,
-  une transaction, un mapping ORM, un protocole ou autre composant. Une gate directement demandée par
-  l'utilisateur ou une autorité externe reste une exigence à implémenter. Un plan, une spécification,
-  une ADR ou une revue produits par un agent dans le même flux ne rendent pas une gate « explicitement
-  demandée » : sa valeur doit rester démontrée indépendamment. Sans exigence explicite, n'ajouter une
-  gate que si elle apporte un oracle durable sur du code ou un invariant possédé, après inventaire des
-  oracles existants ; l'absence de test dédié ne suffit pas. Pour une configuration déclarative
-  interprétée par un outil externe, préférer sa validation native et l'exécution du point d'entrée
-  public. Ne jamais analyser de nouveau la déclaration pour réaffirmer son contenu, le graphe ou les options de
-  l'outil : si aucune panne possédée n'est observable au-delà, ne pas créer de test. Cela vaut notamment
-  pour un Makefile déjà couvert par un smoke test, le comportement interne de Moon et la CI elle-même.
+  une transaction, un mapping ORM, un protocole ou autre composant. Lorsqu'un invariant critique est
+  clairement touché et qu'un oracle pertinent est évident, l'ajouter ou l'exécuter sans demander de
+  confirmation. Ne consulter l'utilisateur que si la criticité de l'invariant ou la pertinence de
+  l'oracle est matériellement ambiguë : suspendre seulement le chemin concerné, exposer les options
+  et leurs conséquences, recommander une voie, puis demander la décision. Une gate directement
+  demandée par l'utilisateur ou une autorité externe reste une exigence à implémenter. Un plan, une
+  spécification, une ADR ou une revue produits par un agent dans le même flux ne rendent pas une gate
+  « explicitement demandée » : sa valeur doit rester démontrée indépendamment. Sans exigence explicite,
+  n'ajouter une gate que si elle apporte un oracle durable sur du code ou un invariant possédé, après
+  inventaire des oracles existants ; l'absence de test dédié ne suffit pas. Pour une configuration
+  déclarative interprétée par un outil externe, préférer sa validation native et l'exécution du point
+  d'entrée public. Ne jamais analyser de nouveau la déclaration pour réaffirmer son contenu, le graphe
+  ou les options de l'outil : si aucune panne possédée n'est observable au-delà, ne pas créer de test.
+  Cela vaut notamment pour un Makefile déjà couvert par un smoke test, le comportement interne de Moon
+  et la CI elle-même.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
@@ -95,7 +100,12 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   seulement si charge, ratio lecture/écriture, tolérance à la fraîcheur ou SLO le justifient.
 - **Migrations progressives et reprenables.** Préférer expand/contract. Découper les gros
   changements en migrations petites, atomiques, compréhensibles et rejouables autant que
-  possible plutôt qu'une opération monolithique difficile à reprendre.
+  possible plutôt qu'une opération monolithique difficile à reprendre. Lorsqu'un changement
+  remplace transversalement un runtime, framework, outil ou mécanisme, inventorier d'abord les
+  garanties et oracles fournis par l'ancien chemin, puis établir lesquels sont conservés,
+  remplacés ou explicitement abandonnés. Un pipeline vert après substitution prouve seulement les
+  propriétés qu'il exerce ; il ne prouve pas l'équivalence des garanties entre l'ancien et le
+  nouveau mécanisme.
 - **Concurrence bornée et asynchrone.** `Promise.all` convient à un ensemble indépendant de
   taille connue ; sinon limiter explicitement la concurrence. Un fan-out DB/API est d'abord
   un signal à remplacer par batch, requête groupée ou queue. Pour les systèmes externes,
@@ -145,6 +155,10 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 - **Validation concise.** Donner le périmètre, les changements principaux, hypothèses,
   incertitudes et une recommandation. Pour un changement complexe, préférer une vue du
   diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
+- **Affirmations alignées sur le résultat.** À la fin d'un changement, vérifier que les affirmations
+  factuelles présentes dans la PR et dans la documentation touchée correspondent au code courant.
+  Ne pas rendre la documentation exhaustive par principe : corriger ou retirer uniquement les
+  affirmations devenues fausses, trop fortes ou contradictoires avec l'implémentation.
 - **Spécifier le résultat, redécouvrir l'implémentation.** Une issue ou spécification doit être
   précise sur le comportement attendu, les contraintes produit, les états visibles, les designs
   ou composants à respecter et les critères d'acceptation, sans figer architecture, fichiers ou
