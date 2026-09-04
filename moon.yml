@@ -34,6 +34,13 @@ fileGroups:
     - tooling/git-main-branch-*.ts
     - package.json
     - bun.lock
+  hunspellTests:
+    - tooling/install-hunspell-dictionary
+    - tooling/install-hunspell-dictionary*.ts
+    - package.json
+    - bun.lock
+    - tsconfig.json
+    - .github/workflows/test-deployment.yml
 
 tasks:
   install:
@@ -42,6 +49,7 @@ tasks:
     deps:
       - applications-install
       - harness:install
+      - hunspell-dictionaries
     toolchains: system
     options:
       cache: false
@@ -98,7 +106,32 @@ tasks:
       cache: false
       mutex: homebrew
       os: macos
+      runInCI: skip
+  hunspell-dictionaries:
+    description: Install Hunspell dictionaries
+    script: |
+      set -e
+      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.aff" "c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5" "$HOME/Library/Spelling/fr.aff"
+      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.dic" "b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c" "$HOME/Library/Spelling/fr.dic"
+      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.aff" "e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e" "$HOME/Library/Spelling/en_US.aff"
+      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$HOME/Library/Spelling/en_US.dic"
+    inputs:
+      - tooling/install-hunspell-dictionary
+      - tooling/install-hunspell-dictionary-error.ts
+      - tooling/install-hunspell-dictionary-files.ts
+      - tooling/install-hunspell-dictionary.ts
+    toolchains: bun
+    options:
+      cache: false
+      os: macos
       runInCI: false
+  hunspell-test:
+    command: >-
+      bun --config=/dev/null --no-env-file test
+      tooling/install-hunspell-dictionary.test.ts
+      tooling/install-hunspell-dictionary-failures.test.ts
+    inputs:
+      - "@group(hunspellTests)"
   typescript-lint:
     command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
     inputs:

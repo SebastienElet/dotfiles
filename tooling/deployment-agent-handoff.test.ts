@@ -1,240 +1,152 @@
-import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import {
-  chmodSync,
-  copyFileSync,
-  mkdirSync,
-  symlinkSync,
-  unlinkSync,
-  utimesSync,
-  writeFileSync,
-} from "node:fs";
+import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
   expectSuccess,
-  fileIdentity,
   linkTarget,
   pathExists,
   project,
   requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
-import { dirname, join } from "node:path";
+import {
+  cleanupMoonDeploymentFixtures,
+  createMoonDeploymentFixture,
+  runMoon,
+} from "./deployment-moon-test-support.ts";
+import {
+  mkdirSync,
+  realpathSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
 
-afterEach(cleanupDeploymentFixtures);
-const deploymentTimeoutMilliseconds = 15_000;
+afterEach(() => {
+  cleanupDeploymentFixtures();
+  cleanupMoonDeploymentFixtures();
+});
+
+const deploymentTimeoutMilliseconds = 120_000;
+const executableFileMode = 0o755;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
 
-const prerequisites = [
-  "Cargo.lock",
-  "Cargo.toml",
-  "src/decision.rs",
-  "src/environment.rs",
-  "src/error.rs",
-  "src/event.rs",
-  "src/lib.rs",
-  "src/main.rs",
-  "src/run.rs",
-  "src/state.rs",
-  "src/transcript.rs",
-  "tests/cli.rs",
-  "tests/cli/runtime_parity.rs",
-  "tests/concurrency.rs",
-  "tests/decision.rs",
-  "tests/event.rs",
-  "tests/transcript.rs",
-  "tests/transcript/numeric.rs",
-] as const;
-const oldTime = new Date("2020-01-01T00:00:00Z");
-const releaseTime = new Date("2021-01-01T00:00:00Z");
-const newTime = new Date("2022-01-01T00:00:00Z");
-const executableFileMode = 0o755;
-type CommandResult = ReturnType<typeof runMake>;
-type DeploymentFixture = ReturnType<typeof createDeploymentFixture>;
+test("installs an executable handoff runtime through Moon", () => {
+  const fixture = createMoonDeploymentFixture("agent-handoff");
+  const result = runMoon(fixture, "agent-handoff:install");
+  const destination = join(fixture.home, ".local/bin/agent-handoff");
 
-describe("agent-handoff release target", () => {
-  test.each([...prerequisites])(
-    "rebuilds once after %s changes",
-    (relativePath) => {
-      const fixture = createDeploymentFixture(
-        `handoff-build-${relativePath.replaceAll("/", "-")}`,
-      );
-      const prepared = prepareAgentHandoff(fixture);
-      utimesSync(join(prepared.crate, relativePath), newTime, newTime);
-
-      const rebuilt = runAgentHandoffMake(fixture, prepared.release);
-      expectSuccess(rebuilt);
-      expect(rebuilt.stdout).toContain(`${fixture.bin}/cargo build --release`);
-
-      const replayed = runAgentHandoffMake(fixture, prepared.release);
-      expectSuccess(replayed);
-      expect(replayed.stdout).not.toContain("cargo build --release");
-    },
+  expectSuccess(result);
+  expect(linkTarget(destination)).toBe(
+    join(
+      realpathSync(fixture.repository),
+      "tooling/agent-handoff/target/release/agent-handoff",
+    ),
   );
-
-  test("refuses a successful build that produces no release binary", () => {
-    const fixture = createDeploymentFixture("handoff-missing-release");
-    const prepared = prepareAgentHandoff(fixture);
-    unlinkSync(prepared.release);
-
-    const result = runAgentHandoffMake(fixture, prepared.release);
-
-    expect(result.exitCode).not.toBe(0);
-    expect(pathExists(prepared.release)).toBeFalse();
-  });
+  expect(statSync(destination).mode & executableFileMode).not.toBe(0);
 });
 
-describe("agent-handoff deployed link", () => {
-  test("does not rebuild or revalidate an up-to-date deployed link", () => {
-    const fixture = createDeploymentFixture("handoff-current");
-    const prepared = prepareAgentHandoff(fixture);
-    mkdirSync(dirname(prepared.destination), { recursive: true });
-    symlinkSync(prepared.release, prepared.destination);
-
-    const result = runAgentHandoffMake(fixture, prepared.destination);
-
-    expectSuccess(result);
-    expect(result.stdout).not.toContain("cargo build --release");
-    expect(result.stdout).not.toContain(`readlink ${prepared.destination}`);
-    expect(linkTarget(prepared.destination)).toBe(prepared.release);
+test("propagates a handoff build failure", () => {
+  const fixture = createMoonDeploymentFixture("agent-handoff");
+  const result = runMoon(fixture, "agent-handoff:install", {
+    cache: "off",
+    environment: { RUSTC: join(fixture.root, "missing-rustc") },
+    force: true,
   });
 
-  test("creates an absent deployed link", () => {
-    const fixture = createDeploymentFixture("handoff-absent");
-    const prepared = prepareAgentHandoff(fixture);
-
-    expectSuccess(runAgentHandoffMake(fixture, prepared.destination));
-
-    expect(linkTarget(prepared.destination)).toBe(prepared.release);
-  });
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain("missing-rustc");
 });
 
-describe("agent-handoff historical migration", () => {
-  test("migrates the exact historical link when the release is newer", () => {
-    const fixture = createDeploymentFixture("handoff-historical-stale");
-    const prepared = prepareAgentHandoff(fixture);
-    installHistoricalLink(prepared);
-    utimesSync(prepared.crate, oldTime, oldTime);
-
-    expectSuccess(runAgentHandoffMake(fixture, prepared.destination));
-
-    expect(linkTarget(prepared.destination)).toBe(prepared.release);
+test("refuses a handoff build that produces no canonical binary", () => {
+  const fixture = createMoonDeploymentFixture("agent-handoff");
+  const alternateTarget = join(fixture.root, "alternate-target");
+  const result = runMoon(fixture, "agent-handoff:install", {
+    cache: "off",
+    environment: { CARGO_TARGET_DIR: alternateTarget },
+    force: true,
   });
 
-  test("leaves an up-to-date historical link untouched", () => {
-    const fixture = createDeploymentFixture("handoff-historical-current");
-    const prepared = prepareAgentHandoff(fixture);
-    installHistoricalLink(prepared);
-    utimesSync(prepared.crate, newTime, newTime);
-
-    const result = runAgentHandoffMake(fixture, prepared.destination);
-
-    expectSuccess(result);
-    expect(result.stdout).not.toContain(`readlink ${prepared.destination}`);
-    expect(linkTarget(prepared.destination)).toBe(prepared.crate);
-  });
-});
-
-describe("agent-handoff up-to-date unexpected destination", () => {
-  test("leaves an up-to-date unexpected file untouched", () => {
-    const fixture = createDeploymentFixture("handoff-current-file");
-    const prepared = prepareAgentHandoff(fixture);
-    mkdirSync(dirname(prepared.destination), { recursive: true });
-    writeFileSync(prepared.destination, "keep\n");
-    utimesSync(prepared.destination, newTime, newTime);
-    const before = fileIdentity(prepared.destination);
-
-    const result = runAgentHandoffMake(fixture, prepared.destination);
-
-    expectSuccess(result);
-    expect(result.stdout).not.toContain(`readlink ${prepared.destination}`);
-    expect(fileIdentity(prepared.destination)).toEqual(before);
-  });
-});
-
-describe("agent-handoff stale unexpected destination", () => {
-  test.each([
-    ["file", false, false],
-    ["link", true, false],
-    ["dangling link", true, true],
-  ] as const)(
-    "refuses a stale unexpected %s without changing it",
-    (name, linked, dangling) => {
-      const fixture = createDeploymentFixture(
-        `handoff-stale-${name.replaceAll(" ", "-")}`,
-      );
-      const prepared = prepareAgentHandoff(fixture);
-      const unexpected = join(fixture.root, "unexpected");
-      mkdirSync(dirname(prepared.destination), { recursive: true });
-      if (!dangling) {
-        writeFileSync(unexpected, "keep\n");
-        utimesSync(unexpected, oldTime, oldTime);
-      }
-      if (linked) {
-        symlinkSync(unexpected, prepared.destination);
-      } else {
-        writeFileSync(prepared.destination, "keep\n");
-        utimesSync(prepared.destination, oldTime, oldTime);
-      }
-      const before = linked
-        ? linkTarget(prepared.destination)
-        : fileIdentity(prepared.destination);
-
-      const result = runAgentHandoffMake(fixture, prepared.destination);
-
-      expect(result.exitCode).not.toBe(0);
-      expect(result.stderr).not.toBe("");
-      expect(
-        linked
-          ? linkTarget(prepared.destination)
-          : fileIdentity(prepared.destination),
-      ).toEqual(before);
-    },
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    "tooling/agent-handoff/target/release/agent-handoff",
   );
 });
 
-type PreparedAgentHandoff = Readonly<{
-  crate: string;
-  destination: string;
-  release: string;
-}>;
+test("propagates a handoff deployment failure", () => {
+  const fixture = createMoonDeploymentFixture("agent-handoff");
+  writeFileSync(join(fixture.home, ".local"), "occupied\n");
+  const result = runMoon(fixture, "agent-handoff:install");
 
-function prepareAgentHandoff(fixture: DeploymentFixture): PreparedAgentHandoff {
-  const crate = join(fixture.repository, "tooling", "agent-handoff");
-  for (const relativePath of prerequisites) {
-    const destination = join(crate, relativePath);
-    mkdirSync(dirname(destination), { recursive: true });
-    copyFileSync(
-      join(project, "tooling", "agent-handoff", relativePath),
-      destination,
-    );
-    utimesSync(destination, oldTime, oldTime);
-  }
-  const release = join(crate, "target", "release", "agent-handoff");
-  mkdirSync(dirname(release), { recursive: true });
-  writeFileSync(release, "binary");
-  chmodSync(release, executableFileMode);
-  utimesSync(release, releaseTime, releaseTime);
-  const noOperation = requireCommand("true");
-  symlinkSync(noOperation, join(fixture.bin, "brew"));
-  symlinkSync(noOperation, join(fixture.bin, "cargo"));
-  return {
-    crate,
-    destination: join(fixture.home, ".local", "bin", "agent-handoff"),
-    release,
-  };
-}
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(".local");
+  expect(result.stderr).toContain("Not a directory");
+});
 
-function installHistoricalLink(prepared: PreparedAgentHandoff): void {
-  mkdirSync(dirname(prepared.destination), { recursive: true });
-  symlinkSync(prepared.crate, prepared.destination);
-}
-
-function runAgentHandoffMake(
-  fixture: DeploymentFixture,
-  target: string,
-): CommandResult {
-  return runMake(fixture, [target], {
+test.each([
+  ["codex", true],
+  ["claude-code", true],
+  ["cursor", false],
+] as const)("%s preserves its handoff dependency", (target, deploysHandoff) => {
+  const fixture = createDeploymentFixture(`handoff-wiring-${target}`);
+  installBuildProviders(fixture);
+  const result = runMake(fixture, [target], {
+    dryRun: true,
+    repository: project,
     variables: { BREW_BIN: fixture.bin },
   });
+
+  expectSuccess(result);
+  expect(
+    result.stdout.includes("moon exec --quiet agent-handoff:install"),
+  ).toBe(deploysHandoff);
+});
+
+test("keeps the handoff runtime independent from memory", () => {
+  const fixture = createDeploymentFixture("handoff-runtime-independence");
+  const result = runMake(fixture, ["agent-handoff"], {
+    dryRun: true,
+    repository: project,
+  });
+
+  expectSuccess(result);
+  expect(result.stdout).toContain("moon exec --quiet agent-handoff:install");
+  expect(result.stdout).not.toContain("agent-memory");
+});
+
+test.each(["file", "directory", "symlink"] as const)(
+  "clean removes the owned handoff %s destination only",
+  (destinationType) => {
+    const fixture = createDeploymentFixture("handoff-clean");
+    const destination = join(fixture.home, ".local/bin/agent-handoff");
+    const neighbor = join(fixture.home, ".local/bin/keep");
+    const external = join(fixture.root, "external");
+    mkdirSync(join(fixture.home, ".local/bin"), { recursive: true });
+    if (destinationType === "directory") {
+      mkdirSync(destination);
+    } else if (destinationType === "symlink") {
+      mkdirSync(external);
+      symlinkSync(external, destination);
+    } else {
+      writeFileSync(destination, "handoff\n");
+    }
+    writeFileSync(neighbor, "keep\n");
+
+    expectSuccess(runMake(fixture, ["clean"], { repository: project }));
+    expect(pathExists(destination)).toBeFalse();
+    expect(pathExists(neighbor)).toBeTrue();
+    if (destinationType === "symlink") {
+      expect(pathExists(external)).toBeTrue();
+    }
+  },
+);
+
+function installBuildProviders(
+  fixture: ReturnType<typeof createDeploymentFixture>,
+): void {
+  const provider = requireCommand("true");
+  for (const command of ["bun", "cargo", "volta"]) {
+    symlinkSync(provider, join(fixture.bin, command));
+  }
 }

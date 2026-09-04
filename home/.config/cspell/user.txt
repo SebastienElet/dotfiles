@@ -22,6 +22,8 @@ pathspecs
 pullrequests
 renameat
 renamex
+rustc
+rustup
 scrapling
 unmatch
 wezterm

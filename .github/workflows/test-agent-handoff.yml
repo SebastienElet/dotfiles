@@ -19,5 +19,4 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run: >-
-          moon ci tooling/agent-handoff:fmt tooling/agent-handoff:clippy
-          tooling/agent-handoff:test
+          moon ci agent-handoff:fmt agent-handoff:clippy agent-handoff:test

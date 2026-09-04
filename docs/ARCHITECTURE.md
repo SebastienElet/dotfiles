@@ -19,7 +19,8 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 
 Les points d'entrée restent à la racine :
 
-- `Makefile` orchestre les profils `minimal` et `optional` et décrit les destinations déployées ;
+- `moon.yml` orchestre les tâches migrées ; le `Makefile` conserve temporairement les profils
+  `minimal` et `optional` ainsi que les points d'entrée de compatibilité ;
 - `Brewfile` et `Brewfile.optional` sont les inventaires canoniques des paquets de leurs profils ;
 - `install.sh` amorce une nouvelle machine en clonant le dépôt puis en lançant
   `make minimal` ;
@@ -43,9 +44,9 @@ Les points d'entrée restent à la racine :
 | `home/.config/wezterm/wezterm.lua` | `~/.config/wezterm/wezterm.lua` |
 | `home/cspell.json`                 | `~/cspell.json`                 |
 
-Le `Makefile` déploie les artefacts statiques et lie les exécutables générés après leur build. À
-chaque passage du profil, il conserve silencieusement un lien exact, crée une destination absente et
-refuse toute divergence sans la modifier.
+Moon déploie les capacités migrées, tandis que le `Makefile` conserve les artefacts encore en
+transition. Chaque installateur part d'une destination possédée absente ; ses probes permettent un
+second passage silencieux sans transformer l'installation en diagnostic.
 
 ## Intégrations d'agents
 
@@ -74,14 +75,15 @@ deux occurrences.
   `upgrade`, `agent-handoff` et `git-main-branch` ;
 - les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
-Les exécutables destinés au `PATH` sont liés depuis le `Makefile`, généralement
-sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
+Les exécutables destinés au `PATH` sont liés par leur projet Moon ou, pour les composants encore en
+transition, par le `Makefile`, généralement sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
 `make minimal`, ce qui déploie les nouveaux chemins du socle.
 
 ## Flux de changement
 
 1. Placer la source dans la zone qui porte sa responsabilité.
-2. Mettre à jour le `Makefile` lorsqu'un artefact est installé ou déployé.
+2. Mettre à jour le projet Moon propriétaire lorsqu'un artefact est installé ou déployé, puis le
+   point d'entrée Make de compatibilité tant que la transition l'exige.
 3. Mettre à jour tous les consommateurs du chemin source dans le même changement.
 4. Ajouter ou adapter la barrière CI qui couvre le type de fichier concerné.
 5. Enregistrer une ADR seulement si le changement introduit ou remplace une

@@ -2,6 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-09-04
 
 ## Contexte
 
@@ -30,10 +31,10 @@ Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
 `CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
 
-Conformément à l'[ADR-003](003-deploiement-par-symlinks.md), le déploiement part
-d'un état propre et laisse Make créer chaque destination absente. Les recettes
-n'inspectent ni ne migrent une destination préexistante. Aucun lien de
-compatibilité n'est conservé dans le dépôt.
+Conformément à l'[ADR-003](003-deploiement-par-symlinks.md), le déploiement par
+Moon ou, pendant la transition, par Make part d'un état propre et crée chaque
+destination absente. Les tâches n'inspectent ni ne migrent une destination
+préexistante. Aucun lien de compatibilité n'est conservé dans le dépôt.
 
 ## Conséquences
 

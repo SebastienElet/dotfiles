@@ -3,7 +3,7 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
+MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/agent-memory .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -43,7 +43,7 @@ smoke-minimal:
 	@set -eu; \
 	$(MAKE) --no-print-directory minimal </dev/null; \
 	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"; \
-	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
+	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/agent-memory" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
 	stdout=$$(mktemp); stderr=$$(mktemp); trap 'rm -f "$$stdout" "$$stderr"' EXIT; \
 	before=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
 	if ! $(MAKE) --no-print-directory minimal </dev/null >"$$stdout" 2>"$$stderr"; then cat "$$stdout"; cat "$$stderr" >&2; exit 1; fi; \
@@ -62,7 +62,7 @@ bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
 
 .PHONY: minimal-artifacts
-minimal-artifacts: bat fish nvim wezterm git-delta starship tmux node pnpm arnes claude-code codex hunspell ${LOCAL_BIN}/colgrep-search
+minimal-artifacts: bat fish nvim wezterm git-delta starship tmux node pnpm arnes claude-code codex ${LOCAL_BIN}/colgrep-search
 
 .PHONY: optional-artifacts
 optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3
@@ -129,50 +129,13 @@ ${LOCAL_BIN}/arnes: FORCE
 ${BREW_BIN}/cargo:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) rust
 
-${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff: \
-	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.lock \
-	${DOTFILES_PATH}/tooling/agent-handoff/Cargo.toml \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/decision.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/environment.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/error.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/event.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/lib.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/main.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/run.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/state.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/src/transcript.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/cli/runtime_parity.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/concurrency.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/decision.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/event.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript.rs \
-	${DOTFILES_PATH}/tooling/agent-handoff/tests/transcript/numeric.rs \
-	| ${BREW_BIN}/cargo
-	cd ${DOTFILES_PATH}/tooling/agent-handoff && ${BREW_BIN}/cargo build --release
-	test -x "$@"
-	touch "$@"
-${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/release/agent-handoff | ${LOCAL_BIN}
-	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-handoff" || ln -sfn "$<" "$@"
-	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
-	test "$$(readlink "$@")" = "$<"
 .PHONY: agent-handoff
-agent-handoff: ${LOCAL_BIN}/agent-handoff
+agent-handoff:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
 
-${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory: \
-	${DOTFILES_PATH}/tooling/agent-memory/Cargo.lock \
-	${DOTFILES_PATH}/tooling/agent-memory/Cargo.toml \
-	$(shell find ${DOTFILES_PATH}/tooling/agent-memory/src ${DOTFILES_PATH}/tooling/agent-memory/tests -type f -name '*.rs') \
-	| ${BREW_BIN}/cargo
-	cd ${DOTFILES_PATH}/tooling/agent-memory && ${BREW_BIN}/cargo build --release
-	test -x "$@"
-	touch "$@"
-${LOCAL_BIN}/agent-memory: ${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory | ${LOCAL_BIN}
-	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-memory" || ln -sfn "$<" "$@"
-	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
-	test "$$(readlink "$@")" = "$<"
 .PHONY: agent-memory
-agent-memory: ${LOCAL_BIN}/agent-memory
+agent-memory:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-memory:install
 
 .PHONY: docker
 docker:
@@ -294,10 +257,7 @@ hunspell: hunspell-dictionaries
 
 .PHONY: hunspell-dictionaries
 hunspell-dictionaries:
-	@"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.aff" "c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5" "$(HOME)/Library/Spelling/fr.aff"
-	@"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.dic" "b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c" "$(HOME)/Library/Spelling/fr.dic"
-	@"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.aff" "e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e" "$(HOME)/Library/Spelling/en_US.aff"
-	@"${DOTFILES_PATH}/tooling/install-hunspell-dictionary" "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$(HOME)/Library/Spelling/en_US.dic"
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:hunspell-dictionaries
 
 .PHONY: codex
 codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
@@ -488,6 +448,8 @@ moon:
 
 .PHONY: clean
 clean:
+	rm -rf ~/.local/bin/agent-handoff
+	rm -rf ~/.local/bin/agent-memory
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim

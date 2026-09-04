@@ -8,8 +8,44 @@ fileGroups:
     - benches/**/*
     - /.cargo/**/*
     - /.github/workflows/test-agent-memory.yml
+  deployment:
+    - moon.yml
+    - /.github/workflows/test-deployment.yml
+    - /Makefile
+    - /.moon/workspace.yml
+    - /harness/moon.yml
+    - /moon.yml
+    - /tooling/deployment-agent-memory.test.ts
+    - /tooling/deployment-moon-test-support.ts
+    - /tooling/deployment-test-support.ts
+    - /package.json
+    - /bun.lock
+    - /tsconfig.json
 
 tasks:
+  install:
+    description: Install the Agent Memory executable
+    command: noop
+    deps:
+      - binary
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  binary:
+    script: |
+      set -e
+      mkdir -p "$HOME/.local/bin"
+      ln -s "$projectRoot/target/release/agent-memory" "$HOME/.local/bin/agent-memory"
+    deps:
+      - build
+    checks:
+      - check: condition
+        script: test -e "$HOME/.local/bin/agent-memory" || test -L "$HOME/.local/bin/agent-memory"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
   fmt:
     command: cargo fmt --check
     env:
@@ -32,11 +68,28 @@ tasks:
       - "@group(rust)"
     options:
       mutex: agent-memory-cargo-target
-  build-release:
-    command: cargo build --release
+  build:
+    script: |
+      set -e
+      cargo build --quiet --release --locked
+      test -x "$projectRoot/target/release/agent-memory" || { printf 'Agent Memory build produced no executable at %s\n' "$projectRoot/target/release/agent-memory" >&2; exit 1; }
+    deps:
+      - repository:rust
+    env:
+      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
     inputs:
       - "@group(rust)"
     outputs:
       - target/release/agent-memory
     options:
       mutex: agent-memory-cargo-target
+  deployment-test:
+    command: >-
+      bun --config=/dev/null --no-env-file test
+      tooling/deployment-agent-memory.test.ts
+    inputs:
+      - "@group(deployment)"
+      - "@group(rust)"
+    toolchains: bun
+    options:
+      runFromWorkspaceRoot: true

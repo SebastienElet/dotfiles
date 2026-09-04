@@ -11,6 +11,8 @@ tasks:
     description: Install migrated harness capabilities
     command: noop
     deps:
+      - agent-handoff:install
+      - agent-memory:install
       - arnes:install
     toolchains: system
   semctx:

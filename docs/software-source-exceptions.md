@@ -14,4 +14,4 @@ référencé par [ADR-002](adr/002-homebrew-source-unique.md).
 | Thèmes Bat                    | Branche Catppuccin par défaut      | HTTPS GitHub                                 | Changement explicite de source         | Fichier de thème existant                           |
 | Dictionnaires Hunspell        | Commit LibreOffice déclaré         | SHA-256 déclaré                              | Changement du commit et du checksum    | Destination identique conservée, divergence refusée |
 
-Les sources internes à un outil local appelé par le `Makefile` relèvent des tests de cet outil.
+Les sources internes à un outil local appelé par Moon ou le `Makefile` relèvent des tests de cet outil.
