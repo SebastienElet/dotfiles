@@ -19,7 +19,7 @@ function runInstaller(
   installer: string,
   downloadStatus: number,
 ): Readonly<{ exitCode: number; stdout: string }> {
-  const task = configuration.tasks["homebrew-install"];
+  const task = configuration.tasks.homebrew;
   expect(task).toBeDefined();
   const { script } = z.object({ script: z.string() }).parse(task);
   const directory = mkdtempSync(join(tmpdir(), "homebrew-install-test-"));
