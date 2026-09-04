@@ -37,7 +37,7 @@ ici sont les dates d'auteur.
 
 | #                                                      | Titre                                                            | Date    |
 | ------------------------------------------------------ | ---------------------------------------------------------------- | ------- |
-| [001](001-makefile-installateur.md)                    | Profils hybrides comme installateur de poste                     | 2026-08 |
+| [001](001-makefile-installateur.md)                    | Moon comme orchestrateur du poste                                | 2026-08 |
 | [002](002-homebrew-source-unique.md)                   | Brewfiles comme source unique des paquets                        | 2026-08 |
 | [003](003-deploiement-par-symlinks.md)                 | Déploiement depuis un état propre                                | 2026-08 |
 | [004](004-script-upgrade-unique.md)                    | Script `upgrade` unique pour toutes les mises à jour             | 2017-09 |

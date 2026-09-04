@@ -5,5 +5,7 @@ projects:
   tooling/agent-memory: tooling/agent-memory
   tooling/arnes: tooling/arnes
 
+defaultProject: repository
+
 vcs:
   defaultBranch: main

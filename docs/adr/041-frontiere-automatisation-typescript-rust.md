@@ -20,10 +20,11 @@ plutôt que comme infrastructure vide.
 
 ## Décision
 
-- Le `Makefile` reste l'installateur idempotent défini par l'ADR-001.
+- Moon devient l'orchestrateur unique selon l'ADR-001 ; les parcours Make non migrés sont transitoires.
 - Bash se limite à l'amorçage, à l'environnement et à une courte séquence linéaire de commandes.
-- Moon porte les tâches de développement nommées progressivement migrées, leur graphe de dépendances
-  et leur sélection affectée; chaque migration conserve une frontière de projet précise.
+- Moon porte les tâches d'installation et de développement, leur graphe de dépendances
+  et leur sélection affectée. Les tâches simples restent dans le projet racine ; un projet séparé
+  correspond à une responsabilité existante, pas à un simple préfixe de commande.
 - Bun et TypeScript sont le choix par défaut pour un petit utilitaire cohésif qui dépasse la frontière
   Shell, y compris l'analyse et la validation de données ou une politique bornée.
 - Rust est retenu pour une CLI substantielle, un état durable, une concurrence complexe, une

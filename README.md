@@ -19,10 +19,18 @@ dialog, then rerun the command above after the installation finishes.
 cd && \
   git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles && \
   cd .dotfiles && \
+  make moon && \
   make minimal
 ```
 
 Install the separately maintained optional profile with `make optional`.
+
+Installation is moving to Moon, one dependency at a time. With Moon available:
+
+```bash
+moon exec install
+moon action-graph repository:install
+```
 
 ## Architecture decisions
 
