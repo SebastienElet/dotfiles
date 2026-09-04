@@ -142,6 +142,7 @@ tasks:
     toolchains: system
     options:
       cache: false
+      mutex: homebrew
   fish-syntax:
     script: |
       set -euo pipefail
