@@ -3,6 +3,7 @@ name: Deployment tests
 on:
   push:
     paths:
+      - .moon/**
       - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
@@ -14,9 +15,11 @@ on:
       - bun.lock
       - tsconfig.json
       - Makefile
+      - moon.yml
       - .github/workflows/test-deployment.yml
   pull_request:
     paths:
+      - .moon/**
       - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
@@ -28,6 +31,7 @@ on:
       - bun.lock
       - tsconfig.json
       - Makefile
+      - moon.yml
       - .github/workflows/test-deployment.yml
 
 jobs:
@@ -39,12 +43,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun test tooling/deployment-*.test.ts
-      - run: bun test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
+      - run: moon ci repository:hunspell-test
       - run: bun test tooling/apple-notes*.test.ts
       - run: tooling/pr-feedback-skill-test
       - run: bun run typecheck
