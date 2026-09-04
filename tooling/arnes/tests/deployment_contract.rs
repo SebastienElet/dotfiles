@@ -35,6 +35,7 @@ fn make_deployments_satisfy_instruction_rule_and_skill_doctors() {
         .arg(&codex_skill)
         .env("HOME", home.path())
         .env("MOON_HOME", moon_home())
+        .env("MOON_EXEC", "moon exec --quiet --ignore-ci-checks")
         .current_dir(&repository)
         .output()
         .unwrap();
