@@ -3,7 +3,7 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
+MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/agent-memory .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -43,7 +43,7 @@ smoke-minimal:
 	@set -eu; \
 	$(MAKE) --no-print-directory minimal </dev/null; \
 	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"; \
-	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
+	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/agent-memory" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
 	stdout=$$(mktemp); stderr=$$(mktemp); trap 'rm -f "$$stdout" "$$stderr"' EXIT; \
 	before=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
 	if ! $(MAKE) --no-print-directory minimal </dev/null >"$$stdout" 2>"$$stderr"; then cat "$$stdout"; cat "$$stderr" >&2; exit 1; fi; \
@@ -159,20 +159,9 @@ ${LOCAL_BIN}/agent-handoff: ${DOTFILES_PATH}/tooling/agent-handoff/target/releas
 .PHONY: agent-handoff
 agent-handoff: ${LOCAL_BIN}/agent-handoff
 
-${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory: \
-	${DOTFILES_PATH}/tooling/agent-memory/Cargo.lock \
-	${DOTFILES_PATH}/tooling/agent-memory/Cargo.toml \
-	$(shell find ${DOTFILES_PATH}/tooling/agent-memory/src ${DOTFILES_PATH}/tooling/agent-memory/tests -type f -name '*.rs') \
-	| ${BREW_BIN}/cargo
-	cd ${DOTFILES_PATH}/tooling/agent-memory && ${BREW_BIN}/cargo build --release
-	test -x "$@"
-	touch "$@"
-${LOCAL_BIN}/agent-memory: ${DOTFILES_PATH}/tooling/agent-memory/target/release/agent-memory | ${LOCAL_BIN}
-	test ! -L "$@" || test "$$(readlink "$@")" != "${DOTFILES_PATH}/tooling/agent-memory" || ln -sfn "$<" "$@"
-	test -e "$@" || test -L "$@" || ln -s "$<" "$@"
-	test "$$(readlink "$@")" = "$<"
 .PHONY: agent-memory
-agent-memory: ${LOCAL_BIN}/agent-memory
+agent-memory:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-memory:install
 
 .PHONY: docker
 docker:
@@ -485,6 +474,7 @@ moon:
 
 .PHONY: clean
 clean:
+	rm -rf ~/.local/bin/agent-memory
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim

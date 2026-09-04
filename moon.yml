@@ -106,7 +106,7 @@ tasks:
       cache: false
       mutex: homebrew
       os: macos
-      runInCI: false
+      runInCI: skip
   hunspell-dictionaries:
     description: Install Hunspell dictionaries
     script: |
