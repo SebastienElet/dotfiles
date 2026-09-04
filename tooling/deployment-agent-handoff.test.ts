@@ -135,52 +135,6 @@ describe("agent-handoff historical migration", () => {
   });
 });
 
-describe("Claude agent-handoff compatibility link", () => {
-  test("migrates the historical crate link to the release binary", () => {
-    const fixture = createDeploymentFixture("handoff-claude-compatibility");
-    const prepared = prepareAgentHandoff(fixture);
-    mkdirSync(dirname(prepared.claudeDestination), { recursive: true });
-    symlinkSync(prepared.crate, prepared.claudeDestination);
-
-    expectSuccess(runAgentHandoffMake(fixture, prepared.claudeDestination));
-
-    expect(linkTarget(prepared.claudeDestination)).toBe(prepared.release);
-  });
-
-  test.each([
-    ["file", false],
-    ["link", true],
-  ] as const)(
-    "refuses an unexpected %s without changing it",
-    (name, linked) => {
-      const fixture = createDeploymentFixture(
-        `handoff-claude-unexpected-${name}`,
-      );
-      const prepared = prepareAgentHandoff(fixture);
-      const unexpected = join(fixture.root, "unexpected");
-      mkdirSync(dirname(prepared.claudeDestination), { recursive: true });
-      writeFileSync(unexpected, "keep\n");
-      if (linked) {
-        symlinkSync(unexpected, prepared.claudeDestination);
-      } else {
-        writeFileSync(prepared.claudeDestination, "keep\n");
-      }
-      const before = linked
-        ? linkTarget(prepared.claudeDestination)
-        : fileIdentity(prepared.claudeDestination);
-
-      const result = runAgentHandoffMake(fixture, prepared.claudeDestination);
-
-      expect(result.exitCode).not.toBe(0);
-      expect(
-        linked
-          ? linkTarget(prepared.claudeDestination)
-          : fileIdentity(prepared.claudeDestination),
-      ).toEqual(before);
-    },
-  );
-});
-
 describe("agent-handoff up-to-date unexpected destination", () => {
   test("leaves an up-to-date unexpected file untouched", () => {
     const fixture = createDeploymentFixture("handoff-current-file");
@@ -240,7 +194,6 @@ describe("agent-handoff stale unexpected destination", () => {
 });
 
 type PreparedAgentHandoff = Readonly<{
-  claudeDestination: string;
   crate: string;
   destination: string;
   release: string;
@@ -266,7 +219,6 @@ function prepareAgentHandoff(fixture: DeploymentFixture): PreparedAgentHandoff {
   symlinkSync(noOperation, join(fixture.bin, "brew"));
   symlinkSync(noOperation, join(fixture.bin, "cargo"));
   return {
-    claudeDestination: join(fixture.home, ".claude", "hooks", "agent_handoff"),
     crate,
     destination: join(fixture.home, ".local", "bin", "agent-handoff"),
     release,

@@ -43,7 +43,7 @@ pub fn expectation(
         }
         HookKind::Handoff => {
             let path = handoff_path(roots.home());
-            let mut aliases = handoff_aliases(&path, roots.repository())?.into_iter();
+            let mut aliases = handoff_aliases(&path, roots.repository(), agent)?.into_iter();
             let command = aliases
                 .next()
                 .ok_or_else(|| HooksError::new("handoff hook command is required"))?;
