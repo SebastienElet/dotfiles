@@ -248,7 +248,7 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 ~/.claude/skills/skill-simplify: ${DOTFILES_PATH}/harness/skills/skill-simplify FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:skill-simplify-claude
 ~/.claude/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 
@@ -321,7 +321,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/skill-simplify: ${DOTFILES_PATH}/harness/skills/skill-simplify FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:skill-simplify-codex
 ~/.agents/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 
