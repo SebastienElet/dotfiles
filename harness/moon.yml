@@ -14,6 +14,8 @@ tasks:
       - agent-handoff:install
       - agent-memory:install
       - arnes:install
+      - repository:code-simplify-claude
+      - repository:code-simplify-codex
     toolchains: system
   semctx:
     description: Install or update Semctx plugins for detected agent hosts

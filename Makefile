@@ -194,7 +194,7 @@ cursor-hooks: arnes agent-memory
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent cursor --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/code-simplify ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -213,6 +213,8 @@ ${LOCAL_BIN}/claude:
 	@${CREATE_SYMLINK}
 ~/.claude/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
+~/.claude/skills/code-simplify: ${DOTFILES_PATH}/harness/skills/code-simplify FORCE | ~/.claude/skills
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-claude
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 ~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/.claude/skills
@@ -260,7 +262,7 @@ hunspell-dictionaries:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:hunspell-dictionaries
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/code-simplify ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -282,6 +284,8 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	@${CREATE_SYMLINK}
 ~/.agents/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
+~/.agents/skills/code-simplify: ${DOTFILES_PATH}/harness/skills/code-simplify FORCE | ~/.agents/skills
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-codex
 ~/.agents/skills/design-claim-audit: ${DOTFILES_PATH}/harness/skills/design-claim-audit FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/.agents/skills

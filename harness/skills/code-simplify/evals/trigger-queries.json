@@ -1,0 +1,56 @@
+{
+  "skill": "code-simplify",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$code-simplify the current invoice calculation diff",
+      "should_activate": true,
+      "reason": "Explicit invocation for bounded code simplification."
+    },
+    {
+      "query": "/code-simplify src/invoices.ts",
+      "should_activate": true,
+      "reason": "Explicit invocation with a file scope."
+    },
+    {
+      "query": "Simplifiez le code du diff courant sans changer son comportement.",
+      "should_activate": true,
+      "reason": "Natural-language request to simplify code using the current diff."
+    },
+    {
+      "query": "Allégez cette implémentation du calcul des factures : trop de couches à suivre.",
+      "should_activate": true,
+      "reason": "Requests lower conceptual complexity without naming refactoring."
+    },
+    {
+      "query": "Reduce the abstractions in the renewal calculation.",
+      "should_activate": true,
+      "reason": "Direct request to reduce code abstractions."
+    },
+    {
+      "query": "Add a JSON output option to the invoice exporter.",
+      "should_activate": false,
+      "reason": "Ordinary feature implementation is not a simplification request."
+    },
+    {
+      "query": "Review this pull request and tell me whether it can merge.",
+      "should_activate": false,
+      "reason": "Merge review belongs to the review procedure."
+    },
+    {
+      "query": "Simplifiez le skill code-search.",
+      "should_activate": false,
+      "reason": "Skill maintenance belongs to skill-manager."
+    },
+    {
+      "query": "Simplify this Linear issue before implementation.",
+      "should_activate": false,
+      "reason": "Issue specification maintenance is outside code simplification."
+    },
+    {
+      "query": "Simplifiez le harnais et ses règles d'activation.",
+      "should_activate": false,
+      "reason": "Harness maintenance is explicitly excluded."
+    }
+  ]
+}
