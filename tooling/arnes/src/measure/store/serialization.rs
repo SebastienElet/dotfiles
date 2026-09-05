@@ -35,12 +35,6 @@ pub fn json_bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, MeasureError> {
     Ok(bytes)
 }
 
-pub fn compact_json_bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, MeasureError> {
-    let bytes = serde_json::to_vec(value)?;
-    ensure_record_size(&bytes)?;
-    Ok(bytes)
-}
-
 pub fn write_json_atomic<T: Serialize>(path: &ManagedPath, value: &T) -> Result<(), MeasureError> {
     let bytes = json_bytes(value)?;
     write_json_atomic_bytes(path, &bytes)

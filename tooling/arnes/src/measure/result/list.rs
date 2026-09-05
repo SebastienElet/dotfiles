@@ -1,5 +1,5 @@
-use super::super::MeasureError;
 use super::super::model::{PromptRecord, RunRecord};
+use super::super::{MeasureError, outcome::latest as latest_outcome};
 use super::io::read_optional_json;
 use super::records::{
     ResultState, read_events_for_list_with, read_events_with, read_first_prompt, result_state,
@@ -22,6 +22,7 @@ struct ListedRun {
     #[serde(skip)]
     event_timestamps_consistent: bool,
     has_result: bool,
+    has_outcome: bool,
     result_state: ResultState,
     started_at_ms: u64,
 }
@@ -31,7 +32,6 @@ struct SilenceReport {
     reported_at_ms: u64,
     runs: Vec<SilentRun>,
 }
-
 #[derive(Serialize)]
 struct SilentRun {
     run_id: String,
@@ -79,6 +79,8 @@ fn collect(
             .into_string()
             .map_err(|_| MeasureError::new("managed run id is not UTF-8"))?;
         let run_dir = open_run(store, &run_id)?;
+        let lifecycle = store.open_run_lock(&run_id)?;
+        lifecycle.lock()?;
         let run: RunRecord = super::super::store::validation::read_run(&run_dir.join("run.json"))?;
         let first_prompt = read_first_prompt(&run_dir.join("prompts.jsonl"), &run)?;
         let read_result = || read_optional_json(&run_dir.join("result.json"), "result.json");
@@ -91,18 +93,31 @@ fn collect(
             validate_result_record(result, &run_id)?;
         }
         let result_state = result_state(&events, result.as_ref())?;
+        let outcome = latest_outcome(&run_dir.join("outcomes.jsonl"), &run_id)?;
+        let has_outcome = outcome.is_some();
+        let result_state = match (run.schema_version(), result_state, has_outcome) {
+            (1, state, false) => state,
+            (2, ResultState::Pending, true) => ResultState::OutcomeRecorded,
+            (2, ResultState::Pending, false) => ResultState::Pending,
+            _ => {
+                return Err(MeasureError::new(
+                    "managed run mixes incompatible result contracts",
+                ));
+            }
+        };
         runs.push(ListedRun {
             run_id,
-            agent: run.agent,
-            repository: run.repository,
+            agent: run.agent().to_owned(),
+            repository: run.repository().map(str::to_owned),
             first_prompt_excerpt: first_prompt.as_ref().map(first_prompt_excerpt),
             last_event: events.last_event().map(str::to_owned),
             first_event_at_ms: events.first_event_at_ms(),
             last_event_at_ms: events.last_event_at_ms(),
             event_timestamps_consistent: events.timestamps_consistent(),
             has_result: result.is_some(),
+            has_outcome,
             result_state,
-            started_at_ms: run.started_at_ms,
+            started_at_ms: run.started_at_ms(),
         });
     }
     Ok(runs)

@@ -92,7 +92,7 @@ const packageSchema = z.looseObject({
         "bun tooling/format-typescript.ts --check",
       ),
       lint: z.literal("bun tooling/lint-typescript.ts"),
-      test: z.literal("bun test"),
+      test: z.literal("moon run repository:typescript-test"),
       typecheck: z.literal("tsc --noEmit"),
     })
     .strict(),

@@ -10,10 +10,20 @@ pub(super) struct Harness {
     home: PathBuf,
     pub(super) repository: PathBuf,
     state: PathBuf,
+    legacy_runs: bool,
 }
 
 impl Harness {
+    #[allow(dead_code)]
     pub(super) fn new() -> Self {
+        Self::with_legacy_runs(true)
+    }
+
+    pub(super) fn new_v2() -> Self {
+        Self::with_legacy_runs(false)
+    }
+
+    fn with_legacy_runs(legacy_runs: bool) -> Self {
         let root = tempfile::tempdir().unwrap();
         let home = root.path().join("home");
         let repository = root.path().join("repository");
@@ -34,6 +44,7 @@ impl Harness {
             home,
             repository,
             state,
+            legacy_runs,
         }
     }
 
@@ -56,6 +67,7 @@ impl Harness {
         session: &str,
         prompt: &str,
     ) -> String {
+        let before = self.runs();
         let mut child = self
             .command()
             .args(["measure", "hook", "--agent", agent])
@@ -75,27 +87,71 @@ impl Harness {
             .write_all(payload.to_string().as_bytes())
             .unwrap();
         assert_success(&child.wait_with_output().unwrap());
-        let runs = self.runs();
-        let path = runs
-            .iter()
-            .find(|path| read_json(path.join("run.json"))["session_id"] == session)
+        let path = self
+            .runs()
+            .into_iter()
+            .find(|path| !before.contains(path))
             .unwrap();
-        path.file_name().unwrap().to_str().unwrap().to_owned()
+        let run_id = path.file_name().unwrap().to_str().unwrap().to_owned();
+        if self.legacy_runs {
+            self.convert_to_v1(&run_id, session);
+        }
+        run_id
     }
 
     pub(super) fn run(&self, arguments: &[&str]) -> Output {
         self.command().args(arguments).output().unwrap()
     }
 
+    #[allow(dead_code)]
+    pub(super) fn hook(&self, agent: &str, payload: Value) -> Output {
+        let mut child = self
+            .command()
+            .args(["measure", "hook", "--agent", agent])
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(payload.to_string().as_bytes())
+            .unwrap();
+        child.wait_with_output().unwrap()
+    }
+
     pub(super) fn run_path(&self, run_id: &str) -> PathBuf {
         self.state.join("dotfiles/agent-harness/runs").join(run_id)
     }
 
+    #[allow(dead_code)]
+    pub(super) fn state_root(&self) -> PathBuf {
+        self.state.join("dotfiles/agent-harness")
+    }
+
     pub(super) fn runs(&self) -> Vec<PathBuf> {
-        fs::read_dir(self.state.join("dotfiles/agent-harness/runs"))
+        let runs = self.state.join("dotfiles/agent-harness/runs");
+        if !runs.exists() {
+            return Vec::new();
+        }
+        fs::read_dir(runs)
             .unwrap()
             .map(|entry| entry.unwrap().path())
             .collect()
+    }
+
+    fn convert_to_v1(&self, run_id: &str, session: &str) {
+        let path = self.run_path(run_id).join("run.json");
+        let mut run = read_json(&path);
+        run["schema_version"] = json!(1);
+        run["session_id"] = json!(session);
+        run["repository"] = Value::Null;
+        run["repository_branch"] = Value::Null;
+        run["model"] = Value::Null;
+        run.as_object_mut().unwrap().remove("model_fingerprint");
+        run.as_object_mut().unwrap().remove("operating_system");
+        run.as_object_mut().unwrap().remove("architecture");
+        fs::write(path, serde_json::to_vec(&run).unwrap()).unwrap();
     }
 }
 

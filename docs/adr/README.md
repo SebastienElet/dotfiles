@@ -76,3 +76,4 @@ ici sont les dates d'auteur.
 | [040](040-skills-user-dans-harness.md)                 | Skills user dans `harness/`                                      | 2026-08 |
 | [041](041-frontiere-automatisation-typescript-rust.md) | Frontière d'automatisation entre Shell, Moon, TypeScript et Rust | 2026-08 |
 | [042](042-memoire-durable-locale-partagee.md)          | Mémoire durable locale partagée                                  | 2026-08 |
+| [043](043-telemetrie-arnes-minimale-et-bornee.md)      | Télémétrie Arnes minimale et bornée                              | 2026-09 |

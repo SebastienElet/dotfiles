@@ -1,4 +1,5 @@
 pub(super) use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 pub(super) use std::fs;
 pub(super) use std::io::{Seek, SeekFrom, Write};
 pub(super) use std::os::unix::fs::{PermissionsExt, symlink};
@@ -132,12 +133,13 @@ pub(super) fn run_at(harness: &Harness, current: &Path, state: &Path, payload: &
 }
 
 pub(super) fn run_record(harness: &Harness, session: &str) -> Value {
-    harness
-        .runs()
-        .into_iter()
-        .map(|path| read_json(path.join("run.json")))
-        .find(|run| run["session_id"] == session)
-        .unwrap()
+    read_json(
+        harness
+            .measure_root()
+            .join("runs")
+            .join(run_id("codex", session))
+            .join("run.json"),
+    )
 }
 
 pub(super) fn capture_run(
@@ -149,7 +151,20 @@ pub(super) fn capture_run(
     let mut payload = json!({});
     payload[session_key] = json!(session);
     assert_success(&harness.run(agent, payload.to_string().as_bytes()));
-    run_record(harness, session)
+    read_json(
+        harness
+            .measure_root()
+            .join("runs")
+            .join(run_id(agent, session))
+            .join("run.json"),
+    )
+}
+
+fn run_id(agent: &str, session: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(agent.as_bytes());
+    hasher.update(session.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
 
 pub(super) fn read_json(path: impl AsRef<Path>) -> Value {

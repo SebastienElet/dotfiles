@@ -32,6 +32,9 @@ pub fn record(args: FeedbackArgs) -> Result<(), MeasureError> {
     validate(&args)?;
     let store = open_store()?;
     let run_dir = open_run(&store, &args.run_id)?;
+    if super::super::store::validation::read_run(&run_dir.join("run.json"))?.schema_version() != 1 {
+        return Err(MeasureError::new("measure feedback supports only v1 runs"));
+    }
     let timestamp = now_ms();
     let analysis_blocking =
         args.severity == Severity::Blocking && args.adjudication == Adjudication::Confirmed;
@@ -55,6 +58,8 @@ pub fn record(args: FeedbackArgs) -> Result<(), MeasureError> {
     };
     let bytes = jsonl_bytes(&feedback)?;
     let path = run_dir.join("feedback.jsonl");
+    let lifecycle = store.open_run_lock(&feedback.run_id)?;
+    lifecycle.lock()?;
     let lock = open_private_append(&run_dir.join("feedback.lock"))?;
     lock.lock()?;
     validate_existing(&path, &feedback.run_id)?;

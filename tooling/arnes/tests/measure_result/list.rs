@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::fs;
 
 #[test]
-fn lists_pending_runs_with_repository_prompt_event_and_agent_filter() {
+fn lists_pending_runs_without_private_context_and_filters_by_agent() {
     let harness = Harness::new();
     let codex = harness.capture(
         "codex",
@@ -24,17 +24,8 @@ fn lists_pending_runs_with_repository_prompt_event_and_agent_filter() {
     assert_eq!(runs.as_array().unwrap().len(), 1);
     assert_eq!(runs[0]["run_id"], codex);
     assert_eq!(runs[0]["agent"], "codex");
-    assert_eq!(
-        runs[0]["repository"],
-        fs::canonicalize(&harness.repository)
-            .unwrap()
-            .to_str()
-            .unwrap()
-    );
-    assert_eq!(
-        runs[0]["first_prompt_excerpt"],
-        "first prompt with enough detail"
-    );
+    assert!(runs[0]["repository"].is_null());
+    assert!(runs[0]["first_prompt_excerpt"].is_null());
     assert_eq!(runs[0]["last_event"], "prompt.submit");
     assert_eq!(runs[0]["has_result"], false);
 }
@@ -212,14 +203,32 @@ fn list_reports_a_one_revision_lag_without_repairing_it() {
 #[test]
 fn human_list_escapes_terminal_controls_without_changing_json() {
     let harness = Harness::new();
-    let prompt = "prompt\u{1b}]52;c;dGVzdA==\u{7}\u{9d}\u{7f}";
-    let repository = "/repo/\u{1b}[31m\u{9d}\u{7f}";
-    let run_id = harness.capture("codex", "session_id", "session", prompt);
+    let agent = "codex\u{1b}]52;c;dGVzdA==\u{7}\u{9d}\u{7f}";
+    let run_id = harness.capture("codex", "session_id", "session", "private prompt");
     let run_path = harness.run_path(&run_id);
     let run_json = run_path.join("run.json");
     let mut run = read_json(&run_json);
-    run["repository"] = json!(repository);
+    run["schema_version"] = json!(1);
+    run["session_id"] = json!("session");
+    run["repository"] = json!(agent);
+    run["repository_branch"] = Value::Null;
+    run["model"] = Value::Null;
+    run.as_object_mut().unwrap().remove("model_fingerprint");
+    run.as_object_mut().unwrap().remove("operating_system");
+    run.as_object_mut().unwrap().remove("architecture");
     fs::write(&run_json, serde_json::to_vec(&run).unwrap()).unwrap();
+    let prompt = json!({
+        "timestamp_ms": run["started_at_ms"],
+        "event_id": "a".repeat(64),
+        "session_id": "session",
+        "prompt_id": Value::Null,
+        "prompt": agent
+    });
+    fs::write(
+        run_path.join("prompts.jsonl"),
+        format!("{}\n", serde_json::to_string(&prompt).unwrap()),
+    )
+    .unwrap();
 
     let human = harness.run(&["measure", "list"]);
 
@@ -236,6 +245,5 @@ fn human_list_escapes_terminal_controls_without_changing_json() {
     let json_output = harness.run(&["measure", "list", "--format", "json"]);
     assert_success(&json_output);
     let runs: Value = serde_json::from_slice(&json_output.stdout).unwrap();
-    assert_eq!(runs[0]["repository"], repository);
-    assert_eq!(runs[0]["first_prompt_excerpt"], prompt);
+    assert_eq!(runs[0]["repository"], agent);
 }

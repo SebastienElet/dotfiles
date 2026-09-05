@@ -15,7 +15,10 @@ use std::path::Path;
 
 pub use feedback::record as feedback;
 pub use finish::record as finish;
+pub(super) use io::read_optional_json;
+pub(super) use io::visit_jsonl_typed;
 pub use list::render as list;
+pub(super) use records::{EventHistory, read_events_for_list_with};
 pub(super) use records::{ResultRecord, validate_result_record};
 
 #[derive(Args)]
@@ -142,7 +145,8 @@ pub(super) fn open_run(store: &Store, run_id: &str) -> Result<ManagedPath, Measu
     }
     path.open_directory()?;
     let run = super::store::validation::read_run(&path.join("run.json"))?;
-    if run.schema_version != 1 || run.run_id != run_id || !valid_agent(&run.agent) {
+    if !matches!(run.schema_version(), 1 | 2) || run.run_id() != run_id || !valid_agent(run.agent())
+    {
         return Err(MeasureError::new(
             "managed run.json has an unexpected identity",
         ));

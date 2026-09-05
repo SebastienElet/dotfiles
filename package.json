@@ -10,7 +10,7 @@
     "format:typescript": "bun tooling/format-typescript.ts",
     "format:typescript:check": "bun tooling/format-typescript.ts --check",
     "lint": "bun tooling/lint-typescript.ts",
-    "test": "bun test",
+    "test": "moon run repository:typescript-test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

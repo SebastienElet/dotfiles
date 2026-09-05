@@ -64,9 +64,8 @@ fn opened_store_anchors_new_existing_and_invalid_writes() {
     let repository = fixture.path().join("repository");
     let state_link = fixture.path().join("state");
     let root = external.join("dotfiles/agent-harness");
-    fs::create_dir_all(root.join("runs/existing/artifacts/hooks")).unwrap();
-    fs::create_dir_all(repository.join("dotfiles/agent-harness/runs/existing/artifacts/hooks"))
-        .unwrap();
+    fs::create_dir_all(root.join("runs/existing")).unwrap();
+    fs::create_dir_all(repository.join("dotfiles/agent-harness/runs/existing")).unwrap();
     symlink(&external, &state_link).unwrap();
     let store =
         Store::open_from_state_base(&state_link, std::slice::from_ref(&repository)).unwrap();
@@ -74,20 +73,17 @@ fn opened_store_anchors_new_existing_and_invalid_writes() {
     symlink(&repository, &state_link).unwrap();
 
     let existing = store.run_dir("existing").unwrap();
-    write_json_atomic_bytes(&existing.join("artifacts/hooks/existing.json"), b"{}\n").unwrap();
-    append_jsonl_bytes(&existing.join("prompts.jsonl"), b"{}\n").unwrap();
+    write_json_atomic_bytes(&existing.join("run.json"), b"{}\n").unwrap();
+    append_jsonl_bytes(&existing.join("events.jsonl"), b"{}\n").unwrap();
     let new = store.run_dir("new").unwrap();
-    write_json_atomic_bytes(&new.join("artifacts/hooks/new.json"), b"{}\n").unwrap();
+    write_json_atomic_bytes(&new.join("run.json"), b"{}\n").unwrap();
     store
         .append_invalid(&serde_json::json!({"safe":true}))
         .unwrap();
 
-    assert!(
-        root.join("runs/existing/artifacts/hooks/existing.json")
-            .is_file()
-    );
-    assert!(root.join("runs/existing/prompts.jsonl").is_file());
-    assert!(root.join("runs/new/artifacts/hooks/new.json").is_file());
+    assert!(root.join("runs/existing/run.json").is_file());
+    assert!(root.join("runs/existing/events.jsonl").is_file());
+    assert!(root.join("runs/new/run.json").is_file());
     assert!(root.join("invalid.jsonl").is_file());
     assert!(!repository.join("dotfiles/agent-harness/runs/new").exists());
     assert!(
@@ -118,4 +114,19 @@ fn concurrent_append_creation_never_loses_its_open_parent() {
             thread.join().unwrap();
         }
     }
+}
+
+#[test]
+fn run_lock_survives_the_removal_of_its_run_directory() {
+    let fixture = tempfile::tempdir().unwrap();
+    let store = Store::open_from_state_base(fixture.path(), &[]).unwrap();
+    let run_id = "a".repeat(64);
+    let run = store.run_dir(&run_id).unwrap();
+    let first = store.open_run_lock(&run_id).unwrap();
+    first.lock().unwrap();
+
+    run.remove_tree().unwrap();
+
+    let second = store.open_run_lock(&run_id).unwrap();
+    assert!(second.try_lock().is_err());
 }

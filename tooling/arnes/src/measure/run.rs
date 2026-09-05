@@ -1,15 +1,14 @@
 use super::MeasureError;
 use super::fingerprint;
-use super::model::{HookAgent, RunRecord};
-use super::redaction::redact_string;
+use super::model::{HookAgent, RunRecord, RunRecordV2};
 use super::repository;
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::env;
 use std::path::{Path, PathBuf};
 
 pub struct NewRun<'a> {
     pub agent: HookAgent,
-    pub session: &'a str,
     pub run_id: String,
     pub timestamp_ms: u64,
     pub raw: &'a Value,
@@ -25,21 +24,23 @@ pub fn build(input: NewRun<'_>) -> Result<RunRecord, MeasureError> {
     let fingerprint = fingerprint::deployed(input.agent, &home, input.deployment_root)?;
     let repository = input
         .repository_root
-        .map(|root| repository::observe(input.observed, root));
-    Ok(RunRecord {
-        schema_version: 1,
+        .map(|_| repository::observe(input.observed));
+    Ok(RunRecord::V2(RunRecordV2 {
+        schema_version: 2,
         run_id: input.run_id,
         agent: input.agent.as_str().to_owned(),
-        session_id: input.session.to_owned(),
         started_at_ms: input.timestamp_ms,
-        model: model(input.raw).map(|model| redact_string(&model)),
-        repository: repository.as_ref().map(|value| value.root.clone()),
+        model_fingerprint: model(input.raw).map(|model| {
+            let digest = Sha256::digest(model.as_bytes());
+            format!("{digest:x}")
+        }),
         repository_commit: repository.as_ref().and_then(|value| value.head.clone()),
-        repository_branch: repository.as_ref().and_then(|value| value.branch.clone()),
         repository_dirty: repository.map(|value| value.dirty),
         harness_fingerprint: fingerprint.digest,
         harness_fingerprint_limitations: fingerprint.limitations,
-    })
+        operating_system: std::env::consts::OS.to_owned(),
+        architecture: std::env::consts::ARCH.to_owned(),
+    }))
 }
 
 fn model(value: &Value) -> Option<String> {

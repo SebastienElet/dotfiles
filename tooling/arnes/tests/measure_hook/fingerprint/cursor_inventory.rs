@@ -40,21 +40,9 @@ fn fingerprint_includes_the_first_512_sorted_deployment_entries() {
         )
         .unwrap();
     }
-    assert_success(&harness.run("codex", br#"{"session_id":"one"}"#));
-    let first = harness
-        .runs()
-        .into_iter()
-        .map(|path| read_json(path.join("run.json")))
-        .find(|run| run["session_id"] == "one")
-        .unwrap();
+    let first = capture_run(&harness, "codex", "session_id", "one");
     fs::write(skills.join("skill-300"), "changed").unwrap();
-    assert_success(&harness.run("codex", br#"{"session_id":"two"}"#));
-    let second = harness
-        .runs()
-        .into_iter()
-        .map(|path| read_json(path.join("run.json")))
-        .find(|run| run["session_id"] == "two")
-        .unwrap();
+    let second = capture_run(&harness, "codex", "session_id", "two");
 
     assert_ne!(first["harness_fingerprint"], second["harness_fingerprint"]);
 }

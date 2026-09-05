@@ -1,5 +1,5 @@
 use super::super::MeasureError;
-use super::super::model::{PromptRecord, RunRecord};
+use super::super::model::{EventRecord, PromptRecord, RunRecord};
 use super::super::store::ManagedPath;
 use super::MergeReady;
 use super::io::visit_jsonl_typed;
@@ -29,16 +29,46 @@ pub struct ResultRecord {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum StoredEvent {
+    V1(Box<StoredEventV1>),
+    V2(EventRecord),
+}
+
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct StoredEvent {
-    pub timestamp_ms: u64,
-    pub event_id: String,
-    pub event: String,
-    pub native_event: String,
-    pub artifact: String,
-    pub native_ids: Map<String, Value>,
+pub struct StoredEventV1 {
+    timestamp_ms: u64,
+    event_id: String,
+    event: String,
+    native_event: String,
+    artifact: String,
+    native_ids: Map<String, Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub result: Option<ResultRecord>,
+    result: Option<ResultRecord>,
+}
+
+impl StoredEvent {
+    fn timestamp_ms(&self) -> u64 {
+        match self {
+            Self::V1(event) => event.timestamp_ms,
+            Self::V2(event) => event.timestamp_ms,
+        }
+    }
+
+    fn event(&self) -> &str {
+        match self {
+            Self::V1(event) => &event.event,
+            Self::V2(event) => &event.event,
+        }
+    }
+
+    fn result(&self) -> Option<&ResultRecord> {
+        match self {
+            Self::V1(event) => event.result.as_ref(),
+            Self::V2(_) => None,
+        }
+    }
 }
 
 pub fn read_first_prompt(
@@ -82,7 +112,9 @@ pub fn validate_result_record(result: &ResultRecord, run_id: &str) -> Result<(),
 
 fn validate_prompt(prompt: &PromptRecord, run: &RunRecord) -> Result<(), MeasureError> {
     if prompt.timestamp_ms == 0
-        || prompt.session_id != run.session_id
+        || run
+            .session_id()
+            .is_none_or(|session| prompt.session_id != session)
         || !is_digest(&prompt.event_id)
     {
         return Err(MeasureError::new(
@@ -93,29 +125,37 @@ fn validate_prompt(prompt: &PromptRecord, run: &RunRecord) -> Result<(), Measure
 }
 
 fn invalid_event(event: &StoredEvent, run_id: &str) -> bool {
-    if event.timestamp_ms == 0
-        || event.event.is_empty()
-        || event.native_event.is_empty()
-        || event.artifact.is_empty()
-        || event
-            .native_ids
-            .values()
-            .any(|value| !value.is_string() && !value.is_number())
-    {
-        return true;
-    }
-    match &event.result {
-        Some(result) => {
-            event.event != "result_recorded"
-                || event.native_event != "human.finish"
-                || event.artifact != "result.json"
-                || event.event_id != format!("result-{}", result.revision)
-                || event.timestamp_ms != result.recorded_at_ms
-                || event.native_ids.len() != 1
-                || event.native_ids.get("revision").and_then(Value::as_u64) != Some(result.revision)
-                || validate_result_record(result, run_id).is_err()
+    match event {
+        StoredEvent::V2(event) => {
+            event.schema_version != 2 || event.timestamp_ms == 0 || event.event.is_empty()
         }
-        None => event.event == "result_recorded" || !is_digest(&event.event_id),
+        StoredEvent::V1(event) => {
+            if event.timestamp_ms == 0
+                || event.event.is_empty()
+                || event.native_event.is_empty()
+                || event.artifact.is_empty()
+                || event
+                    .native_ids
+                    .values()
+                    .any(|value| !value.is_string() && !value.is_number())
+            {
+                return true;
+            }
+            match &event.result {
+                Some(result) => {
+                    event.event != "result_recorded"
+                        || event.native_event != "human.finish"
+                        || event.artifact != "result.json"
+                        || event.event_id != format!("result-{}", result.revision)
+                        || event.timestamp_ms != result.recorded_at_ms
+                        || event.native_ids.len() != 1
+                        || event.native_ids.get("revision").and_then(Value::as_u64)
+                            != Some(result.revision)
+                        || validate_result_record(result, run_id).is_err()
+                }
+                None => event.event == "result_recorded" || !is_digest(&event.event_id),
+            }
+        }
     }
 }
 

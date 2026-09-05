@@ -10,6 +10,8 @@ pub struct EventHistory {
     first_event_at_ms: Option<u64>,
     last_event_at_ms: Option<u64>,
     timestamps_consistent: bool,
+    event_count: u64,
+    tool_call_count: u64,
     latest_result: Option<ResultRecord>,
     previous_result: Option<ResultRecord>,
 }
@@ -18,6 +20,7 @@ pub struct EventHistory {
 #[serde(rename_all = "kebab-case")]
 pub enum ResultState {
     Pending,
+    OutcomeRecorded,
     Recorded,
     Missing,
     Lagging,
@@ -27,6 +30,7 @@ impl ResultState {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Pending => "pending",
+            Self::OutcomeRecorded => "outcome-recorded",
             Self::Recorded => "recorded",
             Self::Missing => "missing",
             Self::Lagging => "lagging",
@@ -111,6 +115,8 @@ impl EventHistory {
             first_event_at_ms: None,
             last_event_at_ms: None,
             timestamps_consistent: true,
+            event_count: 0,
+            tool_call_count: 0,
             latest_result: None,
             previous_result: None,
         }
@@ -122,15 +128,26 @@ impl EventHistory {
                 "managed events.jsonl has an invalid record",
             ));
         }
-        if let Some(result) = event.result {
+        if let Some(result) = event.result().cloned() {
             self.push_result(result)?;
         }
-        self.first_event_at_ms.get_or_insert(event.timestamp_ms);
+        let timestamp_ms = event.timestamp_ms();
+        self.event_count = self
+            .event_count
+            .checked_add(1)
+            .ok_or_else(|| MeasureError::new("event count overflow"))?;
+        if event.event() == "tool.before" {
+            self.tool_call_count = self
+                .tool_call_count
+                .checked_add(1)
+                .ok_or_else(|| MeasureError::new("tool call count overflow"))?;
+        }
+        self.first_event_at_ms.get_or_insert(timestamp_ms);
         self.timestamps_consistent &= self
             .last_event_at_ms
-            .is_none_or(|previous| previous <= event.timestamp_ms);
-        self.last_event_at_ms = Some(event.timestamp_ms);
-        self.last_event = Some(event.event);
+            .is_none_or(|previous| previous <= timestamp_ms);
+        self.last_event_at_ms = Some(timestamp_ms);
+        self.last_event = Some(event.event().to_owned());
         Ok(())
     }
 
@@ -171,6 +188,14 @@ impl EventHistory {
     pub fn timestamps_consistent(&self) -> bool {
         self.timestamps_consistent
     }
+
+    pub fn event_count(&self) -> u64 {
+        self.event_count
+    }
+
+    pub fn tool_call_count(&self) -> u64 {
+        self.tool_call_count
+    }
 }
 
 fn revision_error() -> MeasureError {
@@ -178,70 +203,4 @@ fn revision_error() -> MeasureError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{read_events_for_list_with, read_events_with};
-    use crate::measure::store::ManagedPath;
-    use serde_json::json;
-    use std::fs::OpenOptions;
-    use std::io::Write;
-
-    #[test]
-    fn keeps_the_event_lock_while_reading_the_result_snapshot() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("events.jsonl");
-        let event_id = "a".repeat(64);
-        let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(
-            file,
-            "{}",
-            json!({
-                "timestamp_ms": 1,
-                "event_id": event_id,
-                "event": "prompt.submit",
-                "native_event": "UserPromptSubmit",
-                "artifact": "artifacts/hooks/event.json",
-                "native_ids": {}
-            })
-        )
-        .unwrap();
-
-        let (_, result) = read_events_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
-            let other = OpenOptions::new().read(true).write(true).open(&path)?;
-            assert!(other.try_lock().is_err());
-            Ok(7)
-        })
-        .unwrap();
-
-        assert_eq!(result, 7);
-    }
-
-    #[test]
-    fn list_keeps_the_event_lock_while_reading_the_result_snapshot() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("events.jsonl");
-        let event_id = "a".repeat(64);
-        let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(
-            file,
-            "{}",
-            json!({
-                "timestamp_ms": 1,
-                "event_id": event_id,
-                "event": "prompt.submit",
-                "native_event": "UserPromptSubmit",
-                "artifact": "artifacts/hooks/event.json",
-                "native_ids": {}
-            })
-        )
-        .unwrap();
-
-        let result =
-            read_events_for_list_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
-                let other = OpenOptions::new().read(true).write(true).open(&path)?;
-                assert!(other.try_lock().is_err());
-                Ok(7)
-            });
-
-        assert_eq!(result.unwrap().1, 7);
-    }
-}
+mod tests;

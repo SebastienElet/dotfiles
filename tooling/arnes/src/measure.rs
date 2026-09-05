@@ -4,9 +4,11 @@ mod hook;
 mod input;
 mod json;
 mod model;
-mod redaction;
+mod outcome;
+mod report;
 mod repository;
 mod result;
+mod retention;
 mod run;
 mod store;
 
@@ -14,6 +16,8 @@ use std::fmt::{self, Display};
 
 pub use hook::capture;
 pub use model::HookAgent;
+pub use outcome::{OutcomeArgs, OutcomeStatus, UnjudgeableReason, record as outcome};
+pub use report::{ReportArgs, render as report};
 pub use result::{
     Adjudication, FailureCategory, FeedbackArgs, FeedbackSource, FinishArgs, ListArgs, ListFormat,
     MergeReady, Resolution, Severity, feedback, finish, list,

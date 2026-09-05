@@ -14,15 +14,21 @@ pub(super) mod validation;
 
 pub(super) use path::ManagedPath;
 #[cfg(test)]
+pub(super) use serialization::write_json_atomic_bytes;
+#[cfg(test)]
 pub use serialization::{append_jsonl, write_json_atomic_test};
-pub(super) use serialization::{
-    append_jsonl_bytes, compact_json_bytes, json_bytes, jsonl_bytes, write_json_atomic_bytes,
-};
+pub(super) use serialization::{append_jsonl_bytes, json_bytes, jsonl_bytes, write_json_atomic};
 
 pub(super) const MAX_RECORD_BYTES: usize = 1_100_000;
 
 pub struct Store {
     root: ManagedPath,
+}
+
+#[derive(Serialize)]
+pub struct StorageUsage {
+    pub logical_bytes: u64,
+    pub allocated_bytes: u64,
 }
 
 impl Store {
@@ -44,12 +50,7 @@ impl Store {
 
     pub fn run_dir(&self, run_id: &str) -> Result<ManagedPath, MeasureError> {
         let run = self.run_path(run_id);
-        for path in [
-            self.runs_path(),
-            run.clone(),
-            run.join("artifacts"),
-            run.join("artifacts/hooks"),
-        ] {
+        for path in [self.runs_path(), run.clone()] {
             path.create_dir_all()?;
         }
         Ok(run)
@@ -63,10 +64,53 @@ impl Store {
         self.root.join("runs")
     }
 
+    pub fn open_run_lock(&self, run_id: &str) -> Result<std::fs::File, MeasureError> {
+        let slot = run_id.chars().take(2).collect::<String>();
+        if slot.len() != 2 || !slot.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(MeasureError::new("managed run id has no lock slot"));
+        }
+        let locks = self.root.join("run-locks");
+        locks.create_dir_all()?;
+        open_private_append(&locks.join(format!("{slot}.lock")))
+    }
+
     pub fn append_invalid<T: Serialize>(&self, record: &T) -> Result<(), MeasureError> {
         let bytes = jsonl_bytes(record)?;
         append_jsonl_bytes(&self.root.join("invalid.jsonl"), &bytes)
     }
+
+    pub fn usage(&self) -> Result<StorageUsage, MeasureError> {
+        usage(&self.root)
+    }
+
+    pub(super) fn state_path(&self, name: &str) -> ManagedPath {
+        self.root.join(name)
+    }
+}
+
+fn usage(path: &ManagedPath) -> Result<StorageUsage, MeasureError> {
+    use std::os::unix::fs::MetadataExt;
+
+    let directory = path.open_directory()?;
+    let mut total = StorageUsage {
+        logical_bytes: 0,
+        allocated_bytes: directory.metadata()?.blocks() * 512,
+    };
+    for name in path.read_dir_names()? {
+        let child = path.join(name);
+        if child.open_directory().is_ok() {
+            let nested = usage(&child)?;
+            total.logical_bytes = total.logical_bytes.saturating_add(nested.logical_bytes);
+            total.allocated_bytes = total.allocated_bytes.saturating_add(nested.allocated_bytes);
+        } else {
+            let metadata = child.open_read()?.metadata()?;
+            total.logical_bytes = total.logical_bytes.saturating_add(metadata.len());
+            total.allocated_bytes = total
+                .allocated_bytes
+                .saturating_add(metadata.blocks() * 512);
+        }
+    }
+    Ok(total)
 }
 
 pub fn write_json_once(

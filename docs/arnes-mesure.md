@@ -20,3 +20,32 @@ processus est encore vivant ou arrêté. La commande n’applique aucun seuil et
 n’interrompt ou ne relance aucune exécution.
 
 Cette vue ciblée n’affiche ni prompt, ni contenu utilisateur, ni dépôt, ni secret, ni chemin local.
+
+## Outcome explicite
+
+Un run n’est jugeable qu’après une déclaration séparée liée à un oracle nommé :
+
+```sh
+arnes measure outcome RUN_ID --status pass --oracle cargo-test
+arnes measure outcome RUN_ID --status fail --oracle cargo-test
+arnes measure outcome RUN_ID --status unjudgeable --reason missing-oracle
+```
+
+Le même enregistrement est rejouable sans écriture. Un changement est refusé, sauf ajout explicite
+de `--replace`, qui conserve l’historique. `Stop`, une réponse finale, une session terminée et un
+statut natif ne créent jamais d’outcome. Arnes garantit la structure et l’historique de la
+déclaration ; il n’exécute ni ne certifie l’oracle externe nommé.
+
+## Rapport et rétention
+
+`arnes measure report --format json` restitue globalement et par agent les runs, leur jugeabilité,
+les `pass` déclarés parmi les runs jugeables, les événements, les appels d’outils, la latence
+observable et les octets logiques et alloués. Une valeur sans dénominateur ou sans horodatages cohérents vaut
+`null` ; la présence d’une configuration Cursor, Claude Code ou Codex ne compte pas comme une
+exécution observée.
+
+Les runs v2 expirent après soixante jours depuis leur dernier événement cohérent ou outcome. Le sweep est
+opportuniste, au plus quotidien, sérialisé avec les lecteurs et écrivains et publie son intention
+avant suppression puis son résultat dans `retention.json`. Une incohérence d’horodatage ou de chemin
+conserve le run, marque le sweep en échec et n’empêche pas la collecte courante. Les runs v1 ne sont
+jamais purgés automatiquement.
