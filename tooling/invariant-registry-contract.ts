@@ -1,0 +1,11 @@
+export { validateInvariantRegistry } from "./invariant-registry-policy.ts";
+export {
+  invariantSurfaces,
+  parseInvariantRegistry,
+  type InvariantRecord,
+  type InvariantRegistry,
+  type OracleInspection,
+  type RegistryDiagnostic,
+  type SkillTargetInspection,
+  type ValidationOptions,
+} from "./invariant-registry-schema.ts";
