@@ -1,12 +1,66 @@
 language: typescript
 layer: configuration
 
+fileGroups:
+  evaluation:
+    - evals/**/*
+    - skills/**/*
+    - AGENTS.md
+    - USER.md
+    - SOUL.md
+    - /tooling/harness-eval/**/*
+    - /package.json
+    - /bun.lock
+    - /.moon/**/*
+    - /.prototools
+    - /moon.yml
+    - /.github/workflows/test-harness.yml
+
 taskOptions:
   cache: false
   runFromWorkspaceRoot: true
   runInCI: false
 
 tasks:
+  check:
+    description: Validate the harness deterministically without an agent or LLM
+    command: noop
+    deps:
+      - validate-evals
+      - validate-evidence
+      - test-eval-runner
+      - arnes:test
+      - repository:typescript-lint
+      - repository:typescript-typecheck
+      - repository:typescript-format-check
+      - repository:prettier-check
+    options:
+      runInCI: true
+  validate-evals:
+    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts validate-evals
+    inputs:
+      - "@group(evaluation)"
+      - /.agents/skills/**/evals/trigger-queries.json
+    options:
+      runInCI: true
+  validate-evidence:
+    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts validate-evidence
+    inputs:
+      - "@group(evaluation)"
+    options:
+      runInCI: true
+  test-eval-runner:
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/harness-eval
+    inputs:
+      - "@group(evaluation)"
+    options:
+      runInCI: true
+  eval:
+    description: Manually run selected live Codex evaluations using LLM quota
+    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts eval
+  compare:
+    description: Compare reports with identical recorded experimental controls
+    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts compare
   install:
     description: Install migrated harness capabilities
     command: noop

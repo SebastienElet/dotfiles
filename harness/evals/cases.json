@@ -1,0 +1,43 @@
+[
+  {
+    "id": "code-search-structural",
+    "expected": "Load code-search before conceptual monorepo discovery.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Context Management" },
+      { "path": "harness/skills/code-search/SKILL.md", "heading": "Steps" }
+    ],
+    "prompt": {
+      "triggerFile": "harness/skills/code-search/evals/trigger-queries.json",
+      "queryIndex": 4
+    },
+    "fixture": "code-search-v1",
+    "oracle": "structural-v1",
+    "success": "Successful instrumented skill read precedes successful colgrep-search invocation.",
+    "failure": "Skill read absent, failed, or after conceptual search; conceptual search absent or failed."
+  },
+  {
+    "id": "code-search-literal",
+    "expected": "Use exact lookup without conceptual over-triggering; skill activation is permitted.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Context Management" },
+      { "path": "harness/skills/code-search/SKILL.md", "heading": "Steps" }
+    ],
+    "prompt": { "text": "Trouve exactement FEATURE_FLAG_DISABLED." },
+    "fixture": "code-search-v1",
+    "oracle": "literal-v1",
+    "success": "Successful rg invocation with the exact literal argument, without colgrep-search.",
+    "failure": "No successful exact lookup or any conceptual search."
+  },
+  {
+    "id": "code-search-known-path",
+    "expected": "Read the known file without repository exploration.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Context Management" }
+    ],
+    "prompt": { "text": "Lis src/auth/session.ts et explique cette fonction." },
+    "fixture": "code-search-v1",
+    "oracle": "known-path-v1",
+    "success": "Successful instrumented read of src/auth/session.ts without rg, fd, or colgrep-search.",
+    "failure": "Target file not read successfully, or exploratory search invoked."
+  }
+]

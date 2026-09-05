@@ -224,9 +224,9 @@ Critical skills may store `evals/trigger-queries.json`. When present, doctor req
 - every query has string `query`, boolean `should_activate`, and string `reason`;
 - at least one positive and one negative case.
 
-The repository provides no automatic multi-agent eval runner. Scenario files are evidence only when
-their prompts were actually executed and results recorded outside the repository or in an approved
-design document.
+The repository provides no automatic multi-agent eval runner. Scenario files alone are not executed
+evidence. The [common evaluation layer](../../../evals/README.md) validates scenarios through
+`moon run harness:check` and stores selected manual executions in `harness/evals/evidence/`.
 
 ## 11. README index
 
