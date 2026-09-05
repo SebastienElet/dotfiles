@@ -88,10 +88,43 @@ impl<'de> Visitor<'de> for ValueVisitor {
         let mut values = Map::new();
         while let Some(key) = object.next_key::<String>()? {
             if !keys.insert(key.clone()) {
-                return Err(de::Error::custom(format!("duplicate JSON key: {key}")));
+                return Err(de::Error::custom("duplicate JSON object key"));
             }
             values.insert(key, object.next_value_seed(ValueSeed)?);
         }
         Ok(Value::Object(values))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+
+    #[test]
+    fn duplicate_key_diagnostics_do_not_expose_input_keys() {
+        let cases: &[(&[u8], &str)] = &[
+            (
+                br#"{"private_marker":1,"private_marker":2}"#,
+                "private_marker",
+            ),
+            (
+                br#"{"nested":{"/fixture/private-marker":1,"/fixture/private-marker":2}}"#,
+                "/fixture/private-marker",
+            ),
+            (
+                br#"{"\u0070rivate_marker":1,"private_marker":2}"#,
+                "private_marker",
+            ),
+        ];
+
+        for (payload, private_key) in cases {
+            let error = parse(payload).unwrap_err();
+            let diagnostic = error.to_string();
+
+            assert!(diagnostic.contains("duplicate"));
+            assert!(!diagnostic.contains(private_key));
+            assert!(error.line() > 0);
+            assert!(error.column() > 0);
+        }
     }
 }
