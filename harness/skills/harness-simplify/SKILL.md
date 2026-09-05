@@ -72,7 +72,7 @@ then a narrowly approved change and observation report.
 7. After validation, apply only that change through the canonical procedures: `skill-manager` for
    skills and indexes; `agent-instructions` for instructions and discovery or deployment;
    `harness-reflection` for repeated-failure learning; `memory-governance` for durable memory;
-   and `enforcement-code` for check changes. Read only procedures required by the chosen axis and
+   and `code-enforcement` for check changes. Read only procedures required by the chosen axis and
    retain their approval, evidence, promotion, and verification requirements. If a procedure is not
    exposed as a skill for this agent, inspect its canonical source and documented projection;
    do not assume invocation succeeded or recreate it locally. Report a blocked dependency when
