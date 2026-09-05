@@ -1,0 +1,31 @@
+{
+  "skill": "skill-simplify",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$skill-simplify release-checks; diagnose only",
+      "should_activate": true,
+      "reason": "Explicit diagnosis of an identified skill; no writes authorized."
+    },
+    {
+      "query": "The release-checks skill is too long; remove steps that no longer help.",
+      "should_activate": true,
+      "reason": "Content simplification of an identified skill without naming this specialist."
+    },
+    {
+      "query": "Fix only the invalid frontmatter category in release-checks/SKILL.md.",
+      "should_activate": false,
+      "reason": "Conformity-only editing belongs directly to skill-manager."
+    },
+    {
+      "query": "Install release-checks for Codex and regenerate the skills index.",
+      "should_activate": false,
+      "reason": "Installation and indexing belong directly to skill-manager."
+    },
+    {
+      "query": "Add support for a new release platform in release-checks/SKILL.md.",
+      "should_activate": false,
+      "reason": "A functional skill edit is not automatically content simplification."
+    }
+  ]
+}
