@@ -61,7 +61,7 @@ or a repository-wide cleanup. It does not activate merely because code was modif
    modifying code. Follow the project's canonical validation strategy. For unprotected historical
    code, propose the smallest characterization of the threatened observable behavior; establish
    that protection before a risky refactor, following existing authorization for tests. For a
-   security or refusal control, use `enforcement-code` before changing it. Upstream validation alone
+   security or refusal control, use `code-enforcement` before changing it. Upstream validation alone
    does not prove a downstream trust-boundary check redundant. If the required specialized
    procedure is unavailable, pause that control's change and report the missing procedure.
 8. Apply the supported simplifications and run the relevant checks. Use native syntax, schema,
@@ -80,7 +80,7 @@ or a repository-wide cleanup. It does not activate merely because code was modif
 - **Inlining every single-use helper** — a meaningful step loses its name and increases mental
   load; retain the helper when that name explains intent.
 - **Trusting upstream validation** — alternate callers or entry points may bypass it; establish
-  the actual trust boundary and follow `enforcement-code` before changing a refusal.
+  the actual trust boundary and follow `code-enforcement` before changing a refusal.
 - **Calling a feature superfluous** — deleting it changes the requirement; propose that tradeoff
   for an explicit decision instead of including it in the refactor.
 - **Counting green checks as equivalence** — uncovered errors or effects may change unnoticed;

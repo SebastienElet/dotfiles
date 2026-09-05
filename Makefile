@@ -147,7 +147,7 @@ postgresql: ~/.psqlrc
 	@${CREATE_SYMLINK}
 
 .PHONY: cursor
-cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor/skills/enforcement-code ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/memory-governance ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
+cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor/skills/code-enforcement ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/memory-governance ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
 ~/.cursor/skills:
 	mkdir -p $@
 ~/.cursor/rules:
@@ -158,7 +158,7 @@ cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-dev
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
-~/.cursor/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/.cursor/skills
+~/.cursor/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
@@ -194,7 +194,7 @@ cursor-hooks: arnes agent-memory
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent cursor --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
 .PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/code-simplify ~/.claude/skills/handoff ~/.claude/skills/enforcement-code ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/skill-simplify ~/.claude/skills/workflow-automation claude-code-hooks
+claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/code-simplify ~/.claude/skills/handoff ~/.claude/skills/code-enforcement ~/.claude/skills/harness-reflection ~/.claude/skills/issue-creation ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/skill-simplify ~/.claude/skills/workflow-automation claude-code-hooks
 ${LOCAL_BIN}/claude:
 	curl -fsSL https://claude.ai/install.sh | bash -s latest
 ~/.claude:
@@ -217,7 +217,7 @@ ${LOCAL_BIN}/claude:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-claude
 ~/.claude/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
-~/.claude/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/.claude/skills
+~/.claude/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 ~/.claude/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
@@ -264,7 +264,7 @@ hunspell-dictionaries:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:hunspell-dictionaries
 
 .PHONY: codex
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/code-simplify ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/enforcement-code ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/skill-simplify ~/.agents/skills/workflow-automation codex-hooks
+codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/code-simplify ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/code-enforcement ~/.agents/skills/harness-reflection ~/.agents/skills/issue-creation ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/skill-simplify ~/.agents/skills/workflow-automation codex-hooks
 ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	${BREW_BIN}/volta install @openai/codex
 ~/.codex:
@@ -290,7 +290,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-codex
 ~/.agents/skills/design-claim-audit: ${DOTFILES_PATH}/harness/skills/design-claim-audit FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
-~/.agents/skills/enforcement-code: ${DOTFILES_PATH}/harness/skills/enforcement-code FORCE | ~/.agents/skills
+~/.agents/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}

@@ -5,10 +5,10 @@ Skills · user scope · 3 agents
 CURSOR
   1 issue · 1 unsupported · 1 healthy
 
-  DRIFT enforcement-code
+  DRIFT code-enforcement
     expected  managed skill present
     actual    destination missing
-    path      ~/.cursor/skills/enforcement-code
+    path      ~/.cursor/skills/code-enforcement
   UNSUPPORTED extension skill exposure
   HEALTHY pr-verdict
 
