@@ -60,9 +60,9 @@ fn refuses_hardlinked_and_corrupt_managed_files() {
 #[test]
 fn refuses_incompletely_typed_run_records_without_appending() {
     for (field, replacement) in [
-        ("model", Some(json!([]))),
-        ("repository", Some(json!(["wrong"]))),
-        ("model", None),
+        ("model_fingerprint", Some(json!([]))),
+        ("repository_commit", Some(json!(["wrong"]))),
+        ("model_fingerprint", None),
         ("harness_fingerprint_limitations", Some(json!(false))),
     ] {
         let harness = Harness::new();
@@ -71,9 +71,7 @@ fn refuses_incompletely_typed_run_records_without_appending() {
         let run = harness.only_run();
         let run_json = run.join("run.json");
         let events = run.join("events.jsonl");
-        let artifacts = run.join("artifacts/hooks");
         let before_events = fs::read(&events).unwrap();
-        let before_artifacts = fs::read_dir(&artifacts).unwrap().count();
         let mut record = read_json(&run_json);
         match replacement {
             Some(value) => record[field] = value,
@@ -92,11 +90,6 @@ fn refuses_incompletely_typed_run_records_without_appending() {
         assert_eq!(fs::read(&run_json).unwrap(), corrupted, "field {field}");
         assert_advisory_failure(&output);
         assert_eq!(fs::read(&events).unwrap(), before_events, "field {field}");
-        assert_eq!(
-            fs::read_dir(artifacts).unwrap().count(),
-            before_artifacts,
-            "field {field}"
-        );
     }
 }
 
@@ -108,19 +101,16 @@ fn refuses_duplicate_run_record_keys_without_appending() {
     let run = harness.only_run();
     let run_json = run.join("run.json");
     let events = run.join("events.jsonl");
-    let artifacts = run.join("artifacts/hooks");
     let original = fs::read_to_string(&run_json).unwrap();
     let corrupted = original.replacen('{', r#"{"agent":"evil","#, 1);
     fs::write(&run_json, &corrupted).unwrap();
     let before_events = fs::read(&events).unwrap();
-    let before_artifacts = fs::read_dir(&artifacts).unwrap().count();
 
     let output = harness.run("codex", payload);
 
     assert_advisory_failure(&output);
     assert_eq!(fs::read_to_string(run_json).unwrap(), corrupted);
     assert_eq!(fs::read(events).unwrap(), before_events);
-    assert_eq!(fs::read_dir(artifacts).unwrap().count(), before_artifacts);
 }
 
 #[test]

@@ -2,7 +2,6 @@ use super::measure_support::*;
 use serde_json::json;
 use std::fs;
 use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
 
 #[test]
 fn finish_refuses_duplicate_result_revisions_without_mutation() {
@@ -87,7 +86,8 @@ fn finish_does_not_publish_result_when_the_event_log_cannot_be_opened() {
     let harness = Harness::new();
     let run_id = harness.capture("codex", "session_id", "session", "prompt");
     let run = harness.run_path(&run_id);
-    fs::set_permissions(run.join("events.jsonl"), fs::Permissions::from_mode(0o400)).unwrap();
+    fs::remove_file(run.join("events.jsonl")).unwrap();
+    fs::create_dir(run.join("events.jsonl")).unwrap();
 
     let output = harness.run(&[
         "measure",
@@ -98,7 +98,7 @@ fn finish_does_not_publish_result_when_the_event_log_cannot_be_opened() {
         "--human-minutes",
         "1",
     ]);
-    assert_failure(&output, "Permission denied");
+    assert_failure(&output, "Is a directory");
     assert!(!run.join("result.json").exists());
 }
 

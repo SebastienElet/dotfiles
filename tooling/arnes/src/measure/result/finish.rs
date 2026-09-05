@@ -30,6 +30,13 @@ pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     preflight(&args)?;
     let store = open_store()?;
     let run_dir = open_run(&store, &args.run_id)?;
+    if super::super::store::validation::read_run(&run_dir.join("run.json"))?.schema_version() != 1 {
+        return Err(MeasureError::new(
+            "measure finish supports only v1 runs; use measure outcome",
+        ));
+    }
+    let lifecycle = store.open_run_lock(&args.run_id)?;
+    lifecycle.lock()?;
     let lock = open_private_append(&run_dir.join("result.lock"))?;
     lock.lock()?;
     let current: Option<ResultRecord> =
@@ -64,6 +71,7 @@ fn reconcile_result(
 ) -> Result<u64, MeasureError> {
     match result_state(history, current)? {
         ResultState::Pending => Ok(0),
+        ResultState::OutcomeRecorded => Err(MeasureError::new("incompatible outcome history")),
         ResultState::Recorded | ResultState::Missing | ResultState::Lagging => {
             Ok(latest_result(history).unwrap().revision)
         }

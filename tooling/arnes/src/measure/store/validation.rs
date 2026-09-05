@@ -36,10 +36,10 @@ pub fn read_run(path: &ManagedPath) -> Result<RunRecord, MeasureError> {
     if bytes.len() > 1_048_576 {
         return Err(MeasureError::new("managed run.json is oversized"));
     }
-    let record: RunRecord = serde_json::from_slice(&bytes).map_err(|error| {
+    let raw = super::super::json::parse(&bytes)?;
+    let record = RunRecord::parse(raw.clone()).map_err(|error| {
         MeasureError::new(format!("managed run.json has an invalid schema: {error}"))
     })?;
-    let raw: serde_json::Value = serde_json::from_slice(&bytes)?;
     if serde_json::to_value(&record)? != raw {
         return Err(MeasureError::new(
             "managed run.json does not exactly match its schema",
@@ -55,10 +55,15 @@ pub fn validate_run(
     run_id: &str,
 ) -> Result<(), MeasureError> {
     for (key, matches) in [
-        ("schema_version", current.schema_version == 1),
-        ("run_id", current.run_id == run_id),
-        ("agent", current.agent == agent),
-        ("session_id", current.session_id == session),
+        ("schema_version", matches!(current.schema_version(), 1 | 2)),
+        ("run_id", current.run_id() == run_id),
+        ("agent", current.agent() == agent),
+        (
+            "session_id",
+            current
+                .session_id()
+                .is_none_or(|current| current == session),
+        ),
     ] {
         if !matches {
             return Err(MeasureError::new(format!(

@@ -6,6 +6,8 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
+mod removal;
+
 #[derive(Clone)]
 pub struct ManagedPath {
     root: Arc<File>,

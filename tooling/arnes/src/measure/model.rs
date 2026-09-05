@@ -1,6 +1,6 @@
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub enum HookAgent {
@@ -26,39 +26,109 @@ impl HookAgent {
     }
 }
 
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum RunRecord {
+    V1(RunRecordV1),
+    V2(RunRecordV2),
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct RunRecord {
-    pub schema_version: u8,
-    pub run_id: String,
-    pub agent: String,
-    pub session_id: String,
-    pub started_at_ms: u64,
-    pub model: Option<String>,
-    pub repository: Option<String>,
-    pub repository_commit: Option<String>,
-    pub repository_branch: Option<String>,
-    pub repository_dirty: Option<bool>,
-    pub harness_fingerprint: String,
-    pub harness_fingerprint_limitations: Vec<String>,
+pub struct RunRecordV1 {
+    schema_version: u8,
+    run_id: String,
+    agent: String,
+    session_id: String,
+    started_at_ms: u64,
+    model: Option<String>,
+    repository: Option<String>,
+    repository_commit: Option<String>,
+    repository_branch: Option<String>,
+    repository_dirty: Option<bool>,
+    harness_fingerprint: String,
+    harness_fingerprint_limitations: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunRecordV2 {
+    pub(super) schema_version: u8,
+    pub(super) run_id: String,
+    pub(super) agent: String,
+    pub(super) started_at_ms: u64,
+    pub(super) model_fingerprint: Option<String>,
+    pub(super) repository_commit: Option<String>,
+    pub(super) repository_dirty: Option<bool>,
+    pub(super) harness_fingerprint: String,
+    pub(super) harness_fingerprint_limitations: Vec<String>,
+    pub(super) operating_system: String,
+    pub(super) architecture: String,
+}
+
+impl RunRecord {
+    pub fn parse(value: Value) -> Result<Self, serde_json::Error> {
+        match value.get("schema_version").and_then(Value::as_u64) {
+            Some(1) => serde_json::from_value(value).map(Self::V1),
+            Some(2) => serde_json::from_value(value).map(Self::V2),
+            _ => serde_json::from_value::<RunRecordV2>(value).map(Self::V2),
+        }
+    }
+
+    pub fn schema_version(&self) -> u8 {
+        match self {
+            Self::V1(run) => run.schema_version,
+            Self::V2(run) => run.schema_version,
+        }
+    }
+
+    pub fn run_id(&self) -> &str {
+        match self {
+            Self::V1(run) => &run.run_id,
+            Self::V2(run) => &run.run_id,
+        }
+    }
+
+    pub fn agent(&self) -> &str {
+        match self {
+            Self::V1(run) => &run.agent,
+            Self::V2(run) => &run.agent,
+        }
+    }
+
+    pub fn session_id(&self) -> Option<&str> {
+        match self {
+            Self::V1(run) => Some(&run.session_id),
+            Self::V2(_) => None,
+        }
+    }
+
+    pub fn started_at_ms(&self) -> u64 {
+        match self {
+            Self::V1(run) => run.started_at_ms,
+            Self::V2(run) => run.started_at_ms,
+        }
+    }
+
+    pub fn repository(&self) -> Option<&str> {
+        match self {
+            Self::V1(run) => run.repository.as_deref(),
+            Self::V2(_) => None,
+        }
+    }
 }
 
 pub struct RepositoryRecord {
-    pub root: String,
     pub head: Option<String>,
-    pub branch: Option<String>,
     pub dirty: bool,
 }
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EventRecord {
+    pub schema_version: u8,
     pub timestamp_ms: u64,
-    pub event_id: String,
     pub event: String,
-    pub native_event: String,
-    pub artifact: String,
-    pub native_ids: Map<String, Value>,
 }
 
 #[derive(Deserialize, Serialize)]

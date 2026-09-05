@@ -184,7 +184,6 @@ fn append_event_at(harness: &Harness, run_id: &str, timestamp_ms: u64) {
     let mut events = read_jsonl(&path);
     let mut event = events[0].clone();
     event["timestamp_ms"] = json!(timestamp_ms);
-    event["event_id"] = json!("b".repeat(64));
     events.push(event);
     let content = events
         .iter()

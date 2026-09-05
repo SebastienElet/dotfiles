@@ -1,7 +1,7 @@
 use super::support::*;
 
 #[test]
-fn normalizes_cross_agent_event_names_and_preserves_native_names() {
+fn normalizes_cross_agent_event_names() {
     for (agent, session_key, native_events) in [
         (
             "codex",
@@ -30,10 +30,6 @@ fn normalizes_cross_agent_event_names_and_preserves_native_names() {
             .iter()
             .map(|event| event["event"].as_str().unwrap())
             .collect();
-        let native: Vec<&str> = events
-            .iter()
-            .map(|event| event["native_event"].as_str().unwrap())
-            .collect();
         assert_eq!(
             normalized,
             [
@@ -43,7 +39,11 @@ fn normalizes_cross_agent_event_names_and_preserves_native_names() {
                 "subagent.stop"
             ]
         );
-        assert_eq!(native, native_events);
+        assert!(
+            events
+                .iter()
+                .all(|event| event.get("native_event").is_none())
+        );
     }
 }
 

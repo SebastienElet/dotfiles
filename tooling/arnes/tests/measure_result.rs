@@ -12,3 +12,5 @@ mod measure_support;
 mod recovery;
 #[path = "measure_result/silence.rs"]
 mod silence;
+#[path = "measure_result/v2_contracts.rs"]
+mod v2_contracts;

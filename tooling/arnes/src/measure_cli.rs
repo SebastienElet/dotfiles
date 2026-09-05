@@ -22,6 +22,14 @@ pub(super) fn run_measure(command: MeasureCommand) -> ExitCode {
         },
         MeasureCommand::Finish(args) => finish_measure(measure::finish(args)),
         MeasureCommand::Feedback(args) => finish_measure(measure::feedback(args)),
+        MeasureCommand::Outcome(args) => finish_measure(measure::outcome(args)),
+        MeasureCommand::Report(args) => match measure::report(args) {
+            Ok(output) => match write_output(&output) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => fail_measure(error),
+            },
+            Err(error) => fail_measure(error),
+        },
     }
 }
 

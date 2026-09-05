@@ -31,16 +31,13 @@ fn parallel_hooks_append_complete_json_lines() {
 
     let run = harness.only_run();
     let events = read_jsonl(run.join("events.jsonl"));
-    let prompts = read_jsonl(run.join("prompts.jsonl"));
     assert_eq!(events.len(), 48);
-    assert_eq!(prompts.len(), 48);
-    let mut ids: Vec<&str> = events
-        .iter()
-        .map(|event| event["event_id"].as_str().unwrap())
-        .collect();
-    ids.sort_unstable();
-    ids.dedup();
-    assert_eq!(ids.len(), 48);
+    assert!(
+        events
+            .iter()
+            .all(|event| event.as_object().unwrap().len() == 3)
+    );
+    assert!(!run.join("prompts.jsonl").exists());
 }
 
 fn run_valid_batch(harness: &Harness, offset: usize) {

@@ -135,15 +135,12 @@ fn nested_git_repository_is_observed_while_both_repository_boundaries_are_protec
         br#"{"session_id":"one"}"#,
     ));
     let first = run_record(&harness, "one");
-    assert_eq!(
-        first["repository"],
-        fs::canonicalize(&inner).unwrap().to_str().unwrap()
-    );
+    assert!(first.get("repository").is_none());
     assert_eq!(
         first["repository_commit"],
         git_value(&inner, &["rev-parse", "HEAD"])
     );
-    assert_eq!(first["repository_branch"], "inner");
+    assert!(first.get("repository_branch").is_none());
 
     fs::write(harness.repository.join("AGENTS.md"), "outer two").unwrap();
     assert_success(&run_at(
@@ -183,7 +180,7 @@ fn nested_repositories() -> (Harness, PathBuf) {
 }
 
 #[test]
-fn git_repository_root_preserves_trailing_spaces() {
+fn git_repository_path_with_trailing_spaces_is_not_persisted() {
     let harness = Harness::with_repository_name("repository ");
     git(&harness.repository, &["init", "-b", "measurement"]);
     fs::write(harness.repository.join("tracked"), "tracked").unwrap();
@@ -192,13 +189,7 @@ fn git_repository_root_preserves_trailing_spaces() {
     fs::write(harness.repository.join("AGENTS.md"), "one").unwrap();
 
     let first = capture_run(&harness, "codex", "session_id", "one");
-    assert_eq!(
-        first["repository"],
-        fs::canonicalize(&harness.repository)
-            .unwrap()
-            .to_str()
-            .unwrap()
-    );
+    assert!(first.get("repository").is_none());
     fs::write(harness.repository.join("AGENTS.md"), "two").unwrap();
     let second = capture_run(&harness, "codex", "session_id", "two");
     assert_ne!(first["harness_fingerprint"], second["harness_fingerprint"]);

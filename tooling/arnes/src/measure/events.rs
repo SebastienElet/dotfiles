@@ -1,31 +1,19 @@
 use super::model::EventRecord;
-use super::redaction::redact_string;
-use serde_json::{Map, Value};
+use serde_json::Value;
 
-pub fn record(
-    timestamp_ms: u64,
-    event_id: &str,
-    artifact: String,
-    native_ids: Map<String, Value>,
-    raw: &Value,
-) -> EventRecord {
-    let native_event = native_event(raw);
+pub fn record(timestamp_ms: u64, raw: &Value) -> EventRecord {
     EventRecord {
+        schema_version: 2,
         timestamp_ms,
-        event_id: event_id.to_owned(),
-        event: normalized(&native_event).to_owned(),
-        native_event,
-        artifact,
-        native_ids,
+        event: normalized(native_event(raw)).to_owned(),
     }
 }
 
-fn native_event(value: &Value) -> String {
-    let event = ["hook_event_name", "event", "type"]
+fn native_event(value: &Value) -> &str {
+    ["hook_event_name", "event", "type"]
         .iter()
         .find_map(|key| value.get(key).and_then(Value::as_str))
-        .unwrap_or("unknown");
-    redact_string(event)
+        .unwrap_or("unknown")
 }
 
 fn normalized(native: &str) -> &'static str {

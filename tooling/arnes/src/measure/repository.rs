@@ -7,18 +7,12 @@ pub fn root(directory: &Path) -> Option<String> {
     git(directory, &["rev-parse", "--show-toplevel"])
 }
 
-pub fn observe(directory: &Path, root: String) -> RepositoryRecord {
+pub fn observe(directory: &Path) -> RepositoryRecord {
     let head = git(directory, &["rev-parse", "HEAD"]);
-    let branch = git(directory, &["branch", "--show-current"]).filter(|value| !value.is_empty());
     let dirty = git(directory, &["status", "--porcelain"])
         .map(|value| !value.is_empty())
         .unwrap_or(true);
-    RepositoryRecord {
-        root,
-        head,
-        branch,
-        dirty,
-    }
+    RepositoryRecord { head, dirty }
 }
 
 pub fn protected_roots(directory: &Path, observed: Option<&Path>) -> Vec<PathBuf> {

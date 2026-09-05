@@ -145,6 +145,17 @@ tasks:
       - "@group(typecheckedTypeScript)"
       - "@group(typescriptToolchain)"
       - tsconfig.json
+  typescript-test:
+    command: bun --config=/dev/null --no-env-file test --timeout 15000
+    deps:
+      - agent-memory:build
+    inputs:
+      - "@group(trackedTypeScript)"
+      - "@group(typescriptToolchain)"
+      - tooling/**/*.json
+      - tooling/**/*.md
+    options:
+      cache: false
   typescript-format-check:
     command: bun run format:typescript:check
     inputs:
