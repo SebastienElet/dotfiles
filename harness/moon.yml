@@ -16,6 +16,8 @@ tasks:
       - arnes:install
       - repository:code-simplify-claude
       - repository:code-simplify-codex
+      - repository:harness-simplify-claude
+      - repository:harness-simplify-codex
     toolchains: system
   semctx:
     description: Install or update Semctx plugins for detected agent hosts

@@ -43,6 +43,36 @@ fileGroups:
     - .github/workflows/test-deployment.yml
 
 tasks:
+  harness-simplify-claude:
+    description: Install the harness-simplify user skill for Claude Code
+    script: |
+      set -e
+      test ! -e "$HOME/.claude/skills/harness-simplify"
+      test ! -L "$HOME/.claude/skills/harness-simplify"
+      mkdir -p "$HOME/.claude/skills"
+      ln -s "$workspaceRoot/harness/skills/harness-simplify" "$HOME/.claude/skills/harness-simplify"
+    checks:
+      - check: condition
+        script: test -L "$HOME/.claude/skills/harness-simplify" && test "$(readlink "$HOME/.claude/skills/harness-simplify")" = "$(pwd -P)/harness/skills/harness-simplify"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  harness-simplify-codex:
+    description: Install the harness-simplify user skill for Codex
+    script: |
+      set -e
+      test ! -e "$HOME/.agents/skills/harness-simplify"
+      test ! -L "$HOME/.agents/skills/harness-simplify"
+      mkdir -p "$HOME/.agents/skills"
+      ln -s "$workspaceRoot/harness/skills/harness-simplify" "$HOME/.agents/skills/harness-simplify"
+    checks:
+      - check: condition
+        script: test -L "$HOME/.agents/skills/harness-simplify" && test "$(readlink "$HOME/.agents/skills/harness-simplify")" = "$(pwd -P)/harness/skills/harness-simplify"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
   code-simplify-claude:
     description: Install the code-simplify user skill for Claude Code
     script: |

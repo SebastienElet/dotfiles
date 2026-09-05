@@ -224,7 +224,7 @@ ${LOCAL_BIN}/claude:
 ~/.claude/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 ~/.claude/skills/harness-simplify: ${DOTFILES_PATH}/harness/skills/harness-simplify FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:harness-simplify-claude
 ~/.claude/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec FORCE | ~/.claude/skills
 	@${CREATE_SYMLINK}
 ~/.claude/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start FORCE | ~/.claude/skills
@@ -299,7 +299,7 @@ ${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
 ~/.agents/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/harness-simplify: ${DOTFILES_PATH}/harness/skills/harness-simplify FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:harness-simplify-codex
 ~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec FORCE | ~/.agents/skills
 	@${CREATE_SYMLINK}
 ~/.agents/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start FORCE | ~/.agents/skills
