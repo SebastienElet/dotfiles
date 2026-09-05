@@ -55,7 +55,7 @@ règle, pas de la présence d'un fichier d'instructions supplémentaire.
 
 Les deux règles à déclenchement permanent sont écrites dans `harness/AGENTS.md` : leur retrait
 change le comportement. La règle sur le code qui refuse ne l'est pas : son déclenchement est
-conditionnel, elle devient la skill `enforcement-code`, qui ne coûte que sa description en
+conditionnel, elle devient la skill `code-enforcement`, qui ne coûte que sa description en
 contexte et que les deux agents découvrent par divulgation progressive.
 
 Une skill que personne ne charge étant du poids mort, son déclenchement est mesuré à son tour :

@@ -26,7 +26,7 @@
 - `invalid` produit seulement `invalidated`. Les terminaux métier `achieved`, `abandoned`, `superseded`, `resolved`, `confirmed` exigent une conclusion humaine `valid` compatible; une entrée ne transite qu’une fois.
 - Demande explicite ou proposition acceptée écrit; détection implicite propose sans écrire. Aucun état généré propre à un agent n’est édité.
 - Cœur portable prouvé sur macOS/Linux; agents réels seulement sur l’environnement nommé. Baseline : Codex `0.150.1`, Claude `2.1.250`, Cursor `3.15.6`; Cursor observé `2026.08.25-3e8eec8`, `Darwin arm64 26.6.2`.
-- Utiliser `enforcement-code` pour les refus, `skill-manager fix memory-governance user`, puis `skill-manager sync-index user`.
+- Utiliser `code-enforcement` pour les refus, `skill-manager fix memory-governance user`, puis `skill-manager sync-index user`.
 - Aucune capacité n’est annoncée avant son oracle E2E vert.
 
 ## Structure cible
@@ -576,7 +576,7 @@ git add .github/workflows/test-agent-memory.yml .github/workflows/test-arnes.yml
 git commit -m "ci(memory): verify independent agent runtimes"
 ```
 
-Rejouer Step 2 et les trois runs Task 8; actualiser le SHA du rapport si binaire/adapters changent. Utiliser `superpowers:requesting-code-review`, puis `enforcement-code` sur traversal, symlink, TOCTOU, collision, lock, URL/redirect, secrets, scope user, hook absent et couplage Arnes. Toute correction rejoue test ciblé, trois suites Cargo et oracles affectés.
+Rejouer Step 2 et les trois runs Task 8; actualiser le SHA du rapport si binaire/adapters changent. Utiliser `superpowers:requesting-code-review`, puis `code-enforcement` sur traversal, symlink, TOCTOU, collision, lock, URL/redirect, secrets, scope user, hook absent et couplage Arnes. Toute correction rejoue test ciblé, trois suites Cargo et oracles affectés.
 
 ## Self-review du plan
 

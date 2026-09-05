@@ -1,5 +1,5 @@
 ---
-name: enforcement-code
+name: code-enforcement
 description: >
   Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI
   gate. Use when adding or changing any control that decides pass or fail. Make sure to use it
@@ -8,7 +8,7 @@ metadata:
   category: dev
 ---
 
-# Enforcement Code
+# Code Enforcement
 
 ## Overview
 
