@@ -64,6 +64,10 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: code-simplify
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - slug: design-claim-audit
     installations:
       - { agent: codex, scope: user }

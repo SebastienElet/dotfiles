@@ -43,6 +43,36 @@ fileGroups:
     - .github/workflows/test-deployment.yml
 
 tasks:
+  code-simplify-claude:
+    description: Install the code-simplify user skill for Claude Code
+    script: |
+      set -e
+      test ! -e "$HOME/.claude/skills/code-simplify"
+      test ! -L "$HOME/.claude/skills/code-simplify"
+      mkdir -p "$HOME/.claude/skills"
+      ln -s "$workspaceRoot/harness/skills/code-simplify" "$HOME/.claude/skills/code-simplify"
+    checks:
+      - check: condition
+        script: test -L "$HOME/.claude/skills/code-simplify" && test "$(readlink "$HOME/.claude/skills/code-simplify")" = "$(pwd -P)/harness/skills/code-simplify"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  code-simplify-codex:
+    description: Install the code-simplify user skill for Codex
+    script: |
+      set -e
+      test ! -e "$HOME/.agents/skills/code-simplify"
+      test ! -L "$HOME/.agents/skills/code-simplify"
+      mkdir -p "$HOME/.agents/skills"
+      ln -s "$workspaceRoot/harness/skills/code-simplify" "$HOME/.agents/skills/code-simplify"
+    checks:
+      - check: condition
+        script: test -L "$HOME/.agents/skills/code-simplify" && test "$(readlink "$HOME/.agents/skills/code-simplify")" = "$(pwd -P)/harness/skills/code-simplify"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
   install:
     description: Install the workstation
     command: noop
