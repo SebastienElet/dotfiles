@@ -45,12 +45,12 @@ fn report() -> Report {
             cursor,
             State::Drift,
             "destination is missing",
-            "enforcement-code",
+            "code-enforcement",
         )
         .with_human_details([
             HumanDetail::new("expected", "managed skill present"),
             HumanDetail::new("actual", "destination missing"),
-            HumanDetail::new("path", "~/.cursor/skills/enforcement-code"),
+            HumanDetail::new("path", "~/.cursor/skills/code-enforcement"),
         ]),
         diagnostic(
             codex,
