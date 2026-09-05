@@ -8,6 +8,11 @@ a scenario format, not proof that any host executed the prompts.
 This repository has no automatic multi-agent eval runner. Never claim activation rates or
 cross-agent validation without actual recorded executions.
 
+`moon run harness:check` validates these scenario contracts deterministically. The common
+[behavioral evaluation layer](../../../evals/README.md) can reference a query by file and index
+without copying its prompt. Selected manual Codex executions produce new, schema-validated reports
+under `harness/evals/evidence/`; scenario validation and fixture-smoke are not live evidence.
+
 ## Schema
 
 ```json

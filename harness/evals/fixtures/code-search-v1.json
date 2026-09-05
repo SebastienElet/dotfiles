@@ -1,0 +1,10 @@
+{
+  "id": "code-search-v1",
+  "files": {
+    "package.json": "{\"name\":\"synthetic-monorepo\",\"private\":true,\"workspaces\":[\"packages/*\"]}\n",
+    "packages/app/package.json": "{\"name\":\"app\",\"dependencies\":{\"auth\":\"workspace:*\"}}\n",
+    "packages/auth/package.json": "{\"name\":\"auth\"}\n",
+    "src/auth/session.ts": "export function sessionActive(expiresAt: number, now: number): boolean {\n  return expiresAt > now;\n}\n",
+    "src/flags.ts": "export const FEATURE_FLAG_DISABLED = false;\n"
+  }
+}
