@@ -114,6 +114,10 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: issue-simplify
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - slug: workflow-automation
     installations:
       - { agent: claude, scope: user }
