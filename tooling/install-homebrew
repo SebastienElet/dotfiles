@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -e
+homebrew_installer=$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+/bin/bash -c "$homebrew_installer"

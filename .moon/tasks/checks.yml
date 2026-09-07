@@ -1,0 +1,92 @@
+inheritedBy:
+  tags:
+    - repository
+fileGroups:
+  prettierFiles:
+    - "**/*.yml"
+    - "**/*.yaml"
+    - "**/*.md"
+    - "**/*.json"
+    - "!home/.config/nvim/lazy-lock.json"
+    - "!home/.config/nvim/lazyvim.json"
+  fishGate:
+    - home/.config/fish/**/*.fish
+    - moon.yml
+    - .moon/workspace.yml
+    - .github/workflows/test-fish.yml
+tasks:
+  prettier-check:
+    command: bun run prettier --check "**/*.{yml,yaml,md,json}" "!home/.config/nvim/lazy-lock.json" "!home/.config/nvim/lazyvim.json"
+    inputs:
+      - "@group(prettierFiles)"
+      - bun.lock
+  lua-lint:
+    script: |
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -euo pipefail
+      test -f home/.config/nvim/init.lua
+      test -f home/.config/wezterm/wezterm.lua
+      luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
+      luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
+    inputs:
+      - home/.config/nvim/**/*.lua
+      - home/.config/wezterm/wezterm.lua
+      - .github/workflows/lint.yml
+      - .github/workflows/check-typescript.yml
+    toolchains: system
+    deps:
+      - luacheck-setup
+  shell-lint:
+    deps:
+      - shellcheck-setup
+    inputs:
+      - tooling/**/*
+      - install.sh
+      - "**/*.sh"
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun tooling/check-scripts.ts shell
+  workflows-lint:
+    deps:
+      - actionlint-setup
+      - shellcheck-setup
+    inputs:
+      - .github/workflows/**/*
+    toolchains: system
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
+      actionlint
+  cspell-check:
+    command: bun tooling/check-cspell.ts home/cspell.json home/.config/cspell/user.txt harness/AGENTS.md .agents/skills/scripts/SKILL.md harness/skills/agent-instructions/SKILL.md harness/skills/agent-instructions/references/maintenance.md harness/skills/design-claim-audit/SKILL.md harness/skills/design-claim-audit/evals/trigger-queries.json harness/skills/design-claim-audit/evals/fixture/*.md home/.codex/agents/design-claim-auditor.toml harness/skills/issue-creation/SKILL.md harness/skills/issue-creation/references/forge-capabilities.md harness/skills/issue-creation/evals/trigger-queries.json harness/skills/linear-issue-spec/SKILL.md harness/skills/linear-start/SKILL.md harness/skills/linear-sync/SKILL.md harness/skills/linear-workflow/SKILL.md harness/skills/linear-workflow/references/bitbucket.md harness/skills/linear-workflow/references/completion-evidence.md harness/skills/linear-workflow/references/transports.md harness/skills/memory-governance/SKILL.md harness/skills/memory-governance/evals/trigger-queries.json harness/skills/obsidian-retrieval/SKILL.md harness/skills/obsidian-retrieval/references/obsidian-cli.md harness/skills/obsidian-retrieval/evals/trigger-queries.json harness/skills/pr-feedback/SKILL.md harness/skills/pr-feedback/evals/trigger-queries.json harness/skills/pr-verdict/SKILL.md harness/skills/pr-verdict/assets/verdict-template.md harness/skills/pr-verdict/references/cases.md harness/skills/requirements-clarification/SKILL.md harness/skills/requirements-clarification/evals/trigger-queries.json docs/requirements-clarification-validation.md tooling/design-claim-audit.test.ts tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts tooling/obsidian-retrieval/default-corpus-contract.ts tooling/obsidian-retrieval/evaluation-contract.ts tooling/install-hunspell-dictionary*.ts tooling/deployment-*.ts .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
+    deps:
+      - cspell-setup
+    inputs:
+      - home/cspell.json
+      - home/.config/cspell/user.txt
+      - harness/**/*
+      - .agents/skills/**/*
+      - home/.codex/agents/design-claim-auditor.toml
+      - docs/requirements-clarification-validation.md
+      - tooling/**/*.ts
+  fish-syntax:
+    deps:
+      - fish-setup
+    inputs:
+      - "@group(fishGate)"
+      - tooling/check-scripts.ts
+    tags:
+      - fish
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun tooling/check-scripts.ts fish-syntax
+  fish-format:
+    deps:
+      - fish-setup
+    inputs:
+      - "@group(fishGate)"
+      - tooling/check-scripts.ts
+    tags:
+      - fish
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun tooling/check-scripts.ts fish-format

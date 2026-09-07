@@ -1,0 +1,221 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  bat-setup:
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions bat
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install bat
+  fisher-setup:
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions fisher
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install fisher
+  fzf-setup:
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions fzf
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install fzf
+  colgrep-setup:
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions lightonai/tap/colgrep
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      brew trust --formula lightonai/tap/colgrep
+      brew install lightonai/tap/colgrep
+  fish-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install fish ;;
+        Linux) sudo apt-get update; sudo apt-get install -y fish ;;
+        *) exit 1 ;;
+      esac
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions fish ;;
+            Linux) command -v fish ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      runInCI: true
+  luacheck-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install luacheck ;;
+        Linux) sudo apt-get update; sudo apt-get install -y lua-check ;;
+        *) exit 1 ;;
+      esac
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions luacheck ;;
+            Linux) command -v luacheck ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      runInCI: true
+  shellcheck-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install shellcheck ;;
+        Linux) sudo apt-get update; sudo apt-get install -y shellcheck ;;
+        *) exit 1 ;;
+      esac
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions shellcheck ;;
+            Linux) command -v shellcheck ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      runInCI: true
+  jq-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install jq ;;
+        Linux) sudo apt-get update; sudo apt-get install -y jq ;;
+        *) exit 1 ;;
+      esac
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions jq ;;
+            Linux) command -v jq ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      runInCI: true
+  actionlint-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install actionlint ;;
+        Linux) go version; go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 ;;
+        *) exit 1 ;;
+      esac
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions actionlint ;;
+            Linux) command -v actionlint ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+  cspell-setup:
+    command: bun x --bun --no-install cspell --version
+    deps:
+      - dependencies
+    toolchains: bun

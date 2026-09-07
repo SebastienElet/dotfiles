@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-04
+- **Révision** : 2026-09-07
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
@@ -26,10 +26,14 @@ minimal. Homebrew fournit Rust et Cargo ; aucune toolchain Rust distincte n'est 
 Moon. La présence de la formule est vérifiée par Homebrew avant installation ; la version suit
 Homebrew et ses mises à jour explicites.
 
-Une source non prise en charge par Bundle reste dans le `Makefile` seulement lorsqu’elle possède
-une logique distincte : Volta/npm, installateur éditeur, build Rust, image Docker, téléchargement
-avec intégrité ou symlink. Ces exceptions sont décrites dans
+Une source non prise en charge par Bundle est exécutée directement par Moon une fois migrée :
+Volta/npm, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink. Les opérations
+optionnelles non migrées restent transitoirement dans Make. Ces exceptions sont décrites dans
 [`docs/software-source-exceptions.md`](../software-source-exceptions.md) sans gate miroir.
+
+Les contrôles Rust sous Linux utilisent le runtime du runner, vérifié explicitement ; cette portée
+ne transforme pas le profil du poste en installateur Linux. Les dépendances locales du paquet de
+développement, dont les outils de contrôle, restent gérées par Bun avec son lockfile.
 
 ## Conséquences
 

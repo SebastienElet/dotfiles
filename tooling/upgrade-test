@@ -80,6 +80,7 @@ chmod +x "$mock_bin"/*
 ln -s "$real_bun" "$mock_bin/bun"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
+  'printf "moon %s\\n" "$*" >>"$COMMAND_LOG"' \
   'exit 0' >"$moon"
 chmod +x "$moon"
 
@@ -107,6 +108,7 @@ printf 'unrelated\n' >"$repository/unrelated"
 "$real_git" -C "$repository" add unrelated
 "$real_git" -C "$repository" commit -qm unrelated
 run_upgrade main main-update 0
+grep -Fxq 'moon exec --quiet repository:install' "$command_log" || fail "workstation was not reinstalled through Moon"
 assert_equal "$("$real_git" --git-dir="$remote" rev-parse refs/heads/main)" "$remote_tip" "main remote tip changed"
 assert_equal "$("$real_git" -C "$repository" rev-list --count "$remote_tip..HEAD")" 2 "unexpected local commit count"
 assert_equal "$("$real_git" -C "$repository" log -1 --format=%s)" "chore(nvim): update plugins" "lockfile commit message"

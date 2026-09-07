@@ -1,7 +1,7 @@
 name: TypeScript
-
-on: [push, pull_request]
-
+on:
+  - push
+  - pull_request
 jobs:
   test:
     name: Bun tests
@@ -13,11 +13,6 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - uses: volta-cli/action@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
-      - run: bun --config=/dev/null --no-env-file tooling/node-version-contract.ts verify-runtime
-      - run: bun --config=/dev/null --no-env-file run test
+      - run: moon run repository:node-runtime-check repository:typescript-test
         env:
           SCRAPLING_DOCKER_SMOKE: "1"

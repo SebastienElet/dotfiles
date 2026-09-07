@@ -1,0 +1,63 @@
+inheritedBy:
+  tags:
+    - harness
+taskOptions:
+  cache: false
+  runInCI: false
+  runFromWorkspaceRoot: true
+tasks:
+  codex:
+    command: noop
+    deps:
+      - codex-binary
+      - codex-instructions
+      - codex-agents
+      - codex-skills
+      - codex-hooks
+    toolchains: system
+  codex-binary:
+    script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" volta install @openai/codex
+    deps:
+      - repository:node
+    checks:
+      - check: condition
+        script: test -x "$HOME/.volta/bin/codex"
+    toolchains: system
+    options:
+      os: macos
+      mutex: volta
+  codex-instructions:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/assemble-agent-instructions.ts" "$workspaceRoot/harness" "$HOME/.codex/AGENTS.md"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  codex-agents:
+    script: |-
+      set -e
+      mkdir -p "$HOME/.codex/agents"
+      cp "$workspaceRoot/home/.codex/agents/design-claim-auditor.toml" "$HOME/.codex/agents/design-claim-auditor.toml"
+    checks:
+      - check: condition
+        script: cmp -s "$(pwd -P)/home/.codex/agents/design-claim-auditor.toml" "$HOME/.codex/agents/design-claim-auditor.toml"
+    toolchains: system
+  codex-skills:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" codex
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  codex-hooks:
+    script: '"$HOME/.local/bin/arnes" setup hooks --agent codex'
+    deps:
+      - arnes:install
+      - agent-memory:install
+      - agent-handoff:install
+    checks:
+      - check: condition
+        script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'
+    toolchains: system
+    options:
+      mutex: harness-mutation

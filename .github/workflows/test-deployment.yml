@@ -1,5 +1,4 @@
 name: Deployment tests
-
 on:
   push:
     paths:
@@ -20,6 +19,12 @@ on:
       - Makefile
       - moon.yml
       - .github/workflows/test-deployment.yml
+      - tooling/moon.yml
+      - home/moon.yml
+      - tooling/deploy-*.ts
+      - tooling/assemble-agent-instructions*.ts
+      - tooling/install-agent-skills*.ts
+      - tooling/deployment-moon-runner.ts
   pull_request:
     paths:
       - .cargo/**
@@ -39,13 +44,20 @@ on:
       - Makefile
       - moon.yml
       - .github/workflows/test-deployment.yml
-
+      - tooling/moon.yml
+      - home/moon.yml
+      - tooling/deploy-*.ts
+      - tooling/assemble-agent-instructions*.ts
+      - tooling/install-agent-skills*.ts
+      - tooling/deployment-moon-runner.ts
 jobs:
   deployment:
     name: Deployment (${{ matrix.os }})
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os:
+          - macos-latest
+          - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -53,16 +65,8 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - run: >-
-          bun test tooling/deployment-fish.test.ts tooling/deployment-links.test.ts
-          tooling/deployment-xdg.test.ts
-      - run: moon ci agent-memory:deployment-test
-      - run: moon ci agent-handoff:deployment-test
-      - run: moon ci repository:hunspell-test
-      - run: bun test tooling/apple-notes*.test.ts
-      - run: tooling/pr-feedback-skill-test
-      - run: bun run typecheck
+      - run:
+          moon ci --concurrency 1 --downstream none tooling:deployment-test agent-memory:deployment-test
+          agent-handoff:deployment-test tooling:hunspell-test
+          tooling:apple-notes-test tooling:pr-feedback-skill-test
+          repository:typescript-typecheck

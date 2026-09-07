@@ -1,0 +1,144 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  homebrew:
+    description: Install Homebrew
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      "$workspaceRoot/tooling/install-homebrew"
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          command -v brew
+    toolchains: system
+    options:
+      cache: false
+      interactive: true
+      mutex: homebrew
+      os: macos
+      runInCI: skip
+    deps:
+      - bootstrap
+  applications-install:
+    description: Install the minimal Brewfile
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew bundle check --quiet --no-upgrade --file Brewfile
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew bundle install --no-upgrade --file Brewfile
+  rust:
+    description: Install Rust and Cargo with Homebrew
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          case "$(uname -s)" in
+            Darwin) brew list --formula --versions rust ;;
+            Linux) rustc --version && cargo --version ;;
+            *) exit 1 ;;
+          esac
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      case "$(uname -s)" in
+        Darwin) brew install rust ;;
+        Linux) rustc --version; cargo --version ;;
+        *) exit 1 ;;
+      esac
+  volta:
+    description: Install Volta with Homebrew
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install volta
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions volta
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+  node:
+    description: Install the project Node version as the Volta default
+    script: |
+      set -e
+      node_install_spec=$(bun --config=/dev/null --no-env-file --no-install tooling/node-version-contract.ts install-spec)
+      VOLTA_HOME="$HOME/.volta" PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" volta install "$node_install_spec"
+    deps:
+      - volta
+    checks:
+      - check: condition
+        script: |
+          repository_root=$(pwd -P)
+          test -x "$HOME/.volta/bin/node" && cd / && VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:$PATH" bun --config=/dev/null --no-env-file --no-install "$repository_root/tooling/node-version-contract.ts" verify-runtime "$repository_root/package.json"
+    toolchains: bun
+    options:
+      cache: false
+      mutex: volta
+      runInCI: false
+  pnpm:
+    description: Install pnpm with Volta
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      VOLTA_HOME="$HOME/.volta" volta install pnpm
+    deps:
+      - node
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          test -x "$HOME/.volta/bin/pnpm"
+    toolchains: system
+    options:
+      cache: false
+      mutex: volta
+      runInCI: false
+  bootstrap:
+    description: Verify macOS installation prerequisites
+    command: noop
+    checks:
+      - |-
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+        command -v curl
+      - |-
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+        command -v git
+      - |-
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+        xcode-select --print-path
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: skip

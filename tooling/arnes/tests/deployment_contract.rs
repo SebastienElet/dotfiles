@@ -9,6 +9,13 @@ fn moon_home() -> PathBuf {
         .expect("Moon tests require HOME, XDG_DATA_HOME, or MOON_HOME")
 }
 
+fn proto_home() -> PathBuf {
+    std::env::var_os("PROTO_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|path| PathBuf::from(path).join(".proto")))
+        .expect("Moon tests require HOME or PROTO_HOME")
+}
+
 fn output_text(output: &Output) -> String {
     format!(
         "stdout:\n{}\nstderr:\n{}",
@@ -18,27 +25,29 @@ fn output_text(output: &Output) -> String {
 }
 
 #[test]
-fn make_deployments_satisfy_instruction_rule_and_skill_doctors() {
+fn moon_deployments_satisfy_instruction_rule_and_skill_doctors() {
     let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let home = tempfile::tempdir().unwrap();
-    let codex_instructions = home.path().join(".codex/AGENTS.md");
-    let claude_rule = home.path().join(".claude/rules/agent-instructions.md");
-    let codex_skill = home.path().join(".agents/skills/agent-instructions");
-    let manifest = home.path().join(".arnes.yaml");
-    let deployment = Command::new("make")
-        .arg("-f")
-        .arg(repository.join("Makefile"))
-        .arg(format!("DOTFILES_PATH={}", repository.display()))
-        .arg(&manifest)
-        .arg(&codex_instructions)
-        .arg(&claude_rule)
-        .arg(&codex_skill)
-        .env("HOME", home.path())
-        .env("MOON_HOME", moon_home())
-        .env("MOON_EXEC", "moon exec --quiet --ignore-ci-checks")
-        .current_dir(&repository)
-        .output()
-        .unwrap();
+    let deployment =
+        Command::new(std::env::var_os("DEPLOYMENT_MOON").unwrap_or_else(|| "moon".into()))
+            .args([
+                "exec",
+                "--quiet",
+                "--ignore-ci-checks",
+                "--no-actions",
+                "--upstream",
+                "none",
+                "home:arnes-config",
+                "harness:codex-instructions",
+                "harness:claude-rules",
+                "harness:codex-skills",
+            ])
+            .env("HOME", home.path())
+            .env("MOON_HOME", moon_home())
+            .env("PROTO_HOME", proto_home())
+            .current_dir(&repository)
+            .output()
+            .unwrap();
     assert!(deployment.status.success(), "{}", output_text(&deployment));
 
     for (resource, agent) in [("instructions", "codex"), ("rules", "claude")] {

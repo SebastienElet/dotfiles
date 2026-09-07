@@ -1,21 +1,19 @@
 name: Fish tests
-
-on: [push, pull_request]
-
+on:
+  - push
+  - pull_request
 jobs:
   fish:
     name: Fish tests (${{ matrix.os }})
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os:
+          - macos-latest
+          - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun --config=/dev/null --no-env-file install --frozen-lockfile --ignore-scripts
-      - run: moon ci 'repository:#fish'
+      - run: moon ci --downstream none 'repository:#fish'

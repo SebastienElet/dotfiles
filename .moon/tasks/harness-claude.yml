@@ -1,0 +1,64 @@
+inheritedBy:
+  tags:
+    - harness
+taskOptions:
+  cache: false
+  runInCI: false
+  runFromWorkspaceRoot: true
+tasks:
+  claude:
+    command: noop
+    deps:
+      - home:hunspell-dictionaries
+      - claude-binary
+      - claude-instructions
+      - claude-rules
+      - claude-skills
+      - claude-hooks
+    toolchains: system
+  claude-binary:
+    script: |-
+      set -euo pipefail
+      curl -fsSL --connect-timeout 10 --max-time 60 https://claude.ai/install.sh | bash -s latest
+      test -x "$HOME/.local/bin/claude"
+    checks:
+      - check: condition
+        script: test -x "$HOME/.local/bin/claude"
+    toolchains: system
+    options:
+      os: macos
+  claude-instructions:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/AGENTS.md" "$HOME/.claude/CLAUDE.md"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/SOUL.md" "$HOME/.claude/SOUL.md"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/USER.md" "$HOME/.claude/USER.md"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  claude-rules:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/agent-instructions.md" "$HOME/.claude/rules/agent-instructions.md"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  claude-skills:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" claude
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  claude-hooks:
+    script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'
+    deps:
+      - arnes:install
+      - agent-memory:install
+      - agent-handoff:install
+    checks:
+      - check: condition
+        script: '"$HOME/.local/bin/arnes" doctor hooks --agent claude --color never'
+    toolchains: system
+    options:
+      mutex: harness-mutation

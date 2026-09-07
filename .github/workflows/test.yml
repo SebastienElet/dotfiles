@@ -1,10 +1,9 @@
 name: Smoke tests
-
 on:
   push:
-    branches: [main]
-  pull_request:
-
+    branches:
+      - main
+  pull_request: null
 jobs:
   minimal:
     name: Minimal macOS profile
@@ -15,4 +14,4 @@ jobs:
         with:
           fetch-depth: 0
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - run: make smoke-minimal MOON_EXEC="moon exec --quiet --ignore-ci-checks"
+      - run: moon run tooling:smoke-minimal

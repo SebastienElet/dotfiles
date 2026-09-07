@@ -6,7 +6,6 @@ import {
   linkTarget,
   pathExists,
   project,
-  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
 import {
@@ -14,14 +13,7 @@ import {
   createMoonDeploymentFixture,
   runMoon,
 } from "./deployment-moon-test-support.ts";
-import {
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 afterEach(() => {
@@ -31,7 +23,6 @@ afterEach(() => {
 
 const deploymentTimeoutMilliseconds = 120_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
-const executableFileMode = 0o755;
 
 test("installs an executable memory runtime through Moon", () => {
   const fixture = createMoonDeploymentFixture("agent-memory");
@@ -45,7 +36,10 @@ test("installs an executable memory runtime through Moon", () => {
       "tooling/agent-memory/target/release/agent-memory",
     ),
   );
-  expect(statSync(destination).mode & executableFileMode).not.toBe(0);
+  expect(Bun.spawnSync([destination, "--help"]).exitCode).toBe(0);
+  expect(
+    pathExists(join(fixture.home, ".local/bin/agent-handoff")),
+  ).toBeFalse();
 });
 
 test("propagates a memory build failure", () => {
@@ -85,39 +79,6 @@ test("propagates a memory deployment failure", () => {
   expect(result.stderr).toContain("Not a directory");
 });
 
-test.each([
-  ["codex", "codex", true],
-  ["claude-code", "claude", true],
-  ["cursor", "cursor", false],
-] as const)(
-  "%s entry point deploys its memory runtime",
-  (target, agent, deploysHandoff) => {
-    const fixture = createDeploymentFixture(`memory-wiring-${target}`);
-    const handoffTarget = "moon exec --quiet agent-handoff:install";
-    const expected = `"${fixture.home}/.local/bin/arnes" setup hooks --agent ${agent}`;
-
-    installBuildProviders(fixture);
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-      variables: { BREW_BIN: fixture.bin },
-    });
-
-    expectSuccess(result);
-    expect(result.stdout).toContain("moon exec --quiet agent-memory:install");
-    expect(result.stdout.includes(handoffTarget)).toBe(deploysHandoff);
-    expect(result.stdout).toContain(expected);
-  },
-);
-
-test("declares memory hooks for Codex and Claude only", () => {
-  const manifest = readFileSync(join(project, "home", ".arnes.yaml"), "utf8");
-
-  expect(manifest).toMatch(
-    /- id: memory\n\s+installations:\n\s+- \{ agent: claude, scope: user \}\n\s+- \{ agent: codex, scope: user \}/u,
-  );
-});
-
 test("deploys the Cursor memory rule from its canonical source", () => {
   const fixture = createDeploymentFixture("cursor-memory-rule");
   const source = join(project, "harness/rules/memory-governance-cursor.mdc");
@@ -128,36 +89,6 @@ test("deploys the Cursor memory rule from its canonical source", () => {
 
   expectSuccess(runMake(fixture, [destination], { repository: project }));
   expect(linkTarget(destination)).toBe(source);
-  const rule = readFileSync(source, "utf8");
-  expect(rule).toContain("alwaysApply: true");
-  expect(rule).toContain("agent-memory retrieve --query-stdin --format json");
-  expect(rule).toContain("wait for completion");
-  expect(rule).toContain("apply no memory");
-  expect(rule).not.toMatch(/schema_version|ranking|privacy policy/u);
-});
-
-test("keeps memory and handoff runtime targets independent", () => {
-  const fixture = createDeploymentFixture("memory-runtime-binaries");
-  const memory = join(fixture.home, ".local", "bin", "agent-memory");
-  const handoffTarget = "moon exec --quiet agent-handoff:install";
-  const result = (target: string): ReturnType<typeof runMake> =>
-    runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-      variables: { BREW_BIN: fixture.bin },
-    });
-
-  installBuildProviders(fixture);
-  const memoryResult = result("agent-memory");
-  const handoffResult = result("agent-handoff");
-  expectSuccess(memoryResult);
-  expectSuccess(handoffResult);
-  expect(memoryResult.stdout).toContain(
-    "moon exec --quiet agent-memory:install",
-  );
-  expect(memoryResult.stdout).not.toContain(handoffTarget);
-  expect(handoffResult.stdout).toContain(handoffTarget);
-  expect(handoffResult.stdout).not.toContain(memory);
 });
 
 test.each(["file", "directory", "symlink"] as const)(
@@ -186,12 +117,3 @@ test.each(["file", "directory", "symlink"] as const)(
     }
   },
 );
-
-function installBuildProviders(
-  fixture: ReturnType<typeof createDeploymentFixture>,
-): void {
-  const provider = requireCommand("true");
-  for (const command of ["bun", "cargo", "volta"]) {
-    symlinkSync(provider, join(fixture.bin, command));
-  }
-}

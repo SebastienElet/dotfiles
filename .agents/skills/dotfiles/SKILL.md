@@ -13,71 +13,57 @@ metadata:
 ## Overview
 
 Apply this repository's conventions when changing managed configuration, symlinks, or tool
-installation. Keep changes minimal, portable, and integrated through the repository's `Makefile`.
+installation. Moon owns migrated installation and development tasks; Make remains only for
+optional operations, existing cleanup and compatibility entry points during the transition.
 
 ## Usage
 
-Use this skill before editing a configuration managed by this repository or changing how a tool is
-installed.
-
-Examples:
-
-- `$dotfiles add a managed CLI`
-- `$dotfiles link a home configuration`
-- `$dotfiles gate a platform-specific setting`
+Use this skill before editing managed configuration or changing how a tool is installed.
+Examples: add a managed CLI, deploy a home configuration, or gate a platform-specific setting.
 
 ## Steps
 
-1. Inspect the relevant configuration, the repository `Makefile`, and both the symlink source and
-   destination for existing files, directories, or links.
-2. If a requested direct package installation conflicts with this repository's convention, surface
-   the conflict, propose the minimal `Makefile` target or change, and obtain direction before making
-   a broader repository mutation. Do not execute the direct package-manager command.
-3. Make the smallest approved configuration change that satisfies the request.
-4. For tool installation, add or update a `Makefile` target; never run a package manager directly.
-5. For a home-directory configuration deployed by the `Makefile`, keep its source in this
-   repository, symlink the expected path under the user's home directory to that source, and add or
-   update the symlink target in the `Makefile`.
-6. Prefer settings that work on macOS and Linux. Add an explicit platform check only when a portable
-   alternative is unavailable.
-7. Inspect the target recipe and its dependencies for global side effects. In a worktree or test
-   context, verify every install target only with `make -n <target>`: an isolated `HOME` does not
-   sandbox Homebrew, `/Applications`, `curl | bash`, or other global mutations. Actual execution
-   with an isolated `HOME` is allowed only for a target proven to mutate home-directory links or
-   configuration exclusively; run real installations from the canonical checkout only when the
-   user's intent authorizes them.
+1. Inspect the relevant ADRs, Moon task and dependencies, remaining Make consumer, and both the
+   source and destination of every affected deployment.
+2. Put a migrated installation directly in Moon, with its actual prerequisites. Use the existing
+   task group or owning project; never call Make from a migrated Moon task.
+3. Keep a non-migrated Homebrew package in its profile Brewfile. When its installation becomes an
+   autonomous Moon task, remove the formula from the Brewfile and use a native Homebrew probe.
+4. Keep sources under the existing home, harness or tooling boundary and add their deployment to
+   the owning Moon project. Preserve the source-to-destination symlink pattern and the explicit
+   assembled or copied artifacts described by the ADRs.
+5. Preserve correct destinations silently and reject divergent links or files without overwriting
+   them. Keep behavior specific to Fisher, Git and assembled instructions within its existing
+   tested utility; do not extend it into a general repair mechanism.
+6. Keep installation of the workstation macOS-only and preserve the existing portable checks.
+   Homebrew mutations share the homebrew mutex; tests must not assume a runtime exists merely
+   because one CI runner currently provides it.
+7. In a worktree, inspect the task and its action graph before execution. Execute only deployment
+   tasks proven to mutate fixture-local links or configuration, without their global installation
+   dependencies; the macOS CI smoke exercises the full installation graph. For remaining Make
+   installations, use their dry-run for inspection.
+8. Validate declarative changes with Moon's native configuration and action graph, then run the
+   relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
 
 ## Gotchas
 
-- **Installing directly under time pressure** — commands such as `brew install`, `npm install -g`,
-  or equivalent bypass the repository's reproducible setup. Surface the conflict, refuse the direct
-  command, propose the minimal `Makefile` change, and obtain direction before changing the
-  repository.
-- **Replacing an existing destination** — a real file, directory, or link to another source may
-  contain user data. Inspect the source and destination first; never delete or overwrite them, and
-  ask for direction when the destination is not already the expected link.
-- **Treating an isolated HOME as an install sandbox** — Homebrew, `/Applications`, `curl | bash`,
-  and similar recipes can still mutate global state. Use `make -n <target>` for every install target
-  in a worktree or test context; execute with an isolated `HOME` only after inspecting the recipe
-  dependencies and proving the target changes home-directory links or configuration exclusively.
-- **Adding a home config without its Makefile symlink** — the file remains unmanaged or requires
-  manual setup. Store the config in this repository and update the `Makefile` with the corresponding
-  symlink target.
-- **Assuming macOS-only behavior** — a configuration can break on Linux hosts. Prefer a portable
-  option, or guard the platform-specific behavior with an explicit check such as `uname`.
+- **Running a global package manager directly** — bypasses reproducible setup; put its command
+  in the canonical Moon task or the remaining profile declaration.
+- **Treating isolated HOME as an install sandbox** — Homebrew and application installers can
+  mutate global state; exclude those dependencies from fixture execution and use the CI runner
+  for the full profile.
+- **Leaving a formula in two places** — a Brewfile and a standalone task become competing
+  installation declarations; remove the migrated entry and preserve the native package probe.
+- **Linking inside an existing directory** — changes an unexpected destination; use the deployment
+  helper's collision refusal and inspect any divergent state before a separate reconstruction.
+- **Restoring a Make prerequisite on a migrated path** — recreates the second graph; update the
+  Moon dependency and let any remaining Make adapter delegate to it.
 
 ## Constraints
 
-- Write documentation and comments in English, except under `docs/`, which `docs/AGENTS.md` puts in
-  French.
-- Configuration must stay simple and minimal.
-- macOS is the primary platform, but configurations must remain portable to Linux where practical.
-- The repository `Makefile` is canonical for tool installation; never directly run `brew install`,
-  `npm install -g`, or another global package-manager install command.
-- Never delete or overwrite an existing destination file, directory, or link to an unexpected
-  source.
-- In a worktree or test context, every install target must use `make -n <target>`; isolated `HOME`
-  execution is permitted only for targets whose recipes and dependencies are proven to mutate
-  home-directory links or configuration exclusively, with no global side effects.
-- Every home-directory configuration deployed and managed by the `Makefile` must use the established
-  repository-source-to-home-destination symlink pattern.
+- Write documentation in English except under docs/, whose instructions require French.
+- Never run a global package-manager installation outside the repository's declared task.
+- Never delete or overwrite a divergent symlink destination as an implicit installation repair.
+- Never run a task with global installation side effects from a worktree or fixture HOME.
+- Preserve macOS installation boundaries and every existing Linux check affected by the change.
+- Keep package inventories canonical and use native oracles instead of declaration mirror tests.

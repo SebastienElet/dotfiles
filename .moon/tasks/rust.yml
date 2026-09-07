@@ -1,0 +1,49 @@
+inheritedBy:
+  tags:
+    - rust-cli
+fileGroups:
+  rust:
+    - Cargo.toml
+    - Cargo.lock
+    - build*.rs
+    - src/**/*
+    - tests/**/*
+    - examples/**/*
+    - benches/**/*
+    - /.cargo/**/*
+tasks:
+  fmt:
+    deps:
+      - repository:rust
+    checks:
+      - |-
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+        cargo fmt --version
+    inputs:
+      - "@group(rust)"
+    toolchains: system
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo fmt --check
+  clippy:
+    deps:
+      - repository:rust
+    checks:
+      - |-
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+        cargo clippy --version
+    inputs:
+      - "@group(rust)"
+    toolchains: system
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo clippy --all-targets -- -D warnings
+  test:
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(rust)"
+    toolchains: system
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo test

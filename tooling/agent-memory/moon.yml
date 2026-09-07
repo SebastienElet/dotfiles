@@ -1,12 +1,5 @@
 fileGroups:
   rust:
-    - Cargo.toml
-    - Cargo.lock
-    - src/**/*
-    - tests/**/*
-    - examples/**/*
-    - benches/**/*
-    - /.cargo/**/*
     - /.github/workflows/test-agent-memory.yml
   deployment:
     - moon.yml
@@ -21,7 +14,6 @@ fileGroups:
     - /package.json
     - /bun.lock
     - /tsconfig.json
-
 tasks:
   install:
     description: Install the Agent Memory executable
@@ -47,36 +39,26 @@ tasks:
       cache: false
       runInCI: false
   fmt:
-    command: cargo fmt --check
     env:
       RUSTFLAGS: -Funsafe-code
-    inputs:
-      - "@group(rust)"
   clippy:
-    command: cargo clippy --all-targets -- -D warnings
     env:
       RUSTFLAGS: -Funsafe-code
-    inputs:
-      - "@group(rust)"
     options:
       mutex: agent-memory-cargo-target
   test:
-    command: cargo test
     env:
       RUSTFLAGS: -Funsafe-code
-    inputs:
-      - "@group(rust)"
     options:
       mutex: agent-memory-cargo-target
   build:
     script: |
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       cargo build --quiet --release --locked
       test -x "$projectRoot/target/release/agent-memory" || { printf 'Agent Memory build produced no executable at %s\n' "$projectRoot/target/release/agent-memory" >&2; exit 1; }
     deps:
       - repository:rust
-    env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
     inputs:
       - "@group(rust)"
     outputs:
@@ -84,12 +66,13 @@ tasks:
     options:
       mutex: agent-memory-cargo-target
   deployment-test:
-    command: >-
-      bun --config=/dev/null --no-env-file test
-      tooling/deployment-agent-memory.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/deployment-agent-memory.test.ts
     inputs:
       - "@group(deployment)"
       - "@group(rust)"
     toolchains: bun
     options:
       runFromWorkspaceRoot: true
+tags:
+  - rust-cli
+env: {}

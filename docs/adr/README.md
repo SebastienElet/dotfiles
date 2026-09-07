@@ -39,7 +39,7 @@ ici sont les dates d'auteur.
 | ------------------------------------------------------ | ---------------------------------------------------------------- | ------- |
 | [001](001-makefile-installateur.md)                    | Moon comme orchestrateur du poste                                | 2026-08 |
 | [002](002-homebrew-source-unique.md)                   | Homebrew comme gestionnaire des paquets                          | 2026-08 |
-| [003](003-deploiement-par-symlinks.md)                 | Déploiement depuis un état propre                                | 2026-08 |
+| [003](003-deploiement-par-symlinks.md)                 | Déploiement des configurations et rejeu                          | 2026-08 |
 | [004](004-script-upgrade-unique.md)                    | Script `upgrade` unique pour toutes les mises à jour             | 2017-09 |
 | [005](005-elagage-des-cibles.md)                       | Élagage périodique des cibles inutilisées                        | 2025-12 |
 | [006](006-neovim-editeur-par-defaut.md)                | Neovim comme éditeur par défaut                                  | 2019-11 |

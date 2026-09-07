@@ -4,86 +4,25 @@ import {
   createDeploymentFixture,
   expectSuccess,
   fileIdentity,
-  installProvider,
   linkTarget,
-  pathExists,
   project,
-  requireCommand,
-  runMake,
+  runDeploymentHelper,
 } from "./deployment-test-support.ts";
 import {
   mkdirSync,
   readFileSync,
   readdirSync,
   symlinkSync,
-  unlinkSync,
   utimesSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
 afterEach(cleanupDeploymentFixtures);
 
 const deploymentTimeoutMilliseconds = 15_000;
-const extendedDeploymentTimeoutMilliseconds = 30_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
-const userSkillDestinations = [
-  [".agents", "agent-instructions"],
-  ...[
-    "obsidian-retrieval",
-    "code-search",
-    "code-enforcement",
-    "harness-reflection",
-    "handoff",
-    "issue-creation",
-    "linear-issue-spec",
-    "linear-sync",
-    "memory-governance",
-    "pr-fix",
-    "pr-feedback",
-    "pr-verdict",
-    "requirements-clarification",
-    "skill-manager",
-    "workflow-automation",
-  ].map((slug) => [".claude", slug]),
-  ...[
-    "claude-developer",
-    "obsidian-retrieval",
-    "code-search",
-    "code-enforcement",
-    "harness-reflection",
-    "issue-creation",
-    "linear-issue-spec",
-    "linear-sync",
-    "memory-governance",
-    "pr-fix",
-    "pr-feedback",
-    "pr-verdict",
-    "requirements-clarification",
-    "skill-manager",
-    "workflow-automation",
-  ].map((slug) => [".cursor", slug]),
-  ...[
-    "claude-developer",
-    "obsidian-retrieval",
-    "code-search",
-    "design-claim-audit",
-    "code-enforcement",
-    "harness-reflection",
-    "handoff",
-    "issue-creation",
-    "linear-issue-spec",
-    "linear-sync",
-    "memory-governance",
-    "pr-fix",
-    "pr-feedback",
-    "pr-verdict",
-    "requirements-clarification",
-    "skill-manager",
-    "workflow-automation",
-  ].map((slug) => [".agents", slug] as const),
-] as const;
-
 test("refuses existing directories without linking inside them", () => {
   const fixture = createDeploymentFixture("existing-directory");
   const source = join(fixture.repository, "home", ".config", "fish");
@@ -93,7 +32,10 @@ test("refuses existing directories without linking inside them", () => {
   utimesSync(destination, new Date("2020-01-01"), new Date("2020-01-01"));
   utimesSync(source, new Date("2021-01-01"), new Date("2021-01-01"));
 
-  const result = runMake(fixture, [destination]);
+  const result = runDeploymentHelper(fixture, {
+    helper: "deploy-link.ts",
+    arguments: [source, destination],
+  });
 
   expect(result.exitCode).not.toBe(0);
   expect(readdirSync(destination)).toEqual([]);
@@ -111,82 +53,75 @@ test("refuses a destination symlink to a directory without mutating it", () => {
   utimesSync(actual, new Date("2020-01-01"), new Date("2020-01-01"));
   utimesSync(source, new Date("2021-01-01"), new Date("2021-01-01"));
 
-  const result = runMake(fixture, [destination]);
+  const result = runDeploymentHelper(fixture, {
+    helper: "deploy-link.ts",
+    arguments: [source, destination],
+  });
 
   expect(result.exitCode).not.toBe(0);
   expect(linkTarget(destination)).toBe(actual);
   expect(readdirSync(actual)).toEqual([]);
 });
 
-test(
-  "deploys Starship and tmux links, replays idempotently, and preserves a wrong link",
-  () => {
-    const fixture = createDeploymentFixture("starship");
-    const tmux = join(fixture.home, ".config", "tmux", "tmux.conf");
-    const starship = join(fixture.home, ".config", "starship.toml");
-    expectSuccess(runMake(fixture, [tmux], { repository: project }));
-    expect(linkTarget(tmux)).toBe(
-      join(project, "home", ".config", "tmux", "tmux.conf"),
-    );
-    expectSuccess(runMake(fixture, [starship], { repository: project }));
-    expect(linkTarget(starship)).toBe(
-      join(project, "home", ".config", "starship.toml"),
-    );
+test("deploys Starship and tmux links and replays idempotently", () => {
+  const fixture = createDeploymentFixture("starship");
+  const tmux = join(fixture.home, ".config", "tmux", "tmux.conf");
+  const starship = join(fixture.home, ".config", "starship.toml");
+  const targets = ["home:tmux", "home:starship"];
+  expectSuccess(runDeploymentMoon(fixture, targets));
+  expect(linkTarget(tmux)).toBe(
+    join(project, "home", ".config", "tmux", "tmux.conf"),
+  );
+  expect(linkTarget(starship)).toBe(
+    join(project, "home", ".config", "starship.toml"),
+  );
+  const before = [tmux, starship].map((path) => fileIdentity(path));
+  const replay = runDeploymentMoon(fixture, targets);
+  expectSuccess(replay);
+  expect(replay.stdout).toBe("");
+  expect(replay.stderr).toBe("");
+  expect([tmux, starship].map((path) => fileIdentity(path))).toEqual(before);
+});
 
-    const marker = join(fixture.root, "ln-called");
-    installProvider(fixture, "ln");
-    expectSuccess(
-      runMake(fixture, [starship], {
-        environment: {
-          DEPLOYMENT_MARKER: marker,
-          DEPLOYMENT_PROVIDER_MODE: "ln",
-          DEPLOYMENT_REAL_COMMAND: requireCommand("ln"),
-          PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
-        },
-        repository: project,
-      }),
-    );
-    expect(pathExists(marker)).toBeFalse();
+test("preserves a divergent Starship symlink", () => {
+  const fixture = createDeploymentFixture("starship-collision");
+  const destination = join(fixture.home, ".config", "starship.toml");
+  const unexpected = join(fixture.root, "unexpected");
+  mkdirSync(join(fixture.home, ".config"), { recursive: true });
+  mkdirSync(unexpected);
+  symlinkSync(unexpected, destination);
+  const result = runDeploymentMoon(fixture, ["home:starship"]);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    "exists and is not the expected symbolic link",
+  );
+  expect(linkTarget(destination)).toBe(unexpected);
+});
 
-    expectDivergentSymlinkRejected(fixture, starship);
-  },
-  deploymentTimeoutMilliseconds,
-);
-
-test("deploys the guarded ColGrep entry point without replacing a destination", () => {
+test("deploys the guarded ColGrep entry point and replays idempotently", () => {
   const fixture = createDeploymentFixture("colgrep-search");
   const destination = join(fixture.home, ".local", "bin", "colgrep-search");
 
-  expectSuccess(runMake(fixture, [destination], { repository: project }));
+  expectSuccess(runDeploymentMoon(fixture, ["tooling:colgrep-search-install"]));
   expect(linkTarget(destination)).toBe(
     join(project, "tooling", "colgrep-search-cli.ts"),
   );
-  expectSuccess(runMake(fixture, [destination], { repository: project }));
+  expectSuccess(runDeploymentMoon(fixture, ["tooling:colgrep-search-install"]));
+});
 
-  unlinkSync(destination);
+test("preserves an occupied ColGrep entry point", () => {
+  const fixture = createDeploymentFixture("colgrep-search-collision");
+  const destination = join(fixture.home, ".local", "bin", "colgrep-search");
+  mkdirSync(join(fixture.home, ".local", "bin"), { recursive: true });
   writeFileSync(destination, "keep\n");
-  const divergent = runMake(fixture, [destination], { repository: project });
+  const divergent = runDeploymentMoon(fixture, [
+    "tooling:colgrep-search-install",
+  ]);
   expect(divergent.exitCode).not.toBe(0);
   expect(readFileSync(destination, "utf8")).toBe("keep\n");
 });
 
-function expectDivergentSymlinkRejected(
-  fixture: ReturnType<typeof createDeploymentFixture>,
-  destination: string,
-): void {
-  unlinkSync(destination);
-  const unexpected = join(fixture.root, "unexpected");
-  mkdirSync(unexpected);
-  symlinkSync(unexpected, destination);
-  const result = runMake(fixture, [destination], { repository: project });
-  expect(result.exitCode).not.toBe(0);
-  expect(result.stderr).toContain(
-    `exists and is not the expected symbolic link`,
-  );
-  expect(linkTarget(destination)).toBe(unexpected);
-}
-
-test("deploys shared instructions and skills, rejects divergent rules, and replays idempotently", () => {
+test("deploys shared instructions and skills and replays idempotently", () => {
   const fixture = createDeploymentFixture("agent-instructions");
   const claudeRule = join(
     fixture.home,
@@ -202,13 +137,12 @@ test("deploys shared instructions and skills, rejects divergent rules, and repla
     "agent-instructions",
   );
   expectSuccess(
-    runMake(fixture, [claudeRule, codexInstructions, codexSkill], {
-      repository: project,
-    }),
+    runDeploymentMoon(fixture, [
+      "harness:claude-rules",
+      "harness:codex-instructions",
+      "harness:codex-skills",
+    ]),
   );
-  expect(
-    linkTarget(join(project, "harness", "rules", "agent-instructions.md")),
-  ).toBe("../skills/agent-instructions/references/maintenance.md");
   expect(linkTarget(claudeRule)).toBe(
     join(project, "harness", "rules", "agent-instructions.md"),
   );
@@ -220,14 +154,25 @@ test("deploys shared instructions and skills, rejects divergent rules, and repla
   );
   const before = fileIdentity(codexInstructions);
   expectSuccess(
-    runMake(fixture, [claudeRule, codexInstructions], {
-      repository: project,
-    }),
+    runDeploymentMoon(fixture, [
+      "harness:claude-rules",
+      "harness:codex-instructions",
+    ]),
   );
   expect(fileIdentity(codexInstructions)).toEqual(before);
-  unlinkSync(claudeRule);
+});
+
+test("preserves an occupied Claude rule", () => {
+  const fixture = createDeploymentFixture("claude-rule-collision");
+  const claudeRule = join(
+    fixture.home,
+    ".claude",
+    "rules",
+    "agent-instructions.md",
+  );
+  mkdirSync(join(fixture.home, ".claude", "rules"), { recursive: true });
   writeFileSync(claudeRule, "keep\n");
-  const divergent = runMake(fixture, [claudeRule], { repository: project });
+  const divergent = runDeploymentMoon(fixture, ["harness:claude-rules"]);
   expect(divergent.exitCode).not.toBe(0);
   expect(divergent.stderr).toContain(
     "exists and is not the expected symbolic link",
@@ -245,55 +190,3 @@ function expectedCodexInstructions(): string {
     readFileSync(join(project, "harness", "USER.md"), "utf8")
   );
 }
-
-test(
-  "deploys every public user skill from the shared collection",
-  () => {
-    const fixture = createDeploymentFixture("user-skills");
-    const destinationPaths: string[] = [];
-    for (const [owner, slug] of userSkillDestinations) {
-      destinationPaths.push(join(fixture.home, owner, "skills", slug));
-    }
-    expectSuccess(runMake(fixture, destinationPaths, { repository: project }));
-    for (const [owner, slug] of userSkillDestinations) {
-      const destination = join(fixture.home, owner, "skills", slug);
-      expect(linkTarget(destination)).toBe(
-        join(project, "harness", "skills", slug),
-      );
-      expect(pathExists(join(project, ".agents", "skills", slug))).toBeFalse();
-    }
-  },
-  extendedDeploymentTimeoutMilliseconds,
-);
-test("agent aggregate targets deploy memory governance to every agent", () => {
-  const fixture = createDeploymentFixture("memory-governance");
-  const codexDestination = join(
-    fixture.home,
-    ".agents/skills/memory-governance",
-  );
-  const claudeDestination = join(
-    fixture.home,
-    ".claude/skills/memory-governance",
-  );
-  const cursorDestination = join(
-    fixture.home,
-    ".cursor/skills/memory-governance",
-  );
-  const provider = requireCommand("true");
-  for (const command of ["bun", "cargo", "volta"]) {
-    symlinkSync(provider, join(fixture.bin, command));
-  }
-  for (const [target, included] of [
-    ["codex", codexDestination],
-    ["claude-code", claudeDestination],
-    ["cursor", cursorDestination],
-  ] as const) {
-    const result = runMake(fixture, [target], {
-      dryRun: true,
-      repository: project,
-      variables: { BREW_BIN: fixture.bin },
-    });
-    expectSuccess(result);
-    expect(result.stdout).toContain(included);
-  }
-});

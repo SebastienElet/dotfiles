@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-04
+- **Révision** : 2026-09-07
 
 ## Contexte
 
@@ -32,9 +32,14 @@ Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
 
 Conformément à l'[ADR-003](003-deploiement-par-symlinks.md), le déploiement par
-Moon ou, pendant la transition, par Make part d'un état propre et crée chaque
-destination absente. Les tâches n'inspectent ni ne migrent une destination
-préexistante. Aucun lien de compatibilité n'est conservé dans le dépôt.
+Moon ou, pendant la transition, par Make crée une destination absente, conserve
+le lien attendu et refuse une destination divergente. Les configurations
+spécifiques conservent les comportements explicités par l’ADR-003. Aucun lien
+de compatibilité n’est ajouté aux chemins sources.
+
+Les manifestes Moon de ces répertoires décrivent leurs tâches ; ils ne sont pas
+déployés sous `$HOME`. `home/moon.yml` porte les déploiements, `harness/moon.yml`
+les capacités des agents et les projets de `tooling/` les outils et oracles.
 
 ## Conséquences
 
@@ -43,15 +48,15 @@ préexistante. Aucun lien de compatibilité n'est conservé dans le dépôt.
 - L'arborescence `home/` rend visible la correspondance avec `$HOME` sans
   changer les destinations utilisées par les outils.
 - Un déplacement de source impose d'aligner les consommateurs versionnés, puis
-  de reconstruire les destinations avec `make clean` et la cible d'installation
-  voulue.
+  de reconstruire explicitement les destinations concernées avant le déploiement
+  voulu ; le nettoyage existant n’est pas une remise à zéro générale.
 - Les chemins de découverte imposés restent des exceptions visibles à la
   racine plutôt que des copies sous `harness/`.
 
 ## Alternatives écartées
 
-- Stow, yadm, chezmoi ou Nix : changement de moteur sans nécessité ; le
-  `Makefile` couvre déjà le déploiement.
+- Stow, yadm, chezmoi ou Nix : ajout d'un autre moteur sans nécessité pour
+  les déploiements portés par Moon.
 - Répertoires `hosts/`, `profiles/`, `platforms/` ou `modules/` : catégories
   sans besoin actuel.
 - Conservation de liens vers les anciens chemins : masque les consommateurs
