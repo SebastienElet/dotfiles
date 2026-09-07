@@ -13,64 +13,52 @@ metadata:
 
 ## Overview
 
-Keep the current agent responsible for analysis and prompt quality while the user controls every
-handoff to Claude Code. Inspect the available context, produce one self-contained prompt for the
-user to paste manually, then stop. Continue only after the user returns with Claude's result or asks
-to revise the prompt.
-
-This workflow is advisory at the agent-instruction layer. Removing the repository wrapper closes
-the managed automation path but cannot technically prevent every possible shell invocation of
-Claude; never present the behavior as an enforced execution boundary.
+Prepare a launch command and one self-contained prompt for a manual Claude Code handoff. The user
+runs the command, pastes the prompt, and returns with the result when ready.
 
 ## Usage
 
-Use `$claude-developer` when the user asks Codex or Cursor to prepare work for manual execution in
-Claude Code.
-
-Example: “Write a prompt I can paste into Claude Code to implement the approved authentication
-fix.”
+`$claude-developer <task or returned result>` — prepare an implementation or correction handoff.
+Direct implementation requests without Claude stay with the current agent.
 
 ## Steps
 
-1. Confirm that the request explicitly involves Claude Code, a manual Claude handoff, or a returned
-   Claude result that may need another prompt. A direct request to implement a change without Claude
-   stays with the current agent and must not trigger this skill.
-2. Inspect repository instructions and the minimum read-only context needed to make the prompt
-   accurate. State unresolved facts in the prompt instead of guessing.
-3. Write one self-contained prompt that gives Claude the outcome, relevant facts, constraints,
-   acceptance criteria, allowed scope, expected verification, and requested delivery report.
-4. Tell Claude to inspect the implementation before editing, preserve unrelated changes, surface
-   conflicts, and leave consequential actions such as commits or pushes to the user unless the
-   prompt explicitly authorizes them.
-5. Return exactly one fenced text block containing the prompt, then stop. Do not invoke Claude,
-   create an isolated checkout, edit files, run validations, or begin a second iteration.
-6. If the user asks to revise an unexecuted prompt, produce one replacement prompt and stop again.
-7. After the user brings back Claude's result, review only the supplied evidence and any explicitly
-   authorized local state. Produce one corrective prompt only when the user requests another
-   iteration, then stop again.
+1. Inspect repository instructions and the minimum read-only context needed for the handoff.
+   Record unresolved facts instead of guessing.
+2. Identify the intended existing worktree from the task context; verify its absolute path and
+   branch with `git worktree list --porcelain`. Use the current worktree when the task targets it.
+   If the intended worktree is missing or ambiguous, ask for its path before issuing a launch
+   command; do not invent a path or create a checkout.
+3. Write one prompt with the outcome, verified worktree path and branch (or detached HEAD), relevant
+   facts, constraints, acceptance criteria, allowed scope, expected verification, and delivery
+   report. Tell Claude to inspect before editing, preserve unrelated changes, and surface conflicts.
+   Include the user's authorization limits; reserve consequential actions for the user unless
+   explicitly authorized.
+4. Return two fenced blocks in order: a `sh` block with the copyable one-line command
+   `cd <shell-quoted absolute worktree path> && claude`, then a `text` block with the prompt to paste
+   into that session. Substitute the verified path, quoting shell metacharacters safely. Repeat both
+   blocks for every replacement or corrective prompt, then stop.
+5. On a returned result, review only supplied evidence and explicitly authorized local state.
+   Produce a corrective handoff only when the user requests another iteration; an unexecuted prompt
+   revision replaces the previous handoff.
 
 ## Gotchas
 
-- **Treating any implementation request as delegation** — Claude becomes an implicit default;
-  activate only when the request explicitly involves Claude Code or a manual Claude handoff.
-- **Producing a vague prompt** — Claude must rediscover settled decisions and may widen the scope;
-  include the known constraints, acceptance criteria, and verification expectations.
-- **Continuing after the prompt** — the handoff becomes automatic and the user loses the validation
-  point; return one prompt and wait for the user's next message.
-- **Trusting a reported result** — Claude's summary may omit defects or unverified claims; review the
-  returned diff and evidence before preparing a corrective iteration.
-- **Calling prose an execution guard** — agent instructions can be bypassed by routing or obedience
-  failures; describe this workflow as advisory and do not claim that it technically blocks Claude.
+- **Starting in the wrong checkout** — a bare `claude` uses the terminal's current directory;
+  supply the verified absolute path and `&&` so a failed `cd` prevents launch.
+- **Losing the manual handoff** — executing the command or starting another iteration removes the
+  user's control; supply the two blocks and wait.
+- **Trusting a returned summary** — it may omit defects or failed checks; inspect the available diff
+  and evidence before making a verification claim.
 
 ## Constraints
 
-- Activate only when the request explicitly involves Claude Code or a manual Claude handoff.
-- Never invoke Claude Code, an automation wrapper, or another implementation agent.
-- Never create a branch or isolated checkout, edit files, invoke an implementation agent, or
-  validate the implementation while preparing the prompt.
-- Produce one prompt per response and wait for the user before every subsequent iteration.
-- Treat the no-invocation rule as advisory policy, never as a technical execution barrier.
-- Never claim that Claude's result is correct or verified without reviewing the named evidence in
-  its stated environment.
+- Activate only for requests explicitly involving Claude Code, a manual handoff, or its returned
+  result; intercept automatic Claude delegation as a manual handoff.
+- During preparation, never invoke Claude, an automation wrapper, or another implementation agent;
+  never create a branch or checkout, edit files, or validate the implementation.
 - Never authorize commits, pushes, merges, deletion, publication, or permission bypasses unless the
   user's current request explicitly permits them.
+- Produce at most one prompt per response and wait for the user before every subsequent iteration.
+- This is advisory policy, not a technical execution barrier. Never claim Claude's result is
+  verified without reviewing the named evidence in its stated environment.
