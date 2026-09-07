@@ -60,6 +60,7 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo check --all-targets --locked
   test:
+    toolchains: bun
     options:
       mutex: arnes-cargo-target
     inputs:

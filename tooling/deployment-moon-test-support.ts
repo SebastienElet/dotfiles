@@ -152,6 +152,7 @@ function runMoon(
         MOON_HOME: join(fixture.root, "moon-home"),
         RUSTUP_HOME: process.env.RUSTUP_HOME ?? join(homedir(), ".rustup"),
         ...options.environment,
+        PROTO_OFFLINE: "true",
       },
     },
   );

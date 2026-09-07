@@ -33,6 +33,7 @@ function runDeploymentMoon(
         PROTO_HOME:
           process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
         ...environment,
+        PROTO_OFFLINE: "true",
       },
       stderr: "pipe",
       stdout: "pipe",

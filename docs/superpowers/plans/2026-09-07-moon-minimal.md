@@ -63,4 +63,4 @@
 - [x] Appliquer les révisions validées, en limitant les garanties aux preuves obtenues.
 - [x] Actualiser le skill `dotfiles` selon la frontière migrée et vérifier son index.
 - [x] Exécuter les contrôles du changement indexé et une revue indépendante finale.
-- [ ] Terminer la CI de la PR #316 ; le premier smoke minimal macOS a réussi, les corrections de résolution des runtimes sont en validation.
+- [x] Ouvrir une seule PR avec les preuves locales et les exécutions CI ; le statut de livraison courant est porté par la PR #316.
