@@ -73,6 +73,29 @@ tasks:
     options:
       cache: false
       runInCI: false
+  check:
+    description: Run repository static checks
+    command: noop
+    deps:
+      - typescript-lint
+      - typescript-typecheck
+      - typescript-format-check
+      - prettier-check
+      - lua-lint
+    toolchains: system
+  lua-lint:
+    script: |
+      set -euo pipefail
+      test -f home/.config/nvim/init.lua
+      test -f home/.config/wezterm/wezterm.lua
+      luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
+      luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
+    inputs:
+      - home/.config/nvim/**/*.lua
+      - home/.config/wezterm/wezterm.lua
+      - .github/workflows/lint.yml
+      - .github/workflows/check-typescript.yml
+    toolchains: system
   skill-simplify-claude:
     description: Install the skill-simplify user skill for Claude Code
     script: |

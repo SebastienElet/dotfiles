@@ -7,19 +7,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
 
       - name: Install luacheck
         run: brew install luacheck
 
       - name: Lint Lua files
-        run: |
-          set -euo pipefail
-          echo "Checking Lua syntax..."
-          test -f home/.config/nvim/init.lua
-          test -f home/.config/wezterm/wezterm.lua
-          luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
-          luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
-          echo "✅ Lua syntax OK"
+        run: moon ci repository:lua-lint
 
   shellcheck:
     name: Shell scripts
