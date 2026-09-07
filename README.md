@@ -32,6 +32,17 @@ moon exec install
 moon action-graph repository:install
 ```
 
+## Checks
+
+With Moon and `luacheck` available on `PATH`, run the shared static check task:
+
+```bash
+moon run repository:check
+```
+
+This runs TypeScript lint, type checking and formatting, Prettier, and Lua lint.
+Run Lua lint alone with `moon run repository:lua-lint`; tests remain separate tasks.
+
 ## Architecture decisions
 
 Structural choices — installer, shell, editor, container runtime, agent
