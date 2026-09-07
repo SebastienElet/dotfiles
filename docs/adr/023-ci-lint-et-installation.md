@@ -2,34 +2,38 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-09-07
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
 
-Le smoke historique sélectionnait des cibles à partir du diff du `Makefile` sur les pull requests,
-puis exécutait l’agrégat `all` après fusion. Cette accélération reproduisait la sémantique de
-l’installateur et devait contourner les applications payantes et Docker.
+Les workflows spécialisés couvrent lint, types, tests et déploiements. Le smoke historique
+passait par Make pour compléter les dépendances qui n'avaient pas encore migré vers Moon.
 
 ## Décision
 
-Les workflows spécialisés continuent de vérifier lint, types, tests et déploiements couverts. Le
-workflow macOS d’installation contient un job unique sur `macos-latest`, pour chaque pull request et
-push vers `main`, et appelle seulement l’oracle public `make smoke-minimal`.
+Les workflows choisissent les runners, amorcent leurs runtimes et invoquent les tâches Moon.
+Leur préparation des outils de contrôle appartient au graphe Moon. Les plateformes existantes
+sont conservées : le poste complet est macOS ; les suites portables continuent sur Ubuntu.
 
-Le smoke vérifie les prérequis fournis par le runner, exécute `make minimal`, contrôle le Brewfile et
-les exécutables non-Homebrew, relève les artefacts possédés, puis capture un second `make minimal`.
-Ce second passage doit retourner `0`, garder stdout et stderr vides, satisfaire les mêmes
+Le workflow d'installation conserve un job sur `macos-latest`, pour chaque pull request
+et push vers `main`, et appelle `tooling:smoke-minimal`.
+Cet oracle exerce le point d'entrée public `repository:install` avec l'entrée standard fermée.
+Il contrôle le Brewfile, les exécutables observés et le défaut Node hors projet, relève les
+artefacts possédés déjà observés par le smoke, puis capture un second passage du même profil.
+Le second passage doit retourner zéro, garder stdout et stderr vides, satisfaire les
 postconditions et laisser les artefacts relevés identiques.
 
 ## Conséquences
 
-- La CI exerce exactement le point d’entrée public minimal, sans matrice ni sélection de diff.
-- La preuve reste limitée au runner macOS nommé et aux artefacts observés.
-- Elle ne garantit ni les optionnels, ni une authentification, ni le démarrage du daemon OrbStack,
-  ni les écritures internes de Homebrew.
+- Le smoke exerce le profil minimal public sans sélection des installations à partir du diff.
+- Les tests spécialisés continuent d'exercer leurs erreurs et comportements sur leurs runners.
+- Le résultat d'un graphe ou d'une validation de syntaxe ne remplace pas le smoke exécuté.
+- La preuve reste limitée au runner nommé et aux observations effectuées ; elle ne couvre pas
+  les optionnels, l'authentification, le démarrage d'OrbStack ou les écritures internes de Homebrew.
 
 ## Alternatives écartées
 
-- Parser le `Makefile` ou les Brewfiles : duplication de la source canonique.
-- Rejouer toutes les applications optionnelles : coût et prérequis sans rapport avec le socle.
-- Vérification manuelle avant push : absence de preuve reproductible.
+- Parser Make, les Brewfiles ou Moon pour en recopier le graphe dans un test.
+- Installer toutes les applications optionnelles dans le smoke minimal.
+- Déduire la réussite du profil d'une vérification manuelle avant push.

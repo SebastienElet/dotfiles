@@ -104,6 +104,33 @@ function installProvider(fixture: DeploymentFixture, command: string): string {
   return executable;
 }
 
+function runDeploymentHelper(
+  fixture: DeploymentFixture,
+  invocation: Readonly<{ helper: string; arguments: readonly string[] }>,
+  environment: Readonly<NodeJS.ProcessEnv> = {},
+): CommandResult {
+  const result = Bun.spawnSync(
+    [
+      process.execPath,
+      "--config=/dev/null",
+      "--no-env-file",
+      join(project, "tooling", invocation.helper),
+      ...invocation.arguments,
+    ],
+    {
+      cwd: fixture.root,
+      env: { ...process.env, HOME: fixture.home, ...environment },
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
+  return {
+    exitCode: result.exitCode,
+    stderr: decode(result.stderr),
+    stdout: decode(result.stdout),
+  };
+}
+
 function expectSuccess(result: CommandResult): void {
   if (result.exitCode !== 0) {
     throw new Error(
@@ -165,5 +192,6 @@ export {
   project,
   requireCommand,
   runMake,
+  runDeploymentHelper,
 };
 export type { CommandResult, DeploymentFixture };

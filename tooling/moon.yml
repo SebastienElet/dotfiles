@@ -1,0 +1,176 @@
+language: typescript
+fileGroups:
+  toolingSources:
+    - "**/*"
+  rootToolchain:
+    - /package.json
+    - /bun.lock
+    - /tsconfig.json
+    - /.prototools
+    - /.github/workflows/**/*
+    - /.moon/**/*
+    - /moon.yml
+  deploymentSources:
+    - /home/**/*
+    - /harness/**/*
+    - /.agents/**/*
+    - /Makefile
+    - /.gitignore
+tasks:
+  test:
+    command: noop
+    deps:
+      - repository:typescript-test
+      - upgrade-test
+      - pr-feedback-skill-test
+    toolchains: system
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - "@group(deploymentSources)"
+      - /install.sh
+  deployment-test:
+    command: bun --config=/dev/null --no-env-file test
+      tooling/deployment-fish.test.ts tooling/deployment-links.test.ts
+      tooling/deployment-xdg.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - "@group(deploymentSources)"
+  hunspell-test:
+    command: bun --config=/dev/null --no-env-file test
+      tooling/install-hunspell-dictionary.test.ts
+      tooling/install-hunspell-dictionary-failures.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+  apple-notes-test:
+    command: bun --config=/dev/null --no-env-file test tooling/apple-notes*.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - /.agents/skills/apple-notes/scripts/**/*
+  code-search-test:
+    command: bun --config=/dev/null --no-env-file test
+      tooling/deployment-links.test.ts tooling/code-search-*.test.ts
+      tooling/colgrep-search*.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - "@group(deploymentSources)"
+  code-search-integration-test:
+    deps:
+      - repository:dependencies
+      - colgrep-search-install
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    env:
+      COLGREP_INTEGRATION: "1"
+      PATH: ${HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}
+    script: >-
+      set -e
+
+      colgrep --version
+
+      colgrep-search --help || test "$?" -eq 1
+
+      bun --config=/dev/null --no-env-file test
+      tooling/colgrep-search-integration.test.ts
+    toolchains: bun
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - /Brewfile
+  colgrep-search-install:
+    command: bun tooling/deploy-link.ts
+      "$workspaceRoot/tooling/colgrep-search-cli.ts"
+      "$HOME/.local/bin/colgrep-search"
+    deps:
+      - repository:dependencies
+      - repository:colgrep-setup
+    toolchains: bun
+    options:
+      cache: false
+      runFromWorkspaceRoot: true
+      runInCI: true
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+  upgrade-test:
+    command: tooling/upgrade-test
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+  installer-test:
+    command: bun --config=/dev/null --no-env-file test tooling/install.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - /install.sh
+  docker-smoke:
+    command: bun --config=/dev/null --no-env-file test tooling/scrapling-mcp.test.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    env:
+      SCRAPLING_DOCKER_SMOKE: "1"
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+  pr-feedback-skill-test:
+    command: tooling/pr-feedback-skill-test
+    toolchains: system
+    options:
+      runFromWorkspaceRoot: true
+    inputs:
+      - pr-feedback-skill-test
+      - /harness/skills/pr-feedback/SKILL.md
+      - /.github/workflows/test-deployment.yml
+  smoke-minimal:
+    command: bun tooling/smoke-minimal.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      os: macos
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - "@group(deploymentSources)"
+      - /Brewfile
+      - /install.sh

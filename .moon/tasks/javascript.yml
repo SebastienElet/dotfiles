@@ -1,0 +1,54 @@
+{
+  inheritedBy: { tags: [repository] },
+  fileGroups:
+    {
+      trackedTypeScript: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+      typecheckedTypeScript:
+        [tooling/**/*.ts, .agents/skills/apple-notes/scripts/**/*.ts],
+      typescriptToolchain:
+        [
+          package.json,
+          bun.lock,
+          .moon/workspace.yml,
+          .moon/toolchains.yml,
+          moon.yml,
+          .github/workflows/check-typescript.yml,
+        ],
+    },
+  tasks:
+    {
+      dependencies:
+        {
+          description: Prepare the root package through the Bun toolchain,
+          command: noop,
+          toolchains: bun,
+          options: { cache: false },
+        },
+      typescript-lint:
+        {
+          command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts,
+          inputs:
+            [
+              "@group(trackedTypeScript)",
+              "@group(typescriptToolchain)",
+              .oxlintrc.json,
+              tsconfig.json,
+            ],
+        },
+      typescript-typecheck:
+        {
+          command: bun --config=/dev/null --no-env-file run typecheck,
+          inputs:
+            [
+              "@group(typecheckedTypeScript)",
+              "@group(typescriptToolchain)",
+              tsconfig.json,
+            ],
+        },
+      typescript-format-check:
+        {
+          command: bun run format:typescript:check,
+          inputs: ["@group(trackedTypeScript)", "@group(typescriptToolchain)"],
+        },
+    },
+}

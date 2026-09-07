@@ -7,14 +7,16 @@ import {
   linkTarget,
   project,
   requireCommand,
-  runMake,
+  runDeploymentHelper,
 } from "./deployment-test-support.ts";
 import {
   copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -23,7 +25,7 @@ afterEach(cleanupDeploymentFixtures);
 const deploymentTimeoutMilliseconds = 15_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
 
-test("installs through the real Make target and replays without invoking Fish", () => {
+test("installs through the shipped deployment helper and replays without invoking Fish", () => {
   const fixture = createDeploymentFixture("fish-success");
   const source = join(fixture.repository, "home", ".config", "fish");
   const bindings = join(
@@ -44,13 +46,12 @@ test("installs through the real Make target and replays without invoking Fish", 
     DEPLOYMENT_PROVIDER_MODE: "fish-success",
     PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
   };
+  const invocation = {
+    helper: "deploy-fish-plugins.ts",
+    arguments: [source, join(fixture.home, ".config", "fish")],
+  };
 
-  expectSuccess(
-    runMake(fixture, [bindings], {
-      environment,
-      variables: { BREW_BIN: fixture.bin },
-    }),
-  );
+  expectSuccess(runDeploymentHelper(fixture, invocation, environment));
   expect(linkTarget(join(fixture.home, ".config", "fish"))).toBe(source);
   expect(existsSync(bindings)).toBeTrue();
   expect(existsSync(pluginConfiguration)).toBeTrue();
@@ -59,25 +60,13 @@ test("installs through the real Make target and replays without invoking Fish", 
   );
 
   rmSync(marker);
-  expectSuccess(
-    runMake(fixture, [bindings], {
-      environment,
-      variables: { BREW_BIN: fixture.bin },
-    }),
-  );
+  expectSuccess(runDeploymentHelper(fixture, invocation, environment));
   expect(existsSync(marker)).toBeFalse();
 });
 
 test("repairs a partial fzf.fish installation missing its configuration", () => {
   const fixture = createDeploymentFixture("fish-partial");
   const source = join(fixture.repository, "home", ".config", "fish");
-  const bindings = join(
-    fixture.home,
-    ".config",
-    "fish",
-    "functions",
-    "fzf_configure_bindings.fish",
-  );
   const pluginConfiguration = join(source, "conf.d", "fzf.fish");
   const marker = join(fixture.root, "fish-called");
   mkdirSync(join(fixture.home, ".config"), { recursive: true });
@@ -92,10 +81,14 @@ test("repairs a partial fzf.fish installation missing its configuration", () => 
   };
 
   expectSuccess(
-    runMake(fixture, [bindings], {
+    runDeploymentHelper(
+      fixture,
+      {
+        helper: "deploy-fish-plugins.ts",
+        arguments: [source, join(fixture.home, ".config", "fish")],
+      },
       environment,
-      variables: { BREW_BIN: fixture.bin },
-    }),
+    ),
   );
   expect(existsSync(pluginConfiguration)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
@@ -104,10 +97,14 @@ test("repairs a partial fzf.fish installation missing its configuration", () => 
 
   rmSync(marker);
   expectSuccess(
-    runMake(fixture, [bindings], {
+    runDeploymentHelper(
+      fixture,
+      {
+        helper: "deploy-fish-plugins.ts",
+        arguments: [source, join(fixture.home, ".config", "fish")],
+      },
       environment,
-      variables: { BREW_BIN: fixture.bin },
-    }),
+    ),
   );
   expect(existsSync(marker)).toBeFalse();
 });
@@ -152,23 +149,31 @@ test("restores a partial installation when Fish produces no bindings", () => {
   );
   mkdirSync(join(fixture.home, ".config"), { recursive: true });
   mkdirSync(join(source, "functions"), { recursive: true });
-  writeFileSync(join(source, "functions", "_fzf_wrapper.fish"), "wrapper\n");
+  writeFileSync(join(source, "functions", "original.fish"), "wrapper\n");
+  symlinkSync("original.fish", join(source, "functions", "_fzf_wrapper.fish"));
   writeFileSync(
     join(source, "functions", "fzf_configure_bindings.fish"),
     "bindings\n",
   );
   installProvider(fixture, "fish");
-  const result = runMake(fixture, [bindings], {
-    environment: {
+  const result = runDeploymentHelper(
+    fixture,
+    {
+      helper: "deploy-fish-plugins.ts",
+      arguments: [source, join(fixture.home, ".config", "fish")],
+    },
+    {
       DEPLOYMENT_PROVIDER_MODE: "fish-empty",
       PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
     },
-    variables: { BREW_BIN: fixture.bin },
-  });
+  );
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr).toContain(`Error: Fisher did not install ${bindings}`);
   expect(existsSync(bindings)).toBeTrue();
   expect(readFileSync(bindings, "utf8")).toBe("bindings\n");
+  expect(readlinkSync(join(source, "functions", "_fzf_wrapper.fish"))).toBe(
+    "original.fish",
+  );
   expect(
     readFileSync(join(source, "functions", "_fzf_wrapper.fish"), "utf8"),
   ).toBe("wrapper\n");

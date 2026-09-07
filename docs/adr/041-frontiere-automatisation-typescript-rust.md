@@ -2,6 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-09-07
 
 ## Contexte
 
@@ -14,17 +15,17 @@ utilitaires qu'un développeur maîtrisant TypeScript doit pouvoir produire et m
 [test runner intégré](https://bun.sh/docs/test), mais l'exécution ne remplace pas la vérification
 statique. La documentation Bun recommande une configuration TypeScript stricte avec `noEmit`, et
 [TypeScript 7 fournit désormais le binaire `tsc`
-natif](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Le dépôt ne contient
-encore aucun utilitaire TypeScript : la toolchain sera introduite avec son premier consommateur
-plutôt que comme infrastructure vide.
+natif](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Le dépôt utilise cette toolchain pour ses utilitaires et leurs contrôles.
 
 ## Décision
 
 - Moon devient l'orchestrateur unique selon l'ADR-001 ; les parcours Make non migrés sont transitoires.
 - Bash se limite à l'amorçage, à l'environnement et à une courte séquence linéaire de commandes.
 - Moon porte les tâches d'installation et de développement, leur graphe de dépendances
-  et leur sélection affectée. Les tâches simples restent dans le projet racine ; un projet séparé
-  correspond à une responsabilité existante, pas à un simple préfixe de commande.
+  et leur sélection affectée. La racine expose les agrégats et hérite des regroupements ciblés
+  de `.moon/tasks/` ; un projet séparé correspond à une responsabilité existante, pas à un
+  simple préfixe de commande. Les déploiements appartiennent à `home` ou `harness`, et les
+  outils locaux à leurs projets `tooling`.
 - Bun et TypeScript sont le choix par défaut pour un petit utilitaire cohésif qui dépasse la frontière
   Shell, y compris l'analyse et la validation de données ou une politique bornée.
 - Rust est retenu pour une CLI substantielle, un état durable, une concurrence complexe, une

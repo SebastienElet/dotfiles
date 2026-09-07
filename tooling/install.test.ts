@@ -60,6 +60,7 @@ function createFixture(gitState: GitState): Fixture {
     "make",
     'printf "make %s\\n" "$*" >> "$INSTALL_TEST_TRACE"\nif [ "$1" = moon ]; then exit "$INSTALL_TEST_MOON_STATUS"; fi',
   );
+  installMoon(home);
   if (gitState !== "missing") {
     installCommand(
       bin,
@@ -87,6 +88,15 @@ function createFixture(gitState: GitState): Fixture {
     root,
     trace: tracePath,
   };
+}
+
+function installMoon(home: string): void {
+  mkdirSync(join(home, ".moon/bin"), { recursive: true });
+  installCommand(
+    join(home, ".moon/bin"),
+    "moon",
+    String.raw`printf "moon %s\n" "$*" >> "$INSTALL_TEST_TRACE"`,
+  );
 }
 
 function installCommand(bin: string, name: string, body: string): void {
@@ -181,7 +191,7 @@ test("bootstraps Moon before installing the workstation", async () => {
 
   expect(result).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   expect(readTrace(fixture)).toBe(
-    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake moon\nmake minimal\n",
+    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake moon\nmoon exec --quiet repository:install\n",
   );
 });
 
@@ -198,7 +208,7 @@ test("stops before workstation installation when Moon bootstrap fails", async ()
 
   expect(result.exitCode).toBe(bootstrapFailureExitCode);
   expect(readTrace(fixture)).toEndWith("make moon\n");
-  expect(readTrace(fixture)).not.toContain("make minimal");
+  expect(readTrace(fixture)).not.toContain("moon exec");
 });
 
 test("stops before Moon bootstrap when cloning fails", async () => {
@@ -218,13 +228,24 @@ test("stops before Moon bootstrap when cloning fails", async () => {
 test("preserves stdin for the Homebrew bootstrap delegated through Moon", async () => {
   const fixture = createFixture("working");
   installCommand(
-    fixture.bin,
-    "make",
-    String.raw`if [ "$1" = minimal ]; then IFS= read -r answer || exit 1; printf "answer %s\n" "$answer" >> "$INSTALL_TEST_TRACE"; fi`,
+    join(fixture.home, ".moon/bin"),
+    "moon",
+    String.raw`if [ "$1" = exec ]; then IFS= read -r answer || exit 1; printf "answer %s\n" "$answer" >> "$INSTALL_TEST_TRACE"; fi`,
   );
 
   const result = await runInstaller(fixture, "y\n");
 
   expect(result.exitCode).toBe(0);
   expect(readTrace(fixture)).toEndWith("answer y\n");
+});
+
+test("rejects a non-macOS host before bootstrap", async () => {
+  const fixture = createFixture("working");
+  installCommand(fixture.bin, "uname", String.raw`printf '%s\n' Linux`);
+  const result = await runInstaller(fixture);
+  expect(result.exitCode).toBe(1);
+  expect(result.stdout).toContain(
+    "This installer supports macOS only; Linux and GitHub Codespaces are unsupported.",
+  );
+  expect(readTrace(fixture)).toBe("");
 });

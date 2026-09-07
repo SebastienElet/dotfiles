@@ -1,6 +1,7 @@
 name: Lint
-on: [push, pull_request]
-
+on:
+  - push
+  - pull_request
 jobs:
   lua:
     name: Lua
@@ -10,123 +11,27 @@ jobs:
         with:
           fetch-depth: 0
           filter: blob:none
-
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-
-      - name: Install luacheck
-        run: brew install luacheck
-
-      - name: Lint Lua files
-        run: moon ci repository:lua-lint
-
+      - run: moon ci --downstream none repository:lua-lint
   shellcheck:
     name: Shell scripts
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
-
-      - run: bun install --frozen-lockfile
-
-      - name: Install ShellCheck
-        run: brew install actionlint jq shellcheck
-
-      - name: Lint workflows
-        run: actionlint
-
-      - name: Lint shell scripts
-        run: |
-          set -euo pipefail
-
-          command -v shellcheck > /dev/null \
-            || { echo "::error::shellcheck is missing: the gate cannot run"; exit 1; }
-
-          found_by_shebang=$(git grep -lI -E '^#!.*(bash|sh)' -- tooling install.sh)
-          found_by_extension=$(git ls-files '*.sh')
-          scripts=$(printf '%s\n%s\n' "$found_by_shebang" "$found_by_extension" | sort -u)
-
-          canary_of_shebang_scan=tooling/upgrade
-          canary_of_extension_scan=install.sh
-          for canary in "$canary_of_shebang_scan" "$canary_of_extension_scan"; do
-            printf '%s\n' "$scripts" | grep -qx "$canary" \
-              || { echo "::error::script discovery is broken: $canary missing from the list"; exit 1; }
-          done
-
-          printf '%s\n' "$scripts"
-          printf '%s\n' "$scripts" | xargs -I{} shellcheck --severity=error {}
-
-          if output=$(/bin/bash -c 'uname() { printf "%s\n" Linux; }; source install.sh' 2>&1); then
-            non_darwin_status=0
-          else
-            non_darwin_status=$?
-          fi
-          printf '%s\n' "$output"
-          test "$non_darwin_status" -eq 1
-          printf '%s\n' "$output" \
-            | grep -Fx 'This installer supports macOS only; Linux and GitHub Codespaces are unsupported.'
-
-          tooling/upgrade-test
-          echo "✅ Shell scripts OK"
-
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run:
+          moon ci --downstream none repository:shell-lint repository:workflows-lint
+          tooling:installer-test tooling:upgrade-test
   cspell:
     name: Text configuration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
-      - run: npm install --global cspell
-
-      - name: Check configuration and user dictionary
-        run: |
-          set -euo pipefail
-          test_home=$(mktemp -d)
-          HOME="$test_home" make DOTFILES_PATH="$GITHUB_WORKSPACE" "$test_home/cspell.json" "$test_home/.config/cspell/user.txt"
-          trace=$(HOME="$test_home" cspell trace --config "$test_home/cspell.json" --dictionary-path full --all rclone)
-          printf '%s\n' "$trace"
-          printf '%s\n' "$trace" | grep -F "$test_home/.config/cspell/user.txt"
-          HOME="$test_home" cspell lint --config "$test_home/cspell.json" \
-            home/cspell.json \
-            home/.config/cspell/user.txt \
-            harness/AGENTS.md \
-            .agents/skills/scripts/SKILL.md \
-            harness/skills/agent-instructions/SKILL.md \
-            harness/skills/agent-instructions/references/maintenance.md \
-            harness/skills/design-claim-audit/SKILL.md \
-            harness/skills/design-claim-audit/evals/trigger-queries.json \
-            harness/skills/design-claim-audit/evals/fixture/*.md \
-            home/.codex/agents/design-claim-auditor.toml \
-            harness/skills/issue-creation/SKILL.md \
-            harness/skills/issue-creation/references/forge-capabilities.md \
-            harness/skills/issue-creation/evals/trigger-queries.json \
-            harness/skills/linear-issue-spec/SKILL.md \
-            harness/skills/linear-start/SKILL.md \
-            harness/skills/linear-sync/SKILL.md \
-            harness/skills/linear-workflow/SKILL.md \
-            harness/skills/linear-workflow/references/bitbucket.md \
-            harness/skills/linear-workflow/references/completion-evidence.md \
-            harness/skills/linear-workflow/references/transports.md \
-            harness/skills/memory-governance/SKILL.md \
-            harness/skills/memory-governance/evals/trigger-queries.json \
-            harness/skills/obsidian-retrieval/SKILL.md \
-            harness/skills/obsidian-retrieval/references/obsidian-cli.md \
-            harness/skills/obsidian-retrieval/evals/trigger-queries.json \
-            harness/skills/pr-feedback/SKILL.md \
-            harness/skills/pr-feedback/evals/trigger-queries.json \
-            harness/skills/pr-verdict/SKILL.md \
-            harness/skills/pr-verdict/assets/verdict-template.md \
-            harness/skills/pr-verdict/references/cases.md \
-            harness/skills/requirements-clarification/SKILL.md \
-            harness/skills/requirements-clarification/evals/trigger-queries.json \
-            docs/requirements-clarification-validation.md \
-            tooling/design-claim-audit.test.ts \
-            tooling/obsidian-retrieval/contract.ts \
-            tooling/obsidian-retrieval/contract.test.ts \
-            tooling/obsidian-retrieval/default-corpus-contract.ts \
-            tooling/obsidian-retrieval/evaluation-contract.ts \
-            tooling/install-hunspell-dictionary*.ts \
-            tooling/deployment-*.ts \
-            .agents/skills/apple-notes/scripts/*.ts \
-            tooling/apple-notes*.ts
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: moon ci --downstream none repository:cspell-check

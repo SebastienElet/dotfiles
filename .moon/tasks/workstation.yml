@@ -1,0 +1,116 @@
+{
+  inheritedBy: { tags: [repository] },
+  tasks:
+    {
+      homebrew:
+        {
+          description: Install Homebrew,
+          script: '"$workspaceRoot/tooling/install-homebrew"',
+          checks: [{ check: condition, script: command -v brew }],
+          env: { PATH: "/opt/homebrew/bin:/usr/local/bin:${PATH}" },
+          toolchains: system,
+          options:
+            {
+              cache: false,
+              interactive: true,
+              mutex: homebrew,
+              os: macos,
+              runInCI: skip,
+            },
+          deps: [bootstrap],
+        },
+      applications-install:
+        {
+          description: Install the minimal Brewfile,
+          command: brew bundle install --no-upgrade --file Brewfile,
+          deps: [homebrew],
+          checks:
+            [
+              {
+                check: condition,
+                script: brew bundle check --quiet --no-upgrade --file Brewfile,
+              },
+            ],
+          env:
+            {
+              PATH: "/opt/homebrew/bin:/usr/local/bin:${PATH}",
+              HOMEBREW_NO_ASK: "1",
+            },
+          toolchains: system,
+          options: { cache: false, mutex: homebrew, os: macos, runInCI: false },
+        },
+      rust:
+        {
+          description: Install Rust and Cargo with Homebrew,
+          deps: [homebrew],
+          checks:
+            [
+              {
+                check: condition,
+                script: "case \"$(uname -s)\" in\n  Darwin) brew list --formula --versions rust ;;\n  Linux) rustc --version && cargo --version ;;\n  *) exit 1 ;;\nesac",
+              },
+            ],
+          env:
+            {
+              PATH: "/opt/homebrew/bin:/usr/local/bin:${PATH}",
+              HOMEBREW_NO_ASK: "1",
+            },
+          toolchains: system,
+          options: { cache: false, mutex: homebrew, runInCI: true },
+          script: "set -e\ncase \"$(uname -s)\" in\n  Darwin) brew install rust ;;\n  Linux) rustc --version; cargo --version ;;\n  *) exit 1 ;;\nesac",
+        },
+      volta:
+        {
+          description: Install Volta with Homebrew,
+          script: 'PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" brew install volta',
+          deps: [homebrew],
+          checks:
+            [
+              {
+                check: condition,
+                script: 'PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" brew list --formula --versions volta',
+              },
+            ],
+          env:
+            {
+              PATH: "/opt/homebrew/bin:/usr/local/bin:${PATH}",
+              HOMEBREW_NO_ASK: "1",
+            },
+          toolchains: system,
+          options: { cache: false, mutex: homebrew, os: macos, runInCI: false },
+        },
+      node:
+        {
+          description: Install the project Node version as the Volta default,
+          script: "set -e\nnode_install_spec=$(bun --config=/dev/null --no-env-file --no-install tooling/node-version-contract.ts install-spec)\nVOLTA_HOME=\"$HOME/.volta\" PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\" volta install \"$node_install_spec\"\n",
+          deps: [volta],
+          checks:
+            [
+              {
+                check: condition,
+                script: "repository_root=$(pwd -P)\ntest -x \"$HOME/.volta/bin/node\" && cd / && VOLTA_HOME=\"$HOME/.volta\" PATH=\"$HOME/.volta/bin:$PATH\" bun --config=/dev/null --no-env-file --no-install \"$repository_root/tooling/node-version-contract.ts\" verify-runtime \"$repository_root/package.json\"\n",
+              },
+            ],
+          toolchains: bun,
+          options: { cache: false, mutex: volta, runInCI: false },
+        },
+      pnpm:
+        {
+          description: Install pnpm with Volta,
+          script: 'VOLTA_HOME="$HOME/.volta" PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" volta install pnpm',
+          deps: [node],
+          checks:
+            [{ check: condition, script: 'test -x "$HOME/.volta/bin/pnpm"' }],
+          toolchains: system,
+          options: { cache: false, mutex: volta, runInCI: false },
+        },
+      bootstrap:
+        {
+          description: Verify macOS installation prerequisites,
+          command: noop,
+          checks: [command -v curl, command -v git, xcode-select --print-path],
+          toolchains: system,
+          options: { cache: false, os: macos, runInCI: skip },
+        },
+    },
+}

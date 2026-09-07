@@ -2,64 +2,60 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-03
+- **Révision** : 2026-09-07
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
 
-La cible historique `all` mélangeait socle de développement, applications optionnelles, outils
-payants et composants dépendants de Docker. La CI devait reconstruire sa portée en analysant le
-`Makefile`, et l’inventaire des paquets était dispersé entre des recettes impératives.
+Le profil minimal dépendait de deux graphes : Moon installait les premières dépendances,
+puis Make complétait les configurations et le harnais. Les workflows préparaient aussi
+certains outils et exécutaient leurs contrôles directement.
 
 ## Décision
 
 Moon est l'orchestrateur cible unique pour l'installation et les tâches de développement.
-La migration avance par dépendances validées, jusqu'à la suppression du `Makefile`.
-Une tâche migrée appelle directement sa commande d'installation, jamais une cible Make.
-Les tâches d'installation simples résident dans le `moon.yml` racine ; aucun répertoire projet
-n'est créé uniquement pour donner un préfixe à une commande.
+Le point d'entrée `moon exec --quiet install` porte le profil minimal complet ; `check`
+et `test` agrègent les contrôles statiques et comportementaux.
+Une tâche migrée appelle directement sa commande, jamais une cible Make.
 
-La première étape porte `homebrew` et `applications-install`, cette dernière dépendant de
-la première. Les `checks` natifs de Moon vérifient l'état installé avant les commandes ; le cache
-de tâches est désactivé, car l'état Homebrew n'est pas un artefact de build du dépôt.
+Le fichier racine porte les agrégats publics. Les définitions sont regroupées dans
+`.moon/tasks/` avec un héritage ciblé ; `home`, `harness` et `tooling` portent les
+responsabilités existantes, et les outils Rust gardent leurs projets. Les contrôles transverses
+Lua, Fish et TypeScript restent accessibles depuis le projet racine par défaut.
+Aucun répertoire projet n'est créé uniquement pour donner un préfixe à une commande.
 
-`Brewfile` et `Brewfile.optional` restent les sources canoniques des paquets non migrés. Une formule
-migrée vers une tâche Moon autonome quitte son Brewfile selon l'ADR-002. Installer les paquets
-n'implique pas déployer leurs configurations.
+Les installations utilisent des contrôles d'état et désactivent le cache d'artefacts pour
+les mutations du poste. Les builds conservant des sorties réutilisables gardent leur politique
+propre. Les dépendances de paquets JavaScript sont préparées par la toolchain Bun native ;
+les tâches d'un autre projet qui consomment le paquet racine en dépendent explicitement.
+
+`Brewfile` et `Brewfile.optional` restent les sources des paquets non migrés. Une formule
+migrée vers une tâche autonome quitte son Brewfile selon l'ADR-002. Installer un paquet
+n'implique pas déployer sa configuration.
 
 ## Transition
 
-Les chemins non encore migrés conservent provisoirement les profils Make historiques :
+Make conserve provisoirement les opérations optionnelles et le nettoyage existants, ainsi
+que les adaptateurs qui délèguent aux tâches migrées. Le profil optionnel converge d'abord
+le minimal Moon ; il ne réimplémente pas son installation.
 
-- `minimal` installe le poste de développement de référence ;
-- `optional` converge d’abord `minimal`, puis installe les composants utilisés hors de ce socle.
+`install.sh` vérifie les prérequis macOS et amorce Moon avant le profil minimal.
+L'installation de Moon lui-même reste hors de son graphe. `tooling/upgrade` appelle
+le même profil Moon après la mise à jour du dépôt.
 
-`install.sh` amorce Moon avant d'appeler `make minimal`. Le profil Make délègue les opérations
-migrées à Moon et conserve les artefacts non encore migrés. L'installation de Moon lui-même reste
-hors de son graphe, car elle doit fonctionner avant que son exécutable soit disponible.
-`tooling/upgrade` utilise encore ce profil de transition.
-
-Les profils ferment leur entrée standard après l’amorçage. Ils exécutent
-`brew bundle check --quiet --no-upgrade` avant toute installation, afin qu’un passage convergé
-reste silencieux sans demander de mise à niveau globale.
-
-`harness:install` agrège uniquement les capacités du harnais appartenant au profil minimal.
-L'installation de Semctx reste une action explicite via `harness:semctx` et n'est pas une dépendance
-de `repository:install` tant que ses prérequis hôtes ne font pas partie du graphe.
+L'installation de Semctx reste explicite via `harness:semctx`. La préparation de son paquet
+ne suffit pas à intégrer automatiquement ses plugins et leurs prérequis hôtes au minimal.
 
 ## Conséquences
 
-- Le socle et les optionnels sont lisibles dans deux manifestes déclaratifs.
-- Les installations spécifiques restent locales au processus ou à l’artefact qu’elles possèdent.
-- Le smoke test macOS existant passe par Moon pour les opérations migrées, puis par les recettes
-  Make restantes ; il vérifie l'état installé et le second passage du profil de transition.
-- L'ajout d'un composant Homebrew modifie le Brewfile de son profil, sauf décision explicite de
-  migrer son installation vers une tâche Moon autonome.
+- Le minimal possède un point d'entrée Moon, partagé avec le smoke macOS de l'ADR-023.
+- Les contrôles de développement déclarent leurs prérequis sans installer tout le poste.
+- Les opérations optionnelles restent une étape distincte de la suppression finale de Make.
+- L'état observé et le silence au rejeu sont évalués par les oracles exécutés, pas par la seule
+  présence des tâches ou des dépendances dans le graphe.
 
 ## Alternatives écartées
 
-- Conserver `all` : sa portée ambiguë est précisément le défaut corrigé.
-- Conserver Make derrière Moon : maintient deux graphes pour les mêmes tâches.
-- Créer un projet Moon par commande : ajoute des répertoires sans responsabilité propre.
-- Un script shell orchestrateur : dupliquerait le graphe de Moon.
-- Ansible ou un gestionnaire de dotfiles : disproportionné pour un poste unique.
+- Conserver Make derrière les tâches migrées : maintient deux graphes d'installation.
+- Créer un projet par commande : ajoute des répertoires sans responsabilité propre.
+- Un script shell installateur central : duplique le graphe Moon.

@@ -1,11 +1,9 @@
 name: Static gates
-
 on:
   push:
     branches:
       - main
-  pull_request:
-
+  pull_request: null
 jobs:
   static:
     name: Static gates
@@ -16,6 +14,7 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - name: Install luacheck
-        run: sudo apt-get update && sudo apt-get install -y lua-check
-      - run: moon ci repository:check
+      - run:
+          moon ci --downstream none repository:typescript-lint repository:typescript-typecheck
+          repository:typescript-format-check repository:prettier-check
+          repository:lua-lint

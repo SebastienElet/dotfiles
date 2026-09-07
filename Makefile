@@ -3,7 +3,6 @@ VOLTA_BIN:=$(HOME)/.volta/bin
 PNPM_BIN:=$(HOME)/Library/pnpm
 LOCAL_BIN:=$(HOME)/.local/bin
 APP_BIN:=/Applications
-MINIMAL_SNAPSHOT_PATHS:=.agents/skills .arnes.yaml .claude .claude.json .codex/AGENTS.md .codex/agents .config/bat .config/cspell .config/fish .config/git/config.delta .config/git/ignore .config/nvim .config/starship.toml .config/tmux .config/wezterm .gitconfig .local/bin/agent-handoff .local/bin/agent-memory .local/bin/arnes .local/bin/claude .local/bin/colgrep-search .tmux/plugins/tpm .volta/bin/codex .volta/bin/node .volta/bin/pnpm Library/Spelling cspell.json
 SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
@@ -30,8 +29,7 @@ bootstrap:
 
 .PHONY: minimal
 minimal: bootstrap
-	@$(MOON_EXEC) install
-	@$(MAKE) --no-print-directory minimal-artifacts </dev/null
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:install </dev/null
 
 .PHONY: optional
 optional: minimal
@@ -40,19 +38,7 @@ optional: minimal
 
 .PHONY: smoke-minimal
 smoke-minimal:
-	@set -eu; \
-	$(MAKE) --no-print-directory minimal </dev/null; \
-	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"; \
-	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/agent-memory" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
-	(cd / && VOLTA_HOME="$(HOME)/.volta" PATH="${VOLTA_BIN}:$$PATH" bun --config=/dev/null --no-env-file --no-install "${DOTFILES_PATH}/tooling/node-version-contract.ts" verify-runtime "${DOTFILES_PATH}/package.json" >/dev/null); \
-	stdout=$$(mktemp); stderr=$$(mktemp); trap 'rm -f "$$stdout" "$$stderr"' EXIT; \
-	before=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
-	if ! $(MAKE) --no-print-directory minimal </dev/null >"$$stdout" 2>"$$stderr"; then cat "$$stdout"; cat "$$stderr" >&2; exit 1; fi; \
-	test ! -s "$$stdout" || { cat "$$stdout"; exit 1; }; \
-	test ! -s "$$stderr" || { cat "$$stderr" >&2; exit 1; }; \
-	after=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
-	test "$$before" = "$$after"; \
-	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) tooling:smoke-minimal
 
 .PHONY: bundle-minimal
 bundle-minimal:
@@ -62,81 +48,8 @@ bundle-minimal:
 bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
 
-.PHONY: minimal-artifacts
-minimal-artifacts: bat fish nvim wezterm git-delta starship tmux node pnpm arnes claude-code codex ${LOCAL_BIN}/colgrep-search
-
 .PHONY: optional-artifacts
 optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3
-
-~/.config:
-	mkdir -p $@
-
-.PHONY: bat
-bat: ~/.config/bat/themes/Catppuccin\ Latte.tmTheme
-~/.config/bat/themes:
-	mkdir -p $@
-~/.config/bat/themes/Catppuccin\ Latte.tmTheme: | ~/.config/bat/themes
-	curl -L -o ~/.config/bat/themes/Catppuccin\ Latte.tmTheme https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Latte.tmTheme
-	curl -L -o ~/.config/bat/themes/Catppuccin\ Mocha.tmTheme https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
-	bat cache --build
-
-.PHONY: fish
-fish: starship ~/.config/fish ~/.config/fish/functions/fzf_configure_bindings.fish
-
-~/.config/fish: ${DOTFILES_PATH}/home/.config/fish FORCE | ~/.config
-	@${CREATE_SYMLINK}
-~/.config/fish/functions/fzf_configure_bindings.fish: FORCE ${BREW_BIN}/fish | ~/.config/fish
-	@if [ ! -e "$@" ] || [ ! -e "$(HOME)/.config/fish/conf.d/fzf.fish" ]; then \
-		backup=$$(mktemp -d) || exit 1; \
-		for path in "$(HOME)/.config/fish/functions"/_fzf*.fish; do \
-			if [ -e "$$path" ]; then \
-				mkdir -p "$$backup/functions"; \
-				mv "$$path" "$$backup/functions/"; \
-			fi; \
-		done; \
-		for file in functions/fzf_configure_bindings.fish completions/fzf_configure_bindings.fish conf.d/fzf.fish; do \
-			if [ -e "$(HOME)/.config/fish/$$file" ]; then \
-				mkdir -p "$$backup/$${file%/*}"; \
-				mv "$(HOME)/.config/fish/$$file" "$$backup/$$file"; \
-			fi; \
-		done; \
-		if ${BREW_BIN}/fish -c 'fisher install PatrickF1/fzf.fish' && [ -e "$@" ] && [ -e "$(HOME)/.config/fish/conf.d/fzf.fish" ]; then \
-			rm -rf "$$backup"; \
-		else \
-			cp -R "$$backup/." "$(HOME)/.config/fish/"; \
-			rm -rf "$$backup"; \
-			echo "Error: Fisher did not install $@ and $(HOME)/.config/fish/conf.d/fzf.fish" >&2; \
-			exit 1; \
-		fi; \
-	fi
-
-.PHONY: wezterm
-wezterm: ~/.config/wezterm/wezterm.lua
-~/.config/wezterm:
-	mkdir -p $@
-~/.config/wezterm/wezterm.lua: ${DOTFILES_PATH}/home/.config/wezterm/wezterm.lua FORCE | ~/.config/wezterm
-	@${CREATE_SYMLINK}
-
-~/.arnes.yaml: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:manifest
-
-.PHONY: arnes
-arnes:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:install
-
-${LOCAL_BIN}/arnes: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:binary
-
-${BREW_BIN}/cargo:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) rust
-
-.PHONY: agent-handoff
-agent-handoff:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
-
-.PHONY: agent-memory
-agent-memory:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-memory:install
 
 .PHONY: docker
 docker:
@@ -194,158 +107,11 @@ cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-dev
 cursor-hooks: arnes agent-memory
 	@"${LOCAL_BIN}/arnes" doctor hooks --agent cursor --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent cursor
 
-.PHONY: claude-code
-claude-code: hunspell ${LOCAL_BIN}/claude ~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md ~/.claude/rules/agent-instructions.md ~/.claude/skills/code-search ~/.claude/skills/code-simplify ~/.claude/skills/handoff ~/.claude/skills/code-enforcement ~/.claude/skills/harness-reflection ~/.claude/skills/harness-simplify ~/.claude/skills/issue-creation ~/.claude/skills/issue-simplify ~/.claude/skills/linear-issue-spec ~/.claude/skills/linear-start ~/.claude/skills/linear-sync ~/.claude/skills/linear-workflow ~/.claude/skills/memory-governance ~/.claude/skills/obsidian-retrieval ~/.claude/skills/pr-fix ~/.claude/skills/pr-feedback ~/.claude/skills/pr-verdict ~/.claude/skills/requirements-clarification ~/.claude/skills/skill-manager ~/.claude/skills/skill-simplify ~/.claude/skills/workflow-automation claude-code-hooks
-${LOCAL_BIN}/claude:
-	curl -fsSL https://claude.ai/install.sh | bash -s latest
-~/.claude:
-	mkdir -p $@
-~/.claude/CLAUDE.md: ${DOTFILES_PATH}/harness/AGENTS.md FORCE | ~/.claude
-	@${CREATE_SYMLINK}
-# Imported by AGENTS.md; linked as siblings so the @import resolves whether the
-# tool follows the symlink or reads it from the destination directory.
-~/.claude/SOUL.md: ${DOTFILES_PATH}/harness/SOUL.md FORCE | ~/.claude
-	@${CREATE_SYMLINK}
-~/.claude/USER.md: ${DOTFILES_PATH}/harness/USER.md FORCE | ~/.claude
-	@${CREATE_SYMLINK}
-~/.claude/rules ~/.claude/skills: | ~/.claude
-	mkdir -p $@
-~/.claude/rules/agent-instructions.md: ${DOTFILES_PATH}/harness/rules/agent-instructions.md FORCE | ~/.claude/rules
-	@${CREATE_SYMLINK}
-~/.claude/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/code-simplify: ${DOTFILES_PATH}/harness/skills/code-simplify FORCE | ~/.claude/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-claude
-~/.claude/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/issue-simplify: ${DOTFILES_PATH}/harness/skills/issue-simplify FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/harness-simplify: ${DOTFILES_PATH}/harness/skills/harness-simplify FORCE | ~/.claude/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:harness-simplify-claude
-~/.claude/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-# Linked globally because a pull request is reviewed from the repository under
-# review, which is never this one.
-~/.claude/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-~/.claude/skills/skill-simplify: ${DOTFILES_PATH}/harness/skills/skill-simplify FORCE | ~/.claude/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:skill-simplify-claude
-~/.claude/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation FORCE | ~/.claude/skills
-	@${CREATE_SYMLINK}
-
-.PHONY: claude-code-hooks
-claude-code-hooks: arnes agent-memory agent-handoff
-	@"${LOCAL_BIN}/arnes" doctor hooks --agent claude --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent claude
-
-.PHONY: hunspell
-hunspell: hunspell-dictionaries
-
-.PHONY: hunspell-dictionaries
-hunspell-dictionaries:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:hunspell-dictionaries
-
-.PHONY: codex
-codex: ${VOLTA_BIN}/codex ~/.codex/AGENTS.md ~/.codex/agents/design-claim-auditor.toml ~/.agents/skills/agent-instructions ~/.agents/skills/claude-developer ~/.agents/skills/code-search ~/.agents/skills/code-simplify ~/.agents/skills/design-claim-audit ~/.agents/skills/handoff ~/.agents/skills/code-enforcement ~/.agents/skills/harness-reflection ~/.agents/skills/harness-simplify ~/.agents/skills/issue-creation ~/.agents/skills/issue-simplify ~/.agents/skills/linear-issue-spec ~/.agents/skills/linear-start ~/.agents/skills/linear-sync ~/.agents/skills/linear-workflow ~/.agents/skills/memory-governance ~/.agents/skills/obsidian-retrieval ~/.agents/skills/pr-fix ~/.agents/skills/pr-feedback ~/.agents/skills/pr-verdict ~/.agents/skills/requirements-clarification ~/.agents/skills/skill-manager ~/.agents/skills/skill-simplify ~/.agents/skills/workflow-automation codex-hooks
-${VOLTA_BIN}/codex: ${VOLTA_BIN}/node
-	${BREW_BIN}/volta install @openai/codex
-~/.codex:
-	mkdir -p $@
-# Codex ignores AGENTS.md @import directives, so the sources are assembled
-# here instead of symlinked. Written to a temporary path then moved, so an
-# existing symlink is replaced rather than written through.
-~/.codex/AGENTS.md: ${DOTFILES_PATH}/harness/AGENTS.md ${DOTFILES_PATH}/harness/SOUL.md ${DOTFILES_PATH}/harness/USER.md | ~/.codex
-	@expected="$@.expected.$$$$"; trap 'rm -f "$$expected"' EXIT; grep -v '^@' "$<" | cat - "${DOTFILES_PATH}/harness/SOUL.md" "${DOTFILES_PATH}/harness/USER.md" > "$$expected"; echo "mv $$expected $@"; mv "$$expected" "$@"; trap - EXIT
-~/.codex/agents:
-	mkdir -p $@
-~/.codex/agents/design-claim-auditor.toml: ${DOTFILES_PATH}/home/.codex/agents/design-claim-auditor.toml FORCE | ~/.codex/agents
-	@if [ -f "$@" ] && cmp -s "$<" "$@"; then exit 0; fi; cp "$<" "$@"
-~/.agents/skills:
-	mkdir -p $@
-~/.agents/skills/agent-instructions: ${DOTFILES_PATH}/harness/skills/agent-instructions FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/code-simplify: ${DOTFILES_PATH}/harness/skills/code-simplify FORCE | ~/.agents/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:code-simplify-codex
-~/.agents/skills/design-claim-audit: ${DOTFILES_PATH}/harness/skills/design-claim-audit FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/handoff: ${DOTFILES_PATH}/harness/skills/handoff FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/issue-simplify: ${DOTFILES_PATH}/harness/skills/issue-simplify FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/harness-simplify: ${DOTFILES_PATH}/harness/skills/harness-simplify FORCE | ~/.agents/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:harness-simplify-codex
-~/.agents/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-~/.agents/skills/skill-simplify: ${DOTFILES_PATH}/harness/skills/skill-simplify FORCE | ~/.agents/skills
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:skill-simplify-codex
-~/.agents/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation FORCE | ~/.agents/skills
-	@${CREATE_SYMLINK}
-
-.PHONY: codex-hooks
-codex-hooks: arnes agent-memory agent-handoff
-	@"${LOCAL_BIN}/arnes" doctor hooks --agent codex --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent codex
-
 .PHONY: obsidian-retrieval-test
 obsidian-retrieval-test: ${BREW_BIN}/bun
 	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" ci
 	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" run typecheck
 	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" test tooling/obsidian-retrieval/contract.test.ts
-
-${LOCAL_BIN}/colgrep-search: ${DOTFILES_PATH}/tooling/colgrep-search-cli.ts FORCE | ${LOCAL_BIN}
-	@${CREATE_SYMLINK}
 
 .PHONY: scrapling
 scrapling: docker ${LOCAL_BIN}/scrapling_mcp
@@ -392,78 +158,9 @@ cspell: ${VOLTA_BIN}/cspell
 ${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g cspell
 
-.PHONY: nvim
-nvim: ~/.config/nvim ~/cspell.json ~/.config/cspell/user.txt
-~/.config/nvim: ${DOTFILES_PATH}/home/.config/nvim FORCE | ~/.config
-	@${CREATE_SYMLINK}
-~/cspell.json: ${DOTFILES_PATH}/home/cspell.json FORCE
-	@${CREATE_SYMLINK}
-~/.config/cspell:
-	mkdir -p $@
-~/.config/cspell/user.txt: ${DOTFILES_PATH}/home/.config/cspell/user.txt FORCE | ~/.config/cspell
-	@${CREATE_SYMLINK}
-
-.PHONY: git-delta
-git-delta: ~/.config/git/config.delta ~/.config/git/ignore
-	@includes=$$(git config --global --get-all include.path || test $$? -eq 1) || exit; \
-	if ! printf '%s\n' "$$includes" | grep -Fxq '~/.config/git/config.delta'; then \
-		git config --global --add include.path '~/.config/git/config.delta' || exit; \
-		echo "Added include.path to Git's global configuration"; \
-	fi; \
-	if printf '%s\n' "$$includes" | grep -Fxq '~/.gitconfig.delta'; then \
-		git config --global --unset-all include.path '^~/[.]gitconfig[.]delta$$' || exit; \
-	fi
-~/.config/git:
-	mkdir -p $@
-~/.config/git/config.delta: ${DOTFILES_PATH}/home/.config/git/config.delta FORCE | ~/.config/git
-	@${CREATE_SYMLINK}
-~/.config/git/ignore: ${DOTFILES_PATH}/home/.config/git/ignore FORCE | ~/.config/git
-	@${CREATE_SYMLINK}
-
-.PHONY: starship
-starship: ~/.config/starship.toml
-~/.config/starship.toml: ${DOTFILES_PATH}/home/.config/starship.toml FORCE | ~/.config
-	@${CREATE_SYMLINK}
-
-.PHONY: tmux
-tmux: ~/.config/tmux/tmux.conf ~/.tmux/plugins/tpm/tpm
-~/.config/tmux:
-	mkdir -p $@
-~/.config/tmux/tmux.conf: ${DOTFILES_PATH}/home/.config/tmux/tmux.conf FORCE | ~/.config/tmux
-	@${CREATE_SYMLINK}
-~/.tmux/plugins:
-	mkdir -p $@
-~/.tmux/plugins/tpm/tpm: | ~/.tmux/plugins
-	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-
-.PHONY: brew
-brew:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) homebrew
-
 .PHONY: daisydisk
 daisydisk:
 	@if [ "$(SKIP_PAID_APPS)" != "1" ] && [ ! -d "${APP_BIN}/DaisyDisk.app" ]; then echo "Error: Homebrew Bundle did not install ${APP_BIN}/DaisyDisk.app" >&2; exit 1; fi
-
-.PHONY: node
-node:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
-
-${VOLTA_BIN}/node: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
-
-.PHONY: volta
-volta:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
-
-${BREW_BIN}/volta: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
-
-.PHONY: pnpm
-pnpm:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
-
-${VOLTA_BIN}/pnpm: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
 
 .PHONY: moon
 moon:
@@ -478,3 +175,123 @@ clean:
 	rm -rf ~/.config/nvim
 	rm -rf ~/.local/share/nvim
 	rm -rf ~/.cache/nvim
+
+.PHONY: bat
+bat:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:bat
+
+.PHONY: fish
+fish:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:fish
+
+.PHONY: nvim
+nvim:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:nvim
+
+.PHONY: wezterm
+wezterm:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:wezterm
+
+.PHONY: git-delta
+git-delta:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:git-delta
+
+.PHONY: starship
+starship:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:starship
+
+.PHONY: tmux
+tmux:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:tmux
+
+.PHONY: arnes
+arnes:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:install
+
+.PHONY: agent-memory
+agent-memory:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-memory:install
+
+.PHONY: agent-handoff
+agent-handoff:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
+
+.PHONY: claude-code
+claude-code:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:claude
+
+.PHONY: codex
+codex:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:codex
+
+.PHONY: hunspell
+hunspell:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:hunspell-dictionaries
+
+.PHONY: hunspell-dictionaries
+hunspell-dictionaries:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:hunspell-dictionaries
+
+.PHONY: brew
+brew:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:homebrew
+
+.PHONY: node
+node:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
+
+.PHONY: volta
+volta:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
+
+.PHONY: pnpm
+pnpm:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
+
+~/.arnes.yaml: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:arnes-config
+
+~/.claude/CLAUDE.md ~/.claude/SOUL.md ~/.claude/USER.md: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:claude-instructions
+
+~/.claude/rules/agent-instructions.md: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:claude-rules
+
+$(HOME)/.claude/skills/%: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:claude-skills
+
+~/.codex/AGENTS.md: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:codex-instructions
+
+~/.codex/agents/design-claim-auditor.toml: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:codex-agents
+
+$(HOME)/.agents/skills/%: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:codex-skills
+
+${LOCAL_BIN}/colgrep-search: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) tooling:colgrep-search-install
+
+${LOCAL_BIN}/arnes: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:binary
+
+${LOCAL_BIN}/agent-memory: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-memory:binary
+
+${LOCAL_BIN}/agent-handoff: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:binary
+
+${VOLTA_BIN}/node: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
+
+${VOLTA_BIN}/pnpm: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
+
+${BREW_BIN}/volta: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
+
+${BREW_BIN}/cargo: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:rust
+
+~/cspell.json ~/.config/cspell/user.txt: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) home:cspell-config

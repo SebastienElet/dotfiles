@@ -9,7 +9,6 @@ import {
   pathExists,
   project,
   requireCommand,
-  runMake,
 } from "./deployment-test-support.ts";
 import {
   closeSync,
@@ -19,6 +18,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
 afterEach(cleanupDeploymentFixtures);
 const deploymentTimeoutMilliseconds = 15_000;
@@ -32,7 +32,9 @@ test("deploys XDG links while preserving obsolete user links", () => {
     expect(pathExists(join(project, "home", name))).toBeFalse();
   }
   const targets = xdgTargets(fixture.home);
-  expectSuccess(runMake(fixture, targets, { repository: project }));
+  expectSuccess(
+    runDeploymentMoon(fixture, ["home:wezterm", "home:tmux", "home:git-delta"]),
+  );
   expect(targets.map((target) => linkTarget(target))).toEqual([
     join(project, "home", ".config", "wezterm", "wezterm.lua"),
     join(project, "home", ".config", "tmux", "tmux.conf"),
@@ -44,31 +46,10 @@ test("deploys XDG links while preserving obsolete user links", () => {
   );
 });
 
-test("public targets wire their XDG destinations", () => {
-  const fixture = createDeploymentFixture("xdg-wiring");
-  const targets = xdgTargets(fixture.home);
-  for (const [name, expected] of [
-    ["wezterm", [targets[0]]],
-    ["tmux", [targets[1]]],
-    ["git-delta", [targets[2], targets[3]]],
-  ] as const) {
-    const result = runMake(fixture, [name], {
-      dryRun: true,
-      repository: project,
-    });
-    expectSuccess(result);
-    for (const target of expected) {
-      expect(result.stdout).toContain(target);
-    }
-  }
-});
-
 test("migrates Git includes exactly once and preserves unrelated values", () => {
   const fixture = createDeploymentFixture("xdg-git");
   prepareGitDeltaFixture(fixture);
-  expectSuccess(
-    runMake(fixture, xdgTargets(fixture.home), { repository: project }),
-  );
+  expectSuccess(runDeploymentMoon(fixture, ["home:wezterm", "home:tmux"]));
   expectSuccess(runGitDelta(fixture));
   expect(includePaths(fixture)).toEqual([
     "~/.config/git/config.delta",
@@ -179,7 +160,7 @@ function prepareGitDeltaFixture(fixture: Fixture): void {
 function runGitDelta(
   fixture: Fixture,
   failure?: readonly string[],
-): ReturnType<typeof runMake> {
+): ReturnType<typeof runDeploymentMoon> {
   const environment: NodeJS.ProcessEnv = {};
   if (failure !== undefined) {
     installProvider(fixture, "git");
@@ -188,11 +169,7 @@ function runGitDelta(
     environment.DEPLOYMENT_REAL_COMMAND = requireCommand("git");
     environment.DEPLOYMENT_FAIL_ARGUMENTS = JSON.stringify(failure);
   }
-  return runMake(fixture, ["git-delta"], {
-    environment,
-    repository: project,
-    variables: { BREW_BIN: fixture.bin },
-  });
+  return runDeploymentMoon(fixture, ["home:git-delta"], environment);
 }
 
 function includePaths(fixture: Fixture): string[] {

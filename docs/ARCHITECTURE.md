@@ -19,11 +19,10 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 
 Les points d'entrée restent à la racine :
 
-- `moon.yml` orchestre les tâches migrées ; le `Makefile` conserve temporairement les profils
-  `minimal` et `optional` ainsi que les points d'entrée de compatibilité ;
+- `moon.yml` expose `install`, `check` et `test`, avec des définitions héritées de `.moon/tasks/` ;
+  le `Makefile` conserve les optionnels, le nettoyage et des points d'entrée de compatibilité ;
 - `Brewfile` et `Brewfile.optional` sont les inventaires canoniques des paquets de leurs profils ;
-- `install.sh` amorce une nouvelle machine en clonant le dépôt puis en lançant
-  `make minimal` ;
+- `install.sh` amorce Moon après le clonage puis lance le profil minimal Moon ;
 - `AGENTS.md` porte les instructions de contribution communes, avec
   `CLAUDE.md` comme adaptateur ;
 - `.mcp.json` déclare les serveurs MCP découverts depuis la racine ;
@@ -45,13 +44,13 @@ Les points d'entrée restent à la racine :
 | `home/cspell.json`                 | `~/cspell.json`                 |
 
 Moon déploie les capacités migrées, tandis que le `Makefile` conserve les artefacts encore en
-transition. Chaque installateur part d'une destination possédée absente ; ses probes permettent un
-second passage silencieux sans transformer l'installation en diagnostic.
+transition. Le déploiement crée les liens absents, conserve les liens attendus et refuse les
+destinations divergentes selon l'ADR-003 ; le smoke vérifie le rejeu du profil minimal.
 
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-les skills et leurs adaptateurs sous `harness/rules/`. Le `Makefile` les adapte
+les skills et leurs adaptateurs sous `harness/rules/`. Les tâches Moon les adaptent
 aux contraintes de chaque agent : Claude reçoit des liens symboliques, tandis
 que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
 
@@ -61,7 +60,9 @@ Les [User Rules de Cursor](https://docs.cursor.com/context/rules) sont distribu�
 `~/.cursor/rules` depuis leurs sources canoniques dans `harness/rules/`.
 
 Les skills user vivent dans `harness/skills/` et sont déployées individuellement
-vers les répertoires utilisateur de Claude, Cursor et Codex. Les skills propres
+vers les répertoires utilisateur de Claude, Cursor et Codex. Pour Claude et Codex,
+le déploiement Moon sélectionne les installations user dans le manifeste Arnes existant ;
+Cursor reste dans le profil optionnel Make. Les skills propres
 au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et
 `.cursor/skills` restent leurs adaptateurs de découverte projet. Un slug ne doit
 pas exister dans les deux collections, car les agents peuvent alors exposer les
@@ -77,7 +78,7 @@ deux occurrences.
 
 Les exécutables destinés au `PATH` sont liés par leur projet Moon ou, pour les composants encore en
 transition, par le `Makefile`, généralement sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
-`make minimal`, ce qui déploie les nouveaux chemins du socle.
+le profil minimal Moon, ce qui déploie les nouveaux chemins du socle.
 
 ## Flux de changement
 

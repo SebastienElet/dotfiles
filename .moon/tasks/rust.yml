@@ -1,0 +1,43 @@
+{
+  inheritedBy: { tags: [rust-cli] },
+  fileGroups:
+    {
+      rust:
+        [
+          Cargo.toml,
+          Cargo.lock,
+          build*.rs,
+          src/**/*,
+          tests/**/*,
+          examples/**/*,
+          benches/**/*,
+          /.cargo/**/*,
+        ],
+    },
+  tasks:
+    {
+      fmt:
+        {
+          command: cargo fmt --check,
+          deps: [repository:rust],
+          checks: [cargo fmt --version],
+          inputs: ["@group(rust)"],
+          toolchains: system,
+        },
+      clippy:
+        {
+          command: cargo clippy --all-targets -- -D warnings,
+          deps: [repository:rust],
+          checks: [cargo clippy --version],
+          inputs: ["@group(rust)"],
+          toolchains: system,
+        },
+      test:
+        {
+          command: cargo test,
+          deps: [repository:rust],
+          inputs: ["@group(rust)"],
+          toolchains: system,
+        },
+    },
+}

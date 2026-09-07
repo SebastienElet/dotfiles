@@ -1,11 +1,14 @@
-projects:
-  repository: .
-  harness: harness
-  agent-handoff: tooling/agent-handoff
-  agent-memory: tooling/agent-memory
-  arnes: tooling/arnes
-
-defaultProject: repository
-
-vcs:
-  defaultBranch: main
+{
+  projects:
+    {
+      repository: ".",
+      harness: harness,
+      agent-handoff: tooling/agent-handoff,
+      agent-memory: tooling/agent-memory,
+      arnes: tooling/arnes,
+      home: home,
+      tooling: tooling,
+    },
+  defaultProject: repository,
+  vcs: { defaultBranch: main },
+}

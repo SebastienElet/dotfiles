@@ -6,7 +6,6 @@ import {
   linkTarget,
   pathExists,
   project,
-  requireCommand,
   runMake,
 } from "./deployment-test-support.ts";
 import {
@@ -14,13 +13,7 @@ import {
   createMoonDeploymentFixture,
   runMoon,
 } from "./deployment-moon-test-support.ts";
-import {
-  mkdirSync,
-  realpathSync,
-  statSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 afterEach(() => {
@@ -29,7 +22,6 @@ afterEach(() => {
 });
 
 const deploymentTimeoutMilliseconds = 120_000;
-const executableFileMode = 0o755;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
 
 test("installs an executable handoff runtime through Moon", () => {
@@ -44,7 +36,20 @@ test("installs an executable handoff runtime through Moon", () => {
       "tooling/agent-handoff/target/release/agent-handoff",
     ),
   );
-  expect(statSync(destination).mode & executableFileMode).not.toBe(0);
+  const event = {
+    event: "Stop",
+    session_id: "deployment-smoke",
+    stop_hook_active: true,
+    transcript_path: join(fixture.root, "unused-transcript"),
+  };
+  const invocation = Bun.spawnSync([destination], {
+    stdin: Buffer.from(JSON.stringify(event)),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  expect(invocation.exitCode).toBe(0);
+  expect(invocation.stdout.toString()).toBe("");
+  expect(pathExists(join(fixture.home, ".local/bin/agent-memory"))).toBeFalse();
 });
 
 test("propagates a handoff build failure", () => {
@@ -84,37 +89,6 @@ test("propagates a handoff deployment failure", () => {
   expect(result.stderr).toContain("Not a directory");
 });
 
-test.each([
-  ["codex", true],
-  ["claude-code", true],
-  ["cursor", false],
-] as const)("%s preserves its handoff dependency", (target, deploysHandoff) => {
-  const fixture = createDeploymentFixture(`handoff-wiring-${target}`);
-  installBuildProviders(fixture);
-  const result = runMake(fixture, [target], {
-    dryRun: true,
-    repository: project,
-    variables: { BREW_BIN: fixture.bin },
-  });
-
-  expectSuccess(result);
-  expect(
-    result.stdout.includes("moon exec --quiet agent-handoff:install"),
-  ).toBe(deploysHandoff);
-});
-
-test("keeps the handoff runtime independent from memory", () => {
-  const fixture = createDeploymentFixture("handoff-runtime-independence");
-  const result = runMake(fixture, ["agent-handoff"], {
-    dryRun: true,
-    repository: project,
-  });
-
-  expectSuccess(result);
-  expect(result.stdout).toContain("moon exec --quiet agent-handoff:install");
-  expect(result.stdout).not.toContain("agent-memory");
-});
-
 test.each(["file", "directory", "symlink"] as const)(
   "clean removes the owned handoff %s destination only",
   (destinationType) => {
@@ -141,12 +115,3 @@ test.each(["file", "directory", "symlink"] as const)(
     }
   },
 );
-
-function installBuildProviders(
-  fixture: ReturnType<typeof createDeploymentFixture>,
-): void {
-  const provider = requireCommand("true");
-  for (const command of ["bun", "cargo", "volta"]) {
-    symlinkSync(provider, join(fixture.bin, command));
-  }
-}

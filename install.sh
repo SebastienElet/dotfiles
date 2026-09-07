@@ -33,4 +33,4 @@ cd "$HOME"
 git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
 make moon
-make minimal
+"$HOME/.moon/bin/moon" exec --quiet repository:install

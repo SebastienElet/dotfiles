@@ -20,15 +20,15 @@ cd && \
   git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles && \
   cd .dotfiles && \
   make moon && \
-  make minimal
+  "$HOME/.moon/bin/moon" exec --quiet install
 ```
 
 Install the separately maintained optional profile with `make optional`.
 
-Installation is moving to Moon, one dependency at a time. With Moon available:
+Moon installs the complete minimal profile. With Moon available:
 
 ```bash
-moon exec install
+moon exec --quiet install
 moon action-graph repository:install
 ```
 
@@ -38,14 +38,17 @@ The `make volta`, `make node`, and `make pnpm` entry points delegate to Moon.
 
 ## Checks
 
-With Moon and `luacheck` available on `PATH`, run the shared static check task:
+With Moon available, run the shared checks and behavior tests:
 
 ```bash
-moon run repository:check
+moon run check
+moon run test
 ```
 
-This runs TypeScript lint, type checking and formatting, Prettier, and Lua lint.
-Run Lua lint alone with `moon run repository:lua-lint`; tests remain separate tasks.
+Checks include TypeScript, Prettier, Lua, Fish, shell scripts, workflows, CSpell and Rust.
+Their tools are prerequisites in the Moon graph; Lua lint alone is `moon run lua-lint`.
+The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
+Code Search and Docker integrations remain explicit tasks with their own prerequisites.
 
 ## Architecture decisions
 

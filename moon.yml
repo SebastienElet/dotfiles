@@ -1,381 +1,64 @@
-language: typescript
-
-fileGroups:
-  trackedTypeScript:
-    - "**/*.ts"
-    - "**/*.tsx"
-    - "**/*.mts"
-    - "**/*.cts"
-  typecheckedTypeScript:
-    - tooling/**/*.ts
-    - .agents/skills/apple-notes/scripts/**/*.ts
-  typescriptToolchain:
-    - package.json
-    - bun.lock
-    - .moon/workspace.yml
-    - .moon/toolchains.yml
-    - moon.yml
-    - .github/workflows/check-typescript.yml
-  prettierFiles:
-    - "**/*.yml"
-    - "**/*.yaml"
-    - "**/*.md"
-    - "**/*.json"
-    - "!home/.config/nvim/lazy-lock.json"
-    - "!home/.config/nvim/lazyvim.json"
-  fishGate:
-    - home/.config/fish/**/*.fish
-    - moon.yml
-    - .moon/workspace.yml
-    - .github/workflows/test-fish.yml
-  fishBehaviorDependencies:
-    - .gitignore
-    - tooling/git-main-branch
-    - tooling/git-main-branch-*.ts
-    - package.json
-    - bun.lock
-  hunspellTests:
-    - tooling/install-hunspell-dictionary
-    - tooling/install-hunspell-dictionary*.ts
-    - package.json
-    - bun.lock
-    - tsconfig.json
-    - .github/workflows/test-deployment.yml
-
-tasks:
-  harness-simplify-claude:
-    description: Install the harness-simplify user skill for Claude Code
-    script: |
-      set -e
-      test ! -e "$HOME/.claude/skills/harness-simplify"
-      test ! -L "$HOME/.claude/skills/harness-simplify"
-      mkdir -p "$HOME/.claude/skills"
-      ln -s "$workspaceRoot/harness/skills/harness-simplify" "$HOME/.claude/skills/harness-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.claude/skills/harness-simplify" && test "$(readlink "$HOME/.claude/skills/harness-simplify")" = "$(pwd -P)/harness/skills/harness-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  harness-simplify-codex:
-    description: Install the harness-simplify user skill for Codex
-    script: |
-      set -e
-      test ! -e "$HOME/.agents/skills/harness-simplify"
-      test ! -L "$HOME/.agents/skills/harness-simplify"
-      mkdir -p "$HOME/.agents/skills"
-      ln -s "$workspaceRoot/harness/skills/harness-simplify" "$HOME/.agents/skills/harness-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.agents/skills/harness-simplify" && test "$(readlink "$HOME/.agents/skills/harness-simplify")" = "$(pwd -P)/harness/skills/harness-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  check:
-    description: Run repository static checks
-    command: noop
-    deps:
-      - typescript-lint
-      - typescript-typecheck
-      - typescript-format-check
-      - prettier-check
-      - lua-lint
-    toolchains: system
-  lua-lint:
-    script: |
-      set -euo pipefail
-      test -f home/.config/nvim/init.lua
-      test -f home/.config/wezterm/wezterm.lua
-      luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
-      luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
-    inputs:
-      - home/.config/nvim/**/*.lua
-      - home/.config/wezterm/wezterm.lua
-      - .github/workflows/lint.yml
-      - .github/workflows/check-typescript.yml
-    toolchains: system
-  skill-simplify-claude:
-    description: Install the skill-simplify user skill for Claude Code
-    script: |
-      set -e
-      test ! -e "$HOME/.claude/skills/skill-simplify"
-      test ! -L "$HOME/.claude/skills/skill-simplify"
-      mkdir -p "$HOME/.claude/skills"
-      ln -s "$workspaceRoot/harness/skills/skill-simplify" "$HOME/.claude/skills/skill-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.claude/skills/skill-simplify" && test "$(readlink "$HOME/.claude/skills/skill-simplify")" = "$(pwd -P)/harness/skills/skill-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  skill-simplify-codex:
-    description: Install the skill-simplify user skill for Codex
-    script: |
-      set -e
-      test ! -e "$HOME/.agents/skills/skill-simplify"
-      test ! -L "$HOME/.agents/skills/skill-simplify"
-      mkdir -p "$HOME/.agents/skills"
-      ln -s "$workspaceRoot/harness/skills/skill-simplify" "$HOME/.agents/skills/skill-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.agents/skills/skill-simplify" && test "$(readlink "$HOME/.agents/skills/skill-simplify")" = "$(pwd -P)/harness/skills/skill-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  code-simplify-claude:
-    description: Install the code-simplify user skill for Claude Code
-    script: |
-      set -e
-      test ! -e "$HOME/.claude/skills/code-simplify"
-      test ! -L "$HOME/.claude/skills/code-simplify"
-      mkdir -p "$HOME/.claude/skills"
-      ln -s "$workspaceRoot/harness/skills/code-simplify" "$HOME/.claude/skills/code-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.claude/skills/code-simplify" && test "$(readlink "$HOME/.claude/skills/code-simplify")" = "$(pwd -P)/harness/skills/code-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  code-simplify-codex:
-    description: Install the code-simplify user skill for Codex
-    script: |
-      set -e
-      test ! -e "$HOME/.agents/skills/code-simplify"
-      test ! -L "$HOME/.agents/skills/code-simplify"
-      mkdir -p "$HOME/.agents/skills"
-      ln -s "$workspaceRoot/harness/skills/code-simplify" "$HOME/.agents/skills/code-simplify"
-    checks:
-      - check: condition
-        script: test -L "$HOME/.agents/skills/code-simplify" && test "$(readlink "$HOME/.agents/skills/code-simplify")" = "$(pwd -P)/harness/skills/code-simplify"
-    toolchains: system
-    options:
-      cache: false
-      runInCI: false
-  install:
-    description: Install the workstation
-    command: noop
-    deps:
-      - applications-install
-      - harness:install
-      - hunspell-dictionaries
-      - pnpm
-    toolchains: system
-    options:
-      cache: false
-      os: macos
-      runInCI: false
-  homebrew:
-    description: Install Homebrew
-    script: |
-      set -e
-      homebrew_installer=$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
-      /bin/bash -c "$homebrew_installer"
-    checks:
-      - check: condition
-        script: command -v brew
-    env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
-    toolchains: system
-    options:
-      cache: false
-      interactive: true
-      mutex: homebrew
-      os: macos
-      runInCI: false
-  applications-install:
-    description: Install the minimal Brewfile
-    command: brew bundle install --no-upgrade --file Brewfile
-    deps:
-      - homebrew
-    checks:
-      - check: condition
-        script: brew bundle check --quiet --no-upgrade --file Brewfile
-    env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-      os: macos
-      runInCI: false
-  rust:
-    description: Install Rust and Cargo with Homebrew
-    command: brew install rust
-    deps:
-      - homebrew
-    checks:
-      - check: condition
-        script: brew list --formula --versions rust
-    env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-      os: macos
-      runInCI: skip
-  volta:
-    description: Install Volta with Homebrew
-    script: PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" brew install volta
-    deps: [homebrew]
-    checks:
-      - check: condition
-        script: PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" brew list --formula --versions volta
-    env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-      os: macos
-      runInCI: false
-  node:
-    description: Install the project Node version as the Volta default
-    script: |
-      set -e
-      node_install_spec=$(bun --config=/dev/null --no-env-file --no-install tooling/node-version-contract.ts install-spec)
-      VOLTA_HOME="$HOME/.volta" PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" volta install "$node_install_spec"
-    deps: [volta]
-    checks:
-      - check: condition
-        script: |
-          repository_root=$(pwd -P)
-          test -x "$HOME/.volta/bin/node" && cd / && VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:$PATH" bun --config=/dev/null --no-env-file --no-install "$repository_root/tooling/node-version-contract.ts" verify-runtime "$repository_root/package.json"
-    toolchains: bun
-    options:
-      cache: false
-      mutex: volta
-      runInCI: false
-  pnpm:
-    description: Install pnpm with Volta
-    script: VOLTA_HOME="$HOME/.volta" PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" volta install pnpm
-    deps: [node]
-    checks:
-      - check: condition
-        script: test -x "$HOME/.volta/bin/pnpm"
-    toolchains: system
-    options:
-      cache: false
-      mutex: volta
-      runInCI: false
-  hunspell-dictionaries:
-    description: Install Hunspell dictionaries
-    script: |
-      set -e
-      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.aff" "c176610cd5dc4846806a65ddd029f422d87978bf58f224aa44222662a16a2de5" "$HOME/Library/Spelling/fr.aff"
-      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/fr_FR/dictionaries/fr.dic" "b78a868e31dd6e373b6c3217969afb898a9acde828a5e7ef97308da42218c88c" "$HOME/Library/Spelling/fr.dic"
-      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.aff" "e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e" "$HOME/Library/Spelling/en_US.aff"
-      tooling/install-hunspell-dictionary "https://raw.githubusercontent.com/LibreOffice/dictionaries/f2ff99058268502bdcf4cad25c1ca2935ad8aa7d/en/en_US.dic" "f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647" "$HOME/Library/Spelling/en_US.dic"
-    inputs:
-      - tooling/install-hunspell-dictionary
-      - tooling/install-hunspell-dictionary-error.ts
-      - tooling/install-hunspell-dictionary-files.ts
-      - tooling/install-hunspell-dictionary.ts
-    toolchains: bun
-    options:
-      cache: false
-      os: macos
-      runInCI: false
-  hunspell-test:
-    command: >-
-      bun --config=/dev/null --no-env-file test
-      tooling/install-hunspell-dictionary.test.ts
-      tooling/install-hunspell-dictionary-failures.test.ts
-    inputs:
-      - "@group(hunspellTests)"
-  typescript-lint:
-    command: bun --config=/dev/null --no-env-file tooling/lint-typescript.ts
-    inputs:
-      - "@group(trackedTypeScript)"
-      - "@group(typescriptToolchain)"
-      - .oxlintrc.json
-      - tsconfig.json
-  typescript-typecheck:
-    command: bun --config=/dev/null --no-env-file run typecheck
-    inputs:
-      - "@group(typecheckedTypeScript)"
-      - "@group(typescriptToolchain)"
-      - tsconfig.json
-  typescript-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000
-    deps:
-      - agent-memory:build
-    inputs:
-      - "@group(trackedTypeScript)"
-      - "@group(typescriptToolchain)"
-      - tooling/**/*.json
-      - tooling/**/*.md
-    options:
-      cache: false
-  typescript-format-check:
-    command: bun run format:typescript:check
-    inputs:
-      - "@group(trackedTypeScript)"
-      - "@group(typescriptToolchain)"
-  prettier-check:
-    command: >-
-      bun run prettier --check "**/*.{yml,yaml,md,json}"
-      "!home/.config/nvim/lazy-lock.json"
-      "!home/.config/nvim/lazyvim.json"
-    inputs:
-      - "@group(prettierFiles)"
-      - bun.lock
-  fish-setup:
-    script: |
-      set -euo pipefail
-      if command -v fish > /dev/null; then
-        exit 0
-      fi
-      case "$(uname -s)" in
-        Darwin) brew install fish ;;
-        Linux)
-          sudo apt-get update
-          sudo apt-get install -y fish
-          ;;
-        *) printf 'Fish gates do not support this operating system\n' >&2; exit 1 ;;
-      esac
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-  fish-syntax:
-    script: |
-      set -euo pipefail
-      fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
-      printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
-      printf '%s\n' "$fish_files" | xargs -I{} fish --no-execute {}
-    deps: [fish-setup]
-    inputs: ["@group(fishGate)"]
-    tags: [fish]
-    toolchains: system
-  fish-format:
-    script: |
-      set -euo pipefail
-      fish_files=$(git ls-files 'home/.config/fish/*.fish' 'home/.config/fish/**/*.fish')
-      printf '%s\n' "$fish_files" | grep -qx home/.config/fish/config.fish
-      for file in $fish_files; do
-        fish_indent --check "$file"
-      done
-    deps: [fish-setup]
-    inputs: ["@group(fishGate)"]
-    tags: [fish]
-    toolchains: system
-  fish-test:
-    script: |
-      set -euo pipefail
-      fish --no-config home/.config/fish/tests/git_cleanup_test.fish
-      fish --no-config home/.config/fish/tests/git_main_branch_test.fish
-      fish --no-config home/.config/fish/tests/path_test.fish
-      fish --no-config home/.config/fish/tests/runtime_state_test.fish
-    deps: [fish-setup]
-    inputs: ["@group(fishGate)", "@group(fishBehaviorDependencies)"]
-    tags: [fish]
-    toolchains: system
+{
+  language: typescript,
+  tags: [repository],
+  tasks:
+    {
+      install:
+        {
+          description: Install the minimal workstation,
+          command: noop,
+          deps:
+            [
+              applications-install,
+              pnpm,
+              home:install,
+              harness:install,
+              tooling:colgrep-search-install,
+              jq-setup,
+            ],
+          toolchains: system,
+          options: { cache: false, os: macos, runInCI: false },
+        },
+      check:
+        {
+          description: Run repository static checks,
+          command: noop,
+          deps:
+            [
+              typescript-lint,
+              typescript-typecheck,
+              typescript-format-check,
+              prettier-check,
+              shell-lint,
+              workflows-lint,
+              cspell-check,
+              lua-lint,
+              fish-syntax,
+              fish-format,
+              arnes:fmt,
+              arnes:clippy,
+              arnes:check,
+              agent-memory:fmt,
+              agent-memory:clippy,
+              agent-handoff:fmt,
+              agent-handoff:clippy,
+            ],
+          toolchains: system,
+        },
+      test:
+        {
+          description: Run repository behavior tests,
+          command: noop,
+          deps:
+            [
+              fish-test,
+              tooling:test,
+              arnes:test,
+              agent-memory:test,
+              agent-handoff:test,
+            ],
+          toolchains: system,
+        },
+    },
+  env: { PATH: "${PATH}:/opt/homebrew/bin:/usr/local/bin" },
+}

@@ -1,5 +1,4 @@
 name: Code search tests
-
 on:
   push:
     paths:
@@ -12,6 +11,14 @@ on:
       - tsconfig.json
       - Makefile
       - .github/workflows/test-code-search.yml
+      - .moon/**
+      - moon.yml
+      - tooling/moon.yml
+      - home/moon.yml
+      - tooling/deploy-*.ts
+      - tooling/assemble-agent-instructions*.ts
+      - tooling/install-agent-skills*.ts
+      - tooling/deployment-moon-runner.ts
   pull_request:
     paths:
       - harness/skills/code-search/**
@@ -23,24 +30,24 @@ on:
       - tsconfig.json
       - Makefile
       - .github/workflows/test-code-search.yml
-
+      - .moon/**
+      - moon.yml
+      - tooling/moon.yml
+      - home/moon.yml
+      - tooling/deploy-*.ts
+      - tooling/assemble-agent-instructions*.ts
+      - tooling/install-agent-skills*.ts
+      - tooling/deployment-moon-runner.ts
 jobs:
   code-search:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - run: brew install lightonai/tap/colgrep
-      - run: make "$HOME/.local/bin/colgrep-search"
-      - run: |
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: |
-          colgrep --version
-          colgrep-search --help || test "$?" -eq 1
-      - run: bun test tooling/deployment-links.test.ts tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
-      - run: COLGREP_INTEGRATION=1 bun test tooling/colgrep-search-integration.test.ts
-      - run: bun run typecheck
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run:
+          moon ci --downstream none tooling:code-search-test tooling:code-search-integration-test
+          repository:typescript-typecheck

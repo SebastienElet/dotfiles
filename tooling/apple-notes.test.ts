@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanupNotesFixtures, runNotes } from "./apple-notes-test-support.ts";
-import { join } from "node:path";
-import { readFileSync } from "node:fs";
 
 const commandFailureExitCode = 42;
 const invalidUtf8Byte = 0xff;
@@ -183,15 +181,5 @@ describe("Apple Notes process boundary", () => {
       [invalidUtf8Byte],
       "automation denied\n",
     ]);
-  });
-
-  test("is wired into the cross-platform deployment gate", () => {
-    const workflow = readFileSync(
-      join(import.meta.dir, "../.github/workflows/test-deployment.yml"),
-      "utf8",
-    );
-    expect(workflow).toContain("os: [macos-latest, ubuntu-latest]");
-    expect(workflow).toContain("bun test tooling/apple-notes*.test.ts");
-    expect(workflow).toContain(".agents/skills/apple-notes/scripts/**");
   });
 });

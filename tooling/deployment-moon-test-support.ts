@@ -57,7 +57,11 @@ function copyMoonProjectFixture({
   repository,
   source,
 }: MoonProjectFixturePaths): void {
-  mkdirSync(join(repository, ".moon"), { recursive: true });
+  mkdirSync(join(repository, ".moon/tasks"), { recursive: true });
+  cpSync(
+    join(project, ".moon/tasks/rust.yml"),
+    join(repository, ".moon/tasks/rust.yml"),
+  );
   mkdirSync(join(repository, ".github", "workflows"), { recursive: true });
   mkdirSync(home);
   cpSync(source, destination, {
@@ -129,7 +133,7 @@ function runMoon(
 ): CommandResult {
   return spawn(
     [
-      requireCommand("moon"),
+      process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
       "exec",
       "--quiet",
       "--ignore-ci-checks",

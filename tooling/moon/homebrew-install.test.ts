@@ -2,15 +2,8 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { z } from "zod";
 
-const configuration = z
-  .object({ tasks: z.record(z.string(), z.unknown()) })
-  .parse(
-    Bun.YAML.parse(
-      await Bun.file(new URL("../../moon.yml", import.meta.url)).text(),
-    ),
-  );
+const installerPath = join(import.meta.dir, "../install-homebrew");
 
 const downloadFailureExitCode = 22;
 const installerFailureExitCode = 42;
@@ -19,9 +12,6 @@ function runInstaller(
   installer: string,
   downloadStatus: number,
 ): Readonly<{ exitCode: number; stdout: string }> {
-  const task = configuration.tasks.homebrew;
-  expect(task).toBeDefined();
-  const { script } = z.object({ script: z.string() }).parse(task);
   const directory = mkdtempSync(join(tmpdir(), "homebrew-install-test-"));
 
   try {
@@ -31,7 +21,7 @@ function runInstaller(
       { mode: 0o755 },
     );
 
-    const result = Bun.spawnSync(["/bin/bash", "-c", script], {
+    const result = Bun.spawnSync(["/bin/bash", installerPath], {
       env: {
         PATH: directory,
         HOMEBREW_TEST_INSTALLER: installer,

@@ -1,0 +1,47 @@
+inheritedBy:
+  tags:
+    - repository
+fileGroups:
+  fishBehaviorDependencies:
+    - .gitignore
+    - tooling/git-main-branch
+    - tooling/git-main-branch-*.ts
+    - package.json
+    - bun.lock
+tasks:
+  typescript-test:
+    command: bun --config=/dev/null --no-env-file test --timeout 15000
+    deps:
+      - agent-memory:build
+    inputs:
+      - "@group(trackedTypeScript)"
+      - "@group(typescriptToolchain)"
+      - tooling/**/*.json
+      - tooling/**/*.md
+    options:
+      cache: false
+  fish-test:
+    script: |
+      set -euo pipefail
+      fish --no-config home/.config/fish/tests/git_cleanup_test.fish
+      fish --no-config home/.config/fish/tests/git_main_branch_test.fish
+      fish --no-config home/.config/fish/tests/path_test.fish
+      fish --no-config home/.config/fish/tests/runtime_state_test.fish
+    deps:
+      - fish-setup
+      - dependencies
+    inputs:
+      - "@group(fishGate)"
+      - "@group(fishBehaviorDependencies)"
+    tags:
+      - fish
+    toolchains: bun
+  node-runtime-check:
+    command:
+      bun --config=/dev/null --no-env-file tooling/node-version-contract.ts
+      verify-runtime
+    inputs:
+      - package.json
+      - tooling/node-version-contract.ts
+    options:
+      cache: false
