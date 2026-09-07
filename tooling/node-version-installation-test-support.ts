@@ -72,55 +72,6 @@ async function run(
   return { status, output: `${stdout}${stderr}` };
 }
 
-async function runMakeNode(
-  packageJson: unknown,
-  includeDependencies = true,
-): Promise<CommandResult> {
-  const root = await createTemporaryDirectory("node-make-");
-  const fixture = await createContractFixture(root, packageJson);
-  const bin = join(root, "bin");
-  const home = join(root, "home");
-  const voltaBin = join(home, ".volta/bin");
-  const commandLog = join(root, "volta.log");
-  if (!includeDependencies) {
-    await rm(join(fixture, "node_modules"));
-  }
-  await mkdir(bin, { recursive: true });
-  await mkdir(voltaBin, { recursive: true });
-  await writeExecutable(join(bin, "brew"), "exit 0");
-  await writeExecutable(
-    join(bin, "volta"),
-    String.raw`printf "%s\n" "$*" >>"$COMMAND_LOG"`,
-  );
-  await writeExecutable(
-    join(bin, "bun"),
-    'if [ "$1" = --config=/dev/null ]; then exit 0; fi\nexec "$REAL_BUN" "$@"',
-  );
-  const result = await run(
-    [
-      "make",
-      "-f",
-      join(repositoryRoot, "Makefile"),
-      "node",
-      `HOME=${home}`,
-      `BREW_BIN=${bin}`,
-      `VOLTA_BIN=${voltaBin}`,
-      `DOTFILES_PATH=${fixture}`,
-    ],
-    {
-      COMMAND_LOG: commandLog,
-      PATH: `${bin}:/usr/bin:/bin`,
-      REAL_BUN: process.execPath,
-    },
-  );
-  return {
-    ...result,
-    calls: await Bun.file(commandLog)
-      .text()
-      .catch(() => ""),
-  };
-}
-
 async function createUpgradeFakes(
   root: string,
   scenario: UpgradeScenario,
@@ -192,7 +143,6 @@ async function cleanupNodeVersionFixtures(): Promise<void> {
 
 export {
   cleanupNodeVersionFixtures,
-  runMakeNode,
   runUpgrade,
   type CommandResult,
   type UpgradeScenario,
