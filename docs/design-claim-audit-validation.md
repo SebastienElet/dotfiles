@@ -4,7 +4,7 @@
 
 `propose — subagent-routing`.
 
-Le résultat observable de la PR Bitbucket `septeo-immobilier/modelo-suite#645` est la présence de
+Le résultat observable d'une PR Bitbucket externe est la présence de
 cinq familles de garanties documentaires plus fortes que l'autorité, le mécanisme ou l'oracle
 disponible. Elles concernent l'autorité d'un contexte, la complétude d'un ensemble distribué, une
 validation relationnelle, une frontière atomique, des gates métier et une portée juridique.
@@ -45,7 +45,7 @@ déclenche la réévaluation.
 - `gpt-5.6-terra`, effort `high` ;
 - `codex-cli 0.150.1`, processus `--ephemeral`, sandbox `read-only` et enfants isolés ;
 - fixture synthétique sous `harness/skills/design-claim-audit/evals/fixture/` ;
-- aucune donnée privée de `modelo-suite` copiée dans le dépôt.
+- aucune donnée privée du dépôt externe copiée dans ce dépôt.
 
 ## Trial comportemental
 
