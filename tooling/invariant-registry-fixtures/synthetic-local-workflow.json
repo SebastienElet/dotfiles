@@ -1,0 +1,15 @@
+{
+  "evidenceKind": "synthetic-local-not-historical",
+  "sources": [
+    {
+      "provider": "github",
+      "pullRequestUrl": "https://github.com/example/synthetic-harness/pull/1",
+      "evidenceUrl": "https://github.com/example/synthetic-harness/pull/1#issuecomment-1"
+    },
+    {
+      "provider": "github",
+      "pullRequestUrl": "https://github.com/example/synthetic-harness/pull/2",
+      "evidenceUrl": "https://github.com/example/synthetic-harness/pull/2#issuecomment-2"
+    }
+  ]
+}

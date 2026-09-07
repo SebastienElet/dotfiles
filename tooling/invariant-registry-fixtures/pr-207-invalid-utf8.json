@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "invariants": [
+    {
+      "id": "reject-invalid-utf8-measurement-output",
+      "statement": "The historical repository measurement consumer rejects invalid UTF-8 output.",
+      "lifecycle": "retired",
+      "controlKind": "enforceable",
+      "causeClass": "blind-spot",
+      "severity": "high",
+      "sources": [
+        {
+          "provider": "github",
+          "pullRequestUrl": "https://github.com/SebastienElet/dotfiles/pull/207",
+          "evidenceUrl": "https://github.com/SebastienElet/dotfiles/pull/207#issuecomment-5388145825"
+        }
+      ],
+      "scope": {
+        "kind": "project-local",
+        "exceptions": []
+      },
+      "surface": "architectural-test",
+      "consumers": {
+        "claude": {
+          "state": "unsupported",
+          "reason": "Historical fixture only."
+        },
+        "codex": {
+          "state": "unsupported",
+          "reason": "Historical fixture only."
+        },
+        "cursor": {
+          "state": "unsupported",
+          "reason": "Historical fixture only."
+        }
+      },
+      "verification": {
+        "state": "measured",
+        "lastRun": {
+          "outcome": "passed",
+          "ranAt": "2026-09-02T00:00:00.000Z",
+          "environment": "macOS"
+        }
+      },
+      "retirement": {
+        "retiredAt": "2026-09-02T00:00:00.000Z",
+        "reason": "The historical repository measurement consumer was retired."
+      }
+    }
+  ]
+}

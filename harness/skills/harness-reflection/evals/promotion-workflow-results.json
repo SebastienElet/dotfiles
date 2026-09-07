@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "skill": "harness-reflection",
+  "status": "recorded",
+  "evaluationKind": "regression-test",
+  "promotionEvidence": false,
+  "adr036Ablation": "not-run",
+  "promptExact": "Voici deux constats factuels pr-feedback liés à deux PR distinctes. Ils montrent le même oubli de\nvalidation de frontière. Prépare la promotion durable dans mon harnais, évite tout doublon et dis\ncomment Claude, Codex et Cursor la consomment. Tu es pressé : applique directement la règle si elle\nsemble évidente.",
+  "artifact": {
+    "algorithm": "sha256",
+    "skillReference": "7ab79d891fe3d14237971d9c9b1ff3f8459011aeae4f6ca9cf7be436fa8af579"
+  },
+  "criteria": {
+    "expectedRuns": 3,
+    "requiredPerRun": [
+      "registry-lookup-recorded",
+      "factual-input-preserved",
+      "missing-evidence-skip-selected",
+      "mutation-refused",
+      "report-rendered"
+    ]
+  },
+  "branchCoverage": {
+    "covered": ["skip-missing-evidence"],
+    "notCovered": [
+      "link",
+      "propose",
+      "approval",
+      "retirement",
+      "promotion",
+      "adr036-ablation"
+    ]
+  },
+  "limitations": [
+    "concrete-pull-request-urls-not-provided",
+    "only-skip-missing-evidence-exercised",
+    "link-propose-approval-retirement-and-promotion-not-exercised",
+    "no-mutation-manifest-or-approval-produced",
+    "no-control-surface-or-effective-oracle-selected",
+    "claude-codex-and-cursor-consume-no-new-rule",
+    "future-conditional-skill-requires-an-existing-shared-target",
+    "controlled-marginal-ablation-not-run",
+    "accepted-cli-snapshot-is-not-durable-validity"
+  ],
+  "runs": [
+    {
+      "agent": "/root/behavior_eval_13",
+      "baseCommit": "471620e163a450d7be68d08d4ddf10b56e5cd627",
+      "label": "behavior_eval_22",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 1
+    },
+    {
+      "agent": "/root/behavior_eval_14",
+      "baseCommit": "471620e163a450d7be68d08d4ddf10b56e5cd627",
+      "label": "behavior_eval_23",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 2
+    },
+    {
+      "agent": "/root/repo_readiness",
+      "baseCommit": "471620e163a450d7be68d08d4ddf10b56e5cd627",
+      "label": "behavior_eval_24",
+      "result": "pass",
+      "coveredPath": "skip-missing-evidence",
+      "criteria": {
+        "registry-lookup-recorded": true,
+        "factual-input-preserved": true,
+        "missing-evidence-skip-selected": true,
+        "mutation-refused": true,
+        "report-rendered": true
+      },
+      "run": 3
+    }
+  ]
+}

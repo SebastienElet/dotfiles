@@ -13,58 +13,56 @@ metadata:
 
 ## Overview
 
-Stop unproductive retry loops and turn them into one falsifiable learning candidate. Recurrence is
-a signal to investigate, never proof that a permanent rule is correct. The skill may propose a
-harness change, but promotion remains versioned, evidence-gated, and human-approved.
+Route repeated-failure analysis through one executable contract. The contract owns the diagnostic,
+proposal, approval record, owner routing, registry, verification, and lifecycle workflow; this file
+only activates and routes it.
 
 ## Usage
 
-Use after a second materially equivalent failure, after a recovery that repeats an earlier failure,
-or when reviewing what the harness should learn from a completed task. Do not activate for one
-ordinary command error that immediately reveals its correction.
+Use after a second materially equivalent failure, after a recovery repeats an earlier failure, or
+when reviewing what the harness should learn from completed work. Do not activate for one ordinary
+error whose correction is already known.
 
 Example: two agents independently omit the same required validation even though the applicable
 project instructions are discoverable.
 
 ## Steps
 
-1. Name the repeated observable outcome, the intended outcome, and why the attempts are materially
-   equivalent. Stop repeating the unchanged approach.
-2. Preserve the smallest useful evidence: failing command or review finding, relevant environment,
-   agent, repository, harness fingerprint when available, and the recovery that succeeded or failed.
-3. Classify the cause as `task-specific`, `owned-defect`, `external-transient`, `missing-capability`,
-   or `harness-gap`. Choose `harness-gap` only when a reusable instruction, skill, tool preference,
-   sequence, avoidance rule, or routing decision could plausibly change the outcome.
-4. Check current instructions, skills, ADRs, and official dependency behavior before proposing a
-   compensating rule. Fix an owned defect instead of teaching the harness its workaround.
-5. Return exactly one decision: `skip`, with the reason and next diagnostic action; or `propose`,
-   with one candidate type from `verification-reminder`, `tool-preference`, `sequence-recipe`,
-   `playbook-recipe`, `avoid-strategy`, or `subagent-routing`.
-6. For `propose`, include the trigger, desired behavior, scope, supporting evidence, counterexample,
-   falsifier, expiry condition, and the cheapest behavioral trial that could disprove the candidate.
-7. Keep the candidate session-local until the user approves a trial. Use `skill-manager` for a skill
-   change and `agent-instructions` for instruction discovery or deployment changes.
-8. Promote only after the trial changes the target behavior in three independent sessions without a
-   contradictory result. Roll back on two failed trials, one safety regression, or a user veto.
+1. Read [references/invariant-registry.md](references/invariant-registry.md) completely.
+2. Execute `initialWorkflowOrder` exactly as structured.
+3. When its diagnostic result is `harness-gap`, execute `harnessGapWorkflowOrder`, then prepare the
+   selected branch's proposal and exact manifest before requesting contextual human approval. The
+   approval record is an attestation whose origin the code cannot authenticate.
+4. For `conditional-skill`, require `targetSkillPath` to resolve to an existing triggerable user
+   skill, distinct from this router and deployed to every declared user-skill consumer. Use
+   `skill-manager` to apply `candidateTextExact` to that exact target and run its doctor and contracts.
+5. For every file-backed surface change, resolve the exact `surfaceOwners` entry, use its required
+   skill, and run its named doctor and contracts. Then resolve `workflowRoutes.manifestValidation`;
+   its export only checks the exact manifest and the already-applied surface snapshot. Write only
+   the approved registry replacement after that check, then run `workflowRoutes.registryValidation`.
+6. For an enforceable control, use the exact `externalControlRoutes` entry and its separate owner
+   workflow. Present that owner-specific exact diff for approval, run its contracts, and record the
+   registry only afterward; the generic manifest validator does not accept those implementation paths.
+7. For retirement, remove the exact candidate text through the required owner, record the new exact
+   approval attestation, preserve the historical fields, and follow the same validation and registry order.
+   Stop with a finding when a route or owner is missing, malformed, unresolved, duplicated, or
+   contradicted; never supplement it from prose.
 
 ## Gotchas
 
-- **Counting unrelated failures** — a flaky network request and a wrong repository assumption do
-  not form a pattern; compare observable outcome, cause, and recovery before reflecting.
-- **Learning from recurrence alone** — repeated mistakes can share one bad premise; require a
-  falsifiable behavioral trial before promotion.
-- **Encoding an owned defect** — a workaround becomes permanent policy; fix the defect or record a
-  focused issue instead.
-- **Writing broad instructions first** — every future task pays the context cost; prefer the
-  narrowest existing skill or tool boundary proven by the trial.
+- **Skipping the contract** — the registry flow loses its gates; load the reference before deciding.
+- **Treating prose as authority** — summaries can drift from executable fields; use only the JSON
+  block for domain decisions.
+- **Continuing after invalid input** — a parse failure silently disables policy; return the validator
+  finding instead of choosing a fallback.
+- **Treating validation as application** — the manifest export writes no surface; apply through the
+  required owner before validating its resulting snapshot.
 
 ## Constraints
 
-- Never edit instructions, skills, hooks, repository files, or harness state without explicit user
-  approval of the proposed trial or change.
-- Never let a learned rule modify its own evaluator, evidence threshold, promotion policy, or
-  authority.
-- Never include secrets, credentials, private prompt content, or raw transcripts in a candidate.
-- Never claim that activation scenarios or repeated failures prove improvement; name the behavioral
-  oracle and the environment in which it ran.
-- Keep candidates scoped per agent unless cross-agent trials independently support shared behavior.
+- Keep the authoritative JSON block as the sole source of domain workflow rules.
+- Keep this skill as a router; do not restate contract decisions, classes, thresholds, or gates here.
+- Keep this closed router byte-stable unless its routing contract changes; reject it as every
+  `conditional-skill` target.
+- Refuse the workflow when the authoritative block or its non-contractual surface is invalid.
+- Never use the manifest validator as a surface writer or claim it authenticates an approval origin.
