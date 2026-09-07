@@ -1,35 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
   cleanupNodeVersionFixtures,
-  runMakeNode,
   runUpgrade,
 } from "./node-version-installation-test-support";
 
 afterEach(cleanupNodeVersionFixtures);
-
-describe("Makefile Node installation", () => {
-  test("passes the exact project pin to Volta", async () => {
-    const result = await runMakeNode({ volta: { node: "24.18.1" } });
-
-    expect(result.status).toBe(0);
-    expect(result.calls).toBe("install node@24.18.1\n");
-  });
-
-  test("does not bootstrap repository dependencies to read the pin", async () => {
-    const result = await runMakeNode({ volta: { node: "24.18.1" } }, false);
-
-    expect(result.status).toBe(0);
-    expect(result.calls).toBe("install node@24.18.1\n");
-  });
-
-  test("fails closed when the project pin is absent", async () => {
-    const result = await runMakeNode({});
-
-    expect(result.status).not.toBe(0);
-    expect(result.calls).toBe("");
-    expect(result.output).toContain("Cannot read an exact Node pin");
-  });
-});
 
 describe("Node upgrade", () => {
   test("pins the current LTS before installing the resolved exact version", async () => {

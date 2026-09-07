@@ -99,6 +99,7 @@ function runTarget(
       `APP_BIN=${fixture.apps}`,
       `BREW_BIN=${fixture.brewBin}`,
       `VOLTA_BIN=${fixture.voltaBin}`,
+      "MOON_EXEC=true",
       `SKIP_PAID_APPS=${skipPaidApps ? "1" : "0"}`,
     ],
     { stderr: "pipe", stdout: "pipe" },

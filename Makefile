@@ -44,6 +44,7 @@ smoke-minimal:
 	$(MAKE) --no-print-directory minimal </dev/null; \
 	brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile"; \
 	for executable in "${BREW_BIN}/colgrep" "${LOCAL_BIN}/agent-handoff" "${LOCAL_BIN}/agent-memory" "${LOCAL_BIN}/arnes" "${LOCAL_BIN}/claude" "${LOCAL_BIN}/colgrep-search" "${VOLTA_BIN}/codex" "${VOLTA_BIN}/node" "${VOLTA_BIN}/pnpm"; do test -x "$$executable"; done; \
+	(cd / && VOLTA_HOME="$(HOME)/.volta" PATH="${VOLTA_BIN}:$$PATH" bun --config=/dev/null --no-env-file --no-install "${DOTFILES_PATH}/tooling/node-version-contract.ts" verify-runtime "${DOTFILES_PATH}/package.json" >/dev/null); \
 	stdout=$$(mktemp); stderr=$$(mktemp); trap 'rm -f "$$stdout" "$$stderr"' EXIT; \
 	before=$$(cd "$(HOME)" && tar -cf - ${MINIMAL_SNAPSHOT_PATHS} | shasum -a 256); \
 	if ! $(MAKE) --no-print-directory minimal </dev/null >"$$stdout" 2>"$$stderr"; then cat "$$stdout"; cat "$$stderr" >&2; exit 1; fi; \
@@ -440,17 +441,25 @@ daisydisk:
 	@if [ "$(SKIP_PAID_APPS)" != "1" ] && [ ! -d "${APP_BIN}/DaisyDisk.app" ]; then echo "Error: Homebrew Bundle did not install ${APP_BIN}/DaisyDisk.app" >&2; exit 1; fi
 
 .PHONY: node
-node: ${VOLTA_BIN}/node
-${VOLTA_BIN}/node: ${BREW_BIN}/volta ${DOTFILES_PATH}/package.json ${DOTFILES_PATH}/tooling/node-version-contract.ts | ${BREW_BIN}/bun
-	node_install_spec=$$(${BREW_BIN}/bun --no-install ${DOTFILES_PATH}/tooling/node-version-contract.ts install-spec) && \
-		${BREW_BIN}/volta install "$$node_install_spec"
-	touch $@
+node:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
+
+${VOLTA_BIN}/node: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:node
+
+.PHONY: volta
+volta:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
+
+${BREW_BIN}/volta: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
 
 .PHONY: pnpm
-pnpm: ${VOLTA_BIN}/pnpm
-${VOLTA_BIN}/pnpm: ${VOLTA_BIN}/node
-	${BREW_BIN}/volta install pnpm
-	touch $@
+pnpm:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
+
+${VOLTA_BIN}/pnpm: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:pnpm
 
 .PHONY: moon
 moon:

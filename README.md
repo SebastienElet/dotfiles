@@ -32,6 +32,10 @@ moon exec install
 moon action-graph repository:install
 ```
 
+Install the Node development toolchain independently with `moon exec repository:pnpm`;
+its dependencies install Homebrew, Volta, and the exact Node version from `package.json`.
+The `make volta`, `make node`, and `make pnpm` entry points delegate to Moon.
+
 ## Checks
 
 With Moon and `luacheck` available on `PATH`, run the shared static check task:
