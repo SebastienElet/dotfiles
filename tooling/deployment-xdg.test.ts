@@ -9,14 +9,9 @@ import {
   pathExists,
   project,
   requireCommand,
+  runDeploymentHelper,
 } from "./deployment-test-support.ts";
-import {
-  closeSync,
-  mkdirSync,
-  openSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
@@ -49,8 +44,9 @@ test("deploys XDG links while preserving obsolete user links", () => {
 test("migrates Git includes exactly once and preserves unrelated values", () => {
   const fixture = createDeploymentFixture("xdg-git");
   prepareGitDeltaFixture(fixture);
-  expectSuccess(runDeploymentMoon(fixture, ["home:wezterm", "home:tmux"]));
-  expectSuccess(runGitDelta(fixture));
+  expectSuccess(
+    runDeploymentMoon(fixture, ["home:wezterm", "home:tmux", "home:git-delta"]),
+  );
   expect(includePaths(fixture)).toEqual([
     "~/.config/git/config.delta",
     "~/.config/git/other.conf",
@@ -62,14 +58,14 @@ test("migrates Git includes exactly once and preserves unrelated values", () => 
     config: fileIdentity(config),
     links: links.map((link) => fileIdentity(link)),
   };
-  expectSuccess(runGitDelta(fixture));
+  expectSuccess(runDeploymentMoon(fixture, ["home:git-delta"]));
   expect({
     config: fileIdentity(config),
     links: links.map((link) => fileIdentity(link)),
   }).toEqual(before);
 });
 
-test("rolls back a failed include addition", () => {
+test("preserves configuration when include addition fails", () => {
   const fixture = createDeploymentFixture("xdg-add-failure");
   prepareGitDeltaFixture(fixture);
   git(fixture, [
@@ -82,7 +78,7 @@ test("rolls back a failed include addition", () => {
   ]);
   const config = join(fixture.home, ".gitconfig");
   const before = fileIdentity(config);
-  const result = runGitDelta(fixture, [
+  const result = runGitIncludesWithFailure(fixture, [
     "config",
     "--global",
     "--add",
@@ -104,7 +100,7 @@ test("preserves both includes when removal fails after addition", () => {
     "include.path",
     "^~/.config/git/config[.]delta$",
   ]);
-  const result = runGitDelta(fixture, [
+  const result = runGitIncludesWithFailure(fixture, [
     "config",
     "--global",
     "--unset-all",
@@ -121,7 +117,7 @@ test("does not mutate configuration when reading includes fails", () => {
   prepareGitDeltaFixture(fixture);
   const config = join(fixture.home, ".gitconfig");
   const before = fileIdentity(config);
-  const result = runGitDelta(fixture, [
+  const result = runGitIncludesWithFailure(fixture, [
     "config",
     "--global",
     "--get-all",
@@ -133,9 +129,6 @@ test("does not mutate configuration when reading includes fails", () => {
 type Fixture = ReturnType<typeof createDeploymentFixture>;
 
 function prepareGitDeltaFixture(fixture: Fixture): void {
-  for (const binary of ["brew", "delta"]) {
-    closeSync(openSync(join(fixture.bin, binary), "w"));
-  }
   mkdirSync(join(fixture.home, ".config"), { recursive: true });
   for (const [name, source] of [
     [".wezterm.lua", join(project, "home", ".wezterm.lua")],
@@ -157,19 +150,21 @@ function prepareGitDeltaFixture(fixture: Fixture): void {
   }
 }
 
-function runGitDelta(
+function runGitIncludesWithFailure(
   fixture: Fixture,
-  failure?: readonly string[],
-): ReturnType<typeof runDeploymentMoon> {
-  const environment: NodeJS.ProcessEnv = {};
-  if (failure !== undefined) {
-    installProvider(fixture, "git");
-    environment.PATH = `${fixture.bin}:${process.env.PATH ?? ""}`;
-    environment.DEPLOYMENT_PROVIDER_MODE = "git";
-    environment.DEPLOYMENT_REAL_COMMAND = requireCommand("git");
-    environment.DEPLOYMENT_FAIL_ARGUMENTS = JSON.stringify(failure);
-  }
-  return runDeploymentMoon(fixture, ["home:git-delta"], environment);
+  failure: readonly string[],
+): ReturnType<typeof runDeploymentHelper> {
+  installProvider(fixture, "git");
+  return runDeploymentHelper(
+    fixture,
+    { helper: "deploy-git-includes.ts", arguments: [] },
+    {
+      PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
+      DEPLOYMENT_PROVIDER_MODE: "git",
+      DEPLOYMENT_REAL_COMMAND: requireCommand("git"),
+      DEPLOYMENT_FAIL_ARGUMENTS: JSON.stringify(failure),
+    },
+  );
 }
 
 function includePaths(fixture: Fixture): string[] {
