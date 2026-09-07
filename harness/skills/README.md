@@ -33,6 +33,7 @@ This directory is the canonical source for user-scoped agent skills.
 
 | Skill               | Description                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------ |
+| `issue-simplify`    | Simplify GitHub or Linear issues and drafts.                                         |
 | `linear-issue-spec` | Prepare implementation-ready Linear development issues as functional specifications. |
 
 ## Ops
