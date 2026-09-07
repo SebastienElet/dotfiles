@@ -30,9 +30,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test
-      tooling/deployment-fish.test.ts tooling/deployment-links.test.ts
-      tooling/deployment-xdg.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts
     deps:
       - repository:dependencies
     options:
@@ -43,9 +41,7 @@ tasks:
       - "@group(rootToolchain)"
       - "@group(deploymentSources)"
   hunspell-test:
-    command: bun --config=/dev/null --no-env-file test
-      tooling/install-hunspell-dictionary.test.ts
-      tooling/install-hunspell-dictionary-failures.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
     deps:
       - repository:dependencies
     options:
@@ -66,9 +62,7 @@ tasks:
       - "@group(rootToolchain)"
       - /.agents/skills/apple-notes/scripts/**/*
   code-search-test:
-    command: bun --config=/dev/null --no-env-file test
-      tooling/deployment-links.test.ts tooling/code-search-*.test.ts
-      tooling/colgrep-search*.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/deployment-links.test.ts tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
     deps:
       - repository:dependencies
     options:
@@ -87,25 +81,19 @@ tasks:
       cache: false
     env:
       COLGREP_INTEGRATION: "1"
-      PATH: ${HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}
-    script: >-
+    script: |-
+      export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
       set -e
-
       colgrep --version
-
       colgrep-search --help || test "$?" -eq 1
-
-      bun --config=/dev/null --no-env-file test
-      tooling/colgrep-search-integration.test.ts
+      bun --config=/dev/null --no-env-file test tooling/colgrep-search-integration.test.ts
     toolchains: bun
     inputs:
       - "@group(toolingSources)"
       - "@group(rootToolchain)"
       - /Brewfile
   colgrep-search-install:
-    command: bun tooling/deploy-link.ts
-      "$workspaceRoot/tooling/colgrep-search-cli.ts"
-      "$HOME/.local/bin/colgrep-search"
+    command: bun tooling/deploy-link.ts "$workspaceRoot/tooling/colgrep-search-cli.ts" "$HOME/.local/bin/colgrep-search"
     deps:
       - repository:dependencies
       - repository:colgrep-setup

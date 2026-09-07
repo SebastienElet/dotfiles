@@ -19,8 +19,14 @@ function runCSpell(
 
 function main(): void {
   const files = filesSchema.parse(process.argv.slice(argumentOffset));
+  const originalHome = z.string().min(1).parse(process.env.HOME);
   const home = mkdtempSync(join(tmpdir(), "cspell-check-"));
-  const env = { ...process.env, HOME: home };
+  const env = {
+    ...process.env,
+    HOME: home,
+    MOON_HOME: process.env.MOON_HOME ?? join(originalHome, ".moon"),
+    PROTO_HOME: process.env.PROTO_HOME ?? join(originalHome, ".proto"),
+  };
   const config = join(home, "cspell.json");
   try {
     checkCommand(

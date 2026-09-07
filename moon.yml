@@ -1,64 +1,51 @@
-{
-  language: typescript,
-  tags: [repository],
-  tasks:
-    {
-      install:
-        {
-          description: Install the minimal workstation,
-          command: noop,
-          deps:
-            [
-              applications-install,
-              pnpm,
-              home:install,
-              harness:install,
-              tooling:colgrep-search-install,
-              jq-setup,
-            ],
-          toolchains: system,
-          options: { cache: false, os: macos, runInCI: false },
-        },
-      check:
-        {
-          description: Run repository static checks,
-          command: noop,
-          deps:
-            [
-              typescript-lint,
-              typescript-typecheck,
-              typescript-format-check,
-              prettier-check,
-              shell-lint,
-              workflows-lint,
-              cspell-check,
-              lua-lint,
-              fish-syntax,
-              fish-format,
-              arnes:fmt,
-              arnes:clippy,
-              arnes:check,
-              agent-memory:fmt,
-              agent-memory:clippy,
-              agent-handoff:fmt,
-              agent-handoff:clippy,
-            ],
-          toolchains: system,
-        },
-      test:
-        {
-          description: Run repository behavior tests,
-          command: noop,
-          deps:
-            [
-              fish-test,
-              tooling:test,
-              arnes:test,
-              agent-memory:test,
-              agent-handoff:test,
-            ],
-          toolchains: system,
-        },
-    },
-  env: { PATH: "${PATH}:/opt/homebrew/bin:/usr/local/bin" },
-}
+language: typescript
+tags:
+  - repository
+tasks:
+  install:
+    description: Install the minimal workstation
+    command: noop
+    deps:
+      - applications-install
+      - pnpm
+      - home:install
+      - harness:install
+      - tooling:colgrep-search-install
+      - jq-setup
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+  check:
+    description: Run repository static checks
+    command: noop
+    deps:
+      - typescript-lint
+      - typescript-typecheck
+      - typescript-format-check
+      - prettier-check
+      - shell-lint
+      - workflows-lint
+      - cspell-check
+      - lua-lint
+      - fish-syntax
+      - fish-format
+      - arnes:fmt
+      - arnes:clippy
+      - arnes:check
+      - agent-memory:fmt
+      - agent-memory:clippy
+      - agent-handoff:fmt
+      - agent-handoff:clippy
+    toolchains: system
+  test:
+    description: Run repository behavior tests
+    command: noop
+    deps:
+      - fish-test
+      - tooling:test
+      - arnes:test
+      - agent-memory:test
+      - agent-handoff:test
+    toolchains: system

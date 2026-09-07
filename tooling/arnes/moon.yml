@@ -1,64 +1,73 @@
-{
-  fileGroups:
-    {
-      rust: [/.github/workflows/test-arnes.yml],
-      repositoryTests: [/Makefile, /home/.arnes.yaml, /harness/**/*],
-    },
-  env:
-    {
-      RUSTFLAGS: "-Funsafe-code",
-      PATH: "/opt/homebrew/bin:/usr/local/bin:${PATH}",
-    },
-  tasks:
-    {
-      install:
-        {
-          description: Install the Arnes executable and manifest,
-          command: noop,
-          deps: [binary, home:arnes-config],
-          toolchains: system,
-          options: { cache: false, runInCI: false },
-        },
-      build:
-        {
-          command: cargo build --quiet --release --locked,
-          deps: [repository:rust],
-          env: {},
-          toolchains: system,
-          options: { cache: false, mutex: arnes-cargo-target, runInCI: false },
-        },
-      binary:
-        {
-          script: "set -e\nmkdir -p \"$HOME/.local/bin\"\nln -s \"$projectRoot/target/release/arnes\" \"$HOME/.local/bin/arnes\"\n",
-          deps: [build],
-          checks:
-            [
-              {
-                check: condition,
-                script: 'test -e "$HOME/.local/bin/arnes" || test -L "$HOME/.local/bin/arnes"',
-              },
-            ],
-          toolchains: system,
-          options: { cache: false, runInCI: false },
-        },
-      clippy:
-        {
-          command: cargo clippy --all-targets --locked -- -D warnings,
-          options: { mutex: arnes-cargo-target, mergeArgs: replace },
-        },
-      check:
-        {
-          command: cargo check --all-targets --locked,
-          inputs: ["@group(rust)"],
-          options: { mutex: arnes-cargo-target },
-          deps: [repository:rust],
-        },
-      test:
-        {
-          command: cargo test --locked,
-          options: { mutex: arnes-cargo-target, mergeArgs: replace },
-          inputs: ["@group(repositoryTests)"],
-        },
-    },
-  tags: [rust-cli],
-}
+fileGroups:
+  rust:
+    - /.github/workflows/test-arnes.yml
+  repositoryTests:
+    - /Makefile
+    - /home/.arnes.yaml
+    - /harness/**/*
+env:
+  RUSTFLAGS: -Funsafe-code
+tasks:
+  install:
+    description: Install the Arnes executable and manifest
+    command: noop
+    deps:
+      - binary
+      - home:arnes-config
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  build:
+    deps:
+      - repository:rust
+    toolchains: system
+    options:
+      cache: false
+      mutex: arnes-cargo-target
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo build --quiet --release --locked
+  binary:
+    script: |
+      set -e
+      mkdir -p "$HOME/.local/bin"
+      ln -s "$projectRoot/target/release/arnes" "$HOME/.local/bin/arnes"
+    deps:
+      - build
+    checks:
+      - check: condition
+        script: test -e "$HOME/.local/bin/arnes" || test -L "$HOME/.local/bin/arnes"
+    toolchains: system
+    options:
+      cache: false
+      runInCI: false
+  clippy:
+    options:
+      mutex: arnes-cargo-target
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo clippy --all-targets --locked -- -D warnings
+  check:
+    inputs:
+      - "@group(rust)"
+    options:
+      mutex: arnes-cargo-target
+    deps:
+      - repository:rust
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo check --all-targets --locked
+  test:
+    options:
+      mutex: arnes-cargo-target
+    inputs:
+      - "@group(repositoryTests)"
+    deps:
+      - repository:dependencies
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo test --locked
+tags:
+  - rust-cli

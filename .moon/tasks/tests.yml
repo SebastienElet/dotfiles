@@ -22,6 +22,7 @@ tasks:
       cache: false
   fish-test:
     script: |
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -euo pipefail
       fish --no-config home/.config/fish/tests/git_cleanup_test.fish
       fish --no-config home/.config/fish/tests/git_main_branch_test.fish
@@ -37,9 +38,7 @@ tasks:
       - fish
     toolchains: bun
   node-runtime-check:
-    command:
-      bun --config=/dev/null --no-env-file tooling/node-version-contract.ts
-      verify-runtime
+    command: bun --config=/dev/null --no-env-file tooling/node-version-contract.ts verify-runtime
     inputs:
       - package.json
       - tooling/node-version-contract.ts

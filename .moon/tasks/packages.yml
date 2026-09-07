@@ -3,14 +3,14 @@ inheritedBy:
     - repository
 tasks:
   bat-setup:
-    command: brew install bat
     deps:
       - homebrew
     checks:
       - check: condition
-        script: brew list --formula --versions bat
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions bat
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -18,15 +18,18 @@ tasks:
       mutex: homebrew
       os: macos
       runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install bat
   fisher-setup:
-    command: brew install fisher
     deps:
       - homebrew
     checks:
       - check: condition
-        script: brew list --formula --versions fisher
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions fisher
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -34,15 +37,18 @@ tasks:
       mutex: homebrew
       os: macos
       runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install fisher
   fzf-setup:
-    command: brew install fzf
     deps:
       - homebrew
     checks:
       - check: condition
-        script: brew list --formula --versions fzf
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions fzf
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -50,14 +56,18 @@ tasks:
       mutex: homebrew
       os: macos
       runInCI: true
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install fzf
   colgrep-setup:
     deps:
       - homebrew
     checks:
       - check: condition
-        script: brew list --formula --versions lightonai/tap/colgrep
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions lightonai/tap/colgrep
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -66,11 +76,13 @@ tasks:
       os: macos
       runInCI: true
     script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       brew trust --formula lightonai/tap/colgrep
       brew install lightonai/tap/colgrep
   fish-setup:
     script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       case "$(uname -s)" in
         Darwin) brew install fish ;;
@@ -82,13 +94,13 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
           case "$(uname -s)" in
             Darwin) brew list --formula --versions fish ;;
             Linux) command -v fish ;;
             *) exit 1 ;;
           esac
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -97,6 +109,7 @@ tasks:
       runInCI: true
   luacheck-setup:
     script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       case "$(uname -s)" in
         Darwin) brew install luacheck ;;
@@ -108,13 +121,13 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
           case "$(uname -s)" in
             Darwin) brew list --formula --versions luacheck ;;
             Linux) command -v luacheck ;;
             *) exit 1 ;;
           esac
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -123,6 +136,7 @@ tasks:
       runInCI: true
   shellcheck-setup:
     script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       case "$(uname -s)" in
         Darwin) brew install shellcheck ;;
@@ -134,13 +148,13 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
           case "$(uname -s)" in
             Darwin) brew list --formula --versions shellcheck ;;
             Linux) command -v shellcheck ;;
             *) exit 1 ;;
           esac
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -149,6 +163,7 @@ tasks:
       runInCI: true
   jq-setup:
     script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
       case "$(uname -s)" in
         Darwin) brew install jq ;;
@@ -160,13 +175,13 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
           case "$(uname -s)" in
             Darwin) brew list --formula --versions jq ;;
             Linux) command -v jq ;;
             *) exit 1 ;;
           esac
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
@@ -174,9 +189,9 @@ tasks:
       mutex: homebrew
       runInCI: true
   actionlint-setup:
-    script: >-
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
       set -e
-
       case "$(uname -s)" in
         Darwin) brew install actionlint ;;
         Linux) go version; go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 ;;
@@ -187,13 +202,13 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
           case "$(uname -s)" in
             Darwin) brew list --formula --versions actionlint ;;
             Linux) command -v actionlint ;;
             *) exit 1 ;;
           esac
     env:
-      PATH: /opt/homebrew/bin:/usr/local/bin:${HOME}/go/bin:${PATH}
       HOMEBREW_NO_ASK: "1"
     toolchains: system
     options:
