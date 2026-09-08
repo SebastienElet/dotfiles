@@ -53,9 +53,9 @@ fn persist_hook(
     deployment_root: &Path,
 ) -> Result<(), MeasureError> {
     let run_id = digest(&[agent.as_str().as_bytes(), session.as_bytes()]);
-    let run_dir = store.run_dir(&run_id)?;
     let lifecycle = store.open_run_lock(&run_id)?;
     lifecycle.lock()?;
+    let run_dir = store.run_dir(&run_id)?;
     let timestamp_ms = now_ms();
     let run_json = run_dir.join("run.json");
     let run = if run_json.exists()? {

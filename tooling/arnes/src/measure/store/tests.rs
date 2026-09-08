@@ -9,6 +9,45 @@ use std::sync::{Arc, Barrier};
 const MAX_RECORD_BYTES: usize = 1_100_000;
 
 #[test]
+fn retention_waits_for_run_initialization_before_reading_metadata() {
+    use crate::measure::{hook::now_ms, retention};
+    use serde_json::json;
+    use std::sync::mpsc::{self, RecvTimeoutError};
+    use std::time::Duration;
+
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::open_from_state_base(directory.path(), &[]).unwrap();
+    let run_id = "ab".repeat(32);
+    let lifecycle = store.open_run_lock(&run_id).unwrap();
+    lifecycle.lock().unwrap();
+    let run = store.run_dir(&run_id).unwrap();
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        sender.send(retention::retain(&store, now_ms())).unwrap();
+    });
+    let before_initialization = receiver.recv_timeout(Duration::from_secs(1));
+    let metadata = json!({
+        "schema_version": 2, "run_id": run_id, "agent": "codex",
+        "started_at_ms": now_ms(), "model_fingerprint": null,
+        "repository_commit": null, "repository_dirty": null,
+        "harness_fingerprint": "00".repeat(32), "harness_fingerprint_limitations": [],
+        "operating_system": "macos", "architecture": "aarch64"
+    });
+    super::write_json_atomic(&run.join("run.json"), &metadata).unwrap();
+    drop(lifecycle);
+    worker.join().unwrap();
+    assert!(
+        matches!(before_initialization, Err(RecvTimeoutError::Timeout)),
+        "retention read an uninitialized run: {before_initialization:?}"
+    );
+    receiver
+        .recv_timeout(Duration::from_secs(5))
+        .unwrap()
+        .unwrap();
+    assert!(run.join("run.json").exists().unwrap());
+}
+
+#[test]
 fn pr_retention_rechecks_a_candidate_after_a_fresh_append() {
     use crate::measure::{hook::now_ms, pr_timeline::retention};
     use serde_json::json;

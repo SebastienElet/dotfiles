@@ -130,15 +130,14 @@ fn expired_run(
     run_id: &str,
     now_ms: u64,
 ) -> Result<Option<ExpiredRun>, MeasureError> {
+    let lock = store.open_run_lock(run_id)?;
+    lock.lock()?;
     let run = open_run(store, run_id)?;
     let metadata = validation::read_run(&run.join("run.json"))?;
     if metadata.schema_version() != 2 {
         return Ok(None);
     }
-    let lock = store.open_run_lock(run_id)?;
-    lock.lock()?;
     let now_ms = now_ms.max(super::hook::now_ms());
-    let metadata = validation::read_run(&run.join("run.json"))?;
     let (events, ()) = read_events_for_list_with(&run.join("events.jsonl"), run_id, || Ok(()))?;
     if !events.timestamps_consistent() {
         return Err(MeasureError::new(
