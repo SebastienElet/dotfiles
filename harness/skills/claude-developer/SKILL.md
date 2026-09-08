@@ -13,87 +13,70 @@ metadata:
 
 ## Overview
 
-Prepare one self-contained prompt and launch Claude Code in an interactive terminal in the verified
-worktree. Use a manual handoff when the user asks only for a prompt or the host cannot launch an
-interactive session. Starting a process and displaying it in the app are separate outcomes.
+Prepare one self-contained prompt and launch Claude Code interactively in the verified worktree.
+Use a manual handoff for prompt-only requests or when interactive execution is unavailable.
 
 ## Usage
 
-`$claude-developer <task or returned result>` — prepare an implementation or correction handoff.
-Delegation requests authorize one launch; requests for a prompt alone do not authorize execution.
-Direct implementation requests without Claude stay with the current agent.
+`$claude-developer <task or returned result>` — delegate one implementation or correction.
+Requests without Claude stay with the current agent; prompt-only requests authorize no execution.
 
 ## Steps
 
-1. Inspect repository instructions and the minimum read-only context needed for the handoff.
-   Record unresolved facts instead of guessing. For an existing launch, inspect its session and
-   continue at step 6 instead of preparing another prompt or starting another process.
-2. Identify the intended existing worktree from the task context; verify its absolute path and
-   branch with `git worktree list --porcelain`. Use the current worktree when the task targets it.
-   If the intended worktree is missing or ambiguous, ask for its path before issuing a launch
-   command; do not invent a path or create a checkout.
-3. Write one prompt with the outcome, verified worktree path and branch (or detached HEAD), relevant
-   facts, constraints, acceptance criteria, allowed scope, expected verification, and delivery
-   report. Tell Claude to inspect before editing, preserve unrelated changes, and surface conflicts.
-   Include the user's authorization limits; reserve consequential actions for the user unless
-   explicitly authorized.
-4. For a prompt-only request, or when interactive execution is unavailable, return two fenced
-   blocks: `sh` with `cd <shell-quoted absolute worktree path> && claude`, then `text` with the prompt
-   to paste. Explain any unavailable capability, then stop without launching.
-5. Otherwise, use the host's interactive execution tool. In Codex, call `exec_command` with
-   `workdir` set to the verified absolute path, `tty: true`, and `cmd` set to
-   `claude <shell-quoted complete prompt>`. Preserve newlines inside the single prompt argument;
-   use POSIX quoting in a POSIX-compatible shell, or the host shell's native quoting otherwise.
-   Do not interpolate raw prompt text,
-   execute it as shell syntax, or substitute `claude -p`, which exits after its response.
-6. Keep the returned session identifier and inspect startup output with `write_stdin`, using empty
-   input for observation. A session identifier alone is not evidence that Claude started. Report
-   missing executables, authentication, trust prompts, hook errors, or early exits as observed.
-   If the sandbox prevents access to Claude's normal configuration or credentials, use the host's
-   approval mechanism for the exact launch; stop the failed process before an approved retry.
-7. In the Codex desktop app, request the terminal panel with `mcp__codex_app__open_in_codex`, target
-   `{"type":"terminal","sessionId":"<returned session identifier>"}`. Check
-   `mcp__codex_app__read_thread_terminal` for output matching the launched process. A `queued`
-   response, an empty panel, or unrelated output does not prove attachment: report the observed
-   execution state and that panel attachment is unconfirmed. Never launch another
-   Claude process to compensate for a display failure or bypass a Computer Use refusal.
-8. Report the worktree, command, session identifier, observed startup state, and panel state, then
-   leave the live session available. Forward only user-requested follow-up input to that session;
-   do not submit the initial prompt again. If execution was not started, provide the manual blocks
-   from step 4; if its outcome is uncertain, inspect the original session before proposing a retry.
-9. On a returned result, review only supplied evidence and explicitly authorized local state.
-   Produce a corrective handoff only when the user requests another iteration; an unexecuted prompt
-   revision replaces the previous handoff.
+1. Inspect repository instructions and only the read-only context needed. For an existing launch,
+   continue at step 5 without preparing or resending a prompt. On a returned result, review only
+   supplied evidence and explicitly authorized local state; continue only if another iteration is
+   requested. An unexecuted prompt revision replaces the previous handoff.
+2. Verify the intended existing worktree's absolute path and branch (or detached HEAD) with
+   `git worktree list --porcelain`; use the current worktree when targeted. If missing or ambiguous,
+   ask for its path before issuing a command.
+3. Prepare the prompt: outcome, verified worktree and branch, relevant facts and uncertainties,
+   constraints, allowed scope, acceptance criteria, verification, and delivery report. Tell Claude
+   to inspect before editing, preserve unrelated changes, surface conflicts, and respect the user's
+   authorization limits.
+4. Choose the handoff:
+   - **Manual:** return a `sh` block containing `cd <shell-quoted absolute worktree path> && claude`,
+     then a `text` block containing the prompt. Explain unavailable execution when relevant and stop.
+   - **Automatic:** use the host's interactive execution tool. In Codex, call `exec_command` with
+     the verified `workdir`, `tty: true`, and `cmd: claude <shell-quoted complete prompt>`. Use the
+     host shell's quoting to preserve the complete prompt, including newlines, as one literal
+     argument. Do not use print mode (`claude -p`), which exits after responding.
+5. Retain the session identifier and observe startup; in Codex, use `write_stdin` with empty input.
+   Report missing executables, authentication or trust prompts, hook errors, and early exits as
+   observed. For sandbox access failures, request host approval for the exact launch and stop the
+   failed process before retrying. If no process started, provide the manual blocks; if uncertain,
+   inspect the original session before retrying.
+6. In Codex desktop, call `mcp__codex_app__open_in_codex` with target
+   `{"type":"terminal","sessionId":"<returned session identifier>"}`, then check
+   `mcp__codex_app__read_thread_terminal` for matching output. Report the worktree, command, session
+   identifier, observed execution state, and panel state; leave a live session available. Forward
+   only user-requested follow-up input, without resending the initial prompt.
 
 ## Gotchas
 
-- **Starting in the wrong checkout** — a bare `claude` uses the terminal's current directory;
-  supply the verified absolute path and `&&` so a failed `cd` prevents launch.
-- **Confusing terminal identifiers** — an execution session may not attach to the app panel;
-  verify matching output and report uncertainty instead of claiming the panel shows Claude.
-- **Duplicating a launch** — an opening failure does not stop the existing process; retain its
-  session identifier and inspect it before retrying or forwarding input.
-- **Expanding the prompt in the shell** — quotes, backticks, and substitutions can execute prompt
-  content; pass one safely quoted argument and preserve its literal text.
-- **Trusting a returned summary** — it may omit defects or failed checks; inspect the available diff
-  and evidence before making a verification claim.
+- **Wrong checkout** — a bare `claude` inherits the terminal directory; set `workdir` for execution
+  or use the verified `cd ... && claude` for a manual launch.
+- **Shell expansion** — quotes, backticks, and substitutions can execute prompt content; use POSIX
+  quoting in compatible shells and native quoting elsewhere, never raw interpolation.
+- **Unconfirmed panel attachment** — `queued`, empty, or unrelated output does not prove that the
+  execution session is displayed; report attachment as unconfirmed, never launch a duplicate or
+  bypass a Computer Use refusal.
 
 ## Constraints
 
-- Activate only for requests explicitly involving Claude Code, a handoff, or its returned result.
-- Never launch for a prompt-only request. During preparation, never create a branch or checkout,
-  edit repository files, or validate the implementation; delegate only the authorized task.
-- Never authorize commits, pushes, merges, deletion, publication, or permission bypasses unless the
-  user's current request explicitly permits them.
-- Produce at most one prompt per response and wait for the user before every subsequent iteration.
-- Preserve Claude's configured model, permission mode, and hooks unless the user requests a change.
-  Leave authentication and permission decisions to the user; do not answer them automatically.
-- This is advisory policy, not a technical execution barrier. Never claim Claude's result is
-  verified without reviewing the named evidence in its stated environment.
+- During preparation, never create a branch or checkout, edit repository files, or validate the
+  implementation; delegate only the authorized task.
+- Produce at most one prompt per response and wait for the user before each subsequent iteration.
+- Preserve Claude's configured model, permission mode, and hooks unless the user requests a change;
+  leave authentication and permission decisions to the user.
+- Never authorize commits, pushes, merges, deletion, publication, or permission bypasses without
+  explicit authorization in the current request.
+- This is advisory policy, not an execution barrier. Neither a session identifier nor Claude's
+  summary proves success; verify claims against observed output and named evidence in its stated
+  environment.
 
 ## References
 
-- [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference) — interactive initial
-  prompts and print mode
-- [Integrated terminal](https://learn.chatgpt.com/docs/integrated-terminal) — app terminal and
-  reusable actions; execution-session attachment must be verified with the available host tools
+- [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference) — interactive prompts
+  and print mode
+- [Integrated terminal](https://learn.chatgpt.com/docs/integrated-terminal) — app terminal and actions
