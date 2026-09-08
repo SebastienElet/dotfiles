@@ -152,15 +152,33 @@ external:
     - { agent: claude, scope: user, id: semctx@semctx-stable }
     - { agent: claude, scope: user, id: superpowers@claude-plugins-official }
     - { agent: cursor, scope: user, id: superpowers }
+    - { agent: codex, scope: user, id: chrome@openai-bundled }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
+    - { agent: codex, scope: user, id: computer-use@openai-bundled }
     - { agent: codex, scope: user, id: github@openai-curated }
     - { agent: codex, scope: user, id: semctx-control@semctx-stable }
+    - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: superpowers@openai-curated }
+    - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
     - agent: codex
       scope: user
       origin: system
       slug: openai-docs
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
+        plugin: sites@openai-bundled,
+        slug: sites-building,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
+        plugin: sites@openai-bundled,
+        slug: sites-hosting,
+      }
     - {
         agent: claude,
         scope: user,

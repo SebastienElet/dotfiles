@@ -39,8 +39,8 @@ in the user's language and retain the project's vocabulary and issue conventions
    coherent functional increment; proposals to split or combine work need recognizable standalone
    value or a concrete coordination benefit. `issue-creation` owns lifecycle coherence and new
    publication; compose its draft/review checks when applicable, without entering publication.
-   Before restructuring Linear criteria or evidence, read `linear-workflow`'s
-   `references/completion-evidence.md` for evidence semantics only, not its mutation procedures.
+   Before restructuring Linear criteria or evidence, open `linear-workflow` and read its
+   completion-evidence reference for evidence semantics only, not its mutation procedures.
 3. **Separate facts from suggestions.** Identify the problem, promised outcome, established
    constraints, proposals, suggested technical means, and open questions. Preserve the source and
    decision status of important requirements. For Linear, retain `Requested`, `Established`, and
