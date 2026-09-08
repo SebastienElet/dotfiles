@@ -14,7 +14,7 @@ This directory is the canonical source for user-scoped agent skills.
 | Skill                        | Description                                                                                          |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `agent-instructions`         | Maintain coding-agent instructions and their discovery paths.                                        |
-| `claude-developer`           | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
+| `claude-developer`           | Launch Claude Code with a prepared implementation or correction prompt.                              |
 | `code-enforcement`           | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
 | `code-search`                | Search codebases with exact and conceptual retrieval.                                                |
 | `code-simplify`              | Simplify code to reduce understanding and maintenance costs.                                         |
