@@ -79,6 +79,19 @@ impl Store {
         append_jsonl_bytes(&self.root.join("invalid.jsonl"), &bytes)
     }
 
+    pub fn open_pr_lock(&self, pr_hash: &str) -> Result<std::fs::File, MeasureError> {
+        if pr_hash.len() != 64
+            || !pr_hash
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(MeasureError::new("managed PR identity hash is invalid"));
+        }
+        let locks = self.root.join("pr-locks");
+        locks.create_dir_all()?;
+        open_private_append(&locks.join(format!("{}.lock", &pr_hash[..2])))
+    }
+
     pub fn usage(&self) -> Result<StorageUsage, MeasureError> {
         usage(&self.root)
     }

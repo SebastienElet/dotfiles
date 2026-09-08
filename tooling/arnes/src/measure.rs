@@ -5,6 +5,7 @@ mod input;
 mod json;
 mod model;
 mod outcome;
+mod pr_timeline;
 mod report;
 mod repository;
 mod result;
@@ -17,6 +18,7 @@ use std::fmt::{self, Display};
 pub use hook::capture;
 pub use model::HookAgent;
 pub use outcome::{OutcomeArgs, OutcomeStatus, UnjudgeableReason, record as outcome};
+pub use pr_timeline::{PrVerdictArgs, record as pr_verdict};
 pub use report::{ReportArgs, render as report};
 pub use result::{
     Adjudication, FailureCategory, FeedbackArgs, FeedbackSource, FinishArgs, ListArgs, ListFormat,

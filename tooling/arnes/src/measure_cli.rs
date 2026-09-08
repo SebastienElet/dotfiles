@@ -23,6 +23,9 @@ pub(super) fn run_measure(command: MeasureCommand) -> ExitCode {
         MeasureCommand::Finish(args) => finish_measure(measure::finish(args)),
         MeasureCommand::Feedback(args) => finish_measure(measure::feedback(args)),
         MeasureCommand::Outcome(args) => finish_measure(measure::outcome(args)),
+        MeasureCommand::PrVerdict(args) => finish_measure(
+            measure::pr_verdict(args).and_then(|status| write_output(status).map_err(Into::into)),
+        ),
         MeasureCommand::Report(args) => match measure::report(args) {
             Ok(output) => match write_output(&output) {
                 Ok(()) => ExitCode::SUCCESS,

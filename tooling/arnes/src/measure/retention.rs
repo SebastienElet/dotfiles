@@ -1,5 +1,6 @@
 use super::MeasureError;
 use super::outcome::latest as latest_outcome;
+use super::pr_timeline::retention as pr_retention;
 use super::result::{open_run, read_events_for_list_with, read_optional_json};
 use super::store::{Store, open_private_append, validation, write_json_atomic};
 use serde::{Deserialize, Serialize};
@@ -17,6 +18,10 @@ struct RetentionState {
     next_sweep_at_ms: u64,
     candidate_runs: u64,
     removed_runs: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    candidate_prs: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    removed_prs: Option<u64>,
 }
 
 #[derive(Clone, Copy, Deserialize, Eq, PartialEq, Serialize)]
@@ -42,30 +47,45 @@ pub fn retain(store: &Store, now_ms: u64) -> Result<(), MeasureError> {
     if read_state(&state_path)?.is_some_and(|state| suppresses_sweep(&state, now_ms)) {
         return Ok(());
     }
-    let candidates = match candidates(store, now_ms) {
-        Ok(candidates) => candidates,
-        Err(error) => {
-            write_state(&state_path, RetentionStatus::Failed, now_ms, 0, 0)?;
-            return Err(error);
-        }
+    let mut state = RetentionState {
+        schema_version: 2,
+        status: RetentionStatus::Sweeping,
+        swept_at_ms: now_ms,
+        next_sweep_at_ms: now_ms.saturating_add(DAY_MS),
+        candidate_runs: 0,
+        removed_runs: 0,
+        candidate_prs: Some(0),
+        removed_prs: Some(0),
     };
-    let candidate_runs = u64::try_from(candidates.len())
+    let result = sweep(store, &state_path, &mut state);
+    state.status = if result.is_ok() {
+        RetentionStatus::Complete
+    } else {
+        RetentionStatus::Failed
+    };
+    write_json_atomic(&state_path, &state)?;
+    result
+}
+
+fn sweep(
+    store: &Store,
+    state_path: &super::store::ManagedPath,
+    state: &mut RetentionState,
+) -> Result<(), MeasureError> {
+    let runs = candidates(store, state.swept_at_ms)?;
+    let prs = pr_retention::candidates(store, state.swept_at_ms)?;
+    state.candidate_runs = u64::try_from(runs.len())
         .map_err(|_| MeasureError::new("retention candidate count overflow"))?;
-    write_state(
-        &state_path,
-        RetentionStatus::Sweeping,
-        now_ms,
-        candidate_runs,
-        0,
-    )?;
-    let removed_runs = remove_candidates(store, &candidates, now_ms, &state_path)?;
-    write_state(
-        &state_path,
-        RetentionStatus::Complete,
-        now_ms,
-        candidate_runs,
-        removed_runs,
-    )
+    state.candidate_prs = Some(
+        u64::try_from(prs.len())
+            .map_err(|_| MeasureError::new("retention candidate count overflow"))?,
+    );
+    write_json_atomic(state_path, state)?;
+    remove_candidates(store, &runs, state.swept_at_ms, &mut state.removed_runs)?;
+    let mut removed_prs = 0;
+    let result = pr_retention::remove_candidates(store, &prs, state.swept_at_ms, &mut removed_prs);
+    state.removed_prs = Some(removed_prs);
+    result
 }
 
 fn candidates(store: &Store, now_ms: u64) -> Result<Vec<String>, MeasureError> {
@@ -92,40 +112,17 @@ fn remove_candidates(
     store: &Store,
     candidates: &[String],
     now_ms: u64,
-    state_path: &super::store::ManagedPath,
-) -> Result<u64, MeasureError> {
-    let mut removed = 0_u64;
+    removed: &mut u64,
+) -> Result<(), MeasureError> {
     for run_id in candidates {
-        let run = match expired_run(store, run_id, now_ms) {
-            Ok(run) => run,
-            Err(error) => {
-                write_state(
-                    state_path,
-                    RetentionStatus::Failed,
-                    now_ms,
-                    u64::try_from(candidates.len()).unwrap_or(u64::MAX),
-                    removed,
-                )?;
-                return Err(error);
-            }
-        };
-        if let Some(run) = run {
-            if let Err(error) = run.path.remove_tree() {
-                write_state(
-                    state_path,
-                    RetentionStatus::Failed,
-                    now_ms,
-                    u64::try_from(candidates.len()).unwrap_or(u64::MAX),
-                    removed,
-                )?;
-                return Err(error);
-            }
-            removed = removed
+        if let Some(run) = expired_run(store, run_id, now_ms)? {
+            run.path.remove_tree()?;
+            *removed = removed
                 .checked_add(1)
                 .ok_or_else(|| MeasureError::new("retention removal count overflow"))?;
         }
     }
-    Ok(removed)
+    Ok(())
 }
 
 fn expired_run(
@@ -170,26 +167,6 @@ fn expired_run(
     }))
 }
 
-fn write_state(
-    path: &super::store::ManagedPath,
-    status: RetentionStatus,
-    now_ms: u64,
-    candidate_runs: u64,
-    removed_runs: u64,
-) -> Result<(), MeasureError> {
-    write_json_atomic(
-        path,
-        &RetentionState {
-            schema_version: 1,
-            status,
-            swept_at_ms: now_ms,
-            next_sweep_at_ms: now_ms.saturating_add(DAY_MS),
-            candidate_runs,
-            removed_runs,
-        },
-    )
-}
-
 fn suppresses_sweep(state: &RetentionState, now_ms: u64) -> bool {
     state.status != RetentionStatus::Sweeping && state.next_sweep_at_ms > now_ms
 }
@@ -197,7 +174,7 @@ fn suppresses_sweep(state: &RetentionState, now_ms: u64) -> bool {
 fn read_state(path: &super::store::ManagedPath) -> Result<Option<RetentionState>, MeasureError> {
     let state = read_optional_json(path, "retention.json")?;
     if state.as_ref().is_some_and(|state: &RetentionState| {
-        state.schema_version != 1
+        !valid_version(state)
             || state.next_sweep_at_ms < state.swept_at_ms
             || state.removed_runs > state.candidate_runs
     }) {
@@ -206,4 +183,12 @@ fn read_state(path: &super::store::ManagedPath) -> Result<Option<RetentionState>
         ));
     }
     Ok(state)
+}
+
+fn valid_version(state: &RetentionState) -> bool {
+    match (state.schema_version, state.candidate_prs, state.removed_prs) {
+        (1, None, None) => true,
+        (2, Some(candidates), Some(removed)) => removed <= candidates,
+        _ => false,
+    }
 }
