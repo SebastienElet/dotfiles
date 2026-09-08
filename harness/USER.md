@@ -48,28 +48,34 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   circuler des valeurs fiables ; en TypeScript, Zod est un bon défaut. Éviter `null`/`undefined`
   ambigus. Valider la configuration au démarrage et injecter un objet typé ; `process.env`
   hors frontière est un code smell.
-- **TDD par défaut.** Test avant code ; pour un bug, reproduire d'abord la régression. Exception :
-  déclaratif sans comportement utile à tester. Une constante, version, variable d'environnement ou
-  option de commande sans branche ni invariant propre ne reçoit ni TDD ni test de valeur ; utiliser
-  uniquement un oracle existant utile — syntaxe, schéma, dry-run ou CI — et n'ajouter aucune gate si
-  aucun oracle ne peut détecter une erreur réelle. Une configuration portant un invariant de sécurité
-  ou de compatibilité reste testée par son comportement. Choisir l'oracle le moins coûteux qui prouve
-  réellement l'invariant : unitaire si possible, intégration dès que la preuve appartient à la DB,
-  une transaction, un mapping ORM, un protocole ou autre composant. Lorsqu'un invariant critique est
-  clairement touché et qu'un oracle pertinent est évident, l'ajouter ou l'exécuter sans demander de
-  confirmation. Ne consulter l'utilisateur que si la criticité de l'invariant ou la pertinence de
-  l'oracle est matériellement ambiguë : suspendre seulement le chemin concerné, exposer les options
-  et leurs conséquences, recommander une voie, puis demander la décision. Une gate directement
-  demandée par l'utilisateur ou une autorité externe reste une exigence à implémenter. Un plan, une
-  spécification, une ADR ou une revue produits par un agent dans le même flux ne rendent pas une gate
-  « explicitement demandée » : sa valeur doit rester démontrée indépendamment. Sans exigence explicite,
-  n'ajouter une gate que si elle apporte un oracle durable sur du code ou un invariant possédé, après
-  inventaire des oracles existants ; l'absence de test dédié ne suffit pas. Pour une configuration
-  déclarative interprétée par un outil externe, préférer sa validation native et l'exécution du point
-  d'entrée public. Ne jamais analyser de nouveau la déclaration pour réaffirmer son contenu, le graphe
-  ou les options de l'outil : si aucune panne possédée n'est observable au-delà, ne pas créer de test.
-  Cela vaut notamment pour un Makefile déjà couvert par un smoke test, le comportement interne de Moon
-  et la CI elle-même.
+- **TDD par défaut, preuve proportionnée.** Test avant code possédé ; pour un bug, reproduire
+  d'abord la régression. Ajouter et exécuter les tests ordinaires pertinents sans confirmation.
+  Un oracle maison protège un invariant possédé, pas l'implémentation d'un outil externe comme Moon.
+  Avant tout nouvel oracle, chercher la validation native ou existante suffisante : parser, schéma,
+  typecheck, dry-run, commande d'inspection, exécution publique, smoke test ou CI existante.
+  Choisir le coût global minimal — exécution et maintenance — pour une confiance suffisante au
+  regard de la criticité ; l'absence de test dédié ne justifie pas un nouvel oracle. Monter de
+  l'unitaire à l'intégration, à l'E2E ou à un contrôle custom seulement si la frontière de l'invariant
+  l'exige ; ne pas dupliquer la même preuve à plusieurs niveaux sans bénéfice matériel.
+  DB, transaction ou mapping ORM exigent une intégration avec vraie DB lorsque la preuve leur
+  appartient ; même principe pour un protocole ou autre composant. Nommer les tests selon la
+  frontière exercée : une application montée in-process avec vraie DB et systèmes externes
+  substitués in-memory relève de l'intégration. Réserver E2E à une frontière système assemblée,
+  proche de la production ; HTTP ou une convention de framework, notamment NestJS, ne suffisent pas.
+  Exception au TDD : déclaratif sans comportement propre, notamment constante, version, variable
+  d'environnement ou option de commande, sans test de valeur. Pour Moon, Makefiles ou YAML, utiliser
+  d'abord les oracles natifs ou existants qui détectent une erreur réelle. Un invariant de
+  configuration possédé, notamment de sécurité ou de compatibilité, mérite une preuve de son
+  comportement ; ne pas recopier la déclaration comme attendu ni retester le graphe ou les options
+  de l'outil. Dériver l'attendu d'une autre source canonique indépendante lorsque c'est possible.
+  Ne pas créer spontanément de script Bash/TypeScript, validateur, lint rule, gate CI ou test harness
+  pour renforcer la validation du déclaratif. Si un manque significatif semble justifier cette
+  nouvelle infrastructure, suspendre seulement sa création et demander l'avis de l'utilisateur :
+  invariant possédé, source canonique, oracles considérés, preuve manquante, criticité du risque
+  résiduel et contrôle envisagé. Ce checkpoint porte sur la pertinence de cette nouvelle surface de
+  maintenance, pas sur les tests ordinaires du code possédé. Une gate directement demandée par
+  l'utilisateur ou une autorité externe reste à implémenter ; un plan, une spécification, une ADR
+  ou une revue produits par un agent dans le même flux ne constituent pas cette demande.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
