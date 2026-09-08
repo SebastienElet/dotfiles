@@ -113,6 +113,12 @@ says to post directly.
    lose or corrupt data blocks even when the author disagrees. A style, naming or structure
    preference never blocks: label it non-blocking, or drop it.
 
+   Complete the structured review summary from the phase-1 anchor, findings, changed-behavior
+   ledger and distinct evidence-gap inventory, then emit it with `arnes measure pr-verdict` as
+   specified in `references/measurement.md`. Do this before returning phase 5, including the
+   pre-repair pass of `pr-fix` and an unpublished verdict. Report the measurement status separately;
+   a measurement failure leaves the verdict unchanged and does not prevent its return.
+
 6. **Trace and publish.** When running inside the pre-repair pass of `pr-fix`, return the phase 5
    verdict without a ticket or publication and let that workflow continue. Otherwise, open or reuse
    a fix ticket for blocking defects, and link the initial verdict if one exists. Never open a
@@ -195,3 +201,5 @@ says to post directly.
   slots. Filled in phase 6.
 - [references/cases.md](references/cases.md) — three behavioral cases with their expected verdicts,
   forge coverage, and the record of what they have never validated.
+- [references/measurement.md](references/measurement.md) — structured local emission at the end of
+  phase 5, including duplicate and storage-failure handling.

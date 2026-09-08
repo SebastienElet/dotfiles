@@ -9,6 +9,83 @@ use std::sync::{Arc, Barrier};
 const MAX_RECORD_BYTES: usize = 1_100_000;
 
 #[test]
+fn retention_waits_for_run_initialization_before_reading_metadata() {
+    use crate::measure::{hook::now_ms, retention};
+    use serde_json::json;
+    use std::sync::mpsc::{self, RecvTimeoutError};
+    use std::time::Duration;
+
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::open_from_state_base(directory.path(), &[]).unwrap();
+    let run_id = "ab".repeat(32);
+    let lifecycle = store.open_run_lock(&run_id).unwrap();
+    lifecycle.lock().unwrap();
+    let run = store.run_dir(&run_id).unwrap();
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        sender.send(retention::retain(&store, now_ms())).unwrap();
+    });
+    let before_initialization = receiver.recv_timeout(Duration::from_secs(1));
+    let metadata = json!({
+        "schema_version": 2, "run_id": run_id, "agent": "codex",
+        "started_at_ms": now_ms(), "model_fingerprint": null,
+        "repository_commit": null, "repository_dirty": null,
+        "harness_fingerprint": "00".repeat(32), "harness_fingerprint_limitations": [],
+        "operating_system": "macos", "architecture": "aarch64"
+    });
+    super::write_json_atomic(&run.join("run.json"), &metadata).unwrap();
+    drop(lifecycle);
+    worker.join().unwrap();
+    assert!(
+        matches!(before_initialization, Err(RecvTimeoutError::Timeout)),
+        "retention read an uninitialized run: {before_initialization:?}"
+    );
+    receiver
+        .recv_timeout(Duration::from_secs(5))
+        .unwrap()
+        .unwrap();
+    assert!(run.join("run.json").exists().unwrap());
+}
+
+#[test]
+fn pr_retention_rechecks_a_candidate_after_a_fresh_append() {
+    use crate::measure::{hook::now_ms, pr_timeline::retention};
+    use serde_json::json;
+
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::open_from_state_base(directory.path(), &[]).unwrap();
+    let pr_hash = "ca2553be5531ecdb5e2cffad537225c437eeb107490fb7e44a189a38b3869421";
+    let timeline = store.state_path("pull-requests").join(pr_hash);
+    timeline.create_dir_all().unwrap();
+    let path = timeline.join("events.jsonl");
+    let now = now_ms();
+    let mut event = json!({
+        "schema_version": 1, "event_type": "pr-verdict",
+        "timestamp_ms": now - 91 * 86_400_000,
+        "pr": {"forge": "github.com", "repository": "example/project", "pr_id": 1042},
+        "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "agent": "codex", "operating_system": "macos", "architecture": "aarch64",
+        "data": {"verdict": "changes-required", "blocking_findings": 2,
+                 "non_blocking_findings": 1, "observable_behaviors": 3, "evidence_gaps": 2}
+    });
+    append_jsonl_bytes(&path, &super::jsonl_bytes(&event).unwrap()).unwrap();
+    let candidates = retention::candidates(&store, now).unwrap();
+    assert_eq!(candidates, [pr_hash]);
+
+    let lock = store.open_pr_lock(pr_hash).unwrap();
+    lock.lock().unwrap();
+    event["timestamp_ms"] = json!(now_ms());
+    event["head_sha"] = json!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    append_jsonl_bytes(&path, &super::jsonl_bytes(&event).unwrap()).unwrap();
+    drop(lock);
+
+    let mut removed = 0;
+    retention::remove_candidates(&store, &candidates, now_ms(), &mut removed).unwrap();
+    assert_eq!(removed, 0);
+    assert!(path.exists().unwrap());
+}
+
+#[test]
 fn jsonl_writer_accepts_the_readers_exact_line_limit() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("events.jsonl");

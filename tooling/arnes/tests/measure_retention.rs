@@ -43,7 +43,7 @@ fn expires_v2_after_60_days_and_never_automatically_removes_v1() {
         "unknown run",
     );
     let state = read_json(harness.state_root().join("retention.json"));
-    assert_eq!(state["schema_version"], 1);
+    assert_eq!(state["schema_version"], 2);
     assert_eq!(state["status"], "complete");
     assert_eq!(state["candidate_runs"], 2);
     assert_eq!(state["removed_runs"], 2);
