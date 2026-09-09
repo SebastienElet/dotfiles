@@ -77,7 +77,10 @@ fn live_protocol_runs_with_exact_stdin_fresh_home_and_explicit_controls() {
 
 #[test]
 fn malformed_provider_output_is_protocol_invalid() {
-    let (_directory, codex) = provider("printf not-json", Authentication::default());
+    let (_directory, codex) = provider(
+        "/bin/cat > /dev/null\nprintf not-json",
+        Authentication::default(),
+    );
     let fixture = Fixture::prepare(
         &BTreeMap::new(),
         "instructions",
@@ -85,7 +88,8 @@ fn malformed_provider_output_is_protocol_invalid() {
         Path::new("/tmp/arnes"),
     )
     .unwrap();
-    let result = codex.execute(&fixture, "synthetic", &options()).unwrap();
+    let prompt = "synthetic".repeat(131_072);
+    let result = codex.execute(&fixture, &prompt, &options()).unwrap();
     assert_eq!(result.error, Some(ExecutionError::ProtocolInvalid));
     assert_eq!(result.tokens, None);
     assert_eq!(result.tool_calls, None);
