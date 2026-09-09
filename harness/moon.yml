@@ -8,7 +8,9 @@ fileGroups:
     - AGENTS.md
     - USER.md
     - SOUL.md
-    - /tooling/harness-eval/**/*
+    - /tooling/arnes/src/**/*
+    - /tooling/arnes/Cargo.toml
+    - /tooling/arnes/Cargo.lock
     - /package.json
     - /bun.lock
     - /.moon/**/*
@@ -28,7 +30,9 @@ tasks:
       - validate-evals
       - validate-evidence
       - test-eval-runner
-      - arnes:test
+      - arnes:fmt
+      - arnes:clippy
+      - arnes:check
       - repository:typescript-lint
       - repository:typescript-typecheck
       - repository:typescript-format-check
@@ -36,30 +40,50 @@ tasks:
     options:
       runInCI: true
   validate-evals:
-    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts validate-evals
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evals
+    toolchains: system
+    deps:
+      - repository:rust
     inputs:
       - "@group(evaluation)"
       - /.agents/skills/**/evals/trigger-queries.json
     options:
       runInCI: true
+      mutex: arnes-cargo-target
   validate-evidence:
-    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts validate-evidence
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evidence
+    toolchains: system
+    deps:
+      - repository:rust
     inputs:
       - "@group(evaluation)"
     options:
       runInCI: true
+      mutex: arnes-cargo-target
   test-eval-runner:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/harness-eval
+    command: noop
+    deps:
+      - arnes:test
     inputs:
       - "@group(evaluation)"
     options:
       runInCI: true
   eval:
     description: Manually run selected live Codex evaluations using LLM quota
-    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts eval
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval run
+    toolchains: system
+    deps:
+      - repository:rust
+    options:
+      mutex: arnes-cargo-target
   compare:
     description: Compare reports with identical recorded experimental controls
-    command: bun --config=/dev/null --no-env-file tooling/harness-eval/cli.ts compare
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval compare
+    toolchains: system
+    deps:
+      - repository:rust
+    options:
+      mutex: arnes-cargo-target
   install:
     description: Install migrated harness capabilities
     command: noop

@@ -1,11 +1,12 @@
 # Harness evaluations
 
 `moon run harness:check` is the public deterministic, non-mutating harness gate, locally and in CI.
-It composes `validate-evals`, `validate-evidence`, `test-eval-runner`, the existing `arnes:test`,
-and the repository's existing TypeScript lint/typecheck/format-check and Prettier check tasks.
+It composes `validate-evals`, `validate-evidence`, `test-eval-runner` (the Arnes test suite),
+Arnes format/lint/type checks, and the repository's existing TypeScript and Prettier checks.
 No dependency invokes a real agent or an LLM API. Tests write disposable fixtures; Moon and Cargo
 may write their normal caches and build artifacts, but no deployed harness or historical report
-is changed. Rust/Cargo, Make, Git, and the repository's pinned Moon/Bun toolchain are prerequisites.
+is changed. Rust/Cargo, Git, and the repository's Moon/Bun toolchain are prerequisites for the aggregate check;
+the evaluation engine itself is the Arnes binary and does not require Bun.
 
 The GitHub Actions workflow `test-harness.yml` runs exactly `moon run harness:check` for every PR
 and push to main. It has no affected-file or path filter, so changes to the manifest, projections,
@@ -21,28 +22,34 @@ own inputs, mutex, and cache policy.
 - `fixtures/code-search-v1.json`: a tiny synthetic monorepo, with no dependency installation.
 - `variants/no-op.md`: an explicit neutral replacement for the evaluated instruction section.
 - `evidence/`: optional retained reports, never a prerequisite for a green check.
-- [tooling/harness-eval/](../../tooling/harness-eval/): executable logic lives there under
-  ADR-038/041. Zod schemas in `contracts.ts` and `report-schema.ts` are the
-  executable contracts; TypeScript types derive from them. There is no duplicated JSON Schema.
+- [tooling/arnes/src/eval/](../../tooling/arnes/src/eval/): Arnes owns the execution engine,
+  validation, instrumentation, reports, and comparison under ADR-038/041. Serde models and their
+  validation implement the contracts; there is no duplicated JSON Schema or Bun evaluation runner.
 
 `skill-manager/references/evals.md` owns activation-scenario semantics. `validate-evals` implements
 that existing contract for both tracked skill collections and verifies the new case references.
 The structural case refers to an existing query without copying its prompt. The literal case
 permits skill activation, consistent with the existing scenario; it rejects conceptual search.
 Arnes owns deployment validation; its existing tests exercise synthetic projections and the real
-manifest/Makefile in temporary homes. They do not attest every current installation on your machine.
+manifest/Moon deployments in temporary homes. They do not attest every current installation on your machine.
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
-Use an installed Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,
+From the repository root, use `arnes eval run` (or the Moon alias below) with an installed
+Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,
 with saved `auth.json` or `CODEX_API_KEY`, and supply the exact model ID you intend to measure:
 
 ```bash
 moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only code-search-structural --runs 1 --report harness/evals/evidence/candidate.json
 ```
+
+`arnes eval` exposes `validate-evals`, `validate-evidence [reports]`, `fixture-smoke`,
+`run`, and `compare <baseline> <candidate>`. The optional `--repository` selects the source checkout
+(default: current directory); report paths remain relative to the calling directory.
+Moon aliases compile and run this checkout's Arnes with Cargo and a shared target-directory mutex.
 
 `--only` is mandatory and accepts comma-separated IDs. `--runs` is 1–10 (default 1);
 `--timeout-seconds` is 1–600 (default 120); `--reasoning-effort` is low/medium/high (default low).
@@ -62,16 +69,22 @@ must precede conceptual search; for a literal PASS, exact `rg` must occur withou
 for a known-path PASS, the target must be read without exploration. Other ways of reading a file
 can yield false negatives. The shims simulate external tools, not an agent, and are not protected
 against a deliberately tampering agent. They prove neither ColGrep retrieval quality nor internal
-skill activation. No final-answer self-report is used by the oracle.
+skill activation. No final-answer self-report is used by the oracle. The same synthetic commands and criteria are
+preserved by the Rust port; the instrumentation is not broadened to arbitrary file-reading methods.
 
 ## Evidence and comparison
 
 Reports record version, case snapshots, prompt bytes/fingerprints, source fingerprints, agent and
-version, requested model, Git revision and tested instruction/skill fingerprints, fixture/runner
+version, requested model, Git revision and tested instruction/skill fingerprints, fixture/executable
 fingerprints, controls, environment, date, replicate count, PASS/FAIL/INVALID results, observations,
 tokens/tool calls/duration when available, and limitations. Missing measurements remain null.
 Timeout, nonzero exit, output overflow, broken events, or unreadable observation logs become
 INVALID, never PASS. Raw transcripts and arbitrary tool arguments are not retained.
+
+Version 1 reports produced by the previous Bun engine remain readable and validatable. New reports
+record `environment.runtime` instead of `environment.bun`, and fingerprint the running Arnes binary;
+comparisons between engines or different binaries are refused. Scenario IDs, prompts, oracles,
+PASS/FAIL/INVALID meanings, and publication rules are unchanged.
 
 Historical validation checks the stored snapshot and recomputes its versioned oracle, not the
 current harness bytes: changing a prompt or instruction does not rewrite yesterday's evidence.
@@ -95,7 +108,7 @@ alias's resolved version here. Two identical reports also compare successfully a
 
 ## Deterministic testing and limits
 
-`moon run harness:test-eval-runner` includes fixture creation, actual shim execution, observation
+`moon run harness:test-eval-runner` delegates to `arnes:test`; Cargo unit and CLI integration tests include fixture creation, actual shim execution, observation
 collection, scoring, report construction/validation, publication refusal, comparator controls,
 process failures/timeouts, and CLI isolation tests with sentinel executables. The smoke executor
 is a fixed command sequence, not simulated live evidence. Its report has `agent: fixture-smoke`
@@ -108,6 +121,14 @@ one-shot task with mandatory arguments. Auditing/reclassifying those tasks is a 
 
 This v1 does not include Claude/Cursor adapters, full-harness or composed behavior evaluation,
 automatic ablation, automatic live runs, LLM judges, a database, or a multi-agent scheduler.
+
+## Migration verification
+
+The port preserves deterministic scenario validation, isolated replicas, actual synthetic command
+observations, bounded process execution, historical validation, exclusive publication, and controlled
+comparison. Tests exercise the public Rust CLI with a synthetic Codex executable; they do not spend
+LLM quota or establish live behavioral improvement. Timeout, malformed output, failure, and missing
+measurement paths remain separate from success.
 
 ## Discovery sources
 
