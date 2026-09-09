@@ -1,31 +1,27 @@
 # PR repair record template
 
-Fill this compact skeleton in the pull request's language and pass it through a body file. Repeat
-the correction line, not the surrounding structure.
+Fill this skeleton from the complete journal in the pull request's language. Use one short bullet
+per corrected problem, describing the final behavior. Keep detailed mechanisms, per-pass proofs and
+superseded attempts in the local journal. Pass the public summary through a body file.
 
 ## Skeleton
 
 ```text
-<!-- pr-fix:<pr>:<final-head-sha-12> -->
-## Repair record
+<!-- pr-fix:<pr> -->
+Corrections completed on `<final-head-sha>`.
 
-Review completed on `<final-head-sha>`: <what held under review, with the evidence that established it>.
+- <problem corrected and resulting behavior>.
 
-Corrections pushed:
-- `<correction>` — mechanism: <failure sequence and broken invariant>; proof: <failing observation, then passing check and result>.
-
-Not repaired:
-- `<finding>` — reason: <why it was deliberately excluded>.
-<Write "None" when every finding was repaired.>
-
-Barrier: <tier, commands, and numeric results>. Limits: <what those results do not cover>.
+Validation: <environment, tier, principal checks and counts>; required CI: <linked result on this SHA, or none required>; independent review: <no remaining actionable defect>.
+Limits: <material evidence gaps or deliberately excluded findings and reasons; omit this line when none>.
 ```
 
 ## Self-check before publishing
 
-- Marker first; same `<pr>:<sha>` updated, different SHA published once.
-- What held comes first; every correction, including a correction to an earlier correction, has a
-  mechanism and proof.
-- Every deliberate omission has a reason, or the record says `None`.
-- Barrier numbers are immediately followed by their limits.
-- Body passed through a file; no verdict or merge decision.
+- Publish only after independent `approved` and successful required remote CI on the current SHA.
+- Stable PR marker first; update the existing repair comment even when the SHA changes.
+- One opening sentence, correction bullets, one validation paragraph; aim for 15 non-empty lines.
+- Cover all final corrected problems across passes; group related outcomes instead of truncating.
+- State material limits and reasoned omissions directly after validation; retain full proof in the
+  journal and never copy old results as evidence for the final SHA.
+- Body passed through a file; no local paths, formal verdict, approval action or merge decision.
