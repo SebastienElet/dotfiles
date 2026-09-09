@@ -25,6 +25,9 @@ cd && \
 
 Install the separately maintained optional profile with `make optional`.
 
+Anarlog belongs to the optional profile, alongside Handy. Install it independently
+with `moon exec repository:anarlog` (macOS 15 or newer).
+
 Moon installs the complete minimal profile. With Moon available:
 
 ```bash

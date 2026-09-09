@@ -41,6 +41,26 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew bundle install --no-upgrade --file Brewfile
+  anarlog:
+    description: Install the optional Anarlog meeting notepad
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --cask --versions anarlog
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install --cask anarlog
   rust:
     description: Install Rust and Cargo with Homebrew
     deps:
