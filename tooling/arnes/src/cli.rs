@@ -15,6 +15,7 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand)]
 pub(crate) enum Command {
+    Eval(crate::eval_cli::EvalArgs),
     Export {
         #[arg(long)]
         check: bool,

@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod config;
 pub mod diagnostic;
+pub mod eval;
 pub mod export;
 mod files;
 pub mod hooks;

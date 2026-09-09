@@ -1,6 +1,7 @@
 mod cli;
 mod cli_output;
 mod doctor;
+mod eval_cli;
 mod measure_cli;
 
 use clap::Parser;
@@ -16,6 +17,7 @@ fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
     match command {
+        Command::Eval(args) => eval_cli::run(args),
         Command::Export { check } => run_export(check),
         Command::Doctor {
             resource,

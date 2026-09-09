@@ -1,10 +1,89 @@
 language: typescript
 layer: configuration
+
+fileGroups:
+  evaluation:
+    - evals/**/*
+    - skills/**/*
+    - AGENTS.md
+    - USER.md
+    - SOUL.md
+    - /tooling/arnes/src/**/*
+    - /tooling/arnes/Cargo.toml
+    - /tooling/arnes/Cargo.lock
+    - /package.json
+    - /bun.lock
+    - /.moon/**/*
+    - /.prototools
+    - /moon.yml
+    - /.github/workflows/test-harness.yml
+
 taskOptions:
   cache: false
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
+  check:
+    description: Validate the harness deterministically without an agent or LLM
+    command: noop
+    deps:
+      - validate-evals
+      - validate-evidence
+      - test-eval-runner
+      - arnes:fmt
+      - arnes:clippy
+      - arnes:check
+      - repository:typescript-lint
+      - repository:typescript-typecheck
+      - repository:typescript-format-check
+      - repository:prettier-check
+    options:
+      runInCI: true
+  validate-evals:
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evals
+    toolchains: system
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(evaluation)"
+      - /.agents/skills/**/evals/trigger-queries.json
+    options:
+      runInCI: true
+      mutex: arnes-cargo-target
+  validate-evidence:
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evidence
+    toolchains: system
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(evaluation)"
+    options:
+      runInCI: true
+      mutex: arnes-cargo-target
+  test-eval-runner:
+    command: noop
+    deps:
+      - arnes:test
+    inputs:
+      - "@group(evaluation)"
+    options:
+      runInCI: true
+  eval:
+    description: Manually run selected live Codex evaluations using LLM quota
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval run
+    toolchains: system
+    deps:
+      - repository:rust
+    options:
+      mutex: arnes-cargo-target
+  compare:
+    description: Compare reports with identical recorded experimental controls
+    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval compare
+    toolchains: system
+    deps:
+      - repository:rust
+    options:
+      mutex: arnes-cargo-target
   install:
     description: Install migrated harness capabilities
     command: noop
