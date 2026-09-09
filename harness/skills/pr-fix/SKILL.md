@@ -23,6 +23,8 @@ fresh context because the context that wrote a fix cannot independently validate
 Accumulate corrections in a local journal across passes and sessions. Publish one cumulative repair
 record only when the current head is independently approved and its required remote CI is green.
 This factual record engages no merge decision and needs no separate publication consent.
+Concurrent developer activity or merge ends the run and requires an immediate factual stop notice,
+independently of the approval and CI requirements for the completion summary.
 
 ## Usage
 
@@ -34,6 +36,35 @@ Typical cases: "fix the blockers on PR 1042", "review this PR and correct the is
 re-review a PR belongs to `pr-verdict` and must not mutate the branch.
 
 ## Steps
+
+### Watch for concurrent activity
+
+Before step 1, capture the PR state, source repository/ref, head SHA, and developer activity:
+push events, general comments, review comments and replies, including their IDs, authors and update
+times, with complete pagination. Keep this baseline for the entire run; exclude only pushes and
+comments positively identified as this run's own actions, never an entire account.
+Recheck before each step, immediately before every commit, push or publication, after each push,
+and at least once per minute during long checks or delegated reviews. Use asynchronous execution
+so these checks remain possible. These observations do not make a forge check and push atomic.
+
+If a developer pushes, adds or edits a comment after the baseline, or the PR becomes merged, stop
+the run as soon as detected, even if the change is unrelated or the comment is only an acknowledgment.
+An unexpected head or source change also stops the run. Cancel active checks and delegated work;
+perform no further repairs, commits, pushes or verdict publication. Do not re-anchor, rebase or
+resume this run. Preserve local changes and commits not yet pushed; leave already pushed commits intact.
+
+Record the stop and its evidence in the journal, then publish the **stop notice** from
+`assets/repair-record.md` on the PR, including after merge and when nothing was pushed. This notice
+is authorized by the repair request and does not wait for approval or CI. It does not replace a
+previous completion summary. Use the comment ownership, body-file and uncertain-response handling
+from step 8 with the separate `<!-- pr-fix-stop:<pr>:<initial-head-sha> -->` marker. Update the
+matching notice on retries; save its ID and URL separately from the completion summary in the journal.
+If the journal or publication fails, retain the notice body and report the failure without claiming
+publication. An unavailable or incomplete activity check likewise stops work and is reported as an
+evidence gap, not as proof of developer activity. Report the stop and preserved work to the user.
+Only a new user request starts another repair run; retain prior journal history.
+
+### Repair workflow
 
 1. **Draft the verdict.** Activate `pr-verdict`, read its routed references, and run phases 1 through
    5 on the exact head SHA. Return the verdict to this workflow without opening a ticket or
@@ -85,10 +116,9 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
    `pr-verdict` requires. Keep independent mechanisms in separate commits and coupled corrections
    together.
 
-6. **Re-anchor, then land the whole slate in one push.** Query the forge again and validate that the
-   source repository, source ref and head SHA are all present and still identify the anchored head.
-   If the head moved, do not push: anchor the new head, inspect the overlap, and reapply only
-   corrections that remain valid. Push every correction of the slate together, normally, to the
+6. **Recheck, then land the whole slate in one push.** Apply the concurrent-activity check above;
+   require an open PR and the expected source repository, source ref and head SHA.
+   Push every correction of the slate together, normally, to the
    resolved source ref; never use a force option. A rejected push or missing permission leaves the
    commits local and becomes an explicit delivery blocker. One repair produces one judged head:
    every extra push discards a verdict already delegated and buys another review pass.
@@ -97,7 +127,8 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
    result. On interruption or an ambiguous push result, reconcile remote commits before resuming.
 
 7. **Judge the pushed head independently.** Resolve the SHA now shown by the PR and delegate a full
-   `pr-verdict` review of that exact head to a fresh context, including its barrier. Do not delegate
+   `pr-verdict` review of that exact head to a fresh context, including its barrier and the stop rule
+   above. Require the resolved SHA to match this run's successful push. Do not delegate
    while a correction is still pending — a head you intend to amend is a head whose verdict you are
    about to throw away. When that review does find a defect in the repair itself, correct it, push
    once, and scope the second delegation to the new delta and its barrier tier instead of repeating
@@ -109,9 +140,9 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
 8. **Publish once approved.** Re-read the PR head and required remote checks. Publish only when
    the independent verdict is exactly `approved`, the required remote CI has succeeded on that
    same SHA, and no correction remains pending. `approved with reservations`, failed or pending CI,
-   unavailable evidence, or a moved head keeps the journal pending with no intermediate comment.
+   or unavailable validation evidence keeps the journal pending with no intermediate summary.
+   Concurrent activity or merge follows the stop procedure above instead.
    When no remote check is required, record that fact explicitly instead of claiming CI passed.
-   A merged PR still requires evidence for the reviewed source head; merge alone is no substitute.
 
    Build `assets/repair-record.md` from all journal passes in the PR's language: one opening sentence
    with the final SHA, one short bullet per corrected problem, then validation counts and limits.
@@ -141,9 +172,9 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
 - **The destination is inferred from `origin`** — a fork PR is pushed to the wrong repository or
   fails after all work is complete. Resolve and validate the forge's source repository and ref before
   editing and again before pushing.
-- **The contributor pushes concurrently** — corrections based on the old head become stale or a
-  push collides with new work. Re-query the exact head, refuse every force option, and re-anchor when
-  it moved.
+- **Concurrent activity is reduced to head movement** — a developer comment or a merge can leave
+  the SHA unchanged. Check activity and PR state too, then stop and publish the reason; never
+  re-anchor to continue a concurrent repair.
 - **Small remarks become a cleanup pass** — the PR gains unrelated churn and review risk. Keep at
   most three objective, localized non-blockers and drop preferences.
 - **Repair publication and verdict publication are conflated** — either a team-visible merge
@@ -174,6 +205,8 @@ re-review a PR belongs to `pr-verdict` and must not mutate the branch.
   mandatory factual repair record is not a verdict and requires no confirmation.
 - Never publish a repair summary before independent `approved` and successful required remote CI
   on the current head; pause with the journal intact when that condition is unmet.
+- Never continue a run after developer activity or merge is detected; cancel delegated work and
+  publish the factual stop notice immediately, without waiting for approval or CI.
 - Never create a new repair comment merely because the SHA changed; use the stable PR marker,
   preserve existing replies, and always pass the body through a file.
 - Keep every correction, its mechanism, evidence and reasoned omission in the journal; publish a

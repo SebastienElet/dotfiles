@@ -13,10 +13,12 @@ PR: <canonical URL>
 Source: <repository and ref>
 Initial head: <SHA>
 Current head: <SHA>
-Status: <in progress | pending validation | pending publication | published>
+Status: <in progress | pending validation | pending publication | published | stopped>
 Pending: <remaining correction, check, decision or publication error; none when complete>
 Comment: <ID and URL, or not published>
 Published head: <SHA, or not published>
+Stop: <reason and event evidence, or none>
+Stop notice: <ID and URL, or publication failure; separate from the completion summary>
 
 ## Corrections
 
@@ -39,6 +41,7 @@ Published head: <SHA, or not published>
 
 ## Resume checks
 
+- A stopped run requires a new user request before another run; keep the stop evidence and history.
 - Match the stored PR URL and source to forge metadata before using the journal.
 - Reconcile prepared commits with the remote after an interrupted push; local preparation is not
   proof of delivery.
