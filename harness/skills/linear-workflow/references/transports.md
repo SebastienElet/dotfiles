@@ -10,7 +10,8 @@ Select a transport at runtime. The business workflow remains in its composing sk
    relations, links or attachments, workflow state updates, and URL attachment. Routing an issue by
    its completion evidence additionally requires listing a team's workflow states, an anchored
    partial edit of a description, and applying such an edit in the same save as a state change;
-   check each before relying on it. Missing the anchored guard does not disqualify the transport for
+   check each and the documented whole-save failure semantics, then require the two live
+   observations in [completion evidence](completion-evidence.md) before writing state. Missing the anchored guard does not disqualify the transport for
    reading and classifying — it removes the authority to write the state, which then goes to a
    human. Recording accepted residue on a closing transition also needs reading and writing issue
    comments.
@@ -32,7 +33,7 @@ Select a transport at runtime. The business workflow remains in its composing sk
 
 ## CLI adapter
 
-The locally verified `linear` 2.5.0 surface provides:
+The locally inspected `linear` 2.6.0 help (2026-09-09) exposes:
 
 - `linear auth whoami --workspace <workspace>` for identity and authentication;
 - `linear issue query --workspace <workspace> --assignee <username> --all-states --limit 0 --json`
@@ -44,8 +45,13 @@ The locally verified `linear` 2.5.0 surface provides:
   transitions;
 - `linear issue link <issue-id> <pull-request-url> --workspace <workspace>` for URL attachment.
 
-This surface covers neither listing a team's workflow states nor editing a description, so evidence
-routing is uncovered on the CLI: stop there rather than approximating either one.
+It also exposes `linear team states <team-key> --json` and full-description replacement through
+`linear issue update --description` or `--description-file`. Neither is an anchored edit.
+`linear api` provides GraphQL access, but the inspected `IssueUpdateInput` has `stateId` and
+`description` without a patch or condition field; `issueUpdate` takes only `id` and `input`.
+Evidence-based state writes remain uncovered on these inspected paths. See the
+[dated inspection and limits](linear-guard-observation-2026-09-09.md); command availability is not
+proof of a successful mutation or whole-save atomicity.
 
 Run current local help again before use. This binary is a third-party Linear CLI, not an official
 Linear CLI. Do not use `linear issue pr`: its installed documentation delegates to GitHub's `gh`,
