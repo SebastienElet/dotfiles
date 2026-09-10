@@ -16,6 +16,8 @@ pub struct Fixture {
 }
 
 impl Fixture {
+    /// # Errors
+    /// Rejects escaping fixture paths or non-UTF-8 executable paths, and returns temporary-directory or file-installation errors.
     pub fn prepare(
         files: &BTreeMap<String, String>,
         instructions: &str,

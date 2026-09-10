@@ -69,7 +69,9 @@ impl Resolver {
                 Component::ParentDir if path != self.root => {
                     path.pop();
                 }
-                _ => return Err(IncludeError::Escapes(include.to_owned())),
+                Component::Prefix(_) | Component::RootDir | Component::ParentDir => {
+                    return Err(IncludeError::Escapes(include.to_owned()));
+                }
             }
         }
         if path.starts_with(&self.root) {
@@ -106,9 +108,12 @@ impl Resolver {
             if !parent_within(path, &self.root) {
                 return Err(IncludeError::OutsideRoot(path.to_owned()));
             }
-            let metadata = fs::symlink_metadata(path).map_err(|error| match error.kind() {
-                ErrorKind::NotFound => IncludeError::MissingLink(path.to_owned()),
-                _ => IncludeError::Unreadable(path.to_owned()),
+            let metadata = fs::symlink_metadata(path).map_err(|error| {
+                if error.kind() == std::io::ErrorKind::NotFound {
+                    IncludeError::MissingLink(path.to_owned())
+                } else {
+                    IncludeError::Unreadable(path.to_owned())
+                }
             })?;
             if !metadata.file_type().is_symlink() {
                 return Err(IncludeError::WrongLink(path.to_owned()));
@@ -140,16 +145,21 @@ fn load_regular(path: &Path, root: &Path) -> Result<(PathBuf, String), IncludeEr
     if !ancestor_within(path.parent().unwrap_or(root), root) {
         return Err(IncludeError::OutsideRoot(path.to_owned()));
     }
-    let link_metadata = fs::symlink_metadata(path).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => IncludeError::Missing(path.to_owned()),
-        _ => IncludeError::Unreadable(path.to_owned()),
-    })?;
-    let metadata = fs::metadata(path).map_err(|error| match error.kind() {
-        ErrorKind::NotFound if link_metadata.file_type().is_symlink() => {
-            IncludeError::Dangling(path.to_owned())
+    let link_metadata = fs::symlink_metadata(path).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            IncludeError::Missing(path.to_owned())
+        } else {
+            IncludeError::Unreadable(path.to_owned())
         }
-        ErrorKind::NotFound => IncludeError::Missing(path.to_owned()),
-        _ => IncludeError::Unreadable(path.to_owned()),
+    })?;
+    let metadata = fs::metadata(path).map_err(|error| {
+        if error.kind() != ErrorKind::NotFound {
+            IncludeError::Unreadable(path.to_owned())
+        } else if link_metadata.file_type().is_symlink() {
+            IncludeError::Dangling(path.to_owned())
+        } else {
+            IncludeError::Missing(path.to_owned())
+        }
     })?;
     if !metadata.is_file() {
         return Err(IncludeError::NotFile(path.to_owned()));

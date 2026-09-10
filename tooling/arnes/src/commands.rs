@@ -10,6 +10,7 @@ mod capability;
 #[cfg(test)]
 mod tests;
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,
@@ -30,7 +31,7 @@ fn diagnose_with_tracker(
 ) -> Vec<Diagnostic> {
     let selected = manifest
         .commands()
-        .flat_map(|command| command.bindings())
+        .flat_map(crate::manifest::Command::bindings)
         .filter(|binding| agent.is_none_or(|agent| agent == binding.agent))
         .filter(|binding| scope.is_none_or(|scope| scope == binding.scope))
         .collect::<Vec<_>>();
@@ -218,8 +219,15 @@ fn diagnostic(
 }
 
 fn subject(command: CommandBinding<'_>) -> String {
-    let destination = capability::destination(command.agent, command.scope, command.name())
-        .expect("supported bindings have a destination");
+    let Some(destination) = capability::destination(command.agent, command.scope, command.name())
+    else {
+        return format!(
+            "unsupported {} {} command {}",
+            command.agent,
+            command.scope,
+            command.name()
+        );
+    };
     format!(
         "managed {} {} command {} at {}",
         command.agent,

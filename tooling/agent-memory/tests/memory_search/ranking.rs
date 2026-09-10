@@ -2,11 +2,12 @@ use super::support::{admit_project, memory_root, project_scope};
 use agent_memory::{Index, SearchRequest, SearchSelection, Store, search};
 
 #[test]
-fn normalizes_nfkd_diacritics_case_and_separators_for_phrase_and_statement_matches() {
-    let fixture = tempfile::tempdir().unwrap();
+fn normalizes_nfkd_diacritics_case_and_separators_for_phrase_and_statement_matches()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     let alias = admit_project(
         &store,
         fixture.path(),
@@ -14,7 +15,7 @@ fn normalizes_nfkd_diacritics_case_and_separators_for_phrase_and_statement_match
         "A release rule.",
         &["Déploiement---mémoire"],
         "Established.",
-    );
+    )?;
     let statement = admit_project(
         &store,
         fixture.path(),
@@ -22,8 +23,8 @@ fn normalizes_nfkd_diacritics_case_and_separators_for_phrase_and_statement_match
         "La MEMOIRE accompagne le deploiement.",
         &["release process"],
         "Established.",
-    );
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    )?;
+    let index = Index::load_or_rebuild(&store)?.index;
     let selection = search(
         &index,
         SearchRequest {
@@ -35,14 +36,16 @@ fn normalizes_nfkd_diacritics_case_and_separators_for_phrase_and_statement_match
     );
 
     assert_eq!(ids(&selection), vec![alias, statement]);
+    Ok(())
 }
 
 #[test]
-fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
-    let fixture = tempfile::tempdir().unwrap();
+fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     let two_phrases = admit_project(
         &store,
         fixture.path(),
@@ -50,7 +53,7 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
         "Unrelated statement.",
         &["alpha beta", "beta gamma"],
         "Established.",
-    );
+    )?;
     let one_phrase_more_tokens = admit_project(
         &store,
         fixture.path(),
@@ -58,7 +61,7 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
         "Alpha beta gamma.",
         &["alpha beta", "gamma delta"],
         "Established.",
-    );
+    )?;
     let statement_only = admit_project(
         &store,
         fixture.path(),
@@ -66,7 +69,7 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
         "Alpha beta gamma statement match.",
         &["unrelated term"],
         "Established.",
-    );
+    )?;
     let tie_a = admit_project(
         &store,
         fixture.path(),
@@ -74,7 +77,7 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
         "Alpha beta first.",
         &["unrelated first"],
         "Established.",
-    );
+    )?;
     let tie_b = admit_project(
         &store,
         fixture.path(),
@@ -82,8 +85,8 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
         "Alpha beta second.",
         &["unrelated second"],
         "Established.",
-    );
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    )?;
+    let index = Index::load_or_rebuild(&store)?.index;
     let selection = search(
         &index,
         SearchRequest {
@@ -96,24 +99,27 @@ fn ranks_phrase_count_then_term_tokens_then_statement_tokens_and_ties_by_id() {
 
     let mut ties = [tie_a, tie_b];
     ties.sort();
+    let [first_tie, second_tie] = ties;
     assert_eq!(
         ids(&selection),
         vec![
             two_phrases,
             one_phrase_more_tokens,
             statement_only,
-            ties[0].clone(),
-            ties[1].clone(),
+            first_tie,
+            second_tie,
         ]
     );
+    Ok(())
 }
 
 #[test]
-fn requires_one_term_phrase_or_two_distinct_tokens() {
-    let fixture = tempfile::tempdir().unwrap();
+fn requires_one_term_phrase_or_two_distinct_tokens()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     let phrase = admit_project(
         &store,
         fixture.path(),
@@ -121,7 +127,7 @@ fn requires_one_term_phrase_or_two_distinct_tokens() {
         "Unrelated.",
         &["agent"],
         "Established.",
-    );
+    )?;
     admit_project(
         &store,
         fixture.path(),
@@ -129,8 +135,8 @@ fn requires_one_term_phrase_or_two_distinct_tokens() {
         "Only agent appears.",
         &["unrelated term"],
         "Established.",
-    );
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    )?;
+    let index = Index::load_or_rebuild(&store)?.index;
     let agent = search(
         &index,
         SearchRequest {
@@ -152,6 +158,7 @@ fn requires_one_term_phrase_or_two_distinct_tokens() {
 
     assert_eq!(ids(&agent), vec![phrase]);
     assert!(unrelated.selected.is_empty());
+    Ok(())
 }
 
 fn ids(selection: &SearchSelection) -> Vec<String> {

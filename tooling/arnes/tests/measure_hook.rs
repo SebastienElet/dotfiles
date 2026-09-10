@@ -1,3 +1,4 @@
+#![cfg(test)]
 #[path = "measure_hook/capture.rs"]
 mod capture;
 #[path = "measure_hook/collection_boundaries.rs"]

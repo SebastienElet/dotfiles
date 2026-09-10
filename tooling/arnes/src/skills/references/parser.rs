@@ -5,7 +5,7 @@ pub fn local_references(contents: &str) -> BTreeSet<PathBuf> {
     let visible = without_fenced_code(contents);
     let mut references = markdown_targets(&visible)
         .into_iter()
-        .filter_map(markdown_candidate)
+        .filter_map(|value| markdown_candidate(&value))
         .collect::<BTreeSet<_>>();
     references.extend(resource_tokens(&visible).filter_map(token_candidate));
     references
@@ -79,7 +79,7 @@ fn balanced_target(contents: &str, start: usize) -> Option<(usize, String)> {
     None
 }
 
-fn markdown_candidate(value: String) -> Option<PathBuf> {
+fn markdown_candidate(value: &str) -> Option<PathBuf> {
     let value = value.trim();
     let value = if let Some(value) = value.strip_prefix('<') {
         value.split_once('>')?.0

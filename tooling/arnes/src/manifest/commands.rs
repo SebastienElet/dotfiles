@@ -31,7 +31,7 @@ pub struct CommandBinding<'a> {
 
 impl Manifest {
     pub fn commands(&self) -> impl Iterator<Item = Command<'_>> {
-        self.commands.iter().map(Command::from)
+        self.0.commands.iter().map(Command::from)
     }
 }
 
@@ -42,18 +42,22 @@ impl<'a> From<&'a CommandDeclaration> for Command<'a> {
 }
 
 impl<'a> Command<'a> {
+    #[must_use]
     pub fn name(self) -> &'a str {
         &self.declaration.name
     }
 
+    #[must_use]
     pub fn description(self) -> &'a str {
         &self.declaration.description
     }
 
+    #[must_use]
     pub fn prompt(self) -> &'a str {
         &self.declaration.prompt
     }
 
+    #[must_use]
     pub fn bindings(self) -> impl ExactSizeIterator<Item = CommandBinding<'a>> {
         self.declaration
             .bindings
@@ -67,14 +71,17 @@ impl<'a> Command<'a> {
 }
 
 impl<'a> CommandBinding<'a> {
+    #[must_use]
     pub fn name(self) -> &'a str {
         &self.command.name
     }
 
+    #[must_use]
     pub fn description(self) -> &'a str {
         &self.command.description
     }
 
+    #[must_use]
     pub fn prompt(self) -> &'a str {
         &self.command.prompt
     }

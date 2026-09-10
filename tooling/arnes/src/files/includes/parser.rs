@@ -55,10 +55,11 @@ fn imports_in_line(line: &str) -> Vec<String> {
     let mut index = 0;
     let mut code_ticks = None;
 
-    while index < bytes.len() {
-        if bytes[index] == b'`' {
-            let length = bytes[index..]
+    while let Some(&byte) = bytes.get(index) {
+        if byte == b'`' {
+            let length = bytes
                 .iter()
+                .skip(index)
                 .take_while(|byte| **byte == b'`')
                 .count();
             match code_ticks {
@@ -69,17 +70,21 @@ fn imports_in_line(line: &str) -> Vec<String> {
             index += length;
             continue;
         }
-        if bytes[index] != b'@'
+        if byte != b'@'
             || code_ticks.is_some()
-            || index > 0 && bytes[index - 1].is_ascii_alphanumeric()
+            || index
+                .checked_sub(1)
+                .and_then(|previous| bytes.get(previous))
+                .is_some_and(u8::is_ascii_alphanumeric)
         {
             index += 1;
             continue;
         }
         let start = index + 1;
         let mut end = start;
-        while end < bytes.len()
-            && (bytes[end].is_ascii_alphanumeric() || b"./_~-".contains(&bytes[end]))
+        while bytes
+            .get(end)
+            .is_some_and(|byte| byte.is_ascii_alphanumeric() || b"./_~-".contains(byte))
         {
             end += 1;
         }

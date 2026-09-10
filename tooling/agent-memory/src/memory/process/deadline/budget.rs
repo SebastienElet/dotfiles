@@ -20,7 +20,7 @@ impl ProcessBudget {
         }
     }
 
-    pub(super) fn cleanup_deadline(&self) -> Instant {
+    pub(super) const fn cleanup_deadline(&self) -> Instant {
         self.cleanup_deadline
     }
 

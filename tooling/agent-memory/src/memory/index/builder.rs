@@ -6,7 +6,7 @@ use crate::memory::store::document::StoredEntry;
 use crate::memory::{MemoryError, Status, Store};
 use std::fs::File;
 
-pub(crate) struct PreparedIndex {
+pub struct PreparedIndex {
     pub(super) document: IndexDocument,
     pub(crate) bytes: Vec<u8>,
     pub(crate) inventory: InventorySnapshot,

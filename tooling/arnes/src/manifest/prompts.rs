@@ -44,11 +44,13 @@ impl<'a> From<&'a PromptDeclaration> for Prompt<'a> {
 }
 
 impl<'a> Prompt<'a> {
-    pub fn id(self) -> &'a str {
+    #[must_use]
+    pub const fn id(self) -> &'a str {
         self.id
     }
 
-    pub fn source(self) -> &'a Path {
+    #[must_use]
+    pub const fn source(self) -> &'a Path {
         self.source
     }
 

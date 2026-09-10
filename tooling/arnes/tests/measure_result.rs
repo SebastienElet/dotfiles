@@ -1,9 +1,12 @@
+#![cfg(test)]
 #[path = "measure_result/feedback.rs"]
 mod feedback;
 #[path = "measure_result/finish.rs"]
 mod finish;
 #[path = "measure_result/integrity.rs"]
 mod integrity;
+#[path = "measure_result/legacy_fixture.rs"]
+mod legacy_fixture;
 #[path = "measure_result/list.rs"]
 mod list;
 #[path = "measure_result/support.rs"]

@@ -23,9 +23,10 @@ impl SourceResolver for ObservedWorkCutoffAfterUnavailableResolver {
 }
 
 #[test]
-fn an_observed_expired_source_budget_stops_before_later_source_resolution() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
+fn an_observed_expired_source_budget_stops_before_later_source_resolution()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, store) = open_store(fixture.path())?;
     let yaml = entry_yaml(
         'e',
         "invariant",
@@ -41,10 +42,10 @@ fn an_observed_expired_source_budget_stops_before_later_source_resolution() {
                 fingerprint: 'a',
             },
         ],
-    );
-    write_user_entry(&root, 'e', &yaml);
-    let key = project_key(fixture.path());
-    let selection = select(&store, &key, 5);
+    )?;
+    write_user_entry(&root, 'e', &yaml)?;
+    let key = project_key(fixture.path())?;
+    let selection = select(&store, &key, 5)?;
     let resolver = ObservedWorkCutoffAfterUnavailableResolver {
         expired: AtomicBool::new(false),
         calls: AtomicUsize::new(0),
@@ -52,15 +53,17 @@ fn an_observed_expired_source_budget_stops_before_later_source_resolution() {
 
     let error = retrieve_for_injection(
         RetrievalRequest::new(&selection, &key, true),
-        RetrievalContext::new(
+        &RetrievalContext::new(
             &store,
-            &FixedClock::at("2026-08-28T01:00:00Z"),
+            &FixedClock::at("2026-08-28T01:00:00Z")?,
             &resolver,
             environment(),
         ),
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation failure")?;
 
     assert_eq!(error.class(), MemoryErrorClass::Unavailable);
     assert_eq!(resolver.calls.load(Ordering::Acquire), 1);
+    Ok(())
 }

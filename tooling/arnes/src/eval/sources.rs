@@ -28,6 +28,8 @@ pub fn fingerprint(value: impl AsRef<[u8]>) -> String {
     format!("{:x}", Sha256::digest(value.as_ref()))
 }
 
+/// # Errors
+/// Rejects invalid relative paths, failed canonicalization, or paths resolving outside the supplied root.
 pub fn source_path(root: &Path, path: &str) -> Result<PathBuf, String> {
     validate_path(path)?;
     let root = root.canonicalize().map_err(|e| e.to_string())?;
@@ -38,10 +40,14 @@ pub fn source_path(root: &Path, path: &str) -> Result<PathBuf, String> {
     Ok(canonical)
 }
 
+/// # Errors
+/// Returns path-validation, confinement, file-reading, or UTF-8 decoding errors.
 pub fn read_source(root: &Path, path: &str) -> Result<String, String> {
     fs::read_to_string(source_path(root, path)?).map_err(|e| e.to_string())
 }
 
+/// # Errors
+/// Returns an error when the requested level-two Markdown heading is absent.
 pub fn section<'a>(markdown: &'a str, heading: &str) -> Result<&'a str, String> {
     let start = markdown
         .find(&format!("## {heading}\n"))
@@ -52,6 +58,8 @@ pub fn section<'a>(markdown: &'a str, heading: &str) -> Result<&'a str, String> 
     Ok(&markdown[start..end])
 }
 
+/// # Errors
+/// Rejects inaccessible or invalid trigger JSON, invalid activation examples, or a mismatched skill slug.
 pub fn load_trigger(root: &Path, path: &str) -> Result<Trigger, String> {
     let trigger: Trigger =
         serde_json::from_str(&read_source(root, path)?).map_err(|e| e.to_string())?;
@@ -67,6 +75,8 @@ pub fn load_trigger(root: &Path, path: &str) -> Result<Trigger, String> {
     Ok(trigger)
 }
 
+/// # Errors
+/// Rejects inaccessible or malformed case definitions, empty or duplicate cases, or unresolved case inputs.
 pub fn load_cases(root: &Path) -> Result<Vec<LoadedCase>, String> {
     let definitions: Vec<BehavioralCase> =
         serde_json::from_str(&read_source(root, "harness/evals/cases.json")?)
@@ -86,6 +96,8 @@ pub fn load_cases(root: &Path) -> Result<Vec<LoadedCase>, String> {
         .collect()
 }
 
+/// # Errors
+/// Rejects invalid case definitions, missing sources or headings, unresolved prompts, or invalid fixture identities.
 pub fn resolve_case(root: &Path, definition: BehavioralCase) -> Result<LoadedCase, String> {
     definition.validate()?;
     let sources = definition

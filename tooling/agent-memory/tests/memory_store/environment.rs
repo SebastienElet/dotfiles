@@ -1,23 +1,25 @@
 use super::support::*;
 
 #[test]
-fn memory_root_environment_worker() {
+fn memory_root_environment_worker() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let Some(output) = std::env::var_os(ROOT_WORKER_OUTPUT) else {
-        return;
+        return Ok(());
     };
     let result = MemoryRoot::from_environment();
     let value = match result {
         Ok(root) => root.path().to_string_lossy().into_owned(),
         Err(error) => format!("error:{}", error.code()),
     };
-    fs::write(output, value).unwrap();
+    fs::write(output, value)?;
+    Ok(())
 }
 
 #[test]
-fn resolves_the_override_or_default_memory_root_and_rejects_invalid_environment_paths() {
-    let fixture = tempfile::tempdir().unwrap();
-    let canonical_fixture = fs::canonicalize(fixture.path()).unwrap();
-    let executable = std::env::current_exe().unwrap();
+fn resolves_the_override_or_default_memory_root_and_rejects_invalid_environment_paths()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let canonical_fixture = fs::canonicalize(fixture.path())?;
+    let executable = std::env::current_exe()?;
     let cases = [
         (
             "override",
@@ -59,7 +61,7 @@ fn resolves_the_override_or_default_memory_root_and_rejects_invalid_environment_
         let mut command = Command::new(&executable);
         command
             .arg("--exact")
-            .arg("environment::memory_root_environment_worker")
+            .arg("memory_store::environment::memory_root_environment_worker")
             .arg("--nocapture")
             .env(ROOT_WORKER_OUTPUT, &output)
             .env_remove("AGENT_MEMORY_ROOT")
@@ -71,9 +73,10 @@ fn resolves_the_override_or_default_memory_root_and_rejects_invalid_environment_
             command.env("HOME", path);
         }
 
-        let status = command.status().unwrap();
+        let status = command.status()?;
 
         assert!(status.success(), "{label}");
-        assert_eq!(fs::read_to_string(output).unwrap(), expected, "{label}");
+        assert_eq!(fs::read_to_string(output)?, expected, "{label}");
     }
+    Ok(())
 }

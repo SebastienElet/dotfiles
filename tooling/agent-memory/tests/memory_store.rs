@@ -1,6 +1,4 @@
-#[allow(dead_code)]
-#[path = "support/memory.rs"]
-mod memory_support;
+#![cfg(test)]
 
 #[path = "memory_store/admission.rs"]
 mod admission;

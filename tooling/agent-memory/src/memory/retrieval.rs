@@ -27,22 +27,37 @@ enum HumanTerminal {
 }
 
 impl HumanConclusion {
+    /// # Errors
+    ///
+    /// Returns an error if the reason is blank, exceeds its text bounds, or contains disallowed persisted content.
     pub fn goal_achieved(reason: &str) -> Result<Self, MemoryError> {
         Self::new(HumanTerminal::GoalAchieved, reason)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the reason is blank, exceeds its text bounds, or contains disallowed persisted content.
     pub fn goal_abandoned(reason: &str) -> Result<Self, MemoryError> {
         Self::new(HumanTerminal::GoalAbandoned, reason)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the reason is blank, exceeds its text bounds, or contains disallowed persisted content.
     pub fn decision_superseded(reason: &str) -> Result<Self, MemoryError> {
         Self::new(HumanTerminal::DecisionSuperseded, reason)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the reason is blank, exceeds its text bounds, or contains disallowed persisted content.
     pub fn unknown_resolved(reason: &str) -> Result<Self, MemoryError> {
         Self::new(HumanTerminal::UnknownResolved, reason)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the reason is blank, exceeds its text bounds, or contains disallowed persisted content.
     pub fn assumption_confirmed(reason: &str) -> Result<Self, MemoryError> {
         Self::new(HumanTerminal::AssumptionConfirmed, reason)
     }
@@ -55,7 +70,7 @@ impl HumanConclusion {
         })
     }
 
-    fn status_for(&self, kind: MemoryKind) -> Option<Status> {
+    const fn status_for(&self, kind: MemoryKind) -> Option<Status> {
         match (kind, self.terminal) {
             (MemoryKind::Goal, HumanTerminal::GoalAchieved) => Some(Status::Achieved),
             (MemoryKind::Goal, HumanTerminal::GoalAbandoned) => Some(Status::Abandoned),
@@ -67,6 +82,7 @@ impl HumanConclusion {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct TransitionContext<'a> {
     store: &'a Store,
     clock: &'a dyn Clock,
@@ -85,11 +101,13 @@ pub struct TransitionResult {
 }
 
 impl TransitionResult {
-    pub fn status(&self) -> Status {
+    #[must_use]
+    pub const fn status(&self) -> Status {
         self.status
     }
 
-    pub fn index_rebuild_required(&self) -> bool {
+    #[must_use]
+    pub const fn index_rebuild_required(&self) -> bool {
         self.index_rebuild_required
     }
 }
@@ -100,6 +118,7 @@ pub struct ProofAnswers {
 }
 
 impl ProofAnswers {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -113,6 +132,7 @@ impl ProofAnswers {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct RetrievalRequest<'a> {
     selection: &'a SearchSelection,
     project_key: &'a ProjectKey,
@@ -120,7 +140,8 @@ pub struct RetrievalRequest<'a> {
 }
 
 impl<'a> RetrievalRequest<'a> {
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         selection: &'a SearchSelection,
         project_key: &'a ProjectKey,
         include_user: bool,
@@ -159,12 +180,14 @@ impl<'a> RetrievalContext<'a> {
         }
     }
 
-    pub fn with_proof_answers(mut self, answers: &'a ProofAnswers) -> Self {
+    #[must_use]
+    pub const fn with_proof_answers(mut self, answers: &'a ProofAnswers) -> Self {
         self.proof_answers = Some(answers);
         self
     }
 
-    pub fn with_deadline(mut self, deadline: std::time::Instant) -> Self {
+    #[must_use]
+    pub const fn with_deadline(mut self, deadline: std::time::Instant) -> Self {
         self.deadline = Some(deadline);
         self
     }
@@ -210,7 +233,8 @@ impl SourceSummary {
         }
     }
 
-    pub fn redacted(kind: SourceKind) -> Self {
+    #[must_use]
+    pub const fn redacted(kind: SourceKind) -> Self {
         Self {
             kind,
             locator: None,
@@ -233,6 +257,7 @@ pub enum OmissionEffect {
 }
 
 impl OmissionEffect {
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::NotApplied => "not_applied",

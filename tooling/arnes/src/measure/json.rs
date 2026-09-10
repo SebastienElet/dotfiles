@@ -101,7 +101,8 @@ mod tests {
     use super::parse;
 
     #[test]
-    fn duplicate_key_diagnostics_do_not_expose_input_keys() {
+    fn duplicate_key_diagnostics_do_not_expose_input_keys() -> Result<(), Box<dyn std::error::Error>>
+    {
         let cases: &[(&[u8], &str)] = &[
             (
                 br#"{"private_marker":1,"private_marker":2}"#,
@@ -118,7 +119,7 @@ mod tests {
         ];
 
         for (payload, private_key) in cases {
-            let error = parse(payload).unwrap_err();
+            let error = parse(payload).err().ok_or("expected operation to fail")?;
             let diagnostic = error.to_string();
 
             assert!(diagnostic.contains("duplicate"));
@@ -126,5 +127,6 @@ mod tests {
             assert!(error.line() > 0);
             assert!(error.column() > 0);
         }
+        Ok(())
     }
 }

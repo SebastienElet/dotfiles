@@ -22,13 +22,13 @@ fn read_skill(skill: &Path, file: &Path, subject: &str) -> Result<String, Diagno
         } else {
             (State::Error, "could not be read")
         };
-        broken(subject, state, format!("{} {reason}", file.display()))
+        broken(subject, state, &format!("{} {reason}", file.display()))
     })?;
     if !metadata.is_file() {
         return Err(broken(
             subject,
             State::Error,
-            format!("{} is not a file", file.display()),
+            &format!("{} is not a file", file.display()),
         ));
     }
     ensure_within(file, skill, subject)?;
@@ -36,7 +36,7 @@ fn read_skill(skill: &Path, file: &Path, subject: &str) -> Result<String, Diagno
         broken(
             subject,
             State::Error,
-            format!("{} could not be read", file.display()),
+            &format!("{} could not be read", file.display()),
         )
     })
 }
@@ -46,7 +46,7 @@ fn validate_reference(skill: &Path, reference: &Path, subject: &str) -> Result<(
         broken(
             subject,
             State::Error,
-            format!("local resource {} escapes its skill", reference.display()),
+            &format!("local resource {} escapes its skill", reference.display()),
         )
     })?;
     fs::metadata(&path).map_err(|error| {
@@ -58,7 +58,7 @@ fn validate_reference(skill: &Path, reference: &Path, subject: &str) -> Result<(
         broken(
             subject,
             state,
-            format!("local resource {} {reason}", reference.display()),
+            &format!("local resource {} {reason}", reference.display()),
         )
     })?;
     ensure_within(&path, skill, subject)
@@ -69,14 +69,14 @@ fn ensure_within(path: &Path, skill: &Path, subject: &str) -> Result<(), Diagnos
         broken(
             subject,
             State::Error,
-            format!("skill {} could not be resolved", skill.display()),
+            &format!("skill {} could not be resolved", skill.display()),
         )
     })?;
     let resolved = fs::canonicalize(path).map_err(|_| {
         broken(
             subject,
             State::Error,
-            format!("{} could not be resolved", path.display()),
+            &format!("{} could not be resolved", path.display()),
         )
     })?;
     if resolved.starts_with(root) {
@@ -85,7 +85,7 @@ fn ensure_within(path: &Path, skill: &Path, subject: &str) -> Result<(), Diagnos
         Err(broken(
             subject,
             State::Error,
-            format!("{} resolves outside its skill", path.display()),
+            &format!("{} resolves outside its skill", path.display()),
         ))
     }
 }
@@ -99,12 +99,12 @@ fn resolve(root: &Path, reference: &Path) -> Option<PathBuf> {
             Component::ParentDir if path != root => {
                 path.pop();
             }
-            _ => return None,
+            Component::Prefix(_) | Component::RootDir | Component::ParentDir => return None,
         }
     }
     Some(path)
 }
 
-fn broken(subject: &str, state: State, reason: String) -> Diagnostic {
+fn broken(subject: &str, state: State, reason: &str) -> Diagnostic {
     Diagnostic::new("skills", state, format!("broken {subject}: {reason}"))
 }

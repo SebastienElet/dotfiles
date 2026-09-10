@@ -114,6 +114,7 @@ impl Diagnostic {
         }
     }
 
+    #[must_use]
     pub fn with_human(mut self, group: impl Into<String>, summary: impl Into<String>) -> Self {
         self.human = Some(Box::new(HumanDiagnostic {
             group: group.into(),
@@ -123,6 +124,7 @@ impl Diagnostic {
         self
     }
 
+    #[must_use]
     pub fn with_human_summary(mut self, summary: impl Into<String>) -> Self {
         let summary = summary.into();
         match &mut self.human {
@@ -138,6 +140,7 @@ impl Diagnostic {
         self
     }
 
+    #[must_use]
     pub fn with_human_details(mut self, details: impl IntoIterator<Item = HumanDetail>) -> Self {
         let human = self.human.get_or_insert_with(|| {
             Box::new(HumanDiagnostic {
@@ -150,6 +153,7 @@ impl Diagnostic {
         self
     }
 
+    #[must_use]
     pub fn with_human_section(mut self, section: HumanSection) -> Self {
         self.section = Some(Box::new(section));
         self
@@ -186,18 +190,22 @@ pub struct Report {
 }
 
 impl Report {
-    pub fn new(diagnostics: Vec<Diagnostic>) -> Self {
+    #[must_use]
+    pub const fn new(diagnostics: Vec<Diagnostic>) -> Self {
         Self { diagnostics }
     }
 
+    #[must_use]
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
 
+    #[must_use]
     pub fn into_diagnostics(self) -> Vec<Diagnostic> {
         self.diagnostics
     }
 
+    #[must_use]
     pub fn exit_code(&self) -> u8 {
         self.diagnostics
             .iter()
@@ -210,10 +218,13 @@ impl Report {
             .unwrap_or(0)
     }
 
+    #[must_use]
     pub fn human(&self, context: &HumanContext, options: HumanOptions) -> String {
         human::render(&self.diagnostics, context, options)
     }
 
+    /// # Errors
+    /// Returns a serialization error if the diagnostic report cannot be encoded as JSON.
     pub fn json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(&self.diagnostics)
     }

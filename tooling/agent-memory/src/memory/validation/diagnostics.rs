@@ -59,12 +59,12 @@ pub(super) fn draft_error(mut value: Value, fallback: MemoryError) -> MemoryErro
     }
     serde_path_to_error::deserialize::<_, crate::memory::model::RawDraftData>(value)
         .err()
-        .map(deserialize_error)
+        .map(|error| deserialize_error(&error))
         .unwrap_or(fallback)
 }
 
 pub(super) fn deserialize_error(
-    error: serde_path_to_error::Error<serde_yaml_ng::Error>,
+    error: &serde_path_to_error::Error<serde_yaml_ng::Error>,
 ) -> MemoryError {
     let mut path = String::new();
     let mut index = None;
@@ -77,7 +77,7 @@ pub(super) fn deserialize_error(
                 path = field.to_owned();
             }
             Segment::Seq { index: position } => index = Some(*position),
-            _ => {}
+            Segment::Enum { .. } | Segment::Unknown => {}
         }
     }
     let message = error.inner().to_string();
@@ -111,7 +111,7 @@ fn tagged_field(value: &Value, field: &'static str) -> Option<MemoryError> {
         Value::Sequence(values) => values.iter().enumerate().find_map(|(index, value)| {
             tagged_field(value, field).map(|error| error.at_item(index))
         }),
-        _ => None,
+        Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => None,
     }
 }
 
@@ -131,8 +131,7 @@ fn classify(path: &str, message: &str) -> (&'static str, &'static str) {
         return ("unknown_field", field);
     }
     for candidate in FIELDS {
-        let key = candidate.rsplit('.').next().unwrap();
-        let parent = candidate.rsplit_once('.').map_or("", |(parent, _)| parent);
+        let (parent, key) = candidate.rsplit_once('.').unwrap_or(("", candidate));
         if parent == path && message.contains(&format!("missing field `{key}`")) {
             return ("invalid_field", candidate);
         }

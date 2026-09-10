@@ -31,7 +31,7 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
         &subject,
         &human,
     )
-    .and_then(|_| references::validate(&destination, &subject))
+    .and_then(|()| references::validate(&destination, &subject))
     {
         Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
             .with_human_summary(name),
@@ -65,7 +65,7 @@ pub fn root(
         &human,
     )?;
     let skills = super::discovery::installations(&source)
-        .map_err(|reason| broken(&subject, State::Error, reason))?;
+        .map_err(|reason| broken(&subject, State::Error, &reason))?;
     let diagnostics = skills
         .iter()
         .map(|name| root_skill(roots, resource, &source, &destination, name))
@@ -92,7 +92,7 @@ fn root_skill(
     );
     let result = source_directory(&source, roots.repository(), &subject)
         .and_then(|expected| same_target(&installed, &expected, &subject))
-        .and_then(|_| references::validate(&installed, &subject));
+        .and_then(|()| references::validate(&installed, &subject));
     match result {
         Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
             .with_human_summary(name.display().to_string()),
@@ -142,29 +142,32 @@ fn expected_link(
         return Err(broken(
             subject,
             State::Error,
-            format!(
+            &format!(
                 "destination {} escapes its scope root",
                 destination.display()
             ),
         ));
     }
-    let metadata = fs::symlink_metadata(destination).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => human.missing_destination(broken(
-            subject,
-            State::Drift,
-            format!("destination {} is missing", destination.display()),
-        )),
-        _ => broken(
-            subject,
-            State::Error,
-            format!("destination {} could not be read", destination.display()),
-        ),
+    let metadata = fs::symlink_metadata(destination).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            human.missing_destination(broken(
+                subject,
+                State::Drift,
+                &format!("destination {} is missing", destination.display()),
+            ))
+        } else {
+            broken(
+                subject,
+                State::Error,
+                &format!("destination {} could not be read", destination.display()),
+            )
+        }
     })?;
     if !metadata.file_type().is_symlink() {
         return Err(broken(
             subject,
             State::Drift,
-            format!("destination {} is not a symlink", destination.display()),
+            &format!("destination {} is not a symlink", destination.display()),
         ));
     }
     same_target(destination, &expected, subject)
@@ -180,21 +183,21 @@ fn source_directory(source: &Path, root: &Path, subject: &str) -> Result<PathBuf
         broken(
             subject,
             State::Error,
-            format!("source {} {reason}", source.display()),
+            &format!("source {} {reason}", source.display()),
         )
     })?;
     if !metadata.is_dir() {
         return Err(broken(
             subject,
             State::Error,
-            format!("source {} is not a directory", source.display()),
+            &format!("source {} is not a directory", source.display()),
         ));
     }
     canonical_within(source, root).ok_or_else(|| {
         broken(
             subject,
             State::Error,
-            format!(
+            &format!(
                 "source {} resolves outside the repository",
                 source.display()
             ),
@@ -208,7 +211,7 @@ fn same_target(path: &Path, expected: &Path, subject: &str) -> Result<(), Diagno
         _ => Err(broken(
             subject,
             State::Drift,
-            format!(
+            &format!(
                 "destination {} has the wrong symlink target",
                 path.display()
             ),
@@ -216,6 +219,6 @@ fn same_target(path: &Path, expected: &Path, subject: &str) -> Result<(), Diagno
     }
 }
 
-fn broken(subject: &str, state: State, reason: String) -> Diagnostic {
+fn broken(subject: &str, state: State, reason: &str) -> Diagnostic {
     Diagnostic::new("skills", state, format!("broken {subject}: {reason}"))
 }

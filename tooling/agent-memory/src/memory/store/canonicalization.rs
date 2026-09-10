@@ -19,7 +19,7 @@ pub(super) fn memory_id(
     Ok(format!("mem_{}", &digest[..24]))
 }
 
-pub(super) fn kind_name(kind: MemoryKind) -> &'static str {
+pub(super) const fn kind_name(kind: MemoryKind) -> &'static str {
     match kind {
         MemoryKind::Goal => "goal",
         MemoryKind::Decision => "decision",
@@ -30,7 +30,7 @@ pub(super) fn kind_name(kind: MemoryKind) -> &'static str {
     }
 }
 
-pub(crate) fn source_name(kind: SourceKind) -> &'static str {
+pub const fn source_name(kind: SourceKind) -> &'static str {
     match kind {
         SourceKind::GitFile => "git-file",
         SourceKind::LocalFile => "local-file",
@@ -39,7 +39,7 @@ pub(crate) fn source_name(kind: SourceKind) -> &'static str {
     }
 }
 
-pub(super) fn status_name(status: Status) -> &'static str {
+pub(super) const fn status_name(status: Status) -> &'static str {
     match status {
         Status::Active => "active",
         Status::Achieved => "achieved",
@@ -51,7 +51,7 @@ pub(super) fn status_name(status: Status) -> &'static str {
     }
 }
 
-pub(super) fn transition_verdict_name(verdict: TransitionVerdict) -> &'static str {
+pub(super) const fn transition_verdict_name(verdict: TransitionVerdict) -> &'static str {
     match verdict {
         TransitionVerdict::Valid => "valid",
         TransitionVerdict::Invalid => "invalid",

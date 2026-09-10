@@ -6,6 +6,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,
@@ -58,7 +59,7 @@ fn diagnose_resource(roots: &Roots, resource: RuleResource<'_>) -> Diagnostic {
     diagnostic(
         State::Healthy,
         &subject,
-        format!(
+        &format!(
             "destination ~/{} is current",
             resource.destination.display()
         ),
@@ -78,7 +79,7 @@ fn valid_destination(
         return Err(diagnostic(
             State::Error,
             subject,
-            format!(
+            &format!(
                 "destination {} resolves outside its declared root",
                 destination.display()
             ),
@@ -89,7 +90,7 @@ fn valid_destination(
         return Err(diagnostic(
             State::Drift,
             subject,
-            format!("destination {} is not a symlink", destination.display()),
+            &format!("destination {} is not a symlink", destination.display()),
         ));
     }
     followed_destination(destination, subject)?;
@@ -97,7 +98,7 @@ fn valid_destination(
         return Err(diagnostic(
             State::Drift,
             subject,
-            format!(
+            &format!(
                 "destination {} has the wrong symlink target",
                 destination.display()
             ),
@@ -112,12 +113,12 @@ fn destination_metadata(destination: &Path, subject: &str) -> Result<fs::Metadat
         Err(error) if error.kind() == ErrorKind::NotFound => Err(diagnostic(
             State::Drift,
             subject,
-            format!("destination {} is missing", destination.display()),
+            &format!("destination {} is missing", destination.display()),
         )),
         Err(_) => Err(diagnostic(
             State::Error,
             subject,
-            format!("destination {} could not be read", destination.display()),
+            &format!("destination {} could not be read", destination.display()),
         )),
     }
 }
@@ -128,7 +129,7 @@ fn followed_destination(destination: &Path, subject: &str) -> Result<(), Diagnos
         Err(error) if error.kind() == ErrorKind::NotFound => Err(diagnostic(
             State::Drift,
             subject,
-            format!(
+            &format!(
                 "destination {} is a dangling symlink",
                 destination.display()
             ),
@@ -136,7 +137,7 @@ fn followed_destination(destination: &Path, subject: &str) -> Result<(), Diagnos
         Err(_) => Err(diagnostic(
             State::Error,
             subject,
-            format!(
+            &format!(
                 "destination {} could not be followed",
                 destination.display()
             ),
@@ -151,21 +152,21 @@ fn valid_source(source: &Path, root: &Path, subject: &str) -> Result<(), Diagnos
         diagnostic(
             State::Error,
             subject,
-            format!("source {} could not be read", source.display()),
+            &format!("source {} could not be read", source.display()),
         )
     })?;
     if !metadata.file_type().is_file() {
         return Err(diagnostic(
             State::Error,
             subject,
-            format!("source {} is not a regular file", source.display()),
+            &format!("source {} is not a regular file", source.display()),
         ));
     }
     fs::read_to_string(source).map_err(|_| {
         diagnostic(
             State::Error,
             subject,
-            format!("source {} could not be read as text", source.display()),
+            &format!("source {} could not be read as text", source.display()),
         )
     })?;
     Ok(())
@@ -181,7 +182,7 @@ fn source_exists(source: &Path, subject: &str) -> Result<(), Diagnostic> {
         diagnostic(
             State::Error,
             subject,
-            format!("source {} {reason}", source.display()),
+            &format!("source {} {reason}", source.display()),
         )
     })
 }
@@ -194,13 +195,13 @@ fn source_within(source: &Path, root: &Path, subject: &str) -> Result<(), Diagno
         return Err(diagnostic(
             State::Error,
             subject,
-            format!("source {} is missing (dangling symlink)", source.display()),
+            &format!("source {} is missing (dangling symlink)", source.display()),
         ));
     }
     Err(diagnostic(
         State::Error,
         subject,
-        format!(
+        &format!(
             "source {} resolves outside the repository",
             source.display()
         ),
@@ -221,6 +222,6 @@ fn unsupported(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {
     )
 }
 
-fn diagnostic(state: State, subject: &str, message: String) -> Diagnostic {
+fn diagnostic(state: State, subject: &str, message: &str) -> Diagnostic {
     Diagnostic::new("rules", state, format!("{subject}: {message}"))
 }

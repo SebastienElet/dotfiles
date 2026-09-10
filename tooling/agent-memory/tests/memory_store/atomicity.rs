@@ -1,25 +1,25 @@
 use super::support::*;
 
 #[test]
-fn creating_a_project_scope_syncs_its_parent_before_publication() {
-    let fixture = tempfile::tempdir().unwrap();
+fn creating_a_project_scope_syncs_its_parent_before_publication()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
     let store = Store::open_with_failpoint(
-        memory_root(&root),
+        &memory_root(&root)?,
         StoreFailpoint::AfterProjectDirectoryFsync,
-    )
-    .unwrap();
+    )?;
     let common = fixture.path().join("common.git");
-    fs::create_dir(&common).unwrap();
+    fs::create_dir(&common)?;
     let scope_runner = FakeProcessRunner::with_responses([FakeResponse::success(format!(
         "{}\n",
         common.display()
     ))]);
-    let project = resolve_project(fixture.path(), &scope_runner).unwrap();
+    let project = resolve_project(fixture.path(), &scope_runner)?;
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = draft_yaml(
         "project",
         "Project directory durability.",
@@ -30,21 +30,23 @@ fn creating_a_project_scope_syncs_its_parent_before_publication() {
     );
 
     let result = store.admit(
-        resolved(&draft, &context),
+        &resolved(&draft, &context)?,
         Some(&project),
         &timestamp,
         &context,
     );
 
-    assert_rejected(result, "store_unavailable");
+    assert_rejected(&result, "store_unavailable");
     let project_directory = root.join(format!("entries/project/{}", project.key().as_str()));
     assert!(project_directory.is_dir());
-    assert_eq!(fs::read_dir(project_directory).unwrap().count(), 0);
-    assert!(store.list().unwrap().entries().is_empty());
+    assert_eq!(fs::read_dir(project_directory)?.count(), 0);
+    assert!(store.list()?.entries().is_empty());
+    Ok(())
 }
 
 #[test]
-fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
+fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let pre_yaml = [
         StoreFailpoint::BeforeYamlTemporaryCreate,
         StoreFailpoint::BeforeYamlWrite,
@@ -63,207 +65,262 @@ fn interrupted_writes_never_publish_partial_yaml_or_a_forward_index() {
     let durable_yaml = [StoreFailpoint::BeforeIndexRename];
 
     for failpoint in pre_yaml {
-        assert_interrupted_state(failpoint, InterruptedAdmission::Absent);
+        assert_interrupted_state(&failpoint, InterruptedAdmission::Absent)?;
     }
     for failpoint in undurable_yaml {
-        assert_interrupted_state(failpoint, InterruptedAdmission::Renamed);
+        assert_interrupted_state(&failpoint, InterruptedAdmission::Renamed)?;
     }
     for failpoint in durable_yaml {
-        assert_interrupted_state(failpoint, InterruptedAdmission::Durable);
+        assert_interrupted_state(&failpoint, InterruptedAdmission::Durable)?;
     }
+    Ok(())
 }
 
 #[test]
-fn retry_syncs_a_renamed_admission_before_reporting_duplicate() {
-    let fixture = tempfile::tempdir().unwrap();
+fn retry_syncs_a_renamed_admission_before_reporting_duplicate()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft(
         "A retried admission becomes durable before success.",
         "retry durability",
         "Established.",
     );
     let interrupted =
-        Store::open_with_failpoint(memory_root(&root), StoreFailpoint::AfterYamlRename).unwrap();
+        Store::open_with_failpoint(&memory_root(&root)?, StoreFailpoint::AfterYamlRename)?;
     assert_rejected(
-        interrupted.admit(resolved(&draft, &context), None, &timestamp, &context),
+        &interrupted.admit(&resolved(&draft, &context)?, None, &timestamp, &context),
         "store_unavailable",
     );
 
-    let failed_retry =
-        Store::open_with_failpoint(memory_root(&root), StoreFailpoint::BeforeYamlDirectoryFsync)
-            .unwrap();
+    let failed_retry = Store::open_with_failpoint(
+        &memory_root(&root)?,
+        StoreFailpoint::BeforeYamlDirectoryFsync,
+    )?;
     assert_rejected(
-        failed_retry.admit(resolved(&draft, &context), None, &timestamp, &context),
+        &failed_retry.admit(&resolved(&draft, &context)?, None, &timestamp, &context),
         "store_unavailable",
     );
 
-    let durable_retry = Store::open(memory_root(&root)).unwrap();
-    match durable_retry.admit(resolved(&draft, &context), None, &timestamp, &context) {
-        AdmissionResult::Duplicate { .. } => {}
-        result => panic!("unexpected admission result: {result:?}"),
-    }
+    let durable_retry = Store::open(&memory_root(&root)?)?;
+    assert!(matches!(
+        durable_retry.admit(&resolved(&draft, &context)?, None, &timestamp, &context),
+        AdmissionResult::Duplicate { .. }
+    ));
+    Ok(())
 }
 
+#[derive(Clone, Copy)]
 enum InterruptedAdmission {
     Absent,
     Renamed,
     Durable,
 }
 
-fn assert_interrupted_state(failpoint: StoreFailpoint, expected: InterruptedAdmission) {
-    let fixture = tempfile::tempdir().unwrap();
+fn assert_interrupted_state(
+    failpoint: &StoreFailpoint,
+    expected: InterruptedAdmission,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open_with_failpoint(memory_root(&root), failpoint.clone()).unwrap();
-    let before = directory_inventory(&root);
+    let store = Store::open_with_failpoint(&memory_root(&root)?, failpoint.clone())?;
+    let before = directory_inventory(&root)?;
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft(
         "A durable invariant remains independently useful.",
         "durable invariant",
         "Established.",
     );
 
-    let result = store.admit(resolved(&draft, &context), None, &timestamp, &context);
-    let reopened = Store::open(memory_root(&root)).unwrap();
-    let listing = reopened.list().unwrap();
-    let index: serde_json::Value =
-        serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
+    let result = store.admit(&resolved(&draft, &context)?, None, &timestamp, &context);
+    let reopened = Store::open(&memory_root(&root)?)?;
+    let listing = reopened.list()?;
+    let index: serde_json::Value = serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
 
     match expected {
         InterruptedAdmission::Absent => {
-            assert_rejected(result, "store_unavailable");
+            assert_rejected(&result, "store_unavailable");
             assert!(listing.entries().is_empty(), "{failpoint:?}");
             assert!(!listing.index_rebuild_required(), "{failpoint:?}");
-            assert!(index["entries"].as_array().unwrap().is_empty());
-            assert_eq!(directory_inventory(&root), before, "{failpoint:?}");
+            assert!(
+                index
+                    .get("entries")
+                    .ok_or("missing index entries")?
+                    .as_array()
+                    .ok_or("missing entries array")?
+                    .is_empty()
+            );
+            assert_eq!(directory_inventory(&root)?, before, "{failpoint:?}");
         }
         InterruptedAdmission::Renamed => {
-            assert_rejected(result, "store_unavailable");
+            assert_rejected(&result, "store_unavailable");
             assert_eq!(listing.entries().len(), 1, "{failpoint:?}");
             assert!(listing.index_rebuild_required(), "{failpoint:?}");
-            assert!(index["entries"].as_array().unwrap().is_empty());
+            assert!(
+                index
+                    .get("entries")
+                    .ok_or("missing index entries")?
+                    .as_array()
+                    .ok_or("missing entries array")?
+                    .is_empty()
+            );
         }
         InterruptedAdmission::Durable => {
-            match result {
-                AdmissionResult::Stored {
-                    index_rebuild_required: true,
-                    ..
-                } => {}
-                result => panic!("{failpoint:?}: {result:?}"),
-            }
+            assert!(
+                matches!(
+                    &result,
+                    AdmissionResult::Stored {
+                        index_rebuild_required: true,
+                        ..
+                    }
+                ),
+                "{failpoint:?}: {result:?}"
+            );
             assert_eq!(listing.entries().len(), 1, "{failpoint:?}");
             assert!(listing.index_rebuild_required(), "{failpoint:?}");
-            assert!(index["entries"].as_array().unwrap().is_empty());
+            assert!(
+                index
+                    .get("entries")
+                    .ok_or("missing index entries")?
+                    .as_array()
+                    .ok_or("missing entries array")?
+                    .is_empty()
+            );
         }
     }
+    Ok(())
 }
 
-fn directory_inventory(root: &Path) -> Vec<std::path::PathBuf> {
+fn directory_inventory(
+    root: &Path,
+) -> Result<Vec<std::path::PathBuf>, Box<dyn std::error::Error + Send + Sync>> {
     let mut paths = Vec::new();
-    collect_paths(root, root, &mut paths);
+    collect_paths(root, root, &mut paths)?;
     paths.sort();
-    paths
+    Ok(paths)
 }
 
-fn collect_paths(root: &Path, directory: &Path, paths: &mut Vec<std::path::PathBuf>) {
-    for entry in fs::read_dir(directory).unwrap() {
-        let path = entry.unwrap().path();
-        paths.push(path.strip_prefix(root).unwrap().to_owned());
+fn collect_paths(
+    root: &Path,
+    directory: &Path,
+    paths: &mut Vec<std::path::PathBuf>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    for entry in fs::read_dir(directory)? {
+        let path = entry?.path();
+        paths.push(path.strip_prefix(root)?.to_owned());
         if path.is_dir() {
-            collect_paths(root, &path, paths);
+            collect_paths(root, &path, paths)?;
         }
     }
+    Ok(())
 }
 
 #[test]
-fn replace_active_atomically_updates_yaml_and_index_once() {
-    let fixture = tempfile::tempdir().unwrap();
+fn replace_active_atomically_updates_yaml_and_index_once()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
+    let store = Store::open(&memory_root(&root)?)?;
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft(
         "Transition invariant.",
         "transition invariant",
         "Established.",
     );
-    let id = stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
+    let id = stored_id(store.admit(&resolved(&draft, &context)?, None, &timestamp, &context))?;
     let path = root.join(format!("entries/user/{id}.yaml"));
-    let terminal_yaml = fs::read_to_string(&path).unwrap().replacen(
+    let terminal_yaml = fs::read_to_string(&path)?.replacen(
         "status: active",
         "status: invalidated",
         1,
     ) + "transition:\n  from: active\n  to: invalidated\n  at: 2026-08-28T13:00:00Z\n  verdict: invalid\n  reason: The proof changed.\n";
-    let terminal = parse_entry(terminal_yaml.as_bytes()).unwrap();
+    let terminal = parse_entry(terminal_yaml.as_bytes())?;
 
-    let commit = store.replace_active(&terminal).unwrap();
+    let commit = store.replace_active(&terminal)?;
 
     assert!(!commit.index_rebuild_required());
     assert_eq!(
-        store.load(&id).unwrap().unwrap().status(),
+        store.load(&id)?.ok_or("missing fixture value")?.status(),
         Status::Invalidated
     );
-    let listing = store.list().unwrap();
+    let listing = store.list()?;
     assert!(!listing.index_rebuild_required());
-    let index: serde_json::Value =
-        serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
-    assert!(index["entries"].as_array().unwrap().is_empty());
+    let index: serde_json::Value = serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
+    assert!(
+        index
+            .get("entries")
+            .ok_or("missing index entries")?
+            .as_array()
+            .ok_or("missing fixture value")?
+            .is_empty()
+    );
     assert_eq!(
-        store.replace_active(&terminal).unwrap_err().code(),
+        store
+            .replace_active(&terminal)
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "entry_not_active"
     );
+    Ok(())
 }
 
 #[test]
-fn replace_active_refuses_changes_to_immutable_entry_fields() {
-    let fixture = tempfile::tempdir().unwrap();
+fn replace_active_refuses_changes_to_immutable_entry_fields()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
+    let store = Store::open(&memory_root(&root)?)?;
     let git = FakeProcessRunner::default();
     let curl = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &git, &curl);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft("Immutable invariant.", "original term", "Established.");
-    let id = stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
+    let id = stored_id(store.admit(&resolved(&draft, &context)?, None, &timestamp, &context))?;
     let path = root.join(format!("entries/user/{id}.yaml"));
-    let before = fs::read(&path).unwrap();
-    let terminal_yaml = String::from_utf8(before.clone())
-        .unwrap()
+    let before = fs::read(&path)?;
+    let terminal_yaml = String::from_utf8(before.clone())?
         .replacen("status: active", "status: invalidated", 1)
         .replacen("- original term", "- changed term", 1)
         + "transition:\n  from: active\n  to: invalidated\n  at: 2026-08-28T13:00:00Z\n  verdict: invalid\n  reason: The proof changed.\n";
-    let terminal = parse_entry(terminal_yaml.as_bytes()).unwrap();
+    let terminal = parse_entry(terminal_yaml.as_bytes())?;
 
-    let error = store.replace_active(&terminal).unwrap_err();
+    let error = store
+        .replace_active(&terminal)
+        .err()
+        .ok_or("expected operation failure")?;
 
     assert_eq!(error.code(), "entry_conflict");
-    assert_eq!(fs::read(path).unwrap(), before);
+    assert_eq!(fs::read(path)?, before);
+    Ok(())
 }
 
 #[test]
-fn replace_active_refuses_changes_to_original_timestamps() {
+fn replace_active_refuses_changes_to_original_timestamps()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for field in ["created_at", "established_at"] {
-        let fixture = tempfile::tempdir().unwrap();
+        let fixture = tempfile::tempdir()?;
         let root = fixture.path().join("agent-memory");
-        let store = Store::open(memory_root(&root)).unwrap();
+        let store = Store::open(&memory_root(&root)?)?;
         let git = FakeProcessRunner::default();
         let curl = FakeProcessRunner::default();
         let context = SourceContext::new(fixture.path(), &git, &curl);
-        let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+        let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
         let draft = user_draft("Timestamp invariant.", "timestamp", "Established.");
-        let id = stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
+        let id = stored_id(store.admit(&resolved(&draft, &context)?, None, &timestamp, &context))?;
         let path = root.join(format!("entries/user/{id}.yaml"));
-        let before = fs::read(&path).unwrap();
-        let terminal_yaml = String::from_utf8(before.clone())
-            .unwrap()
+        let before = fs::read(&path)?;
+        let terminal_yaml = String::from_utf8(before.clone())?
             .replacen("status: active", "status: invalidated", 1)
             .replacen(
                 &format!("{field}: 2026-08-28T12:00:00Z"),
@@ -271,11 +328,15 @@ fn replace_active_refuses_changes_to_original_timestamps() {
                 1,
             )
             + "transition:\n  from: active\n  to: invalidated\n  at: 2026-08-28T13:00:00Z\n  verdict: invalid\n  reason: The proof changed.\n";
-        let terminal = parse_entry(terminal_yaml.as_bytes()).unwrap();
+        let terminal = parse_entry(terminal_yaml.as_bytes())?;
 
-        let error = store.replace_active(&terminal).unwrap_err();
+        let error = store
+            .replace_active(&terminal)
+            .err()
+            .ok_or("expected operation failure")?;
 
         assert_eq!(error.code(), "entry_conflict", "{field}");
-        assert_eq!(fs::read(path).unwrap(), before, "{field}");
+        assert_eq!(fs::read(path)?, before, "{field}");
     }
+    Ok(())
 }

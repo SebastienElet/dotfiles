@@ -1,6 +1,4 @@
-#[allow(dead_code)]
-#[path = "support/memory.rs"]
-mod memory_support;
+#![cfg(test)]
 
 #[path = "memory_index/diagnostics.rs"]
 mod diagnostics;
@@ -12,5 +10,4 @@ mod races;
 mod rebuild;
 #[path = "memory_index/security.rs"]
 mod security;
-#[path = "memory_index/support.rs"]
-mod support;
+use crate::index_support as support;

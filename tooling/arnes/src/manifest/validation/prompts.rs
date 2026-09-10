@@ -80,7 +80,7 @@ fn resolve_include(source: &Path, include: &Path) -> Option<PathBuf> {
                 has_file = true;
             }
             Component::ParentDir if resolved.pop() => has_file = false,
-            _ => return None,
+            Component::Prefix(_) | Component::RootDir | Component::ParentDir => return None,
         }
     }
     has_file.then_some(resolved)

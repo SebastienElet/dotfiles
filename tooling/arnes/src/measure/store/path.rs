@@ -25,15 +25,19 @@ impl ManagedPath {
     }
 
     #[cfg(test)]
-    pub fn test_path(path: &Path) -> Self {
-        let parent = path.parent().unwrap();
+    pub fn test_path(path: &Path) -> Result<Self, MeasureError> {
+        let parent = path
+            .parent()
+            .ok_or_else(|| MeasureError::new("fixture path has no parent"))?;
         let root = rustix::fs::open(
             parent,
             OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
             Mode::empty(),
-        )
-        .unwrap();
-        Self::root(root.into(), parent.to_owned()).join(path.file_name().unwrap())
+        )?;
+        let name = path
+            .file_name()
+            .ok_or_else(|| MeasureError::new("fixture path has no name"))?;
+        Ok(Self::root(root.into(), parent.to_owned()).join(name))
     }
 
     pub fn join(&self, path: impl AsRef<Path>) -> Self {
@@ -60,8 +64,7 @@ impl ManagedPath {
         let mut directory = self.root.try_clone()?;
         for component in normal_components(&self.relative)? {
             match rustix::fs::mkdirat(&directory, component, private_dir_mode()) {
-                Ok(()) => {}
-                Err(rustix::io::Errno::EXIST) => {}
+                Ok(()) | Err(rustix::io::Errno::EXIST) => {}
                 Err(error) => return Err(std::io::Error::from(error).into()),
             }
             directory = open_directory_at(&directory, component, &self.display)?;
@@ -220,9 +223,9 @@ fn normal_components(path: &Path) -> Result<Vec<&OsStr>, MeasureError> {
         .filter_map(|component| match component {
             Component::RootDir => None,
             Component::Normal(value) => Some(Ok(value)),
-            _ => Some(Err(MeasureError::new(
-                "managed path has an unsafe component",
-            ))),
+            Component::Prefix(_) | Component::CurDir | Component::ParentDir => Some(Err(
+                MeasureError::new("managed path has an unsafe component"),
+            )),
         })
         .collect()
 }
@@ -238,10 +241,10 @@ fn ensure_single_link(file: &File, path: &Path) -> Result<(), MeasureError> {
     Ok(())
 }
 
-fn private_dir_mode() -> Mode {
+const fn private_dir_mode() -> Mode {
     Mode::from_raw_mode(0o700)
 }
 
-fn private_file_mode() -> Mode {
+const fn private_file_mode() -> Mode {
     Mode::from_raw_mode(0o600)
 }

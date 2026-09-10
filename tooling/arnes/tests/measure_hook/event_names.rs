@@ -1,8 +1,7 @@
 use super::support::*;
-
 #[test]
-fn normalizes_cross_agent_event_names() {
-    for (agent, session_key, native_events) in [
+fn normalizes_cross_agent_event_names() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _: () = for (agent, session_key, native_events) in [
         (
             "codex",
             "session_id",
@@ -19,17 +18,28 @@ fn normalizes_cross_agent_event_names() {
             ["sessionStart", "beforeSubmitPrompt", "stop", "subagentStop"],
         ),
     ] {
-        let harness = Harness::new();
+        let harness = Harness::new()?;
         for native_event in native_events {
-            let mut payload = json!({"hook_event_name":native_event});
-            payload[session_key] = json!("session");
-            assert_success(&harness.run(agent, payload.to_string().as_bytes()));
+            let mut payload = json ! ({ "hook_event_name" : native_event });
+            payload
+                .as_object_mut()
+                .ok_or("expected hook payload object")?
+                .insert(session_key.to_owned(), json!("session"));
+            assert_success(&harness.run(agent, payload.to_string().as_bytes())?);
         }
-        let events = read_jsonl(harness.only_run().join("events.jsonl"));
+        let events = read_jsonl(harness.only_run()?.join("events.jsonl"))?;
         let normalized: Vec<&str> = events
             .iter()
-            .map(|event| event["event"].as_str().unwrap())
-            .collect();
+            .map(
+                |event| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
+                    Ok(
+                        (*(event).get("event").ok_or("missing fixture index event")?)
+                            .as_str()
+                            .ok_or("expected JSON string")?,
+                    )
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()?;
         assert_eq!(
             normalized,
             [
@@ -44,12 +54,13 @@ fn normalizes_cross_agent_event_names() {
                 .iter()
                 .all(|event| event.get("native_event").is_none())
         );
-    }
+    };
+    Ok(())
 }
-
 #[test]
-fn normalizes_every_installed_failure_and_compaction_event() {
-    for (agent, session_key, native_event, expected) in [
+fn normalizes_every_installed_failure_and_compaction_event()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _: () = for (agent, session_key, native_event, expected) in [
         (
             "codex",
             "session_id",
@@ -88,13 +99,21 @@ fn normalizes_every_installed_failure_and_compaction_event() {
             "context.compact.before",
         ),
     ] {
-        let harness = Harness::new();
-        let mut payload = json!({"hook_event_name":native_event});
-        payload[session_key] = json!("session");
-
-        assert_success(&harness.run(agent, payload.to_string().as_bytes()));
-
-        let events = read_jsonl(harness.only_run().join("events.jsonl"));
-        assert_eq!(events[0]["event"], expected, "{agent} {native_event}");
-    }
+        let harness = Harness::new()?;
+        let mut payload = json ! ({ "hook_event_name" : native_event });
+        payload
+            .as_object_mut()
+            .ok_or("expected hook payload object")?
+            .insert(session_key.to_owned(), json!("session"));
+        assert_success(&harness.run(agent, payload.to_string().as_bytes())?);
+        let events = read_jsonl(harness.only_run()?.join("events.jsonl"))?;
+        assert_eq!(
+            *(*(events).first().ok_or("missing fixture index 0")?)
+                .get("event")
+                .ok_or("missing fixture index event")?,
+            expected,
+            "{agent} {native_event}"
+        );
+    };
+    Ok(())
 }

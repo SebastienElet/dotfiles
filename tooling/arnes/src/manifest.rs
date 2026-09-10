@@ -30,9 +30,9 @@ const SCHEMA_VERSION: u64 = 1;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Manifest {
+struct ManifestData {
     #[serde(rename = "version")]
-    _version: u64,
+    version: u64,
     agents: Vec<AgentDeclaration>,
     #[serde(default)]
     skills: Vec<SkillDeclaration>,
@@ -51,22 +51,39 @@ pub struct Manifest {
     resources: Vec<ResourceDeclaration>,
 }
 
+pub struct Manifest(ManifestData);
+
+impl<'de> Deserialize<'de> for Manifest {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let manifest = Self(ManifestData::deserialize(deserializer)?);
+        validation::validate(&manifest).map_err(serde::de::Error::custom)?;
+        if manifest.0.version != SCHEMA_VERSION {
+            return Err(serde::de::Error::custom("unsupported manifest version"));
+        }
+        Ok(manifest)
+    }
+}
+
 impl Manifest {
     pub fn combinations(&self) -> impl Iterator<Item = (Agent, Scope)> + '_ {
-        self.agents
+        self.0
+            .agents
             .iter()
             .flat_map(|agent| agent.scopes.iter().map(move |scope| (agent.id, *scope)))
     }
 
+    #[must_use]
     pub fn user_config(&self, agent: Agent) -> Option<&UserConfig> {
-        self.agents
+        self.0
+            .agents
             .iter()
             .find(|declaration| declaration.id == agent)
             .and_then(|declaration| declaration.user_config.as_ref())
     }
 
     pub fn instruction_resources(&self) -> impl Iterator<Item = InstructionResource<'_>> {
-        self.resources
+        self.0
+            .resources
             .iter()
             .filter(|resource| resource.kind == ResourceKind::Instructions)
             .map(|resource| InstructionResource {
@@ -79,21 +96,25 @@ impl Manifest {
     }
 
     pub fn skill_projections(&self) -> impl Iterator<Item = SkillProjection<'_>> {
-        self.resources
+        self.0
+            .resources
             .iter()
             .filter(|resource| resource.kind == ResourceKind::Skills)
-            .map(|resource| SkillProjection {
-                id: &resource.id,
-                agent: resource.agent,
-                scope: resource.scope,
-                layout: resource.layout.expect("skill projections have a layout"),
-                source: &resource.source.path,
-                destination: &resource.destination.path,
+            .filter_map(|resource| {
+                Some(SkillProjection {
+                    id: &resource.id,
+                    agent: resource.agent,
+                    scope: resource.scope,
+                    layout: resource.layout?,
+                    source: &resource.source.path,
+                    destination: &resource.destination.path,
+                })
             })
     }
 
     pub fn installed_skills(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
-        self.skills
+        self.0
+            .skills
             .iter()
             .filter(move |skill| {
                 skill
@@ -104,11 +125,11 @@ impl Manifest {
     }
 
     pub fn external_roots(&self) -> impl Iterator<Item = ExternalRoot<'_>> {
-        self.external.roots()
+        self.0.external.roots()
     }
 
     pub fn external_plugins(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
-        self.external.plugins(agent, scope)
+        self.0.external.plugins(agent, scope)
     }
 
     pub fn external_skills(
@@ -116,15 +137,16 @@ impl Manifest {
         agent: Agent,
         scope: Scope,
     ) -> impl Iterator<Item = ExternalSkill<'_>> {
-        self.external.skills(agent, scope)
+        self.0.external.skills(agent, scope)
     }
 
     pub fn prompts(&self) -> impl Iterator<Item = Prompt<'_>> {
-        self.prompts.iter().map(Prompt::from)
+        self.0.prompts.iter().map(Prompt::from)
     }
 
     pub(crate) fn resource_destinations(&self) -> impl Iterator<Item = (Scope, &Path)> {
-        self.resources
+        self.0
+            .resources
             .iter()
             .map(|resource| (resource.scope, resource.destination.path.as_path()))
     }

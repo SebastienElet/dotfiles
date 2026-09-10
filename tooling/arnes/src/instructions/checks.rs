@@ -4,7 +4,6 @@ use crate::files::includes::IncludeError;
 use crate::files::paths::{parent_within, resolves_within, same_file};
 use crate::manifest::{InstructionResource, Scope};
 use std::fs;
-use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 pub fn expected_link(
@@ -16,9 +15,12 @@ pub fn expected_link(
     if !parent_within(destination, root) {
         return Err(outside_destination(subject, destination));
     }
-    let metadata = fs::symlink_metadata(destination).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => destination_error(subject, destination, State::Drift, "is missing"),
-        _ => destination_error(subject, destination, State::Error, "could not be read"),
+    let metadata = fs::symlink_metadata(destination).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            destination_error(subject, destination, State::Drift, "is missing")
+        } else {
+            destination_error(subject, destination, State::Error, "could not be read")
+        }
     })?;
     if !metadata.file_type().is_symlink() {
         return Err(wrong_link(subject, destination));
@@ -30,9 +32,12 @@ pub fn expected_link(
 }
 
 pub fn expected_file(destination: &Path, root: &Path, subject: &str) -> Result<(), Diagnostic> {
-    let metadata = fs::symlink_metadata(destination).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => destination_error(subject, destination, State::Drift, "is missing"),
-        _ => destination_error(subject, destination, State::Error, "could not be read"),
+    let metadata = fs::symlink_metadata(destination).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            destination_error(subject, destination, State::Drift, "is missing")
+        } else {
+            destination_error(subject, destination, State::Error, "could not be read")
+        }
     })?;
     if !metadata.file_type().is_file() {
         return Err(destination_error(
@@ -136,7 +141,7 @@ pub fn relative(path: &Path, roots: &Roots) -> String {
         .unwrap_or_else(|_| path.display().to_string())
 }
 
-pub fn healthy(subject: &str, destination: String) -> Diagnostic {
+pub fn healthy(subject: &str, destination: &str) -> Diagnostic {
     Diagnostic::new(
         "instructions",
         State::Healthy,

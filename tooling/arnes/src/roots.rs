@@ -21,6 +21,8 @@ impl Roots {
         }
     }
 
+    /// # Errors
+    /// Rejects missing, empty, or relative HOME values and returns current-directory or deployment-root resolution errors.
     pub fn from_environment() -> Result<Self, RootsError> {
         let repository = env::current_dir()
             .map_err(|_| RootsError::new("repository: current directory is unavailable"))?;
@@ -45,14 +47,17 @@ impl Roots {
         })
     }
 
+    #[must_use]
     pub fn repository(&self) -> &Path {
         &self.repository
     }
 
+    #[must_use]
     pub fn deployment_repository(&self) -> &Path {
         &self.deployment_repository
     }
 
+    #[must_use]
     pub fn home(&self) -> &Path {
         &self.home
     }

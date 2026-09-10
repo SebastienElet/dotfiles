@@ -9,6 +9,7 @@ mod external;
 mod projection;
 mod references;
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,

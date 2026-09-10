@@ -39,7 +39,7 @@ fn run_export(check: bool) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("export: {error}");
+            let _ = crate::cli_output::write_error(format_args!("export: {error}"));
             ExitCode::from(2)
         }
     }
@@ -52,7 +52,7 @@ fn run_setup(command: SetupCommand) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("setup: {error}");
+            let _ = crate::cli_output::write_error(format_args!("setup: {error}"));
             ExitCode::from(2)
         }
     }

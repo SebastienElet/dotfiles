@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 #[path = "memory_admission/concurrency.rs"]
 mod concurrency;
 #[path = "memory_admission/preparation.rs"]
@@ -10,13 +12,14 @@ mod support;
 use support::*;
 
 #[test]
-fn admits_a_project_draft_without_an_explicit_scope() {
-    let fixture = tempfile::tempdir().unwrap();
-    initialize_repository(fixture.path());
+fn admits_a_project_draft_without_an_explicit_scope()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    initialize_repository(fixture.path())?;
     let root = fixture.path().join("store");
-    let store = Store::open(MemoryRoot::new(&root).unwrap()).unwrap();
+    let store = Store::open(&MemoryRoot::new(&root)?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
 
     let result = admit(
         &draft(
@@ -33,13 +36,12 @@ fn admits_a_project_draft_without_an_explicit_scope() {
             &processes,
             AdmissionAuthorization::ExplicitRequest,
         ),
-    )
-    .unwrap();
+    )?;
 
-    let id = stored_id(result, false);
-    let entries = store.list().unwrap();
+    let id = stored_id(result, false)?;
+    let entries = store.list()?;
     assert_eq!(entries.entries().len(), 1);
-    let entry = &entries.entries()[0];
+    let entry = &entries.entries().first().ok_or("missing fixture element")?;
     assert_eq!(entry.id().as_str(), id);
     assert_eq!(entry.created_at().as_str(), "2026-08-29T12:00:00Z");
     assert_eq!(
@@ -47,26 +49,28 @@ fn admits_a_project_draft_without_an_explicit_scope() {
         "2026-08-29T12:00:00Z"
     );
     assert_eq!(
-        entry.proof().sources()[0].fingerprint().as_str(),
+        entry
+            .proof()
+            .sources()
+            .first()
+            .ok_or("missing fixture element")?
+            .fingerprint()
+            .as_str(),
         "sha256:c1cda26362828b69266512052b97cb3729e3b052e4ade47c0a1e3383defe73c7"
     );
     assert!(matches!(entry.scope(), EntryScope::Project(_)));
-    assert!(
-        root.join("entries/project")
-            .read_dir()
-            .unwrap()
-            .next()
-            .is_some()
-    );
+    assert!(root.join("entries/project").read_dir()?.next().is_some());
+    Ok(())
 }
 
 #[test]
-fn admits_user_scope_only_after_an_explicit_authorization() {
-    let fixture = tempfile::tempdir().unwrap();
+fn admits_user_scope_only_after_an_explicit_authorization()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("store");
-    let store = Store::open(MemoryRoot::new(&root).unwrap()).unwrap();
+    let store = Store::open(&MemoryRoot::new(&root)?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
     let bytes = draft(
         Some("user"),
         "invariant",
@@ -84,10 +88,9 @@ fn admits_user_scope_only_after_an_explicit_authorization() {
             &processes,
             AdmissionAuthorization::ImplicitProposal,
         ),
-    )
-    .unwrap();
-    assert_rejected(refused, "admission_not_authorized");
-    assert!(store.list().unwrap().entries().is_empty());
+    )?;
+    assert_rejected(&refused, "admission_not_authorized");
+    assert!(store.list()?.entries().is_empty());
 
     let stored = admit(
         &bytes,
@@ -98,18 +101,19 @@ fn admits_user_scope_only_after_an_explicit_authorization() {
             &processes,
             AdmissionAuthorization::AcceptedProposal,
         ),
-    )
-    .unwrap();
-    stored_id(stored, false);
-    assert_eq!(store.list().unwrap().entries().len(), 1);
+    )?;
+    stored_id(stored, false)?;
+    assert_eq!(store.list()?.entries().len(), 1);
+    Ok(())
 }
 
 #[test]
-fn rejects_invalid_input_before_scope_or_source_resolution() {
-    let fixture = tempfile::tempdir().unwrap();
-    let store = Store::open(MemoryRoot::new(fixture.path().join("store")).unwrap()).unwrap();
+fn rejects_invalid_input_before_scope_or_source_resolution()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let store = Store::open(&MemoryRoot::new(fixture.path().join("store"))?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
 
     let result = admit(
         b"not: [valid",
@@ -120,19 +124,20 @@ fn rejects_invalid_input_before_scope_or_source_resolution() {
             &processes,
             AdmissionAuthorization::ExplicitRequest,
         ),
-    )
-    .unwrap();
+    )?;
 
-    assert_rejected(result, "malformed_yaml");
-    assert!(store.list().unwrap().entries().is_empty());
+    assert_rejected(&result, "malformed_yaml");
+    assert!(store.list()?.entries().is_empty());
+    Ok(())
 }
 
 #[test]
-fn rejects_the_default_project_scope_outside_git() {
-    let fixture = tempfile::tempdir().unwrap();
-    let store = Store::open(MemoryRoot::new(fixture.path().join("store")).unwrap()).unwrap();
+fn rejects_the_default_project_scope_outside_git()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let store = Store::open(&MemoryRoot::new(fixture.path().join("store"))?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
 
     let result = admit(
         &draft(
@@ -149,19 +154,20 @@ fn rejects_the_default_project_scope_outside_git() {
             &processes,
             AdmissionAuthorization::ExplicitRequest,
         ),
-    )
-    .unwrap();
+    )?;
 
-    assert_rejected(result, "scope_unavailable");
-    assert!(store.list().unwrap().entries().is_empty());
+    assert_rejected(&result, "scope_unavailable");
+    assert!(store.list()?.entries().is_empty());
+    Ok(())
 }
 
 #[test]
-fn rejects_an_unverified_source_before_commit() {
-    let fixture = tempfile::tempdir().unwrap();
-    let store = Store::open(MemoryRoot::new(fixture.path().join("store")).unwrap()).unwrap();
+fn rejects_an_unverified_source_before_commit()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let store = Store::open(&MemoryRoot::new(fixture.path().join("store"))?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
     let missing = fixture.path().join("missing-proof");
 
     let result = admit(
@@ -170,7 +176,7 @@ fn rejects_an_unverified_source_before_commit() {
             "invariant",
             "Unverified memory.",
             "local-file",
-            missing.to_str().unwrap(),
+            missing.to_str().ok_or("missing fixture value")?,
         ),
         context(
             &store,
@@ -179,9 +185,9 @@ fn rejects_an_unverified_source_before_commit() {
             &processes,
             AdmissionAuthorization::ExplicitRequest,
         ),
-    )
-    .unwrap();
+    )?;
 
-    assert_rejected(result, "source_invalid");
-    assert!(store.list().unwrap().entries().is_empty());
+    assert_rejected(&result, "source_invalid");
+    assert!(store.list()?.entries().is_empty());
+    Ok(())
 }

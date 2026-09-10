@@ -66,7 +66,7 @@ fn handler_fields(event: &str, handler: &Value) -> Result<(), HooksError> {
     match kind {
         "command" => command(handler),
         "prompt" => prompt(handler),
-        _ => unreachable!(),
+        _ => Ok(()),
     }
 }
 

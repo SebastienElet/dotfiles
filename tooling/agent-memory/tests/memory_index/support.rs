@@ -1,34 +1,36 @@
-pub(crate) use crate::memory_support::{FakeProcessRunner, FakeResponse};
+pub use crate::memory_support::{FakeProcessRunner, FakeResponse};
 use agent_memory::AdmissionAuthorization;
-#[allow(unused_imports)]
-pub(crate) use agent_memory::{
-    AdmissionResult, Index, MemoryRoot, ProjectScope, SourceContext, Store, StoreFailpoint,
-    parse_draft, parse_utc_timestamp, resolve_project, resolve_sources, validate_draft,
+pub use agent_memory::{
+    AdmissionResult, MemoryRoot, ProjectScope, SourceContext, Store, parse_draft,
+    parse_utc_timestamp, resolve_project, resolve_sources, validate_draft,
 };
 use std::fs;
 use std::path::Path;
 
-pub(crate) fn memory_root(path: &Path) -> MemoryRoot {
-    MemoryRoot::new(path).unwrap()
+pub fn memory_root(path: &Path) -> Result<MemoryRoot, agent_memory::MemoryError> {
+    MemoryRoot::new(path)
 }
 
-pub(crate) fn project_scope(directory: &Path, name: &str) -> ProjectScope {
+pub fn project_scope(
+    directory: &Path,
+    name: &str,
+) -> Result<ProjectScope, Box<dyn std::error::Error + Send + Sync>> {
     let common = directory.join(name);
-    fs::create_dir(&common).unwrap();
+    fs::create_dir(&common)?;
     let runner = FakeProcessRunner::with_responses([FakeResponse::success(format!(
         "{}\n",
         common.display()
     ))]);
-    resolve_project(directory, &runner).unwrap()
+    Ok(resolve_project(directory, &runner)?)
 }
 
-pub(crate) fn admit_user(
+pub fn admit_user(
     store: &Store,
     directory: &Path,
     statement: &str,
     retrieval_terms: &[&str],
     summary: &str,
-) -> String {
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     admit(
         store,
         directory,
@@ -40,14 +42,14 @@ pub(crate) fn admit_user(
     )
 }
 
-pub(crate) fn admit_project(
+pub fn admit_project(
     store: &Store,
     directory: &Path,
     project: &ProjectScope,
     statement: &str,
     retrieval_terms: &[&str],
     summary: &str,
-) -> String {
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     admit(
         store,
         directory,
@@ -67,32 +69,37 @@ fn admit(
     statement: &str,
     retrieval_terms: &[&str],
     summary: &str,
-) -> String {
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(directory, &runner, &runner);
     let bytes = draft(scope, statement, retrieval_terms, summary);
-    let parsed = parse_draft(&bytes).unwrap();
-    let validated = validate_draft(parsed, AdmissionAuthorization::ExplicitRequest).unwrap();
-    let resolved = resolve_sources(validated, &context).unwrap();
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
-    match store.admit(resolved, project, &timestamp, &context) {
-        AdmissionResult::Stored {
-            id,
-            index_rebuild_required: false,
-        } => id.as_str().to_owned(),
-        result => panic!("unexpected admission result: {result:?}"),
+    let parsed = parse_draft(&bytes)?;
+    let validated = validate_draft(parsed, AdmissionAuthorization::ExplicitRequest)?;
+    let resolved = resolve_sources(validated, &context)?;
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
+    let result = store.admit(&resolved, project, &timestamp, &context);
+    if let AdmissionResult::Stored {
+        id,
+        index_rebuild_required: false,
+    } = result
+    {
+        Ok(id.as_str().to_owned())
+    } else {
+        Err(format!("unexpected admission result: {result:?}").into())
     }
 }
 
 fn draft(scope: &str, statement: &str, retrieval_terms: &[&str], summary: &str) -> Vec<u8> {
-    let terms = retrieval_terms
-        .iter()
-        .map(|term| format!("  - {}\n", serde_json::to_string(term).unwrap()))
-        .collect::<String>();
+    let mut terms = String::new();
+    for term in retrieval_terms {
+        terms.push_str("  - ");
+        terms.push_str(&serde_json::Value::String((*term).to_owned()).to_string());
+        terms.push('\n');
+    }
     format!(
         "schema_version: 1\nkind: invariant\nstatement: {}\nscope: {scope}\nretrieval_terms:\n{terms}proof:\n  summary: {}\n  sources:\n    - kind: user-decision\n      locator: decision:index-test\noracle:\n  human_fallback:\n    question: Does the proof remain valid?\n    valid_when: The decision remains in force.\n  outcomes:\n    valid: The invariant remains established.\n    invalidated: The invariant no longer applies.\n",
-        serde_json::to_string(statement).unwrap(),
-        serde_json::to_string(summary).unwrap(),
+        serde_json::Value::String(statement.to_owned()),
+        serde_json::Value::String(summary.to_owned()),
     )
     .into_bytes()
 }

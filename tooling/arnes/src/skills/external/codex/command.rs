@@ -39,12 +39,9 @@ pub(super) fn run(home: &Path, args: &[&str], subject: &str) -> Result<Vec<u8>, 
     let mut child = command
         .spawn()
         .map_err(|_| format!("Codex {subject} resolver could not be started"))?;
-    let mut streams = match OutputStreams::new(&mut child) {
-        Ok(streams) => streams,
-        Err(()) => {
-            terminate(&mut child);
-            return Err(format!("Codex {subject} resolver output could not be read"));
-        }
+    let Ok(mut streams) = OutputStreams::new(&mut child) else {
+        terminate(&mut child);
+        return Err(format!("Codex {subject} resolver output could not be read"));
     };
     let status = wait_for_output(&mut child, &mut streams, subject)?;
     if !status.success() {
@@ -66,12 +63,11 @@ fn wait_for_output(
             return Err(stream_detail(subject, failure));
         }
         if status.is_none() {
-            status = match child.try_wait() {
-                Ok(status) => status,
-                Err(_) => {
-                    terminate(child);
-                    return Err(format!("Codex {subject} resolver status could not be read"));
-                }
+            status = if let Ok(status) = child.try_wait() {
+                status
+            } else {
+                terminate(child);
+                return Err(format!("Codex {subject} resolver status could not be read"));
             };
         }
         if let Some(status) = status.filter(|_| streams.complete()) {
@@ -102,13 +98,13 @@ impl OutputStreams {
         self.stderr.drain()
     }
 
-    fn complete(&self) -> bool {
+    const fn complete(&self) -> bool {
         self.stdout.complete && self.stderr.complete
     }
 }
 
 impl<R: Read> BoundedStream<R> {
-    fn new(stream: R) -> Self {
+    const fn new(stream: R) -> Self {
         Self {
             stream,
             output: Vec::new(),
@@ -121,10 +117,13 @@ impl<R: Read> BoundedStream<R> {
         while !self.complete {
             match self.stream.read(&mut buffer) {
                 Ok(0) => self.complete = true,
-                Ok(read) if self.output.len() + read > OUTPUT_LIMIT => {
-                    return Err(StreamFailure::Limit);
+                Ok(read) => {
+                    let chunk = buffer.get(..read).ok_or(StreamFailure::Read)?;
+                    if self.output.len() + chunk.len() > OUTPUT_LIMIT {
+                        return Err(StreamFailure::Limit);
+                    }
+                    self.output.extend_from_slice(chunk);
                 }
-                Ok(read) => self.output.extend_from_slice(&buffer[..read]),
                 Err(error) if error.kind() == ErrorKind::WouldBlock => break,
                 Err(error) if error.kind() == ErrorKind::Interrupted => {}
                 Err(_) => return Err(StreamFailure::Read),
@@ -157,5 +156,47 @@ fn stream_detail(subject: &str, failure: StreamFailure) -> String {
     match failure {
         StreamFailure::Limit => format!("Codex {subject} resolver exceeded its output limit"),
         StreamFailure::Read => format!("Codex {subject} resolver output could not be read"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_a_reader_count_exceeding_the_supplied_buffer() {
+        struct InvalidCountReader;
+
+        impl Read for InvalidCountReader {
+            fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+                Ok(buffer.len() + 1)
+            }
+        }
+
+        let mut stream = BoundedStream::new(InvalidCountReader);
+        assert!(matches!(stream.drain(), Err(StreamFailure::Read)));
+        assert!(stream.output.is_empty());
+    }
+
+    #[test]
+    fn rejects_an_overflowing_reader_count_after_valid_output() {
+        struct InvalidCountReader(bool);
+
+        impl Read for InvalidCountReader {
+            fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+                if std::mem::replace(&mut self.0, false) {
+                    if let Some(byte) = buffer.first_mut() {
+                        *byte = b'x';
+                    }
+                    Ok(1)
+                } else {
+                    Ok(usize::MAX)
+                }
+            }
+        }
+
+        let mut stream = BoundedStream::new(InvalidCountReader(true));
+        assert!(matches!(stream.drain(), Err(StreamFailure::Read)));
+        assert_eq!(stream.output, b"x");
     }
 }

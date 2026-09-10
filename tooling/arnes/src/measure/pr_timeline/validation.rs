@@ -38,7 +38,8 @@ fn identity(pr: &PrIdentity) -> Result<(), MeasureError> {
         });
     let valid_repository = (1..=255).contains(&pr.repository.len())
         && pr.repository.contains('/')
-        && !pr.repository.ends_with(".git")
+        && std::path::Path::new(&pr.repository).file_name() != Some(std::ffi::OsStr::new(".git"))
+        && std::path::Path::new(&pr.repository).extension() != Some(std::ffi::OsStr::new("git"))
         && pr.repository.split('/').all(|segment| {
             !segment.is_empty()
                 && !matches!(segment, "." | "..")

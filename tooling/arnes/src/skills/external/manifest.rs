@@ -19,9 +19,8 @@ pub(super) fn inspect(root: &Path, candidates: &[&str]) -> Inspection {
         Ok(None) => return failure(Topology::Broken, "plugin manifest is missing"),
         Err((topology, detail)) => return failure(topology, detail),
     };
-    let contents = match fs::read_to_string(&manifest) {
-        Ok(contents) => contents,
-        Err(_) => return failure(Topology::Unreadable, "plugin manifest could not be read"),
+    let Ok(contents) = fs::read_to_string(&manifest) else {
+        return failure(Topology::Unreadable, "plugin manifest could not be read");
     };
     let value: Value = match serde_json::from_str(&contents) {
         Ok(value) => value,
@@ -98,7 +97,9 @@ fn skill_paths(root: &Path, value: &Value) -> Result<Vec<PathBuf>, &'static str>
             .map(Value::as_str)
             .collect::<Option<Vec<_>>>()
             .ok_or("plugin skills paths must be strings")?,
-        _ => return Err("plugin skills must be a path or path list"),
+        Value::Null | Value::Bool(_) | Value::Number(_) | Value::Object(_) => {
+            return Err("plugin skills must be a path or path list");
+        }
     };
     values
         .into_iter()

@@ -18,7 +18,7 @@ mod validate;
 const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
 pub use inspect::diagnose;
 
-#[derive(Args)]
+#[derive(Args, Clone, Copy)]
 pub struct SetupHooksArgs {
     #[arg(long, value_enum)]
     pub agent: Agent,
@@ -26,6 +26,8 @@ pub struct SetupHooksArgs {
     pub scope: Scope,
 }
 
+/// # Errors
+/// Returns errors resolving installation roots, validating hook configuration, or reconciling managed hook files.
 pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     if args.scope != Scope::User {
         return Err(HooksError::new("hooks only support the user scope"));
@@ -236,15 +238,15 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn handoff_aliases_include_repository_runtimes() {
+    fn handoff_aliases_include_repository_runtimes() -> Result<(), Box<dyn std::error::Error>> {
         let aliases = handoff_aliases(
             Path::new("/tmp/home/.local/bin/agent-handoff"),
             Path::new("/tmp/repository"),
             crate::manifest::Agent::Claude,
-        )
-        .unwrap();
+        )?;
 
         assert!(aliases.contains(&"/tmp/repository/tooling/agent-handoff".to_owned()));
         assert!(aliases.contains(&"/tmp/repository/scripts/agent_handoff".to_owned()));
+        Ok(())
     }
 }

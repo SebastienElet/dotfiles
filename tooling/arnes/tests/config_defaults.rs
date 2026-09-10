@@ -1,7 +1,6 @@
+#![cfg(test)]
 mod support;
-
 use support::Fixture;
-
 const MANIFEST: &str = "version: 1
 agents:
   - id: claude
@@ -23,10 +22,9 @@ agents:
       context_window: 270000
 resources: []
 ";
-
-fn configured_fixture() -> Fixture {
-    let fixture = Fixture::new();
-    fixture.write_home(".arnes.yaml", MANIFEST);
+fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
+    fixture.write_home(".arnes.yaml", MANIFEST)?;
     fixture.write_home(
         ".claude/settings.json",
         r#"{
@@ -35,7 +33,7 @@ fn configured_fixture() -> Fixture {
             "autoCompactWindow": 600000,
             "unknown": true
         }"#,
-    );
+    )?;
     fixture.write_home(
         ".cursor/cli-config.json",
         r#"{
@@ -43,87 +41,88 @@ fn configured_fixture() -> Fixture {
             "maxMode": false,
             "unknown": true
         }"#,
-    );
-    fixture.write_home(
-        ".codex/config.toml",
-        "model = \"gpt-5.6-sol\"\nmodel_reasoning_effort = \"medium\"\nmodel_context_window = 270000\nunknown = true\n",
-    );
+    )?;
+    fixture . write_home (".codex/config.toml" , "model = \"gpt-5.6-sol\"\nmodel_reasoning_effort = \"medium\"\nmodel_context_window = 270000\nunknown = true\n" ,) ? ;
     for path in [".claude/settings.json", ".cursor/cli.json"] {
-        fixture.write_repository(path, r#"{"unknown": true}"#);
+        fixture.write_repository(path, r#"{"unknown": true}"#)?;
     }
-    fixture.write_repository(".codex/config.toml", "unknown = true\n");
-    fixture
+    fixture.write_repository(".codex/config.toml", "unknown = true\n")?;
+    Ok(fixture)
 }
-
-fn run(fixture: &Fixture, args: &[&str]) -> (i32, String) {
-    let output = fixture.command(args);
-    (
-        output.status.code().unwrap(),
-        String::from_utf8(output.stdout).unwrap(),
-    )
+fn run(
+    fixture: &Fixture,
+    args: &[&str],
+) -> Result<(i32, String), Box<dyn std::error::Error + Send + Sync>> {
+    let output = fixture.command(args)?;
+    Ok((
+        output
+            .status
+            .code()
+            .ok_or("child process exited without a status code")?,
+        String::from_utf8(output.stdout)?,
+    ))
 }
-
 #[test]
-fn native_user_settings_satisfy_manifest_defaults_as_subsets() {
-    let fixture = configured_fixture();
-    let before = fixture.snapshot();
-    let (code, stdout) = run(&fixture, &["doctor", "config", "-v"]);
-
+fn native_user_settings_satisfy_manifest_defaults_as_subsets()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    let before = fixture.snapshot()?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "-v"])?;
     assert_eq!(code, 0);
     assert_eq!(stdout.matches("healthy config:").count(), 3);
     assert!(fixture.home().is_dir());
     assert!(fixture.repository().is_dir());
-    assert_eq!(fixture.snapshot(), before);
+    assert_eq!(fixture.snapshot()?, before);
+    Ok(())
 }
-
 #[test]
-fn missing_and_different_defaults_are_drift() {
-    let fixture = configured_fixture();
+fn missing_and_different_defaults_are_drift() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+{
+    let fixture = configured_fixture()?;
     fixture.write_home(
         ".claude/settings.json",
         r#"{"model":"sonnet","effortLevel":"xhigh"}"#,
-    );
-    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "claude", "-v"]);
-
+    )?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "claude", "-v"])?;
     assert_eq!(code, 1);
     assert!(stdout.contains(r#"model is "sonnet" (expected "opus[1m]")"#));
     assert!(stdout.contains(r#"effortLevel is "xhigh" (expected "high")"#));
     assert!(stdout.contains("autoCompactWindow is missing (expected 600000)"));
+    Ok(())
 }
-
 #[test]
-fn cursor_model_id_is_compared_without_requiring_managed_metadata() {
-    let fixture = configured_fixture();
+fn cursor_model_id_is_compared_without_requiring_managed_metadata()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
     fixture.write_home(
         ".cursor/cli-config.json",
         r#"{"model":{"modelId":"auto"},"maxMode":true}"#,
-    );
-    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "cursor", "-v"]);
-
+    )?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "cursor", "-v"])?;
     assert_eq!(code, 1);
     assert!(stdout.contains(r#"model.modelId is "auto" (expected "grok-4.6")"#));
     assert!(stdout.contains("maxMode is true (expected false)"));
+    Ok(())
 }
-
 #[test]
-fn codex_defaults_use_toml_key_names() {
-    let fixture = configured_fixture();
+fn codex_defaults_use_toml_key_names() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
     fixture.write_home(
         ".codex/config.toml",
         "model = \"gpt-5.6-sol\"\nmodel_reasoning_effort = \"medium\"\n",
-    );
-    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "codex", "-v"]);
-
+    )?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "codex", "-v"])?;
     assert_eq!(code, 1);
     assert!(stdout.contains("model_context_window is missing (expected 270000)"));
     assert!(!stdout.contains("model_auto_compact_token_limit"));
+    Ok(())
 }
-
 #[test]
-fn project_configurations_do_not_inherit_user_defaults() {
-    let fixture = configured_fixture();
-    let (code, stdout) = run(&fixture, &["doctor", "config", "--scope", "project", "-v"]);
-
+fn project_configurations_do_not_inherit_user_defaults()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "--scope", "project", "-v"])?;
     assert_eq!(code, 0);
     assert_eq!(stdout.matches("healthy config:").count(), 3);
+    Ok(())
 }

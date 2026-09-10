@@ -5,12 +5,12 @@ use super::clock::timestamp;
 use super::store::inventory::valid_memory_id;
 use super::store::types::StorePhase;
 use super::{MemoryEntry, MemoryError, Store, UtcTimestamp, parse_utc_timestamp};
-use jiff::SignedDuration;
 use serde::{Deserialize, Serialize};
 use std::io::Read;
+use time::Duration;
 
 const MAX_CACHE_BYTES: u64 = 16 * 1024 * 1024;
-const CACHE_LIFETIME: SignedDuration = SignedDuration::from_hours(48);
+const CACHE_LIFETIME: Duration = Duration::hours(48);
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -27,6 +27,7 @@ impl OracleEnvironment {
         }
     }
 
+    #[must_use]
     pub fn current() -> Self {
         Self::new(std::env::consts::OS, std::env::consts::ARCH)
     }
@@ -34,7 +35,7 @@ impl OracleEnvironment {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct CacheRecord {
+pub struct CacheRecord {
     entry_id: String,
     oracle_digest: String,
     proof_digest: String,
@@ -81,7 +82,7 @@ impl CacheRecord {
         let Some(now) = timestamp(now) else {
             return false;
         };
-        let age = now.duration_since(validated_at);
+        let age = now - validated_at;
         !age.is_negative() && age < CACHE_LIFETIME
     }
 
@@ -129,7 +130,7 @@ struct CacheDocument {
 }
 
 impl CacheDocument {
-    fn empty() -> Self {
+    const fn empty() -> Self {
         Self {
             schema_version: 1,
             entries: Vec::new(),
@@ -141,8 +142,8 @@ impl CacheDocument {
             && self.entries.iter().all(CacheRecord::valid)
             && self
                 .entries
-                .windows(2)
-                .all(|entries| entries[0].entry_id < entries[1].entry_id)
+                .array_windows::<2>()
+                .all(|[left, right]| left.entry_id < right.entry_id)
     }
 
     fn upsert(&mut self, record: CacheRecord) {
@@ -189,7 +190,8 @@ impl Store {
         if metadata.len() > MAX_CACHE_BYTES {
             return Ok(None);
         }
-        let mut bytes = Vec::with_capacity(metadata.len() as usize);
+        let mut bytes =
+            Vec::with_capacity(usize::try_from(metadata.len()).map_err(|_| cache_unavailable())?);
         file.by_ref()
             .take(MAX_CACHE_BYTES + 1)
             .read_to_end(&mut bytes)

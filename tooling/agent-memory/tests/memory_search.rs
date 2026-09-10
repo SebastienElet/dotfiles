@@ -1,10 +1,6 @@
-#[allow(dead_code)]
-#[path = "support/memory.rs"]
-mod memory_support;
+#![cfg(test)]
 
-#[path = "memory_index/support.rs"]
-#[allow(dead_code)]
-mod support;
+use crate::index_support as support;
 
 #[path = "memory_search/freshness.rs"]
 mod freshness;

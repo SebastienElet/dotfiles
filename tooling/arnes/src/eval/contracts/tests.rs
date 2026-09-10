@@ -1,12 +1,15 @@
 use super::*;
 
 #[test]
-fn refuses_escaping_paths_and_missing_trigger_polarity() {
+fn refuses_escaping_paths_and_missing_trigger_polarity() -> Result<(), Box<dyn std::error::Error>> {
     for path in ["../private.md", "a/./b", "/absolute", "a//b", "a b"] {
         assert!(validate_path(path).is_err());
     }
-    let trigger: Trigger = serde_json::from_str(r#"{"skill":"x","version":"1","queries":[{"query":"Find x","should_activate":true,"reason":"literal"}]}"#).unwrap();
+    let trigger: Trigger = serde_json::from_str(
+        r#"{"skill":"x","version":"1","queries":[{"query":"Find x","should_activate":true,"reason":"literal"}]}"#,
+    )?;
     assert!(trigger.validate().is_err());
+    Ok(())
 }
 
 #[test]

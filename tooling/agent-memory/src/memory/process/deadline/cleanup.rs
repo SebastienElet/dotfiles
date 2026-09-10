@@ -33,12 +33,13 @@ impl GroupController for SystemGroupController {
 
 pub(super) fn close_and_reap(
     child: &mut Child,
-    readers: &mut Readers,
+    readers: &Readers,
     deadline: Instant,
     controller: &dyn GroupController,
 ) -> io::Result<()> {
     readers.cancel();
-    let group = Pid::from_raw(child.id() as i32).ok_or_else(group_unavailable)?;
+    let group = Pid::from_raw(i32::try_from(child.id()).map_err(|_| group_unavailable())?)
+        .ok_or_else(group_unavailable)?;
     let mut error = controller.kill_group(group).err();
     if error.is_some() {
         let _ = child.kill();

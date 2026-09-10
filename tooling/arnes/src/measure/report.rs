@@ -7,7 +7,7 @@ use clap::Args;
 use serde::Serialize;
 use std::collections::BTreeMap;
 
-#[derive(Args)]
+#[derive(Args, Clone, Copy)]
 pub struct ReportArgs {
     #[arg(long, value_enum, default_value_t)]
     pub format: ListFormat,
@@ -42,6 +42,8 @@ struct Report {
     storage: StorageUsage,
 }
 
+/// # Errors
+/// Returns errors reading run metadata, event histories, outcomes, storage usage, or serializing the report.
 pub fn render(args: ReportArgs) -> Result<String, MeasureError> {
     let reported_at_ms = now_ms();
     let store = open_store()?;
@@ -123,7 +125,10 @@ fn finalize(counts: &mut Counts) {
 }
 
 fn ratio(numerator: u64, denominator: u64) -> Option<f64> {
-    (denominator > 0).then(|| numerator as f64 / denominator as f64)
+    (denominator > 0).then(|| {
+        crate::numbers::approximate_count(numerator)
+            / crate::numbers::approximate_count(denominator)
+    })
 }
 
 fn ordered_agents(mut agents: BTreeMap<String, Counts>) -> Vec<AgentMetrics> {

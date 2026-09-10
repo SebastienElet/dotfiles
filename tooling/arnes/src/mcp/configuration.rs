@@ -12,6 +12,8 @@ mod codex;
 #[derive(Debug)]
 pub(super) struct ConfigurationError(String);
 
+impl std::error::Error for ConfigurationError {}
+
 impl ConfigurationError {
     fn new(message: impl Into<String>) -> Self {
         Self(message.into())
@@ -68,13 +70,15 @@ fn read_optional(path: &Path, root: &Path) -> Result<Option<Vec<u8>>, Configurat
         }
         Err(_) | Ok(_) => {}
     }
-    match fs::read(path) {
-        Ok(bytes) => Ok(Some(bytes)),
-        Err(_) => Err(ConfigurationError::new(format!(
-            "could not read {}",
-            path.display()
-        ))),
-    }
+    fs::read(path).map_or_else(
+        |_| {
+            Err(ConfigurationError::new(format!(
+                "could not read {}",
+                path.display()
+            )))
+        },
+        |bytes| Ok(Some(bytes)),
+    )
 }
 
 #[cfg(test)]

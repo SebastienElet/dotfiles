@@ -18,7 +18,7 @@ pub struct Statusline<'a> {
 
 impl Manifest {
     pub fn statuslines(&self) -> impl Iterator<Item = Statusline<'_>> {
-        self.statuslines.iter().map(|declaration| Statusline {
+        self.0.statuslines.iter().map(|declaration| Statusline {
             agent: declaration.agent,
             scope: declaration.scope,
             items: &declaration.items,

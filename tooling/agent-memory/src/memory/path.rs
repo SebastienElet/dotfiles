@@ -6,25 +6,30 @@ mod access;
 mod component;
 mod policy;
 
-pub(crate) use access::ManagedPath;
-pub(crate) use component::{open_existing_root, open_root};
-pub(crate) use policy::DirectoryAccess;
+pub use access::ManagedPath;
+pub use component::{open_existing_root, open_root};
+pub use policy::DirectoryAccess;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MemoryRoot(PathBuf);
 
 impl MemoryRoot {
+    /// # Errors
+    ///
+    /// Returns an error if neither root nor home is available, or the selected root path is invalid or inaccessible.
     pub fn from_environment() -> Result<Self, MemoryError> {
-        match env::var_os("AGENT_MEMORY_ROOT") {
-            Some(path) => Self::new(PathBuf::from(path)),
-            None => {
-                let home = env::var_os("HOME")
-                    .ok_or_else(|| MemoryError::unavailable("memory_root_unavailable", "store"))?;
-                Self::new(PathBuf::from(home).join(".local/share/agent-memory"))
-            }
+        if let Some(path) = env::var_os("AGENT_MEMORY_ROOT") {
+            Self::new(PathBuf::from(path))
+        } else {
+            let home = env::var_os("HOME")
+                .ok_or_else(|| MemoryError::unavailable("memory_root_unavailable", "store"))?;
+            Self::new(PathBuf::from(home).join(".local/share/agent-memory"))
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error for a nonabsolute path, parent traversal, a missing final name, or an inaccessible existing ancestor.
     pub fn new(path: impl AsRef<Path>) -> Result<Self, MemoryError> {
         let path = path.as_ref();
         if !path.is_absolute()
@@ -40,6 +45,7 @@ impl MemoryRoot {
         Ok(Self(resolved_parent.join(name)))
     }
 
+    #[must_use]
     pub fn path(&self) -> &Path {
         &self.0
     }

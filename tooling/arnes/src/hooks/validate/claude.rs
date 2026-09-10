@@ -102,7 +102,7 @@ fn handler_fields(event: &str, handler: &Value) -> Result<(), HooksError> {
         "mcp_tool" => mcp(handler),
         "prompt" => prompt(handler),
         "agent" => agent(handler),
-        _ => unreachable!(),
+        _ => Ok(()),
     }
 }
 

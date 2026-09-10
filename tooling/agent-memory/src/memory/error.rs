@@ -43,18 +43,22 @@ impl MemoryError {
         }
     }
 
+    #[must_use]
     pub const fn class(&self) -> MemoryErrorClass {
         self.class
     }
 
+    #[must_use]
     pub const fn code(&self) -> &'static str {
         self.code
     }
 
+    #[must_use]
     pub const fn field(&self) -> &'static str {
         self.field
     }
 
+    #[must_use]
     pub fn diagnostic(&self) -> crate::Diagnostic {
         self.diagnostic
             .as_deref()

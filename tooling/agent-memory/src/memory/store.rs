@@ -28,14 +28,15 @@ pub struct Store {
 }
 
 impl Store {
+    #[must_use]
     pub fn admit(
         &self,
-        resolved: ResolvedDraft,
+        resolved: &ResolvedDraft,
         project: Option<&ProjectScope>,
         timestamp: &UtcTimestamp,
         sources: &SourceContext<'_>,
     ) -> AdmissionResult {
-        let candidate = match StoredEntry::from_resolved(&resolved, project, timestamp) {
+        let candidate = match StoredEntry::from_resolved(resolved, project, timestamp) {
             Ok(candidate) => candidate,
             Err(error) => return AdmissionResult::Rejected { error },
         };
@@ -54,7 +55,7 @@ impl Store {
         if let Err(error) = self.ensure_entry_parent(&candidate) {
             return AdmissionResult::Rejected { error };
         }
-        match self.existing_admission(&destination, &candidate) {
+        match Self::existing_admission(&destination, &candidate) {
             Ok(Some(true)) => {
                 let durability = self
                     .hit(StorePhase::BeforeYamlDirectoryFsync)
@@ -78,6 +79,9 @@ impl Store {
         admission_commit(id, commit)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error for an invalid transition, conflicting entry, lock failure, or failure before durable YAML publication.
     pub fn replace_active(&self, entry: &MemoryEntry) -> Result<StoreCommit, MemoryError> {
         if entry.status() == Status::Active {
             return Err(MemoryError::new("entry_not_terminal", "status"));
@@ -103,6 +107,9 @@ impl Store {
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error for an invalid identifier, unreadable or invalid stored state, or conflicting entries with the same identifier.
     pub fn load(&self, id: &str) -> Result<Option<MemoryEntry>, MemoryError> {
         if !valid_memory_id(id) {
             return Err(MemoryError::new("invalid_memory_id", "id"));
@@ -119,6 +126,9 @@ impl Store {
         Ok(found)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if an entry path is unsafe, an entry is unreadable or invalid, or index freshness cannot be checked.
     pub fn list(&self) -> Result<StoreListing, MemoryError> {
         let paths = entry_paths(&self.root)?;
         let entries = paths
@@ -132,7 +142,6 @@ impl Store {
     }
 
     fn existing_admission(
-        &self,
         path: &ManagedPath,
         candidate: &StoredEntry,
     ) -> Result<Option<bool>, MemoryError> {
@@ -153,11 +162,11 @@ impl Store {
         Ok(lock)
     }
 
-    pub(super) fn publication(&self) -> AtomicPublication<'_> {
+    pub(super) const fn publication(&self) -> AtomicPublication<'_> {
         AtomicPublication::new(&self.root, self.failpoint.as_ref())
     }
 
-    pub(super) fn root(&self) -> &ManagedPath {
+    pub(super) const fn root(&self) -> &ManagedPath {
         &self.root
     }
 

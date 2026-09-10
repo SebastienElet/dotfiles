@@ -7,14 +7,14 @@ pub(super) struct StagedFile {
     file: File,
 }
 
-pub(crate) struct StagedIndex {
+pub struct StagedIndex {
     staged: StagedFile,
     destination: ManagedPath,
     original: Option<File>,
 }
 
 impl StagedFile {
-    pub(super) fn new(path: ManagedPath, file: File) -> Self {
+    pub(super) const fn new(path: ManagedPath, file: File) -> Self {
         Self { path, file }
     }
 
@@ -44,7 +44,7 @@ impl StagedFile {
 }
 
 impl StagedIndex {
-    pub(super) fn new(
+    pub(super) const fn new(
         staged: StagedFile,
         destination: ManagedPath,
         original: Option<File>,

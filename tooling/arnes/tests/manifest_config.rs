@@ -1,21 +1,25 @@
+#![cfg(test)]
 use arnes::manifest;
-
-fn error(agent: &str) -> String {
+fn error(agent: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let input = format!("version: 1\nagents:\n{agent}resources: []\n");
-    manifest::parse(&input).err().unwrap().to_string()
+    Ok(manifest::parse(&input)
+        .err()
+        .ok_or("operation unexpectedly succeeded")?
+        .to_string())
 }
-
 #[test]
-fn user_defaults_require_user_scope() {
+fn user_defaults_require_user_scope() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     assert_eq!(
-        error("  - id: codex\n    scopes: [project]\n    user_config:\n      model: gpt-5.6-sol\n"),
+        error(
+            "  - id: codex\n    scopes: [project]\n    user_config:\n      model: gpt-5.6-sol\n"
+        )?,
         "agents[0].user_config: requires the user scope"
     );
+    Ok(())
 }
-
 #[test]
-fn agent_capabilities_are_validated() {
-    for (agent, expected) in [
+fn agent_capabilities_are_validated() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _: () = for (agent, expected) in [
         (
             "  - id: cursor\n    scopes: [user]\n    user_config:\n      model: auto\n      effort: high\n",
             "agents[0].user_config.effort: cursor does not expose a persistent effort setting",
@@ -29,13 +33,13 @@ fn agent_capabilities_are_validated() {
             "agents[0].user_config.max_mode: codex does not expose max mode",
         ),
     ] {
-        assert_eq!(error(agent), expected);
-    }
+        assert_eq!(error(agent)?, expected);
+    };
+    Ok(())
 }
-
 #[test]
-fn model_and_windows_are_validated() {
-    for (agent, expected) in [
+fn model_and_windows_are_validated() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _: () = for (agent, expected) in [
         (
             "  - id: codex\n    scopes: [user]\n    user_config:\n      model: \"\"\n",
             "agents[0].user_config.model: cannot be empty",
@@ -53,6 +57,7 @@ fn model_and_windows_are_validated() {
             "agents[0].user_config.auto_compact_window: must be smaller than context_window",
         ),
     ] {
-        assert_eq!(error(agent), expected);
-    }
+        assert_eq!(error(agent)?, expected);
+    };
+    Ok(())
 }

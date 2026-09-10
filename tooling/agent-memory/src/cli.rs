@@ -7,13 +7,15 @@ mod trace;
 use arguments::Arguments;
 use boundary::write_json;
 use clap::{Parser, error::ErrorKind};
+#[cfg(test)]
 use serde_json::json;
 use std::io;
 
+#[must_use]
 pub fn run_cli() -> u8 {
     let arguments = match Arguments::try_parse() {
         Ok(arguments) => arguments,
-        Err(error) => return report_argument_error(error),
+        Err(error) => return report_argument_error(&error),
     };
     let stdin = io::stdin();
     let mut input = stdin.lock();
@@ -26,6 +28,7 @@ pub fn run_cli() -> u8 {
         Err(failure) => return write_failure(&mut diagnostics, failure),
     };
     let result = commands::dispatch(arguments.command, &mut input);
+    drop(input);
     let exit = complete(result, &mut output, &mut diagnostics);
     if let Err(failure) = trace.finish(exit) {
         return write_failure(&mut diagnostics, failure);
@@ -33,7 +36,7 @@ pub fn run_cli() -> u8 {
     exit
 }
 
-fn report_argument_error(error: clap::Error) -> u8 {
+fn report_argument_error(error: &clap::Error) -> u8 {
     if matches!(
         error.kind(),
         ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
@@ -61,17 +64,27 @@ fn complete(
 }
 
 fn write_failure(diagnostics: &mut dyn io::Write, failure: CliFailure) -> u8 {
-    let mut error = serde_json::to_value(
-        failure
-            .diagnostic
-            .as_deref()
-            .copied()
-            .unwrap_or_else(|| crate::Diagnostic::for_code(failure.code, failure.field)),
-    )
-    .expect("diagnostics contain only static text and integers");
-    error["code"] = json!(failure.code);
-    error["field"] = json!(failure.field);
-    let value = json!({"error": error});
+    #[derive(serde::Serialize)]
+    struct ErrorPayload {
+        code: &'static str,
+        field: &'static str,
+        #[serde(flatten)]
+        diagnostic: crate::Diagnostic,
+    }
+    #[derive(serde::Serialize)]
+    struct FailurePayload {
+        error: ErrorPayload,
+    }
+    let value = FailurePayload {
+        error: ErrorPayload {
+            code: failure.code,
+            field: failure.field,
+            diagnostic: failure.diagnostic.map_or_else(
+                || crate::Diagnostic::for_code(failure.code, failure.field),
+                |diagnostic| *diagnostic,
+            ),
+        },
+    };
     write_json(diagnostics, &value).map_or(4, |()| failure.exit)
 }
 
@@ -84,7 +97,7 @@ struct CliFailure {
 }
 
 impl CliFailure {
-    fn invalid_arguments() -> Self {
+    const fn invalid_arguments() -> Self {
         Self {
             exit: 2,
             code: "invalid_arguments",
@@ -93,7 +106,7 @@ impl CliFailure {
         }
     }
 
-    fn evaluation_trace_unavailable() -> Self {
+    const fn evaluation_trace_unavailable() -> Self {
         Self {
             exit: 4,
             code: "evaluation_trace_unavailable",
@@ -102,7 +115,7 @@ impl CliFailure {
         }
     }
 
-    fn from_memory(error: crate::MemoryError) -> Self {
+    fn from_memory(error: &crate::MemoryError) -> Self {
         let exit = match error.class() {
             crate::MemoryErrorClass::Rejection => 2,
             crate::MemoryErrorClass::Conflict => 3,
@@ -116,7 +129,7 @@ impl CliFailure {
         }
     }
 
-    fn from_hook(error: crate::HookError) -> Self {
+    const fn from_hook(error: &crate::HookError) -> Self {
         let exit = match error.class() {
             crate::HookErrorClass::Rejection => 2,
             crate::HookErrorClass::Unavailable => 4,
@@ -164,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    fn reports_stdout_failure_on_stderr() {
+    fn reports_stdout_failure_on_stderr() -> Result<(), serde_json::Error> {
         let mut diagnostics = Vec::new();
 
         let exit = complete(
@@ -174,13 +187,18 @@ mod tests {
         );
 
         assert_eq!(exit, 4);
-        let value: serde_json::Value = serde_json::from_slice(&diagnostics).unwrap();
-        assert_eq!(value["error"]["code"], "output_unavailable");
-        assert_eq!(value["error"]["field"], "stdout");
+        let value: serde_json::Value = serde_json::from_slice(&diagnostics)?;
+        assert_eq!(
+            value.pointer("/error/code"),
+            Some(&json!("output_unavailable"))
+        );
+        assert_eq!(value.pointer("/error/field"), Some(&json!("stdout")));
+        Ok(())
     }
 
     #[test]
-    fn reports_flush_only_failure_without_copying_context_to_diagnostics() {
+    fn reports_flush_only_failure_without_copying_context_to_diagnostics()
+    -> Result<(), serde_json::Error> {
         let context = "AGENT_MEMORY_CONTEXT_V1 secret statement";
         let mut output = FlushFailingWriter::default();
         let mut diagnostics = Vec::new();
@@ -193,7 +211,11 @@ mod tests {
 
         assert_eq!(exit, 4);
         assert!(!String::from_utf8_lossy(&diagnostics).contains(context));
-        let value: serde_json::Value = serde_json::from_slice(&diagnostics).unwrap();
-        assert_eq!(value["error"]["code"], "output_unavailable");
+        let value: serde_json::Value = serde_json::from_slice(&diagnostics)?;
+        assert_eq!(
+            value.pointer("/error/code"),
+            Some(&json!("output_unavailable"))
+        );
+        Ok(())
     }
 }

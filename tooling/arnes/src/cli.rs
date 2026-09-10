@@ -8,13 +8,13 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
 #[command(version, about = "Diagnose agent harness resources")]
-pub(crate) struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     pub(crate) command: Command,
 }
 
 #[derive(Subcommand)]
-pub(crate) enum Command {
+pub enum Command {
     Eval(crate::eval_cli::EvalArgs),
     Export {
         #[arg(long)]
@@ -45,7 +45,7 @@ pub(crate) enum Command {
 }
 
 #[derive(Subcommand)]
-pub(crate) enum MeasureCommand {
+pub enum MeasureCommand {
     Hook {
         #[arg(long, value_enum)]
         agent: HookAgent,
@@ -58,13 +58,13 @@ pub(crate) enum MeasureCommand {
     Report(ReportArgs),
 }
 
-#[derive(Subcommand)]
-pub(crate) enum SetupCommand {
+#[derive(Subcommand, Clone, Copy)]
+pub enum SetupCommand {
     Hooks(SetupHooksArgs),
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, ValueEnum)]
-pub(crate) enum Resource {
+pub enum Resource {
     Manifest,
     Config,
     Instructions,
@@ -78,14 +78,14 @@ pub(crate) enum Resource {
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
-pub(crate) enum Format {
+pub enum Format {
     #[default]
     Human,
     Json,
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
-pub(crate) enum Color {
+pub enum Color {
     #[default]
     Auto,
     Always,
@@ -102,7 +102,7 @@ impl From<Color> for ColorMode {
     }
 }
 
-pub(crate) fn validate_render_options(
+pub fn validate_render_options(
     format: Format,
     verbose: bool,
     color: Color,

@@ -9,6 +9,7 @@ pub mod instructions;
 pub mod manifest;
 pub mod mcp;
 pub mod measure;
+mod numbers;
 pub mod prompts;
 pub mod roots;
 pub mod rules;

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use agent_memory::{MemoryKind, Status, parse_entry};
 
 const ACTIVE: &str = "active";
@@ -27,7 +29,7 @@ fn entry(kind: &str, status: &str) -> Vec<u8> {
 }
 
 #[test]
-fn parses_every_closed_kind() {
+fn parses_every_closed_kind() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cases = [
         ("goal", MemoryKind::Goal),
         ("decision", MemoryKind::Decision),
@@ -38,12 +40,13 @@ fn parses_every_closed_kind() {
     ];
 
     for (kind, expected) in cases {
-        assert_eq!(parse_entry(&entry(kind, ACTIVE)).unwrap().kind(), expected);
+        assert_eq!(parse_entry(&entry(kind, ACTIVE))?.kind(), expected);
     }
+    Ok(())
 }
 
 #[test]
-fn enforces_the_kind_status_matrix() {
+fn enforces_the_kind_status_matrix() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let statuses = [
         ACTIVE,
         "achieved",
@@ -69,51 +72,55 @@ fn enforces_the_kind_status_matrix() {
                 assert!(result.is_ok(), "{kind}/{status}: {result:?}");
             } else {
                 assert_eq!(
-                    result.unwrap_err().code(),
+                    result.err().ok_or("expected operation failure")?.code(),
                     "invalid_kind_status",
                     "{kind}/{status}"
                 );
             }
         }
     }
+    Ok(())
 }
 
 #[test]
-fn enforces_status_transition_coherence() {
+fn enforces_status_transition_coherence() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let active_invariant = entry("invariant", ACTIVE);
-    assert_eq!(
-        parse_entry(&active_invariant).unwrap().status(),
-        Status::Active
-    );
+    assert_eq!(parse_entry(&active_invariant)?.status(), Status::Active);
 
     let goal_with_status = entry("goal", "superseded");
     assert_eq!(
-        parse_entry(&goal_with_status).unwrap_err().code(),
+        parse_entry(&goal_with_status)
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "invalid_kind_status"
     );
 
-    let mut active_with_transition = String::from_utf8(entry("goal", ACTIVE)).unwrap();
+    let mut active_with_transition = String::from_utf8(entry("goal", ACTIVE))?;
     active_with_transition.push_str(&transition("achieved"));
     assert_eq!(
         parse_entry(active_with_transition.as_bytes())
-            .unwrap_err()
+            .err()
+            .ok_or("expected operation failure")?
             .code(),
         "unexpected_transition"
     );
 
     let terminal_without_transition = String::from_utf8(entry("goal", "achieved"))
-        .unwrap()
+        ?
         .replace("transition:\n  from: active\n  to: achieved\n  at: 2026-08-28T10:00:00Z\n  verdict: valid\n  reason: The observable outcome was established.\n", "");
     assert_eq!(
         parse_entry(terminal_without_transition.as_bytes())
-            .unwrap_err()
+            .err()
+            .ok_or("expected operation failure")?
             .code(),
         "missing_transition"
     );
+    Ok(())
 }
 
 #[test]
-fn rejects_incoherent_transition_values() {
+fn rejects_incoherent_transition_values() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cases = [
         ("from", "from: active", "from: achieved"),
         ("to", "to: achieved", "to: abandoned"),
@@ -121,63 +128,83 @@ fn rejects_incoherent_transition_values() {
     ];
 
     for (label, from, to) in cases {
-        let yaml = String::from_utf8(entry("goal", "achieved"))
-            .unwrap()
-            .replace(from, to);
+        let yaml = String::from_utf8(entry("goal", "achieved"))?.replace(from, to);
         assert_eq!(
-            parse_entry(yaml.as_bytes()).unwrap_err().code(),
+            parse_entry(yaml.as_bytes())
+                .err()
+                .ok_or("expected operation failure")?
+                .code(),
             "invalid_transition",
             "{label}"
         );
     }
+    Ok(())
 }
 
 #[test]
-fn rejects_future_schema_and_duplicate_yaml_keys() {
-    let future_schema = String::from_utf8(entry("invariant", ACTIVE))
-        .unwrap()
-        .replacen("schema_version: 1", "schema_version: 2", 1);
+fn rejects_future_schema_and_duplicate_yaml_keys()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let future_schema = String::from_utf8(entry("invariant", ACTIVE))?.replacen(
+        "schema_version: 1",
+        "schema_version: 2",
+        1,
+    );
     assert_eq!(
-        parse_entry(future_schema.as_bytes()).unwrap_err().code(),
+        parse_entry(future_schema.as_bytes())
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "unsupported_schema"
     );
 
-    let duplicate_yaml_key = String::from_utf8(entry("invariant", ACTIVE))
-        .unwrap()
-        .replacen("status: active", "status: active\nstatus: active", 1);
+    let duplicate_yaml_key = String::from_utf8(entry("invariant", ACTIVE))?.replacen(
+        "status: active",
+        "status: active\nstatus: active",
+        1,
+    );
     assert_eq!(
         parse_entry(duplicate_yaml_key.as_bytes())
-            .unwrap_err()
+            .err()
+            .ok_or("expected operation failure")?
             .code(),
         "duplicate_field"
     );
+    Ok(())
 }
 
 #[test]
-fn closed_schema_refuses_executable_shapes() {
-    let command_field = String::from_utf8(entry("invariant", ACTIVE))
-        .unwrap()
-        .replacen(
-            "statement: This durable statement is independently useful.",
-            "statement: This durable statement is independently useful.\ncommand: printf unsafe",
-            1,
-        );
+fn closed_schema_refuses_executable_shapes() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+{
+    let command_field = String::from_utf8(entry("invariant", ACTIVE))?.replacen(
+        "statement: This durable statement is independently useful.",
+        "statement: This durable statement is independently useful.\ncommand: printf unsafe",
+        1,
+    );
     assert_eq!(
-        parse_entry(command_field.as_bytes()).unwrap_err().code(),
+        parse_entry(command_field.as_bytes())
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "unknown_field"
     );
 
-    let command_source = String::from_utf8(entry("invariant", ACTIVE))
-        .unwrap()
-        .replacen("kind: git-file", "kind: command", 1);
+    let command_source = String::from_utf8(entry("invariant", ACTIVE))?.replacen(
+        "kind: git-file",
+        "kind: command",
+        1,
+    );
     assert_eq!(
-        parse_entry(command_source.as_bytes()).unwrap_err().code(),
+        parse_entry(command_source.as_bytes())
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "invalid_source_kind"
     );
+    Ok(())
 }
 
 #[test]
-fn rejects_invalid_validated_newtypes() {
+fn rejects_invalid_validated_newtypes() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cases = [
         ("id", "mem_0123456789abcdef01234567", "mem_short"),
         (
@@ -194,13 +221,15 @@ fn rejects_invalid_validated_newtypes() {
     ];
 
     for (label, valid, invalid) in cases {
-        let yaml = String::from_utf8(entry("invariant", ACTIVE))
-            .unwrap()
-            .replacen(valid, invalid, 1);
+        let yaml = String::from_utf8(entry("invariant", ACTIVE))?.replacen(valid, invalid, 1);
         assert_eq!(
-            parse_entry(yaml.as_bytes()).unwrap_err().code(),
+            parse_entry(yaml.as_bytes())
+                .err()
+                .ok_or("expected operation failure")?
+                .code(),
             "invalid_field",
             "{label}"
         );
     }
+    Ok(())
 }

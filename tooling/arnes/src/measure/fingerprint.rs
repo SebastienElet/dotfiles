@@ -53,7 +53,7 @@ fn selected_roots(agent: HookAgent, home: &Path, repository: &Path) -> Vec<Selec
     selected
 }
 
-fn home_roots(agent: HookAgent) -> &'static [&'static str] {
+const fn home_roots(agent: HookAgent) -> &'static [&'static str] {
     match agent {
         HookAgent::Codex => &[
             ".codex/config.toml",
@@ -81,7 +81,7 @@ fn home_roots(agent: HookAgent) -> &'static [&'static str] {
     }
 }
 
-fn repository_roots(agent: HookAgent) -> &'static [&'static str] {
+const fn repository_roots(agent: HookAgent) -> &'static [&'static str] {
     match agent {
         HookAgent::Codex => &[
             "AGENTS.md",

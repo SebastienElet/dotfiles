@@ -25,6 +25,8 @@ struct ResultEvent<'a> {
     result: &'a ResultRecord,
 }
 
+/// # Errors
+/// Rejects invalid finish arguments, incompatible history, or revision overflow, and returns durable-write errors.
 pub fn record(args: FinishArgs) -> Result<(), MeasureError> {
     validate(&args)?;
     preflight(&args)?;
@@ -73,7 +75,9 @@ fn reconcile_result(
         ResultState::Pending => Ok(0),
         ResultState::OutcomeRecorded => Err(MeasureError::new("incompatible outcome history")),
         ResultState::Recorded | ResultState::Missing | ResultState::Lagging => {
-            Ok(latest_result(history).unwrap().revision)
+            latest_result(history)
+                .map(|result| result.revision)
+                .ok_or_else(|| MeasureError::new("result history has no recorded result"))
         }
     }
 }
@@ -96,7 +100,7 @@ fn validate(args: &FinishArgs) -> Result<(), MeasureError> {
         MergeReady::Unjudgeable if args.evidence.is_empty() => Err(MeasureError::new(
             "evidence is required when merge-ready is unjudgeable",
         )),
-        _ => Ok(()),
+        MergeReady::Pass | MergeReady::Fail | MergeReady::Unjudgeable => Ok(()),
     }
 }
 

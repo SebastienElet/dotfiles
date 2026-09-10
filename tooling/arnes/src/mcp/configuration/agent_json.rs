@@ -115,8 +115,9 @@ fn environment_value(value: &str) -> EnvironmentValue {
         .strip_prefix("${")
         .and_then(|value| value.strip_suffix('}'))
         .filter(|value| !value.is_empty())
-        .map(|value| EnvironmentValue::Reference(value.to_owned()))
-        .unwrap_or(EnvironmentValue::RedactedLiteral)
+        .map_or(EnvironmentValue::RedactedLiteral, |value| {
+            EnvironmentValue::Reference(value.to_owned())
+        })
 }
 
 fn claude_disabled(roots: &Roots) -> Result<Vec<String>, ConfigurationError> {

@@ -15,6 +15,9 @@ const MAX_INPUT_BYTES: usize = 1024 * 1024;
 const MAX_RETRIEVAL_TERMS: usize = 20;
 const MAX_SOURCES: usize = 20;
 
+/// # Errors
+///
+/// Returns an error for invalid UTF-8, excessive input size, malformed YAML, or fields that do not match the draft schema.
 pub fn parse_draft(bytes: &[u8]) -> Result<AdmissionDraft, MemoryError> {
     let input = checked_input(bytes)?;
     let value = parse_value(input)?;
@@ -26,6 +29,9 @@ pub fn parse_draft(bytes: &[u8]) -> Result<AdmissionDraft, MemoryError> {
     Ok(AdmissionDraft { kind, data })
 }
 
+/// # Errors
+///
+/// Returns an error for unauthorized admission, invalid field bounds, disallowed persisted content, or unmet proof and oracle requirements.
 pub fn validate_draft(
     draft: AdmissionDraft,
     authorization: AdmissionAuthorization,
@@ -79,6 +85,9 @@ pub fn validate_draft(
     ))
 }
 
+/// # Errors
+///
+/// Returns an error for malformed input or an entry violating its schema, identity, field bounds, proof, or transition requirements.
 pub fn parse_entry(bytes: &[u8]) -> Result<MemoryEntry, MemoryError> {
     let input = checked_input(bytes)?;
     let value = parse_value(input)?;
@@ -89,6 +98,9 @@ pub fn parse_entry(bytes: &[u8]) -> Result<MemoryEntry, MemoryError> {
     validated_entry(raw)
 }
 
+/// # Errors
+///
+/// Returns an error unless the value is a supported UTC calendar timestamp without leap seconds.
 pub fn parse_utc_timestamp(value: &str) -> Result<UtcTimestamp, MemoryError> {
     utc_timestamp(value.to_owned())
 }
@@ -175,7 +187,7 @@ fn validated_transition(
     ))
 }
 
-pub(crate) fn validate_transition_reason(value: &str) -> Result<(), MemoryError> {
+pub fn validate_transition_reason(value: &str) -> Result<(), MemoryError> {
     if value.trim().is_empty() {
         return Err(MemoryError::new(
             "invalid_transition_reason",
@@ -229,7 +241,8 @@ fn parse_value(input: &str) -> Result<Value, MemoryError> {
 
 fn deserialize<T: DeserializeOwned>(input: &str) -> Result<T, MemoryError> {
     let deserializer = serde_yaml_ng::Deserializer::from_str(input);
-    serde_path_to_error::deserialize(deserializer).map_err(diagnostics::deserialize_error)
+    serde_path_to_error::deserialize(deserializer)
+        .map_err(|error| diagnostics::deserialize_error(&error))
 }
 
 fn validate_schema_version(value: &Value) -> Result<(), MemoryError> {
@@ -240,7 +253,7 @@ fn validate_schema_version(value: &Value) -> Result<(), MemoryError> {
     validate_schema_number(version)
 }
 
-fn validate_schema_number(version: u64) -> Result<(), MemoryError> {
+const fn validate_schema_number(version: u64) -> Result<(), MemoryError> {
     if version == 1 {
         Ok(())
     } else {
@@ -409,25 +422,27 @@ fn valid_utc_timestamp(value: &str) -> bool {
         }
     });
     let time_parts = time.split(':').collect::<Vec<_>>();
-    if date_parts.len() != 3 || time_parts.len() != 3 {
-        return false;
-    }
-    let Some(year) = fixed_number(date_parts[0], 4) else {
-        return false;
-    };
-    let Some(month) = fixed_number(date_parts[1], 2) else {
+    let ([year, month, day], [hour, minute, second]) =
+        (date_parts.as_slice(), time_parts.as_slice())
+    else {
         return false;
     };
-    let Some(day) = fixed_number(date_parts[2], 2) else {
+    let Some(year) = fixed_number(year, 4) else {
         return false;
     };
-    let Some(hour) = fixed_number(time_parts[0], 2) else {
+    let Some(month) = fixed_number(month, 2) else {
         return false;
     };
-    let Some(minute) = fixed_number(time_parts[1], 2) else {
+    let Some(day) = fixed_number(day, 2) else {
         return false;
     };
-    let Some(second) = fixed_number(time_parts[2], 2) else {
+    let Some(hour) = fixed_number(hour, 2) else {
+        return false;
+    };
+    let Some(minute) = fixed_number(minute, 2) else {
+        return false;
+    };
+    let Some(second) = fixed_number(second, 2) else {
         return false;
     };
     year > 0
@@ -444,7 +459,7 @@ fn fixed_number(value: &str, length: usize) -> Option<u32> {
         .flatten()
 }
 
-fn days_in_month(year: u32, month: u32) -> u32 {
+const fn days_in_month(year: u32, month: u32) -> u32 {
     match month {
         4 | 6 | 9 | 11 => 30,
         2 if year.is_multiple_of(400) || (year.is_multiple_of(4) && !year.is_multiple_of(100)) => {
@@ -489,7 +504,7 @@ fn validate_count(count: usize, maximum: usize, field: &'static str) -> Result<(
     }
 }
 
-fn validate_oracle_requirement(
+const fn validate_oracle_requirement(
     has_automated: bool,
     all_user_decisions: bool,
 ) -> Result<(), MemoryError> {
@@ -512,11 +527,9 @@ fn validate_scope_source_kinds(
 }
 
 fn reject_sensitive(value: &str, field: &'static str) -> Result<(), MemoryError> {
-    if let Some(message) = sensitive::rejection_reason(value) {
+    sensitive::rejection_reason(value).map_or(Ok(()), |message| {
         Err(MemoryError::new("sensitive_content", field).with_message(message))
-    } else {
-        Ok(())
-    }
+    })
 }
 
 fn reject_persisted_text(value: &str, field: &'static str) -> Result<(), MemoryError> {

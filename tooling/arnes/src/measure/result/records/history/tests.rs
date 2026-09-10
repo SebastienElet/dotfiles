@@ -5,38 +5,42 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 #[test]
-fn keeps_the_event_lock_while_reading_the_result_snapshot() {
-    let directory = tempfile::tempdir().unwrap();
+fn keeps_the_event_lock_while_reading_the_result_snapshot() -> Result<(), Box<dyn std::error::Error>>
+{
+    let directory = tempfile::tempdir()?;
     let path = directory.path().join("events.jsonl");
-    write_event(&path);
+    write_event(&path)?;
 
-    let (_, result) = read_events_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
+    let (_, result) = read_events_with(&ManagedPath::test_path(&path)?, &"b".repeat(64), || {
         let other = OpenOptions::new().read(true).write(true).open(&path)?;
         assert!(other.try_lock().is_err());
         Ok(7)
-    })
-    .unwrap();
+    })?;
 
     assert_eq!(result, 7);
+    Ok(())
 }
 
 #[test]
-fn list_keeps_the_event_lock_while_reading_the_result_snapshot() {
-    let directory = tempfile::tempdir().unwrap();
+fn list_keeps_the_event_lock_while_reading_the_result_snapshot()
+-> Result<(), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
     let path = directory.path().join("events.jsonl");
-    write_event(&path);
+    write_event(&path)?;
 
-    let result = read_events_for_list_with(&ManagedPath::test_path(&path), &"b".repeat(64), || {
-        let other = OpenOptions::new().read(true).write(true).open(&path)?;
-        assert!(other.try_lock().is_err());
-        Ok(7)
-    });
+    let result =
+        read_events_for_list_with(&ManagedPath::test_path(&path)?, &"b".repeat(64), || {
+            let other = OpenOptions::new().read(true).write(true).open(&path)?;
+            assert!(other.try_lock().is_err());
+            Ok(7)
+        });
 
-    assert_eq!(result.unwrap().1, 7);
+    assert_eq!(result?.1, 7);
+    Ok(())
 }
 
-fn write_event(path: &std::path::Path) {
-    let mut file = std::fs::File::create(path).unwrap();
+fn write_event(path: &std::path::Path) -> std::io::Result<()> {
+    let mut file = std::fs::File::create(path)?;
     writeln!(
         file,
         "{}",
@@ -48,6 +52,6 @@ fn write_event(path: &std::path::Path) {
             "artifact": "artifacts/hooks/event.json",
             "native_ids": {}
         })
-    )
-    .unwrap();
+    )?;
+    Ok(())
 }

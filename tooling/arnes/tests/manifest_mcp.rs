@@ -1,23 +1,25 @@
+#![cfg(test)]
 use arnes::manifest::{self, Agent, Scope};
-
 fn input(mcp: &str) -> String {
     format!(
         "version: 1\nagents:\n  - id: claude\n    scopes: [user, project]\n  - id: cursor\n    scopes: [project]\nmcp:{mcp}\nresources: []\n"
     )
 }
-
-fn error(mcp: &str) -> String {
-    manifest::parse(&input(mcp)).err().unwrap().to_string()
+fn error(mcp: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    Ok(manifest::parse(&input(mcp))
+        .err()
+        .ok_or("operation unexpectedly succeeded")?
+        .to_string())
 }
-
 #[test]
-fn parses_one_explicit_mcp_projection() {
+fn parses_one_explicit_mcp_projection() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let manifest = manifest::parse(&input(
         "\n  - name: apple-notes\n    agent: claude\n    scope: project\n    command: notes-mcp\n    args: [--stdio]\n    environment: [NOTES_PROFILE]\n    enabled: true",
-    ))
-    .unwrap();
-    let registration = manifest.mcp_registrations().next().unwrap();
-
+    ))?;
+    let registration = manifest
+        .mcp_registrations()
+        .next()
+        .ok_or("required test value is missing")?;
     assert_eq!(registration.name, "apple-notes");
     assert_eq!(
         (registration.agent, registration.scope),
@@ -27,22 +29,21 @@ fn parses_one_explicit_mcp_projection() {
     assert_eq!(registration.args, ["--stdio"]);
     assert_eq!(registration.environment, ["NOTES_PROFILE"]);
     assert_eq!(registration.enabled, Some(true));
+    Ok(())
 }
-
 #[test]
-fn absent_mcp_declarations_remain_compatible() {
+fn absent_mcp_declarations_remain_compatible()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     assert_eq!(
-        manifest::parse(&input(" []"))
-            .unwrap()
-            .mcp_registrations()
-            .count(),
+        manifest::parse(&input(" []"))?.mcp_registrations().count(),
         0
     );
+    Ok(())
 }
-
 #[test]
-fn rejects_invalid_and_duplicate_declarations() {
-    for (mcp, expected) in [
+fn rejects_invalid_and_duplicate_declarations()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _: () = for (mcp, expected) in [
         (
             "\n  - { name: Bad_Name, agent: claude, scope: user, command: mcp }",
             "mcp[0].name: must be lowercase ASCII kebab-case",
@@ -72,14 +73,15 @@ fn rejects_invalid_and_duplicate_declarations() {
             "mcp[0].enabled: cursor does not represent enabled state",
         ),
     ] {
-        assert_eq!(error(mcp), expected);
-    }
+        assert_eq!(error(mcp)?, expected);
+    };
+    Ok(())
 }
-
 #[test]
-fn targets_must_be_declared() {
+fn targets_must_be_declared() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     assert_eq!(
-        error("\n  - { name: managed, agent: cursor, scope: user, command: mcp }"),
+        error("\n  - { name: managed, agent: cursor, scope: user, command: mcp }")?,
         "mcp[0].scope: scope is not declared for this agent"
     );
+    Ok(())
 }

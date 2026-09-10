@@ -17,4 +17,4 @@ jobs:
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run: >-
           moon ci --downstream none arnes:fmt arnes:clippy
-          arnes:check arnes:test
+          arnes:check arnes:test arnes:doc

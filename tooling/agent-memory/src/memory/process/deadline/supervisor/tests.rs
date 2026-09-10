@@ -8,7 +8,7 @@ use std::io;
 use std::os::unix::process::CommandExt;
 use std::process::Stdio;
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::atomic::AtomicI32;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -23,18 +23,19 @@ impl CommandSpawner for CountingSpawner {
 }
 
 struct RecordingSpawner {
-    pid: Arc<Mutex<Option<Pid>>>,
+    pid: Arc<AtomicI32>,
 }
 
 impl RecordingSpawner {
     fn new() -> Self {
         Self {
-            pid: Arc::new(Mutex::new(None)),
+            pid: Arc::new(AtomicI32::new(0)),
         }
     }
 
-    fn pid(&self) -> Pid {
-        self.pid.lock().unwrap().unwrap()
+    fn pid(&self) -> io::Result<Pid> {
+        Pid::from_raw(self.pid.load(Ordering::Acquire))
+            .ok_or_else(|| io::Error::other("recorded process ID is missing"))
     }
 
     fn group_guard(&self) -> GroupGuard {
@@ -45,16 +46,20 @@ impl RecordingSpawner {
 impl CommandSpawner for RecordingSpawner {
     fn spawn(&self, command: &mut Command) -> io::Result<Child> {
         let child = command.spawn()?;
-        *self.pid.lock().unwrap() = Pid::from_raw(child.id() as i32);
+        self.pid.store(
+            i32::try_from(child.id()).map_err(io::Error::other)?,
+            Ordering::Release,
+        );
         Ok(child)
     }
 }
 
-struct GroupGuard(Arc<Mutex<Option<Pid>>>);
+struct GroupGuard(Arc<AtomicI32>);
 
 impl Drop for GroupGuard {
     fn drop(&mut self) {
-        if let Some(group) = *self.0.lock().unwrap() {
+        let group = Pid::from_raw(self.0.load(Ordering::Acquire));
+        if let Some(group) = group {
             let _ = kill_process_group(group, Signal::KILL);
         }
     }
@@ -127,34 +132,44 @@ fn group_probe_error() -> io::Error {
 }
 
 #[test]
-fn skips_an_injected_spawner_after_observing_an_expired_work_cutoff() {
+fn skips_an_injected_spawner_after_observing_an_expired_work_cutoff()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = CountingSpawner(AtomicUsize::new(0));
     let mut command = Command::new("sh");
 
     let error = run_command(
         &mut command,
-        ProcessBudget::new(Instant::now() - Duration::from_millis(1)),
+        ProcessBudget::new(
+            Instant::now()
+                .checked_sub(Duration::from_millis(1))
+                .ok_or("missing fixture value")?,
+        ),
         &spawner,
         &SystemGroupController,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation failure")?;
 
     assert_eq!(error.kind(), io::ErrorKind::TimedOut);
     assert_eq!(spawner.0.load(Ordering::Acquire), 0);
+    Ok(())
 }
 
 #[test]
-fn reaps_a_live_child_when_the_first_reader_creation_fails() {
-    assert_reader_failure_reaps(1);
+fn reaps_a_live_child_when_the_first_reader_creation_fails()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    assert_reader_failure_reaps(1)
 }
 
 #[test]
-fn reaps_a_live_child_when_the_second_reader_creation_fails() {
-    assert_reader_failure_reaps(2);
+fn reaps_a_live_child_when_the_second_reader_creation_fails()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    assert_reader_failure_reaps(2)
 }
 
 #[test]
-fn returns_promptly_when_group_kill_fails_but_the_leader_is_live() {
+fn returns_promptly_when_group_kill_fails_but_the_leader_is_live()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let mut command = sleep_command();
@@ -166,15 +181,18 @@ fn returns_promptly_when_group_kill_fails_but_the_leader_is_live() {
         &spawner,
         &FailingGroupController,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation failure")?;
 
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
     assert!(started.elapsed() < Duration::from_millis(250));
-    assert_child_reaped(spawner.pid());
+    assert_child_reaped(spawner.pid()?);
+    Ok(())
 }
 
 #[test]
-fn returns_success_after_a_transient_group_probe_error_and_verified_closure() {
+fn returns_success_after_a_transient_group_probe_error_and_verified_closure()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let controller = TransientProbeFailureController(AtomicUsize::new(0));
@@ -185,15 +203,16 @@ fn returns_success_after_a_transient_group_probe_error_and_verified_closure() {
         ProcessBudget::new(Instant::now() + Duration::from_millis(500)),
         &spawner,
         &controller,
-    )
-    .unwrap();
+    )?;
 
     assert!(output.success());
     assert_eq!(controller.0.load(Ordering::Acquire), 2);
+    Ok(())
 }
 
 #[test]
-fn returns_a_persistent_group_probe_error_at_the_cleanup_deadline() {
+fn returns_a_persistent_group_probe_error_at_the_cleanup_deadline()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let mut command = successful_command();
@@ -206,14 +225,18 @@ fn returns_a_persistent_group_probe_error_at_the_cleanup_deadline() {
         &spawner,
         &PersistentProbeFailureController,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation failure")?;
 
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
     assert_eq!(error.to_string(), "group_probe_unavailable");
     assert!((Duration::from_millis(120)..Duration::from_millis(250)).contains(&started.elapsed()));
+    Ok(())
 }
 
-fn assert_reader_failure_reaps(fail_on: usize) {
+fn assert_reader_failure_reaps(
+    fail_on: usize,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let readers = FailingReaderSpawner {
@@ -229,11 +252,13 @@ fn assert_reader_failure_reaps(fail_on: usize) {
         &readers,
         &SystemGroupController,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected reader failure")?;
 
     assert_eq!(error.kind(), io::ErrorKind::Other);
     assert_eq!(readers.attempts.load(Ordering::Acquire), fail_on);
-    assert_child_reaped(spawner.pid());
+    assert_child_reaped(spawner.pid()?);
+    Ok(())
 }
 
 fn assert_child_reaped(pid: Pid) {
@@ -264,7 +289,8 @@ fn successful_command() -> Command {
 }
 
 #[test]
-fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_group_kill() {
+fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_group_kill()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spawner = RecordingSpawner::new();
     let _group_guard = spawner.group_guard();
     let mut command = Command::new("sh");
@@ -281,10 +307,12 @@ fn leaves_no_unbounded_wait_when_a_pipe_holding_descendant_outlives_a_failed_gro
         &spawner,
         &FailingGroupController,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation failure")?;
 
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
     assert!(started.elapsed() < Duration::from_millis(250));
-    assert_child_reaped(spawner.pid());
-    assert!(test_kill_process_group(spawner.pid()).is_ok());
+    assert_child_reaped(spawner.pid()?);
+    assert!(test_kill_process_group(spawner.pid()?).is_ok());
+    Ok(())
 }

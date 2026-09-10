@@ -184,7 +184,7 @@ fn read_state(path: &super::store::ManagedPath) -> Result<Option<RetentionState>
     Ok(state)
 }
 
-fn valid_version(state: &RetentionState) -> bool {
+const fn valid_version(state: &RetentionState) -> bool {
     match (state.schema_version, state.candidate_prs, state.removed_prs) {
         (1, None, None) => true,
         (2, Some(candidates), Some(removed)) => removed <= candidates,

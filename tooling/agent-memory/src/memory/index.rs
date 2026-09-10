@@ -1,9 +1,9 @@
 mod builder;
 mod document;
-pub(crate) mod inventory;
+pub mod inventory;
 
 use self::builder::{PreparedIndex, prepare_with_candidate, rebuild_index};
-pub(crate) use self::document::IndexRow;
+pub use self::document::IndexRow;
 use self::document::{IndexDocument, index_bytes};
 use self::inventory::{InventorySnapshot, max_index_bytes};
 use super::path::ManagedPath;
@@ -35,6 +35,9 @@ pub struct Index {
 }
 
 impl Index {
+    /// # Errors
+    ///
+    /// Returns an error if store paths, inventory reads, locking, or index publication fail.
     pub fn load_or_rebuild(store: &Store) -> Result<IndexLoad, MemoryError> {
         let inventory = InventorySnapshot::capture(store.root())?;
         if let Some(document) = load_current(store.root(), &inventory)? {

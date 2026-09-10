@@ -3,7 +3,7 @@ use crate::memory::MemoryError;
 use std::fs::File;
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) enum DirectoryAccess {
+pub enum DirectoryAccess {
     Repair,
     Validate,
 }

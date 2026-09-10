@@ -6,6 +6,7 @@ import {
   rmSync,
   statSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -49,12 +50,20 @@ test("assembles imports and stays silent without rewriting on replay", () => {
   const paths = fixture();
   expect(run(paths).exitCode).toBe(0);
   expect(readFileSync(paths.destination, "utf8")).toBe("Rules\nSoul\nUser\n");
+  utimesSync(paths.destination, new Date(0), new Date(0));
   const before = statSync(paths.destination);
   const replay = run(paths);
   expect(replay.exitCode).toBe(0);
   expect(replay.stdout.toString()).toBe("");
   expect(replay.stderr.toString()).toBe("");
-  expect(statSync(paths.destination)).toEqual(before);
+  expect(statSync(paths.destination)).toMatchObject({
+    ino: before.ino,
+    mtimeMs: before.mtimeMs,
+    ctimeMs: before.ctimeMs,
+    mode: before.mode,
+    size: before.size,
+  });
+  expect(readFileSync(paths.destination, "utf8")).toBe("Rules\nSoul\nUser\n");
 });
 
 test("replaces the output atomically without writing through a symlink", () => {

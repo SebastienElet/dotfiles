@@ -66,3 +66,32 @@ fn bounds_stdin_writes_when_child_does_not_read() {
     assert_eq!(result.error, Some(ExecutionError::Timeout));
     assert!(started.elapsed() < Duration::from_secs(2));
 }
+
+#[test]
+fn rejects_non_utf8_provider_output() {
+    let result = shell("printf '\\377'", "", Duration::from_secs(2));
+    assert_eq!(result.error, Some(ExecutionError::ProtocolInvalid));
+    assert!(result.output.is_empty());
+}
+
+#[test]
+fn rejects_a_reader_count_exceeding_the_supplied_buffer() -> Result<(), Box<dyn std::error::Error>>
+{
+    struct InvalidCountReader(bool);
+
+    impl Read for InvalidCountReader {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            Ok(if std::mem::replace(&mut self.0, false) {
+                buffer.len() + 1
+            } else {
+                0
+            })
+        }
+    }
+
+    let (sender, receiver) = mpsc::sync_channel(2);
+    read_output(InvalidCountReader(true), &sender);
+    assert!(matches!(receiver.recv()?, PipeEvent::Failed));
+    assert!(matches!(receiver.recv()?, PipeEvent::OutputClosed));
+    Ok(())
+}

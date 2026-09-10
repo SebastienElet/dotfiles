@@ -16,7 +16,7 @@ pub enum Projection {
     Generated,
 }
 
-pub fn kind(agent: Agent, scope: Scope) -> Option<Projection> {
+pub const fn kind(agent: Agent, scope: Scope) -> Option<Projection> {
     match (agent, scope) {
         (Agent::Claude, Scope::User) => Some(Projection::Link),
         (Agent::Claude, Scope::Project) => Some(Projection::Include),
@@ -88,7 +88,7 @@ fn diagnose_link(
     });
     let resolver = Resolver::with_aliases(roots.home(), source_root, aliases);
     match resolver.walk(destination) {
-        Ok(_) => healthy(subject, destination_label(resource)),
+        Ok(_) => healthy(subject, &destination_label(resource)),
         Err(error) => include_diagnostic(subject, error, State::Error),
     }
 }
@@ -99,7 +99,7 @@ fn diagnose_include(roots: &Roots, source: &Path, destination: &Path, subject: &
     }
     let resolver = Resolver::new(roots.repository());
     match resolver.walk(destination) {
-        Ok(graph) if graph.contains(source) => healthy(subject, relative(destination, roots)),
+        Ok(graph) if graph.contains(source) => healthy(subject, &relative(destination, roots)),
         Ok(_) => Diagnostic::new(
             "instructions",
             State::Drift,
@@ -139,7 +139,7 @@ fn diagnose_generated(
         }
     }
     match fs::read_to_string(destination) {
-        Ok(contents) if contents == expected => healthy(subject, relative(destination, roots)),
+        Ok(contents) if contents == expected => healthy(subject, &relative(destination, roots)),
         Ok(_) => Diagnostic::new(
             "instructions",
             State::Drift,

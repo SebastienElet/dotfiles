@@ -2,9 +2,42 @@
 name = "arnes"
 version = "0.1.0"
 edition = "2024"
+description = "Inspection and deployment of coding-agent configuration."
+license-file = "../../LICENSE"
+repository = "https://github.com/SebastienElet/dotfiles"
+readme = "../RUST.md"
+keywords = ["dotfiles", "agents", "cli"]
+categories = ["command-line-utilities", "development-tools"]
 
 [lints.rust]
 unsafe_code = "forbid"
+unused_must_use = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -2 }
+pedantic = { level = "deny", priority = -2 }
+nursery = { level = "deny", priority = -2 }
+cargo = { level = "deny", priority = -2 }
+correctness = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+indexing_slicing = "deny"
+lossy_float_literal = "deny"
+mem_forget = "deny"
+exit = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+multiple_unsafe_ops_per_block = "deny"
+undocumented_unsafe_blocks = "deny"
+integer_division = "deny"
+wildcard_enum_match_arm = "deny"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

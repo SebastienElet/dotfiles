@@ -24,9 +24,12 @@ struct Event {
 
 #[derive(Deserialize)]
 struct Usage {
-    input_tokens: f64,
-    cached_input_tokens: f64,
-    output_tokens: f64,
+    #[serde(rename = "input_tokens")]
+    input: f64,
+    #[serde(rename = "cached_input_tokens")]
+    cached_input: f64,
+    #[serde(rename = "output_tokens")]
+    output: f64,
 }
 
 #[derive(Deserialize)]
@@ -36,6 +39,8 @@ struct Item {
     kind: String,
 }
 
+/// # Errors
+/// Rejects malformed events, failed turns, missing or repeated completion events, and invalid token usage.
 pub fn parse_codex_events(output: &str) -> Result<CodexMetrics, String> {
     let mut tokens = None;
     let mut calls = BTreeSet::new();
@@ -48,22 +53,19 @@ pub fn parse_codex_events(output: &str) -> Result<CodexMetrics, String> {
                     return Err("One completed turn required".into());
                 }
                 let usage: Usage = event_field(&event, "usage")?;
-                if [
-                    usage.input_tokens,
-                    usage.cached_input_tokens,
-                    usage.output_tokens,
-                ]
-                .iter()
-                .any(|value| {
-                    !(0.0..=9_007_199_254_740_991.0).contains(value) || value.fract() != 0.0
-                }) {
+                let input = crate::numbers::safe_integer(usage.input);
+                let cached_input = crate::numbers::safe_integer(usage.cached_input);
+                let output = crate::numbers::safe_integer(usage.output);
+                let (Some(input), Some(cached_input), Some(output)) = (input, cached_input, output)
+                else {
                     return Err("Usage exceeds safe integer range".into());
-                }
-                tokens = Some(Tokens {
-                    input: usage.input_tokens as u64,
-                    cached_input: usage.cached_input_tokens as u64,
-                    output: usage.output_tokens as u64,
-                });
+                };
+                let validated = Tokens {
+                    input,
+                    cached_input,
+                    output,
+                };
+                tokens = Some(validated);
             }
             "item.completed" => {
                 let item: Item = event_field(&event, "item")?;

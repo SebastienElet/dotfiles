@@ -26,6 +26,9 @@ pub struct ProofValid {
 }
 
 impl ProofValid {
+    /// # Errors
+    ///
+    /// Returns an error unless the entry identifier has the canonical memory identifier syntax.
     pub fn new(entry_id: impl Into<String>) -> Result<Self, MemoryError> {
         let entry_id = entry_id.into();
         if !valid_memory_id(&entry_id) {
@@ -67,7 +70,8 @@ impl<'a> OracleContext<'a> {
         }
     }
 
-    pub fn with_proof_valid(mut self, answer: &'a ProofValid) -> Self {
+    #[must_use]
+    pub const fn with_proof_valid(mut self, answer: &'a ProofValid) -> Self {
         self.proof_valid = Some(answer);
         self
     }
@@ -82,24 +86,28 @@ pub struct OracleEvaluation {
 }
 
 impl OracleEvaluation {
-    pub fn verdict(&self) -> OracleVerdict {
+    #[must_use]
+    pub const fn verdict(&self) -> OracleVerdict {
         self.verdict
     }
 
-    pub fn validated_at(&self) -> Option<&UtcTimestamp> {
+    #[must_use]
+    pub const fn validated_at(&self) -> Option<&UtcTimestamp> {
         self.validated_at.as_ref()
     }
 
-    pub(crate) fn evaluated_at(&self) -> &UtcTimestamp {
+    pub(crate) const fn evaluated_at(&self) -> &UtcTimestamp {
         &self.evaluated_at
     }
 
-    pub fn from_cache(&self) -> bool {
+    #[must_use]
+    pub const fn from_cache(&self) -> bool {
         self.from_cache
     }
 }
 
-pub fn evaluate_oracle(entry: &MemoryEntry, context: OracleContext<'_>) -> OracleEvaluation {
+#[must_use]
+pub fn evaluate_oracle(entry: &MemoryEntry, context: &OracleContext<'_>) -> OracleEvaluation {
     let now = context.clock.now();
     if let Some(cached) = context
         .store
@@ -111,17 +119,17 @@ pub fn evaluate_oracle(entry: &MemoryEntry, context: OracleContext<'_>) -> Oracl
             }
             SourceVerdict::Invalid => return transient(OracleVerdict::Invalid, now),
             SourceVerdict::Unavailable => {
-                return fallback(entry, &context, now, OracleVerdict::Unavailable);
+                return fallback(entry, context, now, OracleVerdict::Unavailable);
             }
         }
     }
     if !entry.oracle().has_automated_oracle() {
-        return fallback(entry, &context, now, OracleVerdict::NeedsConfirmation);
+        return fallback(entry, context, now, OracleVerdict::NeedsConfirmation);
     }
     match evaluate_sources(entry, context.resolver, false) {
-        SourceVerdict::Valid => valid(entry, &context, now),
+        SourceVerdict::Valid => valid(entry, context, now),
         SourceVerdict::Invalid => transient(OracleVerdict::Invalid, now),
-        SourceVerdict::Unavailable => fallback(entry, &context, now, OracleVerdict::Unavailable),
+        SourceVerdict::Unavailable => fallback(entry, context, now, OracleVerdict::Unavailable),
     }
 }
 
@@ -148,11 +156,11 @@ fn valid(entry: &MemoryEntry, context: &OracleContext<'_>, now: UtcTimestamp) ->
     evaluation(OracleVerdict::Valid, Some(now.clone()), now, false)
 }
 
-fn transient(verdict: OracleVerdict, evaluated_at: UtcTimestamp) -> OracleEvaluation {
+const fn transient(verdict: OracleVerdict, evaluated_at: UtcTimestamp) -> OracleEvaluation {
     evaluation(verdict, None, evaluated_at, false)
 }
 
-fn evaluation(
+const fn evaluation(
     verdict: OracleVerdict,
     validated_at: Option<UtcTimestamp>,
     evaluated_at: UtcTimestamp,

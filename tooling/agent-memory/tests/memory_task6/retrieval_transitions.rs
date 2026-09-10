@@ -8,7 +8,8 @@ use std::fs;
 type Conclusion = fn(&str) -> Result<HumanConclusion, agent_memory::MemoryError>;
 
 #[test]
-fn every_typed_human_business_terminal_transitions_once() {
+fn every_typed_human_business_terminal_transitions_once()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cases: [(&str, char, Conclusion, Status); 5] = [
         (
             "goal",
@@ -42,8 +43,8 @@ fn every_typed_human_business_terminal_transitions_once() {
         ),
     ];
     for (kind, id, conclusion, expected) in cases {
-        let fixture = tempfile::tempdir().unwrap();
-        let (root, store) = open_store(fixture.path());
+        let fixture = tempfile::tempdir()?;
+        let (root, store) = open_store(fixture.path())?;
         let yaml = entry_yaml(
             id,
             kind,
@@ -52,20 +53,19 @@ fn every_typed_human_business_terminal_transitions_once() {
                 locator: "decision:transition",
                 fingerprint: 'a',
             }],
-        );
-        write_user_entry(&root, id, &yaml);
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
+        )?;
+        write_user_entry(&root, id, &yaml)?;
+        let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
         let id = user_entry_id(id, kind);
         let result = confirm(
             &id,
-            conclusion("Human conclusion established.").unwrap(),
+            conclusion("Human conclusion established.")?,
             TransitionContext::new(&store, &clock),
-        )
-        .unwrap();
+        )?;
 
         assert_eq!(result.status(), expected, "{kind}");
-        let stored = store.load(&id).unwrap().unwrap();
-        let transition = stored.transition().unwrap();
+        let stored = store.load(&id)?.ok_or("missing fixture value")?;
+        let transition = stored.transition().ok_or("missing fixture value")?;
         assert_eq!(transition.from(), Status::Active, "{kind}");
         assert_eq!(transition.to(), expected, "{kind}");
         assert_eq!(transition.verdict(), TransitionVerdict::Valid, "{kind}");
@@ -73,26 +73,32 @@ fn every_typed_human_business_terminal_transitions_once() {
         assert_eq!(
             confirm(
                 &id,
-                conclusion("Repeated conclusion.").unwrap(),
+                conclusion("Repeated conclusion.")?,
                 TransitionContext::new(&store, &clock)
             )
-            .unwrap_err()
+            .err()
+            .ok_or("expected operation failure")?
             .code(),
             "entry_not_active",
             "{kind}"
         );
     }
+    Ok(())
 }
 
 #[test]
-fn refuses_empty_reasons_and_incompatible_human_terminals_without_mutation() {
+fn refuses_empty_reasons_and_incompatible_human_terminals_without_mutation()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     assert_eq!(
-        HumanConclusion::goal_achieved("   ").unwrap_err().code(),
+        HumanConclusion::goal_achieved("   ")
+            .err()
+            .ok_or("expected operation failure")?
+            .code(),
         "invalid_transition_reason"
     );
     for (kind, id) in [("evidence", '6'), ("invariant", '7'), ("decision", '8')] {
-        let fixture = tempfile::tempdir().unwrap();
-        let (root, store) = open_store(fixture.path());
+        let fixture = tempfile::tempdir()?;
+        let (root, store) = open_store(fixture.path())?;
         let yaml = entry_yaml(
             id,
             kind,
@@ -101,23 +107,28 @@ fn refuses_empty_reasons_and_incompatible_human_terminals_without_mutation() {
                 locator: "decision:incompatible",
                 fingerprint: 'b',
             }],
-        );
-        let path = write_user_entry(&root, id, &yaml);
-        let before = fs::read(&path).unwrap();
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
+        )?;
+        let path = write_user_entry(&root, id, &yaml)?;
+        let before = fs::read(&path)?;
+        let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
         let result = confirm(
             &user_entry_id(id, kind),
-            HumanConclusion::goal_achieved("Wrong terminal.").unwrap(),
+            HumanConclusion::goal_achieved("Wrong terminal.")?,
             TransitionContext::new(&store, &clock),
         );
 
-        assert_eq!(result.unwrap_err().code(), "invalid_human_conclusion");
-        assert_eq!(fs::read(path).unwrap(), before);
+        assert_eq!(
+            result.err().ok_or("expected operation failure")?.code(),
+            "invalid_human_conclusion"
+        );
+        assert_eq!(fs::read(path)?, before);
     }
+    Ok(())
 }
 
 #[test]
-fn automated_invalidity_is_the_only_path_to_invalidated_for_every_kind() {
+fn automated_invalidity_is_the_only_path_to_invalidated_for_every_kind()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (index, kind) in [
         "goal",
         "decision",
@@ -129,9 +140,9 @@ fn automated_invalidity_is_the_only_path_to_invalidated_for_every_kind() {
     .into_iter()
     .enumerate()
     {
-        let fixture = tempfile::tempdir().unwrap();
-        let (root, store) = open_store(fixture.path());
-        let id = char::from_digit((index + 9) as u32, 16).unwrap();
+        let fixture = tempfile::tempdir()?;
+        let (root, store) = open_store(fixture.path())?;
+        let id = char::from_digit(u32::try_from(index + 9)?, 16).ok_or("missing fixture value")?;
         let yaml = entry_yaml(
             id,
             kind,
@@ -140,32 +151,56 @@ fn automated_invalidity_is_the_only_path_to_invalidated_for_every_kind() {
                 locator: "/tmp/proof",
                 fingerprint: 'a',
             }],
-        );
-        write_user_entry(&root, id, &yaml);
-        let key = project_key(fixture.path());
-        let selection = select(&store, &key, 5);
+        )?;
+        write_user_entry(&root, id, &yaml)?;
+        let key = project_key(fixture.path())?;
+        let selection = select(&store, &key, 5)?;
         let resolver = FakeResolver::with_responses([valid('b')]);
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
-        let report = retrieve(
-            RetrievalRequest::new(&selection, &key, true),
-            RetrievalContext::new(&store, &clock, &resolver, environment()),
-        );
+        let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+        let report = resolver.checked(|checked_resolver| {
+            Ok(retrieve(
+                RetrievalRequest::new(&selection, &key, true),
+                &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+            ))
+        })?;
 
         assert!(report.injected.is_empty(), "{kind}");
-        assert_eq!(report.omitted[0].code, "oracle_invalidated", "{kind}");
-        assert_eq!(report.omitted[0].effect, OmissionEffect::NotApplied);
-        let stored = store.load(&user_entry_id(id, kind)).unwrap().unwrap();
+        assert_eq!(
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .code,
+            "oracle_invalidated",
+            "{kind}"
+        );
+        assert_eq!(
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .effect,
+            OmissionEffect::NotApplied
+        );
+        let stored = store
+            .load(&user_entry_id(id, kind))?
+            .ok_or("missing fixture value")?;
         assert_eq!(stored.status(), Status::Invalidated, "{kind}");
         assert_eq!(
-            stored.transition().unwrap().verdict(),
+            stored
+                .transition()
+                .ok_or("missing fixture value")?
+                .verdict(),
             TransitionVerdict::Invalid,
             "{kind}"
         );
     }
+    Ok(())
 }
 
 #[test]
-fn unavailable_and_needs_confirmation_leave_yaml_byte_identical() {
+fn unavailable_and_needs_confirmation_leave_yaml_byte_identical()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (id, source, response, expected) in [
         (
             'a',
@@ -188,28 +223,52 @@ fn unavailable_and_needs_confirmation_leave_yaml_byte_identical() {
             "oracle_needs_confirmation",
         ),
     ] {
-        let fixture = tempfile::tempdir().unwrap();
-        let (root, store) = open_store(fixture.path());
-        let yaml = entry_yaml(id, "invariant", &[source]);
-        let path = write_user_entry(&root, id, &yaml);
-        let before = fs::read(&path).unwrap();
-        let key = project_key(fixture.path());
-        let selection = select(&store, &key, 5);
+        let fixture = tempfile::tempdir()?;
+        let (root, store) = open_store(fixture.path())?;
+        let yaml = entry_yaml(id, "invariant", &[source])?;
+        let path = write_user_entry(&root, id, &yaml)?;
+        let before = fs::read(&path)?;
+        let key = project_key(fixture.path())?;
+        let selection = select(&store, &key, 5)?;
         let resolver = FakeResolver::with_responses(response);
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
-        let report = retrieve(
-            RetrievalRequest::new(&selection, &key, true),
-            RetrievalContext::new(
-                &store,
-                &clock,
-                &resolver,
-                OracleEnvironment::new("macos", "aarch64"),
-            ),
-        );
+        let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+        let report = resolver.checked(|checked_resolver| {
+            Ok(retrieve(
+                RetrievalRequest::new(&selection, &key, true),
+                &RetrievalContext::new(
+                    &store,
+                    &clock,
+                    checked_resolver,
+                    OracleEnvironment::new("macos", "aarch64"),
+                ),
+            ))
+        })?;
 
-        assert_eq!(report.omitted[0].code, expected);
-        assert_eq!(report.omitted[0].effect, OmissionEffect::NotApplied);
-        assert!(report.omitted[0].question.is_some());
-        assert_eq!(fs::read(path).unwrap(), before);
+        assert_eq!(
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .code,
+            expected
+        );
+        assert_eq!(
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .effect,
+            OmissionEffect::NotApplied
+        );
+        assert!(
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .question
+                .is_some()
+        );
+        assert_eq!(fs::read(path)?, before);
     }
+    Ok(())
 }

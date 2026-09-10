@@ -39,7 +39,7 @@ impl Store {
             staged_yaml,
             destination,
             staged_index,
-            index.inventory,
+            &index.inventory,
             replace,
             before_publish,
         )

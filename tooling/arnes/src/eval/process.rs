@@ -20,6 +20,7 @@ pub enum ExecutionError {
     ProtocolInvalid,
 }
 
+#[derive(Clone, Copy)]
 pub struct CaptureOptions<'a> {
     pub cwd: &'a Path,
     pub env: &'a BTreeMap<String, String>,
@@ -40,6 +41,7 @@ enum PipeEvent {
     Failed,
 }
 
+#[must_use]
 pub fn capture(command: &Path, args: &[String], options: CaptureOptions<'_>) -> CaptureResult {
     let child = Command::new(command)
         .args(args)
@@ -57,18 +59,36 @@ pub fn capture(command: &Path, args: &[String], options: CaptureOptions<'_>) -> 
             error: Some(ExecutionError::AgentFailed),
         };
     };
-    let stdin = child.stdin.take().expect("piped stdin");
-    let stdout = child.stdout.take().expect("piped stdout");
+    let (Some(stdin), Some(stdout)) = (child.stdin.take(), child.stdout.take()) else {
+        let _ = stop_group(&mut child);
+        let _ = child.wait();
+        return CaptureResult {
+            output: String::new(),
+            error: Some(ExecutionError::AgentFailed),
+        };
+    };
     let (sender, receiver) = mpsc::sync_channel(4);
     thread::scope(|scope| {
         let input_sender = sender.clone();
-        scope.spawn(move || write_input(stdin, options.stdin, input_sender));
-        scope.spawn(move || read_output(stdout, sender));
-        monitor(&mut child, receiver, options.timeout)
+        let input = thread::Builder::new().spawn_scoped(scope, move || {
+            write_input(stdin, options.stdin, &input_sender);
+        });
+        let output =
+            thread::Builder::new().spawn_scoped(scope, move || read_output(stdout, &sender));
+        if input.is_err() || output.is_err() {
+            let _ = stop_group(&mut child);
+        }
+        let mut result = monitor(&mut child, &receiver, options.timeout);
+        for worker in [input, output] {
+            if !matches!(worker.map(std::thread::ScopedJoinHandle::join), Ok(Ok(()))) {
+                result.error.get_or_insert(ExecutionError::AgentFailed);
+            }
+        }
+        result
     })
 }
 
-fn write_input(mut input: impl Write, text: &str, sender: SyncSender<PipeEvent>) {
+fn write_input(mut input: impl Write, text: &str, sender: &SyncSender<PipeEvent>) {
     if input.write_all(text.as_bytes()).is_err() {
         let _ = sender.send(PipeEvent::Failed);
     }
@@ -76,20 +96,21 @@ fn write_input(mut input: impl Write, text: &str, sender: SyncSender<PipeEvent>)
     let _ = sender.send(PipeEvent::InputClosed);
 }
 
-fn read_output(mut output: impl Read, sender: SyncSender<PipeEvent>) {
+fn read_output(mut output: impl Read, sender: &SyncSender<PipeEvent>) {
     let mut bytes = [0_u8; 8192];
     loop {
         match output.read(&mut bytes) {
             Ok(0) => break,
             Ok(count) => {
-                if sender
-                    .send(PipeEvent::Output(bytes[..count].to_vec()))
-                    .is_err()
-                {
+                let Some(chunk) = bytes.get(..count) else {
+                    let _ = sender.send(PipeEvent::Failed);
+                    break;
+                };
+                if sender.send(PipeEvent::Output(chunk.to_vec())).is_err() {
                     return;
                 }
             }
-            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
             Err(_) => {
                 let _ = sender.send(PipeEvent::Failed);
                 break;
@@ -100,7 +121,7 @@ fn read_output(mut output: impl Read, sender: SyncSender<PipeEvent>) {
 }
 
 fn stop_group(child: &mut Child) -> Result<(), ExecutionError> {
-    let pid = Pid::from_raw(child.id() as i32).ok_or(ExecutionError::AgentFailed)?;
+    let pid = Pid::from_child(child);
     match kill_process_group(pid, Signal::KILL) {
         Ok(()) | Err(rustix::io::Errno::SRCH) => Ok(()),
         Err(_) => {
@@ -110,7 +131,7 @@ fn stop_group(child: &mut Child) -> Result<(), ExecutionError> {
     }
 }
 
-fn monitor(child: &mut Child, receiver: Receiver<PipeEvent>, timeout: Duration) -> CaptureResult {
+fn monitor(child: &mut Child, receiver: &Receiver<PipeEvent>, timeout: Duration) -> CaptureResult {
     let started = Instant::now();
     let mut output = Vec::new();
     let mut failure = None;
@@ -165,9 +186,15 @@ fn monitor(child: &mut Child, receiver: Receiver<PipeEvent>, timeout: Duration) 
     if !stopped && let Err(error) = stop_group(child) {
         failure.get_or_insert(error);
     }
-    let _ = child.wait();
+    if child.wait().is_err() {
+        failure.get_or_insert(ExecutionError::AgentFailed);
+    }
+    let output = String::from_utf8(output).unwrap_or_else(|_| {
+        failure.get_or_insert(ExecutionError::ProtocolInvalid);
+        String::new()
+    });
     CaptureResult {
-        output: String::from_utf8_lossy(&output).into_owned(),
+        output,
         error: failure.or_else(|| (!successful).then_some(ExecutionError::AgentFailed)),
     }
 }

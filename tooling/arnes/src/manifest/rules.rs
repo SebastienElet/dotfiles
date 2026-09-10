@@ -3,7 +3,8 @@ use std::path::Path;
 
 impl Manifest {
     pub fn rule_resources(&self) -> impl Iterator<Item = RuleResource<'_>> {
-        self.resources
+        self.0
+            .resources
             .iter()
             .filter(|resource| resource.kind == ResourceKind::Rules)
             .map(|resource| RuleResource {

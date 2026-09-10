@@ -19,16 +19,18 @@ pub(super) fn parse(bytes: &[u8]) -> Result<HookRequest, HookError> {
 }
 
 pub(super) fn render(context: Option<&str>) -> Result<Vec<u8>, HookError> {
-    match context {
-        Some(additional_context) => serde_json::to_vec(&CodexResponse {
-            hook_specific_output: CodexOutput {
-                hook_event_name: "UserPromptSubmit",
-                additional_context,
-            },
-        })
-        .map_err(|_| output_unavailable()),
-        None => Ok(b"{}".to_vec()),
-    }
+    context.map_or_else(
+        || Ok(b"{}".to_vec()),
+        |additional_context| {
+            serde_json::to_vec(&CodexResponse {
+                hook_specific_output: CodexOutput {
+                    hook_event_name: "UserPromptSubmit",
+                    additional_context,
+                },
+            })
+            .map_err(|_| output_unavailable())
+        },
+    )
 }
 
 #[derive(Serialize)]

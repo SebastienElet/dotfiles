@@ -5,20 +5,21 @@ use agent_memory::{
 };
 
 #[test]
-fn open_repairs_existing_entry_and_scope_modes() {
-    let fixture = tempfile::tempdir().unwrap();
+fn open_repairs_existing_entry_and_scope_modes()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
+    let store = Store::open(&memory_root(&root)?)?;
     let common = fixture.path().join("common.git");
-    fs::create_dir(&common).unwrap();
+    fs::create_dir(&common)?;
     let scope_runner = FakeProcessRunner::with_responses([FakeResponse::success(format!(
         "{}\n",
         common.display()
     ))]);
-    let project = resolve_project(fixture.path(), &scope_runner).unwrap();
+    let project = resolve_project(fixture.path(), &scope_runner)?;
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &runner, &runner);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = draft_yaml(
         "project",
         "Private existing entry.",
@@ -28,39 +29,43 @@ fn open_repairs_existing_entry_and_scope_modes() {
         "decision:private-existing-entry",
     );
     let id = stored_id(store.admit(
-        resolved(&draft, &context),
+        &resolved(&draft, &context)?,
         Some(&project),
         &timestamp,
         &context,
-    ));
+    ))?;
     let directory = root.join(format!("entries/project/{}", project.key().as_str()));
     let yaml = directory.join(format!("{id}.yaml"));
 
-    expose(&directory, &yaml);
-    let reopened = Store::open(memory_root(&root)).unwrap();
-    assert_private(&directory, &yaml);
-    assert_eq!(reopened.list().unwrap().entries().len(), 1);
+    expose(&directory, &yaml)?;
+    let reopened = Store::open(&memory_root(&root)?)?;
+    assert_private(&directory, &yaml)?;
+    assert_eq!(reopened.list()?.entries().len(), 1);
+    Ok(())
 }
 
-fn expose(directory: &Path, yaml: &Path) {
-    fs::set_permissions(directory, fs::Permissions::from_mode(0o755)).unwrap();
-    fs::set_permissions(yaml, fs::Permissions::from_mode(0o644)).unwrap();
+fn expose(directory: &Path, yaml: &Path) -> std::io::Result<()> {
+    fs::set_permissions(directory, fs::Permissions::from_mode(0o755))?;
+    fs::set_permissions(yaml, fs::Permissions::from_mode(0o644))?;
+    Ok(())
 }
 
-fn assert_private(directory: &Path, yaml: &Path) {
-    assert_eq!(private_mode(directory), 0o700);
-    assert_eq!(private_mode(yaml), 0o600);
+fn assert_private(directory: &Path, yaml: &Path) -> std::io::Result<()> {
+    assert_eq!(private_mode(directory)?, 0o700);
+    assert_eq!(private_mode(yaml)?, 0o600);
+    Ok(())
 }
 
 #[test]
-fn mutable_list_repairs_nested_directory_modes_after_open() {
-    let fixture = tempfile::tempdir().unwrap();
+fn mutable_list_repairs_nested_directory_modes_after_open()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path());
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path())?;
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &runner, &runner);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = draft_yaml(
         "project",
         "Mutable list permissions.",
@@ -70,61 +75,65 @@ fn mutable_list_repairs_nested_directory_modes_after_open() {
         "decision:mutable-list-permissions",
     );
     stored_id(store.admit(
-        resolved(&draft, &context),
+        &resolved(&draft, &context)?,
         Some(&project),
         &timestamp,
         &context,
-    ));
+    ))?;
     let directories = [
         root.join("entries"),
         root.join("entries/project"),
         root.join(format!("entries/project/{}", project.key().as_str())),
     ];
     for directory in &directories {
-        fs::set_permissions(directory, fs::Permissions::from_mode(0o755)).unwrap();
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o755))?;
     }
 
-    assert_eq!(store.list().unwrap().entries().len(), 1);
+    assert_eq!(store.list()?.entries().len(), 1);
 
     for directory in directories {
-        assert_eq!(private_mode(&directory), 0o700);
+        assert_eq!(private_mode(&directory)?, 0o700);
     }
+    Ok(())
 }
 
 #[test]
-fn mutable_admission_repairs_nested_directory_modes_after_open() {
-    let fixture = tempfile::tempdir().unwrap();
+fn mutable_admission_repairs_nested_directory_modes_after_open()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
+    let store = Store::open(&memory_root(&root)?)?;
     let directories = [root.join("entries"), root.join("entries/user")];
     for directory in &directories {
-        fs::set_permissions(directory, fs::Permissions::from_mode(0o755)).unwrap();
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o755))?;
     }
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &runner, &runner);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft(
         "Mutable admission permissions.",
         "mutable admission permissions",
         "Established.",
     );
 
-    stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
+    stored_id(store.admit(&resolved(&draft, &context)?, None, &timestamp, &context))?;
 
     for directory in directories {
-        assert_eq!(private_mode(&directory), 0o700);
+        assert_eq!(private_mode(&directory)?, 0o700);
     }
+    Ok(())
 }
 
 #[test]
-fn read_only_audit_refuses_nested_mode_drift_after_open_without_repair() {
-    let fixture = tempfile::tempdir().unwrap();
+fn read_only_audit_refuses_nested_mode_drift_after_open_without_repair()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path());
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path())?;
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &runner, &runner);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = draft_yaml(
         "project",
         "Read-only audit permissions.",
@@ -134,40 +143,41 @@ fn read_only_audit_refuses_nested_mode_drift_after_open_without_repair() {
         "decision:read-only-audit-permissions",
     );
     stored_id(store.admit(
-        resolved(&draft, &context),
+        &resolved(&draft, &context)?,
         Some(&project),
         &timestamp,
         &context,
-    ));
-    let audit = Store::open_read_only(memory_root(&root)).unwrap().unwrap();
+    ))?;
+    let audit = Store::open_read_only(&memory_root(&root)?)?.ok_or("missing fixture value")?;
     let scope = root.join(format!("entries/project/{}", project.key().as_str()));
-    fs::set_permissions(&scope, fs::Permissions::from_mode(0o755)).unwrap();
+    fs::set_permissions(&scope, fs::Permissions::from_mode(0o755))?;
 
-    let error = audit.list().unwrap_err();
+    let error = audit.list().err().ok_or("expected operation failure")?;
 
     assert_eq!(error.code(), "store_permissions_unavailable");
-    assert_eq!(private_mode(&scope), 0o755);
+    assert_eq!(private_mode(&scope)?, 0o755);
+    Ok(())
 }
 
 #[test]
-fn retrieval_refuses_nested_mode_drift_after_open_without_repair() {
-    let fixture = tempfile::tempdir().unwrap();
+fn retrieval_refuses_nested_mode_drift_after_open_without_repair()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
+    let store = Store::open(&memory_root(&root)?)?;
     let runner = FakeProcessRunner::default();
     let context = SourceContext::new(fixture.path(), &runner, &runner);
-    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z").unwrap();
+    let timestamp = parse_utc_timestamp("2026-08-28T12:00:00Z")?;
     let draft = user_draft(
         "Retrieval permissions.",
         "retrieval permissions",
         "Established.",
     );
-    stored_id(store.admit(resolved(&draft, &context), None, &timestamp, &context));
-    let retrieval = Store::open_for_retrieval(memory_root(&root))
-        .unwrap()
-        .unwrap();
-    let project = project_scope(fixture.path());
-    let index = Index::load_or_rebuild(&retrieval).unwrap().index;
+    stored_id(store.admit(&resolved(&draft, &context)?, None, &timestamp, &context))?;
+    let retrieval =
+        Store::open_for_retrieval(&memory_root(&root)?)?.ok_or("missing fixture value")?;
+    let project = project_scope(fixture.path())?;
+    let index = Index::load_or_rebuild(&retrieval)?.index;
     let selection = search(
         &index,
         SearchRequest {
@@ -178,13 +188,13 @@ fn retrieval_refuses_nested_mode_drift_after_open_without_repair() {
         },
     );
     let scope = root.join("entries/user");
-    fs::set_permissions(&scope, fs::Permissions::from_mode(0o755)).unwrap();
+    fs::set_permissions(&scope, fs::Permissions::from_mode(0o755))?;
     let clock = PermissionClock(timestamp);
     let resolver = NeverResolver;
 
     let report = retrieve(
         RetrievalRequest::new(&selection, project.key(), true),
-        RetrievalContext::new(
+        &RetrievalContext::new(
             &retrieval,
             &clock,
             &resolver,
@@ -192,18 +202,24 @@ fn retrieval_refuses_nested_mode_drift_after_open_without_repair() {
         ),
     );
 
-    assert_eq!(report.omitted[0].code, "store_permissions_unavailable");
-    assert_eq!(private_mode(&scope), 0o755);
+    assert_eq!(
+        report.omitted.first().ok_or("missing omission")?.code,
+        "store_permissions_unavailable"
+    );
+    assert_eq!(private_mode(&scope)?, 0o755);
+    Ok(())
 }
 
-fn project_scope(directory: &Path) -> agent_memory::ProjectScope {
+fn project_scope(
+    directory: &Path,
+) -> Result<agent_memory::ProjectScope, Box<dyn std::error::Error + Send + Sync>> {
     let common = directory.join("common.git");
-    fs::create_dir_all(&common).unwrap();
+    fs::create_dir_all(&common)?;
     let runner = FakeProcessRunner::with_responses([FakeResponse::success(format!(
         "{}\n",
         common.display()
     ))]);
-    resolve_project(directory, &runner).unwrap()
+    Ok(resolve_project(directory, &runner)?)
 }
 
 struct PermissionClock(UtcTimestamp);

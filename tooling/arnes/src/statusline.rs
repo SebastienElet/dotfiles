@@ -4,6 +4,7 @@ use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, Manifest, Scope, Statusline};
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,

@@ -9,7 +9,7 @@ use std::path::Path;
 #[cfg(test)]
 pub fn append_jsonl<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {
     let bytes = jsonl_bytes(value)?;
-    append_jsonl_bytes(&ManagedPath::test_path(path), &bytes)
+    append_jsonl_bytes(&ManagedPath::test_path(path)?, &bytes)
 }
 
 pub fn append_jsonl_bytes(path: &ManagedPath, bytes: &[u8]) -> Result<(), MeasureError> {
@@ -43,7 +43,7 @@ pub fn write_json_atomic<T: Serialize>(path: &ManagedPath, value: &T) -> Result<
 #[cfg(test)]
 pub fn write_json_atomic_test<T: Serialize>(path: &Path, value: &T) -> Result<(), MeasureError> {
     let bytes = json_bytes(value)?;
-    write_json_atomic_bytes(&ManagedPath::test_path(path), &bytes)
+    write_json_atomic_bytes(&ManagedPath::test_path(path)?, &bytes)
 }
 
 pub fn write_json_atomic_bytes(path: &ManagedPath, bytes: &[u8]) -> Result<(), MeasureError> {

@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+/// # Errors
+/// Returns errors resolving the fixture workspace or appending the tool observation log.
 pub fn invoke_shim(tool: &str, args: &[String]) -> Result<i32, String> {
     let workspace =
         env::var_os("HARNESS_EVAL_WORKSPACE").ok_or("Missing fixture instrumentation")?;
@@ -69,16 +71,18 @@ fn invoke(tool: &str, args: &[String], cwd: &Path) -> (String, i32) {
     if tool == "cat" {
         let content: io::Result<Vec<_>> =
             args.iter().map(|path| fs::read(cwd.join(path))).collect();
-        return match content {
-            Ok(files) => (
-                files
-                    .iter()
-                    .map(|bytes| String::from_utf8_lossy(bytes))
-                    .collect(),
-                0,
-            ),
-            Err(_) => (String::new(), 1),
-        };
+        return content.map_or_else(
+            |_| (String::new(), 1),
+            |files| {
+                (
+                    files
+                        .iter()
+                        .map(|bytes| String::from_utf8_lossy(bytes))
+                        .collect(),
+                    0,
+                )
+            },
+        );
     }
     if tool == "rg"
         && args

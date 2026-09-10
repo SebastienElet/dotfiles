@@ -1,32 +1,27 @@
-pub(super) use serde_json::{Value, json};
-pub(super) use std::fs;
+pub use serde_json::{Value, json};
+pub use std::fs;
 use std::path::PathBuf;
-pub(super) use std::process::{Command, Output, Stdio};
-
-pub(super) const SHA: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-pub(super) const OTHER_SHA: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-
-pub(super) struct Harness {
+pub use std::process::{Command, Output, Stdio};
+pub const SHA: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+pub const OTHER_SHA: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+pub struct Harness {
     pub root: tempfile::TempDir,
 }
-
 impl Harness {
-    pub fn new() -> Self {
-        let root = tempfile::tempdir().unwrap();
-        fs::create_dir(root.path().join("repository")).unwrap();
-        fs::create_dir(root.path().join("home")).unwrap();
+    pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let root = tempfile::tempdir()?;
+        fs::create_dir(root.path().join("repository"))?;
+        fs::create_dir(root.path().join("home"))?;
         assert!(
             Command::new("git")
                 .args(["init", "-q"])
                 .current_dir(root.path().join("repository"))
-                .status()
-                .unwrap()
+                .status()?
                 .success()
         );
-        Self { root }
+        Ok(Self { root })
     }
-
-    pub fn base_command(&self) -> Command {
+    pub fn base_command(&self) -> std::process::Command {
         let mut command = Command::new(env!("CARGO_BIN_EXE_arnes"));
         command
             .current_dir(self.root.path().join("repository"))
@@ -37,8 +32,7 @@ impl Harness {
             .stderr(Stdio::piped());
         command
     }
-
-    pub fn command(&self, overrides: &[(&str, &str)]) -> Command {
+    pub fn command(&self, overrides: &[(&str, &str)]) -> std::process::Command {
         let mut command = self.base_command();
         command.args(["measure", "pr-verdict"]);
         for (flag, default) in [
@@ -61,33 +55,37 @@ impl Harness {
         }
         command
     }
-
-    pub fn record(&self, overrides: &[(&str, &str)]) -> Output {
-        self.command(overrides).output().unwrap()
+    pub fn record(
+        &self,
+        overrides: &[(&str, &str)],
+    ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.command(overrides).output()?)
     }
-
     pub fn measure_root(&self) -> PathBuf {
         self.root.path().join("state/dotfiles/agent-harness")
     }
-
-    pub fn timeline(&self) -> PathBuf {
-        let entries: Vec<_> = fs::read_dir(self.measure_root().join("pull-requests"))
-            .unwrap()
-            .collect();
+    pub fn timeline(&self) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
+        let entries = fs::read_dir(self.measure_root().join("pull-requests"))?
+            .collect::<Result<Vec<_>, _>>()?;
         assert_eq!(entries.len(), 1);
-        entries[0].as_ref().unwrap().path().join("events.jsonl")
+        Ok(entries
+            .first()
+            .ok_or("expected a timeline directory")?
+            .path()
+            .join("events.jsonl"))
     }
-
-    pub fn events(&self) -> Vec<Value> {
-        fs::read_to_string(self.timeline())
-            .unwrap()
+    pub fn events(&self) -> Result<Vec<Value>, Box<dyn std::error::Error + Send + Sync>> {
+        fs::read_to_string(self.timeline()?)?
             .lines()
-            .map(|line| serde_json::from_str(line).unwrap())
-            .collect()
+            .map(
+                |line| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
+                    Ok(serde_json::from_str(line)?)
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()
     }
 }
-
-pub(super) fn assert_status(output: &Output, expected: &str) {
+pub fn assert_status(output: &Output, expected: &str) {
     assert!(
         output.status.success(),
         "{}",
@@ -96,8 +94,7 @@ pub(super) fn assert_status(output: &Output, expected: &str) {
     assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), expected);
     assert!(output.stderr.is_empty());
 }
-
-pub(super) fn assert_error(output: &Output, expected: &str) {
+pub fn assert_error(output: &Output, expected: &str) {
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());
     assert!(

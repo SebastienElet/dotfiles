@@ -2,6 +2,7 @@ use super::{
     evidence::validate_report,
     report::{Harness, Report, Status},
 };
+use crate::numbers::approximate_count;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -38,6 +39,7 @@ pub struct Comparison {
     pub limitations: Vec<String>,
 }
 
+#[must_use]
 pub fn metrics(report: &Report) -> Metrics {
     let runs = report
         .cases
@@ -48,11 +50,12 @@ pub fn metrics(report: &Report) -> Metrics {
         values
             .into_iter()
             .collect::<Option<Vec<_>>>()
-            .map(|values| values.iter().sum::<f64>() / values.len() as f64)
+            .map(|values| values.iter().sum::<f64>() / approximate_count(values.len() as u64))
     };
     Metrics {
-        pass_rate: runs.iter().filter(|run| run.status == Status::Pass).count() as f64
-            / runs.len() as f64,
+        pass_rate: approximate_count(
+            runs.iter().filter(|run| run.status == Status::Pass).count() as u64
+        ) / approximate_count(runs.len() as u64),
         failures: runs.iter().filter(|run| run.status == Status::Fail).count(),
         invalid: runs
             .iter()
@@ -60,12 +63,16 @@ pub fn metrics(report: &Report) -> Metrics {
             .count(),
         mean_tokens: mean(
             runs.iter()
-                .map(|r| r.tokens.as_ref().map(|t| t.input as f64 + t.output as f64))
+                .map(|r| {
+                    r.tokens
+                        .as_ref()
+                        .map(|t| approximate_count(t.input) + approximate_count(t.output))
+                })
                 .collect(),
         ),
         mean_tool_calls: mean(
             runs.iter()
-                .map(|r| r.tool_calls.map(|n| n as f64))
+                .map(|r| r.tool_calls.map(approximate_count))
                 .collect(),
         ),
         mean_duration_ms: mean(runs.iter().map(|r| r.duration_ms).collect()),
@@ -88,6 +95,8 @@ fn same_controls(a: &Report, b: &Report) -> bool {
         })
 }
 
+/// # Errors
+/// Rejects invalid reports or reports whose recorded evaluation controls differ.
 pub fn compare(baseline: &Report, candidate: &Report) -> Result<Comparison, String> {
     validate_report(baseline)?;
     validate_report(candidate)?;

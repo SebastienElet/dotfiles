@@ -7,23 +7,29 @@ use crate::memory::path::{
 };
 
 impl Store {
-    pub fn open(root: MemoryRoot) -> Result<Self, MemoryError> {
+    /// # Errors
+    ///
+    /// Returns an error if the root or controlled paths are unsafe, permissions cannot be repaired, or initialization fails.
+    pub fn open(root: &MemoryRoot) -> Result<Self, MemoryError> {
         Self::open_internal(root, None)
     }
 
+    /// # Errors
+    ///
+    /// Returns initialization and path-safety errors, including the failure requested by the supplied failpoint.
     pub fn open_with_failpoint(
-        root: MemoryRoot,
+        root: &MemoryRoot,
         failpoint: StoreFailpoint,
     ) -> Result<Self, MemoryError> {
         Self::open_internal(root, Some(failpoint))
     }
 
     fn open_internal(
-        root: MemoryRoot,
+        root: &MemoryRoot,
         failpoint: Option<StoreFailpoint>,
     ) -> Result<Self, MemoryError> {
         let fail_mode_repair = matches!(failpoint.as_ref(), Some(StoreFailpoint::BeforeModeRepair));
-        let root = ManagedPath::root(open_root(&root, fail_mode_repair)?, DirectoryAccess::Repair);
+        let root = ManagedPath::root(open_root(root, fail_mode_repair)?, DirectoryAccess::Repair);
         for relative in ["entries", "entries/user", "entries/project"] {
             root.join(relative)?.ensure_directory(fail_mode_repair)?;
         }
@@ -40,19 +46,25 @@ impl Store {
         Ok(store)
     }
 
-    pub fn open_read_only(root: MemoryRoot) -> Result<Option<Self>, MemoryError> {
+    /// # Errors
+    ///
+    /// Returns an error for unsafe paths, invalid permissions, or unreadable existing state; an absent root returns `None`.
+    pub fn open_read_only(root: &MemoryRoot) -> Result<Option<Self>, MemoryError> {
         Self::open_existing(root, false)
     }
 
-    pub fn open_for_retrieval(root: MemoryRoot) -> Result<Option<Self>, MemoryError> {
+    /// # Errors
+    ///
+    /// Returns an error for unsafe paths, invalid permissions, or derived-state initialization failures; an absent root returns `None`.
+    pub fn open_for_retrieval(root: &MemoryRoot) -> Result<Option<Self>, MemoryError> {
         Self::open_existing(root, true)
     }
 
     fn open_existing(
-        root: MemoryRoot,
+        root: &MemoryRoot,
         initialize_derived: bool,
     ) -> Result<Option<Self>, MemoryError> {
-        let Some(root) = open_existing_root(&root)? else {
+        let Some(root) = open_existing_root(root)? else {
             return Ok(None);
         };
         let root = ManagedPath::root(root, DirectoryAccess::Validate);

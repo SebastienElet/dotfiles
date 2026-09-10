@@ -13,6 +13,7 @@ mod presence;
 
 const KINDS: [HookKind; 3] = [HookKind::Measurement, HookKind::Handoff, HookKind::Memory];
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,

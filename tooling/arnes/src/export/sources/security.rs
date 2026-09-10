@@ -56,8 +56,13 @@ pub(super) fn reject_sensitive_path(path: &str) -> Result<(), ExportError> {
         || name.starts_with("token.")
         || name.contains("-token.")
         || name.contains(".local.")
-        || name.ends_with(".pem")
-        || name.ends_with(".key");
+        || name == ".pem"
+        || name == ".key"
+        || std::path::Path::new(&name)
+            .extension()
+            .is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("pem") || extension.eq_ignore_ascii_case("key")
+            });
     if sensitive {
         Err(ExportError::new(format!(
             "refusing sensitive harness path {path}"

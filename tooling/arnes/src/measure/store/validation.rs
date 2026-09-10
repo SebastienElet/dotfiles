@@ -9,8 +9,11 @@ pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
     if length == 0 {
         return Ok(());
     }
-    let window = length.min((MAX_RECORD_BYTES + 1) as u64) as usize;
-    file.seek(SeekFrom::End(-(window as i64)))?;
+    let window = usize::try_from(length.min((MAX_RECORD_BYTES + 1) as u64))
+        .map_err(std::io::Error::other)?;
+    file.seek(SeekFrom::End(
+        -(i64::try_from(window).map_err(std::io::Error::other)?),
+    ))?;
     let mut tail = vec![0; window];
     file.read_exact(&mut tail)?;
     let content = tail
@@ -25,7 +28,10 @@ pub fn validate_jsonl(file: &mut File) -> Result<(), MeasureError> {
             "managed JSONL file is truncated or oversized",
         ));
     }
-    serde_json::from_slice::<serde_json::Value>(&content[start..])?;
+    let record = content
+        .get(start..)
+        .ok_or_else(|| MeasureError::new("managed JSONL record offset is invalid"))?;
+    serde_json::from_slice::<serde_json::Value>(record)?;
     Ok(())
 }
 

@@ -4,7 +4,6 @@ use crate::measure::fingerprint::SelectedRoot;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BinaryHeap};
-use std::fmt::Write;
 use std::fs;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Component, Path, PathBuf};
@@ -149,7 +148,7 @@ fn versions(base: &Path) -> Result<Versions, MeasureError> {
     })
 }
 
-fn empty_versions() -> Versions {
+const fn empty_versions() -> Versions {
     Versions {
         entries: Vec::new(),
         total: 0,
@@ -160,7 +159,8 @@ fn empty_versions() -> Versions {
 fn hex(bytes: &[u8]) -> String {
     let mut value = String::with_capacity(bytes.len() * 2);
     for byte in bytes {
-        write!(value, "{byte:02x}").expect("writing to a string cannot fail");
+        let digits = format!("{byte:02x}");
+        value.push_str(&digits);
     }
     value
 }

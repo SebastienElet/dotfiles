@@ -1,54 +1,54 @@
-pub(super) use serde_json::{Value, json};
+pub use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-pub(super) use std::fs;
-pub(super) use std::io::{Seek, SeekFrom, Write};
-pub(super) use std::os::unix::fs::{PermissionsExt, symlink};
-pub(super) use std::path::{Path, PathBuf};
-pub(super) use std::process::{Child, Command, Output, Stdio};
-pub(super) use tempfile::TempDir;
-
-pub(super) struct Harness {
-    pub(super) _root: TempDir,
+pub use std::fs;
+pub use std::io::{Seek, SeekFrom, Write};
+pub use std::os::unix::fs::{PermissionsExt, symlink};
+pub use std::path::{Path, PathBuf};
+pub use std::process::{Child, Command, Output, Stdio};
+pub use tempfile::TempDir;
+pub struct Harness {
+    pub(super) root: TempDir,
     pub(super) home: PathBuf,
     pub(super) repository: PathBuf,
     pub(super) state: PathBuf,
 }
-
 impl Harness {
-    pub(super) fn new() -> Self {
+    pub(super) fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         Self::with_repository_name("repository")
     }
-
-    pub(super) fn with_repository_name(name: &str) -> Self {
-        let root = tempfile::tempdir().unwrap();
+    pub(super) fn with_repository_name(
+        name: &str,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let root = tempfile::tempdir()?;
         let home = root.path().join("home");
         let repository = root.path().join(name);
         let state = root.path().join("state");
-        fs::create_dir(&home).unwrap();
-        fs::create_dir(&repository).unwrap();
-        fs::create_dir(&state).unwrap();
-        Self {
-            _root: root,
+        fs::create_dir(&home)?;
+        fs::create_dir(&repository)?;
+        fs::create_dir(&state)?;
+        Ok(Self {
+            root,
             home,
             repository,
             state,
-        }
+        })
     }
-
-    pub(super) fn run(&self, agent: &str, payload: &[u8]) -> Output {
-        let mut child = self.command(agent).spawn().unwrap();
-        let mut stdin = child.stdin.take().unwrap();
-        // clap rejects an invalid --agent and exits before reading stdin, so EPIPE is expected.
+    pub(super) fn run(
+        &self,
+        agent: &str,
+        payload: &[u8],
+    ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
+        let mut child = self.command(agent).spawn()?;
+        let mut stdin = child.stdin.take().ok_or("required test value is missing")?;
         match stdin.write_all(payload) {
             Ok(()) => {}
             Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => {}
-            Err(error) => panic!("writing the hook payload failed: {error}"),
+            Err(error) => return Err(format!("writing the hook payload failed: {error}").into()),
         }
         drop(stdin);
-        child.wait_with_output().unwrap()
+        Ok(child.wait_with_output()?)
     }
-
-    pub(super) fn command(&self, agent: &str) -> Command {
+    pub(super) fn command(&self, agent: &str) -> std::process::Command {
         let mut command = Command::new(env!("CARGO_BIN_EXE_arnes"));
         command
             .args(["measure", "hook", "--agent", agent])
@@ -61,41 +61,38 @@ impl Harness {
             .stderr(Stdio::piped());
         command
     }
-
-    pub(super) fn list(&self) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_arnes"))
+    pub(super) fn list(&self) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(Command::new(env!("CARGO_BIN_EXE_arnes"))
             .args(["measure", "list", "--format", "json"])
             .current_dir(&self.repository)
             .env_clear()
             .env("HOME", &self.home)
             .env("XDG_STATE_HOME", &self.state)
-            .output()
-            .unwrap()
+            .output()?)
     }
-
     pub(super) fn measure_root(&self) -> PathBuf {
         self.state.join("dotfiles/agent-harness")
     }
-
-    pub(super) fn runs(&self) -> Vec<PathBuf> {
+    pub(super) fn runs(&self) -> Result<Vec<PathBuf>, Box<dyn std::error::Error + Send + Sync>> {
         let root = self.measure_root().join("runs");
         if !root.exists() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
-        fs::read_dir(root)
-            .unwrap()
-            .map(|entry| entry.unwrap().path())
-            .collect()
+        fs::read_dir(root)?
+            .map(
+                |entry| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
+                    Ok(entry?.path())
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()
     }
-
-    pub(super) fn only_run(&self) -> PathBuf {
-        let runs = self.runs();
+    pub(super) fn only_run(&self) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
+        let runs = self.runs()?;
         assert_eq!(runs.len(), 1, "expected one run, found {runs:?}");
-        runs[0].clone()
+        Ok((*(runs).first().ok_or("missing fixture index 0")?).clone())
     }
 }
-
-pub(super) fn assert_success(output: &Output) {
+pub fn assert_success(output: &Output) {
     assert_eq!(
         output.status.code(),
         Some(0),
@@ -109,14 +106,17 @@ pub(super) fn assert_success(output: &Output) {
         String::from_utf8_lossy(&output.stderr)
     );
 }
-
-pub(super) fn assert_advisory_failure(output: &Output) {
+pub fn assert_advisory_failure(output: &Output) {
     assert_eq!(output.status.code(), Some(0));
     assert!(output.stdout.is_empty());
     assert!(!output.stderr.is_empty());
 }
-
-pub(super) fn run_at(harness: &Harness, current: &Path, state: &Path, payload: &[u8]) -> Output {
+pub fn run_at(
+    harness: &Harness,
+    current: &Path,
+    state: &Path,
+    payload: &[u8],
+) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
     let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
         .args(["measure", "hook", "--agent", "codex"])
         .current_dir(current)
@@ -126,13 +126,18 @@ pub(super) fn run_at(harness: &Harness, current: &Path, state: &Path, payload: &
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child.stdin.take().unwrap().write_all(payload).unwrap();
-    child.wait_with_output().unwrap()
+        .spawn()?;
+    child
+        .stdin
+        .take()
+        .ok_or("required test value is missing")?
+        .write_all(payload)?;
+    Ok(child.wait_with_output()?)
 }
-
-pub(super) fn run_record(harness: &Harness, session: &str) -> Value {
+pub fn run_record(
+    harness: &Harness,
+    session: &str,
+) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
     read_json(
         harness
             .measure_root()
@@ -141,16 +146,18 @@ pub(super) fn run_record(harness: &Harness, session: &str) -> Value {
             .join("run.json"),
     )
 }
-
-pub(super) fn capture_run(
+pub fn capture_run(
     harness: &Harness,
     agent: &str,
     session_key: &str,
     session: &str,
-) -> Value {
+) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
     let mut payload = json!({});
-    payload[session_key] = json!(session);
-    assert_success(&harness.run(agent, payload.to_string().as_bytes()));
+    payload
+        .as_object_mut()
+        .ok_or("expected hook payload object")?
+        .insert(session_key.to_owned(), json!(session));
+    assert_success(&harness.run(agent, payload.to_string().as_bytes())?);
     read_json(
         harness
             .measure_root()
@@ -159,63 +166,78 @@ pub(super) fn capture_run(
             .join("run.json"),
     )
 }
-
 fn run_id(agent: &str, session: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(agent.as_bytes());
     hasher.update(session.as_bytes());
     format!("{:x}", hasher.finalize())
 }
-
-pub(super) fn read_json(path: impl AsRef<Path>) -> Value {
-    serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+pub fn read_json(
+    path: impl AsRef<Path>,
+) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
+    Ok(serde_json::from_slice(&fs::read(path)?)?)
 }
-
-pub(super) fn read_jsonl(path: impl AsRef<Path>) -> Vec<Value> {
-    fs::read_to_string(path)
-        .unwrap()
+pub fn read_jsonl(
+    path: impl AsRef<Path>,
+) -> Result<Vec<Value>, Box<dyn std::error::Error + Send + Sync>> {
+    fs::read_to_string(path)?
         .lines()
-        .map(|line| serde_json::from_str(line).unwrap())
-        .collect()
+        .map(
+            |line| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
+                Ok(serde_json::from_str(line)?)
+            },
+        )
+        .collect::<Result<Vec<_>, _>>()
 }
-
-pub(super) fn walk(root: &Path) -> Vec<PathBuf> {
+pub fn walk(root: &Path) -> Result<Vec<PathBuf>, Box<dyn std::error::Error + Send + Sync>> {
     let mut paths = vec![root.to_owned()];
     let mut index = 0;
     while let Some(path) = paths.get(index).cloned() {
         index += 1;
         if path.is_dir() {
             paths.extend(
-                fs::read_dir(path)
-                    .unwrap()
-                    .map(|entry| entry.unwrap().path()),
+                fs::read_dir(path)?
+                    .map(
+                        |entry| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
+                            Ok(entry?.path())
+                        },
+                    )
+                    .collect::<Result<Vec<_>, _>>()?,
             );
         }
     }
-    paths
+    Ok(paths)
 }
-
-pub(super) fn init_repository(repository: &Path, branch: &str, tracked: &str) {
-    git(repository, &["init", "-b", branch]);
-    fs::write(repository.join(tracked), tracked).unwrap();
-    git(repository, &["add", tracked]);
-    commit(repository, "initial");
+pub fn init_repository(
+    repository: &Path,
+    branch: &str,
+    tracked: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    git(repository, &["init", "-b", branch])?;
+    fs::write(repository.join(tracked), tracked)?;
+    git(repository, &["add", tracked])?;
+    commit(repository, "initial")?;
+    Ok(())
 }
-
-pub(super) fn git(repository: &Path, args: &[&str]) {
+pub fn git(
+    repository: &Path,
+    args: &[&str],
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let output = Command::new("git")
         .args(args)
         .current_dir(repository)
-        .output()
-        .unwrap();
+        .output()?;
     assert!(
         output.status.success(),
         "git {args:?}: {}",
         String::from_utf8_lossy(&output.stderr)
     );
+    Ok(())
 }
-
-pub(super) fn commit(repository: &Path, message: &str) {
+pub fn commit(
+    repository: &Path,
+    message: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     git(
         repository,
         &[
@@ -227,15 +249,17 @@ pub(super) fn commit(repository: &Path, message: &str) {
             "-m",
             message,
         ],
-    );
+    )?;
+    Ok(())
 }
-
-pub(super) fn git_value(repository: &Path, args: &[&str]) -> String {
+pub fn git_value(
+    repository: &Path,
+    args: &[&str],
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let output = Command::new("git")
         .args(args)
         .current_dir(repository)
-        .output()
-        .unwrap();
+        .output()?;
     assert!(output.status.success());
-    String::from_utf8(output.stdout).unwrap().trim().to_owned()
+    Ok(String::from_utf8(output.stdout)?.trim().to_owned())
 }

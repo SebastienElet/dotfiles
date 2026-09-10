@@ -1,5 +1,5 @@
+#![cfg(test)]
 use arnes::diagnostic::{Diagnostic, HumanContext, HumanOptions, HumanSection, Report, State};
-
 fn report() -> Report {
     Report::new(vec![
         Diagnostic::new("manifest", State::Healthy, "manifest is valid"),
@@ -12,15 +12,12 @@ fn report() -> Report {
         Diagnostic::new("config", State::Error, "settings.json could not be read"),
     ])
 }
-
 fn context() -> HumanContext {
     HumanContext::new("Diagnostics")
 }
-
 fn section(key: &str, label: &str) -> HumanSection {
     HumanSection::new(key, label)
 }
-
 #[test]
 fn normal_human_output_hides_healthy_details() {
     assert_eq!(
@@ -28,7 +25,6 @@ fn normal_human_output_hides_healthy_details() {
         include_str!("fixtures/diagnostic/report.txt")
     );
 }
-
 #[test]
 fn verbose_human_output_includes_healthy_details() {
     assert_eq!(
@@ -36,17 +32,14 @@ fn verbose_human_output_includes_healthy_details() {
         include_str!("fixtures/diagnostic/report-verbose.txt")
     );
 }
-
 #[test]
 fn empty_human_report_does_not_claim_health() {
     let report = Report::new(Vec::new());
-
     assert_eq!(
         report.human(&context(), HumanOptions::normal()),
         "No diagnostics"
     );
 }
-
 #[test]
 fn report_without_healthy_diagnostics_displays_zero() {
     let report = Report::new(vec![Diagnostic::new(
@@ -54,22 +47,20 @@ fn report_without_healthy_diagnostics_displays_zero() {
         State::Unsupported,
         "inventory unavailable",
     )]);
-
     assert!(
         report
             .human(&context(), HumanOptions::normal())
             .starts_with("Diagnostics\n✓ 0 healthy\n")
     );
 }
-
 #[test]
-fn json_output_matches_the_exact_fixture() {
+fn json_output_matches_the_exact_fixture() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     assert_eq!(
-        format!("{}\n", report().json().unwrap()),
+        format!("{}\n", report().json()?),
         include_str!("fixtures/diagnostic/report.json")
     );
+    Ok(())
 }
-
 #[test]
 fn report_preserves_diagnostic_order() {
     let report = report();
@@ -78,20 +69,16 @@ fn report_preserves_diagnostic_order() {
         .iter()
         .map(|diagnostic| diagnostic.resource.as_str())
         .collect::<Vec<_>>();
-
     assert_eq!(resources, ["manifest", "rules", "skills", "config"]);
 }
-
 #[test]
 fn human_output_keeps_each_diagnostic_on_one_line() {
     let diagnostic = Diagnostic::new("skills\nconfig", State::Drift, "missing\r\ndestination");
-
     assert_eq!(
         diagnostic.to_string(),
         "drift skills\\nconfig: missing\\r\\ndestination"
     );
 }
-
 #[test]
 fn exit_codes_prioritize_errors_over_drift() {
     for (states, expected) in [
@@ -108,31 +95,30 @@ fn exit_codes_prioritize_errors_over_drift() {
                 .map(|state| Diagnostic::new("resource", state, "message"))
                 .collect(),
         );
-
         assert_eq!(report.exit_code(), expected);
     }
 }
-
 #[test]
-fn human_groups_compact_diagnostics_without_changing_json() {
+fn human_groups_compact_diagnostics_without_changing_json()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let report = Report::new(vec![
         Diagnostic::new("skills", State::Healthy, "verbose first")
             .with_human("claude user external skills", "ponytail · allowed"),
         Diagnostic::new("skills", State::Drift, "verbose second")
             .with_human("claude user external skills", "ponytail-audit · unexpected"),
     ]);
-
     assert_eq!(
         report.human(&context(), HumanOptions::verbose()),
         "Diagnostics\n✓ 1 healthy\n\nclaude user external skills\n  healthy     ponytail · allowed\n  drift       ponytail-audit · unexpected"
     );
-    let json = report.json().unwrap();
+    let json = report.json()?;
     assert!(json.contains("verbose first"));
     assert!(!json.contains("ponytail · allowed"));
+    Ok(())
 }
-
 #[test]
-fn structured_sections_sort_by_severity_without_mutating_report_order() {
+fn structured_sections_sort_by_severity_without_mutating_report_order()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let report = Report::new(vec![
         Diagnostic::new("skills", State::Unsupported, "claude limitation")
             .with_human_section(section("claude:user", "CLAUDE")),
@@ -141,10 +127,15 @@ fn structured_sections_sort_by_severity_without_mutating_report_order() {
         Diagnostic::new("skills", State::Drift, "cursor missing")
             .with_human_section(section("cursor:user", "CURSOR")),
     ]);
-
     let output = report.human(&context(), HumanOptions::normal());
-
-    assert!(output.find("CURSOR").unwrap() < output.find("CLAUDE").unwrap());
+    assert!(
+        output
+            .find("CURSOR")
+            .ok_or("required test value is missing")?
+            < output
+                .find("CLAUDE")
+                .ok_or("required test value is missing")?
+    );
     assert!(!output.contains("cursor current"));
     assert_eq!(
         report
@@ -154,29 +145,34 @@ fn structured_sections_sort_by_severity_without_mutating_report_order() {
             .collect::<Vec<_>>(),
         ["claude limitation", "cursor current", "cursor missing"]
     );
+    Ok(())
 }
-
 #[test]
-fn verbose_places_healthy_diagnostics_after_other_states() {
+fn verbose_places_healthy_diagnostics_after_other_states()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let report = Report::new(vec![
         Diagnostic::new("skills", State::Healthy, "current")
             .with_human_section(section("cursor:user", "CURSOR")),
         Diagnostic::new("skills", State::Unsupported, "inventory unavailable")
             .with_human_section(section("cursor:user", "CURSOR")),
     ]);
-
     let output = report.human(&context(), HumanOptions::verbose());
-
-    assert!(output.find("inventory unavailable").unwrap() < output.find("current").unwrap());
+    assert!(
+        output
+            .find("inventory unavailable")
+            .ok_or("required test value is missing")?
+            < output
+                .find("current")
+                .ok_or("required test value is missing")?
+    );
+    Ok(())
 }
-
 #[test]
 fn healthy_only_section_is_hidden_until_verbose() {
     let report = Report::new(vec![
         Diagnostic::new("skills", State::Healthy, "claude current")
             .with_human_section(section("claude:user", "CLAUDE")),
     ]);
-
     assert!(
         !report
             .human(&context(), HumanOptions::normal())

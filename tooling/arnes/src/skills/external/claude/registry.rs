@@ -166,12 +166,10 @@ fn matching_plugin(
         return None;
     }
     if matching.len() == 1 {
-        return Some(inspect_installation(
-            plugin_root,
-            id,
-            matching.into_iter().next().unwrap(),
-            exposure,
-        ));
+        return matching
+            .into_iter()
+            .next()
+            .map(|installation| inspect_installation(plugin_root, id, installation, exposure));
     }
     let versions = matching
         .iter()

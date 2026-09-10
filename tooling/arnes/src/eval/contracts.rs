@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 #[path = "contracts/tests.rs"]
 mod tests;
 
+/// # Errors
+/// Rejects empty, absolute, dot, parent, or non-ASCII path components.
 pub fn validate_path(path: &str) -> Result<(), String> {
     if path.split('/').any(|part| {
         part.is_empty()
@@ -19,6 +21,8 @@ pub fn validate_path(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// # Errors
+/// Rejects an empty string.
 pub fn nonempty(value: &str) -> Result<(), String> {
     if value.is_empty() {
         Err("Expected nonempty text".into())
@@ -27,6 +31,8 @@ pub fn nonempty(value: &str) -> Result<(), String> {
     }
 }
 
+/// # Errors
+/// Rejects fingerprints with the wrong length or characters outside lowercase hexadecimal.
 pub fn hash(value: &str, length: usize) -> Result<(), String> {
     if value.len() != length
         || !value
@@ -53,6 +59,8 @@ pub struct Query {
     pub reason: String,
 }
 impl Trigger {
+    /// # Errors
+    /// Rejects an empty skill identifier or a query set missing either activation polarity.
     pub fn validate(&self) -> Result<(), String> {
         nonempty(&self.skill)?;
         if !self.queries.iter().any(|q| q.should_activate)
@@ -121,6 +129,8 @@ pub struct BehavioralCase {
 }
 
 impl BehavioralCase {
+    /// # Errors
+    /// Rejects invalid case identifiers, empty expectations or sources, invalid prompts, or unknown fixtures.
     pub fn validate(&self) -> Result<(), String> {
         if self.id.split('-').any(|p| {
             p.is_empty()
@@ -167,6 +177,8 @@ pub struct Fixture {
 }
 
 impl Fixture {
+    /// # Errors
+    /// Rejects unknown or empty fixtures, invalid relative paths, or empty file contents.
     pub fn validate(&self) -> Result<(), String> {
         if self.id != "code-search-v1" || self.files.is_empty() {
             return Err("Invalid fixture".into());

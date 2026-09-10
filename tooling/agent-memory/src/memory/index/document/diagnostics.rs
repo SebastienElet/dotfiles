@@ -114,8 +114,8 @@ fn diagnostic_location(path: &str) -> Option<(StoredScope, &str)> {
 
 fn valid_diagnostics(diagnostics: &[IndexDiagnostic]) -> bool {
     diagnostics
-        .windows(2)
-        .all(|items| diagnostic_key(&items[0]) < diagnostic_key(&items[1]))
+        .array_windows::<2>()
+        .all(|[left, right]| diagnostic_key(left) < diagnostic_key(right))
         && diagnostics.iter().all(valid_diagnostic)
 }
 

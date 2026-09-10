@@ -22,7 +22,7 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
             let _ = (arguments.query_stdin, arguments.format);
             retrieve_command(&read_required(input)?)
         }
-        Command::Confirm(arguments) => confirm_command(arguments, &read_required(input)?),
+        Command::Confirm(arguments) => confirm_command(&arguments, &read_required(input)?),
         Command::Audit(arguments) => {
             let _ = arguments.format;
             audit_command(arguments.include_terminal)
@@ -33,15 +33,15 @@ pub(super) fn dispatch(command: Command, input: &mut dyn Read) -> Result<Value, 
 
 fn admit_command(bytes: &[u8]) -> Result<Value, CliFailure> {
     let draft = prepare_admission(bytes, AdmissionAuthorization::ExplicitRequest)
-        .map_err(CliFailure::from_memory)?;
+        .map_err(|error| CliFailure::from_memory(&error))?;
     let cwd = current_directory()?;
     let clock = SystemClock;
     let processes = SystemProcessRunner;
-    let prepared = resolve_admission(draft, &cwd, &processes).map_err(CliFailure::from_memory)?;
+    let prepared = resolve_admission(draft, &cwd, &processes)
+        .map_err(|error| CliFailure::from_memory(&error))?;
     let store = open_store()?;
     let sources = SourceContext::new(&cwd, &processes, &processes);
-    let result =
-        admit_prepared(prepared, &store, &clock, &sources).map_err(CliFailure::from_memory)?;
+    let result = admit_prepared(&prepared, &store, &clock, &sources);
     admission_json(result)
 }
 
@@ -56,16 +56,17 @@ fn admission_json(result: AdmissionResult) -> Result<Value, CliFailure> {
             "index_rebuild_required": index_rebuild_required,
         })),
         AdmissionResult::Duplicate { id } => Ok(json!({"status": "duplicate", "id": id.as_str()})),
-        AdmissionResult::Rejected { error } => Err(CliFailure::from_memory(error)),
-        AdmissionResult::Conflict { error, .. } => Err(CliFailure::from_memory(error)),
+        AdmissionResult::Rejected { error } | AdmissionResult::Conflict { error, .. } => {
+            Err(CliFailure::from_memory(&error))
+        }
     }
 }
 
 fn retrieve_command(bytes: &[u8]) -> Result<Value, CliFailure> {
     let query = std::str::from_utf8(bytes)
-        .map_err(|_| CliFailure::from_memory(MemoryError::new("invalid_utf8", "query")))?;
+        .map_err(|_| CliFailure::from_memory(&MemoryError::new("invalid_utf8", "query")))?;
     if query.trim().is_empty() {
-        return Err(CliFailure::from_memory(MemoryError::new(
+        return Err(CliFailure::from_memory(&MemoryError::new(
             "empty_query",
             "query",
         )));
@@ -77,29 +78,32 @@ fn retrieve_command(bytes: &[u8]) -> Result<Value, CliFailure> {
 
 fn hook_command(agent: HookAgent, bytes: &[u8]) -> Result<Value, CliFailure> {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(25);
-    let request = parse_hook_request(agent, bytes).map_err(CliFailure::from_hook)?;
+    let request =
+        parse_hook_request(agent, bytes).map_err(|error| CliFailure::from_hook(&error))?;
     let report = retrieval::injection_report(&request.query, &request.cwd, deadline)?;
     if std::time::Instant::now() >= deadline {
-        return Err(CliFailure::from_memory(MemoryError::unavailable(
+        return Err(CliFailure::from_memory(&MemoryError::unavailable(
             "retrieval_deadline_exceeded",
             "memory",
         )));
     }
-    let response = render_hook_response(agent, &report).map_err(CliFailure::from_hook)?;
+    let response =
+        render_hook_response(agent, &report).map_err(|error| CliFailure::from_hook(&error))?;
     serde_json::from_slice(&response).map_err(|_| output_failure())
 }
 
-fn confirm_command(arguments: ConfirmArguments, bytes: &[u8]) -> Result<Value, CliFailure> {
+fn confirm_command(arguments: &ConfirmArguments, bytes: &[u8]) -> Result<Value, CliFailure> {
     let reason = std::str::from_utf8(bytes)
-        .map_err(|_| CliFailure::from_memory(MemoryError::new("invalid_utf8", "reason")))?;
-    let conclusion = conclusion(arguments.status, reason).map_err(CliFailure::from_memory)?;
+        .map_err(|_| CliFailure::from_memory(&MemoryError::new("invalid_utf8", "reason")))?;
+    let conclusion =
+        conclusion(arguments.status, reason).map_err(|error| CliFailure::from_memory(&error))?;
     let store = open_store()?;
     let result = confirm(
         &arguments.id,
         conclusion,
         TransitionContext::new(&store, &SystemClock),
     )
-    .map_err(CliFailure::from_memory)?;
+    .map_err(|error| CliFailure::from_memory(&error))?;
     Ok(json!({
         "status": status_name(result.status()),
         "index_rebuild_required": result.index_rebuild_required(),
@@ -120,7 +124,9 @@ fn audit_command(include_terminal: bool) -> Result<Value, CliFailure> {
     let Some(store) = open_read_only_store()? else {
         return Ok(json!({"entries": [], "index_rebuild_required": false}));
     };
-    let listing = store.list().map_err(CliFailure::from_memory)?;
+    let listing = store
+        .list()
+        .map_err(|error| CliFailure::from_memory(&error))?;
     let entries = listing
         .entries()
         .iter()
@@ -141,18 +147,18 @@ fn audit_command(include_terminal: bool) -> Result<Value, CliFailure> {
 }
 
 fn open_store() -> Result<Store, CliFailure> {
-    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
-    Store::open(root).map_err(CliFailure::from_memory)
+    let root = MemoryRoot::from_environment().map_err(|error| CliFailure::from_memory(&error))?;
+    Store::open(&root).map_err(|error| CliFailure::from_memory(&error))
 }
 
 fn open_read_only_store() -> Result<Option<Store>, CliFailure> {
-    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
-    Store::open_read_only(root).map_err(CliFailure::from_memory)
+    let root = MemoryRoot::from_environment().map_err(|error| CliFailure::from_memory(&error))?;
+    Store::open_read_only(&root).map_err(|error| CliFailure::from_memory(&error))
 }
 
 fn current_directory() -> Result<std::path::PathBuf, CliFailure> {
     env::current_dir()
-        .map_err(|_| CliFailure::from_memory(MemoryError::new("scope_unavailable", "scope")))
+        .map_err(|_| CliFailure::from_memory(&MemoryError::new("scope_unavailable", "scope")))
 }
 
 fn scope_json(scope: &EntryScope) -> Value {
@@ -162,7 +168,7 @@ fn scope_json(scope: &EntryScope) -> Value {
     }
 }
 
-fn kind_name(kind: MemoryKind) -> &'static str {
+const fn kind_name(kind: MemoryKind) -> &'static str {
     match kind {
         MemoryKind::Goal => "goal",
         MemoryKind::Decision => "decision",
@@ -173,7 +179,7 @@ fn kind_name(kind: MemoryKind) -> &'static str {
     }
 }
 
-fn status_name(status: Status) -> &'static str {
+const fn status_name(status: Status) -> &'static str {
     match status {
         Status::Active => "active",
         Status::Achieved => "achieved",
@@ -185,7 +191,7 @@ fn status_name(status: Status) -> &'static str {
     }
 }
 
-fn output_failure() -> CliFailure {
+const fn output_failure() -> CliFailure {
     CliFailure {
         exit: 4,
         code: "output_unavailable",

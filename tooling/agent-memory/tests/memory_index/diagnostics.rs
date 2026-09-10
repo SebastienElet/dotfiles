@@ -1,19 +1,21 @@
 use super::support::*;
+use agent_memory::Index;
 use std::fs;
 
 #[test]
-fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redacted() {
-    let fixture = tempfile::tempdir().unwrap();
+fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redacted()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project.git")?;
     let user_id = admit_user(
         &store,
         fixture.path(),
         "Private user diagnostic statement.",
         &["private user term"],
         "Private user proof.",
-    );
+    )?;
     let mut ids = vec![user_id];
     for number in 0..8 {
         ids.push(admit_project(
@@ -23,14 +25,14 @@ fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redac
             &format!("Private project diagnostic statement {number}."),
             &["private project term"],
             "Private project proof.",
-        ));
+        )?);
     }
     for id in &ids {
-        let path = find_yaml(&root, id);
-        fs::write(path, b"not: [valid").unwrap();
+        let path = find_yaml(&root, id)?;
+        fs::write(path, b"not: [valid")?;
     }
 
-    let loaded = Index::load_or_rebuild(&store).unwrap();
+    let loaded = Index::load_or_rebuild(&store)?;
 
     let actual = loaded
         .diagnostics
@@ -47,25 +49,31 @@ fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redac
         .iter()
         .map(|id| (id.as_str(), "malformed_yaml", "omitted"))
         .collect::<Vec<_>>();
-    expected.sort();
+    expected.sort_unstable();
     assert_eq!(actual, expected);
-    let index: serde_json::Value =
-        serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
-    let diagnostics = index["diagnostics"]["user"]
+    let index: serde_json::Value = serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
+    let diagnostics = index
+        .pointer("/diagnostics/user")
+        .ok_or("missing index diagnostics/user")?
         .as_array()
-        .unwrap()
+        .ok_or("missing fixture value")?
         .iter()
         .chain(
-            index["diagnostics"]["projects"]
+            index
+                .pointer("/diagnostics/projects")
+                .ok_or("missing index diagnostics/projects")?
                 .as_object()
-                .unwrap()
+                .ok_or("missing fixture value")?
                 .values()
-                .flat_map(|items| items.as_array().unwrap()),
+                .map(|items| items.as_array().ok_or("missing fixture value"))
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .flatten(),
         );
     for diagnostic in diagnostics {
         let mut keys = diagnostic
             .as_object()
-            .unwrap()
+            .ok_or("missing fixture value")?
             .keys()
             .cloned()
             .collect::<Vec<_>>();
@@ -78,115 +86,135 @@ fn diagnostics_are_sorted_by_the_bytewise_id_check_effect_tuple_and_remain_redac
         assert!(!rendered.contains("proof"));
         assert!(!rendered.contains("entries/"));
     }
+    Ok(())
 }
 
 #[test]
-fn an_index_row_with_a_missing_or_unknown_field_is_rebuilt() {
+fn an_index_row_with_a_missing_or_unknown_field_is_rebuilt()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for mutation in ["missing", "unknown", "unnormalized", "extra-diagnostic"] {
-        let fixture = tempfile::tempdir().unwrap();
+        let fixture = tempfile::tempdir()?;
         let root = fixture.path().join("agent-memory");
-        let store = Store::open(memory_root(&root)).unwrap();
+        let store = Store::open(&memory_root(&root)?)?;
         admit_user(
             &store,
             fixture.path(),
             "Closed index row.",
             &["closed index"],
             "Established.",
-        );
+        )?;
         let path = root.join("index.json");
-        let mut index: serde_json::Value =
-            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let mut index: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
         match mutation {
             "missing" => {
-                index["entries"][0]
+                index
+                    .pointer_mut("/entries/0")
+                    .ok_or("missing index entries/0")?
                     .as_object_mut()
-                    .unwrap()
+                    .ok_or("missing fixture value")?
                     .remove("statement_tokens");
             }
             "unknown" => {
-                index["entries"][0]
+                index
+                    .pointer_mut("/entries/0")
+                    .ok_or("missing index entries/0")?
                     .as_object_mut()
-                    .unwrap()
+                    .ok_or("missing fixture value")?
                     .insert("statement".to_owned(), "must not persist".into());
             }
             "unnormalized" => {
-                index["entries"][0]
+                index
+                    .pointer_mut("/entries/0")
+                    .ok_or("missing index entries/0")?
                     .as_object_mut()
-                    .unwrap()
+                    .ok_or("missing fixture value")?
                     .insert("statement_tokens".to_owned(), serde_json::json!(["BÉTA"]));
             }
             "extra-diagnostic" => {
-                let id = index["entries"][0]["id"].as_str().unwrap().to_owned();
-                index["diagnostics"]["user"] = serde_json::json!([{
+                let id = index
+                    .pointer("/entries/0/id")
+                    .ok_or("missing index entries/0/id")?
+                    .as_str()
+                    .ok_or("missing fixture value")?
+                    .to_owned();
+                *index
+                    .pointer_mut("/diagnostics/user")
+                    .ok_or("missing index diagnostics/user")? = serde_json::json!([{
                     "entry_id": id,
                     "check": "status",
                     "effect": "omitted",
                 }]);
             }
-            _ => unreachable!(),
+            _ => return Err("unexpected fixture variant".into()),
         }
         fs::write(
             &path,
-            format!("{}\n", serde_json::to_string_pretty(&index).unwrap()),
-        )
-        .unwrap();
+            format!("{}\n", serde_json::to_string_pretty(&index)?),
+        )?;
 
-        let loaded = Index::load_or_rebuild(&store).unwrap();
+        let loaded = Index::load_or_rebuild(&store)?;
 
         assert!(loaded.rebuilt, "{mutation}");
-        let rebuilt = fs::read_to_string(path).unwrap();
+        let rebuilt = fs::read_to_string(path)?;
         assert!(!rebuilt.contains("must not persist"));
         assert!(!rebuilt.contains("\"statement\""));
     }
+    Ok(())
 }
 
 #[test]
-fn rebuilds_rows_with_retrieval_terms_outside_the_yaml_contract() {
+fn rebuilds_rows_with_retrieval_terms_outside_the_yaml_contract()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (mutation, terms) in [
         ("empty", serde_json::json!([])),
         ("too-long", serde_json::json!(["x".repeat(101)])),
         ("too-many", serde_json::json!(vec!["term"; 21])),
     ] {
-        let fixture = tempfile::tempdir().unwrap();
+        let fixture = tempfile::tempdir()?;
         let root = fixture.path().join("agent-memory");
-        let store = Store::open(memory_root(&root)).unwrap();
+        let store = Store::open(&memory_root(&root)?)?;
         admit_user(
             &store,
             fixture.path(),
             "Retrieval term contract.",
             &["valid term"],
             "Established.",
-        );
+        )?;
         let path = root.join("index.json");
-        let mut index: serde_json::Value =
-            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        index["entries"][0]["retrieval_terms"] = terms;
+        let mut index: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
+        *index
+            .pointer_mut("/entries/0/retrieval_terms")
+            .ok_or("missing index entries/0/retrieval_terms")? = terms;
         fs::write(
             &path,
-            format!("{}\n", serde_json::to_string_pretty(&index).unwrap()),
-        )
-        .unwrap();
+            format!("{}\n", serde_json::to_string_pretty(&index)?),
+        )?;
 
-        let loaded = Index::load_or_rebuild(&store).unwrap();
+        let loaded = Index::load_or_rebuild(&store)?;
 
         assert!(loaded.rebuilt, "{mutation}");
-        let rebuilt: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let rebuilt: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
         assert_eq!(
-            rebuilt["entries"][0]["retrieval_terms"],
+            *rebuilt
+                .pointer("/entries/0/retrieval_terms")
+                .ok_or("missing index entries/0/retrieval_terms")?,
             serde_json::json!(["valid term"]),
             "{mutation}"
         );
     }
+    Ok(())
 }
 
-fn find_yaml(root: &std::path::Path, id: &str) -> std::path::PathBuf {
+fn find_yaml(root: &std::path::Path, id: &str) -> std::io::Result<std::path::PathBuf> {
     let user = root.join(format!("entries/user/{id}.yaml"));
     if user.is_file() {
-        return user;
+        return Ok(user);
     }
-    fs::read_dir(root.join("entries/project"))
-        .unwrap()
-        .map(|entry| entry.unwrap().path().join(format!("{id}.yaml")))
-        .find(|path| path.is_file())
-        .unwrap()
+    for entry in fs::read_dir(root.join("entries/project"))? {
+        let path = entry?.path().join(format!("{id}.yaml"));
+        if path.is_file() {
+            return Ok(path);
+        }
+    }
+    Err(std::io::Error::other(format!("missing YAML for {id}")))
 }

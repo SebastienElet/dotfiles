@@ -28,6 +28,8 @@ struct FeedbackRecord {
     analysis_blocking: bool,
 }
 
+/// # Errors
+/// Rejects invalid feedback or incompatible run history, and returns locking or append errors.
 pub fn record(args: FeedbackArgs) -> Result<(), MeasureError> {
     validate(&args)?;
     let store = open_store()?;

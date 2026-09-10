@@ -50,7 +50,7 @@ fn skills_directory_plugins(
             continue;
         };
         for entry in entries.filter_map(Result::ok) {
-            if let Some(plugin) = inspect_skills_directory_entry(&directory, entry, settings) {
+            if let Some(plugin) = inspect_skills_directory_entry(&directory, &entry, settings) {
                 plugins.push(plugin);
             }
         }
@@ -60,7 +60,7 @@ fn skills_directory_plugins(
 
 fn inspect_skills_directory_entry(
     root: &Path,
-    entry: DirEntry,
+    entry: &DirEntry,
     settings: &Result<BTreeMap<String, bool>, ()>,
 ) -> Option<Plugin> {
     let path = entry.path();

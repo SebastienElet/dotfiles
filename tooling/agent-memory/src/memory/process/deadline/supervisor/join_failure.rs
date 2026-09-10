@@ -6,25 +6,29 @@ use std::io;
 use std::os::unix::process::CommandExt;
 use std::process::Stdio;
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-struct RecordingSpawner(Arc<Mutex<Option<Pid>>>);
+struct RecordingSpawner(Arc<AtomicI32>);
 
 impl CommandSpawner for RecordingSpawner {
     fn spawn(&self, command: &mut Command) -> io::Result<Child> {
         let child = command.spawn()?;
-        *self.0.lock().unwrap() = Pid::from_raw(child.id() as i32);
+        self.0.store(
+            i32::try_from(child.id()).map_err(io::Error::other)?,
+            Ordering::Release,
+        );
         Ok(child)
     }
 }
 
-struct GroupGuard(Arc<Mutex<Option<Pid>>>);
+struct GroupGuard(Arc<AtomicI32>);
 
 impl Drop for GroupGuard {
     fn drop(&mut self) {
-        if let Some(group) = *self.0.lock().unwrap() {
+        let group = Pid::from_raw(self.0.load(Ordering::Acquire));
+        if let Some(group) = group {
             let _ = kill_process_group(group, Signal::KILL);
         }
     }
@@ -44,10 +48,11 @@ impl ReaderSpawner for JoinErrorReaderSpawner {
 }
 
 #[test]
-fn closes_redirected_descendants_before_returning_a_joined_reader_error() {
-    let fixture = tempfile::tempdir().unwrap();
+fn closes_redirected_descendants_before_returning_a_joined_reader_error()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let state = fixture.path().join("descendant-pid");
-    let group = Arc::new(Mutex::new(None));
+    let group = Arc::new(AtomicI32::new(0));
     let _guard = GroupGuard(Arc::clone(&group));
     let spawner = RecordingSpawner(group);
     let mut command = Command::new("sh");
@@ -69,14 +74,12 @@ fn closes_redirected_descendants_before_returning_a_joined_reader_error() {
         &JoinErrorReaderSpawner,
         &SystemGroupController,
     )
-    .unwrap_err();
-    let pid = std::fs::read_to_string(state)
-        .unwrap()
-        .trim()
-        .parse::<i32>()
-        .unwrap();
-    let pid = Pid::from_raw(pid).unwrap();
+    .err()
+    .ok_or("expected operation failure")?;
+    let pid = std::fs::read_to_string(state)?.trim().parse::<i32>()?;
+    let pid = Pid::from_raw(pid).ok_or("missing fixture value")?;
 
     assert_eq!(error.kind(), io::ErrorKind::Other);
     assert!(test_kill_process(pid).is_err());
+    Ok(())
 }

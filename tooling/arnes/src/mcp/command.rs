@@ -106,8 +106,5 @@ fn candidate(roots: &Roots, scope: Scope, command: &str) -> Result<Option<PathBu
             Err(_) => return Err("PATH entry is unreadable"),
         }
     }
-    match invalid {
-        Some(error) => Err(error),
-        None => Ok(None),
-    }
+    invalid.map_or(Ok(None), Err)
 }

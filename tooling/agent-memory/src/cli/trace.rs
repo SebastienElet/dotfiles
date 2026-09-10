@@ -138,11 +138,11 @@ fn is_absolute_normal(path: &Path) -> bool {
             .all(|part| matches!(part, Component::RootDir | Component::Normal(_)))
 }
 
-fn failure() -> CliFailure {
+const fn failure() -> CliFailure {
     CliFailure::evaluation_trace_unavailable()
 }
 
-fn exit_class(exit: u8) -> &'static str {
+const fn exit_class(exit: u8) -> &'static str {
     match exit {
         2 => "rejection",
         3 => "conflict",

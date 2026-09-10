@@ -28,12 +28,14 @@ impl HumanContext {
         }
     }
 
+    #[must_use]
     pub fn with_qualifier(mut self, qualifier: impl Into<String>) -> Self {
         self.parts.push(qualifier.into());
         self
     }
 
-    pub fn with_section_count(
+    #[must_use]
+    pub const fn with_section_count(
         mut self,
         singular: &'static str,
         plural: &'static str,
@@ -67,24 +69,28 @@ pub struct HumanOptions {
 }
 
 impl HumanOptions {
-    pub fn normal() -> Self {
+    #[must_use]
+    pub const fn normal() -> Self {
         Self {
             verbose: false,
             color: false,
         }
     }
 
-    pub fn verbose() -> Self {
+    #[must_use]
+    pub const fn verbose() -> Self {
         Self {
             verbose: true,
             color: false,
         }
     }
 
-    pub fn includes_healthy(self) -> bool {
+    #[must_use]
+    pub const fn includes_healthy(self) -> bool {
         self.verbose
     }
 
+    #[must_use]
     pub fn with_color(
         mut self,
         mode: ColorMode,
@@ -95,7 +101,7 @@ impl HumanOptions {
         self
     }
 
-    fn colorizer(self) -> Colorizer {
+    const fn colorizer(self) -> Colorizer {
         Colorizer::new(self.color)
     }
 }
@@ -108,16 +114,13 @@ pub(super) fn render(
     if diagnostics.is_empty() {
         return "No diagnostics".to_owned();
     }
-    let structured = diagnostics
-        .iter()
-        .all(|diagnostic| diagnostic.section().is_some());
     let color = options.colorizer();
-    let (section_count, body) = if structured {
-        let (count, lines) = sections::render(diagnostics, options, color);
-        (Some(count), lines)
-    } else {
-        (None, render_flat(diagnostics, options, color))
-    };
+    let (section_count, body) =
+        if let Some((count, lines)) = sections::render(diagnostics, options, color) {
+            (Some(count), lines)
+        } else {
+            (None, render_flat(diagnostics, options, color))
+        };
     let mut lines = vec![
         context.heading(section_count),
         color.paint(
