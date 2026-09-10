@@ -143,7 +143,7 @@ fn availability_message(code: &str) -> &'static str {
     }
 }
 
-pub(crate) fn field_requirement(field: &str) -> &'static str {
+pub fn field_requirement(field: &str) -> &'static str {
     match field {
         "schema_version" => "Provide the required integer schema_version: 1.",
         "kind" => {

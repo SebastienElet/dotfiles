@@ -45,7 +45,7 @@ pub fn observe(fixture: &Fixture, entry: &LoadedCase, execution: Execution) -> R
     }
 }
 
-fn run_error(error: ExecutionError) -> RunError {
+const fn run_error(error: ExecutionError) -> RunError {
     match error {
         ExecutionError::AgentFailed => RunError::AgentFailed,
         ExecutionError::Timeout => RunError::Timeout,

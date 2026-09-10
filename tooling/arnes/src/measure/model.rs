@@ -10,7 +10,8 @@ pub enum HookAgent {
 }
 
 impl HookAgent {
-    pub fn as_str(self) -> &'static str {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Codex => "codex",
             Self::ClaudeCode => "claude-code",
@@ -18,7 +19,8 @@ impl HookAgent {
         }
     }
 
-    pub fn session_key(self) -> &'static str {
+    #[must_use]
+    pub const fn session_key(self) -> &'static str {
         match self {
             Self::Codex | Self::ClaudeCode => "session_id",
             Self::Cursor => "conversation_id",
@@ -75,7 +77,7 @@ impl RunRecord {
         }
     }
 
-    pub fn schema_version(&self) -> u8 {
+    pub const fn schema_version(&self) -> u8 {
         match self {
             Self::V1(run) => run.schema_version,
             Self::V2(run) => run.schema_version,
@@ -103,7 +105,7 @@ impl RunRecord {
         }
     }
 
-    pub fn started_at_ms(&self) -> u64 {
+    pub const fn started_at_ms(&self) -> u64 {
         match self {
             Self::V1(run) => run.started_at_ms,
             Self::V2(run) => run.started_at_ms,

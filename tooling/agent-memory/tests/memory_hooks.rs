@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 #[path = "memory_hooks/cli.rs"]
 mod cli;
 #[path = "memory_hooks/context_budget.rs"]

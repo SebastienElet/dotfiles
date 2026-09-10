@@ -218,7 +218,7 @@ fn replace_existing(
 }
 
 #[cfg(not(test))]
-fn run_after_publish_hook() {}
+const fn run_after_publish_hook() {}
 
 fn changed() -> HooksError {
     HooksError::new("hook configuration changed during installation")

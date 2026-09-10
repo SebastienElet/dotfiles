@@ -21,6 +21,8 @@ impl Display for ConfigurationError {
     }
 }
 
+/// # Errors
+/// Rejects unsafe configuration paths, unreadable files, invalid TOML, or invalid statusline values.
 pub fn load(roots: &Roots, scope: Scope) -> Result<Option<Vec<String>>, ConfigurationError> {
     let root = match scope {
         Scope::User => roots.home(),

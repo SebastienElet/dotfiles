@@ -27,15 +27,11 @@ pub fn selected(home: &Path) -> Result<PluginSelection, MeasureError> {
         );
         return Ok(selection);
     };
-    let manifest = match manifest::parse(&contents) {
-        Ok(manifest) => manifest,
-        Err(_) => {
-            selection.limitations.push(
-                "cursor local plugin declarations are invalid; local plugin files excluded"
-                    .to_owned(),
-            );
-            return Ok(selection);
-        }
+    let Ok(manifest) = manifest::parse(&contents) else {
+        selection.limitations.push(
+            "cursor local plugin declarations are invalid; local plugin files excluded".to_owned(),
+        );
+        return Ok(selection);
     };
     let local = home.join(".cursor/plugins/local");
     for id in manifest.external_plugins(Agent::Cursor, Scope::User) {

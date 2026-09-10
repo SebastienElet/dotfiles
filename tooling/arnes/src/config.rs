@@ -17,6 +17,7 @@ struct Specification {
     format: ConfigFormat,
 }
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,
@@ -175,7 +176,7 @@ fn unreadable(subject: &str, kind: &str, path: &str) -> Diagnostic {
     )
 }
 
-fn specification(agent: Agent, scope: Scope) -> Specification {
+const fn specification(agent: Agent, scope: Scope) -> Specification {
     match (agent, scope) {
         (Agent::Claude, _) => Specification {
             root: ".claude",

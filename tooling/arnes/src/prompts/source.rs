@@ -55,7 +55,7 @@ fn declared_includes(
     resolver: &Resolver,
 ) -> Result<Vec<PathBuf>, Failure> {
     let source = roots.repository().join(prompt.source());
-    let parent = source.parent().unwrap_or(roots.repository());
+    let parent = source.parent().unwrap_or_else(|| roots.repository());
     prompt
         .includes()
         .map(|include| {
@@ -155,7 +155,10 @@ fn render(roots: &Roots, resolver: &Resolver, path: &Path) -> Result<String, Fai
     let mut rendered = includes::without_leading_imports(&contents);
     for include in includes::leading_imports(&contents) {
         let path = resolver
-            .resolve(path.parent().unwrap_or(roots.repository()), &include)
+            .resolve(
+                path.parent().unwrap_or_else(|| roots.repository()),
+                &include,
+            )
             .map_err(|error| include_failure(roots, error))?;
         rendered.push_str(&render(roots, resolver, &path)?);
     }

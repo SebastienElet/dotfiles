@@ -1,10 +1,10 @@
 use arnes::eval::{compare, evidence, runner, shim, validate};
 use clap::{Args, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 #[derive(Args)]
-pub(crate) struct EvalArgs {
+pub struct EvalArgs {
     #[arg(long, global = true, default_value = ".")]
     repository: PathBuf,
     #[command(subcommand)]
@@ -81,11 +81,11 @@ fn variant_path(value: &str) -> Result<String, String> {
     }
 }
 
-pub(crate) fn run(args: EvalArgs) -> ExitCode {
+pub fn run(args: EvalArgs) -> ExitCode {
     match dispatch(args) {
         Ok(code) => code,
         Err(error) => {
-            eprintln!("eval: {error}");
+            let _ = crate::cli_output::write_error(format_args!("eval: {error}"));
             ExitCode::from(1)
         }
     }
@@ -94,20 +94,26 @@ pub(crate) fn run(args: EvalArgs) -> ExitCode {
 fn dispatch(args: EvalArgs) -> Result<ExitCode, String> {
     match args.command {
         EvalCommand::ValidateEvals => {
-            println!("{}", validate::validate_evaluations(&args.repository)?)
+            crate::cli_output::write_output(&validate::validate_evaluations(&args.repository)?)
+                .map_err(|error| error.to_string())?;
         }
         EvalCommand::ValidateEvidence { reports } => {
             if reports.is_empty() {
-                println!("{}", validate::validate_evidence(&args.repository)?);
+                crate::cli_output::write_output(&validate::validate_evidence(&args.repository)?)
+                    .map_err(|error| error.to_string())?;
             } else {
                 for report in &reports {
                     evidence::read_report(report)?;
                 }
-                println!("{} selected reports valid", reports.len());
+                crate::cli_output::write_output(&format!(
+                    "{} selected reports valid",
+                    reports.len()
+                ))
+                .map_err(|error| error.to_string())?;
             }
         }
         EvalCommand::FixtureSmoke => print_json(&runner::run_smoke(&args.repository)?)?,
-        EvalCommand::Run(options) => return run_and_publish(args.repository, options),
+        EvalCommand::Run(options) => return run_and_publish(&args.repository, options),
         EvalCommand::Compare {
             baseline,
             candidate,
@@ -125,7 +131,7 @@ fn dispatch(args: EvalArgs) -> Result<ExitCode, String> {
     Ok(ExitCode::SUCCESS)
 }
 
-fn run_and_publish(repository: PathBuf, args: RunArgs) -> Result<ExitCode, String> {
+fn run_and_publish(repository: &Path, args: RunArgs) -> Result<ExitCode, String> {
     evidence::assert_new_report(&args.report)?;
     let options = runner::SeriesOptions {
         model: args.model,
@@ -135,9 +141,10 @@ fn run_and_publish(repository: PathBuf, args: RunArgs) -> Result<ExitCode, Strin
         reasoning_effort: args.reasoning_effort,
         variant: args.variant_file,
     };
-    let report = runner::run_live(&repository, &options)?;
+    let report = runner::run_live(repository, &options)?;
     evidence::publish_report(&args.report, &report)?;
-    println!("New report: {}", args.report.display());
+    crate::cli_output::write_output(&format!("New report: {}", args.report.display()))
+        .map_err(|error| error.to_string())?;
     let passed = report.cases.iter().all(|case| {
         case.runs
             .iter()
@@ -151,9 +158,8 @@ fn run_and_publish(repository: PathBuf, args: RunArgs) -> Result<ExitCode, Strin
 }
 
 fn print_json(value: &impl serde::Serialize) -> Result<(), String> {
-    println!(
-        "{}",
-        serde_json::to_string_pretty(value).map_err(|error| error.to_string())?
-    );
-    Ok(())
+    crate::cli_output::write_output(
+        &serde_json::to_string_pretty(value).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())
 }

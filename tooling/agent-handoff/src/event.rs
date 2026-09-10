@@ -9,9 +9,10 @@ pub struct HookEvent {
     pub transcript_path: PathBuf,
 }
 
+/// # Errors
+/// Returns a usage error for malformed JSON, an unsupported event, or invalid required fields.
 pub fn parse_hook_event(input: &[u8]) -> Result<HookEvent, HandoffError> {
-    let input = String::from_utf8_lossy(input);
-    let value: Value = serde_json::from_str(&input)
+    let value: Value = serde_json::from_slice(input)
         .map_err(|_| HandoffError::usage("invalid hook event: expected JSON"))?;
     let object = value
         .as_object()

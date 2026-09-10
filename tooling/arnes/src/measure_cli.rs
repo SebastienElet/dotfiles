@@ -4,12 +4,12 @@ use std::process::ExitCode;
 use crate::cli::MeasureCommand;
 use crate::cli_output::write_output;
 
-pub(super) fn run_measure(command: MeasureCommand) -> ExitCode {
+pub fn run_measure(command: MeasureCommand) -> ExitCode {
     match command {
         MeasureCommand::Hook { agent } => match measure::capture(agent) {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {
-                eprintln!("measure hook: {error}");
+                let _ = crate::cli_output::write_error(format_args!("measure hook: {error}"));
                 ExitCode::SUCCESS
             }
         },
@@ -44,6 +44,6 @@ fn finish_measure(result: Result<(), measure::MeasureError>) -> ExitCode {
 }
 
 fn fail_measure(error: impl std::fmt::Display) -> ExitCode {
-    eprintln!("measure: {error}");
+    let _ = crate::cli_output::write_error(format_args!("measure: {error}"));
     ExitCode::from(2)
 }

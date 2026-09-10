@@ -123,27 +123,27 @@ mod tests {
     }
 
     #[test]
-    fn visits_a_long_journal_line_by_line() {
-        let directory = tempfile::tempdir().unwrap();
-        let mut file = tempfile::NamedTempFile::new_in(directory.path()).unwrap();
+    fn visits_a_long_journal_line_by_line() -> Result<(), Box<dyn std::error::Error>> {
+        let directory = tempfile::tempdir()?;
+        let mut file = tempfile::NamedTempFile::new_in(directory.path())?;
         for sequence in 0..20_000 {
-            writeln!(file, "{{\"sequence\":{sequence}}}").unwrap();
+            writeln!(file, "{{\"sequence\":{sequence}}}")?;
         }
         let mut count = 0;
         let mut last = None;
 
         visit_jsonl_typed::<Record>(
-            &ManagedPath::test_path(file.path()),
+            &ManagedPath::test_path(file.path())?,
             "records.jsonl",
             |record| {
                 count += 1;
                 last = Some(record.sequence);
                 Ok(())
             },
-        )
-        .unwrap();
+        )?;
 
         assert_eq!(count, 20_000);
         assert_eq!(last, Some(19_999));
+        Ok(())
     }
 }

@@ -6,7 +6,7 @@ use std::fs::File;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path};
 
-pub(crate) fn open_root(root: &MemoryRoot, fail_mode_repair: bool) -> Result<File, MemoryError> {
+pub fn open_root(root: &MemoryRoot, fail_mode_repair: bool) -> Result<File, MemoryError> {
     let components = normal_components(root.path())?;
     if components.is_empty() {
         return Err(unsafe_path());
@@ -29,7 +29,7 @@ pub(crate) fn open_root(root: &MemoryRoot, fail_mode_repair: bool) -> Result<Fil
     Ok(directory)
 }
 
-pub(crate) fn open_existing_root(root: &MemoryRoot) -> Result<Option<File>, MemoryError> {
+pub fn open_existing_root(root: &MemoryRoot) -> Result<Option<File>, MemoryError> {
     match std::fs::symlink_metadata(root.path()) {
         Ok(_) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -96,7 +96,9 @@ pub(super) fn normal_components(path: &Path) -> Result<Vec<&OsStr>, MemoryError>
         .filter_map(|component| match component {
             Component::RootDir => None,
             Component::Normal(value) => Some(Ok(value)),
-            _ => Some(Err(unsafe_path())),
+            Component::Prefix(_) | Component::CurDir | Component::ParentDir => {
+                Some(Err(unsafe_path()))
+            }
         })
         .collect()
 }

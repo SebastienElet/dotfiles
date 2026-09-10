@@ -2,7 +2,6 @@ use crate::support::Fixture;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::Path;
-
 pub const MANIFEST: &str = "version: 1
 agents:
   - id: claude
@@ -61,58 +60,86 @@ resources:
     source: { root: repository, path: .agents/skills }
     destination: { root: repository, path: .codex/skills }
 ";
-
-pub fn configured_fixture() -> Fixture {
-    let fixture = Fixture::new();
-    fixture.write_home(".arnes.yaml", MANIFEST);
+/// # Errors
+/// Returns an error if the fixture files, directories or symbolic links cannot be prepared.
+pub fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
+    fixture.write_home(".arnes.yaml", MANIFEST)?;
     fixture.write_repository(
         "harness/skills/alpha/SKILL.md",
         "# Alpha\n[guide](references/guide.md)\n",
-    );
-    fixture.write_repository("harness/skills/alpha/references/guide.md", "guide\n");
-    fixture.write_repository(".agents/skills/project-alpha/SKILL.md", "# Project Alpha\n");
+    )?;
+    fixture.write_repository("harness/skills/alpha/references/guide.md", "guide\n")?;
+    fixture.write_repository(".agents/skills/project-alpha/SKILL.md", "# Project Alpha\n")?;
     fixture.write_repository(
         ".agents/skills/beta/SKILL.md",
         "# Beta\n[missing](references/missing.md)\n",
-    );
+    )?;
     for destination in [
         ".claude/skills/alpha",
         ".cursor/skills/alpha",
         ".agents/skills/alpha",
     ] {
-        link_home(&fixture, "harness/skills/alpha", destination);
+        link_home(&fixture, "harness/skills/alpha", destination)?;
     }
     for destination in [".claude/skills", ".cursor/skills", ".codex/skills"] {
-        link_project(&fixture, destination);
+        link_project(&fixture, destination)?;
     }
-    fixture
+    Ok(fixture)
 }
-
-pub fn link_home(fixture: &Fixture, source: &str, destination: &str) {
+/// # Errors
+/// Returns an error if the fixture files, directories or symbolic links cannot be prepared.
+pub fn link_home(
+    fixture: &Fixture,
+    source: &str,
+    destination: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let destination = fixture.home().join(destination);
-    fs::create_dir_all(destination.parent().unwrap()).unwrap();
-    symlink(fixture.repository().join(source), destination).unwrap();
+    fs::create_dir_all(destination.parent().ok_or("fixture path has no parent")?)?;
+    symlink(fixture.repository().join(source), destination)?;
+    Ok(())
 }
-
-pub fn link_home_relative(fixture: &Fixture, source: &str, destination: &str) {
+/// # Errors
+/// Returns an error if the fixture files, directories or symbolic links cannot be prepared.
+pub fn link_home_relative(
+    fixture: &Fixture,
+    source: &str,
+    destination: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let destination = fixture.home().join(destination);
-    fs::create_dir_all(destination.parent().unwrap()).unwrap();
-    symlink(Path::new("../../../repository").join(source), destination).unwrap();
+    fs::create_dir_all(destination.parent().ok_or("fixture path has no parent")?)?;
+    symlink(Path::new("../../../repository").join(source), destination)?;
+    Ok(())
 }
-
-pub fn link_project(fixture: &Fixture, destination: &str) {
+/// # Errors
+/// Returns an error if the fixture files, directories or symbolic links cannot be prepared.
+pub fn link_project(
+    fixture: &Fixture,
+    destination: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let destination = fixture.repository().join(destination);
-    fs::create_dir_all(destination.parent().unwrap()).unwrap();
-    symlink("../.agents/skills", destination).unwrap();
+    fs::create_dir_all(destination.parent().ok_or("fixture path has no parent")?)?;
+    symlink("../.agents/skills", destination)?;
+    Ok(())
 }
-
-pub fn run(fixture: &Fixture, args: &[&str]) -> (i32, String, String) {
-    let before = fixture.snapshot();
-    let output = fixture.command(args);
-    assert_eq!(fixture.snapshot(), before);
-    (
-        output.status.code().unwrap(),
-        String::from_utf8(output.stdout).unwrap(),
-        String::from_utf8(output.stderr).unwrap(),
-    )
+/// # Errors
+/// Returns an error if the fixture command, filesystem inspection or output decoding fails.
+///
+/// # Panics
+/// Panics if the command changes the fixture filesystem.
+pub fn run(
+    fixture: &Fixture,
+    args: &[&str],
+) -> Result<(i32, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let before = fixture.snapshot()?;
+    let output = fixture.command(args)?;
+    assert_eq!(fixture.snapshot()?, before);
+    Ok((
+        output
+            .status
+            .code()
+            .ok_or("child process exited without a status code")?,
+        String::from_utf8(output.stdout)?,
+        String::from_utf8(output.stderr)?,
+    ))
 }

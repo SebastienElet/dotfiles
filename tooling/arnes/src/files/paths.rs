@@ -57,11 +57,12 @@ fn symlinks_within(
             let Ok(target) = fs::read_link(&candidate) else {
                 return false;
             };
-            let Some(target) = normalize(if target.is_absolute() {
+            let target = if target.is_absolute() {
                 target
             } else {
                 candidate.parent().unwrap_or(base).join(target)
-            }) else {
+            };
+            let Some(target) = normalize(&target) else {
                 return false;
             };
             active.push(candidate.clone());
@@ -89,14 +90,16 @@ fn route_within(path: &Path, canonical_root: &Path) -> bool {
     true
 }
 
-fn normalize(path: PathBuf) -> Option<PathBuf> {
+fn normalize(path: &Path) -> Option<PathBuf> {
     let mut normalized = PathBuf::new();
     for component in path.components() {
         match component {
             Component::CurDir => {}
             Component::ParentDir if normalized.pop() => {}
             Component::ParentDir => return None,
-            _ => normalized.push(component.as_os_str()),
+            Component::Prefix(_) | Component::RootDir | Component::Normal(_) => {
+                normalized.push(component.as_os_str());
+            }
         }
     }
     Some(normalized)

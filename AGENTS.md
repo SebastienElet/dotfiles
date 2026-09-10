@@ -17,12 +17,16 @@ This file is the single source of truth for all coding agents working in this re
 - Follow the Unix philosophy: make each tool do one thing well. Likewise, keep one responsibility
   per function and file. Parsing, orchestration, policy, I/O, and mutation are separate
   responsibilities unless their implementation is trivial.
-- Treat 50 logical lines per production function and 250 lines per hand-written file as review
-  triggers: split the unit or justify in the delivery note why keeping it intact is more cohesive.
+- Keep functions within Clippy's default `too_many_lines` limit of 100 lines; do not raise or suppress
+  the Rust lint.
+- Target fewer than 500 lines per hand-written file, excluding tests, following
+  [Codex's module-size guidance](https://github.com/openai/codex/blob/main/AGENTS.md).
+- When a file exceeds 800 lines, add new functionality in a separate cohesive module instead of
+  extending the existing file. Keep related tests and documentation close to the extracted code.
 - Do not extract a helper solely to satisfy a size trigger; every extracted unit must have a clear
   name and reason to change.
 - These rules override any skill preference for the fewest files or the shortest diff. Before
-  delivery, inspect every changed hand-written function and file against the triggers.
+  delivery, inspect every changed hand-written function and file against these limits.
 
 ## Architecture Decisions
 

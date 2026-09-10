@@ -17,7 +17,8 @@ pub struct ProcessOutput {
 }
 
 impl ProcessOutput {
-    pub fn new(success: bool, code: Option<i32>, stdout: Vec<u8>, stderr: Vec<u8>) -> Self {
+    #[must_use]
+    pub const fn new(success: bool, code: Option<i32>, stdout: Vec<u8>, stderr: Vec<u8>) -> Self {
         Self {
             success,
             code,
@@ -26,24 +27,31 @@ impl ProcessOutput {
         }
     }
 
-    pub fn success(&self) -> bool {
+    #[must_use]
+    pub const fn success(&self) -> bool {
         self.success
     }
 
-    pub fn code(&self) -> Option<i32> {
+    #[must_use]
+    pub const fn code(&self) -> Option<i32> {
         self.code
     }
 
+    #[must_use]
     pub fn stdout(&self) -> &[u8] {
         &self.stdout
     }
 
+    #[must_use]
     pub fn stderr(&self) -> &[u8] {
         &self.stderr
     }
 }
 
 pub trait ProcessRunner {
+    /// # Errors
+    ///
+    /// Returns an I/O error if spawning or supervising the process, capturing output, or deadline cleanup fails.
     fn run(
         &self,
         program: &OsStr,

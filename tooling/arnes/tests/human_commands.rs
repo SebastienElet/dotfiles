@@ -1,9 +1,8 @@
+#![cfg(test)]
 mod support;
-
 use support::Fixture;
-
-fn fixture() -> Fixture {
-    let fixture = Fixture::new();
+fn fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
     fixture.write_home(
         ".arnes.yaml",
         "version: 1
@@ -28,26 +27,26 @@ commands:
       - { agent: claude, scope: user }
 resources: []
 ",
-    );
+    )?;
     let contents = "---\ndescription: Deploy safely\n---\nDeploy now\n";
-    fixture.write_repository("deploy.md", contents);
-    fixture.write_home(".claude/commands/deploy.md", contents);
-    fixture
+    fixture.write_repository("deploy.md", contents)?;
+    fixture.write_home(".claude/commands/deploy.md", contents)?;
+    Ok(fixture)
 }
-
 #[test]
-fn commands_hide_healthy_details_until_verbose() {
-    let fixture = fixture();
+fn commands_hide_healthy_details_until_verbose()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = fixture()?;
     assert!(fixture.home().is_dir());
     assert!(fixture.repository().is_dir());
-    let before = fixture.snapshot();
-    let normal = fixture.command(["doctor", "commands", "--agent", "claude"]);
-    let verbose = fixture.command(["doctor", "commands", "--agent", "claude", "-v"]);
-    let normal = String::from_utf8(normal.stdout).unwrap();
-    let verbose = String::from_utf8(verbose.stdout).unwrap();
-
+    let before = fixture.snapshot()?;
+    let normal = fixture.command(["doctor", "commands", "--agent", "claude"])?;
+    let verbose = fixture.command(["doctor", "commands", "--agent", "claude", "-v"])?;
+    let normal = String::from_utf8(normal.stdout)?;
+    let verbose = String::from_utf8(verbose.stdout)?;
     assert!(normal.starts_with("Commands · user scope · claude agent\n✓ 1 healthy\n"));
     assert!(!normal.contains("deploy · current"));
     assert!(verbose.contains("healthy     deploy · current"));
-    assert_eq!(fixture.snapshot(), before);
+    assert_eq!(fixture.snapshot()?, before);
+    Ok(())
 }

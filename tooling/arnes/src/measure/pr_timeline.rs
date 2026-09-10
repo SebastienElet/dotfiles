@@ -11,6 +11,8 @@ use model::{EventType, PrEventRecord, PrIdentity, VerdictData};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 
+/// # Errors
+/// Rejects invalid pull-request verdicts or conflicting timeline history, and returns managed-store errors.
 pub fn record(args: PrVerdictArgs) -> Result<&'static str, MeasureError> {
     validation::input(&args)?;
     let store = open_store()?;

@@ -1,8 +1,7 @@
 use crate::command_support::{CONTENTS, command, manifest};
 use crate::support::Fixture;
-
-pub fn configured_fixture() -> Fixture {
-    let fixture = Fixture::new();
+pub fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
     let prompts = "  - id: deploy
     source: { root: repository, path: harness/prompts/deploy.md }
     includes: []
@@ -22,9 +21,9 @@ pub fn configured_fixture() -> Fixture {
         "deploy",
         "      - { agent: claude, scope: user }\n      - { agent: claude, scope: project }\n",
     );
-    fixture.write_home(".arnes.yaml", &manifest(prompts, &commands));
-    fixture.write_repository("harness/prompts/deploy.md", CONTENTS);
-    fixture.write_home(".claude/commands/deploy.md", CONTENTS);
-    fixture.write_repository(".claude/commands/deploy.md", CONTENTS);
-    fixture
+    fixture.write_home(".arnes.yaml", &manifest(prompts, &commands))?;
+    fixture.write_repository("harness/prompts/deploy.md", CONTENTS)?;
+    fixture.write_home(".claude/commands/deploy.md", CONTENTS)?;
+    fixture.write_repository(".claude/commands/deploy.md", CONTENTS)?;
+    Ok(fixture)
 }

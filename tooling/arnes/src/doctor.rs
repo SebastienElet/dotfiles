@@ -17,7 +17,7 @@ use std::process::ExitCode;
 
 mod render;
 
-pub(super) fn run(
+pub fn run(
     resource: Option<Resource>,
     agent: Option<Agent>,
     scope: Option<Scope>,
@@ -26,7 +26,7 @@ pub(super) fn run(
     verbose: bool,
 ) -> ExitCode {
     if let Err(error) = validate_render_options(format, verbose, color) {
-        eprintln!("{error}");
+        let _ = crate::cli_output::write_error(format_args!("{error}"));
         return ExitCode::from(2);
     }
 
@@ -43,21 +43,30 @@ pub(super) fn run(
     );
     let rendered_scope = match resource {
         Some(Resource::Statusline) => scope,
-        _ => resource.and(scope.or(Some(Scope::User))).or(scope),
+        _ => resource.and_then(|_| scope.or(Some(Scope::User))).or(scope),
     };
     let (output, exit_code) = match format {
         Format::Human => render::human(diagnostics, resource, agent, rendered_scope, human_options),
         Format::Json => {
             let report = Report::new(diagnostics);
             (
-                report.json().expect("diagnostics are JSON serializable"),
+                match report.json() {
+                    Ok(output) => output,
+                    Err(error) => {
+                        let _ =
+                            crate::cli_output::write_error(format_args!("diagnostics: {error}"));
+                        return ExitCode::from(2);
+                    }
+                },
                 report.exit_code(),
             )
         }
     };
 
     if let Err(error) = write_output(&output) {
-        eprintln!("output: could not write diagnostics: {error}");
+        let _ = crate::cli_output::write_error(format_args!(
+            "output: could not write diagnostics: {error}"
+        ));
         return ExitCode::from(2);
     }
     ExitCode::from(exit_code)

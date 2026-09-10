@@ -33,7 +33,8 @@ pub(super) fn human(
     let report = Report::new(diagnostics);
     let exit_code = report.exit_code();
     let mut output = String::new();
-    for (section, diagnostics) in default_sections(report.into_diagnostics()) {
+    let (sections, unclaimed) = default_sections(report.into_diagnostics());
+    for (section, diagnostics) in sections {
         if section != Resource::Manifest && diagnostics.is_empty() {
             continue;
         }
@@ -49,10 +50,20 @@ pub(super) fn human(
             &Report::new(diagnostics).human(&context(Some(section), agent, section_scope), options),
         );
     }
+    if !unclaimed.is_empty() {
+        if !output.is_empty() {
+            output.push_str("\n\n");
+        }
+        output.push_str(
+            &Report::new(unclaimed).human(&HumanContext::new("Other resources"), options),
+        );
+    }
     (output, exit_code)
 }
 
-fn default_sections(diagnostics: Vec<Diagnostic>) -> Vec<(Resource, Vec<Diagnostic>)> {
+fn default_sections(
+    diagnostics: Vec<Diagnostic>,
+) -> (Vec<(Resource, Vec<Diagnostic>)>, Vec<Diagnostic>) {
     let mut sections = DEFAULT_RESOURCES.map(|resource| (resource, Vec::new()));
     let mut unclaimed = Vec::new();
     for diagnostic in diagnostics {
@@ -64,11 +75,7 @@ fn default_sections(diagnostics: Vec<Diagnostic>) -> Vec<(Resource, Vec<Diagnost
             None => unclaimed.push(diagnostic),
         }
     }
-    debug_assert!(
-        unclaimed.is_empty(),
-        "the default doctor emits only its declared resources"
-    );
-    sections.into_iter().collect()
+    (sections.into_iter().collect(), unclaimed)
 }
 
 fn context(resource: Option<Resource>, agent: Option<Agent>, scope: Option<Scope>) -> HumanContext {
@@ -88,7 +95,7 @@ fn context(resource: Option<Resource>, agent: Option<Agent>, scope: Option<Scope
 }
 
 impl Resource {
-    fn key(self) -> &'static str {
+    const fn key(self) -> &'static str {
         match self {
             Self::Manifest => "manifest",
             Self::Config => "config",
@@ -103,7 +110,7 @@ impl Resource {
         }
     }
 
-    fn heading(self) -> &'static str {
+    const fn heading(self) -> &'static str {
         match self {
             Self::Manifest => "Manifest",
             Self::Config => "Config",
@@ -116,5 +123,20 @@ impl Resource {
             Self::Mcp => "MCP",
             Self::Statusline => "Statusline",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use arnes::diagnostic::State;
+
+    #[test]
+    fn preserves_diagnostics_for_an_unrecognized_resource() {
+        let diagnostics = vec![Diagnostic::new("future-resource", State::Error, "failed")];
+        let (output, exit_code) = human(diagnostics, None, None, None, HumanOptions::normal());
+        assert!(output.contains("future-resource"));
+        assert!(output.contains("failed"));
+        assert_eq!(exit_code, 2);
     }
 }

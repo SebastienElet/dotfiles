@@ -5,6 +5,7 @@ use crate::manifest::{Agent, Manifest, Scope};
 mod checks;
 mod projection;
 
+#[must_use]
 pub fn diagnose(
     roots: &Roots,
     manifest: &Manifest,

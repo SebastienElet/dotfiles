@@ -20,7 +20,12 @@ pub(super) fn read_bounded(
         }
         match reader.read(&mut chunk) {
             Ok(0) => break,
-            Ok(count) => append_chunk(&mut bytes, &chunk[..count], state),
+            Ok(count) => {
+                let captured = chunk.get(..count).ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::InvalidData, "process_reader_invalid_count")
+                })?;
+                append_chunk(&mut bytes, captured, state);
+            }
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                 thread::sleep(READER_POLL_INTERVAL);
             }
@@ -70,6 +75,26 @@ mod tests {
 
     struct FailingReader;
 
+    struct InvalidCountReader;
+
+    impl Read for InvalidCountReader {
+        fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+            Ok(usize::MAX)
+        }
+    }
+
+    #[test]
+    fn rejects_a_reader_count_larger_than_the_buffer() {
+        let error = read_bounded(
+            InvalidCountReader,
+            &ReaderState::default(),
+            &AtomicBool::new(false),
+        )
+        .map_err(|error| error.kind());
+
+        assert_eq!(error, Err(io::ErrorKind::InvalidData));
+    }
+
     struct AvailableReader(bool);
 
     impl Read for FailingReader {
@@ -83,8 +108,11 @@ mod tests {
             if self.0 {
                 return Ok(0);
             }
+            let Some(byte) = buffer.first_mut() else {
+                return Ok(0);
+            };
             self.0 = true;
-            buffer[0] = b'x';
+            *byte = b'x';
             Ok(1)
         }
     }
@@ -96,9 +124,9 @@ mod tests {
             &ReaderState::default(),
             &AtomicBool::new(false),
         )
-        .unwrap_err();
+        .map_err(|error| error.kind());
 
-        assert_eq!(error.kind(), io::ErrorKind::Other);
+        assert_eq!(error, Err(io::ErrorKind::Other));
     }
 
     #[test]
@@ -108,8 +136,8 @@ mod tests {
             &ReaderState::default(),
             &AtomicBool::new(true),
         )
-        .unwrap_err();
+        .map_err(|error| error.kind());
 
-        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert_eq!(error, Err(io::ErrorKind::TimedOut));
     }
 }

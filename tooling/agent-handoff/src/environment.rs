@@ -4,29 +4,29 @@ use std::ffi::{OsStr, OsString};
 pub struct Environment {
     pub handoff_token_threshold: Option<String>,
     pub claude_code_auto_compact_window: Option<String>,
-    pub xdg_state_home: Option<String>,
-    pub home: Option<String>,
+    pub xdg_state_home: Option<OsString>,
+    pub home: Option<OsString>,
 }
 
-impl Environment {
-    #[allow(clippy::should_implement_trait)]
-    pub fn from_iter(values: impl IntoIterator<Item = (OsString, OsString)>) -> Self {
+impl FromIterator<(OsString, OsString)> for Environment {
+    fn from_iter<T: IntoIterator<Item = (OsString, OsString)>>(values: T) -> Self {
         let mut environment = Self::default();
 
         for (name, value) in values {
-            let value = Some(value.to_string_lossy().into_owned());
             match name.as_os_str() {
                 name if name == OsStr::new("HANDOFF_TOKEN_THRESHOLD") => {
-                    environment.handoff_token_threshold = value;
+                    environment.handoff_token_threshold =
+                        Some(value.to_string_lossy().into_owned());
                 }
                 name if name == OsStr::new("CLAUDE_CODE_AUTO_COMPACT_WINDOW") => {
-                    environment.claude_code_auto_compact_window = value;
+                    environment.claude_code_auto_compact_window =
+                        Some(value.to_string_lossy().into_owned());
                 }
                 name if name == OsStr::new("XDG_STATE_HOME") => {
-                    environment.xdg_state_home = value;
+                    environment.xdg_state_home = Some(value);
                 }
                 name if name == OsStr::new("HOME") => {
-                    environment.home = value;
+                    environment.home = Some(value);
                 }
                 _ => {}
             }
@@ -34,7 +34,10 @@ impl Environment {
 
         environment
     }
+}
 
+impl Environment {
+    #[must_use]
     pub fn current() -> Self {
         Self::from_iter(
             [

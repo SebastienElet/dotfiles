@@ -7,7 +7,7 @@ use std::path::Path;
 
 const MAX_ENTRY_BYTES: u64 = 1024 * 1024;
 
-pub(crate) fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryError> {
+pub fn entry_paths(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryError> {
     let mut paths = Vec::new();
     let user = root.join("entries/user")?;
     for name in user.read_dir_names()? {
@@ -63,12 +63,12 @@ fn project_directories(root: &ManagedPath) -> Result<Vec<ManagedPath>, MemoryErr
         .collect()
 }
 
-pub(crate) fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
+pub fn read_entry(path: &ManagedPath) -> Result<MemoryEntry, MemoryError> {
     let mut file = path.open_read_only()?;
     read_entry_from_file(path, &mut file)
 }
 
-pub(crate) fn read_entry_from_file(
+pub fn read_entry_from_file(
     path: &ManagedPath,
     file: &mut File,
 ) -> Result<MemoryEntry, MemoryError> {
@@ -84,7 +84,7 @@ fn read_bounded_file(file: &mut File) -> Result<Vec<u8>, MemoryError> {
     if metadata.len() > MAX_ENTRY_BYTES {
         return Err(store_error());
     }
-    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    let mut bytes = Vec::with_capacity(usize::try_from(metadata.len()).map_err(|_| store_error())?);
     Read::by_ref(file)
         .take(MAX_ENTRY_BYTES + 1)
         .read_to_end(&mut bytes)
@@ -120,13 +120,13 @@ fn valid_entry_filename(value: &str) -> bool {
     value.strip_suffix(".yaml").is_some_and(valid_memory_id)
 }
 
-pub(crate) fn valid_memory_id(value: &str) -> bool {
+pub fn valid_memory_id(value: &str) -> bool {
     value
         .strip_prefix("mem_")
         .is_some_and(|suffix| suffix.len() == 24 && suffix.bytes().all(is_lower_hex))
 }
 
-pub(crate) fn valid_project_key(value: &str) -> bool {
+pub fn valid_project_key(value: &str) -> bool {
     value
         .strip_prefix("project_")
         .is_some_and(|suffix| suffix.len() == 64 && suffix.bytes().all(is_lower_hex))

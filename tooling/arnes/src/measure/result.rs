@@ -21,7 +21,7 @@ pub use list::render as list;
 pub(super) use records::{EventHistory, read_events_for_list_with};
 pub(super) use records::{ResultRecord, validate_result_record};
 
-#[derive(Args)]
+#[derive(Args, Clone, Copy)]
 pub struct ListArgs {
     #[arg(long, value_enum)]
     pub agent: Option<HookAgent>,

@@ -41,8 +41,9 @@ fn mark_one(topology: &mut Topology, detail: &mut Option<String>, reason: &str) 
     if *topology != Topology::Unreadable {
         *topology = Topology::Broken;
     }
-    *detail = Some(match detail.take() {
-        Some(detail) => format!("{detail}; {reason}"),
-        None => reason.to_owned(),
-    });
+    *detail = Some(
+        detail
+            .take()
+            .map_or_else(|| reason.to_owned(), |detail| format!("{detail}; {reason}")),
+    );
 }

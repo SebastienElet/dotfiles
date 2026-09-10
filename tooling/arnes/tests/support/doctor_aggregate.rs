@@ -1,7 +1,6 @@
 use crate::support::Fixture;
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
-
 const MANIFEST: &str = "version: 1
 agents:
   - id: claude
@@ -57,7 +56,6 @@ resources:
     source: { root: repository, path: harness/rules/aggregate.md }
     destination: { root: home, path: .claude/rules/aggregate.md }
 ";
-
 const COMMAND: &str = "---\ndescription: Deploy safely\n---\nDeploy now\n";
 pub const ORDER: [&str; 10] = [
     "manifest",
@@ -71,51 +69,56 @@ pub const ORDER: [&str; 10] = [
     "mcp",
     "statusline",
 ];
-
-pub fn configured_fixture() -> Fixture {
-    let fixture = Fixture::new();
-    fixture.write_home(".arnes.yaml", MANIFEST);
-    fixture.write_repository("harness/AGENTS.md", "agent instructions\n");
-    fixture.write_repository("harness/skills/alpha/SKILL.md", "# Alpha\n");
-    fixture.write_repository("harness/prompts/deploy.md", COMMAND);
-    fixture.write_repository("harness/rules/aggregate.md", "rule\n");
-    fixture.write_home(".claude/commands/deploy.md", COMMAND);
-    link_home(&fixture, "harness/AGENTS.md", ".claude/CLAUDE.md");
-    link_home(&fixture, "harness/skills/alpha", ".claude/skills/alpha");
+pub fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
+    fixture.write_home(".arnes.yaml", MANIFEST)?;
+    fixture.write_repository("harness/AGENTS.md", "agent instructions\n")?;
+    fixture.write_repository("harness/skills/alpha/SKILL.md", "# Alpha\n")?;
+    fixture.write_repository("harness/prompts/deploy.md", COMMAND)?;
+    fixture.write_repository("harness/rules/aggregate.md", "rule\n")?;
+    fixture.write_home(".claude/commands/deploy.md", COMMAND)?;
+    link_home(&fixture, "harness/AGENTS.md", ".claude/CLAUDE.md")?;
+    link_home(&fixture, "harness/skills/alpha", ".claude/skills/alpha")?;
     link_home(
         &fixture,
         "harness/rules/aggregate.md",
         ".claude/rules/aggregate.md",
-    );
-    fixture.write_repository("bin/mcp", "#!/bin/sh\nexit 99\n");
-    set_mode(&fixture.repository().join("bin/mcp"), 0o700);
+    )?;
+    fixture.write_repository("bin/mcp", "#!/bin/sh\nexit 99\n")?;
+    set_mode(&fixture.repository().join("bin/mcp"), 0o700)?;
     fixture.write_repository(
         ".mcp.json",
         r#"{"mcpServers":{"managed":{"command":"bin/mcp"}}}"#,
-    );
+    )?;
     fixture.write_repository(
         ".codex/config.toml",
         "[tui]\nstatus_line = [\"model\", \"current-dir\"]\n",
-    );
-    fixture.write_home(".local/bin/agent-handoff", "binary\n");
-    set_mode(&fixture.home().join(".local/bin/agent-handoff"), 0o700);
-    let setup = fixture.command(["setup", "hooks", "--agent", "claude"]);
+    )?;
+    fixture.write_home(".local/bin/agent-handoff", "binary\n")?;
+    set_mode(&fixture.home().join(".local/bin/agent-handoff"), 0o700)?;
+    let setup = fixture.command(["setup", "hooks", "--agent", "claude"])?;
     assert_eq!(setup.status.code(), Some(0));
-    fixture
+    Ok(fixture)
 }
-
-fn link_home(fixture: &Fixture, source: &str, destination: &str) {
+fn link_home(
+    fixture: &Fixture,
+    source: &str,
+    destination: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let destination = fixture.home().join(destination);
-    fs::create_dir_all(destination.parent().unwrap()).unwrap();
+    fs::create_dir_all(destination.parent().ok_or("fixture path has no parent")?)?;
     symlink(
-        fs::canonicalize(fixture.repository().join(source)).unwrap(),
+        fs::canonicalize(fixture.repository().join(source))?,
         destination,
-    )
-    .unwrap();
+    )?;
+    Ok(())
 }
-
-pub fn set_mode(path: &std::path::Path, mode: u32) {
-    let mut permissions = fs::metadata(path).unwrap().permissions();
+pub fn set_mode(
+    path: &std::path::Path,
+    mode: u32,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut permissions = fs::metadata(path)?.permissions();
     permissions.set_mode(mode);
-    fs::set_permissions(path, permissions).unwrap();
+    fs::set_permissions(path, permissions)?;
+    Ok(())
 }

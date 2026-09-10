@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const MAX_FILES: usize = 512;
 const MAX_FILE_BYTES: u64 = 1_048_576;
-const WINDOW_BYTES: u64 = 65_536;
+const WINDOW_BYTES: u32 = 65_536;
 
 pub struct Traversal<'a> {
     hasher: &'a mut Sha256,
@@ -112,11 +112,11 @@ impl<'a> Traversal<'a> {
             return Ok(());
         }
         std::io::copy(
-            &mut std::io::Read::by_ref(&mut file).take(WINDOW_BYTES),
+            &mut std::io::Read::by_ref(&mut file).take(u64::from(WINDOW_BYTES)),
             self.hasher,
         )?;
-        file.seek(SeekFrom::End(-(WINDOW_BYTES as i64)))?;
-        std::io::copy(&mut file.take(WINDOW_BYTES), self.hasher)?;
+        file.seek(SeekFrom::End(-(i64::from(WINDOW_BYTES))))?;
+        std::io::copy(&mut file.take(u64::from(WINDOW_BYTES)), self.hasher)?;
         self.limit("fingerprint oversized files use size and 65536-byte boundary windows");
         Ok(())
     }

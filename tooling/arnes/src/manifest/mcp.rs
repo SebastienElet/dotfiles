@@ -28,7 +28,7 @@ pub struct McpRegistration<'a> {
 
 impl Manifest {
     pub fn mcp_registrations(&self) -> impl Iterator<Item = McpRegistration<'_>> {
-        self.mcp.iter().map(|declaration| McpRegistration {
+        self.0.mcp.iter().map(|declaration| McpRegistration {
             name: &declaration.name,
             agent: declaration.agent,
             scope: declaration.scope,

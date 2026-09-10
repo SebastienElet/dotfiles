@@ -19,6 +19,7 @@ pub struct DeadlineProcessRunner {
 }
 
 impl DeadlineProcessRunner {
+    #[must_use]
     pub fn new(deadline: Instant) -> Self {
         Self {
             budget: ProcessBudget::new(deadline),

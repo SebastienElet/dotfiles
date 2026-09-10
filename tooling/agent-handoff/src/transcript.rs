@@ -17,6 +17,8 @@ pub struct Usage {
     pub window: Option<u64>,
 }
 
+/// # Errors
+/// Returns a usage error for malformed retained records, invalid token counts, or missing supported usage.
 pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
     let mut physical_lines: Vec<&str> = transcript.split('\n').collect();
     if physical_lines.last() == Some(&"") {
@@ -27,7 +29,7 @@ pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
         .saturating_sub(RETAINED_TRANSCRIPT_LINE_COUNT);
     let mut latest = None;
 
-    for (index, line) in physical_lines[retained_start..].iter().enumerate() {
+    for (index, line) in physical_lines.iter().skip(retained_start).enumerate() {
         if line.chars().all(is_ecmascript_trim_character) {
             continue;
         }
@@ -50,7 +52,7 @@ pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
     latest.ok_or_else(|| HandoffError::usage("no supported usage record in transcript"))
 }
 
-fn is_ecmascript_trim_character(character: char) -> bool {
+const fn is_ecmascript_trim_character(character: char) -> bool {
     matches!(
         character,
         '\u{0009}'
@@ -166,7 +168,6 @@ fn parse_token_count(
         .and_then(parse_safe_integer)
         .ok_or_else(|| HandoffError::usage(format!("invalid {field}")))
 }
-
 fn parse_safe_integer(value: &Value) -> Option<u64> {
     let Value::Number(number) = value else {
         return None;
@@ -175,6 +176,15 @@ fn parse_safe_integer(value: &Value) -> Option<u64> {
         return (value <= MAX_SAFE_INTEGER).then_some(value);
     }
     let value = number.as_f64()?;
-    (value.is_finite() && value >= 0.0 && value.fract() == 0.0 && value <= MAX_SAFE_INTEGER as f64)
-        .then_some(value as u64)
+    if !(0.0..=9_007_199_254_740_991.0).contains(&value) || value.fract() != 0.0 {
+        return None;
+    }
+    if value == 0.0 {
+        return Some(0);
+    }
+    let bits = value.to_bits();
+    let exponent = (bits >> 52) & 0x7ff;
+    let shift = u32::try_from(1075_u64.checked_sub(exponent)?).ok()?;
+    let significand = (bits & ((1_u64 << 52) - 1)) | (1_u64 << 52);
+    significand.checked_shr(shift)
 }

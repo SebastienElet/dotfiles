@@ -48,7 +48,7 @@ tasks:
       mutex: arnes-cargo-target
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo clippy --all-targets --locked -- -D warnings
+      cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
   check:
     inputs:
       - "@group(rust)"
@@ -58,7 +58,7 @@ tasks:
       - repository:rust
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo check --all-targets --locked
+      cargo check --workspace --all-targets --all-features --locked
   test:
     toolchains: bun
     options:
@@ -69,6 +69,6 @@ tasks:
       - repository:dependencies
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo test --locked
+      cargo test --workspace --all-features --locked
 tags:
   - rust-cli

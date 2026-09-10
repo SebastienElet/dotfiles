@@ -19,9 +19,10 @@ impl SourceResolver for SynchronizedResolver {
 }
 
 #[test]
-fn terminal_transition_published_during_oracle_resolution_is_omitted() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
+fn terminal_transition_published_during_oracle_resolution_is_omitted()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, store) = open_store(fixture.path())?;
     let yaml = entry_yaml(
         'a',
         "goal",
@@ -30,41 +31,51 @@ fn terminal_transition_published_during_oracle_resolution_is_omitted() {
             locator: "/tmp/concurrent-proof",
             fingerprint: 'a',
         }],
-    );
-    write_user_entry(&root, 'a', &yaml);
-    let key = project_key(fixture.path());
-    let selection = select(&store, &key, 5);
+    )?;
+    write_user_entry(&root, 'a', &yaml)?;
+    let key = project_key(fixture.path())?;
+    let selection = select(&store, &key, 5)?;
     let resolution_started = Arc::new(Barrier::new(2));
     let resume_resolution = Arc::new(Barrier::new(2));
     let resolver = SynchronizedResolver {
         resolution_started: Arc::clone(&resolution_started),
         resume_resolution: Arc::clone(&resume_resolution),
     };
-    let retrieval_store = Store::open(memory_root(&root)).unwrap();
+    let retrieval_store = Store::open(&memory_root(&root)?)?;
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
     let retrieval = std::thread::spawn(move || {
         retrieve(
             RetrievalRequest::new(&selection, &key, true),
-            RetrievalContext::new(
-                &retrieval_store,
-                &FixedClock::at("2026-08-28T01:00:00Z"),
-                &resolver,
-                environment(),
-            ),
+            &RetrievalContext::new(&retrieval_store, &clock, &resolver, environment()),
         )
     });
     resolution_started.wait();
     let id = user_entry_id('a', "goal");
     let transition = confirm(
         &id,
-        HumanConclusion::goal_achieved("Goal completed concurrently.").unwrap(),
-        TransitionContext::new(&store, &FixedClock::at("2026-08-28T01:00:00Z")),
-    )
-    .unwrap();
+        HumanConclusion::goal_achieved("Goal completed concurrently.")?,
+        TransitionContext::new(&store, &FixedClock::at("2026-08-28T01:00:00Z")?),
+    )?;
     assert_eq!(transition.status(), Status::Achieved);
     resume_resolution.wait();
-    let report = retrieval.join().unwrap();
+    let report = retrieval.join().map_err(|_| "worker thread panicked")?;
 
     assert!(report.injected.is_empty());
-    assert_eq!(report.omitted[0].code, "selection_stale");
-    assert_eq!(report.omitted[0].effect, OmissionEffect::NotApplied);
+    assert_eq!(
+        report
+            .omitted
+            .first()
+            .ok_or("missing fixture element")?
+            .code,
+        "selection_stale"
+    );
+    assert_eq!(
+        report
+            .omitted
+            .first()
+            .ok_or("missing fixture element")?
+            .effect,
+        OmissionEffect::NotApplied
+    );
+    Ok(())
 }

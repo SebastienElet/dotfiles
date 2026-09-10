@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HandoffError {
     pub message: String,
@@ -19,3 +21,11 @@ impl HandoffError {
         }
     }
 }
+
+impl fmt::Display for HandoffError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for HandoffError {}

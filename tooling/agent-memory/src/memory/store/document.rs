@@ -8,7 +8,7 @@ use crate::memory::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize)]
-pub(crate) struct StoredEntry {
+pub struct StoredEntry {
     schema_version: u8,
     pub(crate) id: String,
     pub(crate) kind: String,
@@ -140,7 +140,7 @@ impl StoredEntry {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase", deny_unknown_fields)]
-pub(crate) enum StoredScope {
+pub enum StoredScope {
     Project { key: String },
     User,
 }
@@ -164,7 +164,7 @@ impl StoredScope {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub(crate) struct StoredProof {
+pub struct StoredProof {
     pub(crate) summary: String,
     sources: Vec<StoredSource>,
     established_at: String,

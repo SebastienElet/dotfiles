@@ -27,7 +27,7 @@ pub enum ResultState {
 }
 
 impl ResultState {
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Pending => "pending",
             Self::OutcomeRecorded => "outcome-recorded",
@@ -78,16 +78,16 @@ fn read_events_file_allow_empty(
 ) -> Result<EventHistory, MeasureError> {
     let mut history = EventHistory::new();
     visit_jsonl_typed_file::<StoredEvent>(file, "events.jsonl", |event| {
-        history.push(event, run_id)
+        history.push(&event, run_id)
     })?;
     Ok(history)
 }
 
-pub fn latest_result(history: &EventHistory) -> Option<&ResultRecord> {
+pub const fn latest_result(history: &EventHistory) -> Option<&ResultRecord> {
     history.latest_result.as_ref()
 }
 
-fn previous_result(history: &EventHistory) -> Option<&ResultRecord> {
+const fn previous_result(history: &EventHistory) -> Option<&ResultRecord> {
     history.previous_result.as_ref()
 }
 
@@ -109,7 +109,7 @@ pub fn result_state(
 }
 
 impl EventHistory {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             last_event: None,
             first_event_at_ms: None,
@@ -122,8 +122,8 @@ impl EventHistory {
         }
     }
 
-    fn push(&mut self, event: StoredEvent, run_id: &str) -> Result<(), MeasureError> {
-        if invalid_event(&event, run_id) {
+    fn push(&mut self, event: &StoredEvent, run_id: &str) -> Result<(), MeasureError> {
+        if invalid_event(event, run_id) {
             return Err(MeasureError::new(
                 "managed events.jsonl has an invalid record",
             ));
@@ -177,23 +177,23 @@ impl EventHistory {
         self.last_event.as_deref()
     }
 
-    pub fn first_event_at_ms(&self) -> Option<u64> {
+    pub const fn first_event_at_ms(&self) -> Option<u64> {
         self.first_event_at_ms
     }
 
-    pub fn last_event_at_ms(&self) -> Option<u64> {
+    pub const fn last_event_at_ms(&self) -> Option<u64> {
         self.last_event_at_ms
     }
 
-    pub fn timestamps_consistent(&self) -> bool {
+    pub const fn timestamps_consistent(&self) -> bool {
         self.timestamps_consistent
     }
 
-    pub fn event_count(&self) -> u64 {
+    pub const fn event_count(&self) -> u64 {
         self.event_count
     }
 
-    pub fn tool_call_count(&self) -> u64 {
+    pub const fn tool_call_count(&self) -> u64 {
         self.tool_call_count
     }
 }

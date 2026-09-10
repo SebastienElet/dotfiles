@@ -18,7 +18,7 @@ pub(super) enum Command {
 }
 
 impl Command {
-    pub(super) fn trace_name(&self) -> &'static str {
+    pub(super) const fn trace_name(&self) -> &'static str {
         match self {
             Self::Admit(_) => "admit",
             Self::Retrieve(_) => "retrieve",

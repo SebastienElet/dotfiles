@@ -11,15 +11,20 @@ pub struct ProjectScope {
 }
 
 impl ProjectScope {
-    pub fn key(&self) -> &ProjectKey {
+    #[must_use]
+    pub const fn key(&self) -> &ProjectKey {
         &self.key
     }
 
+    #[must_use]
     pub fn common_directory(&self) -> &Path {
         &self.common_directory
     }
 }
 
+/// # Errors
+///
+/// Returns an error if Git fails, returns an invalid directory, or the resolved directory cannot be accessed.
 pub fn resolve_project(cwd: &Path, git: &dyn ProcessRunner) -> Result<ProjectScope, MemoryError> {
     let common_directory = resolve_git_directory(cwd, git, "--git-common-dir")?;
     let hash = Sha256::digest(common_directory.as_os_str().as_bytes());
@@ -29,7 +34,7 @@ pub fn resolve_project(cwd: &Path, git: &dyn ProcessRunner) -> Result<ProjectSco
     })
 }
 
-pub(crate) fn resolve_worktree_directory(
+pub fn resolve_worktree_directory(
     cwd: &Path,
     git: &dyn ProcessRunner,
 ) -> Result<PathBuf, MemoryError> {
@@ -103,23 +108,29 @@ mod tests {
     }
 
     #[test]
-    fn classifies_a_timed_out_project_lookup_as_unavailable() {
-        let error =
-            resolve_project(Path::new("/"), &FailingGit(io::ErrorKind::TimedOut)).unwrap_err();
+    fn classifies_a_timed_out_project_lookup_as_unavailable()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let error = resolve_project(Path::new("/"), &FailingGit(io::ErrorKind::TimedOut))
+            .err()
+            .ok_or("expected operation failure")?;
 
         assert_eq!(error.class(), crate::MemoryErrorClass::Unavailable);
         assert_eq!(error.code(), "scope_unavailable");
+        Ok(())
     }
 
     #[test]
-    fn classifies_every_project_process_failure_as_unavailable() {
+    fn classifies_every_project_process_failure_as_unavailable()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for kind in [
             io::ErrorKind::Other,
             io::ErrorKind::PermissionDenied,
             io::ErrorKind::Interrupted,
             io::ErrorKind::NotFound,
         ] {
-            let error = resolve_project(Path::new("/"), &FailingGit(kind)).unwrap_err();
+            let error = resolve_project(Path::new("/"), &FailingGit(kind))
+                .err()
+                .ok_or("expected operation failure")?;
 
             assert_eq!(
                 error.class(),
@@ -128,5 +139,6 @@ mod tests {
             );
             assert_eq!(error.code(), "scope_unavailable", "{kind:?}");
         }
+        Ok(())
     }
 }

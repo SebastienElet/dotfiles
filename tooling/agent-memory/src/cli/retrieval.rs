@@ -46,11 +46,12 @@ fn report_with_processes(
     processes: &dyn crate::ProcessRunner,
     deadline: Option<Instant>,
 ) -> Result<RetrievalReport, CliFailure> {
-    let project = resolve_project(cwd, processes).map_err(CliFailure::from_memory)?;
+    let project =
+        resolve_project(cwd, processes).map_err(|error| CliFailure::from_memory(&error))?;
     let Some(store) = open_store()? else {
         return Ok(empty_report());
     };
-    let index = Index::load_or_rebuild(&store).map_err(CliFailure::from_memory)?;
+    let index = Index::load_or_rebuild(&store).map_err(|error| CliFailure::from_memory(&error))?;
     let selection = search(
         &index.index,
         SearchRequest {
@@ -72,19 +73,18 @@ fn report_with_processes(
         context = context.with_deadline(deadline);
     }
     match mode {
-        RetrievalMode::Report => Ok(retrieve(request, context)),
-        RetrievalMode::Injection => {
-            retrieve_for_injection(request, context).map_err(CliFailure::from_memory)
-        }
+        RetrievalMode::Report => Ok(retrieve(request, &context)),
+        RetrievalMode::Injection => retrieve_for_injection(request, &context)
+            .map_err(|error| CliFailure::from_memory(&error)),
     }
 }
 
 fn open_store() -> Result<Option<Store>, CliFailure> {
-    let root = MemoryRoot::from_environment().map_err(CliFailure::from_memory)?;
-    Store::open_for_retrieval(root).map_err(CliFailure::from_memory)
+    let root = MemoryRoot::from_environment().map_err(|error| CliFailure::from_memory(&error))?;
+    Store::open_for_retrieval(&root).map_err(|error| CliFailure::from_memory(&error))
 }
 
-fn empty_report() -> RetrievalReport {
+const fn empty_report() -> RetrievalReport {
     RetrievalReport {
         injected: Vec::new(),
         omitted: Vec::new(),
@@ -113,7 +113,8 @@ mod tests {
     }
 
     #[test]
-    fn hook_retrieval_maps_project_lookup_timeout_to_exit_four() {
+    fn hook_retrieval_maps_project_lookup_timeout_to_exit_four()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let error = report_with_processes(
             "durable memory",
             Path::new("/"),
@@ -121,14 +122,17 @@ mod tests {
             &FailingGit(io::ErrorKind::TimedOut),
             Some(Instant::now() + std::time::Duration::from_secs(1)),
         )
-        .unwrap_err();
+        .err()
+        .ok_or("expected operation failure")?;
 
         assert_eq!(error.exit, 4);
         assert_eq!(error.code, "scope_unavailable");
+        Ok(())
     }
 
     #[test]
-    fn hook_retrieval_maps_project_process_failure_to_exit_four() {
+    fn hook_retrieval_maps_project_process_failure_to_exit_four()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let error = report_with_processes(
             "durable memory",
             Path::new("/"),
@@ -136,9 +140,11 @@ mod tests {
             &FailingGit(io::ErrorKind::Other),
             Some(Instant::now() + std::time::Duration::from_secs(1)),
         )
-        .unwrap_err();
+        .err()
+        .ok_or("expected operation failure")?;
 
         assert_eq!(error.exit, 4);
         assert_eq!(error.code, "scope_unavailable");
+        Ok(())
     }
 }

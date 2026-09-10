@@ -27,7 +27,7 @@ pub(super) struct AnchoredEntry {
     item: InventoryItem,
 }
 
-pub(crate) struct InventorySnapshot {
+pub struct InventorySnapshot {
     entries: Vec<AnchoredEntry>,
 }
 
@@ -114,7 +114,7 @@ impl AnchoredEntry {
         read_entry_from_file(&self.path, &mut self.file)
     }
 
-    pub(super) fn item(&self) -> &InventoryItem {
+    pub(super) const fn item(&self) -> &InventoryItem {
         &self.item
     }
 

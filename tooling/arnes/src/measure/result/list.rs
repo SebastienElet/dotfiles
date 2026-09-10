@@ -43,6 +43,8 @@ struct SilentRun {
     silence_ms: Option<u64>,
 }
 
+/// # Errors
+/// Returns errors reading or validating managed runs and results, or serializing the listing.
 pub fn render(args: ListArgs) -> Result<String, MeasureError> {
     let store = open_store()?;
     let runs_path = store.runs_path();
@@ -197,9 +199,7 @@ fn optional_text(value: Option<&str>) -> &str {
 }
 
 fn optional_u64(value: Option<u64>) -> String {
-    value
-        .map(|value| value.to_string())
-        .unwrap_or_else(|| "unavailable".to_owned())
+    value.map_or_else(|| "unavailable".to_owned(), |value| value.to_string())
 }
 
 fn first_prompt_excerpt(record: &PromptRecord) -> String {

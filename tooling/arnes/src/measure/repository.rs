@@ -9,9 +9,7 @@ pub fn root(directory: &Path) -> Option<String> {
 
 pub fn observe(directory: &Path) -> RepositoryRecord {
     let head = git(directory, &["rev-parse", "HEAD"]);
-    let dirty = git(directory, &["status", "--porcelain"])
-        .map(|value| !value.is_empty())
-        .unwrap_or(true);
+    let dirty = git(directory, &["status", "--porcelain"]).is_none_or(|value| !value.is_empty());
     RepositoryRecord { head, dirty }
 }
 

@@ -1,6 +1,9 @@
 use super::{HumanConclusion, TransitionContext, TransitionResult};
 use crate::memory::{MemoryError, Status, TransitionVerdict};
 
+/// # Errors
+///
+/// Returns an error if the entry is missing, the conclusion is incompatible, the entry is no longer active, or publication fails.
 pub fn confirm(
     id: &str,
     conclusion: HumanConclusion,
@@ -30,7 +33,7 @@ pub fn confirm(
     })
 }
 
-fn human_status_requirement(kind: crate::MemoryKind) -> &'static str {
+const fn human_status_requirement(kind: crate::MemoryKind) -> &'static str {
     match kind {
         crate::MemoryKind::Goal => {
             "For a goal, the human terminal statuses are achieved and abandoned."

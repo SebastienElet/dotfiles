@@ -1,6 +1,8 @@
 use crate::{Environment, HandoffError};
+use std::ffi::{OsStr, OsString};
 use std::fs::{self, OpenOptions};
 use std::io::ErrorKind;
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -9,6 +11,8 @@ pub enum SentinelState {
     Existing,
 }
 
+/// # Errors
+/// Returns a usage error when neither a nonempty XDG state root nor HOME is available.
 pub fn state_root(environment: &Environment) -> Result<PathBuf, HandoffError> {
     if let Some(path) = environment
         .xdg_state_home
@@ -20,58 +24,64 @@ pub fn state_root(environment: &Environment) -> Result<PathBuf, HandoffError> {
     environment
         .home
         .as_deref()
-        .map(|home| join_posix(&[home, ".local", "state"]))
+        .map(|home| join_posix(&[home, OsStr::new(".local"), OsStr::new("state")]))
         .ok_or_else(|| HandoffError::usage("missing HOME and XDG_STATE_HOME"))
 }
 
-pub(crate) fn join_posix(paths: &[&str]) -> PathBuf {
-    let mut joined = String::new();
-    for path in paths.iter().filter(|path| !path.is_empty()) {
+pub fn join_posix(paths: &[impl AsRef<OsStr>]) -> PathBuf {
+    let mut joined = Vec::new();
+    for path in paths
+        .iter()
+        .map(|path| path.as_ref().as_bytes())
+        .filter(|path| !path.is_empty())
+    {
         if !joined.is_empty() {
-            joined.push('/');
+            joined.push(b'/');
         }
-        joined.push_str(path);
+        joined.extend_from_slice(path);
     }
     if joined.is_empty() {
         return PathBuf::from(".");
     }
 
-    let absolute = joined.starts_with('/');
-    let trailing_separator = joined.ends_with('/');
+    let absolute = joined.starts_with(b"/");
+    let trailing_separator = joined.ends_with(b"/");
     let mut components = Vec::new();
-    for component in joined.split('/') {
+    for component in joined.split(|byte| *byte == b'/') {
         match component {
-            "" | "." => {}
-            ".." if components.last().is_some_and(|last| *last != "..") => {
+            b".." if components.last().is_some_and(|last| *last != b"..") => {
                 components.pop();
             }
-            ".." if !absolute => components.push(component),
-            ".." => {}
+            b".." if !absolute => components.push(component),
+            b"" | b"." | b".." => {}
             _ => components.push(component),
         }
     }
 
-    let mut normalized = components.join("/");
+    let mut normalized = components.join(&b'/');
     if absolute {
-        normalized.insert(0, '/');
+        normalized.insert(0, b'/');
     } else if normalized.is_empty() {
-        normalized.push('.');
+        normalized.push(b'.');
     }
-    if trailing_separator && normalized != "/" {
-        normalized.push('/');
+    if trailing_separator && normalized != b"/" {
+        normalized.push(b'/');
     }
-    PathBuf::from(normalized)
+    PathBuf::from(OsString::from_vec(normalized))
 }
 
+/// # Errors
+/// Returns an unexpected error if the sentinel is not a regular file or cannot be inspected.
 pub fn inspect_sentinel(path: &Path) -> Result<bool, HandoffError> {
     match fs::metadata(path) {
         Ok(metadata) if metadata.is_file() => Ok(true),
-        Ok(_) => Err(HandoffError::unexpected("cannot inspect handoff sentinel")),
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(false),
-        Err(_) => Err(HandoffError::unexpected("cannot inspect handoff sentinel")),
+        Ok(_) | Err(_) => Err(HandoffError::unexpected("cannot inspect handoff sentinel")),
     }
 }
 
+/// # Errors
+/// Returns an unexpected error if the parent directory or sentinel cannot be created.
 pub fn create_sentinel(path: &Path) -> Result<SentinelState, HandoffError> {
     let parent = path
         .parent()

@@ -29,23 +29,25 @@ impl Default for DraftText<'_> {
 fn text_draft(text: &DraftText<'_>) -> Vec<u8> {
     format!(
         "schema_version: 1\nkind: invariant\nstatement: {}\nscope: user\nretrieval_terms:\n  - {}\nproof:\n  summary: {}\n  sources:\n    - kind: user-decision\n      locator: {}\noracle:\n  human_fallback:\n    question: {}\n    valid_when: {}\n  outcomes:\n    valid: {}\n    invalidated: {}\n",
-        serde_json::to_string(text.statement).unwrap(),
-        serde_json::to_string(text.retrieval_term).unwrap(),
-        serde_json::to_string(text.summary).unwrap(),
-        serde_json::to_string(text.locator).unwrap(),
-        serde_json::to_string(text.question).unwrap(),
-        serde_json::to_string(text.valid_when).unwrap(),
-        serde_json::to_string(text.valid).unwrap(),
-        serde_json::to_string(text.invalidated).unwrap(),
+        serde_json::Value::String(text.statement.to_owned()),
+        serde_json::Value::String(text.retrieval_term.to_owned()),
+        serde_json::Value::String(text.summary.to_owned()),
+        serde_json::Value::String(text.locator.to_owned()),
+        serde_json::Value::String(text.question.to_owned()),
+        serde_json::Value::String(text.valid_when.to_owned()),
+        serde_json::Value::String(text.valid.to_owned()),
+        serde_json::Value::String(text.invalidated.to_owned()),
     )
     .into_bytes()
 }
 
-fn rejection(bytes: &[u8]) -> (&'static str, &'static str) {
-    let fixture = tempfile::tempdir().unwrap();
-    let store = Store::open(MemoryRoot::new(fixture.path().join("store")).unwrap()).unwrap();
+fn rejection(
+    bytes: &[u8],
+) -> Result<(&'static str, &'static str), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let store = Store::open(&MemoryRoot::new(fixture.path().join("store"))?)?;
     let processes = SystemProcessRunner;
-    let clock = FixedClock::new();
+    let clock = FixedClock::new()?;
     let result = admit(
         bytes,
         context(
@@ -55,17 +57,18 @@ fn rejection(bytes: &[u8]) -> (&'static str, &'static str) {
             &processes,
             AdmissionAuthorization::AcceptedProposal,
         ),
-    )
-    .unwrap();
-    assert!(store.list().unwrap().entries().is_empty());
-    match result {
-        AdmissionResult::Rejected { error } => (error.code(), error.field()),
-        result => panic!("unexpected result: {result:?}"),
+    )?;
+    assert!(store.list()?.entries().is_empty());
+    if let AdmissionResult::Rejected { error } = result {
+        Ok((error.code(), error.field()))
+    } else {
+        Err(format!("unexpected result: {result:?}").into())
     }
 }
 
 #[test]
-fn rejects_bounded_shell_command_forms_in_every_draft_text_field() {
+fn rejects_bounded_shell_command_forms_in_every_draft_text_field()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cases = [
         (
             text_draft(&DraftText {
@@ -126,12 +129,14 @@ fn rejects_bounded_shell_command_forms_in_every_draft_text_field() {
     ];
 
     for (bytes, field) in cases {
-        assert_eq!(rejection(&bytes), ("shell_command", field));
+        assert_eq!(rejection(&bytes)?, ("shell_command", field));
     }
+    Ok(())
 }
 
 #[test]
-fn accepts_prose_that_names_shell_concepts_without_executable_shape() {
+fn accepts_prose_that_names_shell_concepts_without_executable_shape()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for statement in [
         "The shell command policy is documented.",
         "The rm command must never be persisted.",
@@ -139,10 +144,10 @@ fn accepts_prose_that_names_shell_concepts_without_executable_shape() {
         "Condition A || condition B remains prose.",
         "The bash documentation defines option syntax.",
     ] {
-        let fixture = tempfile::tempdir().unwrap();
-        let store = Store::open(MemoryRoot::new(fixture.path().join("store")).unwrap()).unwrap();
+        let fixture = tempfile::tempdir()?;
+        let store = Store::open(&MemoryRoot::new(fixture.path().join("store"))?)?;
         let processes = SystemProcessRunner;
-        let clock = FixedClock::new();
+        let clock = FixedClock::new()?;
         let text = DraftText {
             statement,
             ..DraftText::default()
@@ -157,9 +162,9 @@ fn accepts_prose_that_names_shell_concepts_without_executable_shape() {
                 &processes,
                 AdmissionAuthorization::AcceptedProposal,
             ),
-        )
-        .unwrap();
+        )?;
 
-        stored_id(result, false);
+        stored_id(result, false)?;
     }
+    Ok(())
 }

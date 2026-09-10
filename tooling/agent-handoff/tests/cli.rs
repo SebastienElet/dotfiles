@@ -1,3 +1,7 @@
+#![cfg(test)]
+
+type TestResult<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
 use agent_handoff::{Environment, HandoffError, run_agent_handoff};
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -9,7 +13,7 @@ use tempfile::TempDir;
 mod runtime_parity;
 
 struct Fixture {
-    _root: TempDir,
+    root: TempDir,
     home: PathBuf,
     state: PathBuf,
     transcript: PathBuf,
@@ -28,14 +32,14 @@ impl Write for FailingWriter {
 }
 
 impl Fixture {
-    fn new() -> Self {
-        let root = TempDir::new().unwrap();
-        Self {
+    fn new() -> io::Result<Self> {
+        let root = TempDir::new()?;
+        Ok(Self {
             home: root.path().join("home"),
             state: root.path().join("state"),
             transcript: root.path().join("transcript.jsonl"),
-            _root: root,
-        }
+            root,
+        })
     }
 
     fn command(&self) -> Command {
@@ -52,10 +56,10 @@ impl Fixture {
         self.state.join("dotfiles/handoff").join(session_id)
     }
 
-    fn write_claude_usage(&self, used: u64) {
+    fn write_claude_usage(&self, used: u64) -> io::Result<()> {
         let record = r#"{"type":"assistant","isSidechain":false,"message":{"usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":USED}}}"#
             .replace("USED", &used.to_string());
-        fs::write(&self.transcript, format!("{record}\n")).unwrap();
+        fs::write(&self.transcript, format!("{record}\n"))
     }
 }
 
@@ -67,18 +71,21 @@ fn event(transcript: &Path, session_id: &str, stop_hook_active: bool) -> Vec<u8>
     .into_bytes()
 }
 
-fn run(mut command: Command, input: &[u8]) -> Output {
+fn run(mut command: Command, input: &[u8]) -> io::Result<Output> {
     let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child.stdin.take().unwrap().write_all(input).unwrap();
-    child.wait_with_output().unwrap()
+        .spawn()?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| io::Error::other("child stdin is not piped"))?
+        .write_all(input)?;
+    child.wait_with_output()
 }
 
-fn run_event(fixture: &Fixture, session_id: &str) -> Output {
+fn run_event(fixture: &Fixture, session_id: &str) -> io::Result<Output> {
     run(
         fixture.command(),
         &event(&fixture.transcript, session_id, false),
@@ -92,22 +99,23 @@ fn assert_clean_success(output: &Output) {
 }
 
 #[test]
-fn below_threshold_usage_exits_cleanly_without_creating_a_sentinel() {
-    let fixture = Fixture::new();
-    fixture.write_claude_usage(84_999);
+fn below_threshold_usage_exits_cleanly_without_creating_a_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_claude_usage(84_999)?;
 
-    let output = run_event(&fixture, "below");
+    let output = run_event(&fixture, "below")?;
 
     assert_clean_success(&output);
     assert!(!fixture.sentinel("below").exists());
+    Ok(())
 }
 
 #[test]
-fn threshold_usage_writes_exact_block_bytes_and_creates_the_sentinel() {
-    let fixture = Fixture::new();
-    fixture.write_claude_usage(85_000);
+fn threshold_usage_writes_exact_block_bytes_and_creates_the_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_claude_usage(85_000)?;
 
-    let output = run_event(&fixture, "block");
+    let output = run_event(&fixture, "block")?;
 
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
@@ -116,16 +124,17 @@ fn threshold_usage_writes_exact_block_bytes_and_creates_the_sentinel() {
     );
     assert_eq!(output.stderr, b"");
     assert!(fixture.sentinel("block").is_file());
+    Ok(())
 }
 
 #[test]
-fn output_write_errors_are_classified_as_unexpected_after_sentinel_creation() {
-    let fixture = Fixture::new();
-    fixture.write_claude_usage(85_000);
+fn output_write_errors_are_classified_as_unexpected_after_sentinel_creation() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_claude_usage(85_000)?;
     let environment = Environment {
         claude_code_auto_compact_window: Some("100000".into()),
-        xdg_state_home: Some(fixture.state.to_string_lossy().into_owned()),
-        home: Some(fixture.home.to_string_lossy().into_owned()),
+        xdg_state_home: Some(fixture.state.as_os_str().to_owned()),
+        home: Some(fixture.home.as_os_str().to_owned()),
         ..Environment::default()
     };
 
@@ -134,30 +143,33 @@ fn output_write_errors_are_classified_as_unexpected_after_sentinel_creation() {
         &environment,
         &mut FailingWriter,
     )
-    .unwrap_err();
+    .err()
+    .ok_or("expected operation to fail")?;
 
     assert_eq!(error, HandoffError::unexpected("unexpected failure"));
     assert!(fixture.sentinel("write-error").is_file());
+    Ok(())
 }
 
 #[test]
-fn transcript_read_errors_use_the_usage_exit_contract_without_a_sentinel() {
-    let fixture = Fixture::new();
+fn transcript_read_errors_use_the_usage_exit_contract_without_a_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
 
-    let output = run_event(&fixture, "missing");
+    let output = run_event(&fixture, "missing")?;
 
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(output.stdout, b"");
     assert_eq!(output.stderr, b"agent-handoff: cannot read transcript\n");
     assert!(!fixture.sentinel("missing").exists());
+    Ok(())
 }
 
 #[test]
-fn invalid_transcripts_do_not_create_a_sentinel() {
-    let fixture = Fixture::new();
-    fs::write(&fixture.transcript, b"not-json\n").unwrap();
+fn invalid_transcripts_do_not_create_a_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
+    fs::write(&fixture.transcript, b"not-json\n")?;
 
-    let output = run_event(&fixture, "invalid");
+    let output = run_event(&fixture, "invalid")?;
 
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(output.stdout, b"");
@@ -166,16 +178,17 @@ fn invalid_transcripts_do_not_create_a_sentinel() {
         b"agent-handoff: malformed transcript JSON at retained line 1\n"
     );
     assert!(!fixture.sentinel("invalid").exists());
+    Ok(())
 }
 
 #[test]
-fn invalid_thresholds_do_not_create_a_sentinel() {
-    let fixture = Fixture::new();
-    fixture.write_claude_usage(90_000);
+fn invalid_thresholds_do_not_create_a_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_claude_usage(90_000)?;
     let mut command = fixture.command();
     command.env("HANDOFF_TOKEN_THRESHOLD", "invalid");
 
-    let output = run(command, &event(&fixture.transcript, "threshold", false));
+    let output = run(command, &event(&fixture.transcript, "threshold", false))?;
 
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(output.stdout, b"");
@@ -184,15 +197,16 @@ fn invalid_thresholds_do_not_create_a_sentinel() {
         b"agent-handoff: invalid HANDOFF_TOKEN_THRESHOLD\n"
     );
     assert!(!fixture.sentinel("threshold").exists());
+    Ok(())
 }
 
 #[test]
-fn invalid_sentinel_types_use_the_unexpected_exit_contract() {
-    let fixture = Fixture::new();
+fn invalid_sentinel_types_use_the_unexpected_exit_contract() -> TestResult {
+    let fixture = Fixture::new()?;
     let sentinel = fixture.sentinel("directory");
-    fs::create_dir_all(&sentinel).unwrap();
+    fs::create_dir_all(&sentinel)?;
 
-    let output = run_event(&fixture, "directory");
+    let output = run_event(&fixture, "directory")?;
 
     assert_eq!(output.status.code(), Some(3));
     assert_eq!(output.stdout, b"");
@@ -200,43 +214,47 @@ fn invalid_sentinel_types_use_the_unexpected_exit_contract() {
         output.stderr,
         b"agent-handoff: cannot inspect handoff sentinel\n"
     );
+    Ok(())
 }
 
 #[test]
-fn recursive_stop_returns_before_environment_and_transcript_access() {
-    let fixture = Fixture::new();
+fn recursive_stop_returns_before_environment_and_transcript_access() -> TestResult {
+    let fixture = Fixture::new()?;
     let mut command = Command::new(env!("CARGO_BIN_EXE_agent-handoff"));
     command.env_clear();
 
-    let output = run(command, &event(&fixture.transcript, "recursive", true));
+    let output = run(command, &event(&fixture.transcript, "recursive", true))?;
 
     assert_clean_success(&output);
+    Ok(())
 }
 
 #[test]
-fn an_existing_sentinel_returns_before_transcript_access() {
-    let fixture = Fixture::new();
+fn an_existing_sentinel_returns_before_transcript_access() -> TestResult {
+    let fixture = Fixture::new()?;
     let sentinel = fixture.sentinel("existing");
-    fs::create_dir_all(sentinel.parent().unwrap()).unwrap();
-    File::create(&sentinel).unwrap();
+    fs::create_dir_all(sentinel.parent().ok_or("fixture path has no parent")?)?;
+    File::create(&sentinel)?;
 
-    let output = run_event(&fixture, "existing");
+    let output = run_event(&fixture, "existing")?;
 
     assert_clean_success(&output);
+    Ok(())
 }
 
 #[test]
-fn extra_cli_arguments_are_ignored() {
-    let fixture = Fixture::new();
-    fixture.write_claude_usage(84_999);
+fn extra_cli_arguments_are_ignored() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_claude_usage(84_999)?;
     let mut command = fixture.command();
     command.arg("ignored");
 
     let output = run(
         command,
         &event(&fixture.transcript, "extra-argument", false),
-    );
+    )?;
 
     assert_clean_success(&output);
     assert!(!fixture.sentinel("extra-argument").exists());
+    Ok(())
 }

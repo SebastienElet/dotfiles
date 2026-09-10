@@ -49,7 +49,9 @@ pub(super) fn secret_field(value: &Value, path: &str) -> Option<String> {
             .iter()
             .enumerate()
             .find_map(|(index, value)| secret_field(value, &format!("{path}[{index}]"))),
-        _ => None,
+        Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) | Value::Tagged(_) => {
+            None
+        }
     }
 }
 
@@ -62,7 +64,7 @@ fn is_secret_name(name: &str) -> bool {
 
 pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
     let mut agents = HashMap::new();
-    for (agent_index, agent) in manifest.agents.iter().enumerate() {
+    for (agent_index, agent) in manifest.0.agents.iter().enumerate() {
         if agents.contains_key(&agent.id) {
             return Err(ManifestError::new(
                 format!("agents[{agent_index}].id"),
@@ -78,18 +80,18 @@ pub(super) fn validate(manifest: &Manifest) -> Result<(), ManifestError> {
                 ));
             }
         }
-        super::config::validate(&manifest.agents, agent_index)?;
+        super::config::validate(agent, agent_index)?;
         agents.insert(agent.id, scopes);
     }
 
-    validate_resources(&manifest.resources, &agents)?;
-    prompts::validate(&manifest.prompts, &manifest.resources, &agents)?;
-    commands::validate(&manifest.commands, &manifest.prompts, &agents)?;
-    hooks::validate(&manifest.hooks, &agents)?;
-    mcp::validate(&manifest.mcp, &agents)?;
-    statusline::validate(&manifest.statuslines, &agents)?;
-    skills::validate(&manifest.skills, &manifest.resources, &agents)?;
-    external::validate(&manifest.external, &agents)
+    validate_resources(&manifest.0.resources, &agents)?;
+    prompts::validate(&manifest.0.prompts, &manifest.0.resources, &agents)?;
+    commands::validate(&manifest.0.commands, &manifest.0.prompts, &agents)?;
+    hooks::validate(&manifest.0.hooks, &agents)?;
+    mcp::validate(&manifest.0.mcp, &agents)?;
+    statusline::validate(&manifest.0.statuslines, &agents)?;
+    skills::validate(&manifest.0.skills, &manifest.0.resources, &agents)?;
+    external::validate(&manifest.0.external, &agents)
 }
 
 fn validate_resources(
@@ -153,7 +155,12 @@ fn validate_normalized_resource_kind(
         super::ResourceKind::Prompts => "prompts",
         super::ResourceKind::Commands => "commands",
         super::ResourceKind::Statusline => "statuslines",
-        _ => return Ok(()),
+        super::ResourceKind::Config
+        | super::ResourceKind::Instructions
+        | super::ResourceKind::Skills
+        | super::ResourceKind::Rules
+        | super::ResourceKind::Hooks
+        | super::ResourceKind::Mcp => return Ok(()),
     };
     Err(ManifestError::new(
         format!("resources[{index}].kind"),

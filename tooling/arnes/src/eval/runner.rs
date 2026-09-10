@@ -17,6 +17,8 @@ pub struct SeriesOptions {
     pub variant: Option<String>,
 }
 
+/// # Errors
+/// Rejects invalid run controls or cases, and returns provider-discovery, fixture-preparation, or report-construction errors.
 pub fn run_live(repository: &Path, options: &SeriesOptions) -> Result<Report, String> {
     let selected = select_cases(repository, options)?;
     let codex = Codex::discover()?;
@@ -35,6 +37,8 @@ pub fn run_live(repository: &Path, options: &SeriesOptions) -> Result<Report, St
     )
 }
 
+/// # Errors
+/// Returns errors loading cases, preparing fixtures, executing smoke commands, or constructing the report.
 pub fn run_smoke(repository: &Path) -> Result<Report, String> {
     let selected = load_cases(repository)?;
     let options = SeriesOptions {
@@ -183,7 +187,7 @@ fn report(
             tools: "shell-with-synthetic-cat-rg-fd-colgrep-v1".to_owned(),
             timeout_seconds: options.timeout_seconds, reasoning_effort: options.reasoning_effort.clone(), token_budget: (),
         },
-        run_count: options.runs as usize, cases,
+        run_count: usize::try_from(options.runs).map_err(|error| error.to_string())?, cases,
         limitations: [
             "Only Context Management and code-search are installed; this is not the full deployed harness.",
             "PATH shims observe supported commands, not internal skill loading or uninstrumented reads; bypasses can cause false negatives.",

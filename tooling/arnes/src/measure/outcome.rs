@@ -52,15 +52,17 @@ pub struct OutcomeRecord {
 }
 
 impl OutcomeRecord {
-    pub fn status(&self) -> OutcomeStatus {
+    pub const fn status(&self) -> OutcomeStatus {
         self.status
     }
 
-    pub fn recorded_at_ms(&self) -> u64 {
+    pub const fn recorded_at_ms(&self) -> u64 {
         self.recorded_at_ms
     }
 }
 
+/// # Errors
+/// Rejects invalid outcome arguments or incompatible history, and returns store-locking or durable-write errors.
 pub fn record(args: OutcomeArgs) -> Result<(), MeasureError> {
     validate_input(&args)?;
     let store = open_store()?;

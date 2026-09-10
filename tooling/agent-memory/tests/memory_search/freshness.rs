@@ -4,11 +4,12 @@ use sha2::Digest;
 use std::fs;
 
 #[test]
-fn a_fresh_search_uses_statement_tokens_from_the_index_without_parsing_yaml() {
-    let fixture = tempfile::tempdir().unwrap();
+fn a_fresh_search_uses_statement_tokens_from_the_index_without_parsing_yaml()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     let selected = admit_project(
         &store,
         fixture.path(),
@@ -16,42 +17,62 @@ fn a_fresh_search_uses_statement_tokens_from_the_index_without_parsing_yaml() {
         "Alpha beta are indexed.",
         &["unrelated term"],
         "Established.",
-    );
-    let yaml = find_yaml(&root, &selected);
-    let before = fs::read(&yaml).unwrap();
-    fs::write(&yaml, b"not valid yaml").unwrap();
-    let metadata = fs::metadata(&yaml).unwrap();
+    )?;
+    let yaml = find_yaml(&root, &selected)?;
+    let before = fs::read(&yaml)?;
+    fs::write(&yaml, b"not valid yaml")?;
+    let metadata = fs::metadata(&yaml)?;
     let mut index_value: serde_json::Value =
-        serde_json::from_slice(&fs::read(root.join("index.json")).unwrap()).unwrap();
-    let row = index_value["entries"]
+        serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
+    let row = index_value
+        .get_mut("entries")
+        .ok_or("missing index entries")?
         .as_array_mut()
-        .unwrap()
+        .ok_or("missing fixture value")?
         .iter_mut()
-        .find(|row| row["id"] == selected)
-        .unwrap();
-    row["length"] = metadata.len().into();
-    row["modified_ns"] = modified_ns(&metadata).into();
-    let inventory = index_value["entries"]
+        .find(|row| row.get("id").and_then(serde_json::Value::as_str) == Some(selected.as_str()))
+        .ok_or("missing fixture value")?;
+    *row.get_mut("length").ok_or("missing index length")? = metadata.len().into();
+    *row.get_mut("modified_ns")
+        .ok_or("missing index modified_ns")? = modified_ns(&metadata).into();
+    let inventory = index_value
+        .get("entries")
+        .ok_or("missing index entries")?
         .as_array()
-        .unwrap()
+        .ok_or("missing fixture value")?
         .iter()
-        .map(|row| InventoryFixture {
-            path: row["path"].as_str().unwrap(),
-            length: row["length"].as_u64().unwrap(),
-            modified_ns: row["modified_ns"].as_i64().unwrap(),
+        .map(|row| {
+            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(InventoryFixture {
+                path: row
+                    .get("path")
+                    .ok_or("missing index path")?
+                    .as_str()
+                    .ok_or("missing fixture value")?,
+                length: row
+                    .get("length")
+                    .ok_or("missing index length")?
+                    .as_u64()
+                    .ok_or("missing fixture value")?,
+                modified_ns: row
+                    .get("modified_ns")
+                    .ok_or("missing index modified_ns")?
+                    .as_i64()
+                    .ok_or("missing fixture value")?,
+            })
         })
-        .collect::<Vec<_>>();
-    index_value["inventory_digest"] = format!(
+        .collect::<Result<Vec<_>, _>>()?;
+    *index_value
+        .get_mut("inventory_digest")
+        .ok_or("missing index inventory_digest")? = format!(
         "sha256:{:x}",
-        sha2::Sha256::digest(serde_json::to_vec(&inventory).unwrap())
+        sha2::Sha256::digest(serde_json::to_vec(&inventory)?)
     )
     .into();
     fs::write(
         root.join("index.json"),
-        format!("{}\n", serde_json::to_string_pretty(&index_value).unwrap()),
-    )
-    .unwrap();
-    let loaded = Index::load_or_rebuild(&store).unwrap();
+        format!("{}\n", serde_json::to_string_pretty(&index_value)?),
+    )?;
+    let loaded = Index::load_or_rebuild(&store)?;
     let selection = search(
         &loaded.index,
         SearchRequest {
@@ -64,7 +85,8 @@ fn a_fresh_search_uses_statement_tokens_from_the_index_without_parsing_yaml() {
 
     assert!(!loaded.rebuilt);
     assert_eq!(ids(&selection), vec![selected]);
-    assert_ne!(fs::read(yaml).unwrap(), before);
+    assert_ne!(fs::read(yaml)?, before);
+    Ok(())
 }
 
 fn ids(selection: &SearchSelection) -> Vec<String> {
@@ -75,14 +97,14 @@ fn ids(selection: &SearchSelection) -> Vec<String> {
         .collect()
 }
 
-fn find_yaml(root: &std::path::Path, id: &str) -> std::path::PathBuf {
-    for directory in fs::read_dir(root.join("entries/project")).unwrap() {
-        let candidate = directory.unwrap().path().join(format!("{id}.yaml"));
-        if candidate.is_file() {
-            return candidate;
+fn find_yaml(root: &std::path::Path, id: &str) -> std::io::Result<std::path::PathBuf> {
+    for entry in fs::read_dir(root.join("entries/project"))? {
+        let path = entry?.path().join(format!("{id}.yaml"));
+        if path.is_file() {
+            return Ok(path);
         }
     }
-    panic!("missing YAML for {id}")
+    Err(std::io::Error::other(format!("missing YAML for {id}")))
 }
 
 fn modified_ns(metadata: &fs::Metadata) -> i64 {

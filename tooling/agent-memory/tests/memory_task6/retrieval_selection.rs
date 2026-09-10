@@ -8,10 +8,45 @@ use std::os::unix::fs::PermissionsExt;
 use std::sync::{Arc, Barrier};
 
 #[test]
-fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
-    let key = project_key(fixture.path());
+fn saturates_untrusted_selection_omission_counts()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (_, store) = open_store(fixture.path())?;
+    let key = project_key(fixture.path())?;
+    let selection = agent_memory::SearchSelection {
+        selected: vec![
+            agent_memory::SelectedMemory {
+                entry_id: "mem_999999999999999999999999".to_owned(),
+                kind: "invariant".to_owned(),
+                path: "entries/user/mem_999999999999999999999999.yaml".to_owned(),
+                length: 0,
+                modified_ns: 0,
+            };
+            6
+        ],
+        omitted_by_limit: usize::MAX,
+        diagnostics: Vec::new(),
+    };
+    let resolver = FakeResolver::with_responses([]);
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+
+    let report = resolver.checked(|checked_resolver| {
+        Ok(retrieve(
+            RetrievalRequest::new(&selection, &key, true),
+            &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+        ))
+    })?;
+
+    assert_eq!(report.omitted_by_limit, usize::MAX);
+    Ok(())
+}
+
+#[test]
+fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, store) = open_store(fixture.path())?;
+    let key = project_key(fixture.path())?;
     let yaml = project_entry_yaml(
         'd',
         "invariant",
@@ -38,19 +73,21 @@ fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() 
                 fingerprint: 'd',
             },
         ],
-    );
-    write_project_entry(&root, &key, 'd', &yaml);
-    let selection = select(&store, &key, 5);
+    )?;
+    write_project_entry(&root, &key, 'd', &yaml)?;
+    let selection = select(&store, &key, 5)?;
     let resolver = FakeResolver::with_responses([valid('a'), valid('b'), valid('c'), valid('d')]);
-    let clock = FixedClock::at("2026-08-28T01:00:00Z");
-    let report = retrieve(
-        RetrievalRequest::new(&selection, &key, true),
-        RetrievalContext::new(&store, &clock, &resolver, environment()),
-    );
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+    let report = resolver.checked(|checked_resolver| {
+        Ok(retrieve(
+            RetrievalRequest::new(&selection, &key, true),
+            &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+        ))
+    })?;
 
     assert!(report.omitted.is_empty());
     assert_eq!(report.injected.len(), 1);
-    let injected = &report.injected[0];
+    let injected = &report.injected.first().ok_or("missing fixture element")?;
     assert_eq!(injected.kind, MemoryKind::Invariant);
     assert_eq!(injected.statement, "Durable memory statement d.");
     assert_eq!(injected.verdict_age_milliseconds, 0);
@@ -63,17 +100,19 @@ fn injects_only_reparsed_valid_entries_with_redacted_source_summaries_and_age() 
             SourceSummary::redacted(SourceKind::UserDecision),
         ]
     );
-    let diagnostic = format!("{:?}", report);
+    let diagnostic = format!("{report:?}");
     assert!(!diagnostic.contains("/Users/private/proof"));
     assert!(!diagnostic.contains("decision:private-body"));
     assert!(!diagnostic.contains("private=query"));
     assert!(!diagnostic.contains("private-fragment"));
+    Ok(())
 }
 
 #[test]
-fn preserves_search_limit_omissions_and_loads_no_unselected_yaml() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
+fn preserves_search_limit_omissions_and_loads_no_unselected_yaml()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, store) = open_store(fixture.path())?;
     for id in ['1', '2', '3', '4', '5', '6'] {
         let yaml = entry_yaml(
             id,
@@ -83,16 +122,16 @@ fn preserves_search_limit_omissions_and_loads_no_unselected_yaml() {
                 locator: "decision:limit",
                 fingerprint: id,
             }],
-        );
-        write_user_entry(&root, id, &yaml);
+        )?;
+        write_user_entry(&root, id, &yaml)?;
     }
-    let key = project_key(fixture.path());
-    let selection = select(&store, &key, 10);
+    let key = project_key(fixture.path())?;
+    let selection = select(&store, &key, 10)?;
     assert_eq!(selection.selected.len(), 5);
     assert_eq!(selection.omitted_by_limit, 1);
     let mut answers = ProofAnswers::new();
     for selected in &selection.selected {
-        answers.insert(ProofValid::new(&selected.entry_id).unwrap());
+        answers.insert(ProofValid::new(&selected.entry_id)?);
     }
     let selected_ids = selection
         .selected
@@ -103,27 +142,31 @@ fn preserves_search_limit_omissions_and_loads_no_unselected_yaml() {
         .map(|id| user_entry_id(id, "invariant"))
         .into_iter()
         .find(|id| !selected_ids.contains(&id.as_str()))
-        .unwrap();
+        .ok_or("missing fixture value")?;
     let unselected = root.join(format!("entries/user/{unselected_id}.yaml"));
-    fs::write(&unselected, b"unreadable unselected yaml").unwrap();
-    fs::set_permissions(&unselected, fs::Permissions::from_mode(0o000)).unwrap();
+    fs::write(&unselected, b"unreadable unselected yaml")?;
+    fs::set_permissions(&unselected, fs::Permissions::from_mode(0o000))?;
     let resolver = FakeResolver::with_responses([]);
-    let clock = FixedClock::at("2026-08-28T01:00:00Z");
-    let report = retrieve(
-        RetrievalRequest::new(&selection, &key, true),
-        RetrievalContext::new(&store, &clock, &resolver, environment())
-            .with_proof_answers(&answers),
-    );
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+    let report = resolver.checked(|checked_resolver| {
+        Ok(retrieve(
+            RetrievalRequest::new(&selection, &key, true),
+            &RetrievalContext::new(&store, &clock, checked_resolver, environment())
+                .with_proof_answers(&answers),
+        ))
+    })?;
 
     assert_eq!(report.injected.len(), 5);
     assert_eq!(report.omitted_by_limit, 1);
-    fs::set_permissions(&unselected, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::set_permissions(&unselected, fs::Permissions::from_mode(0o600))?;
+    Ok(())
 }
 
 #[test]
-fn entry_changes_after_selection_are_omitted_without_old_context() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, store) = open_store(fixture.path());
+fn entry_changes_after_selection_are_omitted_without_old_context()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, store) = open_store(fixture.path())?;
     let yaml = entry_yaml(
         '7',
         "invariant",
@@ -132,35 +175,56 @@ fn entry_changes_after_selection_are_omitted_without_old_context() {
             locator: "decision:before",
             fingerprint: '7',
         }],
-    );
-    let path = write_user_entry(&root, '7', &yaml);
-    let key = project_key(fixture.path());
-    let selection = select(&store, &key, 5);
-    let changed = String::from_utf8(yaml).unwrap().replace(
+    )?;
+    let path = write_user_entry(&root, '7', &yaml)?;
+    let key = project_key(fixture.path())?;
+    let selection = select(&store, &key, 5)?;
+    let changed = String::from_utf8(yaml)?.replace(
         "Durable memory statement 7.",
         "Changed memory statement seven.",
     );
-    fs::write(&path, changed).unwrap();
+    fs::write(&path, changed)?;
     let resolver = FakeResolver::with_responses([]);
-    let clock = FixedClock::at("2026-08-28T01:00:00Z");
-    let report = retrieve(
-        RetrievalRequest::new(&selection, &key, true),
-        RetrievalContext::new(&store, &clock, &resolver, environment()),
-    );
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+    let report = resolver.checked(|checked_resolver| {
+        Ok(retrieve(
+            RetrievalRequest::new(&selection, &key, true),
+            &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+        ))
+    })?;
 
     assert!(report.injected.is_empty());
-    assert_eq!(report.omitted[0].code, "selection_stale");
-    assert_eq!(report.omitted[0].effect, OmissionEffect::NotApplied);
-    let diagnostic = format!("{:?}", report.omitted[0]);
+    assert_eq!(
+        report
+            .omitted
+            .first()
+            .ok_or("missing fixture element")?
+            .code,
+        "selection_stale"
+    );
+    assert_eq!(
+        report
+            .omitted
+            .first()
+            .ok_or("missing fixture element")?
+            .effect,
+        OmissionEffect::NotApplied
+    );
+    let diagnostic = format!(
+        "{:?}",
+        report.omitted.first().ok_or("missing fixture element")?
+    );
     assert!(!diagnostic.contains("Changed memory statement"));
     assert!(!diagnostic.contains("decision:before"));
+    Ok(())
 }
 
 #[test]
-fn selection_identity_fields_are_revalidated_against_the_yaml() {
+fn selection_identity_fields_are_revalidated_against_the_yaml()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for field in ["id", "kind", "path"] {
-        let fixture = tempfile::tempdir().unwrap();
-        let (root, store) = open_store(fixture.path());
+        let fixture = tempfile::tempdir()?;
+        let (root, store) = open_store(fixture.path())?;
         let yaml = entry_yaml(
             '8',
             "invariant",
@@ -169,39 +233,62 @@ fn selection_identity_fields_are_revalidated_against_the_yaml() {
                 locator: "decision:identity",
                 fingerprint: '8',
             }],
-        );
-        write_user_entry(&root, '8', &yaml);
-        let key = project_key(fixture.path());
-        let mut selection = select(&store, &key, 5);
+        )?;
+        write_user_entry(&root, '8', &yaml)?;
+        let key = project_key(fixture.path())?;
+        let mut selection = select(&store, &key, 5)?;
         match field {
-            "id" => selection.selected[0].entry_id = "mem_999999999999999999999999".to_owned(),
-            "kind" => selection.selected[0].kind = "goal".to_owned(),
-            "path" => {
-                selection.selected[0].path =
-                    "entries/user/mem_999999999999999999999999.yaml".to_owned()
+            "id" => {
+                selection
+                    .selected
+                    .get_mut(0)
+                    .ok_or("missing fixture element")?
+                    .entry_id = "mem_999999999999999999999999".to_owned();
             }
-            _ => unreachable!(),
+            "kind" => {
+                selection
+                    .selected
+                    .get_mut(0)
+                    .ok_or("missing fixture element")?
+                    .kind = "goal".to_owned();
+            }
+            "path" => {
+                selection
+                    .selected
+                    .get_mut(0)
+                    .ok_or("missing fixture element")?
+                    .path = "entries/user/mem_999999999999999999999999.yaml".to_owned();
+            }
+            _ => return Err(format!("unknown fixture field: {field}").into()),
         }
         let resolver = FakeResolver::with_responses([]);
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
-        let report = retrieve(
-            RetrievalRequest::new(&selection, &key, true),
-            RetrievalContext::new(&store, &clock, &resolver, environment()),
-        );
+        let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
+        let report = resolver.checked(|checked_resolver| {
+            Ok(retrieve(
+                RetrievalRequest::new(&selection, &key, true),
+                &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+            ))
+        })?;
 
         assert!(report.injected.is_empty(), "{field}");
         assert_eq!(
-            report.omitted[0].effect,
+            report
+                .omitted
+                .first()
+                .ok_or("missing fixture element")?
+                .effect,
             OmissionEffect::NotApplied,
             "{field}"
         );
     }
+    Ok(())
 }
 
 #[test]
-fn entry_substitution_during_reparse_is_omitted() {
-    let fixture = tempfile::tempdir().unwrap();
-    let (root, initial) = open_store(fixture.path());
+fn entry_substitution_during_reparse_is_omitted()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
+    let (root, initial) = open_store(fixture.path())?;
     let yaml = entry_yaml(
         '9',
         "invariant",
@@ -210,32 +297,41 @@ fn entry_substitution_during_reparse_is_omitted() {
             locator: "decision:race",
             fingerprint: '9',
         }],
-    );
-    let path = write_user_entry(&root, '9', &yaml);
-    let key = project_key(fixture.path());
-    let selection = select(&initial, &key, 5);
+    )?;
+    let path = write_user_entry(&root, '9', &yaml)?;
+    let key = project_key(fixture.path())?;
+    let selection = select(&initial, &key, 5)?;
     let barrier = Arc::new(Barrier::new(2));
     let store = Store::open_with_failpoint(
-        memory_root(&root),
+        &memory_root(&root)?,
         StoreFailpoint::PauseAfterRetrievalEntryRead(Arc::clone(&barrier)),
-    )
-    .unwrap();
+    )?;
     let worker_barrier = Arc::clone(&barrier);
+    let clock = FixedClock::at("2026-08-28T01:00:00Z")?;
     let worker = std::thread::spawn(move || {
         let resolver = FakeResolver::with_responses([]);
-        let clock = FixedClock::at("2026-08-28T01:00:00Z");
-        retrieve(
-            RetrievalRequest::new(&selection, &key, true),
-            RetrievalContext::new(&store, &clock, &resolver, environment()),
-        )
+        resolver.checked(|checked_resolver| {
+            Ok(retrieve(
+                RetrievalRequest::new(&selection, &key, true),
+                &RetrievalContext::new(&store, &clock, checked_resolver, environment()),
+            ))
+        })
     });
     worker_barrier.wait();
-    fs::rename(&path, root.join("entry-displaced")).unwrap();
-    fs::write(&path, yaml).unwrap();
-    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::rename(&path, root.join("entry-displaced"))?;
+    fs::write(&path, yaml)?;
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
     worker_barrier.wait();
-    let report = worker.join().unwrap();
+    let report = worker.join().map_err(|_| "worker thread panicked")??;
 
     assert!(report.injected.is_empty());
-    assert_eq!(report.omitted[0].code, "selection_stale");
+    assert_eq!(
+        report
+            .omitted
+            .first()
+            .ok_or("missing fixture element")?
+            .code,
+        "selection_stale"
+    );
+    Ok(())
 }

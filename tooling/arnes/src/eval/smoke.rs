@@ -14,8 +14,11 @@ pub fn execute(fixture: &Fixture, entry: &LoadedCase) -> Result<Execution, Strin
         Oracle::KnownPathV1 => &[&["cat", "src/auth/session.ts"]],
     };
     for command in commands {
-        let result = Command::new(command[0])
-            .args(&command[1..])
+        let Some((program, arguments)) = command.split_first() else {
+            return Err("Empty fixture smoke command".into());
+        };
+        let result = Command::new(program)
+            .args(arguments)
             .env_clear()
             .envs(&fixture.env)
             .current_dir(&fixture.workspace)
@@ -25,7 +28,7 @@ pub fn execute(fixture: &Fixture, entry: &LoadedCase) -> Result<Execution, Strin
             .status()
             .map_err(|error| error.to_string())?;
         if !result.success() {
-            return Err(format!("Fixture smoke failed: {}", command[0]));
+            return Err(format!("Fixture smoke failed: {program}"));
         }
     }
     Ok(Execution {

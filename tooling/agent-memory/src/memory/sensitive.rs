@@ -1,4 +1,4 @@
-pub(crate) fn rejection_reason(value: &str) -> Option<&'static str> {
+pub fn rejection_reason(value: &str) -> Option<&'static str> {
     let lowercase = value.to_ascii_lowercase();
     if has_private_pem(&lowercase) {
         return Some("Remove the private-key PEM material; retain only a safe durable summary.");

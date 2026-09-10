@@ -1,10 +1,9 @@
 use super::support::{CliFixture, assert_error};
-
 #[test]
-fn invalid_argument_values_are_redacted() {
-    let fixture = CliFixture::new();
+fn invalid_argument_values_are_redacted() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = CliFixture::new()?;
     let secret = "ghp_abcdefghijklmnopqrstuvwxyz1234567890";
-    let invalid_format = fixture.run(["admit", "--format", secret], b"");
+    let invalid_format = fixture.run(["admit", "--format", secret], b"")?;
     let invalid_status = fixture.run(
         [
             "confirm",
@@ -15,18 +14,18 @@ fn invalid_argument_values_are_redacted() {
             "--reason-stdin",
         ],
         b"reason",
-    );
-    let invalid_agent = fixture.run(["hook", "--agent", secret], b"{}");
+    )?;
+    let invalid_agent = fixture.run(["hook", "--agent", secret], b"{}")?;
     let unknown = format!("--{secret}");
-    let invalid_option = fixture.run(["admit", unknown.as_str()], b"");
-
-    for output in [
+    let invalid_option = fixture.run(["admit", unknown.as_str()], b"")?;
+    let _: () = for output in [
         invalid_format,
         invalid_status,
         invalid_agent,
         invalid_option,
     ] {
-        assert_error(&output, 2, "invalid_arguments");
+        assert_error(&output, 2, "invalid_arguments")?;
         assert!(!String::from_utf8_lossy(&output.stderr).contains(secret));
-    }
+    };
+    Ok(())
 }

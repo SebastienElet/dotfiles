@@ -1,5 +1,6 @@
-#[path = "memory_task6/support.rs"]
-mod support;
+#![cfg(test)]
+
+use crate::retrieval_support as support;
 
 #[path = "memory_task6/process_deadline.rs"]
 mod process_deadline;

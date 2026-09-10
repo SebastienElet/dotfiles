@@ -11,6 +11,10 @@ fileGroups:
     - examples/**/*
     - benches/**/*
     - /.cargo/**/*
+    - /clippy.toml
+    - /rustfmt.toml
+    - /LICENSE
+    - /tooling/RUST.md
 tasks:
   fmt:
     deps:
@@ -24,7 +28,7 @@ tasks:
     toolchains: system
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo fmt --check
+      cargo fmt --all --check
   clippy:
     deps:
       - repository:rust
@@ -37,7 +41,27 @@ tasks:
     toolchains: system
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo clippy --all-targets -- -D warnings
+      cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+  check:
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(rust)"
+    toolchains: system
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo check --workspace --all-targets --all-features --locked
+  doc:
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(rust)"
+    toolchains: system
+    env:
+      RUSTDOCFLAGS: -Dwarnings
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      cargo doc --workspace --all-features --no-deps --locked
   test:
     deps:
       - repository:rust
@@ -46,4 +70,4 @@ tasks:
     toolchains: system
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo test
+      cargo test --workspace --all-features --locked

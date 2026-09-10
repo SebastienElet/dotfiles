@@ -9,8 +9,8 @@ pub(super) fn injected(
 ) -> Option<InjectedMemory> {
     let validated_at = timestamp(evaluation.validated_at()?)?;
     let now = timestamp(evaluation.evaluated_at())?;
-    let age = now.duration_since(validated_at);
-    let verdict_age_milliseconds = u64::try_from(age.as_millis()).ok()?;
+    let age = now - validated_at;
+    let verdict_age_milliseconds = u64::try_from(age.whole_milliseconds()).ok()?;
     Some(InjectedMemory {
         id: entry.id().as_str().to_owned(),
         kind: entry.kind(),

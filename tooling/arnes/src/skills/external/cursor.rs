@@ -41,19 +41,19 @@ fn local_plugins(root: &Path, home: &Path) -> Result<Vec<Plugin>, &'static str> 
             };
         }
         Err(_) => return Err("local plugin root metadata could not be read"),
-    };
+    }
     let entries = fs::read_dir(root).map_err(|_| "local plugin root could not be read")?;
     let mut plugins = entries
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| "local plugin root entry could not be read")?
         .into_iter()
-        .filter_map(|entry| inspect_plugin(root, entry))
+        .filter_map(|entry| inspect_plugin(root, &entry))
         .collect::<Vec<_>>();
     plugins.sort_by(|left, right| left.id.cmp(&right.id));
     Ok(plugins)
 }
 
-fn inspect_plugin(root: &Path, entry: DirEntry) -> Option<Plugin> {
+fn inspect_plugin(root: &Path, entry: &DirEntry) -> Option<Plugin> {
     match entry.file_type() {
         Ok(kind) if !kind.is_dir() && !kind.is_symlink() => return None,
         Err(_) => {

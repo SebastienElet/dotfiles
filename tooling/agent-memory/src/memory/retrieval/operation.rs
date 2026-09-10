@@ -7,13 +7,17 @@ use crate::memory::{
 };
 use projection::injected;
 
-pub fn retrieve(request: RetrievalRequest<'_>, context: RetrievalContext<'_>) -> RetrievalReport {
+#[must_use]
+pub fn retrieve(request: RetrievalRequest<'_>, context: &RetrievalContext<'_>) -> RetrievalReport {
     retrieve_outcome(request, context, RetrievalMode::Report).report
 }
 
+/// # Errors
+///
+/// Returns an unavailable error if a selected entry cannot be validated or the retrieval deadline expires.
 pub fn retrieve_for_injection(
     request: RetrievalRequest<'_>,
-    context: RetrievalContext<'_>,
+    context: &RetrievalContext<'_>,
 ) -> Result<RetrievalReport, MemoryError> {
     let outcome = retrieve_outcome(request, context, RetrievalMode::Injection);
     outcome.unavailable.map_or(Ok(outcome.report), Err)
@@ -32,7 +36,7 @@ struct RetrievalOutcome {
 
 fn retrieve_outcome(
     request: RetrievalRequest<'_>,
-    context: RetrievalContext<'_>,
+    context: &RetrievalContext<'_>,
     mode: RetrievalMode,
 ) -> RetrievalOutcome {
     let extra = request.selection.selected.len().saturating_sub(5);
@@ -45,7 +49,7 @@ fn retrieve_outcome(
                 .iter()
                 .map(|diagnostic| omission(&diagnostic.entry_id, &diagnostic.check, None))
                 .collect(),
-            omitted_by_limit: request.selection.omitted_by_limit + extra,
+            omitted_by_limit: request.selection.omitted_by_limit.saturating_add(extra),
         },
         unavailable: None,
     };
@@ -57,7 +61,7 @@ fn retrieve_outcome(
             ));
             break;
         }
-        retrieve_selected(selected, &request, &context, &mut outcome);
+        retrieve_selected(selected, &request, context, &mut outcome);
         if context.deadline_exceeded() && outcome.unavailable.is_none() {
             outcome.unavailable = Some(MemoryError::unavailable(
                 "retrieval_deadline_exceeded",
@@ -100,7 +104,7 @@ fn retrieve_selected(
     if let Some(answer) = context.proof_valid(entry.id().as_str()) {
         oracle = oracle.with_proof_valid(answer);
     }
-    let evaluation = evaluate_oracle(&entry, oracle);
+    let evaluation = evaluate_oracle(&entry, &oracle);
     if evaluation.verdict() == OracleVerdict::Valid {
         match revalidate_before_injection(selected, request, context) {
             Ok(true) => {}
@@ -117,7 +121,7 @@ fn retrieve_selected(
             }
         }
     }
-    apply_evaluation(entry, evaluation, context, outcome);
+    apply_evaluation(entry, &evaluation, context, outcome);
 }
 
 fn revalidate_before_injection(
@@ -131,12 +135,12 @@ fn revalidate_before_injection(
 
 fn apply_evaluation(
     entry: MemoryEntry,
-    evaluation: OracleEvaluation,
+    evaluation: &OracleEvaluation,
     context: &RetrievalContext<'_>,
     outcome: &mut RetrievalOutcome,
 ) {
     match evaluation.verdict() {
-        OracleVerdict::Valid => match injected(&entry, &evaluation) {
+        OracleVerdict::Valid => match injected(&entry, evaluation) {
             Some(injected) => outcome.report.injected.push(injected),
             None => omit_error(
                 outcome,
@@ -145,7 +149,7 @@ fn apply_evaluation(
                 None,
             ),
         },
-        OracleVerdict::Invalid => invalidate(entry, &evaluation, context, outcome),
+        OracleVerdict::Invalid => invalidate(entry, evaluation, context, outcome),
         OracleVerdict::Unavailable => {
             let question = entry.oracle().fallback_question().to_owned();
             omit_error(

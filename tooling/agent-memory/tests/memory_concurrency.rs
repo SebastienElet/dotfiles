@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use agent_memory::{
     AdmissionAuthorization, AdmissionContext, AdmissionResult, MemoryRoot, Store, SystemClock,
     admit,
@@ -16,7 +18,9 @@ impl agent_memory::ProcessRunner for UnusedProcessRunner {
         _arguments: &[std::ffi::OsString],
         _current_directory: Option<&Path>,
     ) -> std::io::Result<agent_memory::ProcessOutput> {
-        panic!("user-decision source must not invoke a process")
+        Err(std::io::Error::other(
+            "user-decision source must not invoke a process",
+        ))
     }
 }
 
@@ -28,18 +32,22 @@ fn draft(retrieval_term: &str) -> Vec<u8> {
 }
 
 #[test]
-fn concurrency_worker() {
+fn concurrency_worker() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let Some(output) = std::env::var_os("AGENT_MEMORY_CONCURRENCY_OUTPUT") else {
-        return;
+        return Ok(());
     };
-    let ready = PathBuf::from(std::env::var_os("AGENT_MEMORY_CONCURRENCY_READY").unwrap());
-    let go = PathBuf::from(std::env::var_os("AGENT_MEMORY_CONCURRENCY_GO").unwrap());
-    let variant = std::env::var("AGENT_MEMORY_CONCURRENCY_VARIANT").unwrap();
-    let root = MemoryRoot::from_environment().unwrap();
-    let store = Store::open(root).unwrap();
+    let ready = PathBuf::from(
+        std::env::var_os("AGENT_MEMORY_CONCURRENCY_READY").ok_or("missing fixture value")?,
+    );
+    let go = PathBuf::from(
+        std::env::var_os("AGENT_MEMORY_CONCURRENCY_GO").ok_or("missing fixture value")?,
+    );
+    let variant = std::env::var("AGENT_MEMORY_CONCURRENCY_VARIANT")?;
+    let root = MemoryRoot::from_environment()?;
+    let store = Store::open(&root)?;
     let runner = UnusedProcessRunner;
-    let cwd = ready.parent().unwrap();
-    fs::write(&ready, b"ready").unwrap();
+    let cwd = ready.parent().ok_or("missing fixture value")?;
+    fs::write(&ready, b"ready")?;
     let deadline = Instant::now() + Duration::from_secs(5);
     while !go.exists() {
         assert!(Instant::now() < deadline, "concurrency gate timed out");
@@ -54,33 +62,42 @@ fn concurrency_worker() {
             processes: &runner,
             authorization: AdmissionAuthorization::ExplicitRequest,
         },
-    )
-    .unwrap()
-    {
+    )? {
         AdmissionResult::Stored { .. } => "stored",
         AdmissionResult::Duplicate { .. } => "duplicate",
         AdmissionResult::Conflict { .. } => "conflict",
         AdmissionResult::Rejected { .. } => "rejected",
     };
-    fs::write(output, format!("{}:{outcome}", std::process::id())).unwrap();
+    fs::write(output, format!("{}:{outcome}", std::process::id()))?;
+    Ok(())
 }
 
 #[test]
-fn two_processes_admitting_the_same_draft_produce_stored_and_duplicate() {
-    let result = compete("same", "same");
+fn two_processes_admitting_the_same_draft_produce_stored_and_duplicate()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let result = compete("same", "same")?;
 
     assert_eq!(result.outcomes, ["duplicate", "stored"]);
-    assert_ne!(result.processes[0], result.processes[1]);
+    assert_ne!(
+        result.processes.first().ok_or("missing fixture element")?,
+        result.processes.get(1).ok_or("missing fixture element")?
+    );
     assert_eq!(result.entry_count, 1);
+    Ok(())
 }
 
 #[test]
-fn two_processes_admitting_divergent_drafts_at_the_same_id_produce_stored_and_conflict() {
-    let result = compete("first", "second");
+fn two_processes_admitting_divergent_drafts_at_the_same_id_produce_stored_and_conflict()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let result = compete("first", "second")?;
 
     assert_eq!(result.outcomes, ["conflict", "stored"]);
-    assert_ne!(result.processes[0], result.processes[1]);
+    assert_ne!(
+        result.processes.first().ok_or("missing fixture element")?,
+        result.processes.get(1).ok_or("missing fixture element")?
+    );
     assert_eq!(result.entry_count, 1);
+    Ok(())
 }
 
 struct Competition {
@@ -89,12 +106,15 @@ struct Competition {
     entry_count: usize,
 }
 
-fn compete(first: &str, second: &str) -> Competition {
-    let fixture = tempfile::tempdir().unwrap();
+fn compete(
+    first: &str,
+    second: &str,
+) -> Result<Competition, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    Store::open(MemoryRoot::new(&root).unwrap()).unwrap();
+    Store::open(&MemoryRoot::new(&root)?)?;
     let go = fixture.path().join("go");
-    let executable = std::env::current_exe().unwrap();
+    let executable = std::env::current_exe()?;
     let variants = [first, second];
     let mut children = Vec::new();
     let mut ready_paths = Vec::new();
@@ -102,32 +122,34 @@ fn compete(first: &str, second: &str) -> Competition {
     for (index, variant) in variants.into_iter().enumerate() {
         let ready = fixture.path().join(format!("ready-{index}"));
         let output = fixture.path().join(format!("output-{index}"));
-        let child = spawn_worker(&executable, &root, &go, &ready, &output, variant);
+        let child = spawn_worker(&executable, &root, &go, &ready, &output, variant)?;
         children.push(child);
         ready_paths.push(ready);
         output_paths.push(output);
     }
     wait_until_ready(&ready_paths);
-    fs::write(&go, b"go").unwrap();
+    fs::write(&go, b"go")?;
     for mut child in children {
-        assert!(child.wait().unwrap().success());
+        assert!(child.wait()?.success());
     }
     let mut outcomes = Vec::new();
     let mut processes = Vec::new();
     for output in output_paths {
-        let value = fs::read_to_string(output).unwrap();
-        let (process, outcome) = value.split_once(':').unwrap();
-        processes.push(process.parse().unwrap());
+        let value = fs::read_to_string(output)?;
+        let (process, outcome) = value
+            .split_once(':')
+            .ok_or("missing worker outcome delimiter")?;
+        processes.push(process.parse()?);
         outcomes.push(outcome.to_owned());
     }
     outcomes.sort();
-    let store = Store::open(MemoryRoot::new(&root).unwrap()).unwrap();
-    let entry_count = store.list().unwrap().entries().len();
-    Competition {
+    let store = Store::open(&MemoryRoot::new(&root)?)?;
+    let entry_count = store.list()?.entries().len();
+    Ok(Competition {
         outcomes,
         processes,
         entry_count,
-    }
+    })
 }
 
 fn spawn_worker(
@@ -137,10 +159,10 @@ fn spawn_worker(
     ready: &Path,
     output: &Path,
     variant: &str,
-) -> Child {
+) -> std::io::Result<Child> {
     Command::new(executable)
         .arg("--exact")
-        .arg("concurrency_worker")
+        .arg("memory_concurrency::concurrency_worker")
         .arg("--nocapture")
         .env("AGENT_MEMORY_ROOT", root)
         .env("AGENT_MEMORY_CONCURRENCY_GO", go)
@@ -148,7 +170,6 @@ fn spawn_worker(
         .env("AGENT_MEMORY_CONCURRENCY_OUTPUT", output)
         .env("AGENT_MEMORY_CONCURRENCY_VARIANT", variant)
         .spawn()
-        .unwrap()
 }
 
 fn wait_until_ready(paths: &[PathBuf]) {

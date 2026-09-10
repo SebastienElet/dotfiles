@@ -89,7 +89,7 @@ macro_rules! validated_text {
         pub struct $name(String);
 
         impl $name {
-            pub(crate) fn from_validated(value: String) -> Self {
+            pub(crate) const fn from_validated(value: String) -> Self {
                 Self(value)
             }
 
@@ -109,7 +109,7 @@ validated_text!(UtcTimestamp);
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub(crate) enum RawDraftKind {
+pub enum RawDraftKind {
     Goal {
         #[serde(flatten)]
         data: RawDraftData,
@@ -151,7 +151,7 @@ impl RawDraftKind {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawDraftData {
+pub struct RawDraftData {
     pub(crate) schema_version: u64,
     pub(crate) statement: String,
     #[serde(default)]
@@ -163,14 +163,14 @@ pub(crate) struct RawDraftData {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawDraftProof {
+pub struct RawDraftProof {
     pub(crate) summary: String,
     pub(crate) sources: Vec<RawDraftSource>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub(crate) enum RawDraftSource {
+pub enum RawDraftSource {
     GitFile { locator: String },
     LocalFile { locator: String },
     OfficialUrl { locator: String },
@@ -190,7 +190,7 @@ impl RawDraftSource {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawOracle {
+pub struct RawOracle {
     pub(crate) automated: Option<RawAutomatedOracle>,
     pub(crate) human_fallback: RawHumanFallback,
     pub(crate) outcomes: RawOutcomes,
@@ -198,7 +198,7 @@ pub(crate) struct RawOracle {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub(crate) enum RawAutomatedOracle {
+pub enum RawAutomatedOracle {
     SourceFingerprint {
         #[serde(rename = "expected")]
         _expected: FingerprintExpectation,
@@ -207,20 +207,20 @@ pub(crate) enum RawAutomatedOracle {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-pub(crate) enum FingerprintExpectation {
+pub enum FingerprintExpectation {
     AllProofSourcesUnchanged,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawHumanFallback {
+pub struct RawHumanFallback {
     pub(crate) question: String,
     pub(crate) valid_when: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawOutcomes {
+pub struct RawOutcomes {
     pub(crate) valid: String,
     pub(crate) invalidated: String,
 }
@@ -232,7 +232,8 @@ pub struct AdmissionDraft {
 }
 
 impl AdmissionDraft {
-    pub fn kind(&self) -> MemoryKind {
+    #[must_use]
+    pub const fn kind(&self) -> MemoryKind {
         self.kind
     }
 }
@@ -248,7 +249,7 @@ pub struct ValidatedDraft {
 }
 
 impl ValidatedDraft {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         kind: MemoryKind,
         statement: Statement,
         scope: ScopeDraft,
@@ -266,27 +267,33 @@ impl ValidatedDraft {
         }
     }
 
-    pub fn kind(&self) -> MemoryKind {
+    #[must_use]
+    pub const fn kind(&self) -> MemoryKind {
         self.kind
     }
 
-    pub fn statement(&self) -> &Statement {
+    #[must_use]
+    pub const fn statement(&self) -> &Statement {
         &self.statement
     }
 
-    pub fn scope(&self) -> ScopeDraft {
+    #[must_use]
+    pub const fn scope(&self) -> ScopeDraft {
         self.scope
     }
 
+    #[must_use]
     pub fn retrieval_terms(&self) -> &[RetrievalTerm] {
         &self.retrieval_terms
     }
 
-    pub fn proof(&self) -> &ValidatedDraftProof {
+    #[must_use]
+    pub const fn proof(&self) -> &ValidatedDraftProof {
         &self.proof
     }
 
-    pub fn oracle(&self) -> &ValidatedOracle {
+    #[must_use]
+    pub const fn oracle(&self) -> &ValidatedOracle {
         &self.oracle
     }
 }
@@ -298,14 +305,16 @@ pub struct ValidatedDraftProof {
 }
 
 impl ValidatedDraftProof {
-    pub(crate) fn new(summary: String, sources: Vec<ValidatedDraftSource>) -> Self {
+    pub(crate) const fn new(summary: String, sources: Vec<ValidatedDraftSource>) -> Self {
         Self { summary, sources }
     }
 
+    #[must_use]
     pub fn summary(&self) -> &str {
         &self.summary
     }
 
+    #[must_use]
     pub fn sources(&self) -> &[ValidatedDraftSource] {
         &self.sources
     }
@@ -318,14 +327,16 @@ pub struct ValidatedDraftSource {
 }
 
 impl ValidatedDraftSource {
-    pub(crate) fn new(kind: SourceKind, locator: String) -> Self {
+    pub(crate) const fn new(kind: SourceKind, locator: String) -> Self {
         Self { kind, locator }
     }
 
-    pub fn kind(&self) -> SourceKind {
+    #[must_use]
+    pub const fn kind(&self) -> SourceKind {
         self.kind
     }
 
+    #[must_use]
     pub fn locator(&self) -> &str {
         &self.locator
     }
@@ -339,7 +350,7 @@ pub struct ValidatedOracle {
 }
 
 impl ValidatedOracle {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         automated: Option<RawAutomatedOracle>,
         human_fallback: RawHumanFallback,
         outcomes: RawOutcomes,
@@ -351,22 +362,27 @@ impl ValidatedOracle {
         }
     }
 
-    pub fn has_automated_oracle(&self) -> bool {
+    #[must_use]
+    pub const fn has_automated_oracle(&self) -> bool {
         self.automated.is_some()
     }
 
+    #[must_use]
     pub fn fallback_question(&self) -> &str {
         &self.human_fallback.question
     }
 
+    #[must_use]
     pub fn fallback_valid_when(&self) -> &str {
         &self.human_fallback.valid_when
     }
 
+    #[must_use]
     pub fn valid_outcome(&self) -> &str {
         &self.outcomes.valid
     }
 
+    #[must_use]
     pub fn invalidated_outcome(&self) -> &str {
         &self.outcomes.invalidated
     }
@@ -374,7 +390,7 @@ impl ValidatedOracle {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub(crate) enum RawEntryKind {
+pub enum RawEntryKind {
     Goal {
         #[serde(flatten)]
         data: RawEntryData,
@@ -416,7 +432,7 @@ impl RawEntryKind {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawEntryData {
+pub struct RawEntryData {
     pub(crate) schema_version: u64,
     pub(crate) id: String,
     pub(crate) status: Status,
@@ -431,14 +447,14 @@ pub(crate) struct RawEntryData {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase", deny_unknown_fields)]
-pub(crate) enum RawEntryScope {
+pub enum RawEntryScope {
     Project { key: String },
     User,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawEntryProof {
+pub struct RawEntryProof {
     pub(crate) summary: String,
     pub(crate) sources: Vec<RawEntrySource>,
     pub(crate) established_at: String,
@@ -446,7 +462,7 @@ pub(crate) struct RawEntryProof {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub(crate) enum RawEntrySource {
+pub enum RawEntrySource {
     GitFile {
         locator: String,
         fingerprint: String,
@@ -490,7 +506,7 @@ impl RawEntrySource {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct RawTransition {
+pub struct RawTransition {
     pub(crate) from: Status,
     pub(crate) to: Status,
     pub(crate) at: String,
@@ -505,53 +521,63 @@ pub struct MemoryEntry {
 }
 
 impl MemoryEntry {
-    pub(crate) fn new(kind: MemoryKind, data: EntryData) -> Self {
+    pub(crate) const fn new(kind: MemoryKind, data: EntryData) -> Self {
         Self { kind, data }
     }
 
-    pub fn kind(&self) -> MemoryKind {
+    #[must_use]
+    pub const fn kind(&self) -> MemoryKind {
         self.kind
     }
 
-    pub fn id(&self) -> &MemoryId {
+    #[must_use]
+    pub const fn id(&self) -> &MemoryId {
         &self.data.id
     }
 
-    pub fn status(&self) -> Status {
+    #[must_use]
+    pub const fn status(&self) -> Status {
         self.data.status
     }
 
-    pub fn statement(&self) -> &Statement {
+    #[must_use]
+    pub const fn statement(&self) -> &Statement {
         &self.data.statement
     }
 
+    #[must_use]
     pub fn retrieval_terms(&self) -> &[RetrievalTerm] {
         &self.data.retrieval_terms
     }
 
-    pub fn scope(&self) -> &EntryScope {
+    #[must_use]
+    pub const fn scope(&self) -> &EntryScope {
         &self.data.scope
     }
 
-    pub fn proof(&self) -> &EntryProof {
+    #[must_use]
+    pub const fn proof(&self) -> &EntryProof {
         &self.data.proof
     }
 
-    pub fn oracle(&self) -> &ValidatedOracle {
+    #[must_use]
+    pub const fn oracle(&self) -> &ValidatedOracle {
         &self.data.oracle
     }
 
-    pub fn created_at(&self) -> &UtcTimestamp {
+    #[must_use]
+    pub const fn created_at(&self) -> &UtcTimestamp {
         &self.data.created_at
     }
 
-    pub fn transition(&self) -> Option<&EntryTransition> {
+    #[must_use]
+    pub const fn transition(&self) -> Option<&EntryTransition> {
         self.data.transition.as_ref()
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct EntryData {
+pub struct EntryData {
     pub(crate) id: MemoryId,
     pub(crate) status: Status,
     pub(crate) statement: Statement,
@@ -577,7 +603,7 @@ pub struct EntryProof {
 }
 
 impl EntryProof {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         summary: String,
         sources: Vec<EntrySource>,
         established_at: UtcTimestamp,
@@ -589,15 +615,18 @@ impl EntryProof {
         }
     }
 
+    #[must_use]
     pub fn summary(&self) -> &str {
         &self.summary
     }
 
+    #[must_use]
     pub fn sources(&self) -> &[EntrySource] {
         &self.sources
     }
 
-    pub fn established_at(&self) -> &UtcTimestamp {
+    #[must_use]
+    pub const fn established_at(&self) -> &UtcTimestamp {
         &self.established_at
     }
 }
@@ -610,7 +639,7 @@ pub struct EntrySource {
 }
 
 impl EntrySource {
-    pub(crate) fn new(kind: SourceKind, locator: String, fingerprint: Fingerprint) -> Self {
+    pub(crate) const fn new(kind: SourceKind, locator: String, fingerprint: Fingerprint) -> Self {
         Self {
             kind,
             locator,
@@ -618,15 +647,18 @@ impl EntrySource {
         }
     }
 
-    pub fn kind(&self) -> SourceKind {
+    #[must_use]
+    pub const fn kind(&self) -> SourceKind {
         self.kind
     }
 
+    #[must_use]
     pub fn locator(&self) -> &str {
         &self.locator
     }
 
-    pub fn fingerprint(&self) -> &Fingerprint {
+    #[must_use]
+    pub const fn fingerprint(&self) -> &Fingerprint {
         &self.fingerprint
     }
 }
@@ -641,7 +673,7 @@ pub struct EntryTransition {
 }
 
 impl EntryTransition {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         from: Status,
         to: Status,
         at: UtcTimestamp,
@@ -657,22 +689,27 @@ impl EntryTransition {
         }
     }
 
-    pub fn from(&self) -> Status {
+    #[must_use]
+    pub const fn from(&self) -> Status {
         self.from
     }
 
-    pub fn to(&self) -> Status {
+    #[must_use]
+    pub const fn to(&self) -> Status {
         self.to
     }
 
-    pub fn at(&self) -> &UtcTimestamp {
+    #[must_use]
+    pub const fn at(&self) -> &UtcTimestamp {
         &self.at
     }
 
-    pub fn verdict(&self) -> TransitionVerdict {
+    #[must_use]
+    pub const fn verdict(&self) -> TransitionVerdict {
         self.verdict
     }
 
+    #[must_use]
     pub fn reason(&self) -> &str {
         &self.reason
     }

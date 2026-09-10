@@ -1,20 +1,27 @@
+use super::TestResult;
 use super::{assert_usage_error, claude_usage, codex_usage};
 use agent_handoff::{Agent, Usage, find_latest_usage};
 
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
 #[test]
-fn integral_json_number_representations_match_javascript_safe_integers() {
-    let cases = [("1.0", 1), ("1e3", 1_000), ("-0", 0)];
+fn integral_json_number_representations_match_javascript_safe_integers() -> TestResult {
+    let cases = [
+        ("1.0", 1),
+        ("1e3", 1_000),
+        ("-0", 0),
+        ("4503599627370495.0", 4_503_599_627_370_495),
+        ("4503599627370496.0", 4_503_599_627_370_496),
+        ("9007199254740991.0", MAX_SAFE_INTEGER),
+    ];
 
     for (input_tokens, expected) in cases {
         assert_eq!(
-            find_latest_usage(&claude_usage(&format!(r#""input_tokens":{input_tokens}"#)))
-                .unwrap()
-                .used,
+            find_latest_usage(&claude_usage(&format!(r#""input_tokens":{input_tokens}"#)))?.used,
             expected
         );
     }
+    Ok(())
 }
 
 #[test]
@@ -48,12 +55,11 @@ fn out_of_range_json_numbers_keep_field_diagnostics() {
 }
 
 #[test]
-fn claude_numeric_fields_enforce_javascript_safe_integer_bounds() {
+fn claude_numeric_fields_enforce_javascript_safe_integer_bounds() -> TestResult {
     assert_eq!(
         find_latest_usage(&claude_usage(&format!(
             r#""input_tokens":{MAX_SAFE_INTEGER}"#
-        )))
-        .unwrap()
+        )))?
         .used,
         MAX_SAFE_INTEGER
     );
@@ -107,17 +113,17 @@ fn claude_numeric_fields_enforce_javascript_safe_integer_bounds() {
     for (fields, message) in invalid_fields {
         assert_usage_error(&claude_usage(&fields), message);
     }
+    Ok(())
 }
 
 #[test]
-fn codex_numeric_fields_enforce_javascript_safe_integer_bounds() {
+fn codex_numeric_fields_enforce_javascript_safe_integer_bounds() -> TestResult {
     assert_eq!(
         find_latest_usage(&codex_usage(
             &MAX_SAFE_INTEGER.to_string(),
             &MAX_SAFE_INTEGER.to_string(),
             "0",
-        ))
-        .unwrap(),
+        ))?,
         Usage {
             agent: Agent::Codex,
             used: MAX_SAFE_INTEGER,
@@ -154,4 +160,5 @@ fn codex_numeric_fields_enforce_javascript_safe_integer_bounds() {
     for (input_tokens, window, message) in invalid_values {
         assert_usage_error(&codex_usage(&input_tokens, &window, "0"), message);
     }
+    Ok(())
 }

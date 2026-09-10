@@ -5,7 +5,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
 const MAX_BYTES: u64 = 1_048_576;
-const WINDOW_BYTES: u64 = 65_536;
+const WINDOW_BYTES: u32 = 65_536;
 
 pub struct Manifest {
     pub contents: Option<String>,
@@ -13,14 +13,11 @@ pub struct Manifest {
 }
 
 pub fn read(path: &Path) -> Result<Manifest, MeasureError> {
-    let mut file = match File::open(path) {
-        Ok(file) => file,
-        Err(_) => {
-            return Ok(Manifest {
-                contents: None,
-                marker: None,
-            });
-        }
+    let Ok(mut file) = File::open(path) else {
+        return Ok(Manifest {
+            contents: None,
+            marker: None,
+        });
     };
     let size = file.metadata()?.len();
     if size > MAX_BYTES {
@@ -40,8 +37,8 @@ pub fn read(path: &Path) -> Result<Manifest, MeasureError> {
 fn window_marker(file: &mut File, size: u64) -> Result<String, MeasureError> {
     let mut hasher = Sha256::new();
     hasher.update(size.to_le_bytes());
-    std::io::copy(&mut file.take(WINDOW_BYTES), &mut hasher)?;
-    file.seek(SeekFrom::End(-(WINDOW_BYTES as i64)))?;
-    std::io::copy(&mut file.take(WINDOW_BYTES), &mut hasher)?;
+    std::io::copy(&mut file.take(u64::from(WINDOW_BYTES)), &mut hasher)?;
+    file.seek(SeekFrom::End(-(i64::from(WINDOW_BYTES))))?;
+    std::io::copy(&mut file.take(u64::from(WINDOW_BYTES)), &mut hasher)?;
     Ok(format!("oversized:{size}:{:x}", hasher.finalize()))
 }

@@ -2,7 +2,12 @@ use crate::manifest::{Agent, UserConfig};
 use serde_json::{Value, json};
 
 pub(super) fn mismatches(agent: Agent, config: &UserConfig, actual: &Value) -> Vec<String> {
-    let mut expected = vec![("model", json!(config.model))];
+    let model_key = if agent == Agent::Cursor {
+        "model.modelId"
+    } else {
+        "model"
+    };
+    let mut expected = vec![(model_key, json!(config.model))];
     match agent {
         Agent::Claude => {
             push(&mut expected, "effortLevel", config.effort.as_ref());
@@ -13,7 +18,6 @@ pub(super) fn mismatches(agent: Agent, config: &UserConfig, actual: &Value) -> V
             );
         }
         Agent::Cursor => {
-            expected[0].0 = "model.modelId";
             push(&mut expected, "maxMode", config.max_mode);
         }
         Agent::Codex => {
@@ -32,7 +36,7 @@ pub(super) fn mismatches(agent: Agent, config: &UserConfig, actual: &Value) -> V
     }
     expected
         .into_iter()
-        .filter_map(|(path, expected)| mismatch(actual, path, expected))
+        .filter_map(|(path, expected)| mismatch(actual, path, &expected))
         .collect()
 }
 
@@ -46,17 +50,17 @@ fn push<T: serde::Serialize>(
     }
 }
 
-fn mismatch(actual: &Value, path: &str, expected: Value) -> Option<String> {
+fn mismatch(actual: &Value, path: &str, expected: &Value) -> Option<String> {
     match lookup(actual, path) {
-        Some(actual) if actual == &expected => None,
+        Some(actual) if actual == expected => None,
         Some(actual) => Some(format!(
             "{path} is {} (expected {})",
             display(actual),
-            display(&expected)
+            display(expected)
         )),
         None => Some(format!(
             "{path} is missing (expected {})",
-            display(&expected)
+            display(expected)
         )),
     }
 }
@@ -67,5 +71,5 @@ fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
 }
 
 fn display(value: &Value) -> String {
-    serde_json::to_string(value).expect("JSON values serialize")
+    value.to_string()
 }

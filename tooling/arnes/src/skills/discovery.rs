@@ -26,7 +26,7 @@ pub fn unmanaged(
     let names = match installations(&directory) {
         Ok(names) => names,
         Err(_) if missing(&directory) => return Vec::new(),
-        Err(reason) => return vec![read_error(agent, scope, root, reason)],
+        Err(reason) => return vec![read_error(agent, scope, root, &reason)],
     };
     names
         .into_iter()
@@ -125,7 +125,7 @@ fn root_error(agent: Agent, scope: Scope, root: &Path, directory: &Path) -> Diag
     )
 }
 
-fn read_error(agent: Agent, scope: Scope, root: &Path, reason: String) -> Diagnostic {
+fn read_error(agent: Agent, scope: Scope, root: &Path, reason: &str) -> Diagnostic {
     Diagnostic::new(
         "skills",
         State::Error,

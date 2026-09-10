@@ -25,7 +25,7 @@ pub fn configuration(config: &Value, agent: Agent) -> Result<(), HooksError> {
             Agent::Codex if codex::known_event(event) => codex::event(event, entries)?,
             Agent::Claude if claude::known_event(event) => claude::event(event, entries)?,
             Agent::Cursor if cursor::known_event(event) => cursor::event(event, entries)?,
-            _ => {}
+            Agent::Claude | Agent::Cursor | Agent::Codex => {}
         }
     }
     Ok(())

@@ -2,21 +2,17 @@ use super::support::Fixture;
 use super::{REQUIRED_SOURCES, arnes, configured_fixture, generate, git};
 use std::fs;
 use std::os::unix::fs::symlink;
-
 #[test]
-fn records_metadata_sources_and_symlink_identity() {
-    let fixture = configured_fixture();
-    fixture.write_repository("harness/rules/source.md", "rule\n");
+fn records_metadata_sources_and_symlink_identity()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    fixture.write_repository("harness/rules/source.md", "rule\n")?;
     symlink(
         "source.md",
         fixture.repository().join("harness/rules/adapter.md"),
-    )
-    .unwrap();
-
-    generate(&fixture);
-    let manifest =
-        fs::read_to_string(fixture.repository().join(".harness-export/00-MANIFEST.md")).unwrap();
-
+    )?;
+    generate(&fixture)?;
+    let manifest = fs::read_to_string(fixture.repository().join(".harness-export/00-MANIFEST.md"))?;
     assert!(manifest.contains("Format version: `1`"));
     assert!(manifest.contains("Repository state at generation (informational): `dirty`"));
     assert!(manifest.contains("Metadata SHA256: `"));
@@ -25,14 +21,15 @@ fn records_metadata_sources_and_symlink_identity() {
         assert!(manifest.contains(&format!("| {path} | file |")), "{path}");
     }
     assert!(manifest.contains("| harness/rules/adapter.md | symlink -> source.md |"));
+    Ok(())
 }
-
 #[test]
-fn check_detects_metadata_tampering_without_writing() {
-    let fixture = configured_fixture();
-    generate(&fixture);
+fn check_detects_metadata_tampering_without_writing()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    generate(&fixture)?;
     let manifest_path = fixture.repository().join(".harness-export/00-MANIFEST.md");
-    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    let manifest = fs::read_to_string(&manifest_path)?;
     let tampered = manifest
         .lines()
         .map(|line| {
@@ -45,26 +42,23 @@ fn check_detects_metadata_tampering_without_writing() {
         .collect::<Vec<_>>()
         .join("\n")
         + "\n";
-    fs::write(&manifest_path, &tampered).unwrap();
-
-    let output = arnes(&fixture, &["export", "--check"]);
-
+    fs::write(&manifest_path, &tampered)?;
+    let output = arnes(&fixture, &["export", "--check"])?;
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("metadata integrity"));
-    assert_eq!(fs::read_to_string(manifest_path).unwrap(), tampered);
+    assert_eq!(fs::read_to_string(manifest_path)?, tampered);
+    Ok(())
 }
-
 #[test]
-fn generation_without_a_commit_records_unavailable() {
-    let fixture = Fixture::new();
+fn generation_without_a_commit_records_unavailable()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
     for (path, contents) in REQUIRED_SOURCES {
-        fixture.write_repository(path, contents);
+        fixture.write_repository(path, contents)?;
     }
-    git(&fixture, &["init", "-q"]);
-
-    generate(&fixture);
-
-    let manifest =
-        fs::read_to_string(fixture.repository().join(".harness-export/00-MANIFEST.md")).unwrap();
+    git(&fixture, &["init", "-q"])?;
+    generate(&fixture)?;
+    let manifest = fs::read_to_string(fixture.repository().join(".harness-export/00-MANIFEST.md"))?;
     assert!(manifest.contains("Git commit at generation (informational): `unavailable`"));
+    Ok(())
 }

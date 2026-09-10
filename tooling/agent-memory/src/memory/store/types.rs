@@ -29,7 +29,7 @@ pub enum StoreFailpoint {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum StorePhase {
+pub enum StorePhase {
     AfterLockAcquire,
     AfterProjectDirectoryFsync,
     BeforeYamlTemporaryCreate,
@@ -59,27 +59,11 @@ impl StoreFailpoint {
     pub(super) fn reach(&self, phase: StorePhase) -> Result<(), MemoryError> {
         match (self, phase) {
             (Self::PauseBeforeYamlRename(barrier), StorePhase::BeforeYamlRename)
-            | (Self::PauseBeforeIndexRename(barrier), StorePhase::BeforeIndexRename) => {
-                barrier.wait();
-                barrier.wait();
-                Ok(())
-            }
-            (Self::PauseBeforeIndexEntryRead(barrier), StorePhase::BeforeIndexEntryRead) => {
-                barrier.wait();
-                barrier.wait();
-                Ok(())
-            }
-            (Self::PauseAfterIndexEntryRead(barrier), StorePhase::AfterIndexEntryRead) => {
-                barrier.wait();
-                barrier.wait();
-                Ok(())
-            }
-            (Self::PauseAfterLockAcquire(barrier), StorePhase::AfterLockAcquire) => {
-                barrier.wait();
-                barrier.wait();
-                Ok(())
-            }
-            (Self::PauseAfterCacheRead(barrier), StorePhase::AfterCacheRead)
+            | (Self::PauseBeforeIndexRename(barrier), StorePhase::BeforeIndexRename)
+            | (Self::PauseBeforeIndexEntryRead(barrier), StorePhase::BeforeIndexEntryRead)
+            | (Self::PauseAfterIndexEntryRead(barrier), StorePhase::AfterIndexEntryRead)
+            | (Self::PauseAfterLockAcquire(barrier), StorePhase::AfterLockAcquire)
+            | (Self::PauseAfterCacheRead(barrier), StorePhase::AfterCacheRead)
             | (Self::PauseBeforeCacheRename(barrier), StorePhase::BeforeCacheRename)
             | (Self::PauseAfterRetrievalEntryRead(barrier), StorePhase::AfterRetrievalEntryRead) => {
                 barrier.wait();
@@ -91,7 +75,7 @@ impl StoreFailpoint {
         }
     }
 
-    fn matches(&self, phase: StorePhase) -> bool {
+    const fn matches(&self, phase: StorePhase) -> bool {
         matches!(
             (self, phase),
             (
@@ -128,7 +112,8 @@ pub struct StoreCommit {
 }
 
 impl StoreCommit {
-    pub fn index_rebuild_required(&self) -> bool {
+    #[must_use]
+    pub const fn index_rebuild_required(&self) -> bool {
         self.index_rebuild_required
     }
 }
@@ -140,11 +125,13 @@ pub struct StoreListing {
 }
 
 impl StoreListing {
+    #[must_use]
     pub fn entries(&self) -> &[MemoryEntry] {
         &self.entries
     }
 
-    pub fn index_rebuild_required(&self) -> bool {
+    #[must_use]
+    pub const fn index_rebuild_required(&self) -> bool {
         self.index_rebuild_required
     }
 }

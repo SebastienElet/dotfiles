@@ -11,6 +11,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// # Errors
+/// Returns input-validation, repository-resolution, fingerprinting, or managed-store write errors.
 pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
     let observed = env::current_dir()?;
     let repository_root = repository::root(&observed);
@@ -18,8 +20,7 @@ pub fn capture(agent: HookAgent) -> Result<(), MeasureError> {
         repository::protected_roots(&observed, repository_root.as_ref().map(Path::new));
     let deployment_root = repository_root
         .as_ref()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| observed.clone());
+        .map_or_else(|| observed.clone(), PathBuf::from);
     let store = Store::open(&protected_roots)?;
     let payload = Payload::read(&store, agent)?;
     let session = required_string(payload.value(), agent.session_key())

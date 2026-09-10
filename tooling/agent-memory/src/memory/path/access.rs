@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-pub(crate) struct ManagedPath {
+pub struct ManagedPath {
     root: Arc<File>,
     relative: PathBuf,
     directory_access: DirectoryAccess,
@@ -80,7 +80,7 @@ impl ManagedPath {
         self.open_existing(OFlags::RDWR)
     }
 
-    pub(crate) fn repair_private_file_mode(&self, file: &File) -> Result<(), MemoryError> {
+    pub(crate) fn repair_private_file_mode(file: &File) -> Result<(), MemoryError> {
         ensure_single_link_regular(file)?;
         repair_mode(file, private_file_mode(), false)
     }
@@ -100,7 +100,7 @@ impl ManagedPath {
 
     pub(crate) fn open_read(&self) -> Result<File, MemoryError> {
         let file = self.open_existing(OFlags::RDONLY)?;
-        self.repair_private_file_mode(&file)?;
+        Self::repair_private_file_mode(&file)?;
         Ok(file)
     }
 

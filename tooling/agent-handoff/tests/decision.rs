@@ -1,5 +1,9 @@
+#![cfg(test)]
+
+type TestResult<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
 use agent_handoff::{Agent, Environment, HandoffError, Usage, handoff_output, select_threshold};
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
@@ -51,12 +55,15 @@ fn environment_retains_only_handoff_contract_variables() {
         environment.claude_code_auto_compact_window.as_deref(),
         Some("100000")
     );
-    assert_eq!(environment.xdg_state_home.as_deref(), Some("/state"));
-    assert_eq!(environment.home.as_deref(), Some("/home"));
+    assert_eq!(
+        environment.xdg_state_home.as_deref(),
+        Some(OsStr::new("/state"))
+    );
+    assert_eq!(environment.home.as_deref(), Some(OsStr::new("/home")));
 }
 
 #[test]
-fn explicit_threshold_takes_priority_over_context_windows() {
+fn explicit_threshold_takes_priority_over_context_windows() -> TestResult {
     assert_eq!(
         select_threshold(
             &codex(0, 100_001),
@@ -64,46 +71,58 @@ fn explicit_threshold_takes_priority_over_context_windows() {
                 ("HANDOFF_TOKEN_THRESHOLD", "50000"),
                 ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "not-a-number"),
             ]),
-        )
-        .unwrap(),
+        )?,
         50_000
     );
+    Ok(())
 }
 
 #[test]
-fn claude_window_fallback_uses_an_exact_integer_floor() {
+fn claude_window_fallback_uses_an_exact_integer_floor() -> TestResult {
     assert_eq!(
         select_threshold(
             &claude(0),
             &environment(&[("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "100000")]),
-        )
-        .unwrap(),
+        )?,
         85_000
     );
     assert_eq!(
         select_threshold(
             &claude(0),
             &environment(&[("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "9007199254740991",)]),
-        )
-        .unwrap(),
+        )?,
         7_656_119_366_529_842
     );
+    Ok(())
 }
 
 #[test]
-fn codex_window_takes_priority_over_claude_environment_window() {
+fn codex_window_takes_priority_over_claude_environment_window() -> TestResult {
     assert_eq!(
         select_threshold(
             &codex(0, 100_001),
             &environment(&[("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "not-a-number")]),
-        )
-        .unwrap(),
+        )?,
         85_000
     );
+    Ok(())
 }
 
 #[test]
-fn empty_explicit_threshold_falls_back_to_the_context_window() {
+fn direct_usage_rejects_invalid_codex_windows() -> TestResult {
+    for window in [0, MAX_SAFE_INTEGER + 1, u64::MAX] {
+        assert_eq!(
+            select_threshold(&codex(0, window), &Environment::default())
+                .err()
+                .ok_or("expected operation to fail")?,
+            HandoffError::usage("invalid Codex model_context_window")
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn empty_explicit_threshold_falls_back_to_the_context_window() -> TestResult {
     assert_eq!(
         select_threshold(
             &claude(0),
@@ -111,27 +130,30 @@ fn empty_explicit_threshold_falls_back_to_the_context_window() {
                 ("HANDOFF_TOKEN_THRESHOLD", ""),
                 ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "100000"),
             ]),
-        )
-        .unwrap(),
+        )?,
         85_000
     );
+    Ok(())
 }
 
 #[test]
-fn absent_or_empty_claude_window_is_rejected() {
+fn absent_or_empty_claude_window_is_rejected() -> TestResult {
     for environment in [
         Environment::default(),
         environment(&[("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "")]),
     ] {
         assert_eq!(
-            select_threshold(&claude(0), &environment).unwrap_err(),
+            select_threshold(&claude(0), &environment)
+                .err()
+                .ok_or("expected operation to fail")?,
             HandoffError::usage("missing context window")
         );
     }
+    Ok(())
 }
 
 #[test]
-fn invalid_positive_integer_forms_are_rejected() {
+fn invalid_positive_integer_forms_are_rejected() -> TestResult {
     let invalid_values = [
         "0",
         "01",
@@ -152,7 +174,8 @@ fn invalid_positive_integer_forms_are_rejected() {
                 &claude(0),
                 &environment(&[("HANDOFF_TOKEN_THRESHOLD", value)]),
             )
-            .unwrap_err(),
+            .err()
+            .ok_or("expected operation to fail")?,
             HandoffError::usage("invalid HANDOFF_TOKEN_THRESHOLD")
         );
         assert_eq!(
@@ -160,24 +183,28 @@ fn invalid_positive_integer_forms_are_rejected() {
                 &claude(0),
                 &environment(&[("CLAUDE_CODE_AUTO_COMPACT_WINDOW", value)]),
             )
-            .unwrap_err(),
+            .err()
+            .ok_or("expected operation to fail")?,
             HandoffError::usage("invalid CLAUDE_CODE_AUTO_COMPACT_WINDOW")
         );
     }
+    Ok(())
 }
 
 #[test]
-fn handoff_output_matches_claude_hook_bytes() {
+fn handoff_output_matches_claude_hook_bytes() -> TestResult {
     assert_eq!(
-        handoff_output(&claude(85_000), 85_000),
+        handoff_output(&claude(85_000), 85_000)?,
         b"{\n  \"decision\": \"block\",\n  \"reason\": \"Context is at 85k tokens, past the 85k handoff threshold. Start no new work. Use /handoff to emit the resume prompt for a fresh session, then stop.\"\n}\n",
     );
+    Ok(())
 }
 
 #[test]
-fn handoff_output_uses_codex_invocation_and_token_floors() {
+fn handoff_output_uses_codex_invocation_and_token_floors() -> TestResult {
     assert_eq!(
-        handoff_output(&codex(85_999, MAX_SAFE_INTEGER), 50_999),
+        handoff_output(&codex(85_999, MAX_SAFE_INTEGER), 50_999)?,
         b"{\n  \"decision\": \"block\",\n  \"reason\": \"Context is at 85k tokens, past the 50k handoff threshold. Start no new work. Use $handoff to emit the resume prompt for a fresh session, then stop.\"\n}\n",
     );
+    Ok(())
 }

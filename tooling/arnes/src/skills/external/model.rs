@@ -162,7 +162,7 @@ fn skill_diagnostic(
 pub(super) fn external_skill_diagnostic(
     agent: Agent,
     scope: Scope,
-    skill: SystemSkill,
+    skill: &SystemSkill,
     allowed: bool,
 ) -> Diagnostic {
     Diagnostic::new(
@@ -181,11 +181,11 @@ pub(super) fn external_skill_diagnostic(
     )
     .with_human(
         format!("{agent} {scope} system skills"),
-        human::system_skill_summary(&skill, policy(allowed)),
+        human::system_skill_summary(skill, policy(allowed)),
     )
 }
 
-fn state(topology: Topology, exposure: Exposure, allowed: bool) -> State {
+const fn state(topology: Topology, exposure: Exposure, allowed: bool) -> State {
     match (topology, exposure, allowed) {
         (Topology::Broken | Topology::Unreadable, _, _) => State::Error,
         (_, Exposure::Enabled, false) => State::Drift,
@@ -194,11 +194,11 @@ fn state(topology: Topology, exposure: Exposure, allowed: bool) -> State {
     }
 }
 
-fn policy(allowed: bool) -> &'static str {
+const fn policy(allowed: bool) -> &'static str {
     if allowed { "allowed" } else { "unexpected" }
 }
 
-fn activation(exposure: Exposure) -> &'static str {
+const fn activation(exposure: Exposure) -> &'static str {
     match exposure {
         Exposure::Enabled => "available-not-runtime-observed",
         Exposure::Disabled => "disabled",

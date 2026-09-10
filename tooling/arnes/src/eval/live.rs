@@ -37,9 +37,20 @@ pub struct Codex {
 }
 
 impl Codex {
+    /// # Errors
+    /// Returns errors for unavailable Codex executables, non-UTF-8 environment entries,
+    /// incompatible authentication, inaccessible working directories, or failed version discovery.
     pub fn discover() -> Result<Self, String> {
         let command = find_codex()?;
-        let environment: BTreeMap<_, _> = env::vars().collect();
+        let environment: BTreeMap<_, _> = env::vars_os()
+            .map(|(name, value)| {
+                let invalid = |_| "Codex environment must contain UTF-8 names and values";
+                Ok((
+                    name.into_string().map_err(invalid)?,
+                    value.into_string().map_err(invalid)?,
+                ))
+            })
+            .collect::<Result<_, &str>>()?;
         let authentication = authentication_from_environment(&environment)?;
         let cwd = env::current_dir().map_err(|error| error.to_string())?;
         let version = capture(
@@ -62,6 +73,8 @@ impl Codex {
         })
     }
 
+    /// # Errors
+    /// Returns errors preparing the isolated authentication environment; provider failures are recorded in the returned execution.
     pub fn execute(
         &self,
         fixture: &Fixture,
@@ -169,12 +182,10 @@ fn authentication_from_environment(
             api_key: Some(key.clone()),
         });
     }
-    let home = environment
-        .get("CODEX_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(environment.get("HOME").map(String::as_str).unwrap_or("")).join(".codex")
-        });
+    let home = environment.get("CODEX_HOME").map_or_else(
+        || PathBuf::from(environment.get("HOME").map_or("", String::as_str)).join(".codex"),
+        PathBuf::from,
+    );
     let file = home.join("auth.json");
     if file.exists() {
         return Ok(Authentication {

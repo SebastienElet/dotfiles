@@ -51,6 +51,6 @@ pub(super) fn installed(
 
 impl Manifest {
     pub fn hooks(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = HookKind> + '_ {
-        installed(&self.hooks, agent, scope)
+        installed(&self.0.hooks, agent, scope)
     }
 }

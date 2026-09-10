@@ -37,14 +37,17 @@ pub struct HookError {
 }
 
 impl HookError {
+    #[must_use]
     pub const fn class(&self) -> HookErrorClass {
         self.class
     }
 
+    #[must_use]
     pub const fn code(&self) -> &'static str {
         self.code
     }
 
+    #[must_use]
     pub const fn field(&self) -> &'static str {
         self.field
     }
@@ -74,6 +77,9 @@ impl Display for HookError {
 
 impl std::error::Error for HookError {}
 
+/// # Errors
+///
+/// Returns an error for empty or oversized input, malformed JSON, an unsupported event, or invalid prompt and working-directory fields.
 pub fn parse_hook_request(agent: HookAgent, bytes: &[u8]) -> Result<HookRequest, HookError> {
     if bytes.is_empty() {
         return Err(HookError::rejection("empty_stdin", "stdin"));
@@ -87,6 +93,9 @@ pub fn parse_hook_request(agent: HookAgent, bytes: &[u8]) -> Result<HookRequest,
     }
 }
 
+/// # Errors
+///
+/// Returns an error if the response cannot be serialized or the bounded context cannot be represented.
 pub fn render_hook_response(
     agent: HookAgent,
     report: &RetrievalReport,
@@ -98,7 +107,7 @@ pub fn render_hook_response(
     }
 }
 
-pub(super) fn parse_payload(
+pub fn parse_payload(
     event: &PayloadField,
     prompt: &PayloadField,
     cwd: &PayloadField,
@@ -119,16 +128,16 @@ pub(super) fn parse_payload(
     })
 }
 
-pub(super) const fn invalid_payload() -> HookError {
+pub const fn invalid_payload() -> HookError {
     HookError::rejection("invalid_hook_payload", "payload")
 }
 
-pub(super) const fn output_unavailable() -> HookError {
+pub const fn output_unavailable() -> HookError {
     HookError::unavailable("output_unavailable", "stdout")
 }
 
 #[derive(Default)]
-pub(super) enum PayloadField {
+pub enum PayloadField {
     #[default]
     Missing,
     Present(Value),

@@ -1,22 +1,23 @@
+#![cfg(test)]
 use std::fs;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
-
 const FORBIDDEN_RUNTIME_CRATES: &[&str] = &["agent-memory", "agent-handoff"];
 const RUNTIME_DEPENDENCY_TABLES: &[&str] =
     &["dependencies", "dev-dependencies", "build-dependencies"];
 const FORBIDDEN_RUNTIME_MODULES: &[&str] = &["memory", "handoff"];
-
 #[test]
-fn arnes_manifest_has_no_runtime_crate_dependency_on_memory_or_handoff() {
+fn arnes_manifest_has_no_runtime_crate_dependency_on_memory_or_handoff()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let manifest: toml::Value =
-        toml::from_str(&fs::read_to_string(arnes_root().join("Cargo.toml")).unwrap()).unwrap();
+        toml::from_str(&fs::read_to_string(arnes_root().join("Cargo.toml"))?)?;
     let forbidden = forbidden_runtime_crate_dependencies(&manifest);
     assert!(forbidden.is_empty(), "{}", forbidden.join("\n"));
+    Ok(())
 }
-
 #[test]
-fn runtime_crate_detection_rejects_package_aliases() {
+fn runtime_crate_detection_rejects_package_aliases()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let manifest = parse_manifest(
         r#"
 [package]
@@ -27,20 +28,19 @@ edition = "2024"
 [dependencies]
 memory_runtime = { package = "agent-memory", path = "../agent-memory" }
 "#,
-    );
-
+    )?;
     let forbidden = forbidden_runtime_crate_dependencies(&manifest);
-
     assert!(
         forbidden
             .iter()
             .any(|violation| violation.contains("agent-memory")),
         "{forbidden:?}"
     );
+    Ok(())
 }
-
 #[test]
-fn runtime_crate_detection_rejects_target_specific_dependencies() {
+fn runtime_crate_detection_rejects_target_specific_dependencies()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let manifest = parse_manifest(
         r#"
 [package]
@@ -54,10 +54,8 @@ handoff_runtime = { package = "agent-handoff", path = "../agent-handoff" }
 [target.'cfg(windows)'.dev-dependencies]
 memory_runtime = { package = "agent-memory", path = "../agent-memory" }
 "#,
-    );
-
+    )?;
     let forbidden = forbidden_runtime_crate_dependencies(&manifest);
-
     assert!(
         forbidden
             .iter()
@@ -70,14 +68,13 @@ memory_runtime = { package = "agent-memory", path = "../agent-memory" }
             .any(|violation| violation.contains("agent-memory")),
         "{forbidden:?}"
     );
+    Ok(())
 }
-
 fn forbidden_runtime_crate_dependencies(manifest: &toml::Value) -> Vec<String> {
     let mut forbidden = Vec::new();
     collect_forbidden_runtime_crate_dependencies(manifest, "", &mut forbidden);
     forbidden
 }
-
 fn collect_forbidden_runtime_crate_dependencies(
     value: &toml::Value,
     path: &str,
@@ -98,7 +95,6 @@ fn collect_forbidden_runtime_crate_dependencies(
         collect_forbidden_runtime_crate_dependencies(value, &next_path, forbidden);
     }
 }
-
 fn collect_dependency_table(value: &toml::Value, path: &str, forbidden: &mut Vec<String>) {
     let Some(table) = value.as_table() else {
         forbidden.push(format!("{path} is not a dependency table"));
@@ -111,7 +107,6 @@ fn collect_dependency_table(value: &toml::Value, path: &str, forbidden: &mut Vec
         }
     }
 }
-
 fn dependency_package_name(key: &str, value: &toml::Value) -> String {
     value
         .as_table()
@@ -120,17 +115,16 @@ fn dependency_package_name(key: &str, value: &toml::Value) -> String {
         .unwrap_or(key)
         .to_owned()
 }
-
 #[test]
 fn arnes_source_tree_has_no_memory_or_handoff_runtime_module() {
     let source = arnes_root().join("src");
     let forbidden = forbidden_runtime_modules(&source);
     assert!(forbidden.is_empty(), "{forbidden:?}");
 }
-
 #[test]
-fn arnes_source_inventory_includes_core_canaries() {
-    let files = rust_sources(&arnes_root().join("src"));
+fn arnes_source_inventory_includes_core_canaries()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let files = rust_sources(&arnes_root().join("src"))?;
     assert!(
         files.iter().any(|path| path.ends_with("hooks.rs")),
         "{files:?}"
@@ -139,20 +133,19 @@ fn arnes_source_inventory_includes_core_canaries() {
         files.iter().any(|path| path.ends_with("main.rs")),
         "{files:?}"
     );
+    Ok(())
 }
-
 #[test]
-fn runtime_module_detection_rejects_directory_modules() {
-    let root = TempDir::new().unwrap();
+fn runtime_module_detection_rejects_directory_modules()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let root = TempDir::new()?;
     let source = root.path().join("src");
     for module in ["memory", "handoff"] {
         let directory = source.join(module);
-        fs::create_dir_all(&directory).unwrap();
-        fs::write(directory.join("mod.rs"), b"").unwrap();
+        fs::create_dir_all(&directory)?;
+        fs::write(directory.join("mod.rs"), b"")?;
     }
-
     let forbidden = forbidden_runtime_modules(&source);
-
     assert!(
         forbidden.iter().any(|path| path.ends_with("memory/mod.rs")),
         "{forbidden:?}"
@@ -163,8 +156,8 @@ fn runtime_module_detection_rejects_directory_modules() {
             .any(|path| path.ends_with("handoff/mod.rs")),
         "{forbidden:?}"
     );
+    Ok(())
 }
-
 fn forbidden_runtime_modules(source: &Path) -> Vec<PathBuf> {
     let mut forbidden = Vec::new();
     for module in FORBIDDEN_RUNTIME_MODULES {
@@ -179,12 +172,12 @@ fn forbidden_runtime_modules(source: &Path) -> Vec<PathBuf> {
     }
     forbidden
 }
-
 #[test]
-fn arnes_source_tree_does_not_read_memory_state_or_name_memory_domain_types() {
+fn arnes_source_tree_does_not_read_memory_state_or_name_memory_domain_types()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut forbidden = Vec::new();
-    for file in rust_sources(&arnes_root().join("src")) {
-        let contents = fs::read_to_string(&file).unwrap();
+    for file in rust_sources(&arnes_root().join("src"))? {
+        let contents = fs::read_to_string(&file)?;
         for token in [
             "AGENT_MEMORY_ROOT",
             ".local/share/agent-memory",
@@ -197,26 +190,26 @@ fn arnes_source_tree_does_not_read_memory_state_or_name_memory_domain_types() {
         }
     }
     assert!(forbidden.is_empty(), "{}", forbidden.join("\n"));
+    Ok(())
 }
-
 fn arnes_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
 }
-
-fn parse_manifest(contents: &str) -> toml::Value {
-    toml::from_str(contents).unwrap()
+fn parse_manifest(contents: &str) -> Result<toml::Value, Box<dyn std::error::Error + Send + Sync>> {
+    Ok(toml::from_str(contents)?)
 }
-
-fn rust_sources(directory: &Path) -> Vec<PathBuf> {
+fn rust_sources(
+    directory: &Path,
+) -> Result<Vec<PathBuf>, Box<dyn std::error::Error + Send + Sync>> {
     let mut files = Vec::new();
-    for entry in fs::read_dir(directory).unwrap() {
-        let entry = entry.unwrap();
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            files.extend(rust_sources(&path));
+            files.extend(rust_sources(&path)?);
         } else if path.extension().and_then(|extension| extension.to_str()) == Some("rs") {
             files.push(path);
         }
     }
-    files
+    Ok(files)
 }

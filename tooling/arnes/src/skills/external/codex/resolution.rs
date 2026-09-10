@@ -38,7 +38,7 @@ pub(super) fn resolve(
         Ok(artifact) => artifact,
         Err(detail) => return unresolved(id, Some(selected.enabled), detail),
     };
-    inspect_artifact(home, id, identity, artifact, exposure(selected.enabled))
+    inspect_artifact(home, id, &identity, artifact, exposure(selected.enabled))
 }
 
 fn selected_plugin<'a>(
@@ -106,11 +106,11 @@ fn selected_artifact(selected: &SelectedPlugin) -> Result<&str, &'static str> {
 fn inspect_artifact(
     home: &Path,
     id: String,
-    identity: PluginIdentity,
+    identity: &PluginIdentity,
     artifact: &str,
     exposure: Exposure,
 ) -> Plugin {
-    let canonical_path = match resolved_artifact_path(home, &identity, artifact) {
+    let canonical_path = match resolved_artifact_path(home, identity, artifact) {
         Ok(path) => path,
         Err((path, detail)) => return broken(id, artifact, path, exposure, detail),
     };
@@ -209,7 +209,7 @@ fn broken(
     }
 }
 
-fn exposure(enabled: bool) -> Exposure {
+const fn exposure(enabled: bool) -> Exposure {
     if enabled {
         Exposure::Enabled
     } else {

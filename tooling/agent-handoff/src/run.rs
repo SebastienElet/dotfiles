@@ -3,9 +3,12 @@ use crate::{
     Environment, HandoffError, SentinelState, create_sentinel, find_latest_usage, handoff_output,
     inspect_sentinel, parse_hook_event, select_threshold, state_root,
 };
+use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
 
+/// # Errors
+/// Returns usage errors for invalid input, transcript, or threshold; returns unexpected errors for sentinel or output failures.
 pub fn run_agent_handoff(
     input: &[u8],
     environment: &Environment,
@@ -17,8 +20,12 @@ pub fn run_agent_handoff(
     }
 
     let state_root = state_root(environment)?;
-    let state_root = state_root.to_string_lossy();
-    let sentinel = join_posix(&[&state_root, "dotfiles", "handoff", &event.session_id]);
+    let sentinel = join_posix(&[
+        state_root.as_os_str(),
+        OsStr::new("dotfiles"),
+        OsStr::new("handoff"),
+        OsStr::new(&event.session_id),
+    ]);
     if inspect_sentinel(&sentinel)? {
         return Ok(());
     }
@@ -31,11 +38,12 @@ pub fn run_agent_handoff(
     if usage.used < threshold {
         return Ok(());
     }
+    let output = handoff_output(&usage, threshold)?;
     if create_sentinel(&sentinel)? == SentinelState::Existing {
         return Ok(());
     }
 
     stdout
-        .write_all(&handoff_output(&usage, threshold))
+        .write_all(&output)
         .map_err(|_| HandoffError::unexpected("unexpected failure"))
 }

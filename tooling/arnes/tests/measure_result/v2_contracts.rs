@@ -1,10 +1,9 @@
 use super::measure_support::*;
-
 #[test]
-fn finish_refuses_v2_runs_in_favor_of_explicit_outcomes() {
-    let harness = Harness::new_v2();
-    let run_id = harness.capture("codex", "session_id", "session", "fixture prompt");
-
+fn finish_refuses_v2_runs_in_favor_of_explicit_outcomes()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let harness = Harness::new_v2()?;
+    let run_id = harness.capture("codex", "session_id", "session", "fixture prompt")?;
     assert_failure(
         &harness.run(&[
             "measure",
@@ -14,17 +13,17 @@ fn finish_refuses_v2_runs_in_favor_of_explicit_outcomes() {
             "pass",
             "--human-minutes",
             "1",
-        ]),
+        ])?,
         "measure finish supports only v1 runs; use measure outcome",
     );
     assert!(!harness.run_path(&run_id).join("result.json").exists());
+    Ok(())
 }
-
 #[test]
-fn feedback_refuses_v2_runs_without_a_reported_evaluation_use() {
-    let harness = Harness::new_v2();
-    let run_id = harness.capture("codex", "session_id", "session", "fixture prompt");
-
+fn feedback_refuses_v2_runs_without_a_reported_evaluation_use()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let harness = Harness::new_v2()?;
+    let run_id = harness.capture("codex", "session_id", "session", "fixture prompt")?;
     assert_failure(
         &harness.run(&[
             "measure",
@@ -48,8 +47,9 @@ fn feedback_refuses_v2_runs_without_a_reported_evaluation_use() {
             "open",
             "--failure-category",
             "other",
-        ]),
+        ])?,
         "measure feedback supports only v1 runs",
     );
     assert!(!harness.run_path(&run_id).join("feedback.jsonl").exists());
+    Ok(())
 }

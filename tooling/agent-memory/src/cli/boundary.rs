@@ -28,7 +28,7 @@ pub(super) fn write_json(output: &mut dyn Write, value: &impl Serialize) -> Resu
         .map_err(|_| failure(4, "output_unavailable", "stdout"))
 }
 
-fn failure(exit: u8, code: &'static str, field: &'static str) -> CliFailure {
+const fn failure(exit: u8, code: &'static str, field: &'static str) -> CliFailure {
     CliFailure {
         exit,
         code,
@@ -61,17 +61,23 @@ mod tests {
     }
 
     #[test]
-    fn distinguishes_stdin_and_stdout_failures() {
-        let read = read_required(&mut FailingIo).unwrap_err();
+    fn distinguishes_stdin_and_stdout_failures()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let read = read_required(&mut FailingIo)
+            .err()
+            .ok_or("expected operation failure")?;
         assert_eq!(
             (read.exit, read.code, read.field),
             (4, "stdin_unavailable", "stdin")
         );
 
-        let write = write_json(&mut FailingIo, &serde_json::json!({})).unwrap_err();
+        let write = write_json(&mut FailingIo, &serde_json::json!({}))
+            .err()
+            .ok_or("expected operation failure")?;
         assert_eq!(
             (write.exit, write.code, write.field),
             (4, "output_unavailable", "stdout")
         );
+        Ok(())
     }
 }

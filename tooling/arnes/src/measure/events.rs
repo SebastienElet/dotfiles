@@ -19,7 +19,7 @@ fn native_event(value: &Value) -> &str {
 fn normalized(native: &str) -> &'static str {
     let compact: String = native
         .chars()
-        .filter(|character| character.is_ascii_alphanumeric())
+        .filter(char::is_ascii_alphanumeric)
         .flat_map(char::to_lowercase)
         .collect();
     match compact.as_str() {
@@ -31,18 +31,19 @@ fn normalized(native: &str) -> &'static str {
         "subagentstop" => "subagent.stop",
         "permissionrequest" => "permission.request",
         "permissiondenied" => "permission.denied",
-        "pretooluse" => "tool.before",
-        "posttooluse" => "tool.after",
-        "posttoolusefailure" => "tool.failure",
-        "stopfailure" => "agent.failure",
-        "precompact" => "context.compact.before",
-        "postcompact" => "context.compact.after",
-        "beforefileedit"
+        "pretooluse"
+        | "beforefileedit"
         | "beforereadfile"
         | "beforetabfileread"
         | "beforeshellexecution"
         | "beforemcpexecution" => "tool.before",
-        "afterfileedit" | "aftershellexecution" | "aftermcpexecution" => "tool.after",
+        "posttooluse" | "afterfileedit" | "aftershellexecution" | "aftermcpexecution" => {
+            "tool.after"
+        }
+        "posttoolusefailure" => "tool.failure",
+        "stopfailure" => "agent.failure",
+        "precompact" => "context.compact.before",
+        "postcompact" => "context.compact.after",
         "afteragentresponse" => "agent.response",
         _ => "unknown",
     }

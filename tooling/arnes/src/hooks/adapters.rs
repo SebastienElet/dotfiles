@@ -55,7 +55,7 @@ pub struct Policy {
     pub memory_event: Option<&'static str>,
 }
 
-pub fn policy(agent: Agent) -> Policy {
+pub const fn policy(agent: Agent) -> Policy {
     match agent {
         Agent::Codex => Policy {
             directory: ".codex",

@@ -1,16 +1,16 @@
 use super::*;
 
 #[test]
-fn installs_inputs_and_discards_fixture_home_with_its_lifetime() {
+fn installs_inputs_and_discards_fixture_home_with_its_lifetime()
+-> Result<(), Box<dyn std::error::Error>> {
     let fixture = Fixture::prepare(
         &BTreeMap::from([("src/auth/session.ts".into(), "session".into())]),
         "instructions",
         "skill",
         Path::new("/tmp/arnes"),
-    )
-    .unwrap();
+    )?;
     assert_eq!(
-        std::fs::read_to_string(fixture.workspace.join("AGENTS.md")).unwrap(),
+        std::fs::read_to_string(fixture.workspace.join("AGENTS.md"))?,
         "instructions"
     );
     assert_eq!(
@@ -18,39 +18,46 @@ fn installs_inputs_and_discards_fixture_home_with_its_lifetime() {
             fixture
                 .workspace
                 .join(".agents/skills/code-search/SKILL.md")
-        )
-        .unwrap(),
+        )?,
         "skill"
     );
     assert_eq!(
-        fixture.env.get("HOME").unwrap(),
-        fixture.home.to_str().unwrap()
+        fixture.env.get("HOME").ok_or("missing fixture value")?,
+        fixture.home.to_str().ok_or("missing fixture value")?
     );
     assert_eq!(
-        fixture.env.get("CODEX_HOME").unwrap(),
-        fixture.home.join(".codex").to_str().unwrap()
+        fixture
+            .env
+            .get("CODEX_HOME")
+            .ok_or("missing fixture value")?,
+        fixture
+            .home
+            .join(".codex")
+            .to_str()
+            .ok_or("missing fixture value")?
     );
     assert!(!fixture.env.contains_key("CODEX_API_KEY"));
     assert!(!fixture.env.contains_key("PRIVATE_SENTINEL"));
-    assert_eq!(std::fs::read_to_string(&fixture.observations).unwrap(), "");
+    assert_eq!(std::fs::read_to_string(&fixture.observations)?, "");
     let root = fixture.root.clone();
     drop(fixture);
     assert!(!root.exists());
+    Ok(())
 }
 
 #[test]
-fn instruction_sources_override_fixture_entries() {
+fn instruction_sources_override_fixture_entries() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = Fixture::prepare(
         &BTreeMap::from([("AGENTS.md".into(), "fixture".into())]),
         "instructions",
         "skill",
         Path::new("/tmp/arnes"),
-    )
-    .unwrap();
+    )?;
     assert_eq!(
-        std::fs::read_to_string(fixture.workspace.join("AGENTS.md")).unwrap(),
+        std::fs::read_to_string(fixture.workspace.join("AGENTS.md"))?,
         "instructions"
     );
+    Ok(())
 }
 
 #[test]

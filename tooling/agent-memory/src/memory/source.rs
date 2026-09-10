@@ -1,5 +1,8 @@
 mod oracle;
 
+#[cfg(test)]
+mod tests;
+
 use super::identity::resolve_worktree_directory;
 use super::{Fingerprint, MemoryError, ProcessOutput, ProcessRunner, SourceKind, ValidatedDraft};
 use rustix::fs::{Mode, OFlags, open};
@@ -32,7 +35,8 @@ impl<'a> SourceContext<'a> {
         }
     }
 
-    pub fn with_temporary_directory(mut self, directory: &'a Path) -> Self {
+    #[must_use]
+    pub const fn with_temporary_directory(mut self, directory: &'a Path) -> Self {
         self.temporary_directory = Some(directory);
         self
     }
@@ -46,15 +50,18 @@ pub struct ResolvedSource {
 }
 
 impl ResolvedSource {
-    pub fn kind(&self) -> SourceKind {
+    #[must_use]
+    pub const fn kind(&self) -> SourceKind {
         self.kind
     }
 
+    #[must_use]
     pub fn locator(&self) -> &str {
         &self.locator
     }
 
-    pub fn fingerprint(&self) -> &Fingerprint {
+    #[must_use]
+    pub const fn fingerprint(&self) -> &Fingerprint {
         &self.fingerprint
     }
 }
@@ -66,14 +73,19 @@ pub struct ResolvedDraft {
 }
 
 impl ResolvedDraft {
-    pub fn draft(&self) -> &ValidatedDraft {
+    #[must_use]
+    pub const fn draft(&self) -> &ValidatedDraft {
         &self.draft
     }
 
+    #[must_use]
     pub fn sources(&self) -> &[ResolvedSource] {
         &self.sources
     }
 
+    /// # Errors
+    ///
+    /// Returns a conflict when a source becomes invalid or changes fingerprint, or an unavailable error when revalidation fails.
     pub fn recheck_sources(&self, context: &SourceContext<'_>) -> Result<(), MemoryError> {
         for (index, expected) in self.sources.iter().enumerate() {
             let actual = match resolve_source(expected.kind, &expected.locator, context) {
@@ -90,11 +102,15 @@ impl ResolvedDraft {
         Ok(())
     }
 
+    #[must_use]
     pub fn into_parts(self) -> (ValidatedDraft, Vec<ResolvedSource>) {
         (self.draft, self.sources)
     }
 }
 
+/// # Errors
+///
+/// Returns an error for unsupported source policy, invalid locators, inaccessible sources, or unsuccessful external probes.
 pub fn resolve_sources(
     draft: ValidatedDraft,
     context: &SourceContext<'_>,
@@ -263,9 +279,11 @@ fn resolved_regular_path(path: &Path) -> Result<PathBuf, MemoryError> {
         source_invalid()
             .with_message("Provide a file path with a parent directory and a file name.")
     })?;
-    let parent = parent.canonicalize().map_err(classify_local_error)?;
+    let parent = parent
+        .canonicalize()
+        .map_err(|error| classify_local_error(&error))?;
     let resolved = parent.join(name);
-    let metadata = fs::symlink_metadata(&resolved).map_err(classify_local_error)?;
+    let metadata = fs::symlink_metadata(&resolved).map_err(|error| classify_local_error(&error))?;
     if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
         return Err(source_invalid().with_message(
             "The final source path must be a regular file, not a symlink or directory.",
@@ -277,7 +295,7 @@ fn resolved_regular_path(path: &Path) -> Result<PathBuf, MemoryError> {
 fn read_bounded_regular_file(path: &Path) -> Result<Vec<u8>, MemoryError> {
     let descriptor = open(
         path,
-        OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW,
+        OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NONBLOCK,
         Mode::empty(),
     )
     .map_err(|error| classify_local_io_kind(error.kind()))?;
@@ -289,7 +307,8 @@ fn read_bounded_regular_file(path: &Path) -> Result<Vec<u8>, MemoryError> {
     if metadata.len() > MAX_SOURCE_BYTES {
         return Err(source_unavailable().with_message("The source body must be at most 1048576 bytes (1 MiB); select a bounded primary source."));
     }
-    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    let mut bytes =
+        Vec::with_capacity(usize::try_from(metadata.len()).map_err(|_| source_unavailable())?);
     file.by_ref()
         .take(MAX_SOURCE_BYTES + 1)
         .read_to_end(&mut bytes)
@@ -304,7 +323,7 @@ fn resolve_official_url(
     locator: &str,
     context: &SourceContext<'_>,
 ) -> Result<Vec<u8>, MemoryError> {
-    let url = validated_https_url(locator).map_err(|_| source_invalid().with_message("Use an HTTPS URL with a domain name, without credentials, literal IP addresses or fragments."))?;
+    let url = validated_https_url(locator).map_err(|()| source_invalid().with_message("Use an HTTPS URL with a domain name, without credentials, literal IP addresses or fragments."))?;
     let temporary = create_private_temporary(context)?;
     let max_time = curl_max_time(context.curl)?;
     let arguments = curl_arguments(temporary.path(), url.as_str(), &max_time);
@@ -320,11 +339,13 @@ fn resolve_official_url(
 fn create_private_temporary(context: &SourceContext<'_>) -> Result<NamedTempFile, MemoryError> {
     let mut builder = Builder::new();
     builder.prefix(".agent-memory-source-");
-    let temporary = match context.temporary_directory {
-        Some(directory) => builder.tempfile_in(directory),
-        None => builder.tempfile(),
-    }
-    .map_err(|_| source_unavailable())?;
+    let temporary = context
+        .temporary_directory
+        .map_or_else(
+            || builder.tempfile(),
+            |directory| builder.tempfile_in(directory),
+        )
+        .map_err(|_| source_unavailable())?;
     temporary
         .as_file()
         .set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))
@@ -369,11 +390,7 @@ fn curl_max_time(runner: &dyn ProcessRunner) -> Result<String, MemoryError> {
     if milliseconds == 0 {
         return Err(source_unavailable());
     }
-    Ok(format!(
-        "{}.{:03}",
-        milliseconds / 1000,
-        milliseconds % 1000
-    ))
+    Ok(format!("{}.{:03}", capped.as_secs(), milliseconds % 1000))
 }
 
 struct CurlMetadata {
@@ -385,15 +402,18 @@ struct CurlMetadata {
 fn curl_metadata(output: &ProcessOutput) -> Result<CurlMetadata, MemoryError> {
     let stdout = std::str::from_utf8(output.stdout()).map_err(|_| source_unavailable())?;
     let lines = stdout.lines().collect::<Vec<_>>();
-    if lines.len() != 3 || lines.iter().any(|line| line.is_empty()) {
+    let [status, final_url, remote_ip] = lines.as_slice() else {
+        return Err(source_unavailable());
+    };
+    if lines.iter().any(|line| line.is_empty()) {
         return Err(source_unavailable());
     }
-    let status = lines[0].parse::<u16>().map_err(|_| source_unavailable())?;
+    let status = status.parse::<u16>().map_err(|_| source_unavailable())?;
     if !(100..=599).contains(&status) {
         return Err(source_unavailable());
     }
-    let final_url = Url::parse(lines[1]).map_err(|_| source_unavailable())?;
-    let remote_ip = lines[2]
+    let final_url = Url::parse(final_url).map_err(|_| source_unavailable())?;
+    let remote_ip = remote_ip
         .parse::<IpAddr>()
         .map_err(|_| source_unavailable())?;
     Ok(CurlMetadata {
@@ -432,7 +452,7 @@ fn allowed_https_url(url: &Url) -> bool {
         && matches!(url.host(), Some(Host::Domain(_)))
 }
 
-fn classify_local_error(error: io::Error) -> MemoryError {
+fn classify_local_error(error: &io::Error) -> MemoryError {
     classify_local_io_kind(error.kind())
 }
 

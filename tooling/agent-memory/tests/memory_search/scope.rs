@@ -3,12 +3,13 @@ use agent_memory::{Index, SearchRequest, SearchSelection, Store, search};
 use std::fs;
 
 #[test]
-fn isolates_the_requested_project_and_optionally_includes_user_scope() {
-    let fixture = tempfile::tempdir().unwrap();
+fn isolates_the_requested_project_and_optionally_includes_user_scope()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project_a = project_scope(fixture.path(), "project-a.git");
-    let project_b = project_scope(fixture.path(), "project-b.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project_a = project_scope(fixture.path(), "project-a.git")?;
+    let project_b = project_scope(fixture.path(), "project-b.git")?;
     let selected_project = admit_project(
         &store,
         fixture.path(),
@@ -16,7 +17,7 @@ fn isolates_the_requested_project_and_optionally_includes_user_scope() {
         "Agent project A.",
         &["agent"],
         "Established.",
-    );
+    )?;
     admit_project(
         &store,
         fixture.path(),
@@ -24,15 +25,15 @@ fn isolates_the_requested_project_and_optionally_includes_user_scope() {
         "Agent project B.",
         &["agent"],
         "Established.",
-    );
+    )?;
     let selected_user = admit_user(
         &store,
         fixture.path(),
         "Agent user.",
         &["agent"],
         "Established.",
-    );
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    )?;
+    let index = Index::load_or_rebuild(&store)?.index;
     let with_user = search(
         &index,
         SearchRequest {
@@ -56,14 +57,16 @@ fn isolates_the_requested_project_and_optionally_includes_user_scope() {
     expected.sort();
     assert_eq!(ids(&with_user), expected);
     assert_eq!(ids(&project_only), vec![selected_project]);
+    Ok(())
 }
 
 #[test]
-fn limits_results_and_reports_only_matches_omitted_by_the_limit() {
-    let fixture = tempfile::tempdir().unwrap();
+fn limits_results_and_reports_only_matches_omitted_by_the_limit()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     for number in 0..6 {
         admit_project(
             &store,
@@ -72,9 +75,9 @@ fn limits_results_and_reports_only_matches_omitted_by_the_limit() {
             &format!("Agent statement {number}."),
             &["agent"],
             "Established.",
-        );
+        )?;
     }
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    let index = Index::load_or_rebuild(&store)?.index;
     let selection = search(
         &index,
         SearchRequest {
@@ -88,14 +91,16 @@ fn limits_results_and_reports_only_matches_omitted_by_the_limit() {
     assert_eq!(selection.selected.len(), 5);
     assert_eq!(selection.omitted_by_limit, 1);
     assert!(selection.diagnostics.is_empty());
+    Ok(())
 }
 
 #[test]
-fn clamps_requested_limits_above_five_and_reports_the_remaining_matches() {
-    let fixture = tempfile::tempdir().unwrap();
+fn clamps_requested_limits_above_five_and_reports_the_remaining_matches()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project = project_scope(fixture.path(), "project-a.git");
+    let store = Store::open(&memory_root(&root)?)?;
+    let project = project_scope(fixture.path(), "project-a.git")?;
     for number in 0..6 {
         admit_project(
             &store,
@@ -104,9 +109,9 @@ fn clamps_requested_limits_above_five_and_reports_the_remaining_matches() {
             &format!("Bounded agent statement {number}."),
             &["bounded agent"],
             "Established.",
-        );
+        )?;
     }
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    let index = Index::load_or_rebuild(&store)?.index;
 
     let selection = search(
         &index,
@@ -120,42 +125,44 @@ fn clamps_requested_limits_above_five_and_reports_the_remaining_matches() {
 
     assert_eq!(selection.selected.len(), 5);
     assert_eq!(selection.omitted_by_limit, 1);
+    Ok(())
 }
 
 #[test]
-fn returns_only_diagnostics_visible_to_the_requested_scopes() {
-    let fixture = tempfile::tempdir().unwrap();
+fn returns_only_diagnostics_visible_to_the_requested_scopes()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = tempfile::tempdir()?;
     let root = fixture.path().join("agent-memory");
-    let store = Store::open(memory_root(&root)).unwrap();
-    let project_a = project_scope(fixture.path(), "project-a.git");
-    let project_b = project_scope(fixture.path(), "project-b.git");
-    let project_a_id = admit_project(
+    let store = Store::open(&memory_root(&root)?)?;
+    let project_a = project_scope(fixture.path(), "project-a.git")?;
+    let project_b = project_scope(fixture.path(), "project-b.git")?;
+    let selected_entry_id = admit_project(
         &store,
         fixture.path(),
         &project_a,
         "Private diagnostic A.",
         &["private diagnostic"],
         "Established.",
-    );
-    let project_b_id = admit_project(
+    )?;
+    let other_entry_id = admit_project(
         &store,
         fixture.path(),
         &project_b,
         "Private diagnostic B.",
         &["private diagnostic"],
         "Established.",
-    );
+    )?;
     let user_id = admit_user(
         &store,
         fixture.path(),
         "Private diagnostic user.",
         &["private diagnostic"],
         "Established.",
-    );
-    for id in [&project_a_id, &project_b_id, &user_id] {
-        fs::write(find_yaml(&root, id), b"not: [valid").unwrap();
+    )?;
+    for id in [&selected_entry_id, &other_entry_id, &user_id] {
+        fs::write(find_yaml(&root, id)?, b"not: [valid")?;
     }
-    let index = Index::load_or_rebuild(&store).unwrap().index;
+    let index = Index::load_or_rebuild(&store)?.index;
 
     let project_only = search(
         &index,
@@ -176,11 +183,15 @@ fn returns_only_diagnostics_visible_to_the_requested_scopes() {
         },
     );
 
-    assert_eq!(diagnostic_ids(&project_only), vec![project_a_id.clone()]);
-    let mut expected = vec![project_a_id, user_id];
+    assert_eq!(
+        diagnostic_ids(&project_only),
+        vec![selected_entry_id.clone()]
+    );
+    let mut expected = vec![selected_entry_id, user_id];
     expected.sort();
     assert_eq!(diagnostic_ids(&with_user), expected);
-    assert!(!diagnostic_ids(&with_user).contains(&project_b_id));
+    assert!(!diagnostic_ids(&with_user).contains(&other_entry_id));
+    Ok(())
 }
 
 fn ids(selection: &SearchSelection) -> Vec<String> {
@@ -201,14 +212,16 @@ fn diagnostic_ids(selection: &SearchSelection) -> Vec<String> {
     ids
 }
 
-fn find_yaml(root: &std::path::Path, id: &str) -> std::path::PathBuf {
+fn find_yaml(root: &std::path::Path, id: &str) -> std::io::Result<std::path::PathBuf> {
     let user = root.join(format!("entries/user/{id}.yaml"));
     if user.is_file() {
-        return user;
+        return Ok(user);
     }
-    fs::read_dir(root.join("entries/project"))
-        .unwrap()
-        .map(|entry| entry.unwrap().path().join(format!("{id}.yaml")))
-        .find(|path| path.is_file())
-        .unwrap()
+    for entry in fs::read_dir(root.join("entries/project"))? {
+        let path = entry?.path().join(format!("{id}.yaml"));
+        if path.is_file() {
+            return Ok(path);
+        }
+    }
+    Err(std::io::Error::other(format!("missing YAML for {id}")))
 }

@@ -12,10 +12,9 @@ pub struct UserConfig {
 }
 
 pub(super) fn validate(
-    agents: &[AgentDeclaration],
+    declaration: &AgentDeclaration,
     agent_index: usize,
 ) -> Result<(), ManifestError> {
-    let declaration = &agents[agent_index];
     let Some(config) = &declaration.user_config else {
         return Ok(());
     };
@@ -124,6 +123,6 @@ fn validate_capabilities(
                 "cursor does not expose this persistent setting",
             ))
         }
-        _ => Ok(()),
+        Agent::Claude | Agent::Cursor | Agent::Codex => Ok(()),
     }
 }

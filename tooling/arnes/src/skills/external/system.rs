@@ -38,7 +38,7 @@ pub(super) fn diagnose(
         *counts.entry(skill.slug.clone()).or_insert(0) += 1;
     }
     for mut skill in skills {
-        if counts[&skill.slug] > 1 {
+        if counts.get(&skill.slug).is_some_and(|count| *count > 1) {
             skill.topology = Topology::Broken;
             skill.detail = Some("duplicate system skill slug across roots".to_owned());
         }
@@ -47,7 +47,7 @@ pub(super) fn diagnose(
                 && allowed.plugin.is_none()
                 && allowed.slug == skill.slug
         });
-        diagnostics.push(external_skill_diagnostic(agent, scope, skill, allowed));
+        diagnostics.push(external_skill_diagnostic(agent, scope, &skill, allowed));
     }
     diagnostics
 }
@@ -93,7 +93,7 @@ fn scan_root(
     };
     let skills = entries
         .into_iter()
-        .filter_map(|entry| entry_skill(roots, agent, &directory, entry))
+        .filter_map(|entry| entry_skill(roots, agent, &directory, &entry))
         .collect();
     (Vec::new(), skills)
 }
@@ -128,11 +128,11 @@ fn root_entries(
         .map_err(|_| ("unreadable", "root directory could not be read"))?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| ("unreadable", "root directory entry could not be read"))?;
-    entries.sort_by_key(|entry| entry.file_name());
+    entries.sort_by_key(std::fs::DirEntry::file_name);
     Ok(Some(entries))
 }
 
-fn entry_skill(roots: &Roots, agent: Agent, root: &Path, entry: DirEntry) -> Option<SystemSkill> {
+fn entry_skill(roots: &Roots, agent: Agent, root: &Path, entry: &DirEntry) -> Option<SystemSkill> {
     let slug = entry.file_name().to_string_lossy().into_owned();
     let path = entry.path();
     let (topology, detail, exposure) = match entry.file_type() {

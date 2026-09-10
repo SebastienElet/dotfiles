@@ -78,7 +78,7 @@ impl Tracker {
 
     fn seed_resource(&mut self, roots: &Roots, scope: Scope, path: &std::path::Path) {
         let destination = destination(roots, scope, path);
-        let owner = DestinationOwner::resource(label(scope, path));
+        let owner = DestinationOwner::resource(&label(scope, path));
         for identity in planned_identities(&destination, boundary(roots, scope)) {
             self.destinations
                 .entry(identity)
@@ -179,7 +179,7 @@ impl DestinationOwner {
         }
     }
 
-    fn resource(label: String) -> Self {
+    fn resource(label: &str) -> Self {
         Self {
             prompt: None,
             label: format!("resource {label}"),

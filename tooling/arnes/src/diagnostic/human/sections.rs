@@ -13,8 +13,8 @@ pub(super) fn render(
     diagnostics: &[Diagnostic],
     options: HumanOptions,
     color: Colorizer,
-) -> (usize, Vec<String>) {
-    let mut sections = collect(diagnostics);
+) -> Option<(usize, Vec<String>)> {
+    let mut sections = collect(diagnostics)?;
     let count = sections.len();
     sections.sort_by(|left, right| {
         section_rank(right)
@@ -25,13 +25,13 @@ pub(super) fn render(
     for section in sections {
         render_section(&mut lines, section, options, color);
     }
-    (count, lines)
+    Some((count, lines))
 }
 
-fn collect(diagnostics: &[Diagnostic]) -> Vec<Section<'_>> {
+fn collect(diagnostics: &[Diagnostic]) -> Option<Vec<Section<'_>>> {
     let mut sections: Vec<Section<'_>> = Vec::new();
     for (index, diagnostic) in diagnostics.iter().enumerate() {
-        let metadata = diagnostic.section().expect("structured diagnostic section");
+        let metadata = diagnostic.section()?;
         match sections
             .iter_mut()
             .find(|section| section.key == metadata.key())
@@ -45,7 +45,7 @@ fn collect(diagnostics: &[Diagnostic]) -> Vec<Section<'_>> {
             }),
         }
     }
-    sections
+    Some(sections)
 }
 
 fn render_section(
@@ -89,7 +89,7 @@ fn render_diagnostics(
     {
         let human = diagnostic.human();
         let next_group = human
-            .map(|metadata| metadata.group())
+            .map(super::super::HumanDiagnostic::group)
             .filter(|group| !group.is_empty());
         if next_group != group {
             if let Some(label) = next_group {
@@ -160,7 +160,7 @@ fn section_rank(section: &Section<'_>) -> u8 {
         .unwrap_or(0)
 }
 
-fn state_rank(state: State) -> u8 {
+const fn state_rank(state: State) -> u8 {
     match state {
         State::Error => 3,
         State::Drift => 2,

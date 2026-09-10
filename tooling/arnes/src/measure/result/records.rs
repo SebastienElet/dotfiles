@@ -141,8 +141,9 @@ fn invalid_event(event: &StoredEvent, run_id: &str) -> bool {
             {
                 return true;
             }
-            match &event.result {
-                Some(result) => {
+            event.result.as_ref().map_or_else(
+                || event.event == "result_recorded" || !is_digest(&event.event_id),
+                |result| {
                     event.event != "result_recorded"
                         || event.native_event != "human.finish"
                         || event.artifact != "result.json"
@@ -152,9 +153,8 @@ fn invalid_event(event: &StoredEvent, run_id: &str) -> bool {
                         || event.native_ids.get("revision").and_then(Value::as_u64)
                             != Some(result.revision)
                         || validate_result_record(result, run_id).is_err()
-                }
-                None => event.event == "result_recorded" || !is_digest(&event.event_id),
-            }
+                },
+            )
         }
     }
 }
@@ -174,7 +174,7 @@ fn validate_verdict(result: &ResultRecord) -> Result<(), MeasureError> {
         MergeReady::Unjudgeable if result.evidence.is_empty() => Err(MeasureError::new(
             "managed result.json requires evidence for unjudgeable",
         )),
-        _ => Ok(()),
+        MergeReady::Pass | MergeReady::Fail | MergeReady::Unjudgeable => Ok(()),
     }
 }
 

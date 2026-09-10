@@ -5,6 +5,7 @@ use crate::{
 };
 use std::path::Path;
 
+#[derive(Clone, Copy)]
 pub struct AdmissionContext<'a> {
     pub store: &'a Store,
     pub cwd: &'a Path,
@@ -13,11 +14,15 @@ pub struct AdmissionContext<'a> {
     pub authorization: AdmissionAuthorization,
 }
 
-pub(crate) struct PreparedAdmission {
+pub struct PreparedAdmission {
     resolved: crate::ResolvedDraft,
     project: Option<crate::ProjectScope>,
 }
 
+/// # Errors
+///
+/// The current implementation reports rejection and storage failures in
+/// `AdmissionResult`; it does not return an outer error.
 pub fn admit(bytes: &[u8], context: AdmissionContext<'_>) -> Result<AdmissionResult, MemoryError> {
     let draft = match prepare_admission(bytes, context.authorization) {
         Ok(draft) => draft,
@@ -28,9 +33,17 @@ pub fn admit(bytes: &[u8], context: AdmissionContext<'_>) -> Result<AdmissionRes
         Err(error) => return Ok(AdmissionResult::Rejected { error }),
     };
     let sources = SourceContext::new(context.cwd, context.processes, context.processes);
-    admit_prepared(prepared, context.store, context.clock, &sources)
+    Ok(admit_prepared(
+        &prepared,
+        context.store,
+        context.clock,
+        &sources,
+    ))
 }
 
+/// # Errors
+///
+/// Returns an error for malformed input, unauthorized admission, or invalid draft fields and proof requirements.
 pub fn prepare_admission(
     bytes: &[u8],
     authorization: AdmissionAuthorization,
@@ -38,7 +51,7 @@ pub fn prepare_admission(
     validate_draft(parse_draft(bytes)?, authorization)
 }
 
-pub(crate) fn resolve_admission(
+pub fn resolve_admission(
     draft: ValidatedDraft,
     cwd: &Path,
     processes: &dyn ProcessRunner,
@@ -52,16 +65,16 @@ pub(crate) fn resolve_admission(
     Ok(PreparedAdmission { resolved, project })
 }
 
-pub(crate) fn admit_prepared(
-    prepared: PreparedAdmission,
+pub fn admit_prepared(
+    prepared: &PreparedAdmission,
     store: &Store,
     clock: &dyn Clock,
     sources: &SourceContext<'_>,
-) -> Result<AdmissionResult, MemoryError> {
-    Ok(store.admit(
-        prepared.resolved,
+) -> AdmissionResult {
+    store.admit(
+        &prepared.resolved,
         prepared.project.as_ref(),
         &clock.now(),
         sources,
-    ))
+    )
 }

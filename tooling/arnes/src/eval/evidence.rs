@@ -10,6 +10,8 @@ use std::{collections::HashSet, fs, io::Write, path::Path};
 #[path = "evidence/tests.rs"]
 mod tests;
 
+/// # Errors
+/// Rejects malformed report metadata, controls, case identities, run counts, fingerprints, or oracle results.
 pub fn validate_report(report: &Report) -> Result<(), String> {
     if report.schema_version != 1
         || !(1..=10).contains(&report.run_count)
@@ -38,19 +40,19 @@ pub fn validate_report(report: &Report) -> Result<(), String> {
         hash(value, 64)?;
     }
     validate_date(&report.date)?;
-    let (platform, architecture, runtime) = match &report.environment {
+    let environment = match &report.environment {
         Environment::Rust {
             platform,
             architecture,
             runtime,
-        } => (platform, architecture, runtime),
+        } => [platform, architecture, runtime],
         Environment::Legacy {
             platform,
             architecture,
             bun,
-        } => (platform, architecture, bun),
+        } => [platform, architecture, bun],
     };
-    for value in [platform, architecture, runtime] {
+    for value in environment {
         nonempty(value)?;
     }
     let controls = &report.controls;
@@ -138,7 +140,10 @@ fn validate_date(date: &str) -> Result<(), String> {
         .and_then(|v| v.split_once('T'))
         .ok_or_else(invalid)?;
     let parts = day.split('-').collect::<Vec<_>>();
-    if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
+    let [year, month, day] = parts.as_slice() else {
+        return Err(invalid());
+    };
+    if year.len() != 4 || month.len() != 2 || day.len() != 2 {
         return Err(invalid());
     }
     let parse = |s: &str| {
@@ -148,9 +153,9 @@ fn validate_date(date: &str) -> Result<(), String> {
             Err(invalid())
         }
     };
-    let year = parse(parts[0])?;
-    let month = parse(parts[1])?;
-    let day = parse(parts[2])?;
+    let year = parse(year)?;
+    let month = parse(month)?;
+    let day = parse(day)?;
     let leap = year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
     let max_day = match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
@@ -163,18 +168,18 @@ fn validate_date(date: &str) -> Result<(), String> {
         return Err(invalid());
     }
     let parts = time.split(':').collect::<Vec<_>>();
-    if !(2..=3).contains(&parts.len())
-        || parts[0].len() != 2
-        || parts[1].len() != 2
-        || parse(parts[0])? > 23
-        || parse(parts[1])? > 59
-    {
+    let (hour, minute, second) = match parts.as_slice() {
+        [hour, minute] => (*hour, *minute, None),
+        [hour, minute, second] => (*hour, *minute, Some(*second)),
+        _ => return Err(invalid()),
+    };
+    if hour.len() != 2 || minute.len() != 2 || parse(hour)? > 23 || parse(minute)? > 59 {
         return Err(invalid());
     }
-    if parts.len() == 3 {
-        let (seconds, fraction) = parts[2]
+    if let Some(second) = second {
+        let (seconds, fraction) = second
             .split_once('.')
-            .map_or((parts[2], None), |(s, f)| (s, Some(f)));
+            .map_or((second, None), |(s, f)| (s, Some(f)));
         if seconds.len() != 2
             || parse(seconds)? > 59
             || fraction.is_some_and(|f| f.is_empty() || !f.bytes().all(|b| b.is_ascii_digit()))
@@ -185,6 +190,8 @@ fn validate_date(date: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// # Errors
+/// Returns file-reading, JSON-decoding, or report-validation errors.
 pub fn read_report(path: &Path) -> Result<Report, String> {
     let report = serde_json::from_str(&fs::read_to_string(path).map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
@@ -192,6 +199,8 @@ pub fn read_report(path: &Path) -> Result<Report, String> {
     Ok(report)
 }
 
+/// # Errors
+/// Rejects an existing report, an inaccessible parent directory, or inability to create a temporary file.
 pub fn assert_new_report(path: &Path) -> Result<(), String> {
     match fs::symlink_metadata(path) {
         Ok(_) => return Err(format!("Report already exists: {}", path.display())),
@@ -201,7 +210,7 @@ pub fn assert_new_report(path: &Path) -> Result<(), String> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
+        .unwrap_or_else(|| Path::new("."));
     if !fs::metadata(parent).map_err(|e| e.to_string())?.is_dir() {
         return Err("Report parent is not a directory".into());
     }
@@ -209,13 +218,15 @@ pub fn assert_new_report(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// # Errors
+/// Returns report-validation, filesystem, serialization, or atomic publication errors; an existing destination is never overwritten.
 pub fn publish_report(path: &Path, report: &Report) -> Result<(), String> {
     validate_report(report)?;
     assert_new_report(path)?;
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
+        .unwrap_or_else(|| Path::new("."));
     let mut temporary = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
     let bytes = format!(
         "{}\n",

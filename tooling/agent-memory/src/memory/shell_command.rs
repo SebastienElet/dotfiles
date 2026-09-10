@@ -1,4 +1,4 @@
-pub(crate) fn contains_shell_command(value: &str) -> bool {
+pub fn contains_shell_command(value: &str) -> bool {
     value.contains("$(")
         || value.lines().any(|line| {
             has_shell_shebang(line)

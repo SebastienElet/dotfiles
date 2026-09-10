@@ -4,6 +4,8 @@ use super::{
 };
 use std::{fs, path::Path, process::Command};
 
+/// # Errors
+/// Returns errors loading cases, enumerating tracked contracts with Git, or validating required activation contracts.
 pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
     let cases = load_cases(repository)?;
     let result = Command::new("git")
@@ -39,6 +41,8 @@ pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
     ))
 }
 
+/// # Errors
+/// Returns errors enumerating the evidence directory or reading and validating any selected JSON report.
 pub fn validate_evidence(repository: &Path) -> Result<String, String> {
     let directory = repository.join("harness/evals/evidence");
     let mut files = fs::read_dir(directory)

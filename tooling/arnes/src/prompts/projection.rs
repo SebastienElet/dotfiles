@@ -4,7 +4,6 @@ use crate::diagnostic::State;
 use crate::files::paths::{ancestor_within, canonical_within, destination, label};
 use crate::manifest::{PromptProjection, PromptRepresentation, Scope};
 use std::fs;
-use std::io::ErrorKind;
 use std::path::Path;
 
 pub fn validate(
@@ -21,7 +20,13 @@ pub fn validate(
     let expected = match projection.representation {
         PromptRepresentation::File => &expected.direct,
         PromptRepresentation::Rendered => &expected.rendered,
-        PromptRepresentation::Symlink => unreachable!(),
+        PromptRepresentation::Symlink => {
+            return Err(Failure::new(
+                State::Unsupported,
+                "symlink projections have no stable agent contract",
+                "symlink projection unsupported",
+            ));
+        }
     };
     if actual == *expected {
         Ok(actual)
@@ -41,17 +46,20 @@ fn read_regular(destination: &Path, boundary: &Path) -> Result<String, Failure> 
             "destination escapes scope root",
         ));
     }
-    let metadata = fs::symlink_metadata(destination).map_err(|error| match error.kind() {
-        ErrorKind::NotFound => Failure::new(
-            State::Drift,
-            format!("destination {} is missing", destination.display()),
-            "destination missing",
-        ),
-        _ => Failure::new(
-            State::Error,
-            format!("destination {} could not be read", destination.display()),
-            "destination unreadable",
-        ),
+    let metadata = fs::symlink_metadata(destination).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            Failure::new(
+                State::Drift,
+                format!("destination {} is missing", destination.display()),
+                "destination missing",
+            )
+        } else {
+            Failure::new(
+                State::Error,
+                format!("destination {} could not be read", destination.display()),
+                "destination unreadable",
+            )
+        }
     })?;
     if metadata.file_type().is_symlink() {
         return Err(Failure::new(
@@ -104,10 +112,10 @@ fn stale(projection: PromptProjection<'_>) -> Failure {
     )
 }
 
-fn representation(representation: PromptRepresentation) -> &'static str {
+const fn representation(representation: PromptRepresentation) -> &'static str {
     match representation {
         PromptRepresentation::File => "direct",
         PromptRepresentation::Rendered => "rendered",
-        PromptRepresentation::Symlink => unreachable!(),
+        PromptRepresentation::Symlink => "symlink",
     }
 }

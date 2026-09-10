@@ -76,14 +76,12 @@ fn validate_skills(
         super::validate_target(&field, skill.agent, skill.scope, agents)?;
         super::skills::validate_slug(&field("slug"), &skill.slug)?;
         match (skill.origin, skill.plugin.as_deref()) {
-            (ExternalOrigin::Managed, None) => {}
             (ExternalOrigin::Managed, Some(_)) => {
                 return Err(ManifestError::new(
                     field("plugin"),
                     "managed external skills cannot name a plugin",
                 ));
             }
-            (ExternalOrigin::System, None) => {}
             (ExternalOrigin::System, Some(_)) => {
                 return Err(ManifestError::new(
                     field("plugin"),
@@ -104,7 +102,8 @@ fn validate_skills(
                     "plugin skill requires a matching allowed plugin",
                 ));
             }
-            (ExternalOrigin::Plugin, Some(_)) => {}
+            (ExternalOrigin::Managed | ExternalOrigin::System, None)
+            | (ExternalOrigin::Plugin, Some(_)) => {}
         }
         if !declarations.insert((
             skill.agent,

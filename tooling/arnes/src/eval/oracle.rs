@@ -3,6 +3,7 @@ use super::{
     report::Status,
 };
 
+#[must_use]
 pub fn evaluate(oracle: Oracle, observations: &[Observation]) -> Status {
     let read_index = observations.iter().position(|event| {
         event.tool == Tool::Cat

@@ -1,35 +1,37 @@
 use super::support::*;
-
 #[test]
-fn fingerprint_tracks_project_instructions_config_hooks_and_skills() {
-    let harness = Harness::new();
-    fs::write(harness.repository.join("AGENTS.md"), "first instructions").unwrap();
-    fs::create_dir(harness.repository.join(".codex")).unwrap();
+fn fingerprint_tracks_project_instructions_config_hooks_and_skills()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let harness = Harness::new()?;
+    fs::write(harness.repository.join("AGENTS.md"), "first instructions")?;
+    fs::create_dir(harness.repository.join(".codex"))?;
     fs::write(
         harness.repository.join(".codex/config.toml"),
         "project='first'",
-    )
-    .unwrap();
+    )?;
     fs::write(
         harness.repository.join(".codex/hooks.json"),
         r#"{"hooks":{}}"#,
-    )
-    .unwrap();
-    fs::create_dir_all(harness.repository.join(".codex/skills/example")).unwrap();
+    )?;
+    fs::create_dir_all(harness.repository.join(".codex/skills/example"))?;
     fs::write(
         harness.repository.join(".codex/skills/example/SKILL.md"),
         "first skill",
-    )
-    .unwrap();
-    let first = capture_run(&harness, "codex", "session_id", "one");
-
-    fs::write(harness.repository.join("AGENTS.md"), "second instructions").unwrap();
-    let second = capture_run(&harness, "codex", "session_id", "two");
-
-    assert_ne!(first["harness_fingerprint"], second["harness_fingerprint"]);
+    )?;
+    let first = capture_run(&harness, "codex", "session_id", "one")?;
+    fs::write(harness.repository.join("AGENTS.md"), "second instructions")?;
+    let second = capture_run(&harness, "codex", "session_id", "two")?;
+    assert_ne!(
+        *(first)
+            .get("harness_fingerprint")
+            .ok_or("missing fixture index harness_fingerprint")?,
+        *(second)
+            .get("harness_fingerprint")
+            .ok_or("missing fixture index harness_fingerprint")?
+    );
     assert!(!first.to_string().contains("first instructions"));
+    Ok(())
 }
-
 #[path = "fingerprint/claude.rs"]
 mod claude;
 #[path = "fingerprint/codex.rs"]

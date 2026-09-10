@@ -32,7 +32,7 @@ impl Payload {
         })
     }
 
-    pub fn value(&self) -> &Value {
+    pub const fn value(&self) -> &Value {
         &self.value
     }
 
@@ -64,20 +64,24 @@ fn read_stdin() -> Result<RawPayload, MeasureError> {
     let mut input = std::io::stdin().lock();
     let mut bytes = Vec::new();
     let mut buffer = [0_u8; 8192];
-    let mut size = 0;
+    let mut size = 0_usize;
     let mut hasher = Sha256::new();
     loop {
         let read = input.read(&mut buffer)?;
         if read == 0 {
             break;
         }
-        size += read;
-        hasher.update(&buffer[..read]);
+        size = size.saturating_add(read);
+        let chunk = buffer
+            .get(..read)
+            .ok_or_else(|| MeasureError::new("stdin returned an invalid byte count"))?;
+        hasher.update(chunk);
         if bytes.len() < MAX_PAYLOAD_BYTES {
             let keep = (MAX_PAYLOAD_BYTES - bytes.len()).min(read);
-            bytes.extend_from_slice(&buffer[..keep]);
+            bytes.extend(chunk.iter().take(keep));
         }
     }
+    drop(input);
     Ok(RawPayload {
         bytes,
         size,

@@ -3,15 +3,16 @@ use super::types::{StoreFailpoint, StorePhase};
 use crate::memory::MemoryError;
 use crate::memory::index::inventory::InventorySnapshot;
 use crate::memory::path::ManagedPath;
+use std::fmt::Write as _;
 use std::io::{BufWriter, Write};
 
-pub(crate) struct AtomicPublication<'a> {
+pub struct AtomicPublication<'a> {
     root: &'a ManagedPath,
     failpoint: Option<&'a StoreFailpoint>,
 }
 
 impl<'a> AtomicPublication<'a> {
-    pub(super) fn new(root: &'a ManagedPath, failpoint: Option<&'a StoreFailpoint>) -> Self {
+    pub(super) const fn new(root: &'a ManagedPath, failpoint: Option<&'a StoreFailpoint>) -> Self {
         Self { root, failpoint }
     }
 
@@ -118,7 +119,7 @@ impl<'a> AtomicPublication<'a> {
         yaml: StagedFile,
         destination: &ManagedPath,
         index: StagedIndex,
-        inventory: InventorySnapshot,
+        inventory: &InventorySnapshot,
         replace: bool,
         before_publish: F,
     ) -> Result<(), CommitFailure>
@@ -204,10 +205,10 @@ impl<'a> AtomicPublication<'a> {
             .ok_or_else(store_error)?;
         let mut random = [0_u8; 16];
         getrandom::fill(&mut random).map_err(|_| store_error())?;
-        let suffix = random
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
+        let mut suffix = String::new();
+        for byte in random {
+            write!(&mut suffix, "{byte:02x}").map_err(|_| store_error())?;
+        }
         self.root.join(parent.join(format!(".{name}.tmp-{suffix}")))
     }
 

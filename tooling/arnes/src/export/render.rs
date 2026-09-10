@@ -31,20 +31,22 @@ fn category_bundles(category: Category, sources: Vec<&Source>) -> Vec<(String, V
     if category != Category::Skills {
         return vec![(bundle_name(category, 1), sources)];
     }
-    let mut partitions = vec![Vec::new()];
+    let mut partitions = Vec::new();
+    let mut current = Vec::new();
     let mut lines = 0;
-    for skill in skill_groups(sources) {
+    for skill in skill_groups(&sources) {
         let skill_lines = skill
             .iter()
             .map(|source| line_count(&source.contents))
             .sum::<usize>();
         if lines > 0 && lines + skill_lines > MAX_SKILL_LINES {
-            partitions.push(Vec::new());
+            partitions.push(std::mem::take(&mut current));
             lines = 0;
         }
-        partitions.last_mut().unwrap().extend(skill);
+        current.extend(skill);
         lines += skill_lines;
     }
+    partitions.push(current);
     partitions
         .into_iter()
         .enumerate()
@@ -52,18 +54,11 @@ fn category_bundles(category: Category, sources: Vec<&Source>) -> Vec<(String, V
         .collect()
 }
 
-fn skill_groups(sources: Vec<&Source>) -> Vec<Vec<&Source>> {
-    let mut groups = Vec::<Vec<&Source>>::new();
-    let mut current_slug = "";
-    for source in sources {
-        let slug = source.path.split('/').nth(2).unwrap_or("");
-        if slug != current_slug {
-            groups.push(Vec::new());
-            current_slug = slug;
-        }
-        groups.last_mut().unwrap().push(source);
-    }
-    groups
+fn skill_groups<'a>(sources: &[&'a Source]) -> Vec<Vec<&'a Source>> {
+    sources
+        .chunk_by(|left, right| left.path.split('/').nth(2) == right.path.split('/').nth(2))
+        .map(<[_]>::to_vec)
+        .collect()
 }
 
 fn bundle_name(category: Category, index: usize) -> String {
@@ -88,12 +83,16 @@ fn render_bundle(category: Category, sources: &[&Source]) -> String {
         "# {title}\n\n> Generated artifact. Do not edit; regenerate with `arnes export`.\n\n"
     );
     for source in sources {
-        output.push_str(&format!("# FILE: {}\n\n", source.path));
+        output.push_str("# FILE: ");
+        output.push_str(&source.path);
+        output.push_str("\n\n");
         output.push_str(&source.contents);
         if !source.contents.ends_with('\n') {
             output.push('\n');
         }
-        output.push_str(&format!("\n# END FILE: {}\n\n", source.path));
+        output.push_str("\n# END FILE: ");
+        output.push_str(&source.path);
+        output.push_str("\n\n");
     }
     output
 }
@@ -111,15 +110,16 @@ fn render_manifest(
         metadata_sha256(metadata)
     );
     for source in sources {
-        output.push_str(&format!(
+        let row = format!(
             "| {} | {} | {} | {} | {} | {} |\n",
             source.path,
             source.kind,
-            source_bundles[&source.path],
+            source_bundles.get(&source.path).map_or("", String::as_str),
             sha256(&source.contents),
             source.contents.len(),
             line_count(&source.contents)
-        ));
+        );
+        output.push_str(&row);
     }
     output
 }

@@ -8,7 +8,7 @@ const LOCK_TIMEOUT: Duration = Duration::from_secs(2);
 const LOCK_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 #[derive(Debug)]
-pub(crate) struct GlobalLock {
+pub struct GlobalLock {
     _directory: File,
     file: File,
 }
@@ -21,8 +21,7 @@ impl GlobalLock {
         let file = path
             .open_existing_read_write()
             .map_err(|_| lock_unavailable())?;
-        path.repair_private_file_mode(&file)
-            .map_err(|_| lock_unavailable())?;
+        ManagedPath::repair_private_file_mode(&file).map_err(|_| lock_unavailable())?;
         acquire_exclusive(&file, started)?;
         Ok(Self {
             _directory: directory,
@@ -47,7 +46,7 @@ fn acquire_exclusive(file: &File, started: Instant) -> Result<(), MemoryError> {
                 if elapsed >= LOCK_TIMEOUT {
                     return Err(MemoryError::conflict("store_lock_timeout", "store"));
                 }
-                std::thread::sleep(LOCK_POLL_INTERVAL.min(LOCK_TIMEOUT - elapsed));
+                std::thread::sleep(LOCK_POLL_INTERVAL.min(LOCK_TIMEOUT.saturating_sub(elapsed)));
             }
             Err(_) => return Err(lock_unavailable()),
         }

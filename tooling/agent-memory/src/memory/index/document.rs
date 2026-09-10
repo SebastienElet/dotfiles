@@ -41,8 +41,8 @@ impl IndexDocument {
             && inventory_digest(inventory).is_ok_and(|digest| digest == self.inventory_digest)
             && self
                 .entries
-                .windows(2)
-                .all(|rows| rows[0].path < rows[1].path)
+                .array_windows::<2>()
+                .all(|[left, right]| left.path < right.path)
             && self.entries.iter().all(|row| row.valid_for(inventory))
             && self.diagnostics.valid()
             && self.entries.len() + self.diagnostics.len() == inventory.len()
@@ -56,7 +56,7 @@ impl IndexDocument {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct IndexRow {
+pub struct IndexRow {
     pub(crate) id: String,
     pub(crate) kind: String,
     status: String,
@@ -139,10 +139,12 @@ fn valid_retrieval_terms(terms: &[String]) -> bool {
 }
 
 fn valid_statement_tokens(tokens: &[String]) -> bool {
-    tokens.windows(2).all(|tokens| tokens[0] < tokens[1])
+    tokens
+        .array_windows::<2>()
+        .all(|[left, right]| left < right)
         && tokens.iter().all(|token| {
             let normalized = normalized_tokens(token);
-            normalized.len() == 1 && normalized[0] == *token
+            normalized.as_slice() == [token.as_str()]
         })
 }
 

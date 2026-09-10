@@ -11,7 +11,7 @@ pub enum ColorMode {
 impl ColorMode {
     pub(super) fn enabled(self, stdout_is_terminal: bool, no_color: Option<&OsStr>) -> bool {
         match self {
-            Self::Auto => stdout_is_terminal && no_color.is_none_or(|value| value.is_empty()),
+            Self::Auto => stdout_is_terminal && no_color.is_none_or(std::ffi::OsStr::is_empty),
             Self::Always => true,
             Self::Never => false,
         }
@@ -24,7 +24,7 @@ pub(super) struct Colorizer {
 }
 
 impl Colorizer {
-    pub(super) fn new(enabled: bool) -> Self {
+    pub(super) const fn new(enabled: bool) -> Self {
         Self { enabled }
     }
 

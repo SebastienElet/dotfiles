@@ -39,6 +39,8 @@ impl Display for ExportError {
 
 impl std::error::Error for ExportError {}
 
+/// # Errors
+/// Returns errors reading or validating export sources, detecting drift in check mode, or publishing the snapshot.
 pub fn run(roots: &Roots, check: bool) -> Result<(), ExportError> {
     let output = roots.repository().join(EXPORT_DIRECTORY);
     let metadata = if check {
