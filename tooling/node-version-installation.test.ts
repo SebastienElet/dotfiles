@@ -28,7 +28,7 @@ describe("Node upgrade", () => {
     expect(result.finalPackageJson).toEqual({ volta: { node: "24.18.1" } });
   });
 
-  test("fails closed when the pin validator cannot run", async () => {
+  test("fails before any update when the Bun orchestrator cannot run", async () => {
     const result = await runUpgrade({
       includeBun: false,
       pinnedPackage: { volta: { node: "24.19.0" } },
@@ -36,9 +36,7 @@ describe("Node upgrade", () => {
 
     expect(result.status).toBe(1);
     expect(result.calls).toBe("");
-    expect(result.output).toContain(
-      "bun not found, unable to validate the Node.js pin",
-    );
+    expect(result.output).toContain("bun not found, unable to run upgrade");
   });
 
   test("does not require repository dependencies to validate the pin", async () => {
