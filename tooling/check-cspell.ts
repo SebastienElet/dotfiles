@@ -1,5 +1,6 @@
 import { checkCommand, reportCheckFailure } from "./check-command.ts";
 import { mkdtempSync, rmSync } from "node:fs";
+import { requiredFiles, skillMarkdownPaths } from "./skill-markdown-paths.ts";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { z } from "zod";
@@ -17,8 +18,40 @@ function runCSpell(
   );
 }
 
+function verifyDictionary(
+  config: string,
+  env: Readonly<NodeJS.ProcessEnv>,
+): void {
+  const trace = runCSpell(
+    [
+      "trace",
+      "--config",
+      config,
+      "--dictionary-path",
+      "full",
+      "--all",
+      "rclone",
+    ],
+    env,
+  );
+  process.stdout.write(trace.stdout);
+  process.stderr.write(trace.stderr);
+  if (
+    !trace.stdout
+      .toString()
+      .includes(join(z.string().parse(env.HOME), ".config/cspell/user.txt"))
+  ) {
+    throw new Error(
+      "CSpell trace did not resolve the deployed user dictionary",
+    );
+  }
+}
+
 function main(): void {
-  const files = filesSchema.parse(process.argv.slice(argumentOffset));
+  const files = requiredFiles(
+    filesSchema.parse(process.argv.slice(argumentOffset)),
+  );
+  const skills = skillMarkdownPaths();
   const originalHome = z.string().min(1).parse(process.env.HOME);
   const home = mkdtempSync(join(tmpdir(), "cspell-check-"));
   const env = {
@@ -33,30 +66,15 @@ function main(): void {
       ["moon", "exec", "--quiet", "--ignore-ci-checks", "home:cspell-config"],
       { env },
     );
-    const trace = runCSpell(
-      [
-        "trace",
-        "--config",
-        config,
-        "--dictionary-path",
-        "full",
-        "--all",
-        "rclone",
-      ],
-      env,
-    );
-    process.stdout.write(trace.stdout);
-    process.stderr.write(trace.stderr);
-    if (
-      !trace.stdout.toString().includes(join(home, ".config/cspell/user.txt"))
-    ) {
-      throw new Error(
-        "CSpell trace did not resolve the deployed user dictionary",
-      );
+    verifyDictionary(config, env);
+    for (const selection of [
+      ["--file", ...files],
+      ["--force-check", "--file", ...skills],
+    ]) {
+      const lint = runCSpell(["lint", "--config", config, ...selection], env);
+      process.stdout.write(lint.stdout);
+      process.stderr.write(lint.stderr);
     }
-    const lint = runCSpell(["lint", "--config", config, ...files], env);
-    process.stdout.write(lint.stdout);
-    process.stderr.write(lint.stderr);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
