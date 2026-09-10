@@ -80,6 +80,13 @@ async function createUpgradeFakes(
   const moonBin = join(root, "home", ".moon/bin");
   await mkdir(bin, { recursive: true });
   await mkdir(moonBin, { recursive: true });
+  for (const command of ["bash", "dirname", "cp"]) {
+    const executable = Bun.which(command);
+    if (executable === null) {
+      throw new Error(`${command} missing from test environment`);
+    }
+    await symlink(executable, join(bin, command));
+  }
   for (const command of ["brew", "mas", "npm"]) {
     await writeExecutable(join(bin, command), "exit 0");
   }
@@ -120,7 +127,7 @@ async function runUpgrade(scenario: UpgradeScenario): Promise<CommandResult> {
   const result = await run([join(repositoryRoot, "tooling/upgrade")], {
     FAIL_VOLTA_COMMAND: scenario.failVoltaCommand ?? "",
     HOME: home,
-    PATH: `${bin}:/usr/bin:/bin`,
+    PATH: bin,
     PINNED_PACKAGE: pinnedPackagePath,
     VOLTA_LOG: voltaLog,
   });

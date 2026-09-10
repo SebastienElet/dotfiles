@@ -106,7 +106,7 @@ tasks:
       - "@group(toolingSources)"
       - "@group(rootToolchain)"
   upgrade-test:
-    command: tooling/upgrade-test
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/upgrade.test.ts tooling/upgrade-git.test.ts tooling/upgrade-node.test.ts tooling/node-version-installation.test.ts
     deps:
       - repository:dependencies
     toolchains: bun
@@ -116,6 +116,19 @@ tasks:
     inputs:
       - "@group(toolingSources)"
       - "@group(rootToolchain)"
+  upgrade-neovim-test:
+    command: bun --config=/dev/null --no-env-file test --timeout 30000 ./tooling/upgrade-neovim.integration.ts
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+    inputs:
+      - "@group(toolingSources)"
+      - "@group(rootToolchain)"
+      - /home/.config/nvim/upgrade.lua
+      - /home/.config/nvim/lazy-lock.json
   installer-test:
     command: bun --config=/dev/null --no-env-file test tooling/install.test.ts
     deps:
