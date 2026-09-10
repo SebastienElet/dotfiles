@@ -52,7 +52,9 @@ function discoverShell(): readonly string[] {
     ...trackedPaths(["grep", "--cached", ...grep.slice(1)]),
   ];
   const shebang = [...new Set(candidates)].filter((path) =>
-    /^#!.*(?:bash|sh)/u.test(readFileSync(path, "utf8").split("\n", 1)[0] ?? ""),
+    /^#!.*(?:bash|sh)/u.test(
+      readFileSync(path, "utf8").split("\n", 1)[0] ?? "",
+    ),
   );
   const extension = trackedPaths(["ls-files", "-z", "--", "*.sh"]);
   requireCanary(shebang, "tooling/upgrade");
