@@ -55,6 +55,7 @@ tasks:
     toolchains: system
     options:
       cache: false
+      interactive: true
       mutex: homebrew
       os: macos
       runInCI: false
