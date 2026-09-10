@@ -198,7 +198,6 @@ test("a destination appearing during extraction is preserved", async () => {
         );
       },
     }),
-    /appeared/u,
   );
   expect(await readFile(join(directory, "Lumen.app/application"), "utf8")).toBe(
     "concurrent app",
