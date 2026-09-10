@@ -5,7 +5,7 @@ import {
   gateFixture,
   runGate,
 } from "./gate-test-support.ts";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 afterEach(clearGateFixtures);
@@ -13,6 +13,12 @@ const failureStatus = 31;
 
 function fixture(): ReturnType<typeof gateFixture> {
   const result = gateFixture();
+  writeFileSync(join(result.root, "home/cspell.json"), "{}\n");
+  executable(
+    result.bin,
+    "git",
+    String.raw`printf "harness/skills/example/SKILL.md\0"`,
+  );
   executable(result.bin, "bun", 'shift 4; exec cspell "$@"');
   executable(
     result.bin,
@@ -72,3 +78,16 @@ test("propagates a lint failure after resolving the dictionary", () => {
   expect(result.exitCode).toBe(failureStatus);
   expect(result.stderr.toString()).toContain("rejected");
 });
+
+test.each(["exit 17", "exit 0", String.raw`printf 'invalid'`])(
+  "refuses unavailable or malformed Git discovery: %s",
+  (body) => {
+    const context = fixture();
+    executable(context.bin, "git", body);
+    const result = runGate("check-cspell.ts", context, ["home/cspell.json"]);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr.toString()).toContain(
+      body === "exit 17" ? "git" : "Git",
+    );
+  },
+);
