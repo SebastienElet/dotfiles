@@ -35,6 +35,7 @@ minimal: bootstrap
 optional: minimal
 	@$(MAKE) --no-print-directory bundle-optional </dev/null
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:anarlog
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:minutes </dev/null
 	@$(MAKE) --no-print-directory optional-artifacts </dev/null
 
 .PHONY: smoke-minimal
