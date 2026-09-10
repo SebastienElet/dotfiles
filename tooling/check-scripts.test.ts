@@ -45,8 +45,12 @@ function index(root: string): void {
   expect(Bun.spawnSync(["git", "add", "."], { cwd: root }).exitCode).toBe(0);
 }
 
-function run(root: string, gate = "shell"): Bun.SyncSubprocess<"pipe", "pipe"> {
-  return Bun.spawnSync([process.execPath, entrypoint, gate], {
+function run(
+  root: string,
+  gate = "shell",
+  arguments_: readonly string[] = [],
+): Bun.SyncSubprocess<"pipe", "pipe"> {
+  return Bun.spawnSync([process.execPath, entrypoint, gate, ...arguments_], {
     cwd: root,
     env: {
       ...process.env,
@@ -58,6 +62,118 @@ function run(root: string, gate = "shell"): Bun.SyncSubprocess<"pipe", "pipe"> {
 test("accepts tracked scripts when their checker succeeds", () => {
   expect(run(fixture()).exitCode).toBe(0);
 });
+
+test.each([
+  { arguments: [] },
+  { arguments: ["tooling/check-scripts.ts", "--", "../outside.sh"] },
+  { arguments: ["tooling/check-scripts.ts", "--", ""] },
+])(
+  "refuses malformed Shell selection arguments: %j",
+  ({ arguments: arguments_ }) => {
+    expect(run(fixture(), "shell-ci", arguments_).exitCode).not.toBe(0);
+  },
+);
+
+test("does not prepare or invoke ShellCheck for an unrelated document", () => {
+  const root = fixture();
+  writeFileSync(
+    join(root, "tooling/notes.md"),
+    "Documentation\n\n```bash\n#!/bin/bash\ntrue\n```\n",
+  );
+  index(root);
+  rmSync(join(root, "bin/shellcheck"));
+  const result = run(root, "shell-ci", [
+    "tooling/check-scripts.ts",
+    "--",
+    "tooling/notes.md",
+  ]);
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout.toString()).toContain("unaffected");
+});
+
+test.each(["tooling/new.md", "tooling/new", "new name.sh"])(
+  "selects newly indexed Shell input %s before delegating preparation",
+  (path) => {
+    const root = fixture();
+    writeFileSync(join(root, path), "#!/bin/bash\ntrue\n");
+    index(root);
+    const moon = join(root, "bin/moon");
+    writeFileSync(moon, "#!/bin/sh\necho selected-shell >&2\nexit 31\n");
+    chmodSync(moon, executableMode);
+    const result = run(root, "shell-ci", [
+      "tooling/check-scripts.ts",
+      "--",
+      path,
+    ]);
+    expect(result.exitCode).toBe(failureStatus);
+    expect(result.stderr.toString()).toContain("selected-shell");
+  },
+);
+
+test("refuses a missing indexed extensionless script before selection", () => {
+  const root = fixture();
+  const path = "tooling/still-expected";
+  writeFileSync(join(root, path), "#!/bin/bash\ntrue\n");
+  index(root);
+  rmSync(join(root, path));
+  const result = run(root, "shell-ci", [
+    "tooling/check-scripts.ts",
+    "--",
+    "tooling/notes.md",
+  ]);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr.toString()).toContain(path);
+});
+
+test.each([
+  { changed: ["tooling/check-scripts.ts"] },
+  { changed: ["."] },
+  { changed: [] },
+])(
+  "checks Shell when its implementation or complete selection changes: %j",
+  ({ changed }) => {
+    const root = fixture();
+    const moon = join(root, "bin/moon");
+    writeFileSync(moon, "#!/bin/sh\necho selected-shell >&2\nexit 31\n");
+    chmodSync(moon, executableMode);
+    const result = run(root, "shell-ci", [
+      "tooling/check-scripts.ts",
+      "--",
+      ...changed,
+    ]);
+    expect(result.exitCode).toBe(failureStatus);
+    expect(result.stderr.toString()).toContain("selected-shell");
+  },
+);
+
+test("does not mistake failed discovery for an unrelated Shell change", () => {
+  const root = fixture();
+  rmSync(join(root, ".git"), { recursive: true });
+  const result = run(root, "shell-ci", [
+    "tooling/check-scripts.ts",
+    "--",
+    "tooling/notes.md",
+  ]);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr.toString()).toContain("discovery failed");
+});
+
+test.each(["./tooling/upgrade", "absolute"])(
+  "normalizes a changed Shell path before selection: %s",
+  (path) => {
+    const root = fixture();
+    const moon = join(root, "bin/moon");
+    writeFileSync(moon, "#!/bin/sh\necho selected-shell >&2\nexit 31\n");
+    chmodSync(moon, executableMode);
+    const changed = path === "absolute" ? join(root, "tooling/upgrade") : path;
+    const result = run(root, "shell-ci", [
+      "tooling/check-scripts.ts",
+      "--",
+      changed,
+    ]);
+    expect(result.exitCode).toBe(failureStatus);
+  },
+);
 
 test.each(["tooling/broken", "broken name.sh"])(
   "checks newly indexed %s and propagates tool failure",

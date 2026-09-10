@@ -125,7 +125,7 @@ tasks:
       - /.prototools
       - /.moon/toolchains.yml
       - /.moon/workspace.yml
-      - /.github/workflows/lint.yml
+      - /.github/workflows/check-shell.yml
   upgrade-neovim-test:
     command: bun --config=/dev/null --no-env-file test --timeout 30000 ./tooling/upgrade-neovim.integration.ts
     deps:
@@ -154,7 +154,7 @@ tasks:
       - /.prototools
       - /.moon/toolchains.yml
       - /.moon/workspace.yml
-      - /.github/workflows/lint.yml
+      - /.github/workflows/check-shell.yml
   docker-smoke:
     command: bun --config=/dev/null --no-env-file test tooling/scrapling-mcp.test.ts
     deps:

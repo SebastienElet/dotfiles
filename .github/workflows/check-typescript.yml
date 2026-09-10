@@ -16,5 +16,5 @@ jobs:
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run:
           moon ci --downstream none repository:typescript-lint repository:typescript-typecheck
-          repository:typescript-format-check repository:prettier-check
+          repository:typescript-format-check
           repository:lua-lint
