@@ -1,5 +1,9 @@
 # Linear guard inspection — 2026-09-09
 
+Follow-up: [the 2026-09-10 MCP experiment](linear-guard-observation-2026-09-10.md) reached the official
+server directly with existing authentication and executed both cases; this earlier record covers
+only the initial CLI/GraphQL inspection, not exhaustion of available transports.
+
 ## Result and scope
 
 Follow-up to [dotfiles #245](https://github.com/SebastienElet/dotfiles/issues/245), whose body and
@@ -241,9 +245,3 @@ but no live rejection observation exists. The independent agent answered that th
 permits the write because it relies on the connector documentation. This is a skill-reading
 result, not a Linear experiment. The replacement requires documented write-boundary semantics
 and the two live observations before enabling this state write.
-
-Baseline doctor: frontmatter, required sections, resource links, shell-placeholder safety, and
-README membership passed manual inspection; optional evals absent. `skills-ref` was not installed,
-so standard validator execution was unavailable. Project adapters point to `../.agents/skills`;
-user projections point to the main checkout's canonical skill, not this unmerged worktree.
-No installation or projection change is part of this PR.

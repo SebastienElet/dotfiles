@@ -27,6 +27,13 @@ Select a transport at runtime. The business workflow remains in its composing sk
 
 - Inspect the connector's tools in the current session; configuration or marketplace availability
   alone does not prove activation or authentication.
+- If no integrated connector tool is exposed, the [official MCP authentication
+  documentation](https://linear.app/docs/mcp) permits an existing API key or OAuth token in the
+  bearer header to `https://mcp.linear.app/mcp`. Inspect that server's live `tools/list` before
+  declaring MCP unavailable; never expose or persist the credential. The
+  [2026-09-10 experiment](linear-guard-observation-2026-09-10.md) reached it this way, but found that
+  `save_issue` rejects identity replacements even with a unique anchor: state writes using that
+  guard remain disabled. A valid schema and a whole-save contract do not override this observation.
 - Retrieve issue data and relations with structured fields. Resolve attachment URLs without
   inferring their meaning from prose.
 - After a state or link mutation, retrieve the issue independently and compare the stored value.

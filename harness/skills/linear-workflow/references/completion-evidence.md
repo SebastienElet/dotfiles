@@ -167,12 +167,19 @@ writing.
 A workflow state decided from checkboxes must not be written from a classification that has since
 gone stale. A pre-write read only narrows that window; a valid payload does not close it.
 
-**Current evidence:** the [2026-09-09 transport inspection](linear-guard-observation-2026-09-09.md)
-found no executable anchored state guard on the available CLI/GraphQL path. Neither requested
-mutation case was run. The previous whole-save atomicity claim was attributed to a connector
-contract by this skill; its original contract and live schema were not available for verification.
-It is reported documentation, not observed behavior or a currently verified provider guarantee.
-Until a conditional mechanism is verified, classify and report; do not write the state.
+**Current evidence:** the [2026-09-10 live MCP experiment](linear-guard-observation-2026-09-10.md)
+executed both combined saves. Linear MCP 1.0.0 rejected both because `old_string` and `new_string`
+were identical, including the unique-anchor case. Independent reads found no state, description,
+`updatedAt`, or history change. This identity replacement is therefore not an executable state
+guard on the observed transport: do not use it for workflow state writes. The earlier
+[CLI/GraphQL inspection](linear-guard-observation-2026-09-09.md) did not exhaust available access;
+the official MCP was subsequently reached using existing authentication.
+
+The live tool contract documents whole-save abort, but the experiment establishes only the two
+observed identity-replacement rejections. It establishes neither rejection caused by non-uniqueness
+nor a successful identity-guarded transition, and does not establish isolation against concurrent
+writers. Until an alternative conditional mechanism is verified, classify and report; do not write
+the state. Do not replace the identity operation with a description-changing workaround.
 
 1. Before enabling a transport for this guard, inspect its current schema and provider contract.
    Require one save combining state and anchored identity replacement, with a documented condition
@@ -192,28 +199,12 @@ Until a conditional mechanism is verified, classify and report; do not write the
    mechanism; without one, do not write state. Never treat a rejected identity replacement, error,
    timeout, or null result alone as proof of rollback: independently read state and description,
    report partial or unknown outcomes, and stop instead of retrying the previous decision.
-4. Only after those prerequisites hold, send state and guard in one save. For a connector whose
-   inspected schema supports this shape, the candidate is:
-
-   ```json
-   {
-     "id": "DISPOSABLE-ISSUE-ID",
-     "state": "RESOLVED-STATE-NAME",
-     "patch": [
-       {
-         "op": "replace",
-         "old_string": "- [X] Scenario: import rejects a malformed row",
-         "new_string": "- [X] Scenario: import rejects a malformed row"
-       }
-     ]
-   }
-   ```
-
-   This is an illustrative payload, not a request executed in the linked inspection. Never use a
-   state type or `replace_all`. Use one contiguous anchor covering the classified region, including
-   newlines, widened until unique. When classification rests on absence of an evidence section,
-   use the whole current description; an empty description leaves the guard uncovered.
-
+4. The identity-replacement candidate tested in the linked experiment is rejected on the observed
+   transport; it is not an enabled recipe. If a future transport changes that behavior, verify its
+   contract and both cases again before considering it. Never use a state type or `replace_all`.
+   The intended anchor must cover one contiguous classified region, including newlines, widened
+   until unique. When classification rests on absence of an evidence section, the entire current
+   description must be covered; an empty description leaves the guard uncovered.
 5. An identity replacement changes no intended box, but travels the description-mutation path;
    do not promise a no-op for timestamps or activity. After every save, independently re-read state
    and description. On rejection, confirm the stored outcome before classifying anew; never replay
