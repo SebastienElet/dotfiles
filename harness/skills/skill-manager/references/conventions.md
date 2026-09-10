@@ -66,6 +66,17 @@ must permit only explicit `$<slug>` or `/<slug>` invocation, and every true acti
 use one of those two forms. This exception intentionally targets the three supported hosts rather
 than arbitrary Agent Skills implementations; no other non-standard top-level field is allowed.
 
+### Explicit invocation with composition
+
+When a skill must also be invoked by another authorized workflow, keep model invocation available:
+omit `disable-model-invocation` and any `policy.allow_implicit_invocation: false` setting. Name the
+allowed caller and delegated scope in the description and Usage; state phase and side-effect
+limits in Usage. This is an instruction-level selection contract,
+not a host-enforced manual-only guarantee; prose cannot override a host's invocation refusal.
+Keep direct-invocation positives, add composition positives and unrelated-workflow negatives, and
+retain standalone natural-language negatives. For `pr-verdict`, only an authorized `pr-fix` may
+compose it; that permission does not authorize publication or ticket creation.
+
 ### Description format
 
 Descriptions determine discovery. Put the distinguishing case first and use this local pattern:
@@ -85,6 +96,9 @@ For a manual-only skill, replace the implicit-trigger pattern with:
 <What it handles>. Use only when the user explicitly invokes `$<slug>` or `/<slug>`; never select
 it implicitly from <natural-language cases>.
 ```
+
+For explicit invocation with composition, also name the authorized caller in `Use only when` and
+retain the exclusion of standalone natural-language requests.
 
 ## 3. Canonical collections and adapters
 

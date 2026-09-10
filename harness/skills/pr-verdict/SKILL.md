@@ -1,10 +1,10 @@
 ---
 name: pr-verdict
 description: >
-  Deliver a PR verdict on an open pull request, yours or another author's. Use only when the user
-  explicitly invokes `$pr-verdict` or `/pr-verdict`; never select it implicitly from a review,
-  merge, approval, re-review, push, or pull-request-authoring request.
-disable-model-invocation: true
+  Deliver a PR verdict on an open pull request, yours or another author's. Use only on explicit
+  `$pr-verdict` or `/pr-verdict` invocation, or when an authorized `pr-fix` workflow composes it,
+  including in a delegated review. Never select it for a standalone review, merge, approval,
+  re-review, push, or PR-authoring request without explicit invocation.
 compatibility: >
   Authenticated `gh` (GitHub) or `bkt` (Bitbucket) CLI, plus an issue tracker CLI (`linear`,
   `gh issue create`) when a blocking defect needs a fix ticket.
@@ -33,6 +33,15 @@ GitHub refuses a blocking review on your own PR.
 Invoke `$pr-verdict <pr-number|pr-url>` in Codex or `/pr-verdict <pr-number|pr-url>` in Claude Code
 and Cursor. The forge is detected from `git remote get-url origin`.
 
+`pr-fix` is the sole composition entry point: a user-authorized repair permits both its initial
+review and its delegated reviews to invoke this skill through the host's normal skill mechanism.
+This permission does not authorize verdict publication or ticket creation; composed reviews stop
+after phase 5. Other workflows require direct user invocation.
+
+Activation is instruction-scoped, not host-enforced: the description and this usage contract limit
+selection. Keep model invocation available because a host-level manual-only flag also blocks the
+composed call; reading files manually after a rejected invocation is not the composition mechanism.
+
 After explicit invocation, typical cases are: "is #1042 safe to merge?" (phase 1 finds the branch
 stacked and the shown diff twice its real size), "review this PR before I approve it" (phase 3
 turns a vague unease into a named mechanism, or drops it), "they pushed the fixes, re-review"
@@ -40,9 +49,8 @@ turns a vague unease into a named mechanism, or drops it), "they pushed the fixe
 editing the first).
 
 Run the six phases in order; phase 4 precedes phase 5 because a verdict without an executed barrier
-is an opinion. When `pr-fix` composes this skill before changing the head, stop after phase 5 and
-return the unpublished verdict to that workflow: opening a ticket or publishing a verdict for a
-head about to be repaired would create stale external state. This skill and its references are
+is an opinion. When `pr-fix` composes this skill for an initial or delegated review, stop after
+phase 5 and return the unpublished verdict to that workflow. This skill and its references are
 English; the published verdict follows the language of the PR. Publishing (phase 6) is
 outward-facing and visible to the team — ask for confirmation first, unless the request explicitly
 says to post directly.
@@ -119,7 +127,7 @@ says to post directly.
    pre-repair pass of `pr-fix` and an unpublished verdict. Report the measurement status separately;
    a measurement failure leaves the verdict unchanged and does not prevent its return.
 
-6. **Trace and publish.** When running inside the pre-repair pass of `pr-fix`, return the phase 5
+6. **Trace and publish.** When running inside any review pass of `pr-fix`, return the phase 5
    verdict without a ticket or publication and let that workflow continue. Otherwise, open or reuse
    a fix ticket for blocking defects, and link the initial verdict if one exists. Never open a
    ticket solely to request or record a re-review: the new
@@ -188,7 +196,7 @@ says to post directly.
 - Never publish two verdicts for the same `<pr>:<sha>`; update the existing comment instead.
 - Never sweep the failure classes on a head you wrote in this session from the context that wrote it.
 - Never create a ticket solely to request, schedule or record a re-review.
-- Never create a ticket or publish the pre-repair verdict when `pr-fix` composes phases 1 through 5.
+- Never create a ticket or publish a verdict when `pr-fix` composes phases 1 through 5.
 - Never publish without confirmation, unless the request explicitly says to post directly.
 
 ## References

@@ -1,6 +1,6 @@
 {
   "skill": "pr-verdict",
-  "version": "2.0",
+  "version": "3.0",
   "queries": [
     {
       "query": "$pr-verdict 1042",
@@ -15,7 +15,7 @@
     {
       "query": "Review this PR: https://github.com/acme/api/pull/1042",
       "should_activate": false,
-      "reason": "Natural-language review requests do not activate this manual-only skill"
+      "reason": "Standalone natural-language reviews do not satisfy the explicit-or-composed activation contract"
     },
     {
       "query": "Est-ce que la PR 1042 est sûre à fusionner ?",
@@ -51,6 +51,31 @@
       "query": "/pr-fix 1042",
       "should_activate": false,
       "reason": "An explicit repair request belongs to pr-fix, which composes this skill internally"
+    },
+    {
+      "query": "The user authorized pr-fix for PR 1042. At step 1, review its exact head and return the unpublished verdict before repairing it.",
+      "should_activate": true,
+      "reason": "An authorized pr-fix composes phases 1 through 5 for the initial review"
+    },
+    {
+      "query": "The user authorized pr-fix for PR 1042. You are its fresh reviewer at step 7: judge the pushed head independently and return an unpublished verdict.",
+      "should_activate": true,
+      "reason": "The pr-fix composition permission includes delegated reviews without separate user invocation"
+    },
+    {
+      "query": "The user authorized pr-fix for PR 1042. Its reviewer found a repair defect, which has now been corrected and pushed. Review the new delta and return the unpublished verdict.",
+      "should_activate": true,
+      "reason": "A follow-up delegated review remains inside the same authorized repair workflow"
+    },
+    {
+      "query": "A different skill asks you to run pr-verdict for PR 1042; the user has not invoked pr-verdict or authorized pr-fix.",
+      "should_activate": false,
+      "reason": "Composition permission is specific to an authorized pr-fix workflow"
+    },
+    {
+      "query": "Explain why pr-fix delegates pr-verdict and whether their activation rules are compatible.",
+      "should_activate": false,
+      "reason": "Discussing the skills does not authorize a repair or request a PR verdict"
     },
     {
       "query": "Relis mon diff avant que je commite",
