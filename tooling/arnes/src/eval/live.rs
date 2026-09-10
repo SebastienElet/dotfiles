@@ -63,8 +63,8 @@ impl Codex {
                 timeout: Duration::from_secs(5),
             },
         );
-        if version.error.is_some() {
-            return Err("Cannot identify Codex version".into());
+        if let Some(detail) = version.failure_detail {
+            return Err(format!("Cannot identify Codex version: {detail}"));
         }
         Ok(Self {
             command,
@@ -205,7 +205,7 @@ fn find_codex() -> Result<PathBuf, String> {
                 metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
             })
         })
-        .and_then(|candidate| fs::canonicalize(candidate).ok())
+        .and_then(|candidate| std::path::absolute(candidate).ok())
         .ok_or_else(|| "Codex CLI is not installed".into())
 }
 

@@ -32,6 +32,7 @@ pub struct CaptureOptions<'a> {
 pub struct CaptureResult {
     pub output: String,
     pub error: Option<ExecutionError>,
+    pub failure_detail: Option<String>,
 }
 
 enum PipeEvent {
@@ -53,11 +54,15 @@ pub fn capture(command: &Path, args: &[String], options: CaptureOptions<'_>) -> 
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn();
-    let Ok(mut child) = child else {
-        return CaptureResult {
-            output: String::new(),
-            error: Some(ExecutionError::AgentFailed),
-        };
+    let mut child = match child {
+        Ok(child) => child,
+        Err(error) => {
+            return CaptureResult {
+                output: String::new(),
+                error: Some(ExecutionError::AgentFailed),
+                failure_detail: Some(format!("could not start process: {}", error.kind())),
+            };
+        }
     };
     let (Some(stdin), Some(stdout)) = (child.stdin.take(), child.stdout.take()) else {
         let _ = stop_group(&mut child);
@@ -65,6 +70,7 @@ pub fn capture(command: &Path, args: &[String], options: CaptureOptions<'_>) -> 
         return CaptureResult {
             output: String::new(),
             error: Some(ExecutionError::AgentFailed),
+            failure_detail: Some("process pipes unavailable".into()),
         };
     };
     let (sender, receiver) = mpsc::sync_channel(4);
@@ -82,6 +88,9 @@ pub fn capture(command: &Path, args: &[String], options: CaptureOptions<'_>) -> 
         for worker in [input, output] {
             if !matches!(worker.map(std::thread::ScopedJoinHandle::join), Ok(Ok(()))) {
                 result.error.get_or_insert(ExecutionError::AgentFailed);
+                result
+                    .failure_detail
+                    .get_or_insert_with(|| "process I/O worker failed".into());
             }
         }
         result
@@ -137,14 +146,14 @@ fn monitor(child: &mut Child, receiver: &Receiver<PipeEvent>, timeout: Duration)
     let mut failure = None;
     let mut closed = 0;
     let mut exited = false;
-    let mut successful = false;
+    let mut status = None;
     let mut stopped = false;
     while !exited || closed < 2 {
         if !exited {
             match child.try_wait() {
-                Ok(Some(status)) => {
+                Ok(Some(exit_status)) => {
                     exited = true;
-                    successful = status.success();
+                    status = Some(exit_status);
                 }
                 Err(_) => {
                     failure.get_or_insert(ExecutionError::AgentFailed);
@@ -193,9 +202,25 @@ fn monitor(child: &mut Child, receiver: &Receiver<PipeEvent>, timeout: Duration)
         failure.get_or_insert(ExecutionError::ProtocolInvalid);
         String::new()
     });
+    let error = failure.or_else(|| {
+        (!status.is_some_and(|status| status.success())).then_some(ExecutionError::AgentFailed)
+    });
     CaptureResult {
         output,
-        error: failure.or_else(|| (!successful).then_some(ExecutionError::AgentFailed)),
+        error,
+        failure_detail: error.map(|error| failure_detail(error, status)),
+    }
+}
+
+fn failure_detail(error: ExecutionError, status: Option<std::process::ExitStatus>) -> String {
+    match error {
+        ExecutionError::Timeout => "process timed out".into(),
+        ExecutionError::OutputLimit => "process output exceeded the limit".into(),
+        ExecutionError::ProtocolInvalid => "invalid process protocol".into(),
+        ExecutionError::AgentFailed => match status.and_then(|status| status.code()) {
+            Some(code) if code != 0 => format!("process exited with code {code}"),
+            _ => "process terminated or I/O failed".into(),
+        },
     }
 }
 
