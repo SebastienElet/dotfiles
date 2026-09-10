@@ -184,3 +184,20 @@ test("reports indexed Markdown omitted by a native formatter exclusion", () => {
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout.toString() + result.stderr.toString()).toContain(path);
 });
+
+test.each(["literal", "absolute"])(
+  "checks an existing %s path before interpreting glob syntax",
+  (kind) => {
+    const context = fixture();
+    const path = "existing [resource].md";
+    add(context, path, "# Valid document\n");
+    const selected = kind === "absolute" ? join(context.root, path) : path;
+    expect(spelling(context, [selected]).exitCode).toBe(0);
+    writeFileSync(join(context.root, path), "zzqxmisspelledword\n");
+    const result = spelling(context, [selected]);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout.toString() + result.stderr.toString()).toContain(
+      "Unknown word",
+    );
+  },
+);

@@ -1,4 +1,5 @@
 import { checkCommand } from "./check-command.ts";
+import { existsSync } from "node:fs";
 import { z } from "zod";
 
 const pathsSchema = z.array(z.string().min(1).endsWith(".md")).min(1);
@@ -23,6 +24,9 @@ function skillMarkdownPaths(): readonly string[] {
 
 function requiredFiles(patterns: readonly string[]): readonly string[] {
   return patterns.flatMap((pattern) => {
+    if (existsSync(pattern)) {
+      return [pattern];
+    }
     const paths = [...new Bun.Glob(pattern).scanSync({ dot: true })];
     if (paths.length === 0) {
       throw new Error(`No files found for required selection: ${pattern}`);
