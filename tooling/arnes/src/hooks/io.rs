@@ -22,7 +22,7 @@ struct Snapshot {
     bytes: Vec<u8>,
     device: u64,
     inode: u64,
-    mode: u16,
+    mode: Mode,
 }
 
 pub struct ConfigFile {
@@ -71,7 +71,10 @@ impl ConfigFile {
             return Err(HooksError::new("hook configuration is oversized"));
         }
         let temporary = temporary_name(&self.name);
-        let mode = self.original.as_ref().map_or(0o600, |value| value.mode);
+        let mode = self
+            .original
+            .as_ref()
+            .map_or(Mode::from_raw_mode(0o600), |value| value.mode);
         let expected = match write_temporary(&self.directory, &temporary, bytes, mode) {
             Ok(expected) => expected,
             Err(error) => {
@@ -166,13 +169,13 @@ fn write_temporary(
     directory: &File,
     name: &str,
     bytes: &[u8],
-    mode: u16,
+    mode: Mode,
 ) -> Result<Snapshot, HooksError> {
     let flags = OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let file =
         rustix::fs::openat(directory, name, flags, Mode::from_raw_mode(0o600)).map_err(errno)?;
     let mut file = File::from(file);
-    rustix::fs::fchmod(&file, Mode::from_raw_mode(mode as _)).map_err(errno)?;
+    rustix::fs::fchmod(&file, mode).map_err(errno)?;
     file.write_all(bytes)?;
     file.sync_all()?;
     let metadata = validate_regular(&file)?;
@@ -184,7 +187,7 @@ fn snapshot(bytes: Vec<u8>, metadata: &std::fs::Metadata) -> Snapshot {
         bytes,
         device: metadata.dev(),
         inode: metadata.ino(),
-        mode: (metadata.mode() & 0o777) as u16,
+        mode: Mode::from_raw_mode((metadata.mode() & 0o777) as _),
     }
 }
 
