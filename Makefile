@@ -50,7 +50,11 @@ bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
 
 .PHONY: optional-artifacts
-optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3
+optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3 lumen
+
+.PHONY: lumen
+lumen:
+	@bun "${DOTFILES_PATH}/tooling/install-lumen.ts" "${APP_BIN}"
 
 .PHONY: docker
 docker:
