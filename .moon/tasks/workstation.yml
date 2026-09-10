@@ -62,6 +62,26 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask anarlog
+  minutes:
+    description: Install the optional Minutes meeting recorder
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --cask --versions silverstein/tap/minutes
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install --cask silverstein/tap/minutes
   rust:
     description: Install Rust and Cargo with Homebrew
     deps:
