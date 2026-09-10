@@ -2,6 +2,46 @@ inheritedBy:
   tags:
     - repository
 fileGroups:
+  shellSources:
+    - tooling/**/*
+    - install.sh
+    - "**/*.sh"
+  shellSupport:
+    - moon.yml
+    - tooling/check-scripts.ts
+    - package.json
+    - bun.lock
+    - .prototools
+    - .moon/toolchains.yml
+    - .moon/workspace.yml
+    - .moon/tasks/checks.yml
+    - .moon/tasks/packages.yml
+    - .moon/tasks/workstation.yml
+    - .github/workflows/check-shell.yml
+  skillMarkdown:
+    - "harness/skills/**/*.md"
+    - ".agents/skills/**/*.md"
+  cspellFiles:
+    - "home/cspell.json"
+    - "home/.config/cspell/user.txt"
+    - "harness/AGENTS.md"
+    - "harness/skills/design-claim-audit/evals/trigger-queries.json"
+    - "home/.codex/agents/design-claim-auditor.toml"
+    - "harness/skills/issue-creation/evals/trigger-queries.json"
+    - "harness/skills/memory-governance/evals/trigger-queries.json"
+    - "harness/skills/obsidian-retrieval/evals/trigger-queries.json"
+    - "harness/skills/pr-feedback/evals/trigger-queries.json"
+    - "harness/skills/requirements-clarification/evals/trigger-queries.json"
+    - "docs/requirements-clarification-validation.md"
+    - "tooling/design-claim-audit.test.ts"
+    - "tooling/obsidian-retrieval/contract.ts"
+    - "tooling/obsidian-retrieval/contract.test.ts"
+    - "tooling/obsidian-retrieval/default-corpus-contract.ts"
+    - "tooling/obsidian-retrieval/evaluation-contract.ts"
+    - "tooling/install-hunspell-dictionary*.ts"
+    - "tooling/deployment-*.ts"
+    - ".agents/skills/apple-notes/scripts/*.ts"
+    - "tooling/apple-notes*.ts"
   prettierFiles:
     - "**/*.yml"
     - "**/*.yaml"
@@ -34,21 +74,34 @@ tasks:
     inputs:
       - home/.config/nvim/**/*.lua
       - home/.config/wezterm/wezterm.lua
-      - .github/workflows/lint.yml
+      - .github/workflows/check-lua.yml
       - .github/workflows/check-typescript.yml
     toolchains: system
     deps:
       - luacheck-setup
   shell-lint:
+    options:
+      cache: false
     deps:
       - shellcheck-setup
     inputs:
-      - tooling/**/*
-      - install.sh
-      - "**/*.sh"
+      - "@group(shellSources)"
+      - "@group(shellSupport)"
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       bun tooling/check-scripts.ts shell
+  shell-ci:
+    command: bun tooling/check-scripts.ts shell-ci
+    args:
+      - "@group(shellSupport)"
+      - --
+    inputs:
+      - "@group(shellSources)"
+      - "@group(shellSupport)"
+    options:
+      cache: false
+      affectedFiles: args
+      shell: false
   workflows-lint:
     deps:
       - actionlint-setup
@@ -60,17 +113,25 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/go/bin"
       actionlint
   cspell-check:
-    command: bun tooling/check-cspell.ts home/cspell.json home/.config/cspell/user.txt harness/AGENTS.md harness/skills/design-claim-audit/evals/trigger-queries.json home/.codex/agents/design-claim-auditor.toml harness/skills/issue-creation/evals/trigger-queries.json harness/skills/memory-governance/evals/trigger-queries.json harness/skills/obsidian-retrieval/evals/trigger-queries.json harness/skills/pr-feedback/evals/trigger-queries.json harness/skills/requirements-clarification/evals/trigger-queries.json docs/requirements-clarification-validation.md tooling/design-claim-audit.test.ts tooling/obsidian-retrieval/contract.ts tooling/obsidian-retrieval/contract.test.ts tooling/obsidian-retrieval/default-corpus-contract.ts tooling/obsidian-retrieval/evaluation-contract.ts tooling/install-hunspell-dictionary*.ts tooling/deployment-*.ts .agents/skills/apple-notes/scripts/*.ts tooling/apple-notes*.ts
+    command: bun tooling/check-cspell.ts
+    args:
+      - "@group(cspellFiles)"
+    options:
+      cache: false
+      shell: false
     deps:
       - cspell-setup
     inputs:
-      - home/cspell.json
-      - home/.config/cspell/user.txt
-      - harness/**/*
-      - .agents/skills/**/*
-      - home/.codex/agents/design-claim-auditor.toml
-      - docs/requirements-clarification-validation.md
-      - tooling/**/*.ts
+      - "@group(cspellFiles)"
+      - tooling/check-cspell.ts
+      - tooling/check-command.ts
+      - "@group(skillMarkdown)"
+      - tooling/skill-markdown-paths.ts
+      - home/moon.yml
+      - tooling/deploy-link.ts
+      - package.json
+      - bun.lock
+      - .github/workflows/check-text.yml
   fish-syntax:
     deps:
       - fish-setup

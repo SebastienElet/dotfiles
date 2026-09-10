@@ -1,0 +1,15 @@
+name: Text gates
+on:
+  - push
+  - pull_request
+jobs:
+  cspell:
+    name: Text configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: moon ci --downstream none repository:cspell-check repository:prettier-check
