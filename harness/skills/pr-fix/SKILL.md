@@ -31,7 +31,8 @@ PR source branch, then return a verdict on the pushed head.
 
 Typical cases: "fix the blockers on PR 1042", "review this PR and correct the issues directly", or
 "we can push small review fixes to the contributor's branch". A request only to judge, approve or
-re-review a PR belongs to `pr-verdict` and must not mutate the branch.
+re-review a PR must not mutate the branch; activate `pr-verdict` only if the user explicitly
+invokes it.
 
 ## Steps
 

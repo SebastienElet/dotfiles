@@ -54,7 +54,8 @@ Any other validator failure remains FAIL.
 - `metadata.category` exists and is `dev`, `support`, `product`, or `ops`;
 - the skill appears exactly once under the matching README section;
 - description starts with the distinguishing case, contains concrete `Use when` conditions or the
-  approved manual-only `Use only when` form, and stays below the local 400-character target;
+  explicit-invocation `Use only` form (manual-only or composed), and stays below the local
+  400-character target;
 - a weak but valid description is WARN, not FAIL.
 
 For the manual-only invocation exception, require all of these or report FAIL:
@@ -64,6 +65,15 @@ For the manual-only invocation exception, require all of these or report FAIL:
 - the description requires explicit `$<slug>` or `/<slug>` invocation and rejects implicit use;
 - true eval queries use only `$<slug>` or `/<slug>`; both forms are represented;
 - no always-loaded shared instruction mandates invoking the skill.
+
+For explicit invocation with composition, require:
+
+- model invocation remains available: no `disable-model-invocation: true` or
+  `policy.allow_implicit_invocation: false`;
+- description and Usage agree on the allowed caller and delegated scope; Usage states publication
+  limits;
+- evals cover direct invocation, authorized composition, standalone requests and unrelated callers;
+- the skill describes its selection restriction as instruction-level, not host-enforced.
 
 ### Body structure
 
