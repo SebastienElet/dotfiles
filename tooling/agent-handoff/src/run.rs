@@ -33,7 +33,9 @@ pub fn run_agent_handoff(
     let transcript = fs::read(event.transcript_path)
         .map_err(|_| HandoffError::usage("cannot read transcript"))?;
     let transcript = String::from_utf8_lossy(&transcript);
-    let usage = find_latest_usage(&transcript)?;
+    let Some(usage) = find_latest_usage(&transcript)? else {
+        return Ok(());
+    };
     let threshold = select_threshold(&usage, environment)?;
     if usage.used < threshold {
         return Ok(());

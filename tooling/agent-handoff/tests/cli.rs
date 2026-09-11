@@ -182,6 +182,21 @@ fn invalid_transcripts_do_not_create_a_sentinel() -> TestResult {
 }
 
 #[test]
+fn transcripts_without_usage_records_exit_cleanly_without_a_sentinel() -> TestResult {
+    let fixture = Fixture::new()?;
+    fs::write(
+        &fixture.transcript,
+        b"{\"type\":\"user\",\"isSidechain\":false}\n",
+    )?;
+
+    let output = run_event(&fixture, "no-usage")?;
+
+    assert_clean_success(&output);
+    assert!(!fixture.sentinel("no-usage").exists());
+    Ok(())
+}
+
+#[test]
 fn invalid_thresholds_do_not_create_a_sentinel() -> TestResult {
     let fixture = Fixture::new()?;
     fixture.write_claude_usage(90_000)?;

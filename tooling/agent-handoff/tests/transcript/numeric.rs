@@ -1,6 +1,6 @@
 use super::TestResult;
-use super::{assert_usage_error, claude_usage, codex_usage};
-use agent_handoff::{Agent, Usage, find_latest_usage};
+use super::{assert_usage_error, claude_usage, codex_usage, latest_usage};
+use agent_handoff::{Agent, Usage};
 
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
@@ -17,7 +17,7 @@ fn integral_json_number_representations_match_javascript_safe_integers() -> Test
 
     for (input_tokens, expected) in cases {
         assert_eq!(
-            find_latest_usage(&claude_usage(&format!(r#""input_tokens":{input_tokens}"#)))?.used,
+            latest_usage(&claude_usage(&format!(r#""input_tokens":{input_tokens}"#)))?.used,
             expected
         );
     }
@@ -57,7 +57,7 @@ fn out_of_range_json_numbers_keep_field_diagnostics() {
 #[test]
 fn claude_numeric_fields_enforce_javascript_safe_integer_bounds() -> TestResult {
     assert_eq!(
-        find_latest_usage(&claude_usage(&format!(
+        latest_usage(&claude_usage(&format!(
             r#""input_tokens":{MAX_SAFE_INTEGER}"#
         )))?
         .used,
@@ -119,7 +119,7 @@ fn claude_numeric_fields_enforce_javascript_safe_integer_bounds() -> TestResult 
 #[test]
 fn codex_numeric_fields_enforce_javascript_safe_integer_bounds() -> TestResult {
     assert_eq!(
-        find_latest_usage(&codex_usage(
+        latest_usage(&codex_usage(
             &MAX_SAFE_INTEGER.to_string(),
             &MAX_SAFE_INTEGER.to_string(),
             "0",

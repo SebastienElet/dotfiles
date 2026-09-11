@@ -18,8 +18,8 @@ pub struct Usage {
 }
 
 /// # Errors
-/// Returns a usage error for malformed retained records, invalid token counts, or missing supported usage.
-pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
+/// Returns a usage error for malformed retained records or invalid token counts.
+pub fn find_latest_usage(transcript: &str) -> Result<Option<Usage>, HandoffError> {
     let mut physical_lines: Vec<&str> = transcript.split('\n').collect();
     if physical_lines.last() == Some(&"") {
         physical_lines.pop();
@@ -49,7 +49,7 @@ pub fn find_latest_usage(transcript: &str) -> Result<Usage, HandoffError> {
         }
     }
 
-    latest.ok_or_else(|| HandoffError::usage("no supported usage record in transcript"))
+    Ok(latest)
 }
 
 const fn is_ecmascript_trim_character(character: char) -> bool {
