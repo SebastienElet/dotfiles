@@ -1,7 +1,7 @@
 use super::super::adapters::Policy;
 use super::super::{
     HooksError, handoff_aliases, handoff_path, measurement_command, measurement_path,
-    memory_command, memory_path,
+    memory_command, memory_path, output_discipline_command,
 };
 use super::{drift, error};
 use crate::Roots;
@@ -30,6 +30,17 @@ pub fn expectation(
     kind: HookKind,
 ) -> Result<Expectation, HooksError> {
     match kind {
+        HookKind::OutputDiscipline => {
+            let path = measurement_path(roots.home());
+            Ok(Expectation {
+                events: vec!["SessionStart"],
+                nested: true,
+                command: output_discipline_command(&path)?,
+                superseded: Vec::new(),
+                path,
+                label: "~/.local/bin/arnes",
+            })
+        }
         HookKind::Measurement => {
             let path = measurement_path(roots.home());
             Ok(Expectation {

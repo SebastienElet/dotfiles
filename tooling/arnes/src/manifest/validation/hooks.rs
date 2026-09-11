@@ -36,10 +36,12 @@ pub(super) fn validate(
                     "hooks only support the user scope",
                 ));
             }
-            if hook.id == HookKind::Handoff && installation.agent == Agent::Cursor {
+            if matches!(hook.id, HookKind::Handoff | HookKind::OutputDiscipline)
+                && installation.agent == Agent::Cursor
+            {
                 return Err(ManifestError::new(
                     installation_field("agent"),
-                    "Cursor does not support the handoff hook",
+                    format!("Cursor does not support the {} hook", hook.id),
                 ));
             }
             if !installations.insert(*installation) {

@@ -11,7 +11,12 @@ mod comparison;
 mod expectation;
 mod presence;
 
-const KINDS: [HookKind; 3] = [HookKind::Measurement, HookKind::Handoff, HookKind::Memory];
+const KINDS: [HookKind; 4] = [
+    HookKind::Measurement,
+    HookKind::Handoff,
+    HookKind::Memory,
+    HookKind::OutputDiscipline,
+];
 
 #[must_use]
 pub fn diagnose(
@@ -124,6 +129,13 @@ fn diagnose_kind(
     }
     if let Some(diagnostic) = expectation.command_state(subject, kind) {
         return Some(diagnostic);
+    }
+    if kind == HookKind::OutputDiscipline
+        && !presence::output_discipline_matches(config, &expectation.command)
+    {
+        return Some(drift(format!(
+            "{subject} {kind} hook has incorrect SessionStart matcher or execution settings"
+        )));
     }
     Some(comparison::compare(
         &expectation,

@@ -15,6 +15,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
+    OutputDiscipline,
     Eval(crate::eval_cli::EvalArgs),
     Export {
         #[arg(long)]

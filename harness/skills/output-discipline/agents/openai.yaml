@@ -1,0 +1,7 @@
+interface:
+  display_name: "Output Discipline"
+  short_description: "Make decisive information easy to find"
+  default_prompt: "Use $output-discipline to make this response action-first and easy to execute."
+
+policy:
+  allow_implicit_invocation: false

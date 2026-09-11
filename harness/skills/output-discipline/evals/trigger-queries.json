@@ -1,0 +1,26 @@
+{
+  "skill": "output-discipline",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$output-discipline Explain the failing build and the next useful action.",
+      "should_activate": true,
+      "reason": "Explicit Codex invocation."
+    },
+    {
+      "query": "/output-discipline Compare merge and rebase for a shared branch.",
+      "should_activate": true,
+      "reason": "Explicit Claude Code invocation."
+    },
+    {
+      "query": "Make this answer shorter.",
+      "should_activate": false,
+      "reason": "A request for brevity does not opt into this persistent mode."
+    },
+    {
+      "query": "Explain how transaction isolation works.",
+      "should_activate": false,
+      "reason": "A normal task does not authorize persistent activation; lifecycle opt-in is tested separately."
+    }
+  ]
+}

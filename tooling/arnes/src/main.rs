@@ -3,6 +3,7 @@ mod cli_output;
 mod doctor;
 mod eval_cli;
 mod measure_cli;
+mod output_discipline;
 
 use clap::Parser;
 use std::process::ExitCode;
@@ -17,6 +18,7 @@ fn main() -> ExitCode {
     let Cli { command } = Cli::parse();
 
     match command {
+        Command::OutputDiscipline => output_discipline::run(),
         Command::Eval(args) => eval_cli::run(args),
         Command::Export { check } => run_export(check),
         Command::Doctor {

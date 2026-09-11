@@ -18,6 +18,10 @@ agents:
       effort: medium
       context_window: 512000
 skills:
+  - slug: output-discipline
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - slug: agent-instructions
     installations:
       - { agent: codex, scope: user }
@@ -129,6 +133,10 @@ skills:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
 hooks:
+  - id: output-discipline
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - id: measurement
     installations:
       - { agent: claude, scope: user }

@@ -15,6 +15,7 @@ mod ownership;
 mod reconcile;
 mod validate;
 
+const OUTPUT_DISCIPLINE_MATCHER: &str = "startup|resume|clear|compact";
 const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
 pub use inspect::diagnose;
 
@@ -52,6 +53,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     let handoff_aliases = handoff_aliases(&handoff_path, roots.repository(), args.agent)?;
     let memory = memory_command(&memory_path, args.agent)?;
     let memory_event = policy.memory_event;
+    let output_discipline = output_discipline_command(&measurement_path)?;
     if desired.contains(&HookKind::Memory) && (memory.is_none() || memory_event.is_none()) {
         return Err(HooksError::new("Cursor does not support the memory hook"));
     }
@@ -65,6 +67,11 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     ownership::remove_everywhere(&mut config, args.agent, &measurement)?;
     if let Some(command) = &memory {
         ownership::remove_everywhere(&mut config, args.agent, command)?;
+    }
+    ownership::remove_everywhere(&mut config, args.agent, &output_discipline)?;
+    if desired.contains(&HookKind::OutputDiscipline) {
+        validate_command(&measurement_path)?;
+        reconcile::output_discipline(&mut config, &output_discipline)?;
     }
     if desired.contains(&HookKind::Measurement) {
         validate_command(&measurement_path)?;
@@ -174,6 +181,12 @@ fn measurement_command(command: &Path, agent: Agent) -> Result<String, HooksErro
         Agent::Cursor => "cursor",
     };
     Ok(format!("{quoted} measure hook --agent {agent}"))
+}
+
+fn output_discipline_command(command: &Path) -> Result<String, HooksError> {
+    let command = path_string(command)?;
+    let quoted = format!("'{}'", command.replace('\'', "'\\''"));
+    Ok(format!("{quoted} output-discipline"))
 }
 
 fn memory_command(command: &Path, agent: Agent) -> Result<Option<String>, HooksError> {
