@@ -29,7 +29,7 @@ These results cover CLI 2.6.0 help and the inspected GraphQL schema in one authe
 not an unavailable connector or all Linear clients. No state-write guarantee is established.
 Issue #245 remains open for the two mutation observations.
 
-## Environment and anonymization
+## Environment and redaction
 
 - Date: 2026-09-09; schema inspection checkpoint `2026-09-09T14:09:03Z`.
 - Environment: Codex desktop local worktree, macOS (`Darwin arm64`), zsh; CLI installed via Homebrew.

@@ -32,7 +32,7 @@ those unestablished success criteria in [#245](https://github.com/SebastienElet/
 ## Transport and protocol
 
 - Codex desktop, macOS `Darwin arm64`, zsh; 2026-09-10 UTC.
-- Official endpoint `https://mcp.linear.app/mcp`, Streamable HTTP, JSON-RPC; negotiated protocol
+- Official endpoint `https://mcp.linear.app/mcp`, HTTP MCP transport, JSON-RPC; negotiated protocol
   `2024-11-05`, server `Linear MCP` version `1.0.0`.
 - Existing `linear 2.6.0` credential supplied in memory to the documented bearer header; no new
   login, plugin installation, or credential persisted in evidence. Network/keyring calls ran
