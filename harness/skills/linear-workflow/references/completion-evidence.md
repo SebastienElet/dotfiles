@@ -145,8 +145,8 @@ writing.
    ```
 
 3. Anchor on the whole line, marker included, with enough of its text to match the current content
-   exactly once. Operations apply in order and atomically, so one failing anchor aborts the entire
-   save. Never set `replace_all` for a checkbox edit: two scenarios can share a prefix, and one
+   exactly once. Verify the current transport contract for operation order and description-patch
+   atomicity; neither implies atomicity with a state change. Never set `replace_all` for a checkbox edit: two scenarios can share a prefix, and one
    anchor must identify one line.
 4. Batch every box of one decision into a single call, up to the transport's operation limit, so the
    description is never left half-updated.
@@ -165,53 +165,52 @@ writing.
 ## Guarding a state write with the boxes it rests on
 
 A workflow state decided from checkboxes must not be written from a classification that has since
-gone stale, and re-reading before the write only narrows that window. The anchor requirement closes
-it, because an anchor that no longer matches exactly once aborts the whole save.
+gone stale. A pre-write read only narrows that window; a valid payload does not close it.
 
-1. Send the state change and the guard in one save. On the Linear connector, `save_issue` accepts
-   `state` alongside `patch`, and the connector documents that one failing operation aborts the
-   whole save — the save, not merely the patch — so no state is written when the guarded text moved.
-   `Done` below is a state name, not a state type; the field accepts either, and passing a type is
-   what the rule above forbids.
+**Current evidence:** the [2026-09-10 live MCP experiment](linear-guard-observation-2026-09-10.md)
+executed both combined saves. Linear MCP 1.0.0 rejected both because `old_string` and `new_string`
+were identical, including the unique-anchor case. Independent reads found no state, description,
+`updatedAt`, or history change. This identity replacement is therefore not an executable state
+guard on the observed transport: do not use it for workflow state writes. The earlier
+[CLI/GraphQL inspection](linear-guard-observation-2026-09-09.md) did not exhaust available access;
+the official MCP was subsequently reached using existing authentication.
 
-   ```json
-   {
-     "id": "ENG-482",
-     "state": "Done",
-     "patch": [
-       {
-         "op": "replace",
-         "old_string": "- [X] Scenario 2: import rejects a malformed row",
-         "new_string": "- [X] Scenario 2: import rejects a malformed row"
-       }
-     ]
-   }
-   ```
+The live tool contract documents whole-save abort, but the experiment establishes only the two
+observed identity-replacement rejections. It establishes neither rejection caused by non-uniqueness
+nor a successful identity-guarded transition, and does not establish isolation against concurrent
+writers. Until an alternative conditional mechanism is verified, classify and report; do not write
+the state. Do not replace the identity operation with a description-changing workaround.
 
-2. Use one contiguous anchor covering the region the classification relied on, sent back unchanged,
-   rather than one anchor per line. One operation stays inside the transport's limit whatever the
-   section's length, and it survives byte-identical checkbox lines, which a per-line anchor cannot:
-   an anchor must match exactly once, and two identical lines can never be told apart at line
-   granularity. The anchor is a single string, so it carries the newlines between those lines —
-   widen the region, up to the whole description, until it matches once.
-3. This is a guard, not a description edit: what it sends back is what it read, so it writes no box
-   and needs no authorization to write one. It does travel the description-mutation path, so accept
-   that the issue's updated timestamp and activity feed may move.
-4. When the classification rests on absence — no acceptance or evidence section at all — there is no
-   region to anchor, so anchor the whole current description instead. An empty description leaves
-   nothing to guard: treat that as an uncovered guard and follow the last item.
-5. An abort is the guard working. Read the issue again — the description and the workflow state —
-   confirm the state did not move, then classify and write again. Never retry the save with the
-   anchors from the stale read. An anchor that still cannot match exactly once is an uncovered
-   guard, not a retry.
-6. A transport that rejects an unchanged `old_string`/`new_string` pair fails the save and therefore
-   writes no state either, which is the safe direction. Treat the rejection as an uncovered guard,
-   not as a reason to write unguarded.
-7. This guard asserts facts inside the issue's own description. It cannot assert another issue's
-   state, so it does not make a parent completion conditional on its sub-issues; that still needs a
-   documented conditional mutation over those issues.
-8. Where the guard is uncovered, do not write the state at all. Classify, report the classification
-   and the missing capability, and leave the transition to a human. Do not fall back to an
-   unguarded write behind a pre-write re-read: an issue completed over a box that moved reports as
-   an ordinary success, so nothing downstream surfaces it, and this harness states in three places
-   that such a gap never resurfaces.
+1. Before enabling a transport for this guard, inspect its current schema and provider contract.
+   Require one save combining state and anchored identity replacement, with a documented condition
+   evaluated at the write boundary and failure semantics covering both fields. Patch atomicity,
+   sequential client calls, and acceptance of both fields establish none of those guarantees.
+2. Verify that mechanism on an explicitly authorized disposable issue in the intended workspace.
+   Record the transport/version, date, environment, contract source, anonymized requests, responses,
+   and independent before/after reads. Observe both cases in one save per case:
+   - a non-unique anchor rejects the save and the re-read state remains unchanged;
+   - a unique anchor changes the state and the re-read description is strictly identical.
+     Record `updatedAt` and activity before/after each case, including issue age: Linear documents
+     activity suppression during the first three minutes after creation. Unavailable activity is an
+     observation limit, not an empty feed. An unavailable experiment is not a passing check.
+3. Distinguish provider-documented semantics from the behavior observed on that transport and date.
+   Both passing cases cover only those cases, not every race or future server version. If state
+   changes despite patch failure, stop using this guard and replace it with a verified conditional
+   mechanism; without one, do not write state. Never treat a rejected identity replacement, error,
+   timeout, or null result alone as proof of rollback: independently read state and description,
+   report partial or unknown outcomes, and stop instead of retrying the previous decision.
+4. The identity-replacement candidate tested in the linked experiment is rejected on the observed
+   transport; it is not an enabled recipe. If a future transport changes that behavior, verify its
+   contract and both cases again before considering it. Never use a state type or `replace_all`.
+   The intended anchor must cover one contiguous classified region, including newlines, widened
+   until unique. When classification rests on absence of an evidence section, the entire current
+   description must be covered; an empty description leaves the guard uncovered.
+5. An identity replacement changes no intended box, but travels the description-mutation path;
+   do not promise a no-op for timestamps or activity. After every save, independently re-read state
+   and description. On rejection, confirm the stored outcome before classifying anew; never replay
+   stale anchors. Strict description inequality on the unique case leaves this guard uncovered.
+6. This guard concerns only this issue's description. It does not make parent completion
+   conditional on sub-issue state; that needs a separate documented conditional mutation.
+7. Where any required capability or observation is missing, leave the state untouched, report the
+   classification and missing evidence, and leave the transition to a human. Never substitute a
+   full-description write or an unguarded state update behind a pre-write read.

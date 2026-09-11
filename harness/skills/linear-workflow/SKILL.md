@@ -74,5 +74,7 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
   acceptance or evidence section at all; a section that holds no state proves nothing, so the issue
   goes to its team's review state with the unproven lines named, and `Done` stays an explicit human
   decision.
+- Without a verified conditional state-write mechanism, leave state untouched; the required
+  transport contract and live observations are defined in completion evidence.
 - Resolve the review state by enumerating the issue's own team's states and matching by name, never
   by state type; stop when the transport cannot enumerate them or the team exposes none.

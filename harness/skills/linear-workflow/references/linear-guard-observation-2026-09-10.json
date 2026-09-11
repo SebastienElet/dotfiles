@@ -1,0 +1,440 @@
+{
+  "environment": {
+    "date": "2026-09-10",
+    "host": "Codex desktop, Darwin arm64, zsh, outside sandbox for network/keyring",
+    "transport": "https://mcp.linear.app/mcp, Streamable HTTP JSON-RPC",
+    "protocolVersion": "2024-11-05",
+    "serverInfo": {
+      "name": "Linear MCP",
+      "version": "1.0.0"
+    },
+    "authentication": "existing linear 2.6.0 credential; MCP/GraphQL viewer and workspace IDs matched"
+  },
+  "contractExcerpt": {
+    "tool": "save_issue",
+    "properties": {
+      "id": {
+        "description": "Only for updating an existing issue. Pass the issue ID or identifier (e.g., LIN-123). Do NOT pass this parameter when creating a new issue.",
+        "type": "string"
+      },
+      "state": {
+        "description": "State type, name, or ID",
+        "type": "string"
+      },
+      "patch": {
+        "description": "Partial edits applied to the current content, in order and atomically (one failing operation aborts the whole save). Every anchor string must match the current content exactly once. Only valid on update, in place of the full content/description field",
+        "minItems": 1,
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "replace"
+                },
+                "old_string": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exact text to replace. Must match the current content exactly once"
+                },
+                "new_string": {
+                  "type": "string",
+                  "description": "Replacement text. Empty string deletes the match"
+                },
+                "replace_all": {
+                  "description": "Replace every occurrence instead of requiring a unique match",
+                  "type": "boolean"
+                }
+              },
+              "required": ["op", "old_string", "new_string"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "insert_before"
+                },
+                "anchor": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exact text to insert before. Must match the current content exactly once"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Text to insert directly before the anchor. Include separators (e.g. \"\\n\\n\")"
+                }
+              },
+              "required": ["op", "anchor", "text"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "insert_after"
+                },
+                "anchor": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exact text to insert after. Must match the current content exactly once"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Text to insert directly after the anchor. Include separators (e.g. \"\\n\\n\")"
+                }
+              },
+              "required": ["op", "anchor", "text"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "prepend"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Text to insert at the very start of the content"
+                }
+              },
+              "required": ["op", "text"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "append"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Text to insert at the very end of the content"
+                }
+              },
+              "required": ["op", "text"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "const": "replace_range"
+                },
+                "from": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exact text where the range starts (inclusive). Must match exactly once"
+                },
+                "to": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Exact text where the range ends (exclusive, stays in place). Must match exactly once after `from`"
+                },
+                "new_string": {
+                  "type": "string",
+                  "description": "Text replacing the range. Empty string deletes it"
+                }
+              },
+              "required": ["op", "from", "to", "new_string"]
+            }
+          ]
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "create": {
+    "time": "2026-09-10T06:51:21.721563+00:00",
+    "arguments": {
+      "team": "<team-A>",
+      "title": "Disposable guard observation — dotfiles #245 — 2026-09-10",
+      "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+      "state": "<state-backlog>",
+      "assignee": "me"
+    },
+    "responseProjection": {
+      "id": "<issue-identifier-A>",
+      "uuid": "<issue-A>",
+      "title": "Disposable guard observation — dotfiles #245 — 2026-09-10",
+      "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+      "createdAt": "2026-09-10T06:51:21.517Z",
+      "updatedAt": "2026-09-10T06:51:21.517Z",
+      "status": "Backlog"
+    }
+  },
+  "readQuery": "query GuardRead { issue(id: \"<issue-A>\") { id identifier description createdAt updatedAt archivedAt state { id name } history(first: 100) { nodes { id createdAt updatedAt fromStateId toStateId updatedDescription changes } pageInfo { hasNextPage endCursor } } } }",
+  "before": {
+    "data": {
+      "issue": {
+        "id": "<issue-A>",
+        "identifier": "<issue-identifier-A>",
+        "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+        "createdAt": "2026-09-10T06:51:21.517Z",
+        "updatedAt": "2026-09-10T06:51:21.517Z",
+        "archivedAt": null,
+        "state": {
+          "id": "<state-backlog>",
+          "name": "Backlog"
+        },
+        "history": {
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          }
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "case": "duplicate",
+      "save": {
+        "time": "2026-09-10T06:54:43.600853+00:00",
+        "request": {
+          "method": "tools/call",
+          "params": {
+            "name": "save_issue",
+            "arguments": {
+              "id": "<issue-A>",
+              "state": "<state-todo>",
+              "patch": [
+                {
+                  "op": "replace",
+                  "old_string": "ANCHOR-245-DUPLICATE",
+                  "new_string": "ANCHOR-245-DUPLICATE"
+                }
+              ]
+            }
+          }
+        },
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Error: Patch failed, nothing was saved. Operation 1 (replace): old_string and new_string are identical"
+              }
+            ],
+            "isError": true
+          },
+          "jsonrpc": "2.0",
+          "id": 2
+        }
+      },
+      "mcpRead": {
+        "time": "2026-09-10T06:54:45.066479+00:00",
+        "request": {
+          "method": "tools/call",
+          "params": {
+            "name": "get_issue",
+            "arguments": {
+              "id": "<issue-A>"
+            }
+          }
+        },
+        "responseProjection": {
+          "id": "<issue-identifier-A>",
+          "uuid": "<issue-A>",
+          "status": "Backlog",
+          "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+          "updatedAt": "2026-09-10T06:51:21.517Z"
+        }
+      },
+      "graphqlRead": {
+        "data": {
+          "issue": {
+            "id": "<issue-A>",
+            "identifier": "<issue-identifier-A>",
+            "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+            "createdAt": "2026-09-10T06:51:21.517Z",
+            "updatedAt": "2026-09-10T06:51:21.517Z",
+            "archivedAt": null,
+            "state": {
+              "id": "<state-backlog>",
+              "name": "Backlog"
+            },
+            "history": {
+              "nodes": [],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": null
+              }
+            }
+          }
+        }
+      },
+      "comparison": {
+        "anchorOccurrences": 2,
+        "descriptionUtf8Bytes": 226,
+        "descriptionSha256": "f1dc38f61e3ebb9e61362d346560e51a3acdfd8c434647131f2457566ff58395",
+        "descriptionBytesIdentical": true,
+        "stateUnchanged": true,
+        "updatedAtUnchanged": true,
+        "historyIdentical": true
+      }
+    },
+    {
+      "case": "unique",
+      "save": {
+        "time": "2026-09-10T06:55:00.287677+00:00",
+        "request": {
+          "method": "tools/call",
+          "params": {
+            "name": "save_issue",
+            "arguments": {
+              "id": "<issue-A>",
+              "state": "<state-todo>",
+              "patch": [
+                {
+                  "op": "replace",
+                  "old_string": "ANCHOR-245-UNIQUE",
+                  "new_string": "ANCHOR-245-UNIQUE"
+                }
+              ]
+            }
+          }
+        },
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Error: Patch failed, nothing was saved. Operation 1 (replace): old_string and new_string are identical"
+              }
+            ],
+            "isError": true
+          },
+          "jsonrpc": "2.0",
+          "id": 2
+        }
+      },
+      "mcpRead": {
+        "time": "2026-09-10T06:55:01.995271+00:00",
+        "request": {
+          "method": "tools/call",
+          "params": {
+            "name": "get_issue",
+            "arguments": {
+              "id": "<issue-A>"
+            }
+          }
+        },
+        "responseProjection": {
+          "id": "<issue-identifier-A>",
+          "uuid": "<issue-A>",
+          "status": "Backlog",
+          "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+          "updatedAt": "2026-09-10T06:51:21.517Z"
+        }
+      },
+      "graphqlRead": {
+        "data": {
+          "issue": {
+            "id": "<issue-A>",
+            "identifier": "<issue-identifier-A>",
+            "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+            "createdAt": "2026-09-10T06:51:21.517Z",
+            "updatedAt": "2026-09-10T06:51:21.517Z",
+            "archivedAt": null,
+            "state": {
+              "id": "<state-backlog>",
+              "name": "Backlog"
+            },
+            "history": {
+              "nodes": [],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": null
+              }
+            }
+          }
+        }
+      },
+      "comparison": {
+        "anchorOccurrences": 1,
+        "descriptionUtf8Bytes": 226,
+        "descriptionSha256": "f1dc38f61e3ebb9e61362d346560e51a3acdfd8c434647131f2457566ff58395",
+        "descriptionBytesIdentical": true,
+        "stateUnchanged": true,
+        "updatedAtUnchanged": true,
+        "historyIdentical": true
+      }
+    }
+  ],
+  "delayedReadAt": "2026-09-10T06:55:35Z",
+  "delayedRead": {
+    "data": {
+      "issue": {
+        "id": "<issue-A>",
+        "identifier": "<issue-identifier-A>",
+        "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+        "createdAt": "2026-09-10T06:51:21.517Z",
+        "updatedAt": "2026-09-10T06:51:21.517Z",
+        "archivedAt": null,
+        "state": {
+          "id": "<state-backlog>",
+          "name": "Backlog"
+        },
+        "history": {
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          }
+        }
+      }
+    }
+  },
+  "cleanup": {
+    "query": "mutation ArchiveDisposableGuardIssue { issueArchive(id: \"<issue-A>\", trash: false) { success } }",
+    "response": {
+      "data": {
+        "issueArchive": {
+          "success": true
+        }
+      }
+    },
+    "read": {
+      "data": {
+        "issue": {
+          "id": "<issue-A>",
+          "identifier": "<issue-identifier-A>",
+          "description": "Disposable experiment authorized for dotfiles #245. No business work.\n\n## Duplicate anchor\n\nANCHOR-245-DUPLICATE\n\nANCHOR-245-DUPLICATE\n\n## Unique anchor\n\nANCHOR-245-UNIQUE\n\nNo acceptance claim is made by these fixture strings.",
+          "createdAt": "2026-09-10T06:51:21.517Z",
+          "updatedAt": "2026-09-10T06:51:21.517Z",
+          "archivedAt": "2026-09-10T06:55:37.389Z",
+          "state": {
+            "id": "<state-backlog>",
+            "name": "Backlog"
+          },
+          "history": {
+            "nodes": [
+              {
+                "id": "<archive-history-A>",
+                "createdAt": "2026-09-10T06:55:37.382Z",
+                "updatedAt": "2026-09-10T06:55:37.382Z",
+                "fromStateId": null,
+                "toStateId": null,
+                "updatedDescription": null,
+                "changes": null
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": "<archive-history-A>"
+            }
+          }
+        }
+      }
+    }
+  }
+}
