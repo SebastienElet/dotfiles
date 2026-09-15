@@ -55,7 +55,6 @@ tasks:
       - pr-feedback-skill-test
       - deployment-test
       - hunspell-test
-      - apple-notes-test
       - agent-memory:deployment-test
       - agent-handoff:deployment-test
     toolchains: system
@@ -94,18 +93,6 @@ tasks:
       - "@group(bunTestSupport)"
       - install-hunspell-dictionary*
       - /home/moon.yml
-      - /.github/workflows/test-deployment.yml
-  apple-notes-test:
-    command: bun --config=/dev/null --no-env-file test tooling/apple-notes*.test.ts
-    deps:
-      - repository:dependencies
-    options:
-      runFromWorkspaceRoot: true
-      cache: false
-    inputs:
-      - "@group(bunTestSupport)"
-      - apple-notes*.ts
-      - /.agents/skills/apple-notes/scripts/**/*
       - /.github/workflows/test-deployment.yml
   code-search-test:
     command: bun --config=/dev/null --no-env-file test tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts

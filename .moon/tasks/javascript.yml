@@ -9,7 +9,6 @@ fileGroups:
     - "**/*.cts"
   typecheckedTypeScript:
     - tooling/**/*.ts
-    - .agents/skills/apple-notes/scripts/**/*.ts
   typescriptToolchain:
     - package.json
     - bun.lock

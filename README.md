@@ -62,7 +62,7 @@ The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated m
 Code Search and Docker integrations remain explicit tasks with their own prerequisites.
 
 Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
-`tooling:apple-notes-test`, `tooling:pr-feedback-skill-test`,
+`tooling:pr-feedback-skill-test`,
 `agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
 Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
 on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
