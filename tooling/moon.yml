@@ -16,6 +16,36 @@ fileGroups:
     - /.agents/**/*
     - /Makefile
     - /.gitignore
+  bunTestSupport:
+    - moon.yml
+    - /moon.yml
+    - /package.json
+    - /bun.lock
+    - /tsconfig.json
+    - /.prototools
+    - /.moon/tasks/javascript.yml
+  linkDeployment:
+    - deployment-links.test.ts
+    - design-claim-audit.test.ts
+    - deployment-moon-runner.ts
+    - deployment-test-support.ts
+    - deploy-link*.ts
+    - assemble-agent-instructions*.ts
+    - install-agent-skills*.ts
+    - colgrep-search-cli.ts
+    - /home/moon.yml
+    - /home/.arnes.yaml
+    - /home/.codex/agents/design-claim-auditor.toml
+    - /home/.config/starship.toml
+    - /home/.config/tmux/**/*
+    - /harness/AGENTS.md
+    - /harness/moon.yml
+    - /harness/SOUL.md
+    - /harness/USER.md
+    - /harness/rules/agent-instructions.md
+    - /harness/skills/*/SKILL.md
+    - /.moon/tasks/harness-claude.yml
+    - /.moon/tasks/harness-codex.yml
 tasks:
   test:
     command: noop
@@ -23,6 +53,11 @@ tasks:
       - repository:typescript-test
       - upgrade-test
       - pr-feedback-skill-test
+      - deployment-test
+      - hunspell-test
+      - apple-notes-test
+      - agent-memory:deployment-test
+      - agent-handoff:deployment-test
     toolchains: system
     inputs:
       - "@group(toolingSources)"
@@ -30,16 +65,24 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts
     deps:
       - repository:dependencies
     options:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
-      - "@group(deploymentSources)"
+      - "@group(bunTestSupport)"
+      - "@group(linkDeployment)"
+      - deployment-fish.test.ts
+      - deployment-xdg.test.ts
+      - deployment-test-provider.ts
+      - deploy-fish-plugins.ts
+      - deploy-git-includes.ts
+      - /home/.config/fish/**/*
+      - /home/.config/git/**/*
+      - /home/.config/wezterm/**/*
+      - /.github/workflows/test-deployment.yml
   hunspell-test:
     command: bun --config=/dev/null --no-env-file test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
     deps:
@@ -48,8 +91,10 @@ tasks:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
+      - "@group(bunTestSupport)"
+      - install-hunspell-dictionary*
+      - /home/moon.yml
+      - /.github/workflows/test-deployment.yml
   apple-notes-test:
     command: bun --config=/dev/null --no-env-file test tooling/apple-notes*.test.ts
     deps:
@@ -58,20 +103,22 @@ tasks:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
+      - "@group(bunTestSupport)"
+      - apple-notes*.ts
       - /.agents/skills/apple-notes/scripts/**/*
+      - /.github/workflows/test-deployment.yml
   code-search-test:
-    command: bun --config=/dev/null --no-env-file test tooling/deployment-links.test.ts tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
     deps:
       - repository:dependencies
     options:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
-      - "@group(deploymentSources)"
+      - "@group(bunTestSupport)"
+      - code-search-*.ts
+      - colgrep-search*.ts
+      - /.github/workflows/test-code-search.yml
   code-search-integration-test:
     deps:
       - repository:dependencies
@@ -89,9 +136,13 @@ tasks:
       bun --config=/dev/null --no-env-file test tooling/colgrep-search-integration.test.ts
     toolchains: bun
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
+      - "@group(bunTestSupport)"
+      - colgrep-search*.ts
+      - deploy-link.ts
       - /Brewfile
+      - /.moon/tasks/packages.yml
+      - /.moon/tasks/workstation.yml
+      - /.github/workflows/test-code-search.yml
   colgrep-search-install:
     command: bun tooling/deploy-link.ts "$workspaceRoot/tooling/colgrep-search-cli.ts" "$HOME/.local/bin/colgrep-search"
     deps:
@@ -173,6 +224,7 @@ tasks:
     options:
       runFromWorkspaceRoot: true
     inputs:
+      - moon.yml
       - pr-feedback-skill-test
       - /harness/skills/pr-feedback/SKILL.md
       - /.github/workflows/test-deployment.yml

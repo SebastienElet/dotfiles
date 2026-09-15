@@ -1,7 +1,9 @@
 name: TypeScript
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
   test:
     name: Bun tests
@@ -13,6 +15,6 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - uses: volta-cli/action@v4
-      - run: moon run repository:node-runtime-check repository:typescript-test
+      - run: moon ci --downstream none repository:node-runtime-check repository:typescript-test
         env:
           SCRAPLING_DOCKER_SMOKE: "1"

@@ -61,6 +61,13 @@ Their tools are prerequisites in the Moon graph. Run Lua lint independently with
 The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
 Code Search and Docker integrations remain explicit tasks with their own prerequisites.
 
+Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
+`tooling:apple-notes-test`, `tooling:pr-feedback-skill-test`,
+`agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
+Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
+on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
+these families; `moon run test` still includes them. Typechecking stays shared in Static gates.
+
 ## Architecture decisions
 
 Structural choices — installer, shell, editor, container runtime, agent

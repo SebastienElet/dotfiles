@@ -1,43 +1,9 @@
 name: Code search tests
 on:
   push:
-    paths:
-      - harness/skills/code-search/**
-      - tooling/code-search-*
-      - tooling/colgrep-search*
-      - Brewfile
-      - package.json
-      - bun.lock
-      - tsconfig.json
-      - Makefile
-      - .github/workflows/test-code-search.yml
-      - .moon/**
-      - moon.yml
-      - tooling/moon.yml
-      - home/moon.yml
-      - tooling/deploy-*.ts
-      - tooling/assemble-agent-instructions*.ts
-      - tooling/install-agent-skills*.ts
-      - tooling/deployment-moon-runner.ts
+    branches:
+      - main
   pull_request:
-    paths:
-      - harness/skills/code-search/**
-      - tooling/code-search-*
-      - tooling/colgrep-search*
-      - Brewfile
-      - package.json
-      - bun.lock
-      - tsconfig.json
-      - Makefile
-      - .github/workflows/test-code-search.yml
-      - .moon/**
-      - moon.yml
-      - tooling/moon.yml
-      - home/moon.yml
-      - tooling/deploy-*.ts
-      - tooling/assemble-agent-instructions*.ts
-      - tooling/install-agent-skills*.ts
-      - tooling/deployment-moon-runner.ts
 jobs:
   code-search:
     runs-on: macos-latest
@@ -48,6 +14,4 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - run:
-          moon ci --concurrency 1 --downstream none tooling:code-search-test tooling:code-search-integration-test
-          repository:typescript-typecheck
+      - run: moon ci --concurrency 1 --downstream none tooling:code-search-test tooling:code-search-integration-test

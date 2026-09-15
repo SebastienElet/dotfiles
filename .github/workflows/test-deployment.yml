@@ -1,55 +1,9 @@
 name: Deployment tests
 on:
   push:
-    paths:
-      - .cargo/**
-      - .moon/**
-      - .agents/skills/apple-notes/scripts/**
-      - home/**
-      - harness/**
-      - tooling/deployment-*.ts
-      - tooling/install-hunspell-dictionary*
-      - tooling/agent-handoff/**
-      - tooling/agent-memory/**
-      - tooling/apple-notes*.ts
-      - tooling/pr-feedback-skill-test
-      - package.json
-      - bun.lock
-      - tsconfig.json
-      - Makefile
-      - moon.yml
-      - .github/workflows/test-deployment.yml
-      - tooling/moon.yml
-      - home/moon.yml
-      - tooling/deploy-*.ts
-      - tooling/assemble-agent-instructions*.ts
-      - tooling/install-agent-skills*.ts
-      - tooling/deployment-moon-runner.ts
+    branches:
+      - main
   pull_request:
-    paths:
-      - .cargo/**
-      - .moon/**
-      - .agents/skills/apple-notes/scripts/**
-      - home/**
-      - harness/**
-      - tooling/deployment-*.ts
-      - tooling/install-hunspell-dictionary*
-      - tooling/agent-handoff/**
-      - tooling/agent-memory/**
-      - tooling/apple-notes*.ts
-      - tooling/pr-feedback-skill-test
-      - package.json
-      - bun.lock
-      - tsconfig.json
-      - Makefile
-      - moon.yml
-      - .github/workflows/test-deployment.yml
-      - tooling/moon.yml
-      - home/moon.yml
-      - tooling/deploy-*.ts
-      - tooling/assemble-agent-instructions*.ts
-      - tooling/install-agent-skills*.ts
-      - tooling/deployment-moon-runner.ts
 jobs:
   deployment:
     name: Deployment (${{ matrix.os }})
@@ -66,7 +20,5 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run:
-          moon ci --concurrency 1 --downstream none tooling:deployment-test agent-memory:deployment-test
-          agent-handoff:deployment-test tooling:hunspell-test
+          moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
           tooling:apple-notes-test tooling:pr-feedback-skill-test
-          repository:typescript-typecheck
