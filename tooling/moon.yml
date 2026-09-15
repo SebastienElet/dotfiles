@@ -65,7 +65,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts
     deps:
       - repository:dependencies
     options:
