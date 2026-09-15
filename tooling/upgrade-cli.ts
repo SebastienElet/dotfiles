@@ -23,7 +23,12 @@ async function upgradePackages(
 ): Promise<void> {
   process.stdout.write("ℹ️  Brew\n");
   await runner.command("Brew metadata", ["brew", "update"]);
-  await runner.command("Brew packages", ["brew", "upgrade", "--yes"]);
+  await runner.command("Brew packages", [
+    "brew",
+    "upgrade",
+    "--formula",
+    "--yes",
+  ]);
   await runner.command("Brew casks", [
     "brew",
     "upgrade",
