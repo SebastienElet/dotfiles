@@ -7,7 +7,12 @@ fn provider(
 ) -> Result<(tempfile::TempDir, Codex), std::io::Error> {
     let directory = tempfile::tempdir()?;
     let command = directory.path().join("provider");
-    fs::write(&command, format!("#!/bin/sh\n{script}\n"))?;
+    fs::write(
+        &command,
+        format!(
+            "#!/bin/sh\nif [ \"$1\" = --version ]; then printf synthetic; exit 0; fi\n{script}\n"
+        ),
+    )?;
     fs::set_permissions(&command, fs::Permissions::from_mode(0o755))?;
     Ok((
         directory,
@@ -15,6 +20,7 @@ fn provider(
             command,
             authentication,
             version: "synthetic".into(),
+            volta_home: None,
         },
     ))
 }
@@ -190,5 +196,24 @@ fn api_key_authentication_only_reaches_explicit_provider_environment()
         "synthetic-key"
     );
     assert!(!fixture.env.contains_key("CODEX_API_KEY"));
+    Ok(())
+}
+
+#[test]
+fn changed_version_prevents_prompt_execution() -> Result<(), Box<dyn std::error::Error>> {
+    let (_directory, mut codex) = provider("/bin/cat > request.txt", Authentication::default())?;
+    codex.version = "previous-version".into();
+    let fixture = Fixture::prepare(
+        &BTreeMap::new(),
+        "instructions",
+        "skill",
+        Path::new("/tmp/arnes"),
+    )?;
+    assert!(
+        codex
+            .execute(&fixture, "private prompt", &options())
+            .is_err_and(|error| error.contains("version changed"))
+    );
+    assert!(!fixture.workspace.join("request.txt").exists());
     Ok(())
 }

@@ -47,9 +47,22 @@ moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only code-search-structur
 ```
 
 `arnes eval` exposes `validate-evals`, `validate-evidence [reports]`, `fixture-smoke`,
-`run`, and `compare <baseline> <candidate>`. The optional `--repository` selects the source checkout
+`preflight`, `run`, and `compare <baseline> <candidate>`. The optional `--repository` selects the source checkout
 (default: current directory); report paths remain relative to the calling directory.
 Moon aliases compile and run this checkout's Arnes with Cargo and a shared target-directory mutex.
+
+Before spending quota, check startup without a model request:
+
+```bash
+cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval preflight
+```
+
+This command uses saved authentication and the same isolated environment builder as live runs,
+executes only `codex --version`, and fails within five seconds of process startup on a timeout.
+It preserves `VOLTA_HOME` (or its default under the original HOME) while keeping HOME and CODEX_HOME
+isolated. Every live replicate repeats this check in its own fixture and refuses an empty or changed
+version before sending the prompt. This checks CLI startup, not authentication validity, model access,
+or provider connectivity; `harness:check` remains independent of an installed Codex CLI.
 
 `--only` is mandatory and accepts comma-separated IDs. `--runs` is 1–10 (default 1);
 `--timeout-seconds` is 1–600 (default 120); `--reasoning-effort` is low/medium/high (default low).

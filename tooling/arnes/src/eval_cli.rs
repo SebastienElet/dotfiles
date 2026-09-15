@@ -1,4 +1,4 @@
-use arnes::eval::{compare, evidence, runner, shim, validate};
+use arnes::eval::{compare, evidence, live::Codex, runner, shim, validate};
 use clap::{Args, Subcommand};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -18,6 +18,7 @@ enum EvalCommand {
         reports: Vec<PathBuf>,
     },
     FixtureSmoke,
+    Preflight,
     Run(RunArgs),
     Compare {
         baseline: PathBuf,
@@ -111,6 +112,14 @@ fn dispatch(args: EvalArgs) -> Result<ExitCode, String> {
                 ))
                 .map_err(|error| error.to_string())?;
             }
+        }
+        EvalCommand::Preflight => {
+            let codex = Codex::discover()?;
+            crate::cli_output::write_output(&format!(
+                "Codex isolated preflight passed: {}",
+                codex.version
+            ))
+            .map_err(|error| error.to_string())?;
         }
         EvalCommand::FixtureSmoke => print_json(&runner::run_smoke(&args.repository)?)?,
         EvalCommand::Run(options) => return run_and_publish(&args.repository, options),
