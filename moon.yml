@@ -28,7 +28,8 @@ tasks:
       - shell-lint
       - workflows-lint
       - cspell-check
-      - lua-lint
+      - neovim-lint
+      - wezterm-lint
       - fish-syntax
       - fish-format
       - arnes:fmt
