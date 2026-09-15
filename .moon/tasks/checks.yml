@@ -63,22 +63,6 @@ tasks:
       - tooling/skill-markdown-paths.ts
       - tooling/check-command.ts
       - bun.lock
-  lua-lint:
-    script: |
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      set -euo pipefail
-      test -f home/.config/nvim/init.lua
-      test -f home/.config/wezterm/wezterm.lua
-      luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
-      luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
-    inputs:
-      - home/.config/nvim/**/*.lua
-      - home/.config/wezterm/wezterm.lua
-      - .github/workflows/check-lua.yml
-      - .github/workflows/check-typescript.yml
-    toolchains: system
-    deps:
-      - luacheck-setup
   shell-lint:
     options:
       cache: false

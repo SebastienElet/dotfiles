@@ -56,7 +56,8 @@ moon run test
 ```
 
 Checks include TypeScript, Prettier, Lua, Fish, shell scripts, workflows, CSpell and Rust.
-Their tools are prerequisites in the Moon graph; Lua lint alone is `moon run lua-lint`.
+Their tools are prerequisites in the Moon graph. Run Lua lint independently with
+`moon run neovim-lint` or `moon run wezterm-lint`.
 The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
 Code Search and Docker integrations remain explicit tasks with their own prerequisites.
 

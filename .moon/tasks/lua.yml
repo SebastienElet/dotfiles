@@ -1,0 +1,39 @@
+inheritedBy:
+  tags:
+    - repository
+fileGroups:
+  luaLintSupport:
+    - moon.yml
+    - .prototools
+    - .moon/tasks/packages.yml
+    - .moon/tasks/workstation.yml
+    - .github/workflows/check-lua.yml
+tasks:
+  neovim-lint:
+    script: |
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -euo pipefail
+      test -f home/.config/nvim/init.lua
+      luacheck home/.config/nvim --no-unused-args --no-max-line-length --globals vim
+    inputs:
+      - home/.config/nvim/**/*.lua
+      - file: .luacheckrc
+        optional: true
+      - "@group(luaLintSupport)"
+    toolchains: system
+    deps:
+      - luacheck-setup
+  wezterm-lint:
+    script: |
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -euo pipefail
+      test -f home/.config/wezterm/wezterm.lua
+      luacheck home/.config/wezterm/wezterm.lua --no-max-line-length
+    inputs:
+      - home/.config/wezterm/wezterm.lua
+      - file: .luacheckrc
+        optional: true
+      - "@group(luaLintSupport)"
+    toolchains: system
+    deps:
+      - luacheck-setup

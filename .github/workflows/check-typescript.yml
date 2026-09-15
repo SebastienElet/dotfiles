@@ -17,4 +17,3 @@ jobs:
       - run:
           moon ci --downstream none repository:typescript-lint repository:typescript-typecheck
           repository:typescript-format-check
-          repository:lua-lint
