@@ -34,6 +34,7 @@ pub struct Codex {
     pub command: PathBuf,
     pub authentication: Authentication,
     pub version: String,
+    pub volta_home: Option<String>,
 }
 
 impl Codex {
@@ -52,25 +53,46 @@ impl Codex {
             })
             .collect::<Result<_, &str>>()?;
         let authentication = authentication_from_environment(&environment)?;
-        let cwd = env::current_dir().map_err(|error| error.to_string())?;
-        let version = capture(
-            &command,
+        let volta_home = environment
+            .get("VOLTA_HOME")
+            .filter(|value| !value.is_empty())
+            .cloned()
+            .or_else(|| environment.get("HOME").map(|home| format!("{home}/.volta")));
+        let mut codex = Self {
+            command,
+            authentication,
+            version: String::new(),
+            volta_home,
+        };
+        let executable = env::current_exe().map_err(|error| error.to_string())?;
+        let fixture = Fixture::prepare(&BTreeMap::new(), "", "", &executable)?;
+        codex.version = codex.isolated_version(&fixture, &codex.environment(&fixture)?)?;
+        Ok(codex)
+    }
+
+    fn isolated_version(
+        &self,
+        fixture: &Fixture,
+        environment: &BTreeMap<String, String>,
+    ) -> Result<String, String> {
+        let result = capture(
+            &self.command,
             &["--version".into()],
             CaptureOptions {
-                cwd: &cwd,
-                env: &environment,
+                cwd: &fixture.workspace,
+                env: environment,
                 stdin: "",
                 timeout: Duration::from_secs(5),
             },
         );
-        if version.error.is_some() {
-            return Err("Cannot identify Codex version".into());
+        if let Some(detail) = result.failure_detail {
+            return Err(format!("Codex isolated preflight failed: {detail}"));
         }
-        Ok(Self {
-            command,
-            authentication,
-            version: version.output.trim().into(),
-        })
+        let version = result.output.trim();
+        if version.is_empty() {
+            return Err("Codex isolated preflight failed: empty version".into());
+        }
+        Ok(version.into())
     }
 
     /// # Errors
@@ -82,6 +104,9 @@ impl Codex {
         options: &LiveOptions,
     ) -> Result<Execution, String> {
         let environment = self.environment(fixture)?;
+        if self.isolated_version(fixture, &environment)? != self.version {
+            return Err("Codex version changed after discovery".into());
+        }
         let started = Instant::now();
         let result = capture(
             &self.command,
@@ -123,6 +148,9 @@ impl Codex {
                 .map_err(|error| error.to_string())?;
         }
         let mut environment = fixture.env.clone();
+        if let Some(home) = &self.volta_home {
+            environment.insert("VOLTA_HOME".into(), home.clone());
+        }
         let parent = self
             .command
             .parent()
@@ -205,7 +233,7 @@ fn find_codex() -> Result<PathBuf, String> {
                 metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
             })
         })
-        .and_then(|candidate| fs::canonicalize(candidate).ok())
+        .and_then(|candidate| std::path::absolute(candidate).ok())
         .ok_or_else(|| "Codex CLI is not installed".into())
 }
 

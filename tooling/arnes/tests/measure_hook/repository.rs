@@ -100,24 +100,22 @@ fn nested_fake_git_marker_cannot_shrink_the_protected_repository()
     fs::create_dir(nested.join(".git"))?;
     let current = nested.join("deeper");
     fs::create_dir(&current)?;
-    let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
+    let output = Command::new(env!("CARGO_BIN_EXE_arnes"))
         .args(["measure", "hook", "--agent", "codex"])
         .current_dir(current)
         .env_clear()
         .env("HOME", &harness.home)
         .env("PATH", "/nonexistent")
         .env("XDG_STATE_HOME", harness.repository.join("state"))
-        .stdin(Stdio::piped())
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(br#"{"session_id":"session"}"#)?;
-    let output = child.wait_with_output()?;
+        .output()?;
     assert_advisory_failure(&output);
+    assert!(
+        String::from_utf8(output.stderr)?
+            .contains("state root cannot resolve inside the repository")
+    );
     assert!(!harness.repository.join("state").exists());
     Ok(())
 }
