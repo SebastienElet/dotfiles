@@ -50,17 +50,6 @@ tasks:
     inputs:
       - "@group(toolingSources)"
       - "@group(rootToolchain)"
-  apple-notes-test:
-    command: bun --config=/dev/null --no-env-file test tooling/apple-notes*.test.ts
-    deps:
-      - repository:dependencies
-    options:
-      runFromWorkspaceRoot: true
-      cache: false
-    inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
-      - /.agents/skills/apple-notes/scripts/**/*
   code-search-test:
     command: bun --config=/dev/null --no-env-file test tooling/deployment-links.test.ts tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
     deps:

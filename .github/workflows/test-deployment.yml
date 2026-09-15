@@ -4,14 +4,12 @@ on:
     paths:
       - .cargo/**
       - .moon/**
-      - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
       - tooling/deployment-*.ts
       - tooling/install-hunspell-dictionary*
       - tooling/agent-handoff/**
       - tooling/agent-memory/**
-      - tooling/apple-notes*.ts
       - tooling/pr-feedback-skill-test
       - package.json
       - bun.lock
@@ -29,14 +27,12 @@ on:
     paths:
       - .cargo/**
       - .moon/**
-      - .agents/skills/apple-notes/scripts/**
       - home/**
       - harness/**
       - tooling/deployment-*.ts
       - tooling/install-hunspell-dictionary*
       - tooling/agent-handoff/**
       - tooling/agent-memory/**
-      - tooling/apple-notes*.ts
       - tooling/pr-feedback-skill-test
       - package.json
       - bun.lock
@@ -68,5 +64,5 @@ jobs:
       - run:
           moon ci --concurrency 1 --downstream none tooling:deployment-test agent-memory:deployment-test
           agent-handoff:deployment-test tooling:hunspell-test
-          tooling:apple-notes-test tooling:pr-feedback-skill-test
+          tooling:pr-feedback-skill-test
           repository:typescript-typecheck
