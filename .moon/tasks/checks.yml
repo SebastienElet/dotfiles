@@ -61,6 +61,9 @@ tasks:
       - tooling/skill-markdown-paths.ts
       - tooling/check-command.ts
       - bun.lock
+      - .gitignore
+      - file: .prettierignore
+        optional: true
   shell-lint:
     options:
       cache: false

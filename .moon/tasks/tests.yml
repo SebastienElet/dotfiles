@@ -4,6 +4,7 @@ inheritedBy:
 fileGroups:
   generalTypeScriptTests:
     - tooling/**/*.ts
+    - oxfmt.config.ts
     - tooling/**/*.json
     - tooling/**/*.md
     - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,code-search-*,colgrep-search*}.ts"

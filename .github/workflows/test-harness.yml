@@ -15,4 +15,4 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - run: moon run harness:check
+      - run: moon ci --downstream none harness:validate-evals harness:validate-evidence

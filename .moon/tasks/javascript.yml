@@ -9,6 +9,7 @@ fileGroups:
     - "**/*.cts"
   typecheckedTypeScript:
     - tooling/**/*.ts
+    - oxfmt.config.ts
   typescriptToolchain:
     - package.json
     - bun.lock

@@ -1,7 +1,9 @@
 name: Text gates
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
   cspell:
     name: Text configuration

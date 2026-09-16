@@ -1,7 +1,9 @@
 name: Fish tests
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
   fish:
     name: Fish tests (${{ matrix.os }})
