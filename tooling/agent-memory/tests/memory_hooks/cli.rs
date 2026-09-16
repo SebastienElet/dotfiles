@@ -121,7 +121,7 @@ fn an_unavailable_project_git_process_exits_four_without_context()
 #[test]
 fn cursor_is_not_a_native_hook_variant() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = CliFixture::new()?;
-    let output = fixture.run(["hook", "--agent", "cursor"], b"{}")?;
+    let output = fixture.run(["hook", "--agent", "cursor"], b"")?;
     assert_error(&output, 2, "invalid_arguments")?;
     Ok(())
 }
