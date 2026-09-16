@@ -2,6 +2,34 @@ inheritedBy:
   tags:
     - repository
 fileGroups:
+  generalTypeScriptTests:
+    - tooling/**/*.ts
+    - tooling/**/*.json
+    - tooling/**/*.md
+    - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
+    - tooling/scrapling-mcp
+    - tooling/install-homebrew
+    - tooling/git-main-branch
+    - tooling/upgrade
+    - tooling/agent-memory/Cargo.toml
+    - tooling/agent-memory/Cargo.lock
+    - tooling/agent-memory/moon.yml
+    - tooling/agent-memory/build*.rs
+    - tooling/agent-memory/src/**/*
+    - .cargo/**/*
+    - .moon/tasks/rust.yml
+    - .moon/tasks/workstation.yml
+    - .moon/tasks/javascript.yml
+    - .moon/tasks/checks.yml
+    - .oxlintrc.json
+    - .prototools
+    - .github/dependabot.yml
+    - Makefile
+    - install.sh
+    - harness/USER.md
+    - harness/skills/obsidian-retrieval/SKILL.md
+    - harness/skills/obsidian-retrieval/references/obsidian-cli.md
+    - harness/skills/obsidian-retrieval/evals/trigger-queries.json
   fishBehaviorDependencies:
     - .gitignore
     - tooling/git-main-branch
@@ -10,14 +38,13 @@ fileGroups:
     - bun.lock
 tasks:
   typescript-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     deps:
       - agent-memory:build
     inputs:
-      - "@group(trackedTypeScript)"
+      - "@group(generalTypeScriptTests)"
       - "@group(typescriptToolchain)"
-      - tooling/**/*.json
-      - tooling/**/*.md
+      - .github/workflows/test-typescript.yml
     options:
       cache: false
   fish-test:
