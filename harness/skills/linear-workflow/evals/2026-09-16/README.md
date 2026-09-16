@@ -23,19 +23,22 @@ starting did not activate shaping, and explicit verification did not activate sy
 
 Claude Code 2.1.236 and 2.1.272 reported `loggedIn: false`; Cursor Agent
 2026.09.08-6caf4ff and 2026.03.18-f6873f7 reported `Not logged in` outside the sandbox.
-No model request was made on either platform. Their 18 planned executions each remain missing;
-the preflights are availability observations, not failed skill runs or three repetitions.
+No model request was made on either platform. On 2026-09-16, the user explicitly excluded
+Claude Code and Cursor checks from this task. Their 36 initially planned executions are cancelled,
+not remaining work. Both hosts remain unverified; the startup checks are availability observations,
+not failed skill runs or three repetitions.
 
 | #246 acceptance criterion                                                | Status                                                                  |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | Four valid scenario files                                                | Satisfied by local doctor and native scenario validation                |
-| Three completion refusals per supported agent                            | Partial: Codex satisfied; Claude Code and Cursor unverified             |
-| Equivalent prose and checkbox refusal                                    | Observed on Codex, three runs of each; other hosts unverified           |
-| Three negative-routing runs per supported agent                          | Partial: Codex satisfied for all four skills; other hosts unverified    |
+| Three completion refusals on Codex                                       | Satisfied on Codex; other hosts excluded by user decision               |
+| Equivalent prose and checkbox refusal                                    | Satisfied on Codex, three runs of each; other hosts excluded            |
+| Three negative-routing runs on Codex                                     | Satisfied on Codex for all four skills; other hosts excluded            |
 | Per-execution prompts, results, environment and coverage limits retained | Satisfied for every executed run; unavailable hosts explicitly recorded |
 
-This delivery does not establish completion of #246 across all supported agents. The PR links the
-issue without closing it. Deterministic checks do not fill the 36 missing live executions.
+The evaluation criteria are satisfied within the revised Codex-only scope. Claude Code and Cursor
+remain unsupported by behavioral evidence from this experiment; excluding them does not establish
+a pass. Their cancelled executions no longer block this task. The PR remains open for review.
 
 ## Method
 
@@ -57,7 +60,7 @@ repeating skill bodies. Agent messages are preserved without editorial correctio
 The invocation used `codex exec --json --ephemeral --ignore-user-config --ignore-rules
 --skip-git-repo-check --sandbox read-only --model gpt-6-astra -c
 'model_reasoning_effort="high"' --cd /fixture/workspace -`, with the prompt on stdin.
-An allowlisted process environment preserved PATH, TMPDIR, LANG and SYSTEMROOT when present;
+An allowlisted process environment preserved PATH, TMPDIR and LANG when present;
 HOME and CODEX_HOME pointed to the per-run fixture, and VOLTA_HOME retained the existing CLI
 installation. Existing Codex authentication was copied privately for the model request, never
 included in evidence or offered as task data. At most three independent processes ran concurrently;
@@ -101,7 +104,8 @@ enabled, or retried, and no description-changing workaround was introduced.
 The requested model and effort are recorded; the provider's resolved model revision and random
 seed are not exposed. Three repetitions characterize these executions only. The supported hosts
 are Codex, Claude Code and Cursor under ADR-026; an installed binary without authentication is not
-a completed evaluation. Missing hosts remain unverified rather than receiving synthetic passes.
+a completed evaluation. The user limited this task to Codex without changing the repository-wide
+host support policy. The excluded hosts remain unverified rather than receiving synthetic passes.
 
 ## Deterministic and procedural validation
 

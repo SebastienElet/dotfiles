@@ -91,5 +91,14 @@
     "review-agent/SKILL.md": "07079efd0dc76f05fade424e5dfb048dce1de2df7626e1a4f56292a4f3f92228",
     "skill-creator/SKILL.md": "6656e54755638e8efcf275a472b9672eaa8a9a1b9e59dc210e275b03b59e1e66",
     "skill-installer/SKILL.md": "d68b77e5bbb34dedab89d134da52855f140fc4b4299b80104f534e3b9e98f8ee"
+  },
+  "scope_decision": {
+    "date": "2026-09-16",
+    "authority": "Explicit user instruction in the task conversation",
+    "instruction": "On ne fera pas les checks cursor/claude",
+    "required_agents": ["Codex"],
+    "excluded_agents": ["Claude Code", "Cursor Agent"],
+    "cancelled_executions": 36,
+    "note": "The planned counts and availability observations above describe the initial scope. No Claude or Cursor behavior was verified; those runs are no longer required."
   }
 }
