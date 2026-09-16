@@ -10,7 +10,7 @@ taskOptions:
   mutex: proof-integrity-cargo-target
 tasks:
   build:
-    command: cargo build --release --locked --target-dir target
+    command: cargo build --quiet --release --locked --target-dir target
     deps:
       - repository:rust
     inputs:
