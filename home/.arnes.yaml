@@ -22,6 +22,10 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
+  - slug: prose-edit
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - slug: agent-instructions
     installations:
       - { agent: codex, scope: user }
