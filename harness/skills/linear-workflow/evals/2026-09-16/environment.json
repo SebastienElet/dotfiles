@@ -1,0 +1,95 @@
+{
+  "issue": 246,
+  "source_revision": "272e8a69781734780e5531701d9fa41c2815ba7c",
+  "environment": {
+    "os": "macOS 26.6.2",
+    "kernel": "Darwin",
+    "architecture": "arm64",
+    "shell": "zsh",
+    "date": "2026-09-16"
+  },
+  "context_sha256": "9b7d8cb397cae5cbd8b1aa13b2057a01ec8be90ae0f25b29ce7437cf8d5fdbce",
+  "source_sha256": {
+    "harness/skills/linear-start/SKILL.md": "851eec60a53b3c409d2a5152f16e6153bb526bc70afbe58de132798c8b09f9f0",
+    "harness/skills/linear-sync/SKILL.md": "a501bc608382a2a8b8bacd602596eac96e654a62816a1b55476d3e8d1a567749",
+    "harness/skills/linear-workflow/SKILL.md": "85b3d3c1e679494eff5bdfbd538f27dbd4e401f030dfcaaf84e936dfe38265dc",
+    "harness/skills/linear-workflow/references/bitbucket.md": "50057257a5f6fd43805d72ee4467fbdaed927a38aa1c6d48ba1b8777ba13cd11",
+    "harness/skills/linear-workflow/references/completion-evidence.md": "61b601e5d9fbec6c72f390065bb6dc13dd5e3e5c8162ae594b23d67b6ac663f5",
+    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-09.md": "b97d96737739028a41ad41c92743c59028801033b9e1a530a7aea995c73c4296",
+    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-10.json": "a3ca438177d6fabadadfb45c68c3278d8dac2a1627dbf4ed414ec930b232a480",
+    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-10.md": "0c3877cabd0089770c6a8cec97d638ec53b319805ab1ccecc2429a250242916c",
+    "harness/skills/linear-workflow/references/transports.md": "af45eee1c9908edc77d6bace551fea0c3f839a81b088d0a3e9881bc956c85f4a",
+    "harness/skills/linear-issue-spec/SKILL.md": "1692972c31f763507c279a94004a74456e23857e8ae7520cd053530499cbbb33"
+  },
+  "codex": {
+    "version": "codex-cli 0.154.0",
+    "requested_model": "gpt-6-astra",
+    "requested_reasoning_effort": "high",
+    "resolved_model_version": null
+  },
+  "unavailable_agents": [
+    {
+      "agent": "Claude Code",
+      "version": "2.1.236",
+      "command": "claude auth status",
+      "exit_code": 0,
+      "stdout": {
+        "loggedIn": false,
+        "authMethod": "none",
+        "apiProvider": "firstParty"
+      },
+      "scope": "native host outside sandbox",
+      "model": null,
+      "effort": null,
+      "verdict": "NOT_VERIFIED",
+      "reason": "No authenticated session; no model request made.",
+      "planned_repetitions_per_case": 3,
+      "executed_repetitions_per_case": 0,
+      "additional_probe": {
+        "binary": "/host-user/.local/bin/claude",
+        "version": "2.1.272",
+        "command": "claude auth status",
+        "exit_code": 0,
+        "stdout": {
+          "loggedIn": false,
+          "authMethod": "none",
+          "apiProvider": "firstParty",
+          "analyticsDisabled": false,
+          "projectsDirectory": "/host-user/.claude/projects",
+          "configDirectory": "/host-user/.claude"
+        }
+      }
+    },
+    {
+      "agent": "Cursor Agent",
+      "version": "2026.09.08-6caf4ff",
+      "desktop_version": "3.19.13",
+      "command": "cursor-agent status",
+      "exit_code": 0,
+      "stdout": "Not logged in",
+      "scope": "native host outside sandbox",
+      "model": null,
+      "effort": null,
+      "verdict": "NOT_VERIFIED",
+      "reason": "No authenticated session; no model request made.",
+      "planned_repetitions_per_case": 3,
+      "executed_repetitions_per_case": 0,
+      "additional_probe": {
+        "binary": "/host-user/.local/bin/cursor-agent",
+        "version": "2026.03.18-f6873f7",
+        "command": "cursor-agent status",
+        "exit_code": 130,
+        "stdout": "Starting login process...\nNot logged in",
+        "outcome": "Interrupted after unauthenticated status; no login completed."
+      }
+    }
+  ],
+  "bundled_system_skill_sha256": {
+    "imagegen/SKILL.md": "681ddb4ad6d06a2acc78a3535b583f8d0c1ea800ecda3d56370d3310fd2cd4ba",
+    "openai-docs/SKILL.md": "aa6829e21df2223167c85d2e49b6337a7345c84c1033f1ec10182c7882b36d45",
+    "plugin-creator/SKILL.md": "71b95b8219644f95d633721e7f7cd3c469edfc8fe50f8415d400dfb2d74bc7b9",
+    "review-agent/SKILL.md": "07079efd0dc76f05fade424e5dfb048dce1de2df7626e1a4f56292a4f3f92228",
+    "skill-creator/SKILL.md": "6656e54755638e8efcf275a472b9672eaa8a9a1b9e59dc210e275b03b59e1e66",
+    "skill-installer/SKILL.md": "d68b77e5bbb34dedab89d134da52855f140fc4b4299b80104f534e3b9e98f8ee"
+  }
+}

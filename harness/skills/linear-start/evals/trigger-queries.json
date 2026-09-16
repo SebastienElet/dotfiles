@@ -1,0 +1,21 @@
+{
+  "skill": "linear-start",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Start implementing my assigned Linear issue LIN-246 in its Bitbucket repository. Use the supplied snapshot for this isolated rehearsal and describe the first actionable step and any blocker.",
+      "should_activate": true,
+      "reason": "Explicit start of assigned Linear-backed implementation."
+    },
+    {
+      "query": "What is the current status and assignee of LIN-246 in the supplied snapshot? Report those two fields only; I am not asking to start work, synchronize anything, draft a ticket, or verify completion.",
+      "should_activate": false,
+      "reason": "Status lookup does not authorize implementation."
+    },
+    {
+      "query": "Prepare a Linear development issue for an operator to export the currently filtered invoice list as CSV. Use the supplied product facts, expose missing decisions, and give a functional draft for review before implementation.",
+      "should_activate": false,
+      "reason": "Drafting belongs to linear-issue-spec."
+    }
+  ]
+}

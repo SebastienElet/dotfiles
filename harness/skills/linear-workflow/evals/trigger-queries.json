@@ -1,0 +1,36 @@
+{
+  "skill": "linear-workflow",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Verify whether the merged Linear issue LIN-246 can be completed. Its acceptance section says \"- [ ] Export completes within two seconds for 10,000 invoices.\" No performance measurement has been made, the representative dataset is unavailable, and CI only ran formatting. Use the supplied snapshot and give the verification verdict and next action.",
+      "should_activate": true,
+      "reason": "Explicit verification cannot invent an unavailable measurement or complete the issue."
+    },
+    {
+      "query": "Start implementing my assigned Linear issue LIN-246 in its Bitbucket repository. Use the supplied snapshot for this isolated rehearsal and describe the first actionable step and any blocker.",
+      "should_activate": true,
+      "reason": "Implementation composes the shared execution policy."
+    },
+    {
+      "query": "Synchronize my assigned Linear issue LIN-246 with its merged Bitbucket pull request. The release dashboard should be up to date today. Use the supplied snapshot and report the lifecycle decision and any remaining work.\n\nAcceptance criteria in the issue description:\n- [ ] Exported CSV preserves the active filter.\n- [ ] Export completes within two seconds for 10,000 invoices.\n\nThe merge and code review are complete. Neither acceptance check has ever been run; there is no CI result or observation covering either criterion.",
+      "should_activate": true,
+      "reason": "Synchronization composes the completion policy."
+    },
+    {
+      "query": "Synchronize my assigned Linear issue LIN-246 with its merged Bitbucket pull request. The release dashboard should be up to date today. Use the supplied snapshot and report the lifecycle decision and any remaining work.\n\nAcceptance criteria in the issue description:\nExported CSV preserves the active filter. Export completes within two seconds for 10,000 invoices.\n\nThe merge and code review are complete. Neither acceptance check has ever been run; there is no CI result or observation covering either criterion.",
+      "should_activate": true,
+      "reason": "Completion policy applies regardless of acceptance-section syntax."
+    },
+    {
+      "query": "What is the current status and assignee of LIN-246 in the supplied snapshot? Report those two fields only; I am not asking to start work, synchronize anything, draft a ticket, or verify completion.",
+      "should_activate": false,
+      "reason": "Simple status lookup is outside execution and verification."
+    },
+    {
+      "query": "Prepare a Linear development issue for an operator to export the currently filtered invoice list as CSV. Use the supplied product facts, expose missing decisions, and give a functional draft for review before implementation.",
+      "should_activate": false,
+      "reason": "Product issue preparation is outside execution policy."
+    }
+  ]
+}
