@@ -25,14 +25,9 @@ Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son abse
 aucun drift. La propriété reste `external`, même pour une capacité autorisée. Les diagnostics
 conservent le schéma partagé `resource/state/message` et exposent dans le message l'origine, le
 conteneur, la version, l'exposition, la topologie, la politique et la limite d'observation runtime.
-La sortie humaine affiche le nombre de diagnostics `healthy`, masque leur détail et inventorie les
-problèmes ainsi que les limites `unsupported`. Pour les skills, elle regroupe cet inventaire par
-agent et place les agents en défaut en premier. `-v` ou `--verbose` rétablit le détail des
-diagnostics `healthy` pour tous les doctors. `--format json` reste exhaustif et conserve l'ordre
-canonique ; il ne se combine pas avec `--verbose`. `--color auto|always|never` règle la couleur de
-toutes les sorties humaines, avec `auto` par défaut : stdout doit être un TTY et `NO_COLOR` doit être
-absent ou vide. `always` garde priorité sur `NO_COLOR`; `never` et le JSON ne produisent aucun ANSI.
-`--format json --color always` échoue avant tout diagnostic.
+Les options, formats, états et codes de sortie communs sont décrits dans la
+[référence Doctor](arnes-doctor.md#formats-états-et-sorties). Pour les skills, la sortie humaine
+regroupe l'inventaire par agent et place les agents en défaut en premier.
 
 ## Codex
 
@@ -125,6 +120,7 @@ reste dans cette racine. Un lien pendant ou une sortie par un composant intermé
 sans être traversé. `doctor` n'analyse aucun cache orphelin et ne charge aucune capacité. La seule
 frontière exécutée est le résolveur JSON Codex pour ses plugins ; elle reçoit le HOME injecté, est
 lancée depuis HOME pour exclure les réglages du projet appelant, et possède une limite de cinq
-secondes et de 1 Mio par flux. Codex 0.147.0 crée et supprime pendant son démarrage des alias
-temporaires sous `CODEX_HOME/tmp/arg0` ; Arnes n'effectue aucune installation ni écriture durable
-dans le repository ou HOME.
+secondes et de 1 Mio par flux. L'exécution de ce binaire externe ne permet pas de déduire
+l'absence d'écritures temporaires ou de contacts réseau. La
+[référence Doctor](arnes-doctor.md#vérification-et-portée-des-preuves) borne les preuves actuelles
+d'absence de modification aux fixtures effectivement exercées.
