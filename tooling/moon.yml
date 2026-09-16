@@ -24,6 +24,11 @@ fileGroups:
     - /tsconfig.json
     - /.prototools
     - /.moon/tasks/javascript.yml
+  codeSearchRuntime:
+    - colgrep-search-cli.ts
+    - colgrep-search.ts
+    - colgrep-search-contract.ts
+    - /harness/skills/code-search/**/*
   linkDeployment:
     - deployment-links.test.ts
     - design-claim-audit.test.ts
@@ -53,6 +58,7 @@ tasks:
       - repository:typescript-test
       - upgrade-test
       - pr-feedback-skill-test
+      - code-search-test
       - deployment-test
       - hunspell-test
       - agent-memory:deployment-test
@@ -95,7 +101,7 @@ tasks:
       - /home/moon.yml
       - /.github/workflows/test-deployment.yml
   code-search-test:
-    command: bun --config=/dev/null --no-env-file test tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
+    command: bun --config=/dev/null --no-env-file test --path-ignore-patterns "tooling/colgrep-search-integration.test.ts" tooling/code-search-*.test.ts tooling/colgrep-search*.test.ts
     deps:
       - repository:dependencies
     options:
@@ -103,8 +109,10 @@ tasks:
       cache: false
     inputs:
       - "@group(bunTestSupport)"
-      - code-search-*.ts
+      - "@group(codeSearchRuntime)"
+      - code-search-*
       - colgrep-search*.ts
+      - "!colgrep-search-integration.test.ts"
       - /.github/workflows/test-code-search.yml
   code-search-integration-test:
     deps:
@@ -113,20 +121,24 @@ tasks:
     options:
       runFromWorkspaceRoot: true
       cache: false
+      os: macos
     env:
       COLGREP_INTEGRATION: "1"
     script: |-
       export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
       set -e
-      colgrep --version
-      colgrep-search --help || test "$?" -eq 1
+      export COLGREP_REAL_BIN="${COLGREP_REAL_BIN:-$(command -v colgrep)}"
+      export COLGREP_SEARCH_ENTRY_POINT="$HOME/.local/bin/colgrep-search"
+      "$COLGREP_REAL_BIN" --version
+      "$COLGREP_SEARCH_ENTRY_POINT" || test "$?" -eq 1
       bun --config=/dev/null --no-env-file test tooling/colgrep-search-integration.test.ts
     toolchains: bun
     inputs:
       - "@group(bunTestSupport)"
-      - colgrep-search*.ts
+      - "@group(codeSearchRuntime)"
+      - colgrep-search-integration.test.ts
       - deploy-link.ts
-      - /Brewfile
+      - install-homebrew
       - /.moon/tasks/packages.yml
       - /.moon/tasks/workstation.yml
       - /.github/workflows/test-code-search.yml
@@ -141,8 +153,9 @@ tasks:
       runFromWorkspaceRoot: true
       runInCI: true
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
+      - "@group(bunTestSupport)"
+      - colgrep-search-cli.ts
+      - deploy-link.ts
   upgrade-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/upgrade.test.ts tooling/upgrade-git.test.ts tooling/upgrade-node.test.ts tooling/node-version-installation.test.ts
     deps:

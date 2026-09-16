@@ -6,6 +6,20 @@ on:
   pull_request:
 jobs:
   code-search:
+    name: Code search (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: moon ci --downstream none tooling:code-search-test
+  colgrep:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
@@ -14,4 +28,4 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - run: moon ci --concurrency 1 --downstream none tooling:code-search-test tooling:code-search-integration-test
+      - run: moon ci --downstream none tooling:code-search-integration-test
