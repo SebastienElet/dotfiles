@@ -11,6 +11,7 @@ fileGroups:
     - /tooling/arnes/src/**/*
     - /tooling/arnes/Cargo.toml
     - /tooling/arnes/Cargo.lock
+    - /.cargo/**/*
     - /package.json
     - /bun.lock
     - /.moon/**/*
