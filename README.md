@@ -89,6 +89,12 @@ deployment flow, and placement rules.
 - `tooling/` contains maintained local applications and extensionless kebab-case executables.
 - Tool-mandated integration paths and repository entry points remain at the root.
 
+## Arnes Doctor
+
+See the [Doctor reference](docs/arnes-doctor.md) for its diagnostic scope,
+resource coverage, defaults, examples, exit codes, and observation limits for
+Claude Code, Cursor, and Codex.
+
 ## Harness project export
 
 Generate the portable user-harness Markdown snapshot used by ChatGPT Projects, Claude Projects,
