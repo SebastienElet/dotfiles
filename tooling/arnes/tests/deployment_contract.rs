@@ -49,7 +49,9 @@ fn moon_deployments_satisfy_instruction_rule_and_skill_doctors()
     for (resource, agent) in [("instructions", "codex"), ("rules", "claude")] {
         let diagnosis = Command::new(env!("CARGO_BIN_EXE_arnes"))
             .args(["doctor", resource, "--agent", agent, "--scope", "user"])
+            .env_clear()
             .env("HOME", home.path())
+            .env("PATH", home.path().join("bin"))
             .current_dir(&repository)
             .output()?;
         assert!(diagnosis.status.success(), "{}", output_text(&diagnosis));
@@ -58,7 +60,9 @@ fn moon_deployments_satisfy_instruction_rule_and_skill_doctors()
         .args([
             "doctor", "skills", "--agent", "codex", "--scope", "user", "--format", "json",
         ])
+        .env_clear()
         .env("HOME", home.path())
+        .env("PATH", home.path().join("bin"))
         .current_dir(&repository)
         .output()?;
     let diagnostics: serde_json::Value = serde_json::from_slice(&skill_diagnosis.stdout)?;
