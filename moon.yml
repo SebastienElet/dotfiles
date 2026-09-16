@@ -39,6 +39,9 @@ tasks:
       - agent-memory:clippy
       - agent-handoff:fmt
       - agent-handoff:clippy
+      - proof-integrity:fmt
+      - proof-integrity:clippy
+      - proof-integrity:check
     toolchains: system
   test:
     description: Run repository behavior tests
@@ -49,4 +52,5 @@ tasks:
       - arnes:test
       - agent-memory:test
       - agent-handoff:test
+      - proof-integrity:test
     toolchains: system

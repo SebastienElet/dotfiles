@@ -1,0 +1,24 @@
+fileGroups:
+  rust:
+    - /harness/skills/proof-integrity-review/SKILL.md
+    - /harness/skills/proof-integrity-review/references/**/*
+    - /.github/workflows/test-proof-integrity.yml
+    - moon.yml
+env:
+  RUSTFLAGS: -Funsafe-code
+taskOptions:
+  mutex: proof-integrity-cargo-target
+tasks:
+  build:
+    command: cargo build --release --locked --target-dir target
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(rust)"
+    outputs:
+      - target/release/proof-integrity
+    toolchains: system
+    options:
+      runInCI: false
+tags:
+  - rust-cli

@@ -1,0 +1,68 @@
+{
+  "ci_delivery": [
+    "(^|/)bitbucket-pipelines\\.ya?ml$",
+    "(^|/)\\.github/(?:workflows|actions)/",
+    "(^|/)\\.gitlab/ci/",
+    "(^|/)\\.gitlab-ci\\.ya?ml$",
+    "(^|/)\\.circleci/",
+    "(^|/)\\.buildkite/",
+    "(^|/)\\.drone\\.ya?ml$",
+    "(^|/)azure-pipelines\\.ya?ml$",
+    "(^|/)Jenkinsfile$"
+  ],
+  "verification_routing": [
+    "(^|/)(Makefile|Taskfile\\.ya?ml|Justfile|package\\.json|composer\\.json|Cargo\\.toml|go\\.mod|pom\\.xml|build\\.gradle(?:\\.kts)?)$",
+    "(^|/)(scripts|tooling)/.*(?:verify|check|lint|test|quality|gate|ci|e2e|proof|preflight|witness|conformance|replay).*",
+    "(^|/)(?:scripts|tooling)/(?:[^/]+/)*(?:[^/]*[-_.])?(?:re)?validat(?:e|ion|or)(?:[-_.][^/]*)?(?:/|$)",
+    "(^|/)scripts/.*(?:workspace|paths|scope|schema-drift).*\\.sh$",
+    "^scripts/(?:build-plugin-runtime|build-public-demo|impact-pilot)\\.ts$",
+    "(^|/)tooling/checks/",
+    "(^|/)(?:\\.moon/|moon\\.ya?ml$)",
+    "(^|/)harness/skills/[^/]+/scripts/"
+  ],
+  "test_oracles": [
+    "(^|/)(tests?|__tests__)/",
+    "(^|/)(?:conftest|noxfile|test[^/]*|[^/]+_test)\\.py$",
+    "(?:^|/).*(?:\\.spec|\\.test)\\.[^/]+$",
+    "(^|/)[^/]+(?:_test\\.go|Test\\.php|Test\\.java|Tests?\\.cs|_spec\\.rb)$",
+    "(^|/)\\.?(vitest|jest|playwright|pytest|tox|ruff|eslint|oxlint|markdownlint|cspell|cypress|coverage|mypy|pyright|biome|nox|pylint|stylelint|mocha|karma|sonar)(?:\\.|/)",
+    "(^|/)(pyproject\\.toml|pytest\\.(?:ini|toml)|tox\\.ini|setup\\.cfg|pyrightconfig\\.json|phpunit\\.xml(?:\\.dist)?|\\.coveragerc|\\.flake8|\\.nycrc|\\.ruff\\.toml|\\.eslintrc(?:\\.[^/]+)?|\\.?pylintrc|\\.stylelintrc(?:\\.[^/]+)?|\\.mocharc(?:\\.[^/]+)?|karma\\.conf\\.[^/]+|sonar-project\\.properties|tsconfig(?:\\.[^/]+)?\\.json)$",
+    "(^|/)(?:src|lib)/(?:[^/]+/)*(?:test|testing|verification|proof|engine)/adapters?/",
+    "(^|/)(?:src|lib)/.*(?:test[-_.]?reporter|runtime[-_.]?facts|assertion[-_.]?(?:classifier|attribution)|evidence[-_.]?(?:gate|normalizer)).*",
+    "^scripts/pilot/",
+    "^site/app\\.js$"
+  ],
+  "cache_build_graph": [
+    "(^|/)(turbo\\.json|nx\\.json|bazelrc|\\.bazelrc)$",
+    "(^|/).*(?:cache|artifact).*(?:\\.ya?ml|\\.json|\\.toml|\\.sh|\\.ps1)$"
+  ],
+  "normative_docs": [
+    "(^|/)docs/adr/",
+    "(^|/)docs/frontier(?:/|$)",
+    "(^|/)docs/.*(?:index|summary|sommaire|decision|convention|protocol|proof|verification|conformance|policy).*\\.md$",
+    "(^|/)specs?/[^/]+/contracts?/.*\\.(?:md|ya?ml|json|toml)$",
+    "(^|/)(AGENTS|CLAUDE|REVIEW)\\.md$"
+  ],
+  "authority_contracts": [
+    "(^|/)(?:specs?/[^/]+/contracts?/)?[^/]*(?:capabilit|permission|persona|authorit|mandate|access-control|regulation)[^/]*\\.(?:md|ya?ml|json|toml)$",
+    "(^|/)(?:policies|permissions|authorization|access-control)/"
+  ],
+  "agent_governance": [
+    "(^|/)\\.agents/(?:skills|agents|hooks|rules|commands)/",
+    "(^|/)\\.claude/(?:skills|agents|rules|hooks|commands)/",
+    "(^|/)\\.codex/(?:skills|agents|hooks|rules|commands)/",
+    "^(?:agents|hooks|rules|commands)/",
+    "^skills/[^/]+/(?:SKILL\\.md|agents/|scripts/|evals/|references/)",
+    "^plugins/[^/]+/(?:hooks|skills|omp)/",
+    "^plugins/[^/]+/(?:plugin|mcp)\\.json$",
+    "(^|/)\\.codex-plugin/plugin\\.json$",
+    "(^|/)\\.claude-plugin/plugin\\.json$",
+    "(^|/)harness/(?:skills|agents|hooks|rules|commands)/"
+  ],
+  "tool_pins": [
+    "(^|/)(Dockerfile(?:\\..*)?|docker-compose.*\\.ya?ml|compose.*\\.ya?ml)$",
+    "(^|/)(renovate\\.json|\\.renovaterc(?:\\.json)?|\\.tool-versions|mise\\.toml)$",
+    "(^|/)(?:pnpm-lock\\.yaml|package-lock\\.json|yarn\\.lock|uv\\.lock|poetry\\.lock)$",
+    "(^|/)(?:Cargo\\.lock|bun\\.lock|rust-toolchain(?:\\.toml)?|\\.prototools)$"
+  ]
+}

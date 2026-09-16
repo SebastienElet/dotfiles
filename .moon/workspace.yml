@@ -6,6 +6,7 @@
       agent-handoff: tooling/agent-handoff,
       agent-memory: tooling/agent-memory,
       arnes: tooling/arnes,
+      proof-integrity: harness/skills/proof-integrity-review/scripts,
       home: home,
       tooling: tooling,
     },

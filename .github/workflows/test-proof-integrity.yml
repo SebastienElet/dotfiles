@@ -1,0 +1,22 @@
+name: Proof Integrity tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  proof-integrity:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: >-
+          moon ci --downstream none proof-integrity:fmt proof-integrity:clippy proof-integrity:check proof-integrity:test proof-integrity:doc

@@ -13,6 +13,7 @@ PRODUCTIVITY_REVIEW.md
 tooling/agent-memory/target/
 tooling/agent-handoff/target/
 tooling/arnes/target/
+harness/skills/proof-integrity-review/scripts/target/
 .moon/cache/
 node_modules/
 .harness-export/

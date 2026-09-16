@@ -83,6 +83,14 @@ says to post directly.
    green aggregate barrier is evidence for no individual row by itself. Record missing evidence as
    `absent`, never as an inference.
 
+   When the aggregate PR diff changes a verification mechanism (CI routing, test oracles, caches,
+   proof policy, or agent review rules), activate `proof-integrity-review` on the same base and
+   exact head. This also applies when `pr-fix` composes the review. Select by the semantic change,
+   not filenames alone; ordinary application changes and editorial-only changes do not require
+   this audit. Complete it before phase 5, retaining its matrix and artifacts with the review's
+   evidence. Reuse relevant observed commands on the same inputs instead of running a duplicate
+   barrier; preserve the proof auditor's fresh context and independent first pass.
+
 3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
    `<mechanism>`. Only the third form can become a blocker. When the head under review was written
@@ -120,6 +128,13 @@ says to post directly.
    to go away. Reservations are for mechanisms whose consequence is bounded; a mechanism that can
    lose or corrupt data blocks even when the author disagrees. A style, naming or structure
    preference never blocks: label it non-blocking, or drop it.
+
+   For an applicable proof-integrity audit, `PROOF_WEAK`, `PROOF_CIRCULAR`, a rejected gate, or
+   an absent or stale audit requires _changes required_; name the missing evidence or failing
+   mechanism and its lift criterion. `PROOF_ADEQUATE` satisfies this additional requirement only,
+   not the rest of the PR review. Include the proof result and artifact locations in the existing
+   evidence gaps and behavior ledger, retaining the full claim matrix as a linked review artifact.
+   Do not publish a separate proof verdict or interpret a path-only `NOT_APPLICABLE` as an exemption.
 
    Complete the structured review summary from the phase-1 anchor, findings, changed-behavior
    ledger and distinct evidence-gap inventory, then emit it with `arnes measure pr-verdict` as

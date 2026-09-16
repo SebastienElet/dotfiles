@@ -1,0 +1,61 @@
+{
+  "skill": "proof-integrity-review",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "An authorized pr-verdict review found that the PR changes CI test selection. Run its conditional proof-integrity audit on the anchored base and head.",
+      "should_activate": true,
+      "reason": "pr-verdict explicitly composes the audit for changed verification mechanisms"
+    },
+    {
+      "query": "During pr-fix, pr-verdict is reviewing a new head after a comment-only correction. The aggregate PR still changes a gate and the previous proof receipt names the old head.",
+      "should_activate": true,
+      "reason": "The proof audit must be renewed for the complete aggregate diff at the new head"
+    },
+    {
+      "query": "An authorized pr-verdict review covers only a dashboard layout change, with unchanged verification mechanisms.",
+      "should_activate": false,
+      "reason": "Composition is conditional; an ordinary PR review does not require a proof audit"
+    },
+    {
+      "query": "$proof-integrity-review compare this branch with main",
+      "should_activate": true,
+      "reason": "Explicit invocation"
+    },
+    {
+      "query": "Review whether the changed Moon check task still detects the defects it claims to block",
+      "should_activate": true,
+      "reason": "Verification invocation changed"
+    },
+    {
+      "query": "CI is green after changing cache keys and removing a test discovery step; can we call this done?",
+      "should_activate": true,
+      "reason": "Cache and coverage changes can invalidate the evidence"
+    },
+    {
+      "query": "Audit a changed agent rule that allows approval based on an epoch-bound receipt",
+      "should_activate": true,
+      "reason": "Review policy changes its own acceptance mechanism"
+    },
+    {
+      "query": "Change a dashboard margin from 8px to 12px",
+      "should_activate": false,
+      "reason": "Ordinary application styling has no changed verification mechanism"
+    },
+    {
+      "query": "Correct spelling in an ADR without changing its meaning",
+      "should_activate": false,
+      "reason": "Editorial documentation is excluded"
+    },
+    {
+      "query": "Review this application's business logic with unchanged tests and CI",
+      "should_activate": false,
+      "reason": "Ordinary code review is not proof-system review"
+    },
+    {
+      "query": "Audit whether a domain specification grants the right persona authority",
+      "should_activate": false,
+      "reason": "Domain authority belongs to design-claim-audit"
+    }
+  ]
+}
