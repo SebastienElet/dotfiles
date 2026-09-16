@@ -5,7 +5,9 @@ import { tmpdir } from "node:os";
 
 const integrationEnabled = process.env.COLGREP_INTEGRATION === "1";
 const integrationTimeoutMilliseconds = 300_000;
-const entryPoint = join(import.meta.dirname, "colgrep-search-cli.ts");
+const entryPoint =
+  process.env.COLGREP_SEARCH_ENTRY_POINT ??
+  join(import.meta.dirname, "colgrep-search-cli.ts");
 const fixtureRoots: string[] = [];
 const mainSymbols = [
   "mainCheckoutTrackedSymbol",
