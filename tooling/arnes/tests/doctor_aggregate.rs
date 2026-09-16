@@ -16,8 +16,11 @@ fn healthy_aggregate_is_deterministic_ordered_and_read_only()
     let fixture = configured_fixture()?;
     let before = fixture.snapshot()?;
     let human = fixture.command(["doctor", "-v"])?;
+    assert_eq!(fixture.snapshot()?, before);
     let repeated_human = fixture.command(["doctor", "-v"])?;
+    assert_eq!(fixture.snapshot()?, before);
     let structured = fixture.command(["doctor", "--format", "json"])?;
+    assert_eq!(fixture.snapshot()?, before);
     let repeated_structured = fixture.command(["doctor", "--format", "json"])?;
     assert_eq!(
         human.status.code(),
@@ -71,25 +74,10 @@ fn healthy_aggregate_is_deterministic_ordered_and_read_only()
     let diagnostics = json(&structured)?;
     for resource in ORDER {
         assert!(
-            diagnostics
-                .iter()
-                .map(
-                    |diagnostic| -> Result<_, Box<dyn std::error::Error + Send + Sync>> {
-                        Ok({
-                            *(diagnostic)
-                                .get("resource")
-                                .ok_or("missing fixture index resource")?
-                                == resource
-                                && *(diagnostic)
-                                    .get("state")
-                                    .ok_or("missing fixture index state")?
-                                    == "healthy"
-                        })
-                    }
-                )
-                .collect::<Result<Vec<_>, _>>()?
-                .into_iter()
-                .any(std::convert::identity),
+            diagnostics.iter().any(|diagnostic| {
+                diagnostic.get("resource").and_then(Value::as_str) == Some(resource)
+                    && diagnostic.get("state").and_then(Value::as_str) == Some("healthy")
+            }),
             "missing healthy {resource} diagnostic"
         );
     }
@@ -116,6 +104,7 @@ fn healthy_aggregate_is_deterministic_ordered_and_read_only()
 fn filtered_aggregate_reuses_each_direct_resource_diagnostic()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
+    let before = fixture.snapshot()?;
     let _: () = for resource in ORDER {
         let (agent, scope) = match resource {
             "mcp" => ("claude", "project"),
@@ -125,10 +114,12 @@ fn filtered_aggregate_reuses_each_direct_resource_diagnostic()
         let aggregate = fixture.command([
             "doctor", "--agent", agent, "--scope", scope, "--format", "json",
         ])?;
+        assert_eq!(fixture.snapshot()?, before);
         let aggregate = json(&aggregate)?;
         let direct = fixture.command([
             "doctor", resource, "--agent", agent, "--scope", scope, "--format", "json",
         ])?;
+        assert_eq!(fixture.snapshot()?, before);
         let expected = json(&direct)?;
         let actual = aggregate
             .iter()
@@ -217,9 +208,17 @@ fn aggregate_surfaces_every_drift_without_mutation()
 fn operational_error_does_not_suppress_later_resources()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
+    let before = fixture.snapshot()?;
+    let permissions = fs::metadata(fixture.repository().join("harness/AGENTS.md"))?.permissions();
     set_mode(&fixture.repository().join("harness/AGENTS.md"), 0o000)?;
+    let unreadable = fs::metadata(fixture.repository().join("harness/AGENTS.md"))?.permissions();
     let output = fixture.command(["doctor", "--format", "json"])?;
-    set_mode(&fixture.repository().join("harness/AGENTS.md"), 0o600)?;
+    assert_eq!(
+        fs::metadata(fixture.repository().join("harness/AGENTS.md"))?.permissions(),
+        unreadable
+    );
+    fs::set_permissions(fixture.repository().join("harness/AGENTS.md"), permissions)?;
+    assert_eq!(fixture.snapshot()?, before);
     assert_eq!(output.status.code(), Some(2));
     let diagnostics = json(&output)?;
     assert!(
@@ -264,5 +263,59 @@ fn operational_error_does_not_suppress_later_resources()
             .into_iter()
             .any(std::convert::identity)
     );
+    Ok(())
+}
+
+#[test]
+fn aggregate_preserves_one_fixture_through_healthy_drift_and_fatal_states()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    for (exit_code, resource, state) in [
+        (0, "instructions", "healthy"),
+        (1, "instructions", "drift"),
+        (2, "manifest", "error"),
+    ] {
+        let before = fixture.snapshot()?;
+        for format in ["human", "json"] {
+            let output = fixture.command(["doctor", "--format", format])?;
+            assert_eq!(fixture.snapshot()?, before, "{state}, {format}");
+            assert_eq!(output.status.code(), Some(exit_code), "{state}, {format}");
+            assert!(output.stderr.is_empty());
+            if format == "json" {
+                let diagnostics = json(&output)?;
+                assert!(diagnostics.iter().any(|diagnostic| {
+                    diagnostic.get("resource").and_then(Value::as_str) == Some(resource)
+                        && diagnostic.get("state").and_then(Value::as_str) == Some(state)
+                }));
+            } else {
+                assert!(!output.stdout.is_empty());
+            }
+        }
+        match exit_code {
+            0 => fs::remove_file(fixture.home().join(".claude/CLAUDE.md"))?,
+            1 => fixture.write_home(".arnes.yaml", "version: [invalid\n")?,
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn undeclared_cursor_aggregate_is_unsupported_instead_of_healthy()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    let before = fixture.snapshot()?;
+    let output = fixture.command(["doctor", "--agent", "cursor", "--format", "json"])?;
+    assert_eq!(fixture.snapshot()?, before);
+    assert_eq!(output.status.code(), Some(0));
+    let diagnostics = json(&output)?;
+    let resources = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.get("resource").and_then(Value::as_str) != Some("manifest"))
+        .collect::<Vec<_>>();
+    assert!(!resources.is_empty());
+    assert!(resources.iter().all(|diagnostic| {
+        diagnostic.get("state").and_then(Value::as_str) == Some("unsupported")
+    }));
     Ok(())
 }
