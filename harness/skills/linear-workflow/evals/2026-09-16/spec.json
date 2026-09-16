@@ -1,0 +1,200 @@
+{
+  "case": "spec",
+  "runs": [
+    {
+      "run_id": "codex-spec-1",
+      "agent": "Codex CLI",
+      "agent_version": "0.154.0",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "resolved_model_revision": null,
+      "environment": "macOS 26.6.2 / Darwin arm64 / zsh; fresh isolated home and workspace; read-only sandbox",
+      "context_file": "context.md",
+      "prompt": "Prepare a Linear development issue for an operator to export the currently filtered invoice list as CSV. Use the supplied product facts, expose missing decisions, and give a functional draft for review before implementation.",
+      "prompt_sha256": "d446334194900b62bcedbddfbd87a98a81bfc8a8de1bd6b148ba10a6392a3fe2",
+      "started_at": "2026-09-16T08:29:46Z",
+      "duration_seconds": 97.46,
+      "command": [
+        "/host-user/.volta/bin/codex",
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"high\"",
+        "--cd",
+        "/fixture/workspace",
+        "-"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "observed_skill_reads": ["linear-issue-spec"],
+      "tool_observations": [
+        {
+          "command": "/bin/zsh -lc 'cat /fixture/home/.agents/skills/linear-issue-spec/SKILL.md'",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 9309,
+          "output_sha256": "1692972c31f763507c279a94004a74456e23857e8ae7520cd053530499cbbb33"
+        },
+        {
+          "command": "/bin/zsh -lc 'rg --files /fixture/home/.agents/skills /fixture/home/.codex/skills/.system -g SKILL.md'",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 780,
+          "output_sha256": "923a1c2db3e3fb9d20229558017fd870c2bd3bcc2c04d63ea55246ad4505364a"
+        }
+      ],
+      "agent_messages": [
+        "I’m using the linear-issue-spec skill to draft the issue from the supplied facts and make unresolved product decisions explicit. This rehearsal will remain read-only.",
+        "**Missing information and contradictions**\n\n- The supplied snapshot establishes an authenticated billing employee and an invoice list with date and customer filters. Its observation date is unspecified.\n- Designs, CSV columns, export permission decisions, journey research, and adjacent-ticket inventory are unavailable. These gaps prevent an implementation-ready specification; proposals below remain open for review.\n- LIN-246 is **In Progress**, but its associated PR 17 is **MERGED**. Only formatting CI passed; no behavioral acceptance checks or performance observations exist. The requested outcome is therefore unverified. Review the existing behavior against the agreed specification before commissioning further implementation.\n\n**Title**\n\nExport the currently filtered invoice list as CSV\n\n**Context and observable outcome**\n\n**Requested:** An operator can download a CSV containing only invoices matching the invoice list’s currently applied filters.\n\n**Persona and user journey**\n\n**Established — supplied product facts:** The operator is an authenticated billing employee. The invoice list supports filtering by date and customer.\n\n**Proposed journey:** Open the invoice list → apply filters → request export → receive progress feedback → download the CSV → use the exported records. If export fails, the operator can retry without rebuilding the filters.\n\n**Scope**\n\n**Proposed:** One complete manual export journey, including filter selection, download, empty results, permission handling, and recovery from failure. Confirm the CSV content and access policy before implementation.\n\n**Functional requirements**\n\n| Evidence | Requirement |\n|---|---|\n| Requested | Provide a CSV download for the currently filtered invoice list. Exclude invoices outside the selected filters. |\n| Established | Respect the existing date and customer filtering behavior. Source: supplied product facts; no independent inspection available. |\n| Proposed | Include every matching invoice across result pages, if pagination exists. This makes the export useful for the whole filtered result. |\n| Proposed | Use the applied filters at the moment export is requested. Later filter changes do not change that export’s selection. |\n| Proposed | Export requires an explicit operator action and leaves the current filters intact. |\n| Proposed | Include only records and fields the operator is authorized to export. Authentication alone does not establish export permission. |\n| Proposed | Deliver a complete file or a clear failure; do not present an incomplete export as successful. |\n| Proposed | Preserve agreed field values in CSV, including values containing commas, quotation marks, or line breaks. |\n\n**Required data and visible information**\n\n**Open decision:** Approve the column list, column order, header names, and the representation of dates, monetary amounts, currencies, and missing values. No schema is established by the supplied facts.\n\n**Proposed:** Show an identifiable export action, progress, failure feedback, and permission or availability explanations. Use a recognizable filename that identifies an invoice export and its creation date; exact naming remains open.\n\n**User interactions**\n\n**Proposed:** The operator applies date and customer filters using the existing controls, then selects “Export CSV.” The export uses applied filter values rather than unsubmitted edits. A failed attempt offers retry for the same selection; starting a fresh export uses the filters currently applied.\n\n**States and permissions**\n\nAll behavior below is **Proposed**.\n\n| State | Expected behavior |\n|---|---|\n| Initial | Offer export when the applied filter selection is settled and export is permitted. Confirm behavior when no filters are applied. |\n| Loading | While filters are being applied, prevent an ambiguous export selection. During export, show progress and prevent accidental duplicate requests. |\n| Empty filtered result | Explain that no invoices match; do not start a download. |\n| No data | If no invoices are available before filtering, explain that there are no invoices to export. |\n| Success | Deliver one complete CSV for the captured selection and clear progress feedback. |\n| Partial | Do not silently omit records or truncate the file. Treat inability to deliver the complete selection as failure. |\n| Error | Explain that export failed without clearing the operator’s filters. |\n| Retry | Allow another attempt for the failed selection. |\n| Unavailable | Explain when export cannot be used and whether retry is possible. |\n| Permission | Prevent unauthorized export and provide an appropriate explanation. The governing permission remains undecided. |\n\n**Design and existing product alignment**\n\n**Established:** Date and customer filtering already exist.\n\n**Proposed:** Place export within the invoice-list journey and follow existing action, progress, empty-state, and error patterns where available. No design or component guidance has been inspected; placement and wording require review.\n\n**Dependencies and related issues**\n\nThe snapshot identifies LIN-246 and its associated [merged PR 17](https://bitbucket.org/fixture-workspace/invoice-export/pull-requests/17). It records no parent, sub-issues, or blocking relations. Broader overlap and duplication remain unknown because the adjacent-ticket inventory is unavailable.\n\nProduct dependencies are approval of the CSV schema, permissions, selection rules, and expected export size and duration.\n\n**Deliberate out of scope**\n\n**Proposed:** Scheduled exports, additional file formats, custom column selection, and new filtering features. Each expands beyond the requested manual CSV journey and is unnecessary to establish its value.\n\n**Functional acceptance criteria**\n\nThe proposed criteria become binding only after product review.\n\n1. **Requested:** With date and customer filters applied, the downloaded CSV contains matching invoices and excludes nonmatching invoices.\n2. **Proposed:** Where results span pages, the CSV includes each matching invoice once across all pages.\n3. **Proposed:** Changing filters after requesting export does not alter that export’s captured selection.\n4. **Proposed:** The file follows the approved schema and preserves agreed values when opened in the agreed CSV consumer.\n5. **Proposed:** Zero matching invoices and no available invoices produce their respective explanations without a download.\n6. **Proposed:** Progress is visible; failure preserves filters and permits retry; incomplete output is never reported as success.\n7. **Proposed:** An operator without the approved export permission cannot download invoice data.\n8. **Proposed:** At the agreed representative volume, export completes within the agreed time or clearly explains the applicable limit.\n\n**Open product questions**\n\n- Which columns and value formats are required, and which CSV consumer must be supported?\n- Who may export, and are any visible invoice fields excluded?\n- Does export include all matching pages? What should happen with no filters applied?\n- Should zero results prevent download or produce a header-only CSV?\n- What ordering, data-freshness behavior, volume limits, and completion time are expected?\n- Does the merged work already satisfy any of this behavior, and is there overlapping planned work?\n\n**Why this scope**\n\nThis slice lets a billing employee complete a recognizable task from filtering through download and failure recovery. No evidence supports splitting it or merging it with another ticket.\n\nProposed next action: review the open decisions, then compare the merged behavior with the approved acceptance criteria to identify any remaining work. No issue or lifecycle state was changed. The `issue-creation` companion skill is unavailable, so no publication handoff was performed."
+      ],
+      "usage": {
+        "input_tokens": 50446,
+        "cached_input_tokens": 38272,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1734,
+        "reasoning_output_tokens": 152
+      },
+      "verdict": "PASS",
+      "assessment_method": "Manual inspection of completed command events and full agent messages against README rubric; not an automated or model-graded score.",
+      "verdict_reason": "Read linear-issue-spec; produced a provisional functional draft, labeled proposals and unavailable product decisions, without prescribing implementation. No execution skill activation. Publication composition is outside this verdict."
+    },
+    {
+      "run_id": "codex-spec-2",
+      "agent": "Codex CLI",
+      "agent_version": "0.154.0",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "resolved_model_revision": null,
+      "environment": "macOS 26.6.2 / Darwin arm64 / zsh; fresh isolated home and workspace; read-only sandbox",
+      "context_file": "context.md",
+      "prompt": "Prepare a Linear development issue for an operator to export the currently filtered invoice list as CSV. Use the supplied product facts, expose missing decisions, and give a functional draft for review before implementation.",
+      "prompt_sha256": "d446334194900b62bcedbddfbd87a98a81bfc8a8de1bd6b148ba10a6392a3fe2",
+      "started_at": "2026-09-16T08:29:48Z",
+      "duration_seconds": 117.62,
+      "command": [
+        "/host-user/.volta/bin/codex",
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"high\"",
+        "--cd",
+        "/fixture/workspace",
+        "-"
+      ],
+      "exit_code": 0,
+      "stderr": "2026-09-16T08:29:53.802644Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n2026-09-16T08:29:53.803267Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n",
+      "observed_skill_reads": ["linear-issue-spec"],
+      "tool_observations": [
+        {
+          "command": "/bin/zsh -lc 'cat /fixture/home/.agents/skills/linear-issue-spec/SKILL.md'",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 9309,
+          "output_sha256": "1692972c31f763507c279a94004a74456e23857e8ae7520cd053530499cbbb33"
+        },
+        {
+          "command": "/bin/zsh -lc \"rg --files /fixture/home/.agents/skills /fixture/home/.codex/skills | rg '(\"'^|/)(issue-creation|linear-workflow)/|SKILL.md$'\"'\"",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 936,
+          "output_sha256": "e2a7fb3bb55e34dd0dfac3d43326750d7b33834212087b2030b069bf439858a3"
+        }
+      ],
+      "agent_messages": [
+        "I’m using the linear-issue-spec skill to draft the issue from the supplied facts and make unresolved product decisions explicit. This rehearsal will remain read-only.",
+        "**Missing information and contradictions**\n\n- The supplied product facts establish an authenticated billing employee, existing date and customer filters, and the requested CSV download. Their recency is unspecified; no independent product evidence is available.\n- CSV columns, column order, value formatting, export permissions, pagination behavior, and acceptable export size or waiting time are undecided. These affect acceptance and must be resolved before implementation.\n- Designs, journey research, and adjacent-ticket inventory are unavailable. Overlap and consistency with other export experiences cannot be assessed. LIN-246 has no recorded parent, sub-issues, or blockers.\n- LIN-246 is **In Progress**, while its attached [PR 17](https://bitbucket.org/fixture-workspace/invoice-export/pull-requests/17) is **MERGED**. Only formatting passed; no behavioral acceptance checks or performance observations exist. This draft must be reconciled with the merged behavior before further implementation. The snapshot does not establish functional completion.\n\n**Title**\n\nExport the currently filtered invoice list as CSV\n\n**Context and observable outcome**\n\n[Requested] Let a billing employee download a CSV containing only invoices matching the invoice list’s current filters.\n\n**Persona and user journey**\n\n[Established — supplied product facts] The operator is an authenticated billing employee using an invoice list that supports date and customer filters.\n\n[Proposed] The operator opens the list, applies or changes filters, reviews the results, starts an export, receives progress or failure feedback, and downloads a CSV. They can retry a failed export without rebuilding their filters.\n\n**Scope**\n\n[Proposed] Deliver one complete journey from filtered results to a usable CSV, including empty results, export progress, errors, retry, and permission handling. Keep the existing filtering behavior as the basis for which invoices qualify.\n\n**Functional requirements**\n\n| ID | Provenance | Requirement |\n|---|---|---|\n| F1 | Requested | Provide a CSV download for the currently filtered invoice list; exclude invoices outside those filters. |\n| F2 | Established — supplied product facts | Date and customer filtering already exist and form the relevant product context. |\n| F3 | Proposed | Export every matching invoice across all result pages, once each. Pagination behavior requires confirmation. |\n| F4 | Proposed | Use the filters active when export starts. Later filter changes do not alter that export. Behavior when invoice data changes during export remains undecided. |\n| F5 | Proposed | Apply an explicitly agreed export permission rule. Authentication alone does not establish export authorization. |\n| F6 | Proposed | Produce a CSV with an agreed schema and value formatting, preserving field boundaries when values contain commas, quotes, line breaks, or non-ASCII characters. |\n| F7 | Proposed | Preserve the operator’s filters through export success, failure, and retry; clearly distinguish a complete export from failure. |\n\n**Required data and visible information**\n\n[Proposed] Agree the CSV’s columns, headers, ordering, row order, date and monetary formatting, treatment of missing values, and filename convention before implementation.\n\n[Proposed] Show an identifiable export action, progress feedback, and actionable failure feedback. Exact copy and placement await product review.\n\n**User interactions**\n\n[Proposed] Start export from the invoice list. While export is running, indicate progress and prevent accidental duplicate activation. On failure, offer retry using the filters currently shown; if they have changed, the retry exports that current selection.\n\n**States and permissions**\n\nAll behaviors below are **Proposed**:\n\n| State | Expected behavior |\n|---|---|\n| Initial | Show the export action to operators permitted to export. Behavior with no active filters requires confirmation. |\n| List loading | Make export unavailable until the current filter results are established. |\n| Export loading | Show that export is in progress and prevent duplicate activation. |\n| Empty filtered results | Explain that no invoices match; disable export. |\n| No invoice data | Explain that no invoices are available; disable export. This differs from filters returning no matches. |\n| Success | Deliver a complete CSV that can be opened with the agreed headers and values. |\n| Partial | Partial delivery is outside the proposed scope; do not present an incomplete file as successful. |\n| Error | Explain the failure and preserve filters. |\n| Retry | Allow another attempt after a retryable failure. |\n| Unavailable | Explain temporary unavailability without losing the current list selection. |\n| Permission denied | Prevent export and provide appropriate feedback; the permission rule itself is unresolved. |\n\n**Design and existing product alignment**\n\n[Established — supplied facts] The existing invoice list and its filters are the entry point.\n\n[Proposed] Align export controls and feedback with the product’s existing patterns once those sources are available. No design or component pattern has been verified.\n\n**Dependencies and related issues**\n\nLIN-246 is the existing issue. PR 17 is merged, but its user-visible behavior has not been established by the supplied checks. No related-ticket inventory is available; absence of recorded blockers does not resolve the missing product decisions.\n\n**Deliberate out of scope, with product rationale**\n\n[Proposed] Exclude new filtering capabilities, scheduled exports, additional file formats, and configurable column selection. These are separate capabilities; the proposed increment delivers an immediate CSV from existing filters.\n\n**Functional acceptance criteria**\n\nRequested behavior:\n\n1. With date and customer filters applied, the downloaded CSV contains only invoices matching those filters.\n\nProposed criteria, subject to product confirmation:\n\n2. A result set spanning multiple pages exports every matching invoice exactly once.\n3. Changing filters after export starts leaves that export tied to its original filter selection.\n4. The CSV matches the approved schema and preserves values containing special characters.\n5. Empty results and absence of invoice data show the appropriate message and prevent export.\n6. Export progress is visible; successful export delivers a complete file.\n7. A failed or incomplete export is reported as unsuccessful; filters remain intact and retry is available when appropriate.\n8. Permission checks allow and deny exports according to the approved rule.\n\nLarge-export acceptance remains incomplete until supported volume and acceptable waiting time are agreed.\n\n**Open product questions**\n\n- Which columns and formatting must the CSV contain?\n- Which billing employees may export, and which invoice data may they export?\n- Should export include all matching pages? What happens when no filters are active?\n- How should concurrent invoice changes and export row ordering be handled?\n- Are the proposed empty, progress, failure, and retry behaviors acceptable?\n- What export volumes and completion times must be supported?\n\n**Why this scope**\n\nThis increment lets the operator complete a recognizable task: turn the current filtered invoice selection into a usable file. Its feedback and recovery states belong in the same issue because they determine whether the journey is complete. No evidence supports merging or splitting adjacent work.\n\nThe proposed next action is product review of the open decisions, followed by comparison with PR 17’s delivered behavior and identification of any remaining work. No issue or lifecycle state was changed. The referenced `issue-creation` skill is unavailable, so publication handoff remains unavailable; this is a read-only functional draft."
+      ],
+      "usage": {
+        "input_tokens": 50736,
+        "cached_input_tokens": 38784,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1619,
+        "reasoning_output_tokens": 12
+      },
+      "verdict": "PASS",
+      "assessment_method": "Manual inspection of completed command events and full agent messages against README rubric; not an automated or model-graded score.",
+      "verdict_reason": "Read linear-issue-spec; produced a provisional functional draft, labeled proposals and unavailable product decisions, without prescribing implementation. No execution skill activation. Publication composition is outside this verdict."
+    },
+    {
+      "run_id": "codex-spec-3",
+      "agent": "Codex CLI",
+      "agent_version": "0.154.0",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "resolved_model_revision": null,
+      "environment": "macOS 26.6.2 / Darwin arm64 / zsh; fresh isolated home and workspace; read-only sandbox",
+      "context_file": "context.md",
+      "prompt": "Prepare a Linear development issue for an operator to export the currently filtered invoice list as CSV. Use the supplied product facts, expose missing decisions, and give a functional draft for review before implementation.",
+      "prompt_sha256": "d446334194900b62bcedbddfbd87a98a81bfc8a8de1bd6b148ba10a6392a3fe2",
+      "started_at": "2026-09-16T08:30:08Z",
+      "duration_seconds": 77.09,
+      "command": [
+        "/host-user/.volta/bin/codex",
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"high\"",
+        "--cd",
+        "/fixture/workspace",
+        "-"
+      ],
+      "exit_code": 0,
+      "stderr": "2026-09-16T08:30:13.931549Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n2026-09-16T08:30:13.933389Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n",
+      "observed_skill_reads": ["linear-issue-spec"],
+      "tool_observations": [
+        {
+          "command": "/bin/zsh -lc 'cat /fixture/home/.agents/skills/linear-issue-spec/SKILL.md'",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 9309,
+          "output_sha256": "1692972c31f763507c279a94004a74456e23857e8ae7520cd053530499cbbb33"
+        },
+        {
+          "command": "/bin/zsh -lc 'rg --files /fixture/home/.agents/skills /fixture/home/.codex/skills/.system -g SKILL.md'",
+          "exit_code": 0,
+          "status": "completed",
+          "output_bytes": 780,
+          "output_sha256": "2d920f4a751f1f3418469fe9497c55c7a20bb8ee887bd6c895c108d10aac3667"
+        }
+      ],
+      "agent_messages": [
+        "I’m using the linear-issue-spec skill to draft the issue from the supplied facts and make the unresolved product decisions explicit.",
+        "Missing information and contradictions: This is a review draft for **LIN-246 — Export filtered invoices**, based only on the supplied snapshot. No issue was changed.\n\n- **Product evidence:** The snapshot establishes an authenticated billing employee and existing date/customer filters. Its recency is unspecified. Designs, journey research, permission decisions, CSV columns, and adjacent-ticket inventory are unavailable.\n- **Decisions needed:** Export columns and formatting; export permission; all matching invoices versus the visible page; behavior when filters or invoice data change during export; empty results; and expected volume and completion time.\n- **Lifecycle discrepancy:** LIN-246 is In Progress, but its attached PR 17 is merged. Formatting passed; behavioral acceptance and performance evidence are absent. The merge does not establish that this requested outcome works. Review existing behavior against the agreed specification before deciding whether further implementation is needed.\n\n**Title:** Export the currently filtered invoice list as CSV\n\n**Context and observable outcome:** An authenticated billing employee can download a CSV containing only invoices matching the filters applied to the invoice list. The file provides the agreed invoice information in a usable, consistent format.\n\n**Persona and user journey:** The operator opens the invoice list, applies date and/or customer filters, reviews the results, starts export, and receives a CSV. Proposed: the operator remains on the list with their filters preserved and can recover from an export failure.\n\n**Scope:** One complete journey from the existing filtered list to a usable CSV, including export feedback, empty results, failure, retry, and access restrictions. Proposed scope choices below require product confirmation.\n\n**Functional requirements:**\n\n| Provenance | Requirement |\n|---|---|\n| Requested — current request | Provide a CSV download for the currently filtered invoice list. Exclude invoices outside the applied filters. |\n| Established — supplied product facts | Support the existing date and customer filtering context for an authenticated billing employee. |\n| Proposed | Export all matching invoices across any pagination, so the file represents the filtered result set. |\n| Proposed | Use filters applied when the operator starts export; later filter changes do not alter that export. |\n| Proposed | Include each matching invoice once, using an agreed set of columns and formats. |\n| Proposed | Preserve the list and filters throughout export, with visible progress, completion, and recoverable failure feedback. |\n| Proposed | Treat export as complete only when the entire intended file is available; do not present a partial result as success. |\n| Proposed | Limit exported invoices and fields to those the operator is authorized to export. Authentication alone does not settle export permission. |\n\n**Required data and visible information:** Product must approve the column names, order, field meanings, date/time conventions, currency and number formats, and missing-value representation. Proposed: provide a recognizable CSV filename and feedback identifying which applied filters the export uses. No column list or filename convention is established by the supplied facts.\n\n**User interactions:** Proposed: offer an export action on the invoice list. Starting it shows progress and prevents accidental duplicate activation while that request is pending. Success makes the CSV available for download. Failure explains that the export did not complete and offers retry.\n\n**States and permissions:**\n\n| State | Proposed behavior for review |\n|---|---|\n| Initial | Export is available once results and access are known. Unfiltered export behavior remains a product decision. |\n| List loading / export loading | Explain temporary unavailability while results load; show progress while exporting. |\n| Empty filtered results | Explain that no invoices match and disable export. A headers-only CSV is an alternative requiring a decision. |\n| No invoice data | Explain that no invoices are available and disable export. |\n| Success | Make the complete CSV available and show completion feedback. |\n| Partial | Report an incomplete export as failure. |\n| Error / retry | Preserve list and filters, explain failure, and allow retry using the filters applied when retry begins. |\n| Unavailable | Explain that export is unavailable without disrupting invoice viewing. |\n| Permission denied | Prevent export and explain the restriction; do not expose restricted invoice information. |\n\n**Design and existing product alignment:** Reuse established invoice-list terminology and interaction patterns once inspected. No design, component, or export convention has been verified.\n\n**Dependencies and related issues:** LIN-246 has no recorded parent, sub-issues, or blocking relations in the supplied snapshot. PR 17 is merged and associated with the issue. The broader adjacent-ticket inventory is unavailable, so overlaps and duplication remain unassessed.\n\n**Deliberate out of scope:** Proposed: additional filters, other file formats, scheduled exports, and emailed delivery. None is needed to complete the requested list-to-CSV journey.\n\n**Functional acceptance criteria:**\n\n1. **Requested:** With date and customer filters applied, the downloaded CSV contains no invoices outside those filters.\n2. **Proposed:** With matching invoices across multiple pages, every matching invoice appears exactly once.\n3. **Proposed:** The CSV opens successfully in the agreed target application; headers, values, punctuation, line breaks, and non-ASCII text follow the approved data contract.\n4. **Proposed:** Changing filters after starting export leaves that export tied to its original filters.\n5. **Proposed:** Empty, loading, unavailable, and permission states behave as specified above.\n6. **Proposed:** A failed or incomplete export shows failure, preserves the list, and supports a successful retry.\n7. **Proposed:** At the agreed supported volume, export completes within the agreed time and provides visible progress.\n\nCriteria depending on unresolved decisions are provisional.\n\n**Open product questions:** Approve or revise the proposed behaviors; define the CSV data contract, access policy, unfiltered behavior, treatment of concurrent invoice changes, supported volume, target application, and completion-time expectation.\n\n**Why this scope:** The slice delivers a usable file through a complete operator journey. Splitting download, feedback, and recovery would leave that journey incomplete. No neighboring work can responsibly be merged without its inventory. The proposed next action is product review of these decisions, followed by checking the merged behavior against the approved criteria before implementation planning."
+      ],
+      "usage": {
+        "input_tokens": 50545,
+        "cached_input_tokens": 43904,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1544,
+        "reasoning_output_tokens": 154
+      },
+      "verdict": "PASS",
+      "assessment_method": "Manual inspection of completed command events and full agent messages against README rubric; not an automated or model-graded score.",
+      "verdict_reason": "Read linear-issue-spec; produced a provisional functional draft, labeled proposals and unavailable product decisions, without prescribing implementation. No execution skill activation. Publication composition is outside this verdict."
+    }
+  ]
+}
