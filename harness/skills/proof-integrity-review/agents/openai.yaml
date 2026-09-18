@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proof Integrity Review"
+  short_description: "Review changes to verification mechanisms and their evidence"
+  default_prompt: "Review the changed verification mechanisms with the bundled CLI, an independent audit, and observed negative witnesses."

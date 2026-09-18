@@ -61,6 +61,11 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: proof-integrity-review
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: pr-fix
     installations:
       - { agent: claude, scope: user }

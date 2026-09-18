@@ -13,9 +13,9 @@ fn invalid_argument_values_are_redacted() -> Result<(), Box<dyn std::error::Erro
             secret,
             "--reason-stdin",
         ],
-        b"reason",
+        b"",
     )?;
-    let invalid_agent = fixture.run(["hook", "--agent", secret], b"{}")?;
+    let invalid_agent = fixture.run(["hook", "--agent", secret], b"")?;
     let unknown = format!("--{secret}");
     let invalid_option = fixture.run(["admit", unknown.as_str()], b"")?;
     let _: () = for output in [

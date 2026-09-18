@@ -23,6 +23,11 @@ executed test-first RED or controlled faulty variant derived from that head and 
 observed; "test passes" alone is not a negative witness. Use `absent` for missing evidence. Either
 approval verdict is invalid while a row is incomplete or contradicted.>
 
+<When verification mechanisms changed, include the proof-integrity result on this exact base/head,
+its gate result, and the locations of its complete claim matrix, epoch and receipt with the
+relevant ledger rows or evidence gaps. Missing, stale, weak or circular proof prevents approval;
+an adequate proof result does not replace the rest of the review.>
+
 <Blocking paragraph — one clause per blocker: the mechanism, then the invariant it breaks. Close
 with one sentence stating what must become true to lift them. Omit this paragraph entirely when
 the verdict is "approved".>

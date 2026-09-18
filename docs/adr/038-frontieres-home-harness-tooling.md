@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-07
+- **Révision** : 2026-09-16
 
 ## Contexte
 
@@ -15,6 +15,10 @@ pas les chemins sources. Les ADR-024 et ADR-027 nommaient en revanche `ai/` ;
 leur décision fonctionnelle reste valable, mais cette localisation est
 remplacée ici.
 
+Un skill peut dépendre d'un outil compilé qui lui est propre. Séparer cet outil
+du skill impose de retrouver et de distribuer deux composants pour réutiliser
+la même capacité dans un autre harnais.
+
 ## Décision
 
 Adopter trois frontières :
@@ -23,9 +27,22 @@ Adopter trois frontières :
    reproduit leur chemin relatif de destination ;
 2. `harness/` contient les instructions et capacités partagées entre les
    agents, dont `AGENTS.md`, `SOUL.md` et `USER.md` ;
-3. `tooling/` contient les applications et exécutables locaux maintenus. Les
+3. `tooling/` contient les applications et exécutables locaux maintenus qui
+   sont autonomes ou partagés entre plusieurs capacités. Les
    exécutables placés directement sous ce répertoire sont sans extension et
    nommés en kebab-case.
+
+Les outils propres à un skill résident dans son répertoire canonique, sous
+`harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
+sources, les manifestes de compilation, les fichiers de verrouillage, les tests
+et les binaires associés. Le choix du langage suit l'ADR-041.
+
+Le skill documente comment construire ou obtenir son exécutable, les plateformes
+prises en charge et les dépendances nécessaires. Ses chemins internes sont
+résolus depuis son propre emplacement, sans dépendre du chemin du checkout
+dotfiles. La présence d'un binaire dans le skill ne le rend pas compatible avec
+tous les systèmes et architectures ; son mode de distribution et son éventuel
+versionnement dans Git sont des décisions distinctes de son emplacement.
 
 Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
@@ -39,7 +56,9 @@ de compatibilité n’est ajouté aux chemins sources.
 
 Les manifestes Moon de ces répertoires décrivent leurs tâches ; ils ne sont pas
 déployés sous `$HOME`. `home/moon.yml` porte les déploiements, `harness/moon.yml`
-les capacités des agents et les projets de `tooling/` les outils et oracles.
+les capacités des agents, y compris l'intégration des outils embarqués dans les
+skills ; les projets de `tooling/` portent les outils et oracles autonomes ou
+partagés.
 
 ## Conséquences
 
@@ -52,6 +71,11 @@ les capacités des agents et les projets de `tooling/` les outils et oracles.
   voulu ; le nettoyage existant n’est pas une remise à zéro générale.
 - Les chemins de découverte imposés restent des exceptions visibles à la
   racine plutôt que des copies sous `harness/`.
+- Un outil propre à un skill évolue avec ses instructions et ses tests dans
+  le même répertoire ; l'intégration Moon du dépôt ne doit pas être nécessaire
+  à son utilisation dans un autre harnais.
+- Cette décision n'impose pas de déplacer les outils existants sans besoin
+  lié au skill concerné.
 
 ## Alternatives écartées
 
@@ -62,3 +86,5 @@ les capacités des agents et les projets de `tooling/` les outils et oracles.
 - Conservation de liens vers les anciens chemins : masque les consommateurs
   oubliés et pérennise deux sources possibles.
 - Modularisation du `Makefile` : indépendante du problème de placement.
+- Placer tous les exécutables dans `tooling/`, même ceux propres à un seul
+  skill : disperse les composants nécessaires à la réutilisation du skill.

@@ -41,6 +41,10 @@ invokes it.
    publishing it. Resolve the source repository and source ref from forge metadata; never infer the
    push target from the local branch name or `origin`.
 
+   `pr-verdict` owns conditional activation of `proof-integrity-review`; do not start a second
+   parallel proof audit from this workflow. Carry its findings and evidence locations into the
+   repair journal with the head they concern.
+
    Before repairing, open or create
    `~/.local/state/pr-fix/<forge-host>/<destination-owner>/<destination-repository>/<pr>/journal.md`
    from `assets/repair-journal.md`. Derive the identity from the canonical PR URL, verify the URL
@@ -102,7 +106,11 @@ invokes it.
    while a correction is still pending — a head you intend to amend is a head whose verdict you are
    about to throw away. When that review does find a defect in the repair itself, correct it, push
    once, and scope the second delegation to the new delta and its barrier tier instead of repeating
-   the whole sweep. Record the verdict and its SHA in the journal; an older verdict is historical.
+   the whole sweep. Exception: if the aggregate PR diff changes a verification mechanism, require
+   `pr-verdict` to renew its `proof-integrity-review` audit over the complete aggregate diff at the
+   new head, even when the latest correction is editorial. A receipt from the previous head cannot
+   satisfy that requirement; keep ordinary review work scoped to the correction where appropriate.
+   Record the verdict and its SHA in the journal; an older verdict is historical.
    All delegated passes stop after phase 5 without publishing comments or opening tickets.
    Return only the final head's verdict as current. Verdict publication remains subject to separate
    user authorization; repair authority alone publishes only the factual summary in step 8.

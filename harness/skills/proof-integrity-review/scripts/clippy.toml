@@ -1,0 +1,6 @@
+allow-unwrap-in-tests = false
+allow-expect-in-tests = false
+allow-panic-in-tests = false
+allow-indexing-slicing-in-tests = false
+allow-unwrap-in-consts = false
+allow-expect-in-consts = false

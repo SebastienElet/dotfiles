@@ -102,6 +102,9 @@ cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-dev
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
+cursor: ~/.cursor/skills/proof-integrity-review
+~/.cursor/skills/proof-integrity-review: ${DOTFILES_PATH}/harness/skills/proof-integrity-review FORCE | ~/.cursor/skills proof-integrity
+	@${CREATE_SYMLINK}
 ~/.cursor/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification FORCE | ~/.cursor/skills
 	@${CREATE_SYMLINK}
 ~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.cursor/skills
@@ -221,6 +224,10 @@ agent-memory:
 .PHONY: agent-handoff
 agent-handoff:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
+
+.PHONY: proof-integrity
+proof-integrity:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) proof-integrity:build
 
 .PHONY: claude-code
 claude-code:

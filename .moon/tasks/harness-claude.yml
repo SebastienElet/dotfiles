@@ -49,6 +49,7 @@ tasks:
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" claude
     deps:
       - repository:dependencies
+      - proof-integrity:build
     toolchains: bun
   claude-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'

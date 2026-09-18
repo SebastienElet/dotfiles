@@ -34,6 +34,9 @@ tasks:
       - arnes:fmt
       - arnes:clippy
       - arnes:check
+      - proof-integrity:fmt
+      - proof-integrity:clippy
+      - proof-integrity:test
       - repository:typescript-lint
       - repository:typescript-typecheck
       - repository:typescript-format-check
