@@ -1,8 +1,13 @@
-# #111 — Brouillons de décisions et de synchronisation
+# #111 — Décisions Doctor et brouillons de synchronisation
 
-**Propositions du 16 septembre 2026, non approuvées et non publiées.**
+**D1 et D2 approuvées le 19 septembre 2026.** Le mainteneur a répondu « ok »
+aux deux recommandations présentées dans cette session : lecture seule stricte et
+conservation des défauts MCP, avec équivalence à portée explicite identique.
+**Les huit brouillons S1–S8 du 16 septembre restent non approuvés et non publiés.**
 Cible : `SebastienElet/dotfiles`, parent prévu [#111](https://github.com/SebastienElet/dotfiles/issues/111).
-Le [bilan sourcé](issue-111-doctor-bilan.md) distingue ce qui est livré et ce qui reste à décider.
+Le [bilan sourcé](issue-111-doctor-bilan.md) distingue les décisions, les capacités
+livrées et les preuves restant à établir. Cette validation ne vaut ni livraison
+de la lecture seule stricte ni autorisation de publier les sous-issues.
 Les titres et corps ci-dessous décrivent des résultats attendus ; ils ne prescrivent
 ni nouvelle commande, ni modules, ni étapes d'implémentation.
 
@@ -27,7 +32,7 @@ la recherche sera rafraîchie avant publication.
 | commands     | S5                                 | Claude user/project ; cohérence avec les prompts, sans double écriture contradictoire                                                   |
 | rules        | S6                                 | Claude/Cursor user ; destination divergente conservée                                                                                   |
 | hooks        | Pas de nouveau chantier équivalent | `setup hooks --agent …` réconcilie déjà user ; voir état livré ci-dessous                                                               |
-| mcp          | S7                                 | Agents/portées explicitement sélectionnés ; contrat de portée D2 à disposer avant publication de cette proposition                      |
+| mcp          | S7                                 | Agents/portées explicitement sélectionnés ; D2 approuvée, brouillon S7 toujours à valider avant publication                             |
 | statusline   | S8                                 | Codex user/project seulement ; liste ordonnée, pas rendu TUI                                                                            |
 
 Ces périmètres stabilisent uniquement les ressources et représentations déjà observables
@@ -61,9 +66,8 @@ la publication ; elles font partie de la présente demande de validation.
 
 ## D1 — Décider la frontière de lecture seule de Doctor face au résolveur Codex
 
-**Résultat attendu.** Disposer explicitement la contradiction entre la lecture seule
-stricte demandée par #111/#123/#124 et l'inventaire Codex livré par #166/#168, afin
-qu'un prochain chantier puisse appliquer un contrat cohérent et vérifiable.
+**Résultat attendu.** Mettre l'inventaire Codex livré par #166/#168 en conformité
+avec la lecture seule stricte conservée pour Doctor par la décision du 19 septembre.
 
 **Constat.** Sur `272e8a6`, `doctor skills` et l'agrégat Codex user exécutent les
 deux commandes d'inventaire de Codex. L'[expérience macOS](issue-111-doctor-bilan.md#contre-exemple-de-lecture-seule)
@@ -71,19 +75,23 @@ obtient code 0 et snapshots identiques malgré les écritures d'un double hors d
 arbres observés. Elle ne prouve aucun effet du vrai Codex. HOME/cwd, délai et taille
 de sortie bornés ne constituent pas un confinement des effets.
 
-**Proposition à décider.** Conserver la lecture seule comme contrat de Doctor, y compris
-les effets de ses subprocessus ; une sélection active non observable dans cette
-frontière reste explicitement inconnue, jamais déduite d'un cache solitaire. Si le
-mainteneur préfère autoriser une résolution ayant des effets, définir séparément son
-autorisation et ses limites et modifier explicitement le contrat concerné. Aucune
-des deux orientations n'est approuvée par ce brouillon.
+**Décision approuvée.** Doctor doit rester sans écriture ni contact réseau, y compris
+par ses subprocessus. La portée comprend les écritures persistantes et transitoires,
+dans et hors du HOME et du projet. Une sélection active non observable dans cette
+frontière est signalée explicitement comme indisponible, jamais déduite d'un cache
+solitaire. L'exhaustivité de l'inventaire Codex peut donc être réduite ; l'exigence
+de sélection autoritative de #166 est conservée pour les résultats observables.
 
-**Critères de décision.**
+Cette décision fixe une cible : le contre-exemple du résolveur reste valable pour
+le code audité. Aucun mécanisme de conformité ni aucune nouvelle preuve verte
+n'est livré par la présente mise à jour documentaire.
 
-- [ ] L'autorité choisit la portée exacte : écritures persistantes/transitoires, chemins
-      observés et extérieurs, réseau, processus enfants et comportement en cas d'observation indisponible.
-- [ ] Les exigences de #166 sur la sélection autoritative reçoivent une disposition
-      explicite : conservées, remplacées ou volontairement réduites, avec impact visible sur les diagnostics.
+**Disposition et preuves restantes.**
+
+- [x] Le mainteneur conserve la lecture seule stricte pour les effets directs et ceux
+      des processus enfants ; l'indisponibilité de l'inventaire doit être explicite.
+- [x] La sélection autoritative de #166 est conservée ; une couverture moindre est
+      acceptée lorsque cette sélection n'est pas observable dans la frontière retenue.
 - [ ] Le contrat de #111/#123/#124 est réconcilié sans qualifier leurs anciens snapshots
       de preuve universelle ; #126 demeure la référence unique.
 - [ ] Les preuves attendues pour l'implémentation choisie nomment plateformes, limites et
@@ -96,30 +104,33 @@ Parent proposé : #111 ; lien de contexte : #166, sans rouvrir son implémentati
 
 ## D2 — Préciser l'équivalence MCP entre Doctor direct et agrégé
 
-**Résultat attendu.** Donner une disposition explicite au critère « mêmes diagnostics »
-de #111/#123 lorsque `--scope` est absent.
+**Résultat retenu.** Le critère « mêmes diagnostics » de #111/#123 s'applique à
+une portée explicitement identique ; les défauts des deux appels restent inchangés.
 
 **Constat.** Le [contre-exemple reproductible](issue-111-doctor-bilan.md#contre-exemple-déquivalence-sans-scope-mcp)
 donne 0/unsupported user en direct et 1/drift project dans l'agrégat. Le comportement
 est livré, testé et déjà documenté par #126 ; un scope explicite produit les mêmes
 diagnostics MCP. Le changer modifierait ce comportement public.
 
-**Proposition à décider.** Conserver les défauts livrés et qualifier l'équivalence
-par une même sélection effective, avec comparaison explicite des scopes. Si une
-équivalence des options absentes est requise, décider quel défaut remplace l'autre
-et les conséquences pour les utilisateurs avant le correctif.
+**Décision approuvée.** `doctor mcp` conserve `user` par défaut ; l'agrégat sans
+`--scope` examine toutes les portées MCP déclarées. L'équivalence des diagnostics MCP
+est garantie dans les représentations vérifiées lorsque `--scope` est explicite et
+identique, à filtre agent identique. Aucune équivalence n'est promise entre les deux
+appels sans scope. La décision conserve le comportement déjà livré et documenté.
 
-**Critères de décision.**
+**Disposition et suivi.**
 
 - [ ] #111/#123 expriment sans ambiguïté la sélection à laquelle s'applique l'équivalence.
+- [x] Le mainteneur valide les défauts actuels et limite l'équivalence aux sélections
+      explicites identiques. Cette disposition reste à reporter dans les trackers.
 - [ ] Le cas MCP uniquement project a un résultat attendu explicite pour les appels
       direct, agrégé et filtré, dans les deux formats, sans perte silencieuse de diagnostic.
 - [ ] La référence commune reste exacte ; toute modification du défaut public est
       justifiée et couverte par le cas contradictoire, sans refaire les tests sans rapport.
 
 **Hors périmètre.** Uniformiser tous les défauts des autres ressources ou synchroniser MCP.
-Parent proposé : #111. Cette décision peut aussi être enregistrée directement dans le
-parent après validation, sans créer une issue autonome supplémentaire.
+La décision est consignée ici ; elle peut être reportée dans #111/#123 lors d'une
+mise à jour autorisée, sans créer une issue autonome supplémentaire.
 
 ## S1 — Synchroniser les valeurs user de configuration gérées par Arnes
 
@@ -252,7 +263,8 @@ Parent proposé : #111 ; observation livrée : #119.
 
 **Résultat attendu.** Converger les enregistrements locaux déclarés pour un agent
 et une portée explicitement sélectionnés, selon [#121](https://github.com/SebastienElet/dotfiles/issues/121).
-La proposition reste conditionnée à la disposition D2 pour sa publication.
+D2 est désormais tranchée ; la validation de S7 et l'autorisation de sa publication
+restent nécessaires, comme pour les autres brouillons de synchronisation.
 
 **Critères d'acceptation**, avec les contraintes communes :
 
@@ -269,7 +281,7 @@ La proposition reste conditionnée à la disposition D2 pour sa publication.
 
 **Hors périmètre.** Installer MCP, gérer Docker, authentifier ou tester les services,
 adopter les enregistrements de plugins et supprimer les collisions automatiquement.
-Parent proposé : #111 ; observation livrée : #121 ; décision préalable : D2.
+Parent proposé : #111 ; observation livrée : #121 ; décision de portée approuvée : D2.
 
 ## S8 — Synchroniser la liste de statusline Codex déclarée
 
@@ -314,9 +326,11 @@ un écart concret approuvé. Ni façade générale ni extension project ne sont 
 Chaque promesse des titres S1–S8 est couverte par un résultat Doctor sélectionné,
 la protection des voisins et des refus/échecs observables. Les limites d'agents et
 de représentations empêchent une promesse de parité ; les contraintes communes font
-partie de chaque corps. D1 et D2 demandent une décision, pas une implémentation anticipée.
+partie de chaque corps. D1 et D2 sont approuvées ; D1 reste à mettre en œuvre et à
+prouver, tandis que D2 conserve le comportement livré. Aucun brouillon S1–S8 n'est
+approuvé par la seule résolution de ces arbitrages.
 
 Après validation des corps : rafraîchir la recherche de doublons, publier les seuls
 brouillons approuvés, inclure leurs contraintes communes et vérifier leur rattachement
-réel à #111. D2 peut être disposée dans le parent ; S7 attend cette disposition.
+réel à #111. D2 reste à reporter dans les trackers ; S7 n'attend plus un choix de portée.
 Aucune publication, modification d'issue, fermeture ou synchronisation n'a lieu dans ce dossier.

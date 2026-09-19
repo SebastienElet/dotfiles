@@ -5,9 +5,15 @@ Ce bilan rapproche le contrat ouvert de [#111](https://github.com/SebastienElet/
 des livraisons existantes. Il ne remplace pas la [référence commune](arnes-doctor.md)
 livrée par #126 et ne clôture aucune issue.
 
+Mise à jour du 19 septembre : le mainteneur a approuvé les recommandations D1/D2.
+Les observations techniques ci-dessous restent celles du 16 septembre ; aucune
+nouvelle exécution Doctor n'est revendiquée par cette mise à jour.
+
 **Conclusion :** les familles Doctor et les preuves sur fixtures sont livrées.
 La lecture seule stricte reste contredite par l'exécution du résolveur Codex.
-L'équivalence directe/agrégée exige aussi de préciser les portées effectives de MCP.
+La décision D1 conserve cette exigence, encore à mettre en œuvre et à prouver.
+D2 conserve les défauts MCP et limite l'équivalence à une portée explicite identique ;
+cette précision reste à reporter dans #111/#123.
 Les [brouillons de synchronisation](issue-111-sync-brouillons.md) restent des propositions
 à valider puis à publier ; aucune synchronisation n'est implémentée ici.
 
@@ -72,17 +78,17 @@ ne forment pas une certification de toute combinaison agent × portée × état.
 
 ## Bilan des neuf critères de #111
 
-| Critère                                                                    | Disposition                                        | Preuve et reste exact                                                                                                                                                                                    |
-| -------------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Familles livrées dans des sous-issues rattachées                        | Établi                                             | Inventaire des 15 enfants et livraisons ci-dessus ; aucune réparation de rattachement nécessaire                                                                                                         |
-| 2. Sélecteurs, filtres et états sur dépôt/HOME isolés                      | Établi dans les représentations nommées            | Suites de ressources et compléments macOS ci-dessous. `unsupported` et les omissions ne valent pas healthy ; aucune parité d'agents                                                                      |
-| 3. Toutes les familles dans l'ordre et mêmes diagnostics individuels       | Partiel : équivalence à portée effective identique | `filtered_aggregate_reuses_each_direct_resource_diagnostic` et ordre vert dans #339 ; contre-exemple MCP sans scope ci-dessous, à disposer explicitement                                                 |
-| 4. Cohérence human/JSON et sorties                                         | Établi dans la portée CLI testée                   | `aggregate_preserves_one_fixture_through_healthy_drift_and_fatal_states`, suites de rendu/CLI : 0 healthy/unsupported/vide, 1 drift, 2 error ; erreurs d'arguments/sortie possibles sur stderr sans JSON |
-| 5. Absence de mutation et de contact externe, aucun lancement de capacités | Non établi ; garantie générale contredite          | Snapshots bornés déjà livrés ; nouvelle expérience du résolveur ci-dessous. Aucun oracle de confinement du vrai Codex ; pas de preuve d'absence d'effet externe universelle                              |
-| 6. Livraison canonique et documentation                                    | Livré dans la portée demandée de l'inspection      | #339 atteste graphe/recettes Moon natifs sans installation globale ; chemins binaire/manifeste identifiés. #126 est la référence commune. Pas de réinstallation du poste ici                             |
-| 7. Rust couvert par format/analyse/tests                                   | Établi pour la livraison existante                 | Cinq gates et 742 tests Ubuntu relus ; entrées src/tests héritées de `.moon/tasks/rust.yml`. Aucun Rust ajouté/modifié dans ce chantier                                                                  |
-| 8. Plateformes et agents nommés sans couverture implicite                  | Établi pour les preuves nommées                    | macOS local et Ubuntu 24.04 CI ; fixtures/doubles seulement. Pas de sandbox réseau Linux attesté, pas de session Claude/Cursor/Codex réelle                                                              |
-| 9. Sous-issues de synchronisation par ressource                            | Brouillons prêts, non publié                       | Huit périmètres proposés ; hooks déjà réconciliés par setup, manifest livré par Moon. Publication/rattachement après validation, donc critère encore ouvert                                              |
+| Critère                                                                    | Disposition                                   | Preuve et reste exact                                                                                                                                                                                    |
+| -------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Familles livrées dans des sous-issues rattachées                        | Établi                                        | Inventaire des 15 enfants et livraisons ci-dessus ; aucune réparation de rattachement nécessaire                                                                                                         |
+| 2. Sélecteurs, filtres et états sur dépôt/HOME isolés                      | Établi dans les représentations nommées       | Suites de ressources et compléments macOS ci-dessous. `unsupported` et les omissions ne valent pas healthy ; aucune parité d'agents                                                                      |
+| 3. Toutes les familles dans l'ordre et mêmes diagnostics individuels       | Équivalence bornée approuvée par D2           | Ordre et filtres explicites verts dans #339 ; D2 conserve les défauts MCP et l'équivalence à portée explicite identique. Précision à reporter dans #111/#123                                             |
+| 4. Cohérence human/JSON et sorties                                         | Établi dans la portée CLI testée              | `aggregate_preserves_one_fixture_through_healthy_drift_and_fatal_states`, suites de rendu/CLI : 0 healthy/unsupported/vide, 1 drift, 2 error ; erreurs d'arguments/sortie possibles sur stderr sans JSON |
+| 5. Absence de mutation et de contact externe, aucun lancement de capacités | Non établi ; garantie générale contredite     | Snapshots bornés déjà livrés ; nouvelle expérience du résolveur ci-dessous. Aucun oracle de confinement du vrai Codex ; pas de preuve d'absence d'effet externe universelle                              |
+| 6. Livraison canonique et documentation                                    | Livré dans la portée demandée de l'inspection | #339 atteste graphe/recettes Moon natifs sans installation globale ; chemins binaire/manifeste identifiés. #126 est la référence commune. Pas de réinstallation du poste ici                             |
+| 7. Rust couvert par format/analyse/tests                                   | Établi pour la livraison existante            | Cinq gates et 742 tests Ubuntu relus ; entrées src/tests héritées de `.moon/tasks/rust.yml`. Aucun Rust ajouté/modifié dans ce chantier                                                                  |
+| 8. Plateformes et agents nommés sans couverture implicite                  | Établi pour les preuves nommées               | macOS local et Ubuntu 24.04 CI ; fixtures/doubles seulement. Pas de sandbox réseau Linux attesté, pas de session Claude/Cursor/Codex réelle                                                              |
+| 9. Sous-issues de synchronisation par ressource                            | Brouillons prêts, non publié                  | Huit périmètres proposés ; hooks déjà réconciliés par setup, manifest livré par Moon. Publication/rattachement après validation, donc critère encore ouvert                                              |
 
 Les tests agrégés réutilisés vérifient aussi que drift et erreur d'une famille
 n'empêchent pas les suivantes. Un manifeste invalide arrête le diagnostic global.
@@ -143,8 +149,10 @@ confinement des écritures ou du réseau. [#166](https://github.com/SebastienEle
 et [#168](https://github.com/SebastienElet/dotfiles/pull/168) ont livré la résolution
 autoritative ; ils ne constituent pas une décision d'abandonner le contrat de #111.
 Retirer cette résolution sans décision pourrait perdre une capacité demandée par #166.
-Le [brouillon D1](issue-111-sync-brouillons.md#d1--décider-la-frontière-de-lecture-seule-de-doctor-face-au-résolveur-codex)
-porte cet arbitrage. La référence #126 expose déjà correctement la limite : aucun correctif documentaire redondant.
+La [décision D1](issue-111-sync-brouillons.md#d1--décider-la-frontière-de-lecture-seule-de-doctor-face-au-résolveur-codex),
+approuvée le 19 septembre, conserve la lecture seule stricte, quitte à signaler
+l'inventaire Codex indisponible. Elle ne constitue pas une preuve de conformité.
+La référence #126 expose déjà correctement la limite : aucun correctif documentaire redondant.
 
 ### Contre-exemple d'équivalence sans scope MCP
 
@@ -162,8 +170,9 @@ La cause est explicite dans [doctor.rs](../tooling/arnes/src/doctor.rs) : MCP di
 reçoit `user` par défaut, MCP agrégé reçoit la portée absente. Le test existant
 `default_doctor_checks_project_mcp_without_changing_other_scope_defaults` et #126
 décrivent ce choix. Ce n'est donc pas un défaut borné à corriger silencieusement.
-La proposition [D2](issue-111-sync-brouillons.md#d2--préciser-léquivalence-mcp-entre-doctor-direct-et-agrégé)
-demande une disposition explicite du critère large de #111/#123.
+La décision [D2](issue-111-sync-brouillons.md#d2--préciser-léquivalence-mcp-entre-doctor-direct-et-agrégé),
+approuvée le 19 septembre, conserve ces défauts et borne l'équivalence à une portée
+explicitement identique. La formulation large de #111/#123 reste à mettre à jour.
 
 ## Suite et validation du présent dossier
 
@@ -173,7 +182,8 @@ Les preuves originales de #123/#124/#126 restent réutilisées avec leur portée
 
 Les brouillons distinguent observation stable et autorité future d'écriture.
 Leur validation puis publication ne suffiront pas, seules, à clôturer #111 : il faut
-encore disposer D1 et D2 et établir les preuves du contrat finalement retenu.
+encore appliquer D1 et établir les preuves de lecture seule stricte, puis reporter
+la disposition D2 dans les trackers. Les arbitrages eux-mêmes sont désormais tranchés.
 Les sessions réelles restent non attestées ; ne les revendiquer que si un oracle
 nomme l'agent, sa version, sa représentation, la plateforme et l'observation de session.
 
