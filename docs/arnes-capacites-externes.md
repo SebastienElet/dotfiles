@@ -43,26 +43,24 @@ installation déclare sa propre racine stable ; sans déclaration, aucun skill s
 L'activation des plugins de projet n'a aucun registre filesystem : le scope project ne rapporte donc
 aucun plugin Codex.
 
-Codex CLI 0.147.0 expose `codex plugin marketplace list --json` et `codex plugin list --json`. La
-première commande fournit les marketplaces considérées ; la seconde fournit la sélection installée,
-son état on/off et son identifiant d'artefact. Son champ `source.path` désigne la source marketplace,
-pas l'artefact actif, et n'est jamais inspecté par Arnes. Il s'agit du schéma structuré du binaire
-installé et de son code source tagué, pas d'une interface publique stable. Un schéma absent, invalide
-ou incompatible reste donc `unsupported`.
+Doctor ne lance aucune commande Codex pour inventorier les plugins. Les commandes de résolution
+introduites par #166/#168 ont été retirées selon D1 de #111 : leurs effets externes ne pouvaient
+pas être déduits des snapshots. L'inventaire actif reste explicitement `unsupported`, même lorsque
+la configuration ne mentionne aucun plugin ; ce silence local ne prouve pas une installation vide.
 
-Arnes joint exhaustivement cette sélection à `~/.codex/config.toml` par l'identifiant complet du
-plugin et exige une sélection, une identité et une marketplace uniques. Il reconstruit ensuite le
-chemin avec le contrat `PluginStore::plugin_root` de Codex 0.147.0, puis le confine sous
-`~/.codex/plugins/cache` avant inspection. L'identifiant d'artefact Codex reste distinct de la
-version sémantique de `.codex-plugin/plugin.json` : une révision marketplace `11c74d6b` peut ainsi
-contenir un manifeste `5.1.3`. Les skills proviennent uniquement de cet artefact résolu. Le contenu
-du cache ne choisit jamais la version, même lorsqu'un plugin ne contient qu'un seul répertoire.
+Arnes lit les entrées de plugins dans `~/.codex/config.toml` et distingue `enabled=true`,
+`enabled=false` et l'absence du champ. Une entrée activée hors politique reste `drift` ; une entrée
+autorisée, désactivée ou d'exposition inconnue reste `unsupported` faute de topologie observable.
+Pour une entrée activée, `exposure=enabled` décrit le réglage, tandis que `activation=unknown`
+signale l'absence d'observation de disponibilité. Une configuration malformée reste une erreur.
+
+Installation active, version, artefact, chemin, topologie et skills d'un plugin Codex ne sont plus
+résolus. Aucun cache n'est inspecté pour choisir un artefact, même solitaire. Les racines déclarées
+de skills standalone/système et leurs réglages `[[skills.config]]` restent audités séparément.
 
 Sources : [Build skills](https://learn.chatgpt.com/docs/build-skills),
 [Plugins](https://learn.chatgpt.com/docs/plugins),
-[Package your plugin](https://developers.openai.com/plugins/build/plugins),
-[`plugin_cmd.rs` de Codex CLI 0.147.0](https://github.com/openai/codex/blob/rust-v0.147.0/codex-rs/cli/src/plugin_cmd.rs),
-[`store.rs` de Codex CLI 0.147.0](https://github.com/openai/codex/blob/rust-v0.147.0/codex-rs/core-plugins/src/store.rs).
+[Package your plugin](https://developers.openai.com/plugins/build/plugins).
 
 ## Claude Code
 
@@ -117,10 +115,9 @@ Sources : [Skills](https://cursor.com/docs/skills),
 Chaque scan part d'une racine déclarée, d'un registre installé ou d'une configuration effectivement
 lue par l'agent. Les symlinks absolus et relatifs sont acceptés seulement si leur cible canonique
 reste dans cette racine. Un lien pendant ou une sortie par un composant intermédiaire est rapporté
-sans être traversé. `doctor` n'analyse aucun cache orphelin et ne charge aucune capacité. La seule
-frontière exécutée est le résolveur JSON Codex pour ses plugins ; elle reçoit le HOME injecté, est
-lancée depuis HOME pour exclure les réglages du projet appelant, et possède une limite de cinq
-secondes et de 1 Mio par flux. L'exécution de ce binaire externe ne permet pas de déduire
-l'absence d'écritures temporaires ou de contacts réseau. La
+sans être traversé. `doctor` n'analyse aucun cache orphelin et ne charge aucune capacité.
+Le chemin Doctor possédé ne lance aucun résolveur externe, hook, serveur MCP ou statusline.
+La non-exécution de Codex est exercée par un double dont le lancement laisserait un témoin
+hors des snapshots ; les états finaux du dépôt et du HOME sont vérifiés séparément. La
 [référence Doctor](arnes-doctor.md#vérification-et-portée-des-preuves) borne les preuves actuelles
-d'absence de modification aux fixtures effectivement exercées.
+d'absence de modification aux fixtures effectivement exercées, sans les assimiler à une session réelle.
