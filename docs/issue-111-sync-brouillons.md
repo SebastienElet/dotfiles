@@ -82,9 +82,9 @@ frontière est signalée explicitement comme indisponible, jamais déduite d'un 
 solitaire. L'exhaustivité de l'inventaire Codex peut donc être réduite ; l'exigence
 de sélection autoritative de #166 est conservée pour les résultats observables.
 
-Cette décision fixe une cible : le contre-exemple du résolveur reste valable pour
-le code audité. Aucun mécanisme de conformité ni aucune nouvelle preuve verte
-n'est livré par la présente mise à jour documentaire.
+Le correctif de la PR #343 supprime maintenant le résolveur ; le contre-exemple
+historique est devenu une régression rouge puis verte. Le bilan distingue les
+preuves locales du correctif, la CI du head final et son intégration encore attendue.
 
 **Disposition et preuves restantes.**
 
@@ -326,8 +326,8 @@ un écart concret approuvé. Ni façade générale ni extension project ne sont 
 Chaque promesse des titres S1–S8 est couverte par un résultat Doctor sélectionné,
 la protection des voisins et des refus/échecs observables. Les limites d'agents et
 de représentations empêchent une promesse de parité ; les contraintes communes font
-partie de chaque corps. D1 et D2 sont approuvées ; D1 reste à mettre en œuvre et à
-prouver, tandis que D2 conserve le comportement livré. Aucun brouillon S1–S8 n'est
+partie de chaque corps. D1 et D2 sont approuvées ; le correctif D1 est livré dans
+la PR, tandis que D2 conserve le comportement existant. Aucun brouillon S1–S8 n'est
 approuvé par la seule résolution de ces arbitrages.
 
 Après validation des corps : rafraîchir la recherche de doublons, publier les seuls
