@@ -120,9 +120,9 @@ appels sans scope. La décision conserve le comportement déjà livré et docume
 
 **Disposition et suivi.**
 
-- [ ] #111/#123 expriment sans ambiguïté la sélection à laquelle s'applique l'équivalence.
+- [x] #111/#123 expriment sans ambiguïté la sélection à laquelle s'applique l'équivalence.
 - [x] Le mainteneur valide les défauts actuels et limite l'équivalence aux sélections
-      explicites identiques. Cette disposition reste à reporter dans les trackers.
+      explicites identiques. Cette disposition a été reportée dans #111/#123 et relue.
 - [ ] Le cas MCP uniquement project a un résultat attendu explicite pour les appels
       direct, agrégé et filtré, dans les deux formats, sans perte silencieuse de diagnostic.
 - [ ] La référence commune reste exacte ; toute modification du défaut public est
@@ -332,5 +332,5 @@ approuvé par la seule résolution de ces arbitrages.
 
 Après validation des corps : rafraîchir la recherche de doublons, publier les seuls
 brouillons approuvés, inclure leurs contraintes communes et vérifier leur rattachement
-réel à #111. D2 reste à reporter dans les trackers ; S7 n'attend plus un choix de portée.
+réel à #111. D2 est reportée dans les trackers ; S7 n'attend plus un choix de portée.
 Aucune publication, modification d'issue, fermeture ou synchronisation n'a lieu dans ce dossier.

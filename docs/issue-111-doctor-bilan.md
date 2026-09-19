@@ -53,8 +53,8 @@ Cursor et Codex ne prouve pas le chargement de leur configuration en session.
 | 4. Human/JSON et sorties                      | Contrat partagé conservé : 0 healthy/unsupported/vide, 1 drift, 2 error ; erreurs d'arguments/sortie possibles hors rapport JSON.                                                                                         |
 | 5. Lecture seule et non-exécution             | Résolveur Codex supprimé ; régression observée rouge puis verte sur direct/agrégat, human/JSON et configurations absente/vide/activée. Le témoin externe complète les snapshots, sans leur donner une portée universelle. |
 | 6. Installation et référence commune          | Preuves Moon de #339 réutilisées ; binaire/manifeste restent livrés par les mêmes recettes. Référence #126 alignée sur la réduction d'inventaire.                                                                         |
-| 7. Contrôles Rust                             | Cinq gates Moon réussies sur le correctif local macOS : fmt, Clippy, check, test, doc ; 713 tests réussis, 0 échec, 0 ignoré. La CI du nouveau head est à vérifier séparément.                                            |
-| 8. Plateformes/représentations explicites     | Correctif exécuté localement sous macOS 26.6.2 arm64, Cargo 1.98.0, réseau interdit. La preuve Ubuntu de #339 concerne l'ancien code ; aucune session d'agent réelle n'est revendiquée.                                   |
+| 7. Contrôles Rust                             | Cinq gates Moon réussies sur macOS et Ubuntu 24.04 : fmt, Clippy, check, test, doc ; 713 tests réussis, 0 échec, 0 ignoré par plateforme. Preuve CI du code e3804e1 liée ci-dessous.                                      |
+| 8. Plateformes/représentations explicites     | Correctif exécuté sous macOS 26.6.2 arm64, Cargo 1.98.0, réseau interdit, et Ubuntu 24.04 CI sans confinement réseau attesté. Aucune session d'agent réelle.                                                              |
 | 9. Synchronisations ultérieures               | Huit brouillons distincts ; hooks renvoie à setup existant, manifest à Moon. Publication et rattachements nécessitent validation. Pas de sync dans ce correctif.                                                          |
 
 ## Correctif D1 et preuve ciblée
@@ -97,6 +97,12 @@ Les cinq cibles ont été exécutées, avec 713 tests réussis. L'interdiction r
 appartient à l'environnement de preuve ; la correction supprime le mécanisme
 d'exécution externe dans le code possédé, sans ajouter de sandbox à Arnes.
 
+Le [job Arnes Ubuntu 24.04 du correctif](https://github.com/SebastienElet/dotfiles/actions/runs/35450287145/job/105916137440)
+a exécuté les cinq gates avec 713 tests réussis, 0 échec et 0 ignoré pour `e3804e1`,
+sur son merge synthétique `9872c73` avec main `445a0b4`.
+Les mises à jour documentaires ultérieures ne constituent pas une nouvelle exécution Rust.
+Aucune interdiction réseau équivalente à celle de la preuve macOS n'est revendiquée en CI Linux.
+
 ## Compléments exécutés, sans refaire les suites
 
 Au 16 septembre, sur `272e8a6`, six appels CLI macOS en human/JSON avaient complété
@@ -121,7 +127,7 @@ comportement documenté ; elle ne prétend pas rendre les appels sans scope équ
 ## Suite
 
 La validation puis la publication des sous-issues restent distinctes de l'intégration
-du correctif. Le contrat MCP des trackers doit reprendre D2. Une fois ces dispositions,
+du correctif. Le contrat MCP de #111/#123 reprend désormais D2. Une fois ces dispositions,
 les preuves du head final et l'intégration établies, #111 peut être clôturée sans
 attendre l'implémentation des synchronisations futures.
 
