@@ -78,5 +78,14 @@
   },
   "alternatives_skill_sha256": "ba0af12737e7870153b94919844ce7d0ed76da77a33d053fb3d647b31201856d",
   "final_skill_sha256": "2f38f81fa08b5816dafb27f5a61f92178ad4f8a11e593e1a9d0bf7572b70ee5d",
-  "source_revision_role": "Baseline checkout; evaluated variants are identified by each run skill_sha256 and retained snapshots."
+  "source_revision_role": "Baseline checkout; evaluated variants are identified by each run skill_sha256 and retained snapshots.",
+  "scope_decision": {
+    "date": "2026-09-19",
+    "authority": "Explicit user instruction in the task conversation",
+    "reason": "Additional Cursor and Claude subscriptions solely for validation are too costly; proceed without those live benchmarks.",
+    "required_agents": ["Codex"],
+    "excluded_agents": ["Claude Code", "Cursor Agent"],
+    "cancelled_final_executions": 48,
+    "note": "The original availability probes and execution records remain historical observations. Excluded hosts remain NOT_VERIFIED; their repetitions are no longer required for #223. Repository-wide supported agents remain unchanged."
+  }
 }

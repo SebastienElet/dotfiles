@@ -38,10 +38,14 @@ function, with invocation and scheduling out of scope. Its three new baseline ru
 skill; the refined and policy variants use the same corrected prompt. The six original prompts and the
 new material-positive prompt are identical throughout.
 
-Claude Code and Cursor are **not verified**: native authentication probes report no logged-in
-session. No model request or behavioral repetition was performed on either host. Their required
-three repetitions per case remain outstanding; the Codex-only exception for #246 does not apply
-to #223. This experiment does not establish completion of #223.
+Claude Code and Cursor are **not verified**: the 2026-09-16 native authentication probes reported
+no logged-in session. No model request or behavioral repetition was performed on either host.
+
+On 2026-09-19, the user explicitly limited required live evaluations to Codex because additional
+Claude Code and Cursor subscriptions would be too costly. Their 48 planned final repetitions are
+cancelled, not passed or still required. This is a separate scope decision for #223; it does not
+change the repository's supported agents or establish behavior on either untested host. Static
+portability checks and deployment tests remain useful within their documented limits.
 
 ## Routing results and execution index
 
@@ -66,16 +70,17 @@ These totals can be reproduced from the per-record `phase` and `verdict` fields.
 
 ## Acceptance status
 
-| #223 requirement                                                              | Status                                                                                     |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Positive outside authentication/migration, three fresh executions per host    | Codex 3/3; Claude Code and Cursor NOT VERIFIED                                             |
-| Discoverable facts and style, zero questions in three fresh contexts per host | Codex satisfied on the retained corpus; other hosts NOT VERIFIED                           |
-| Negative scenarios avoid activation, three times per host                     | Codex 15/15; other hosts NOT VERIFIED                                                      |
-| Authentication/migration preserved                                            | Codex 6/6; other hosts NOT VERIFIED                                                        |
-| Individual evidence and traceable aggregate                                   | All 102 executions retained and linked above                                               |
-| Modified-surface validation                                                   | Local checks documented in [validation.json](validation.json); remote CI belongs to the PR |
+| #223 requirement                                                           | Status                                                                                     |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Positive outside authentication/migration, three fresh Codex executions    | Satisfied: Codex 3/3; other hosts excluded and NOT VERIFIED                                |
+| Discoverable facts and style, zero questions in three fresh Codex contexts | Satisfied on Codex; other hosts excluded and NOT VERIFIED                                  |
+| Negative scenarios avoid activation, three times on Codex                  | Satisfied: Codex 15/15; other hosts excluded and NOT VERIFIED                              |
+| Authentication/migration preserved                                         | Satisfied: Codex 6/6; other hosts excluded and NOT VERIFIED                                |
+| Individual evidence and traceable aggregate                                | All 102 executions retained and linked above                                               |
+| Modified-surface validation                                                | Local checks documented in [validation.json](validation.json); remote CI belongs to the PR |
 
-The cross-agent criteria remain incomplete. This PR references #223 without closing it.
+The evaluation criteria are satisfied within the Codex-only scope accepted on 2026-09-19.
+Delivery still requires PR review and integration; this scope decision does not authorize a merge.
 
 ## Reproduction and retained evidence
 
@@ -174,4 +179,4 @@ checks the scenario contracts, not the manual behavioral verdicts. Formatting an
 cover the authored surfaces; exact agent responses are retained in JSON without prose correction.
 No code comments were added.
 
-The completed local checks are recorded in [validation.json](validation.json): seven targeted deployment tests, TypeScript lint and types, native scenario validation, repository formatting, spelling, and evidence integrity. These are macOS observations; they do not replace the missing Claude Code/Cursor runs or remote CI.
+The completed local checks are recorded in [validation.json](validation.json): seven targeted deployment tests, TypeScript lint and types, native scenario validation, repository formatting, spelling, and evidence integrity. These are macOS observations; they do not establish behavior on the excluded Claude Code/Cursor hosts or replace remote CI.
