@@ -1,11 +1,10 @@
 ---
 name: requirements-clarification
 description: >
-  Clarify requirements before implementation. Use when a request adds authentication or migrates a
-  configuration manifest between versions without defining actors, trust boundaries, compatibility,
-  data loss, failure behavior, or acceptance criteria. Make sure to use this skill for any
-  authentication or migration request with unresolved material decisions, even if the user asks to
-  proceed.
+  Clarify requirements before implementation. Use when product or operational policy is undecided,
+  such as authentication boundaries, migration compatibility, or data retention. Make sure to use this
+  skill whenever that missing policy changes material outcomes, even if asked to proceed. Excludes
+  implementing or testing established requirements, discoverable facts, and inconsequential style.
 metadata:
   category: dev
 ---
@@ -20,9 +19,11 @@ security, or acceptance criteria.
 
 ## Usage
 
-Apply before implementation when the request may admit materially different outcomes. For example,
-use it before adding authentication when the actors, trust boundary, or failure behavior are not
-established.
+Apply before implementation when an undecided product or operational policy admits materially
+different outcomes, such as authentication boundaries, migration compatibility, or artifact retention
+and data loss. Implementing or testing an established contract does not require clarification.
+The domain alone is not a trigger. A request with settled material decisions, a fact available from
+authorized sources, or a local style choice does not require this skill or a clarification question.
 
 ## Steps
 

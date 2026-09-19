@@ -1,0 +1,65 @@
+{
+  "environment": "macOS 26.6.2 arm64, 2026-09-16",
+  "checks": [
+    {
+      "command": "bun --config=/dev/null --no-env-file test tooling/install-agent-skills.test.ts",
+      "exit_code": 0,
+      "result": "6 passed, 0 failed, 17 assertions"
+    },
+    {
+      "command": "PATH=/host-user/.moon/bin:$PATH bun --config=/dev/null --no-env-file test tooling/deployment-links.test.ts --test-name-pattern 'deploys shared instructions and skills and replays idempotently'",
+      "exit_code": 0,
+      "result": "1 passed, 7 filtered, 0 failed, 4 assertions; fixture HOME, no global deployment"
+    },
+    {
+      "command": "bun --config=/dev/null --no-env-file run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "bun --config=/dev/null --no-env-file tooling/lint-typescript.ts",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evals",
+      "exit_code": 0,
+      "result": "3 behavioral cases; 20 activation contracts valid"
+    },
+    {
+      "command": "skill-manager doctor requirements-clarification (manual procedure)",
+      "result": "PASS local conventions; standard validator unavailable"
+    },
+    {
+      "command": "skill-manager cross-check (manual, modified skill interactions only)",
+      "result": "PASS D1-D6 within scope; static evidence only"
+    },
+    {
+      "command": "skill-manager sync-index user (manual procedure, twice)",
+      "result": "Byte-identical to original index after both generations; no index diff"
+    },
+    {
+      "command": "bun tooling/check-prettier.ts --check '**/*.{yml,yaml,md,json}' '!home/.config/nvim/lazy-lock.json' '!home/.config/nvim/lazyvim.json'",
+      "exit_code": 0,
+      "result": "All matched files use Prettier code style."
+    },
+    {
+      "command": "PATH=/host-user/.moon/bin:$PATH bun tooling/check-cspell.ts harness/skills/requirements-clarification/evals/trigger-queries.json",
+      "exit_code": 0,
+      "result": "Scenario JSON: 1 file, 0 issues; skill Markdown: 72 files, 0 issues. Native host outside sandbox, dictionary in temporary HOME.",
+      "preceding_attempt": "Sandbox blocked the runtime .last-used timestamp under ~/.proto; native-host replay succeeded."
+    },
+    {
+      "command": "git diff --check; git diff --cached --check",
+      "exit_code": 0
+    },
+    {
+      "command": "Manual evidence integrity review",
+      "result": "102 complete transcripts; exact anonymized agent messages match local originals; source/prompt/fixture hashes verified; no workspace mutations; six original scenarios unchanged."
+    }
+  ],
+  "limits": [
+    "These local deterministic checks do not prove behavioral routing or missing host evaluations.",
+    "skills-ref is not installed; no standard-validator pass is claimed.",
+    "Remote Linux and macOS CI results belong to the PR and are not inferred from these checks."
+  ],
+  "added_comments": []
+}

@@ -1,0 +1,91 @@
+{
+  "issue": 223,
+  "source_revision": "b0fdbfa06cb6e19f045e710e660b49e3cff0d46b",
+  "date": "2026-09-16",
+  "platform": {
+    "os": "26.6.2",
+    "architecture": "arm64"
+  },
+  "baseline_skill_sha256": "7623000a2cfcc5e526344a444aef099a3040be3ece0dd95621734a29b6f90737",
+  "baseline_doctor": {
+    "status": "PASS",
+    "standard_validation": "unavailable (skills-ref not installed)",
+    "frontmatter": "PASS: allowed fields, matching slug, 389-character folded description, scalar dev category",
+    "body": "PASS: required sections in order, four gotchas, five constraints, 65 lines",
+    "resources": "PASS: eval JSON only, no scoped references, no duplicate project slug",
+    "templated_shell": "PASS: no positional placeholders",
+    "evals": "PASS: six valid queries, two positive and four negative",
+    "readme": "PASS: one matching entry",
+    "adapters": "PASS: three project adapters point to ../.agents/skills; three user destinations resolve to canonical main-checkout source with matching baseline bytes"
+  },
+  "unavailable_agents": [
+    {
+      "agent": "Claude Code",
+      "versions": ["2.1.236", "2.1.272"],
+      "command": "claude auth status",
+      "scope": "native macOS host outside sandbox",
+      "exit_code": 1,
+      "stdout": {
+        "loggedIn": false,
+        "authMethod": "none",
+        "apiProvider": "firstParty"
+      },
+      "model": null,
+      "effort": null,
+      "verdict": "NOT_VERIFIED",
+      "executed_repetitions_per_case": 0,
+      "planned_repetitions_per_case": 3,
+      "reason": "Native authentication probe reports no logged-in session; no model request made."
+    },
+    {
+      "agent": "Cursor Agent",
+      "version": "2026.09.08-6caf4ff",
+      "command": "cursor-agent status",
+      "scope": "native macOS host outside sandbox",
+      "exit_code": 0,
+      "stdout": "Not logged in",
+      "model": null,
+      "effort": null,
+      "verdict": "NOT_VERIFIED",
+      "executed_repetitions_per_case": 0,
+      "planned_repetitions_per_case": 3,
+      "reason": "Native authentication probe reports no logged-in session; no model request made."
+    }
+  ],
+  "previous_experiment": "#246 / merged PR #342 at 65275906e0878aea48323c5b3563e5bc0cea3c70; isolated read-only method reused; its Codex-only waiver does not apply to #223",
+  "candidate_skill_sha256": "1748959b7f5a14881155cbe91c7a5c7c0adf8942c8d1246b3586340bd25bc65c",
+  "refined_skill_sha256": "ec63f0a4042ce3e748f5c15b4d995e57ff8451c01c659a74d12514d44a433ad4",
+  "fixture_sha256": "9b1633918c5f42bf318bab947a6c24c6e5d2ea2023ec81cfb6ba09ec4b3b7cbf",
+  "final_doctor": {
+    "status": "PASS",
+    "standard_validation": "unavailable (skills-ref not installed)",
+    "frontmatter": "PASS: allowed fields, matching slug, 391-character description, dev category",
+    "body": "PASS: required sections, four gotchas, five constraints, fewer than 500 lines; seven-step procedure and constraints unchanged",
+    "resources": "PASS: only skill/evals; no reference routing or positional placeholders; fixture deployment preserves canonical source links",
+    "readme": "PASS: regenerated twice, byte-identical to existing index",
+    "projections": "Live user links still target canonical main checkout; modified worktree content is evaluated in isolated copies and deployment fixtures, not installed globally",
+    "evals": "PASS: six original prompts unchanged, new material positive and function-only negative; valid schema"
+  },
+  "cross_check": {
+    "scope": "Interactions of requirements-clarification with 25 other user skills only",
+    "result": "No D1-D6 conflict involving modified skill",
+    "final_D1_maximum_percent": 9.43,
+    "final_D1_pair": "issue-simplify",
+    "D2_D4": "No duplication or contradiction; established contracts remain actionable without clarification",
+    "D3_D5": "No dead references or duplicate/ambiguous slug",
+    "D6": "Not applicable: no scoped references",
+    "kind": "Static manual audit, not agent behavior"
+  },
+  "alternatives_skill_sha256": "ba0af12737e7870153b94919844ce7d0ed76da77a33d053fb3d647b31201856d",
+  "final_skill_sha256": "2f38f81fa08b5816dafb27f5a61f92178ad4f8a11e593e1a9d0bf7572b70ee5d",
+  "source_revision_role": "Baseline checkout; evaluated variants are identified by each run skill_sha256 and retained snapshots.",
+  "scope_decision": {
+    "date": "2026-09-19",
+    "authority": "Explicit user instruction in the task conversation",
+    "reason": "Additional Cursor and Claude subscriptions solely for validation are too costly; proceed without those live benchmarks.",
+    "required_agents": ["Codex"],
+    "excluded_agents": ["Claude Code", "Cursor Agent"],
+    "cancelled_final_executions": 48,
+    "note": "The original availability probes and execution records remain historical observations. Excluded hosts remain NOT_VERIFIED; their repetitions are no longer required for #223. Repository-wide supported agents remain unchanged."
+  }
+}
