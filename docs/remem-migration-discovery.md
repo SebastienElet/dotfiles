@@ -1,6 +1,9 @@
 # Migration remem : découverte et essai de mémoire partagée
 
-État au 21 septembre 2026 : **migration non déployée**. Le partage explicite d'une
+État final au 21 septembre 2026 : **installation locale déployée**, décrite dans
+la [procédure d'exploitation](remem.md) et la section de mise en service ci-dessous.
+Les sections de découverte et d'essai conservent leurs observations antérieures.
+Le partage explicite d'une
 mémoire par projet via MCP fonctionne dans l'essai Codex CLI/Desktop ci-dessous,
 y compris entre worktrees et après suppression du worktree d'origine. Il dépend
 des instructions suivies par les agents. La version publiée `v0.6.93` ne regroupe
@@ -31,7 +34,7 @@ enfant. Le [routeur](https://github.com/majiayu000/remem/blob/dc5bfc562a0eef4f65
 propage l'erreur de l'exécuteur sélectionné, sans bascule automatique vers HTTP.
 Aucun fichier d'authentification ni secret du trousseau n'a été lu par le diagnostic.
 
-## Source canonique et inventaire local
+## Source canonique et inventaire initial
 
 | Composant                     | Source ou destination                                                                                                                                          | Traitement prévu si la migration devient possible                                                    |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -212,13 +215,11 @@ sans session LLM, mais cela ne validerait ni son comportement réel ni le parcou
 croisé. Ces résultats resteront explicitement non vérifiés. Aucun jeton n'a été
 extrait, aucun abonnement ni appel API facturé de remplacement n'a été configuré.
 
-## Artefacts et commandes de diagnostic
+## Artefacts des essais initiaux
 
-Aucun composant retiré, aucun souvenir utilisateur migré, aucune configuration
-du harnais quotidien modifiée. Les neuf fichiers Claude sont conservés ; leur utilité n'a
-pas été évaluée. Aucune sauvegarde de migration n'a été créée, puisqu'aucune
-écriture sur ces données ou configurations n'a été engagée. Une sauvegarde
-vérifiée reste un préalable à toute bascule ultérieure.
+Lors des essais initiaux, aucun composant ni souvenir utilisateur n'avait été
+modifié. La mise en service ultérieure est distinguée ci-dessous ; elle a été
+précédée d'une sauvegarde vérifiée des configurations et des neuf fichiers Claude.
 
 Le téléchargement, la configuration de test, la base chiffrée, les captures de
 diagnostic et l'export fictif sont locaux, hors Git, sous
@@ -237,10 +238,83 @@ export REMEM_DATA_DIR=/tmp/remem-discovery-20260921/store
 /tmp/remem-discovery-20260921/remem export --markdown --output /tmp/remem-discovery-20260921/export --project /private/tmp/remem-discovery-20260921/project-a
 ```
 
-Retour arrière : aucune action nécessaire sur le harnais. Fermer le shell de
-diagnostic retire la variable exportée ; les artefacts temporaires peuvent être
-supprimés après consultation. Le second essai ajoute uniquement le projet fictif
-Desktop et ses fichiers locaux ; le worktree B et les tâches de diagnostic sont
-conservés pour inspection. L'installation reproductible
-par Moon et la migration des données réelles restent à effectuer après les
-vérifications manquantes et le choix explicite du mode de fonctionnement.
+Fermer le shell de diagnostic retire la variable exportée. Les artefacts fictifs
+restent distincts de la base réelle sous `~/.remem/`. Le retour arrière de
+l'installation est décrit dans la procédure d'exploitation, pas par suppression
+des répertoires temporaires.
+
+## Mise en service locale
+
+L'utilisateur a demandé de passer à l'installation. Les seuls fichiers de cette
+migration ont été appliqués au checkout principal avant exécution des tâches Moon,
+sans fusion de branche ni réécriture Git. Ses changements non liés ont été conservés.
+Les mêmes sources sont proposées dans la PR ; le checkout principal conserve ces
+modifications de déploiement non commitées jusqu'à intégration de la PR.
+
+- Le binaire publié `0.6.93` est installé sous `~/.local/bin/remem`, avec checksum
+  vérifié par l'installateur upstream figé au commit.
+- La configuration liée, la base SQLCipher, le MCP Codex/Claude, le skill partagé
+  et les instructions Codex assemblées sont déployés. Le LaunchAgent natif
+  `dev.remem.worker` exécute `worker --once` toutes les 300 secondes ; son dernier
+  passage observé s'est terminé avec le code zéro.
+- Arnes rapporte les MCP et hooks concernés sains. Les anciens hooks mémoire et
+  liens `memory-governance` Codex/Claude sont retirés. Le moteur historique reste
+  présent pour Cursor. Les fonctionnalités natives sont désactivées :
+  `memories=false` pour Codex, `autoMemoryEnabled=false` pour Claude.
+- Trois connaissances utiles ont été migrées par la CLI officielle Codex, puis
+  relues via MCP et exportées en Markdown. Leurs sources et qualifications sont
+  conservées, avec `claim_enabled=false` ; aucune proposition n'est devenue une
+  règle actuelle. L'ancienne consigne Bash contredit la politique actuelle et
+  l'ancien statut d'annulation n'a pas été revalidé : ils ne sont pas réinjectés.
+- Les neuf fichiers d'origine restent en place, leur mécanisme natif étant
+  désactivé. Le contrôle automatique d'approbation a refusé leur déplacement,
+  car trois entrées migrées ne justifient pas à elles seules ce retrait plus large.
+  Aucune tentative de contournement ni suppression n'a suivi.
+
+La sauvegarde initiale est
+`~/.local/state/remem-backups/20260921-162605/before-remem.tar.gz` : 33 membres
+vérifiés, permissions `0600`, sans fichier d'authentification. Une archive séparée
+conserve les sources avant déploiement ; les trois exports sont sous `exports/`.
+
+### Vérification avec le harnais installé
+
+Les sessions suivantes n'utilisent plus les instructions locales de la fixture
+initiale. Elles découvrent le skill utilisateur et la configuration MCP déployés.
+
+- La première tentative de migration a été refusée par les permissions MCP de
+  Codex en mode non interactif ; aucun ID n'a été annoncé comme sauvegardé.
+  Les autorisations natives ciblées `save_memory` et `get_observations` ont ensuite
+  été configurées. La reprise a produit trois IDs relus avec succès. La gouvernance
+  destructive reste soumise à approbation.
+- Une première tâche Desktop a seulement accusé réception sans écrire. La
+  découverte explicite des outils a confirmé leur présence. L'instruction de
+  démarrage a été clarifiée pour imposer le chargement du skill, sans condition
+  ambiguë de disponibilité, et interdire une promesse de sauvegarde sans reçu.
+- Une nouvelle tâche Desktop a alors effectué `search`, `save_memory` et
+  `get_observations` pour une décision fictive. Une nouvelle session CLI dans ce
+  même projet a retrouvé les valeurs attendues, sans les recevoir dans le prompt.
+- Une session CLI dans un nouveau worktree sans instructions locales a résolu
+  `/private/tmp/remem-installed-git/.git`, enregistré la décision fictive et relu
+  l'ID. Cette clé est identique depuis le checkout principal.
+- Le premier rappel depuis le checkout a échoué sur une requête trop précise et
+  l'agent a donné une réponse issue de notes hors projet. La recherche native avec
+  un terme plus court retrouvait pourtant le souvenir. Le skill a été corrigé pour
+  essayer une fois un terme distinctif dans le même projet, puis signaler l'absence
+  de mémoire sans repli vers un autre corpus. Le rejeu du même prompt a effectué
+  les deux recherches dans la même clé projet puis une relecture de l'ID, et
+  retrouvé les valeurs attendues sans consulter un autre corpus.
+
+Ces échecs et reprises montrent la limite du rappel guidé par instructions. Ils ne
+sont pas masqués par les essais positifs. La base reste locale et les résultats
+`legacy_unverified` demandent de vérifier les sources avant une utilisation décisive.
+Claude reste configuré statiquement, sans test LLM faute d'abonnement sur ce poste.
+
+Les traces de mise en service sont sous `/tmp/remem-production-verification/`.
+Les tests de l'installateur, le lint et le typecheck locaux portent sur le retrait
+des liens gérés et la préservation des destinations divergentes et de Cursor.
+Sur macOS, les trois suites ciblées totalisent 19 tests réussis ; Linux n'a pas
+été exercé localement. La régénération de l'index des skills est byte-identique.
+Le relevé Codex après installation indique 72 % disponibles sur la fenêtre
+hebdomadaire partagée du compte ; ce relevé n'isole pas le coût de la mémoire.
+Le diagnostic global des skills signale aussi des plugins externes non liés à cette
+migration ; leur configuration n'a pas été modifiée pour masquer ces écarts.

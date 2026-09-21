@@ -3,6 +3,13 @@
 @SOUL.md
 @USER.md
 
+## Project Memory
+
+For Codex and Claude Code, use the `remem-memory` skill before analyzing each task and before
+finishing work that produced a durable decision, correction, bug cause or procedure. Discover the
+remem tools before concluding that the server is unavailable. Never describe a memory as saved
+without a successful tool receipt.
+
 ## Critical Analysis (ALWAYS)
 
 Before implementing any request:

@@ -95,7 +95,6 @@ tasks:
       - claude
       - codex
       - arnes:install
-      - agent-memory:install
       - agent-handoff:install
     toolchains: system
   semctx:

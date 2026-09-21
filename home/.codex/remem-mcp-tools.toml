@@ -1,0 +1,8 @@
+[mcp_servers.remem.tools.save_memory]
+approval_mode = "approve"
+
+[mcp_servers.remem.tools.get_observations]
+approval_mode = "approve"
+
+[mcp_servers.remem.tools.govern_memory]
+approval_mode = "prompt"

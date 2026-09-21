@@ -2,84 +2,67 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-09-21
 
 ## Contexte
 
-La spécification approuvée de la PR 249 décrit une mémoire durable, locale et partagée entre
-Codex, Claude Code et Cursor. Les décisions structurelles qui la rendent sûre et vérifiable doivent
-cependant devenir une autorité en vigueur dans `docs/adr/` avant l'implémentation.
+L'utilisateur demande remem publié pour Codex et Claude Code, sans API payante,
+modèle génératif local, modification de remem ou adaptateur mémoire maison.
+Après les essais MCP, il autorise une mémoire commune au projet et à ses
+worktrees, guidée par les instructions des agents. L'absence d'abonnement Claude
+sur ce poste limite les vérifications, sans bloquer l'installation Codex.
 
-Les ADR-025, ADR-036, ADR-038 et ADR-040 imposent respectivement une source unique de règles, des
-instructions admises par mesure, des frontières explicites et des skills user sous `harness/`.
-L'ADR-041 impose Rust, pas Arnes, pour cette automatisation à état durable. Les contrats officiels
-de hooks vérifiés le 2026-08-28 donnent une surface synchrone `UserPromptSubmit` avec
-`additionalContext` pour Codex et Claude, mais aucune injection query-specific native avant modèle
-pour Cursor.
+Remem `0.6.93` sépare les worktrees dans ses hooks. Le paramètre MCP `project`
+permet de choisir explicitement une identité commune. Ce chemin remplace le
+retrieval synchrone de `agent-memory` pour Codex et Claude ; ses garanties
+d'exécution à chaque prompt et de revalidation des sources ne sont pas conservées.
 
 ## Décision
 
-Les fichiers YAML sous `~/.local/share/agent-memory/`, hors Git, sont l'autorité humaine unique des
-entrées. L'index et le cache sont dérivés, supprimables et reconstruisibles. `agent-memory` possède
-le schéma, l'admission, l'identité projet, les sources, le store, l'index, les oracles, le cache, le
-retrieval, les transitions, la CLI et les adapters runtime ; `agent-handoff` possède son runtime.
-Arnes configure et valide leurs hooks et exécutables. Sa mesure reste limitée aux événements que
-les agents lui remettent directement ; elle n'observe ni ne prouve l'exécution d'un handler frère.
-Les deux packages Cargo sont indépendants, sans workspace ni crate partagé. Aucun état généré
-propre à un agent, notamment `~/.codex/memories/`, n'est édité.
+- Remem intact possède la base SQLCipher locale sous `~/.remem/`, les index,
+  la recherche, les écritures et les files. `home/.remem/config.toml` est la source
+  canonique de sa configuration ; Moon porte son installation et son exploitation.
+- Les opérations LLM de remem utilisent `codex-cli`, `gpt-5.6-luna` et un effort
+  `low` pour les deux hôtes. La CLI officielle gère l'authentification. Les
+  embeddings utilisent le moteur local `feature-hash`.
+- Le skill `remem-memory` demande le chemin réel absolu du `git-common-dir`
+  comme clé de chaque lecture et écriture. Hors Git, il utilise le chemin physique
+  du projet. Deux clones restent distincts. La portée repose sur l'agent ; le
+  aucune garantie d'isolation d'accès entre projets n'est revendiquée ici.
+- Une instruction globale minimale demande le rappel avant analyse et la
+  conservation des connaissances utiles avant livraison. Aucun hook de capture
+  remem n'est installé. Arnes retire ses hooks mémoire Codex/Claude et les tâches
+  de setup désactivent leurs mémoires natives.
+- Le LaunchAgent exécute le worker natif `--once` toutes les cinq minutes.
+  Cette intégration ne redéfinit pas ses budgets, baux ou tentatives. Les agents
+  doivent signaler un échec direct de `save_memory` sans prétendre une mise en file.
+- Les agents doivent conserver provenance, portée, branche et incertitude.
+  Ni indexation ni suppression d'un worktree ne démontrent la vérité d'un fait.
+  Une correction est explicite ; les sources actuelles restent prioritaires.
 
-La clé projet est `project_<sha256(realpath(git-common-dir))>`. Elle converge entre worktrees ; deux
-clones et un dépôt déplacé restent distincts. Une admission projet est refusée hors Git, si le
-résultat est ambigu, non absolu ou impossible à canonicaliser. L'identifiant est déterministe :
-`mem_<24 premiers hex de sha256(schema_version, kind, scope.key, statement normalisé)>`. Un même
-document canonique retourne `duplicate` ; une même identité associée à un contenu différent retourne
-`conflict`.
-
-L'écriture suit l'ordre verrou global, préparation YAML et index, rename YAML, fsync du répertoire,
-rename index, puis fsync. Ainsi, aucun index ne peut pointer vers un YAML absent ; après un crash
-postérieur au YAML, seul un index périmé est reconstruit au retrieval.
-
-L'oracle automatisé `source-fingerprint` compare toutes les empreintes de preuve. Il retourne
-`valid`, `invalid` ou `unavailable`; `invalid` produit exclusivement la transition
-`invalidated`. Les transitions métier `achieved`, `abandoned`, `superseded`, `resolved` et
-`confirmed` exigent une conclusion humaine `valid`, explicitement typée pour le `kind`. Une entrée
-ne transite qu'une fois de `active` vers un statut terminal et n'est jamais réactivée.
-
-Codex et Claude reçoivent le retrieval par hooks synchrones `UserPromptSubmit` et
-`additionalContext`. Cursor reçoit une règle user `alwaysApply` minimale et la skill partagée ; leur
-effet est mesuré en `3/3` processus frais avant toute promesse d'automatisation. Une règle globale
-partagée ne peut être ajoutée sans mesure d'ablation conforme à l'ADR-036.
-
-Le refus sensible est déterministe pour les formes nommées et seulement advisory pour un prompt
-privé ou transcript non marqué : aucune détection universelle n'est revendiquée. Une `official-url`
-est HTTPS, sans credentials, IP littérale ni fragment, avec au plus cinq redirections HTTPS, 1 Mio,
-une connexion de 5 s et une durée totale de 15 s. L'officialité d'un domaine est une décision
-utilisateur persistée comme `user-decision`, jamais une inférence du fetch.
-
-Seul un verdict `valid` âgé de strictement moins de 48 h est consommable. À 48 h, il est expiré ;
-toute modification locale observable invalide immédiatement le cache.
+Cursor reste hors migration : `memory-governance`, sa règle et `agent-memory`
+conservent leur contrat YAML historique. Les instructions stables, préférences,
+skills métier, documents de projet, notes Obsidian et `agent-handoff` restent
+indépendants de remem.
 
 ## Conséquences
 
-- Le comportement de mémoire reste local, auditable et commun aux trois agents sans versionner les
-  données utilisateur ou projet.
-- Les adaptateurs ne dupliquent ni le schéma, ni la politique de confidentialité, ni les
-  transitions ; Cursor reste une capacité comportementale mesurée, non une garantie native.
-- Les limites de détection sensible et d'officialité URL sont explicites et leurs échecs ne créent
-  ni injection ni écriture implicite.
-- Les domaines mémoire et handoff, leurs états et leurs échecs restent dans leurs exécutables
-  indépendants ; Arnes porte leur configuration et leur validation, tandis que ses mesures ne
-  couvrent que ses propres événements de harnais.
+Les [essais](../remem-migration-discovery.md) observent l'écriture, le rappel
+CLI/Desktop, une correction et la suppression d'un worktree. Ils ne prouvent ni
+fiabilité universelle du suivi des instructions, ni vérité des faits, ni
+comportement Claude réel, ni résistance aux corrections concurrentes.
+La classification `legacy_unverified` reste une limite du chemin MCP testé.
+
+La [procédure d'exploitation](../remem.md) décrit sources, diagnostics, sauvegardes
+et retour arrière. Le retrait des souvenirs d'origine est subordonné à leur
+sauvegarde et à la vérification de leur migration. Les liens et hooks de
+l'ancien mécanisme sont réconciliés séparément par le déploiement existant.
 
 ## Alternatives écartées
 
-- L'intégration du domaine mémoire ou du runtime handoff dans Arnes : confond la gestion du harnais
-  avec les capacités configurées et empêche leur évolution indépendante.
-- Un workspace ou un crate partagé entre `agent-memory` et `agent-handoff` : aucun invariant métier
-  commun ne justifie ce couplage.
-- SQLite dès cette phase : moins lisible pour l'audit et non justifié avant mesure du processus YAML.
-- Un service MCP avec embeddings : daemon, dépendances, coût et surface de confidentialité sans
-  besoin de recherche sémantique établi.
-- Une règle globale partagée non mesurée : contredit l'admission par ablation de l'ADR-036.
-- Un wrapper Cursor limité au CLI : ne prouve pas le retrieval avant l'influence sur le modèle.
-- L'écriture dans `~/.codex/memories/` : état généré propre à Codex, non partagé avec Claude et
-  Cursor.
+- Conserver le moteur maison pour Codex/Claude : contraire au remplacement demandé.
+- Réécrire les projets des hooks dans un wrapper : adaptateur mémoire interdit.
+- Extraire des jetons, facturer une API ou exploiter un modèle génératif local :
+  contraire aux contraintes de l'utilisateur.
+- Présenter le rappel ou les index comme une revalidation automatique : les essais
+  et le code publié ne l'établissent pas.
