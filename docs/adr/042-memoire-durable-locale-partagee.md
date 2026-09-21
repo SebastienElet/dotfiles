@@ -47,7 +47,7 @@ indépendants de remem.
 
 ## Conséquences
 
-Les [essais](../remem-migration-discovery.md) observent l'écriture, le rappel
+Les [essais de la PR](https://github.com/SebastienElet/dotfiles/pull/346) observent l'écriture, le rappel
 CLI/Desktop, une correction et la suppression d'un worktree. Ils ne prouvent ni
 fiabilité universelle du suivi des instructions, ni vérité des faits, ni
 comportement Claude réel, ni résistance aux corrections concurrentes.

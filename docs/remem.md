@@ -106,7 +106,7 @@ SQLCipher et la base, ensemble et hors Git. Restaurer les seuls fichiers concern
 depuis l'archive et leurs sources avant de redéployer les instructions et les hooks
 historiques. Ne pas écraser les modifications faites depuis la sauvegarde.
 
-Les [observations détaillées](remem-migration-discovery.md) distinguent les essais
+Le [bilan de la PR](https://github.com/SebastienElet/dotfiles/pull/346) distingue les essais
 réels, les limites du mode MCP et les parcours Claude non exécutés.
 
 Trois souvenirs utiles ont été migrés, relus et exportés sous `exports/` dans le
