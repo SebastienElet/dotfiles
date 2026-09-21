@@ -4,8 +4,9 @@
 mémoire par projet via MCP fonctionne dans l'essai Codex CLI/Desktop ci-dessous,
 y compris entre worktrees et après suppression du worktree d'origine. Il dépend
 des instructions suivies par les agents. La version publiée `v0.6.93` ne regroupe
-pas automatiquement les worktrees pour ses hooks. Le parcours Claude reste à
-tester après connexion de sa CLI officielle. Cette note rapporte des observations,
+pas automatiquement les worktrees pour ses hooks. Le parcours Claude reste non
+vérifié : l'utilisateur ne dispose pas d'abonnement Claude sur cet ordinateur.
+Cette absence ne bloque pas le travail indépendant sur Codex. Cette note rapporte des observations,
 pas une nouvelle ADR ni une garantie de capture automatique.
 
 ## Version et exécuteur vérifiés
@@ -138,17 +139,17 @@ natifs `search`, `get_observations`, `save_memory` et `govern_memory` uniquement
 Les hooks et mémoires natives sont désactivés dans les sessions CLI et la
 configuration locale du projet Desktop. Aucun adaptateur ni moteur n'est ajouté.
 
-| Parcours réellement exécuté                         | Résultat observé                                                                                                  |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Codex CLI, worktree A, décision fictive             | Recherche préalable, `save_memory`, puis lecture de contrôle ; projet canonique, origine `probe-a`, entrée `id=1` |
-| Nouvelle session CLI, worktree B                    | Retrouve `SABLE-583`, attente de 37 secondes, verrou de 36 secondes                                               |
-| Nouvelle tâche Desktop, checkout principal          | Retrouve les mêmes trois informations par MCP                                                                     |
-| Codex CLI, autre projet, même base                  | Recherche avec sa propre clé projet ; répond « information inconnue »                                             |
-| Correction explicite dans Desktop                   | Réutilise le `topic_key`, met à jour `id=1`, puis relit : attente de 53 secondes, verrou de 52 secondes           |
-| Suppression du worktree A par `git worktree remove` | Worktree propre supprimé, mémoire et checkout principal conservés                                                 |
-| Nouveau processus CLI, worktree B après suppression | Retrouve les valeurs corrigées 53/52                                                                              |
-| Nouvelle tâche Desktop après suppression            | Retrouve les valeurs corrigées 53/52                                                                              |
-| Claude → Codex et Codex → Claude                    | Non exécutés : `claude auth status` retourne `loggedIn=false`, y compris hors sandbox                             |
+| Parcours réellement exécuté                         | Résultat observé                                                                                                     |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Codex CLI, worktree A, décision fictive             | Recherche préalable, `save_memory`, puis lecture de contrôle ; projet canonique, origine `probe-a`, entrée `id=1`    |
+| Nouvelle session CLI, worktree B                    | Retrouve `SABLE-583`, attente de 37 secondes, verrou de 36 secondes                                                  |
+| Nouvelle tâche Desktop, checkout principal          | Retrouve les mêmes trois informations par MCP                                                                        |
+| Codex CLI, autre projet, même base                  | Recherche avec sa propre clé projet ; répond « information inconnue »                                                |
+| Correction explicite dans Desktop                   | Réutilise le `topic_key`, met à jour `id=1`, puis relit : attente de 53 secondes, verrou de 52 secondes              |
+| Suppression du worktree A par `git worktree remove` | Worktree propre supprimé, mémoire et checkout principal conservés                                                    |
+| Nouveau processus CLI, worktree B après suppression | Retrouve les valeurs corrigées 53/52                                                                                 |
+| Nouvelle tâche Desktop après suppression            | Retrouve les valeurs corrigées 53/52                                                                                 |
+| Claude → Codex et Codex → Claude                    | Non exécutés : aucun abonnement Claude disponible sur cet ordinateur, confirmé par l'utilisateur ; CLI non connectée |
 
 Les tâches Desktop proviennent d'une tâche de préparation ne contenant que le
 chemin de travail. Elles ne reprennent pas l'historique des décisions fictives ;
@@ -204,9 +205,12 @@ export REMEM_DATA_DIR=/tmp/remem-mcp-probe-20260921/store
 /tmp/remem-discovery-20260921/remem export --markdown --output /tmp/remem-mcp-probe-20260921/export --project /Users/sebastien/Documents/Codex/2026-09-21/remem-mcp-probe
 ```
 
-La prochaine vérification dépend de `claude auth login` effectué par l'utilisateur
-avec son abonnement existant. Aucun jeton n'a été extrait, aucun abonnement ni
-appel API facturé de remplacement n'a été configuré.
+L'utilisateur a confirmé ne pas disposer d'abonnement Claude sur cet ordinateur.
+Aucune connexion ou souscription Claude n'est donc un préalable à la suite du
+travail sur Codex. Les contrats et configurations Claude peuvent être contrôlés
+sans session LLM, mais cela ne validerait ni son comportement réel ni le parcours
+croisé. Ces résultats resteront explicitement non vérifiés. Aucun jeton n'a été
+extrait, aucun abonnement ni appel API facturé de remplacement n'a été configuré.
 
 ## Artefacts et commandes de diagnostic
 
@@ -237,6 +241,6 @@ Retour arrière : aucune action nécessaire sur le harnais. Fermer le shell de
 diagnostic retire la variable exportée ; les artefacts temporaires peuvent être
 supprimés après consultation. Le second essai ajoute uniquement le projet fictif
 Desktop et ses fichiers locaux ; le worktree B et les tâches de diagnostic sont
-conservés pour inspection et reprise avec Claude. L'installation reproductible
+conservés pour inspection. L'installation reproductible
 par Moon et la migration des données réelles restent à effectuer après les
 vérifications manquantes et le choix explicite du mode de fonctionnement.
