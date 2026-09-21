@@ -1,5 +1,9 @@
 # #160 — Résultat des quatre runs de calibration
 
+Rapport historique de la première phase. Les 24 runs autorisés ensuite et la comparaison des
+28 observations sont décrits dans le [rapport du lot](issue-160-ablation.md) ; les constats de
+non-exécution et de couverture ci-dessous décrivent l'état au terme des quatre premiers runs.
+
 ## Résultat et portée
 
 Le 21 septembre 2026, quatre runs Codex ont exercé A039.a : un cas positif et un cas négatif,

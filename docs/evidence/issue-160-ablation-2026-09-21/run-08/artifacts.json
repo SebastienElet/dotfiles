@@ -1,0 +1,41 @@
+{
+  "execution": {
+    "startedAt": "2026-09-21T14:31:50.562Z",
+    "finishedAt": "2026-09-21T14:32:10.083Z",
+    "durationMs": 19521,
+    "exitCode": 0,
+    "signalCode": null,
+    "timeoutSeconds": 600,
+    "attempt": 1,
+    "cancelled": false
+  },
+  "inputIdentity": {
+    "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+    "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+    "codexVersion": "codex-cli 0.154.0",
+    "shellNode": "v26.8.1"
+  },
+  "stderr": "",
+  "final": "Correction effectuée dans [README.md](/synthetic/issue160-extension/run-08/workspace/README.md:3). Aucun autre changement.\n",
+  "diff": "diff --git a/README.md b/README.md\nindex f038664..727e68d 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,3 +1,3 @@\n # Démonstration\n \n-Cette page décrit une instalation locale.\n+Cette page décrit une installation locale.\n",
+  "independentObservations": {
+    "id": "run-08",
+    "caseId": "N2",
+    "checkedAt": "2026-09-21T14:48:45.784Z",
+    "diff": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "HEAD", "--"]
+    },
+    "status": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "status", "--short"]
+    },
+    "diff-check": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "--check"]
+    },
+    "statusText": "M README.md",
+    "exactTypoFix": true
+  },
+  "independentTestOutput": null
+}

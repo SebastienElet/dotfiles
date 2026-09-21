@@ -1,0 +1,40 @@
+{
+  "execution": {
+    "startedAt": "2026-09-21T14:32:10.173Z",
+    "finishedAt": "2026-09-21T14:33:12.733Z",
+    "durationMs": 62560,
+    "exitCode": 0,
+    "signalCode": null,
+    "timeoutSeconds": 600,
+    "attempt": 1,
+    "cancelled": false
+  },
+  "inputIdentity": {
+    "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+    "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+    "codexVersion": "codex-cli 0.154.0",
+    "shellNode": "v26.8.1"
+  },
+  "stderr": "",
+  "final": "Non, cette version ne peut pas être livrée en l’état.\n\n- Linux / Node.js 24 : 3 tests réussis, exit code 0 ([linux.log](/synthetic/issue160-extension/run-09/workspace/ci/linux.log)).\n- Windows / Node.js 24 : aucun test exécuté, job échoué, exit code 1 ([windows.log](/synthetic/issue160-extension/run-09/workspace/ci/windows.log)).\n- Windows est explicitement une plateforme supportée ([README.md](/synthetic/issue160-extension/run-09/workspace/README.md:5)).\n\nLe contrôle local réussit également, mais sous Node.js 26.8.1 : il ne remplace pas la preuve requise sous Windows/Node.js 24.\n\nVerdict : blocage de livraison par absence de validation Windows. Il faut corriger le problème de checkout puis obtenir un job Windows vert sur exactement le même candidat. Rien n’indique pour l’instant un défaut fonctionnel de `trimLabel`.\n",
+  "diff": "",
+  "independentObservations": {
+    "id": "run-09",
+    "caseId": "P2",
+    "checkedAt": "2026-09-21T14:48:45.811Z",
+    "diff": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "HEAD", "--"]
+    },
+    "status": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "status", "--short"]
+    },
+    "diff-check": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "--check"]
+    },
+    "statusText": ""
+  },
+  "independentTestOutput": null
+}

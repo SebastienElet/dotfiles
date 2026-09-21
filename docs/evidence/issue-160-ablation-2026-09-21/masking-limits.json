@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-09-21T14:30:43.848Z",
+  "ABMapping": "withheld from scoring until score file publication",
+  "placeboIdentity": "last four run IDs are known to the coordinating reviewer as placebo cases",
+  "reviewer": "same coordinating agent; no independent human or paid scorer",
+  "limitation": "This is partial label masking, not a fully blind or filesystem-confined assessment."
+}

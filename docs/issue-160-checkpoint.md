@@ -7,6 +7,7 @@ il ne décide pas encore de retirer une règle.
 Depuis ce checkpoint, les quatre runs initiaux ont été autorisés et exécutés ; voir le
 [rapport de calibration](issue-160-calibration.md). Les constats « aucun nouveau run » et la
 couverture nulle ci-dessous décrivent le point de départ, pas le résultat de la calibration.
+L'extension de 24 runs autorisée ensuite est décrite dans le [rapport du lot](issue-160-ablation.md).
 
 ## Périmètre et autorité
 

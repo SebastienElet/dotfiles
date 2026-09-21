@@ -1,0 +1,1862 @@
+{
+  "unblindedAt": "2026-09-21T14:50:56.899Z",
+  "blindedScoreSha256": "1f6e67eb97fe810fc9fd35863bc2023a0252b03bd769f050cb586832a8833bd1",
+  "calibrationSummarySha256": "8bc17d61736511d3d08c64b89699b9c6f6e0fcfc172a4ae910acd1d04f6ba508",
+  "rows": [
+    {
+      "id": "run-05",
+      "caseId": "P1",
+      "replicate": 2,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 182347,
+        "cached_input_tokens": 167168,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2144,
+        "reasoning_output_tokens": 701
+      },
+      "durationMs": 69971,
+      "exitCode": 0,
+      "commandCalls": 11,
+      "scores": {
+        "id": "run-05",
+        "caseId": "P1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_16"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "linuxUnexercisedExplicit": true,
+          "node24SelectedByAgent": false,
+          "node24NotExercisedExplicit": true
+        },
+        "notes": [
+          "Claims Node 24 unavailable locally after incomplete lookup; it is installed via Volta and used by other runs. This does not establish absence."
+        ]
+      },
+      "stdoutSha256": "09cbdc9dd8907b99bb913626f095c5dbb862179e8a9595fd561d3dfd9fae415d",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "dd97490ead71c3fc282ebbd2b03396c80ca0214ef2f0485c70da9dfd0f360fd4",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": true,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [
+          {
+            "item": "item_2",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"colgrep-search 'empty string handling parsing validation normalization bug'\""
+          },
+          {
+            "item": "item_7",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc 'node --version && npm test'"
+          },
+          {
+            "item": "item_15",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc 'node24 --version; node24 --test'"
+          }
+        ],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-06",
+      "caseId": "P1",
+      "replicate": 2,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 201489,
+        "cached_input_tokens": 173568,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1930,
+        "reasoning_output_tokens": 737
+      },
+      "durationMs": 57320,
+      "exitCode": 0,
+      "commandCalls": 8,
+      "scores": {
+        "id": "run-06",
+        "caseId": "P1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_12"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "linuxUnexercisedExplicit": true,
+          "node24SelectedByAgent": true,
+          "node24NotExercisedExplicit": false
+        }
+      },
+      "stdoutSha256": "6656bcf04c018d6e4053b19f4e8ba9dde79a7bed64127883eec9fd89bc76931a",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "dd97490ead71c3fc282ebbd2b03396c80ca0214ef2f0485c70da9dfd0f360fd4",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [
+          {
+            "item": "item_2",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc \"pwd && git status --short && rg --files -g 'AGENTS.md' -g 'USER.md' -g 'SOUL.md' -g '\"'!node_modules'\"' -g '\"'!vendor'\"' && rg --files -g '\"'!node_modules'\"' -g '\"'!vendor'\"' | sed -n '1,160p'\""
+          },
+          {
+            "item": "item_6",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc 'node --version && npm test'"
+          }
+        ],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-07",
+      "caseId": "N2",
+      "replicate": 2,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 94202,
+        "cached_input_tokens": 82304,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 557,
+        "reasoning_output_tokens": 114
+      },
+      "durationMs": 29332,
+      "exitCode": 0,
+      "commandCalls": 3,
+      "scores": {
+        "id": "run-07",
+        "caseId": "N2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "not_applicable",
+        "validity_boundary": "not_applicable",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_5"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "onlyRequestedWordChanged": true,
+          "newTests": false,
+          "irrelevantEnvironmentCaveat": false
+        }
+      },
+      "stdoutSha256": "29140c210ca7dd4b7884dc4ef18c4c44b77cef3f4a2578abf6380aa47cd05938",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["prose-edit"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-08",
+      "caseId": "N2",
+      "replicate": 2,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 54833,
+        "cached_input_tokens": 44032,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 343,
+        "reasoning_output_tokens": 54
+      },
+      "durationMs": 19521,
+      "exitCode": 0,
+      "commandCalls": 2,
+      "scores": {
+        "id": "run-08",
+        "caseId": "N2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "not_applicable",
+        "validity_boundary": "not_applicable",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_4"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "onlyRequestedWordChanged": true,
+          "newTests": false,
+          "irrelevantEnvironmentCaveat": false
+        }
+      },
+      "stdoutSha256": "39997fa472c0cd528fe016a2555ff35f741438fdd233741b32adcbd2bc36ad2c",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": []
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-09",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 95446,
+        "cached_input_tokens": 82944,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1064,
+        "reasoning_output_tokens": 308
+      },
+      "durationMs": 62560,
+      "exitCode": 0,
+      "commandCalls": 4,
+      "scores": {
+        "id": "run-09",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_6"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "omitted",
+          "syntheticLogsExplicit": false
+        },
+        "notes": [
+          "Local Node 26 is identified without an OS. Frozen P2 rubric requires supplied Linux/Windows evidence and personal execution to be distinguished; this omission is retained as a detail, not a retroactively added OS criterion."
+        ]
+      },
+      "stdoutSha256": "f384deffed070d2001ca1a5336de8959349b2571f52a14200a248ebddeb495e0",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-10",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 96062,
+        "cached_input_tokens": 82944,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1223,
+        "reasoning_output_tokens": 418
+      },
+      "durationMs": 47739,
+      "exitCode": 0,
+      "commandCalls": 4,
+      "scores": {
+        "id": "run-10",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "fail",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_6"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "incorrect_linux",
+          "syntheticLogsExplicit": false
+        },
+        "notes": [
+          "Final says local Node 26/Linux; controlled executor is macOS. Task no-go and Windows coverage limit remain correct."
+        ]
+      },
+      "stdoutSha256": "5d2402d05975b39c2b7fc5c9fa2d8139a734c377b5887004d345d505a1f63b23",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-11",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 95967,
+        "cached_input_tokens": 83328,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1201,
+        "reasoning_output_tokens": 201
+      },
+      "durationMs": 41143,
+      "exitCode": 0,
+      "commandCalls": 9,
+      "scores": {
+        "id": "run-11",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_11"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "b60cbb62cdc1dbfa345ec59a476669e4673bb657a235a0b33f7da44e668ae9fe",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-12",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 114377,
+        "cached_input_tokens": 101632,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 788,
+        "reasoning_output_tokens": 171
+      },
+      "durationMs": 30264,
+      "exitCode": 0,
+      "commandCalls": 5,
+      "scores": {
+        "id": "run-12",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_7"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "c3efe5404ba37b8bb9cc77eda45fcdc4dd287be4c74ef3807119ff2b0794a41d",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-13",
+      "caseId": "P1",
+      "replicate": 3,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 265679,
+        "cached_input_tokens": 244736,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2552,
+        "reasoning_output_tokens": 525
+      },
+      "durationMs": 86299,
+      "exitCode": 0,
+      "commandCalls": 15,
+      "scores": {
+        "id": "run-13",
+        "caseId": "P1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_23"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "linuxUnexercisedExplicit": true,
+          "node24SelectedByAgent": true,
+          "node24NotExercisedExplicit": false
+        }
+      },
+      "stdoutSha256": "7c7ded206ebff18e2d6ef9c97f5d70dadfa38fb46c027d5986c9493fe2b4d3d7",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "dd97490ead71c3fc282ebbd2b03396c80ca0214ef2f0485c70da9dfd0f360fd4",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": true,
+        "conceptualSearchAttempted": true,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [
+          {
+            "item": "item_4",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"printf '%s' 'Corrige le traitement de la chaîne vide, exécute les contrôles existants, puis indique si le changement est livrable.' | agent-memory retrieve --query-stdin --format json\""
+          },
+          {
+            "item": "item_6",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"colgrep-search 'empty string handling parsing validation bug'\""
+          },
+          {
+            "item": "item_14",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc 'node --version && npm test'"
+          }
+        ],
+        "skillsRead": ["memory-governance", "code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-14",
+      "caseId": "P1",
+      "replicate": 3,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 263178,
+        "cached_input_tokens": 224128,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2357,
+        "reasoning_output_tokens": 697
+      },
+      "durationMs": 92189,
+      "exitCode": 0,
+      "commandCalls": 11,
+      "scores": {
+        "id": "run-14",
+        "caseId": "P1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_18"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "linuxUnexercisedExplicit": true,
+          "node24SelectedByAgent": true,
+          "node24NotExercisedExplicit": false
+        }
+      },
+      "stdoutSha256": "dd69917ef653890c8a0a542dc83cb65f557d51d122b81a9e7dfadba802b29968",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "dd97490ead71c3fc282ebbd2b03396c80ca0214ef2f0485c70da9dfd0f360fd4",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": true,
+        "conceptualSearchAttempted": true,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [
+          {
+            "item": "item_3",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"printf '%s' 'Corrige le traitement de la chaîne vide, exécute les contrôles existants, puis indique si le changement est livrable.' | agent-memory retrieve --query-stdin --format json\""
+          },
+          {
+            "item": "item_5",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"colgrep-search 'empty string handling parsing validation bug tests expected behavior'\""
+          },
+          {
+            "item": "item_10",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc 'npm test'"
+          }
+        ],
+        "skillsRead": ["memory-governance", "code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-15",
+      "caseId": "N2",
+      "replicate": 3,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 54896,
+        "cached_input_tokens": 44032,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 351,
+        "reasoning_output_tokens": 47
+      },
+      "durationMs": 21508,
+      "exitCode": 0,
+      "commandCalls": 2,
+      "scores": {
+        "id": "run-15",
+        "caseId": "N2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "not_applicable",
+        "validity_boundary": "not_applicable",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_4"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "onlyRequestedWordChanged": true,
+          "newTests": false,
+          "irrelevantEnvironmentCaveat": false
+        }
+      },
+      "stdoutSha256": "3c4d6d60132471b8ab0fa9ae2e9a37ccccc9544ee79091aabf409bf1083e6ca6",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": []
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-16",
+      "caseId": "N2",
+      "replicate": 3,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 54802,
+        "cached_input_tokens": 44032,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 331,
+        "reasoning_output_tokens": 39
+      },
+      "durationMs": 19722,
+      "exitCode": 0,
+      "commandCalls": 2,
+      "scores": {
+        "id": "run-16",
+        "caseId": "N2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "not_applicable",
+        "validity_boundary": "not_applicable",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_4"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "onlyRequestedWordChanged": true,
+          "newTests": false,
+          "irrelevantEnvironmentCaveat": false
+        }
+      },
+      "stdoutSha256": "5b5d6b6fdec30ebc9017cfd645bebac84d58f27021bf463e4584dc30070c1dfe",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": []
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-17",
+      "caseId": "P2",
+      "replicate": 2,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 116168,
+        "cached_input_tokens": 102784,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1062,
+        "reasoning_output_tokens": 215
+      },
+      "durationMs": 50464,
+      "exitCode": 0,
+      "commandCalls": 5,
+      "scores": {
+        "id": "run-17",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_7"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "correct_macos",
+          "syntheticLogsExplicit": false
+        }
+      },
+      "stdoutSha256": "3880ecf418bdf0f1515979b6197c96ddd540915766ac696099629339c34a6b1e",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-18",
+      "caseId": "P2",
+      "replicate": 2,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 95910,
+        "cached_input_tokens": 82688,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1209,
+        "reasoning_output_tokens": 438
+      },
+      "durationMs": 44906,
+      "exitCode": 0,
+      "commandCalls": 4,
+      "scores": {
+        "id": "run-18",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_6"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": false,
+          "personalExecutionOs": "not_applicable",
+          "syntheticLogsExplicit": true
+        }
+      },
+      "stdoutSha256": "5bb8687e931aa80d0c144339ceeb216d15c361f65502c0d4a8e206176628c30f",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-19",
+      "caseId": "N1",
+      "replicate": 2,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 114354,
+        "cached_input_tokens": 90368,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 857,
+        "reasoning_output_tokens": 241
+      },
+      "durationMs": 64358,
+      "exitCode": 0,
+      "commandCalls": 5,
+      "scores": {
+        "id": "run-19",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_7"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "44b16029a5d1cfc363b061ef4ec2504992855f054211f242ae4fb1946c0c6c19",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-20",
+      "caseId": "N1",
+      "replicate": 2,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 95416,
+        "cached_input_tokens": 71552,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 780,
+        "reasoning_output_tokens": 189
+      },
+      "durationMs": 28238,
+      "exitCode": 0,
+      "commandCalls": 4,
+      "scores": {
+        "id": "run-20",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_6"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "5ae2771f4e8605f8daf75887619f9c9d25d9ea6e787fcba5fd1b0ad7633a6cc1",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-21",
+      "caseId": "P2",
+      "replicate": 3,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 122795,
+        "cached_input_tokens": 107776,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1651,
+        "reasoning_output_tokens": 350
+      },
+      "durationMs": 60188,
+      "exitCode": 0,
+      "commandCalls": 10,
+      "scores": {
+        "id": "run-21",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_14"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "correct_macos",
+          "syntheticLogsExplicit": true
+        }
+      },
+      "stdoutSha256": "5cb53406b26f82b1ac8277cafde2db3505f531499abde058bf805d1a07216f63",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": true,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [
+          {
+            "item": "item_3",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"printf '%s' 'Analyse les résultats fournis et dis si cette version peut être livrée.' | agent-memory retrieve --query-stdin --format json\""
+          }
+        ],
+        "skillsRead": ["memory-governance", "code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-22",
+      "caseId": "P2",
+      "replicate": 3,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 160826,
+        "cached_input_tokens": 141568,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1850,
+        "reasoning_output_tokens": 410
+      },
+      "durationMs": 54445,
+      "exitCode": 0,
+      "commandCalls": 13,
+      "scores": {
+        "id": "run-22",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_16"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "omitted",
+          "syntheticLogsExplicit": true
+        },
+        "notes": [
+          "Local Node 26 is identified without an OS. Frozen P2 rubric requires supplied Linux/Windows evidence and personal execution to be distinguished; this omission is retained as a detail, not a retroactively added OS criterion."
+        ]
+      },
+      "stdoutSha256": "d9930f10748ac4fcd8a336214a658edb5339209f3f1c5b862ad1fe4183a1eed8",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": true,
+        "conceptualSearchAttempted": true,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [
+          {
+            "item": "item_4",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"printf '%s' 'Analyse les résultats fournis et dis si cette version peut être livrée.' | agent-memory retrieve --query-stdin --format json\""
+          },
+          {
+            "item": "item_7",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"colgrep-search 'test results validation release readiness failures report evidence'\""
+          }
+        ],
+        "skillsRead": ["code-search", "memory-governance"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-23",
+      "caseId": "N1",
+      "replicate": 3,
+      "condition": "B",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 94882,
+        "cached_input_tokens": 82688,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 769,
+        "reasoning_output_tokens": 156
+      },
+      "durationMs": 31532,
+      "exitCode": 0,
+      "commandCalls": 4,
+      "scores": {
+        "id": "run-23",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_6"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "6d35b74a551f624bdddec8e1c08678150c402e3234642f392dca5156a3131be5",
+      "inputIdentity": {
+        "globalInstructionsSha256": "6231ff800846172f9246c9ef7f74320e5e525d5dd73c60d470cf0ea809012b6f",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-24",
+      "caseId": "N1",
+      "replicate": 3,
+      "condition": "A",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 137754,
+        "cached_input_tokens": 124032,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1117,
+        "reasoning_output_tokens": 229
+      },
+      "durationMs": 37913,
+      "exitCode": 0,
+      "commandCalls": 6,
+      "scores": {
+        "id": "run-24",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_8"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "c348a4a5b31d5c688bbdb03a068f21bc125f3f99ff0a097406768eec4b4f1b55",
+      "inputIdentity": {
+        "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-25",
+      "caseId": "P1",
+      "replicate": 1,
+      "condition": "C",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 136568,
+        "cached_input_tokens": 110720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1277,
+        "reasoning_output_tokens": 442
+      },
+      "durationMs": 53221,
+      "exitCode": 0,
+      "commandCalls": 5,
+      "scores": {
+        "id": "run-25",
+        "caseId": "P1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_8"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "linuxUnexercisedExplicit": true,
+          "node24SelectedByAgent": false,
+          "node24NotExercisedExplicit": true
+        }
+      },
+      "stdoutSha256": "630ed7a779fbd89b047a0dfaa4aacc8399b29645842cf7ed77bedad99cde7aba",
+      "inputIdentity": {
+        "globalInstructionsSha256": "7043ef9ff9e34d82102be3ba654277d43f340c52a4afd4021b90e3a058916509",
+        "promptSha256": "dd97490ead71c3fc282ebbd2b03396c80ca0214ef2f0485c70da9dfd0f360fd4",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [
+          {
+            "item": "item_5",
+            "exitCode": 1,
+            "command": "/bin/zsh -lc 'npm test'"
+          }
+        ],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-26",
+      "caseId": "N2",
+      "replicate": 1,
+      "condition": "C",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 73025,
+        "cached_input_tokens": 61824,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 357,
+        "reasoning_output_tokens": 66
+      },
+      "durationMs": 23827,
+      "exitCode": 0,
+      "commandCalls": 2,
+      "scores": {
+        "id": "run-26",
+        "caseId": "N2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "not_applicable",
+        "validity_boundary": "not_applicable",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_4"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "onlyRequestedWordChanged": true,
+          "newTests": false,
+          "irrelevantEnvironmentCaveat": false
+        }
+      },
+      "stdoutSha256": "9ded7d9835d132107ca9013155bf1074fcec5c12f4c592c1bb06a5aed060ab10",
+      "inputIdentity": {
+        "globalInstructionsSha256": "7043ef9ff9e34d82102be3ba654277d43f340c52a4afd4021b90e3a058916509",
+        "promptSha256": "5641288dc2a791a284db9f07f8a62503b0fa2b108e05498efb2b3e6c66a27216",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": []
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-27",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "C",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 186897,
+        "cached_input_tokens": 163840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1840,
+        "reasoning_output_tokens": 265
+      },
+      "durationMs": 56991,
+      "exitCode": 0,
+      "commandCalls": 14,
+      "scores": {
+        "id": "run-27",
+        "caseId": "P2",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_applicable",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_17"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "linuxLogAttributed": true,
+          "windowsLogAttributed": true,
+          "windowsTestsNotRunExplicit": true,
+          "localTestRun": true,
+          "personalExecutionOs": "correct_macos",
+          "syntheticLogsExplicit": false
+        }
+      },
+      "stdoutSha256": "abf35f1d1eedf24ca73d7cb4e5206f70bca49f51856b36a898d5a955317deffa",
+      "inputIdentity": {
+        "globalInstructionsSha256": "7043ef9ff9e34d82102be3ba654277d43f340c52a4afd4021b90e3a058916509",
+        "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": true,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": true,
+        "toolCommandFailures": [
+          {
+            "item": "item_4",
+            "exitCode": 127,
+            "command": "/bin/zsh -lc \"printf '%s' 'Analyse les résultats fournis et dis si cette version peut être livrée.' | agent-memory retrieve --query-stdin --format json\""
+          }
+        ],
+        "skillsRead": ["code-search", "memory-governance"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    },
+    {
+      "id": "run-28",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "C",
+      "phase": "extension",
+      "usage": {
+        "input_tokens": 95111,
+        "cached_input_tokens": 82688,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 848,
+        "reasoning_output_tokens": 148
+      },
+      "durationMs": 32676,
+      "exitCode": 0,
+      "commandCalls": 5,
+      "scores": {
+        "id": "run-28",
+        "caseId": "N1",
+        "task": "pass",
+        "scope": "pass",
+        "evidence_attribution": "pass",
+        "validity_boundary": "pass",
+        "overactivation": "not_observed",
+        "global_injection": "not_attested",
+        "evidence": [
+          {
+            "artifact": "stdout.jsonl",
+            "item": "item_7"
+          },
+          {
+            "artifact": "independent-observations.json"
+          }
+        ],
+        "details": {
+          "operatingSystemNamed": true,
+          "declaredSingleTargetRespected": true,
+          "newPlatformCampaign": false
+        }
+      },
+      "stdoutSha256": "422f53ecbb109ab2ad214b4d82107dec3333b6030607aa307c97300dc1d6bf86",
+      "inputIdentity": {
+        "globalInstructionsSha256": "7043ef9ff9e34d82102be3ba654277d43f340c52a4afd4021b90e3a058916509",
+        "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+        "codexVersion": "codex-cli 0.154.0",
+        "shellNode": "v26.8.1"
+      },
+      "auxiliaryObservations": {
+        "agentMemoryAttempted": false,
+        "conceptualSearchAttempted": false,
+        "localTestInAnalysis": false,
+        "toolCommandFailures": [],
+        "skillsRead": ["code-search"]
+      },
+      "requestedModel": "gpt-5.6-sol",
+      "resolvedModel": "not_exposed",
+      "initialShellNode": "26.8.1"
+    }
+  ],
+  "totals": {
+    "input_tokens": 3002984,
+    "cached_input_tokens": 2597376,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 28458,
+    "reasoning_output_tokens": 7161,
+    "durationMs": 1116327,
+    "commandCalls": 153
+  },
+  "all28Totals": {
+    "input_tokens": 3468422,
+    "cached_input_tokens": 3011456,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 32631,
+    "reasoning_output_tokens": 8310,
+    "durationMs": 1339281,
+    "commandCalls": 176
+  },
+  "extensionEstimatedApiUsd": 3.2305424,
+  "all28EstimatedApiUsd": 3.6850664,
+  "comparison": [
+    {
+      "caseId": "P1",
+      "condition": "A",
+      "runs": ["run-02", "run-05", "run-14"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 3,
+      "attributionFail": 0,
+      "validityPass": 3,
+      "scopePass": 3,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 624784,
+        "cached_input_tokens": 556160,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6138,
+        "reasoning_output_tokens": 1974,
+        "durationMs": 264852,
+        "commandCalls": 29
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 2,
+      "overactivationUnscored": 1
+    },
+    {
+      "caseId": "P1",
+      "condition": "B",
+      "runs": ["run-01", "run-06", "run-13"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 2,
+      "attributionFail": 1,
+      "validityPass": 2,
+      "scopePass": 3,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 605482,
+        "cached_input_tokens": 542336,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6190,
+        "reasoning_output_tokens": 1696,
+        "durationMs": 204595,
+        "commandCalls": 34
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 2,
+      "overactivationUnscored": 1
+    },
+    {
+      "caseId": "P1",
+      "condition": "C",
+      "runs": ["run-25"],
+      "count": 1,
+      "taskPass": 1,
+      "attributionPass": 1,
+      "attributionFail": 0,
+      "validityPass": 1,
+      "scopePass": 1,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 136568,
+        "cached_input_tokens": 110720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1277,
+        "reasoning_output_tokens": 442,
+        "durationMs": 53221,
+        "commandCalls": 5
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 1,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "P2",
+      "condition": "A",
+      "runs": ["run-09", "run-17", "run-21"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 3,
+      "attributionFail": 0,
+      "validityPass": 3,
+      "scopePass": 3,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 334409,
+        "cached_input_tokens": 293504,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3777,
+        "reasoning_output_tokens": 873,
+        "durationMs": 173212,
+        "commandCalls": 19
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 3,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "P2",
+      "condition": "B",
+      "runs": ["run-10", "run-18", "run-22"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 2,
+      "attributionFail": 1,
+      "validityPass": 3,
+      "scopePass": 3,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 352798,
+        "cached_input_tokens": 307200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4282,
+        "reasoning_output_tokens": 1266,
+        "durationMs": 147090,
+        "commandCalls": 21
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 3,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "P2",
+      "condition": "C",
+      "runs": ["run-27"],
+      "count": 1,
+      "taskPass": 1,
+      "attributionPass": 1,
+      "attributionFail": 0,
+      "validityPass": 1,
+      "scopePass": 1,
+      "noOveractivation": 0,
+      "totals": {
+        "input_tokens": 186897,
+        "cached_input_tokens": 163840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1840,
+        "reasoning_output_tokens": 265,
+        "durationMs": 56991,
+        "commandCalls": 14
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 1,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N1",
+      "condition": "A",
+      "runs": ["run-12", "run-20", "run-24"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 3,
+      "attributionFail": 0,
+      "validityPass": 3,
+      "scopePass": 3,
+      "noOveractivation": 3,
+      "totals": {
+        "input_tokens": 347547,
+        "cached_input_tokens": 297216,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2685,
+        "reasoning_output_tokens": 589,
+        "durationMs": 96415,
+        "commandCalls": 15
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N1",
+      "condition": "B",
+      "runs": ["run-11", "run-19", "run-23"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 3,
+      "attributionFail": 0,
+      "validityPass": 3,
+      "scopePass": 3,
+      "noOveractivation": 3,
+      "totals": {
+        "input_tokens": 305203,
+        "cached_input_tokens": 256384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2827,
+        "reasoning_output_tokens": 598,
+        "durationMs": 137033,
+        "commandCalls": 18
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N1",
+      "condition": "C",
+      "runs": ["run-28"],
+      "count": 1,
+      "taskPass": 1,
+      "attributionPass": 1,
+      "attributionFail": 0,
+      "validityPass": 1,
+      "scopePass": 1,
+      "noOveractivation": 1,
+      "totals": {
+        "input_tokens": 95111,
+        "cached_input_tokens": 82688,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 848,
+        "reasoning_output_tokens": 148,
+        "durationMs": 32676,
+        "commandCalls": 5
+      },
+      "attributionNotApplicable": 0,
+      "validityNotApplicable": 0,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N2",
+      "condition": "A",
+      "runs": ["run-03", "run-07", "run-15"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 0,
+      "attributionFail": 0,
+      "validityPass": 0,
+      "scopePass": 3,
+      "noOveractivation": 3,
+      "totals": {
+        "input_tokens": 222064,
+        "cached_input_tokens": 188160,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1260,
+        "reasoning_output_tokens": 217,
+        "durationMs": 71185,
+        "commandCalls": 7
+      },
+      "attributionNotApplicable": 3,
+      "validityNotApplicable": 3,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N2",
+      "condition": "B",
+      "runs": ["run-04", "run-08", "run-16"],
+      "count": 3,
+      "taskPass": 3,
+      "attributionPass": 0,
+      "attributionFail": 0,
+      "validityPass": 0,
+      "scopePass": 3,
+      "noOveractivation": 3,
+      "totals": {
+        "input_tokens": 184534,
+        "cached_input_tokens": 151424,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1150,
+        "reasoning_output_tokens": 176,
+        "durationMs": 78184,
+        "commandCalls": 7
+      },
+      "attributionNotApplicable": 3,
+      "validityNotApplicable": 3,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    },
+    {
+      "caseId": "N2",
+      "condition": "C",
+      "runs": ["run-26"],
+      "count": 1,
+      "taskPass": 1,
+      "attributionPass": 0,
+      "attributionFail": 0,
+      "validityPass": 0,
+      "scopePass": 1,
+      "noOveractivation": 1,
+      "totals": {
+        "input_tokens": 73025,
+        "cached_input_tokens": 61824,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 357,
+        "reasoning_output_tokens": 66,
+        "durationMs": 23827,
+        "commandCalls": 2
+      },
+      "attributionNotApplicable": 1,
+      "validityNotApplicable": 1,
+      "overactivationNotApplicable": 0,
+      "overactivationUnscored": 0
+    }
+  ],
+  "quota": {
+    "beforeUsedPercent": 23,
+    "afterUsedPercent": 26,
+    "attribution": "shared account; preparation, coordination, and possible concurrent activity included"
+  },
+  "disposition": "inconclusive",
+  "proposedAction": "Keep current text provisionally; no permanent instruction change justified by this corpus.",
+  "limits": [
+    "One clause in one parent unit among 205",
+    "Codex CLI Sol medium only; resolved model snapshot not exposed",
+    "Global instruction injection not attested",
+    "A/B labels masked; placebo identities known to scorer",
+    "3 replicates per A/B cell, one placebo per case",
+    "No statistical equivalence or cross-agent transfer claim"
+  ]
+}

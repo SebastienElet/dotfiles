@@ -2,7 +2,9 @@
 
 Protocole initial présenté avant exécution. Les quatre runs de calibration ont ensuite été
 autorisés et exécutés ; leur [rapport](issue-160-calibration.md) consigne notamment le runtime
-réel Node 26.8.1, différent de celui de préparation. Les 24 autres runs restent proposés.
+réel Node 26.8.1, différent de celui de préparation. Les 24 autres runs ont ensuite été autorisés
+et exécutés ; voir le [résultat du lot complet](issue-160-ablation.md). Les estimations ci-dessous
+restent celles du protocole initial, distinctes de la consommation observée.
 
 ## Question et delta
 

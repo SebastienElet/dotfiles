@@ -1,0 +1,46 @@
+{
+  "execution": {
+    "startedAt": "2026-09-21T14:47:19.384Z",
+    "finishedAt": "2026-09-21T14:47:52.060Z",
+    "durationMs": 32676,
+    "exitCode": 0,
+    "signalCode": null,
+    "timeoutSeconds": 600,
+    "attempt": 1,
+    "cancelled": false
+  },
+  "inputIdentity": {
+    "globalInstructionsSha256": "7043ef9ff9e34d82102be3ba654277d43f340c52a4afd4021b90e3a058916509",
+    "promptSha256": "023791b3f91f5657d0a6beee912351b2d0916bc5931f18d54757e5b2b59be86e",
+    "codexVersion": "codex-cli 0.154.0",
+    "shellNode": "v26.8.1"
+  },
+  "stderr": "",
+  "final": "`npm test` est vert :\n\n- 3 tests réussis\n- 0 échec, skip ou annulation\n- Environnement supporté : macOS 27 arm64, Node.js 26.8.1\n- Durée : 45 ms\n- Aucun fichier modifié\n",
+  "diff": "",
+  "independentObservations": {
+    "id": "run-28",
+    "caseId": "N1",
+    "checkedAt": "2026-09-21T14:48:47.628Z",
+    "diff": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "HEAD", "--"]
+    },
+    "status": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "status", "--short"]
+    },
+    "diff-check": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "--check"]
+    },
+    "statusText": "",
+    "nativeTest": {
+      "exitCode": 0,
+      "command": ["/bin/zsh", "-lc", "npm test"],
+      "node": "26.8.1",
+      "environment": "macOS 27.0 arm64"
+    }
+  },
+  "independentTestOutput": "\n> test\n> node --test\n\n✔ empty input remains an empty string (0.267875ms)\n✔ whitespace-only input becomes an empty string (0.049333ms)\n✔ surrounding whitespace is trimmed (0.046917ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.330417\n"
+}

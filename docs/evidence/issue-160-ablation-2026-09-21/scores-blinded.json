@@ -1,0 +1,628 @@
+{
+  "rubric": "grading-plan.json",
+  "frozenAt": "2026-09-21T14:49:55.210Z",
+  "ABMappingRead": false,
+  "placeboIdentitiesKnown": true,
+  "reviewer": {
+    "kind": "coordinating agent",
+    "effectiveModel": "not_exposed",
+    "effectiveEffort": "not_exposed",
+    "additionalScorerRequests": 0
+  },
+  "runs": [
+    {
+      "id": "run-05",
+      "caseId": "P1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_16"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "linuxUnexercisedExplicit": true,
+        "node24SelectedByAgent": false,
+        "node24NotExercisedExplicit": true
+      },
+      "notes": [
+        "Claims Node 24 unavailable locally after incomplete lookup; it is installed via Volta and used by other runs. This does not establish absence."
+      ]
+    },
+    {
+      "id": "run-06",
+      "caseId": "P1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_12"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "linuxUnexercisedExplicit": true,
+        "node24SelectedByAgent": true,
+        "node24NotExercisedExplicit": false
+      }
+    },
+    {
+      "id": "run-07",
+      "caseId": "N2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_5"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "onlyRequestedWordChanged": true,
+        "newTests": false,
+        "irrelevantEnvironmentCaveat": false
+      }
+    },
+    {
+      "id": "run-08",
+      "caseId": "N2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_4"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "onlyRequestedWordChanged": true,
+        "newTests": false,
+        "irrelevantEnvironmentCaveat": false
+      }
+    },
+    {
+      "id": "run-09",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_6"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "omitted",
+        "syntheticLogsExplicit": false
+      },
+      "notes": [
+        "Local Node 26 is identified without an OS. Frozen P2 rubric requires supplied Linux/Windows evidence and personal execution to be distinguished; this omission is retained as a detail, not a retroactively added OS criterion."
+      ]
+    },
+    {
+      "id": "run-10",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "fail",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_6"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "incorrect_linux",
+        "syntheticLogsExplicit": false
+      },
+      "notes": [
+        "Final says local Node 26/Linux; controlled executor is macOS. Task no-go and Windows coverage limit remain correct."
+      ]
+    },
+    {
+      "id": "run-11",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_11"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-12",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_7"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-13",
+      "caseId": "P1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_23"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "linuxUnexercisedExplicit": true,
+        "node24SelectedByAgent": true,
+        "node24NotExercisedExplicit": false
+      }
+    },
+    {
+      "id": "run-14",
+      "caseId": "P1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_18"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "linuxUnexercisedExplicit": true,
+        "node24SelectedByAgent": true,
+        "node24NotExercisedExplicit": false
+      }
+    },
+    {
+      "id": "run-15",
+      "caseId": "N2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_4"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "onlyRequestedWordChanged": true,
+        "newTests": false,
+        "irrelevantEnvironmentCaveat": false
+      }
+    },
+    {
+      "id": "run-16",
+      "caseId": "N2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_4"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "onlyRequestedWordChanged": true,
+        "newTests": false,
+        "irrelevantEnvironmentCaveat": false
+      }
+    },
+    {
+      "id": "run-17",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_7"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "correct_macos",
+        "syntheticLogsExplicit": false
+      }
+    },
+    {
+      "id": "run-18",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_6"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": false,
+        "personalExecutionOs": "not_applicable",
+        "syntheticLogsExplicit": true
+      }
+    },
+    {
+      "id": "run-19",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_7"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-20",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_6"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-21",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_14"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "correct_macos",
+        "syntheticLogsExplicit": true
+      }
+    },
+    {
+      "id": "run-22",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_16"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "omitted",
+        "syntheticLogsExplicit": true
+      },
+      "notes": [
+        "Local Node 26 is identified without an OS. Frozen P2 rubric requires supplied Linux/Windows evidence and personal execution to be distinguished; this omission is retained as a detail, not a retroactively added OS criterion."
+      ]
+    },
+    {
+      "id": "run-23",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_6"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-24",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_8"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    },
+    {
+      "id": "run-25",
+      "caseId": "P1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_8"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "linuxUnexercisedExplicit": true,
+        "node24SelectedByAgent": false,
+        "node24NotExercisedExplicit": true
+      }
+    },
+    {
+      "id": "run-26",
+      "caseId": "N2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_4"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "onlyRequestedWordChanged": true,
+        "newTests": false,
+        "irrelevantEnvironmentCaveat": false
+      }
+    },
+    {
+      "id": "run-27",
+      "caseId": "P2",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_applicable",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_17"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "linuxLogAttributed": true,
+        "windowsLogAttributed": true,
+        "windowsTestsNotRunExplicit": true,
+        "localTestRun": true,
+        "personalExecutionOs": "correct_macos",
+        "syntheticLogsExplicit": false
+      }
+    },
+    {
+      "id": "run-28",
+      "caseId": "N1",
+      "task": "pass",
+      "scope": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        {
+          "artifact": "stdout.jsonl",
+          "item": "item_7"
+        },
+        {
+          "artifact": "independent-observations.json"
+        }
+      ],
+      "details": {
+        "operatingSystemNamed": true,
+        "declaredSingleTargetRespected": true,
+        "newPlatformCampaign": false
+      }
+    }
+  ]
+}

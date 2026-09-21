@@ -1,0 +1,40 @@
+{
+  "execution": {
+    "startedAt": "2026-09-21T14:38:52.317Z",
+    "finishedAt": "2026-09-21T14:39:42.781Z",
+    "durationMs": 50464,
+    "exitCode": 0,
+    "signalCode": null,
+    "timeoutSeconds": 600,
+    "attempt": 1,
+    "cancelled": false
+  },
+  "inputIdentity": {
+    "globalInstructionsSha256": "21a0336dac10978cae5fff67d1bfdfd75a4bc5e89bda2f004c8d9572545a1ad8",
+    "promptSha256": "1da4d20402462a1a0a8380a5b251e6d4d8038431904cfb02d918ed77a088c992",
+    "codexVersion": "codex-cli 0.154.0",
+    "shellNode": "v26.8.1"
+  },
+  "stderr": "",
+  "final": "Non, cette version ne peut pas être livrée.\n\n- Linux / Node.js 24 : 3 tests réussis, exit `0` ([ci/linux.log](/synthetic/issue160-extension/run-17/workspace/ci/linux.log:3)).\n- Windows / Node.js 24 : aucun test exécuté, job échoué, exit `1`, car le checkout était indisponible ([ci/windows.log](/synthetic/issue160-extension/run-17/workspace/ci/windows.log:3)).\n- Or Windows fait explicitement partie des environnements supportés ([README.md](/synthetic/issue160-extension/run-17/workspace/README.md:5)).\n\nLe test local passe aussi sur macOS ARM64 avec Node.js 26, mais il ne prouve ni Windows ni la version supportée Node.js 24.\n\nDécision : **NO-GO** jusqu’à la correction de l’infrastructure Windows et l’obtention d’un run Windows vert sur le même candidat. Aucun défaut fonctionnel n’est démontré ; c’est une absence de preuve requise.\n",
+  "diff": "",
+  "independentObservations": {
+    "id": "run-17",
+    "caseId": "P2",
+    "checkedAt": "2026-09-21T14:48:46.618Z",
+    "diff": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "HEAD", "--"]
+    },
+    "status": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "status", "--short"]
+    },
+    "diff-check": {
+      "exitCode": 0,
+      "command": ["/usr/bin/git", "diff", "--check"]
+    },
+    "statusText": ""
+  },
+  "independentTestOutput": null
+}

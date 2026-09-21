@@ -2,7 +2,7 @@
 
 État : inventaire textuel des quatre sources fournies ; aucune évaluation causale. Les cas ci-dessous sont des candidats synthétiques, pas des prompts exécutés. Tous les effets sont attendus, jamais constatés. Les preuves de présence, de chargement et d’application ne sont pas interchangeables.
 
-Mise à jour après calibration : seule la sous-unité A039.a dispose d'une [comparaison exploratoire](issue-160-calibration.md), sur P1/N2 avec une répétition par condition. Sa disposition reste `inconclusive`. Les cas génériques des tables ci-dessous restent des propositions distinctes des prompts exécutés.
+Mise à jour après le [lot de 28 runs](issue-160-ablation.md) : seule la sous-unité A039.a dispose d'une comparaison, sur quatre scénarios avec trois répétitions par condition A/B et un placebo par scénario. Proposition : conserver provisoirement cette phrase ; disposition expérimentale `inconclusive`. Les cas génériques des tables ci-dessous restent des propositions distinctes des prompts exécutés.
 
 Statut de chaque ligne : **en attente de mesure attribuable**, texte conservé provisoirement. Ce statut n’est pas une décision finale « conserver » démontrée. Les références E renvoient au [checkpoint](issue-160-checkpoint.md#preuves-retrouvées).
 

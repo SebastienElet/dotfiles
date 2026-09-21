@@ -1,0 +1,567 @@
+{
+  "issue": 160,
+  "createdAt": "2026-09-21T14:26:55.067Z",
+  "phase": "24-run extension",
+  "sourceRevision": "445a0b48d287dc64363b2b34166fe9f2711867ce",
+  "reportRevision": "9ed2ef0806f193c222767004251c139e3569db9e",
+  "agent": "Codex CLI",
+  "version": "0.154.0",
+  "requestedModel": "gpt-5.6-sol",
+  "resolvedModel": "not_exposed",
+  "effort": "medium",
+  "os": "macOS 27.0 arm64",
+  "preparationNode": "24.21.0",
+  "agentShellNode": "26.8.1",
+  "bun": "1.4.0",
+  "skills": [
+    "output-discipline",
+    "prose-edit",
+    "agent-instructions",
+    "claude-developer",
+    "handoff",
+    "harness-reflection",
+    "harness-simplify",
+    "memory-governance",
+    "code-enforcement",
+    "pr-verdict",
+    "proof-integrity-review",
+    "pr-fix",
+    "pr-feedback",
+    "code-search",
+    "code-simplify",
+    "design-claim-audit",
+    "skill-manager",
+    "skill-simplify",
+    "linear-issue-spec",
+    "linear-workflow",
+    "linear-start",
+    "linear-sync",
+    "obsidian-retrieval",
+    "issue-creation",
+    "issue-simplify",
+    "workflow-automation",
+    "requirements-clarification"
+  ],
+  "runIds": [
+    "run-05",
+    "run-06",
+    "run-07",
+    "run-08",
+    "run-09",
+    "run-10",
+    "run-11",
+    "run-12",
+    "run-13",
+    "run-14",
+    "run-15",
+    "run-16",
+    "run-17",
+    "run-18",
+    "run-19",
+    "run-20",
+    "run-21",
+    "run-22",
+    "run-23",
+    "run-24",
+    "run-25",
+    "run-26",
+    "run-27",
+    "run-28"
+  ],
+  "quotaBefore": {
+    "usedPercent": 23,
+    "window": "weekly",
+    "resetAt": 1790433129
+  },
+  "originalP1AndN2Unchanged": true,
+  "calibrationSourceHashesUnchanged": true,
+  "globalInstructionInjection": "not_attested",
+  "activeAgentConcurrency": 1,
+  "conditions": {
+    "A": "original",
+    "B": "only A039.a removed",
+    "C": "original plus neutral synthetic-title sentence"
+  },
+  "ablation": {
+    "with": "unchanged sources at gitRevision",
+    "without": "Remove exactly the following bytes from harness/AGENTS.md before canonical assembly",
+    "removedBytes": "Every piece of evidence states where it was produced and is\n  valid only there. "
+  },
+  "placeboSentence": "A synthetic example has a short title that identifies the example within its collection.",
+  "order": [
+    {
+      "id": "run-05",
+      "caseId": "P1",
+      "replicate": 2,
+      "condition": "A"
+    },
+    {
+      "id": "run-06",
+      "caseId": "P1",
+      "replicate": 2,
+      "condition": "B"
+    },
+    {
+      "id": "run-07",
+      "caseId": "N2",
+      "replicate": 2,
+      "condition": "A"
+    },
+    {
+      "id": "run-08",
+      "caseId": "N2",
+      "replicate": 2,
+      "condition": "B"
+    },
+    {
+      "id": "run-09",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "A"
+    },
+    {
+      "id": "run-10",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "B"
+    },
+    {
+      "id": "run-11",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "B"
+    },
+    {
+      "id": "run-12",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "A"
+    },
+    {
+      "id": "run-13",
+      "caseId": "P1",
+      "replicate": 3,
+      "condition": "B"
+    },
+    {
+      "id": "run-14",
+      "caseId": "P1",
+      "replicate": 3,
+      "condition": "A"
+    },
+    {
+      "id": "run-15",
+      "caseId": "N2",
+      "replicate": 3,
+      "condition": "A"
+    },
+    {
+      "id": "run-16",
+      "caseId": "N2",
+      "replicate": 3,
+      "condition": "B"
+    },
+    {
+      "id": "run-17",
+      "caseId": "P2",
+      "replicate": 2,
+      "condition": "A"
+    },
+    {
+      "id": "run-18",
+      "caseId": "P2",
+      "replicate": 2,
+      "condition": "B"
+    },
+    {
+      "id": "run-19",
+      "caseId": "N1",
+      "replicate": 2,
+      "condition": "B"
+    },
+    {
+      "id": "run-20",
+      "caseId": "N1",
+      "replicate": 2,
+      "condition": "A"
+    },
+    {
+      "id": "run-21",
+      "caseId": "P2",
+      "replicate": 3,
+      "condition": "A"
+    },
+    {
+      "id": "run-22",
+      "caseId": "P2",
+      "replicate": 3,
+      "condition": "B"
+    },
+    {
+      "id": "run-23",
+      "caseId": "N1",
+      "replicate": 3,
+      "condition": "B"
+    },
+    {
+      "id": "run-24",
+      "caseId": "N1",
+      "replicate": 3,
+      "condition": "A"
+    },
+    {
+      "id": "run-25",
+      "caseId": "P1",
+      "replicate": 1,
+      "condition": "C"
+    },
+    {
+      "id": "run-26",
+      "caseId": "N2",
+      "replicate": 1,
+      "condition": "C"
+    },
+    {
+      "id": "run-27",
+      "caseId": "P2",
+      "replicate": 1,
+      "condition": "C"
+    },
+    {
+      "id": "run-28",
+      "caseId": "N1",
+      "replicate": 1,
+      "condition": "C"
+    }
+  ],
+  "invocation": [
+    "/synthetic/operator/.volta/bin/codex",
+    "exec",
+    "--json",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--model",
+    "gpt-5.6-sol",
+    "--sandbox",
+    "workspace-write",
+    "-c",
+    "approval_policy=\"never\"",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "-c",
+    "web_search=\"disabled\"",
+    "-c",
+    "model_reasoning_effort=\"medium\"",
+    "-c",
+    "shell_environment_policy.inherit=\"all\"",
+    "-c",
+    "shell_environment_policy.ignore_default_excludes=false",
+    "-c",
+    "shell_environment_policy.experimental_use_profile=false",
+    "-"
+  ],
+  "environmentTemplate": {
+    "PATH": "/synthetic/operator/.volta/tools/image/node/24.21.0/bin:/synthetic/operator/.volta/bin:/opt/homebrew/bin:/usr/bin:/bin",
+    "VOLTA_HOME": "/synthetic/operator/.volta",
+    "LANG": "C.UTF-8",
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "HOME": "/synthetic/issue160-extension/run-05/home",
+    "CODEX_HOME": "/synthetic/issue160-extension/run-05/home/.codex",
+    "XDG_CONFIG_HOME": "/synthetic/issue160-extension/run-05/home/.config",
+    "TMPDIR": "/synthetic/issue160-extension/run-05/tmp"
+  },
+  "redactions": [
+    {
+      "run": "run-05",
+      "originalSha256": "09cbdc9dd8907b99bb913626f095c5dbb862179e8a9595fd561d3dfd9fae415d",
+      "exportedSha256": "adfdd227d20ed5d320275fc9b667e329732915417dd1cd768477f065e9a4cac7",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-06",
+      "originalSha256": "6656bcf04c018d6e4053b19f4e8ba9dde79a7bed64127883eec9fd89bc76931a",
+      "exportedSha256": "6e5dc88395bc460bc1ea4e7fba5bdb7470ba9294cb31e1f59ebd201c593d14dd",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-07",
+      "originalSha256": "29140c210ca7dd4b7884dc4ef18c4c44b77cef3f4a2578abf6380aa47cd05938",
+      "exportedSha256": "fb70f72d67ba7931c50ee3eb2f8c6899df197ba83c0eb0639fcc3df8c23b7e3e",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-08",
+      "originalSha256": "39997fa472c0cd528fe016a2555ff35f741438fdd233741b32adcbd2bc36ad2c",
+      "exportedSha256": "d5e493a2df0386196e59492124e5e539f4bc9145b859a13c25dcaf315a90bedb",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-09",
+      "originalSha256": "f384deffed070d2001ca1a5336de8959349b2571f52a14200a248ebddeb495e0",
+      "exportedSha256": "3b1f221cfb4f264411ba93ca5268ea8ca8835c261eba7d7459d8a58bf207e9d4",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-10",
+      "originalSha256": "5d2402d05975b39c2b7fc5c9fa2d8139a734c377b5887004d345d505a1f63b23",
+      "exportedSha256": "7ecd20b7486a64bed2f7a4e415ab3c3cbae36cb3944d1027cd39b7aa7183d38b",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-11",
+      "originalSha256": "b60cbb62cdc1dbfa345ec59a476669e4673bb657a235a0b33f7da44e668ae9fe",
+      "exportedSha256": "eef77f83f34f9e588eeb6cff8e551d01bd5d740119db4b381b92d21bacd1afd2",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-12",
+      "originalSha256": "c3efe5404ba37b8bb9cc77eda45fcdc4dd287be4c74ef3807119ff2b0794a41d",
+      "exportedSha256": "ca7b008103969cbc60b304173e98817577a580cd60de9e00504f7ce7f010d246",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-13",
+      "originalSha256": "7c7ded206ebff18e2d6ef9c97f5d70dadfa38fb46c027d5986c9493fe2b4d3d7",
+      "exportedSha256": "e5ab9c9c8fbc27b3c4c17aecd954b6a7dcda18d5851cb2ce1561b1eea98b5369",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-14",
+      "originalSha256": "dd69917ef653890c8a0a542dc83cb65f557d51d122b81a9e7dfadba802b29968",
+      "exportedSha256": "e96849bb2e578de4f1c5a6104c9619e72f0ef3cb0b43cec44a041cfe528e0371",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-15",
+      "originalSha256": "3c4d6d60132471b8ab0fa9ae2e9a37ccccc9544ee79091aabf409bf1083e6ca6",
+      "exportedSha256": "5cf9da22f5b2f92d765efaa91cfacaf59fe383704a1b2990f5653c87bc21df60",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-16",
+      "originalSha256": "5b5d6b6fdec30ebc9017cfd645bebac84d58f27021bf463e4584dc30070c1dfe",
+      "exportedSha256": "f633085d6cf43b06138233d840c53880379831069a552b87b13859da68419026",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-17",
+      "originalSha256": "3880ecf418bdf0f1515979b6197c96ddd540915766ac696099629339c34a6b1e",
+      "exportedSha256": "9ec47ffb9dca3f908210e42d45691809b2f5b3d00c77d9e252a578308287a4d8",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-18",
+      "originalSha256": "5bb8687e931aa80d0c144339ceeb216d15c361f65502c0d4a8e206176628c30f",
+      "exportedSha256": "d316934cf50234be8a92996b5343e4227a8dbabddeb382dd81a6cca063a7e7d2",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-19",
+      "originalSha256": "44b16029a5d1cfc363b061ef4ec2504992855f054211f242ae4fb1946c0c6c19",
+      "exportedSha256": "43a51cfaf2e8ab4400035b33ddf7098cc97aabc87af0a6f505ece602e8a64a33",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-20",
+      "originalSha256": "5ae2771f4e8605f8daf75887619f9c9d25d9ea6e787fcba5fd1b0ad7633a6cc1",
+      "exportedSha256": "83989c7d02bc72bddab578100e4cf011065fc805f15a55f449fec84b3910bbf8",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-21",
+      "originalSha256": "5cb53406b26f82b1ac8277cafde2db3505f531499abde058bf805d1a07216f63",
+      "exportedSha256": "162d63bfba06da002738f294fa7720ffe6e16aa305177c8f097ebc09c08c0d9e",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-22",
+      "originalSha256": "d9930f10748ac4fcd8a336214a658edb5339209f3f1c5b862ad1fe4183a1eed8",
+      "exportedSha256": "8925a7592db50dc52183248a1f100abb5fb86a6a30ad9132ddc53a290deb4187",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-23",
+      "originalSha256": "6d35b74a551f624bdddec8e1c08678150c402e3234642f392dca5156a3131be5",
+      "exportedSha256": "6207132b71fef4027ef2c31b7be6c68d56e1d9b0fec500e09e0e6e3d74720dbb",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-24",
+      "originalSha256": "c348a4a5b31d5c688bbdb03a068f21bc125f3f99ff0a097406768eec4b4f1b55",
+      "exportedSha256": "254e32f8afb9462b1c5014de66a0ce5ca1b45db0fc198e0fc71ab06771f16a75",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-25",
+      "originalSha256": "630ed7a779fbd89b047a0dfaa4aacc8399b29645842cf7ed77bedad99cde7aba",
+      "exportedSha256": "930ac39e319224f7a367a8af9ae4b841f0a814ace10a77cd4bd3a03de7927cc4",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-26",
+      "originalSha256": "9ded7d9835d132107ca9013155bf1074fcec5c12f4c592c1bb06a5aed060ab10",
+      "exportedSha256": "c8831e333db563f9066b7f0336bbccefd89258db69d6551fb943c3ab77cf5f05",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-27",
+      "originalSha256": "abf35f1d1eedf24ca73d7cb4e5206f70bca49f51856b36a898d5a955317deffa",
+      "exportedSha256": "216f49999495cbca144e1c25256102ea97a90f172fadbbef8b42617f104bc7fb",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    },
+    {
+      "run": "run-28",
+      "originalSha256": "422f53ecbb109ab2ad214b4d82107dec3333b6030607aa307c97300dc1d6bf86",
+      "exportedSha256": "927222a7a4c0f621c7e178e18ce443c40ef05be2a961919a84d9fbfa1a977742",
+      "originalRetainedLocally": true,
+      "changes": [
+        "Synthetic experiment root normalized",
+        "Operator home and account name normalized",
+        "Host name normalized",
+        "Thread identifier replaced with run-local opaque identifier"
+      ]
+    }
+  ],
+  "originalScoresSha256": "1f6e67eb97fe810fc9fd35863bc2023a0252b03bd769f050cb586832a8833bd1",
+  "retention": "Exact originals and complete snapshots retained locally outside Arnes telemetry. Repository event copies normalize paths, operator/host names and thread IDs. Authentication and CLI caches excluded."
+}
