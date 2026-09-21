@@ -1,129 +1,104 @@
 #![cfg(test)]
-#[path = "support/codex.rs"]
-pub mod codex_support;
 #[path = "support/skills.rs"]
 pub mod skill_support;
 pub mod support;
-use codex_support::{install, marketplace, plugin};
-use serde_json::json;
+
+use serde_json::Value;
 use skill_support::{MANIFEST, configured_fixture, run};
-fn manifest(plugin_allowed: bool, skill_allowed: bool) -> String {
+
+fn manifest(plugin_allowed: bool) -> String {
     let plugins = if plugin_allowed {
         "    - { agent: codex, scope: user, id: demo@marketplace }\n"
     } else {
         ""
     };
-    let skills = if skill_allowed {
-        "    - { agent: codex, scope: user, origin: plugin, plugin: demo@marketplace, slug: brainstorm }\n"
-    } else {
-        ""
-    };
-    MANIFEST . replacen ("resources:" , & format ! ("external:\n  roots:\n    - {{ agent: codex, scope: user, origin: system, location: {{ root: home, path: .codex/skills/.system }} }}\n  plugins:\n{plugins}  skills:\n{skills}resources:") , 1 ,)
+    MANIFEST.replacen(
+        "resources:",
+        &format!("external:\n  plugins:\n{plugins}resources:"),
+        1,
+    )
 }
+
 #[test]
-fn active_plugin_uses_codex_selection_and_inventories_skills()
+fn configured_plugins_preserve_exposure_and_policy_without_claiming_availability()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let fixture = configured_fixture()?;
-    fixture.write_home(".arnes.yaml", &manifest(true, true))?;
-    fixture . write_home (".codex/config.toml" , "[plugins.\"demo@marketplace\"]\nenabled = true\n[[skills.config]]\nname = 'review'\nenabled = false\n" ,) ? ;
-    fixture.write_home(
-        ".codex/plugins/cache/marketplace/demo/11c74d6b/.codex-plugin/plugin.json",
-        r#"{"name":"demo","version":"5.1.3","skills":["skills"]}"#,
-    )?;
-    fixture.write_home(
-        ".codex/plugins/cache/marketplace/demo/11c74d6b/skills/brainstorm/SKILL.md",
-        "brainstorm\n",
-    )?;
-    fixture.write_home(
-        ".codex/.tmp/plugins/plugins/demo/skills/source-only/SKILL.md",
-        "source only\n",
-    )?;
-    let root = fixture.home().join(".codex/.tmp/plugins");
-    let path = root.join("plugins/demo");
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [marketplace ("marketplace" , & root)] }),
-        &json ! ({ "installed" : [plugin ("demo@marketplace" , "marketplace" , "11c74d6b" , true , & path)] , "available" : [] }),
-    )?;
-    let (code, stdout, _) = run(
-        &fixture,
-        &[
-            "doctor",
-            "skills",
-            "--agent",
-            "codex",
-            "--scope",
-            "user",
-            "--verbose",
-        ],
-    )?;
-    assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("codex user plugin demo@marketplace@5.1.3"));
-    assert!(stdout.contains("artifact=11c74d6b"));
-    assert!(stdout.contains("plugin · enabled · healthy · allowed"));
-    assert!(stdout.contains("skill brainstorm · enabled · healthy · allowed"));
-    assert!(!stdout.contains("@?"));
-    assert!(!stdout.contains("path=unknown"));
-    assert!(!stdout.contains("topology=unknown"));
-    assert!(!stdout.contains("source-only"));
+    for (setting, exposure, activation) in [
+        ("enabled = true", "enabled", "unknown"),
+        ("enabled = false", "disabled", "disabled"),
+        ("", "unknown", "unknown"),
+    ] {
+        for allowed in [true, false] {
+            let fixture = configured_fixture()?;
+            fixture.write_home(".arnes.yaml", &manifest(allowed))?;
+            fixture.write_home(
+                ".codex/config.toml",
+                &format!("[plugins.\"demo@marketplace\"]\n{setting}\n"),
+            )?;
+            let before = fixture.snapshot()?;
+            let (code, stdout, stderr) = run(
+                &fixture,
+                &["doctor", "skills", "--agent", "codex", "--format", "json"],
+            )?;
+            let unexpected_enabled = exposure == "enabled" && !allowed;
+            assert_eq!(code, i32::from(unexpected_enabled), "{stdout}");
+            assert!(stderr.is_empty());
+            assert_eq!(fixture.snapshot()?, before);
+            let diagnostics: Vec<Value> = serde_json::from_str(&stdout)?;
+            let plugin = diagnostics
+                .iter()
+                .find(|diagnostic| {
+                    diagnostic
+                        .get("message")
+                        .and_then(Value::as_str)
+                        .is_some_and(|message| message.contains("plugin demo@marketplace "))
+                })
+                .ok_or("missing configured plugin diagnostic")?;
+            assert_eq!(
+                plugin.get("state").and_then(Value::as_str),
+                Some(if unexpected_enabled {
+                    "drift"
+                } else {
+                    "unsupported"
+                }),
+            );
+            let message = plugin
+                .get("message")
+                .and_then(Value::as_str)
+                .ok_or("missing plugin message")?;
+            for expected in [
+                format!("exposure={exposure}"),
+                format!("activation={activation}"),
+                format!("policy={}", if allowed { "allowed" } else { "unexpected" }),
+                "topology=unknown".to_owned(),
+                "version=unknown".to_owned(),
+                "path=unknown".to_owned(),
+            ] {
+                assert!(message.contains(&expected), "{message}");
+            }
+            assert!(stdout.contains("read-only"), "{stdout}");
+        }
+    }
     Ok(())
 }
-#[test]
-fn disabled_plugin_is_classified_from_the_resolved_artifact()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let fixture = configured_fixture()?;
-    fixture.write_home(".arnes.yaml", &manifest(false, false))?;
-    fixture.write_home(
-        ".codex/config.toml",
-        "[plugins.\"demo@marketplace\"]\nenabled = false\n",
-    )?;
-    fixture.write_home(
-        ".codex/plugins/cache/marketplace/demo/revision/.codex-plugin/plugin.json",
-        r#"{"name":"demo","version":"1.0.0"}"#,
-    )?;
-    let root = fixture.home().join(".codex/.tmp/plugins");
-    let path = root.join("plugins/demo");
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [marketplace ("marketplace" , & root)] }),
-        &json ! ({ "installed" : [plugin ("demo@marketplace" , "marketplace" , "revision" , false , & path)] , "available" : [] }),
-    )?;
-    let (code, stdout, _) = run(
-        &fixture,
-        &[
-            "doctor",
-            "skills",
-            "--agent",
-            "codex",
-            "--scope",
-            "user",
-            "--verbose",
-        ],
-    )?;
-    assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("demo@marketplace@1.0.0"));
-    assert!(stdout.contains("plugin · disabled · healthy · unexpected"));
-    assert!(!stdout.contains("UNSUPPORTED plugin"));
-    Ok(())
-}
+
 #[test]
 fn a_lone_cache_artifact_never_proves_activation()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
-    fixture.write_home(".arnes.yaml", &manifest(false, false))?;
+    fixture.write_home(".arnes.yaml", &manifest(false))?;
     fixture.write_home(
         ".codex/config.toml",
         "[plugins.\"demo@marketplace\"]\nenabled = true\n",
     )?;
     fixture.write_home(
+        ".codex/plugins/cache/marketplace/demo/0.9.0/.codex-plugin/plugin.json",
+        r#"{"name":"demo","version":"0.9.0","skills":["skills"]}"#,
+    )?;
+    fixture.write_home(
         ".codex/plugins/cache/marketplace/demo/0.9.0/skills/orphan/SKILL.md",
         "orphan\n",
     )?;
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [] }),
-        &json ! ({ "installed" : [] , "available" : [] }),
-    )?;
+    let before = fixture.snapshot()?;
     let (code, stdout, _) = run(
         &fixture,
         &["doctor", "skills", "--agent", "codex", "--scope", "user"],
@@ -131,99 +106,35 @@ fn a_lone_cache_artifact_never_proves_activation()
     assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("DRIFT plugin · enabled · unknown · unexpected"));
     assert!(stdout.contains("UNSUPPORTED external codex user plugin resolution"));
-    assert!(stdout.contains("Codex resolver did not select this configured plugin"));
+    assert!(stdout.contains("read-only"));
     assert!(!stdout.contains("orphan"));
     assert!(!stdout.contains("0.9.0"));
+    assert_eq!(fixture.snapshot()?, before);
     Ok(())
 }
+
 #[test]
-fn resolver_order_does_not_change_human_or_json_diagnostics()
+fn configuration_order_does_not_change_human_or_json_diagnostics()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
-    fixture.write_home(".arnes.yaml", &manifest(true, false))?;
-    fixture . write_home (".codex/config.toml" , "[plugins.\"demo@marketplace\"]\nenabled = true\n[plugins.\"other@second\"]\nenabled = false\n" ,) ? ;
-    for (path, name) in [
-        (".codex/plugins/cache/marketplace/demo/first", "demo"),
-        (".codex/plugins/cache/second/other/second", "other"),
-    ] {
-        fixture.write_home(
-            format!("{path}/.codex-plugin/plugin.json"),
-            &format!(r#"{{"name":"{name}","version":"1.0.0"}}"#),
-        )?;
+    fixture.write_home(".arnes.yaml", &manifest(true))?;
+    let first = "[plugins.\"demo@marketplace\"]\nenabled = true\n";
+    let second = "[plugins.\"other@second\"]\nenabled = false\n";
+    for format in ["human", "json"] {
+        fixture.write_home(".codex/config.toml", &format!("{second}{first}"))?;
+        let before = fixture.snapshot()?;
+        let args = [
+            "doctor", "skills", "--agent", "codex", "--scope", "user", "--format", format,
+        ];
+        let (first_code, first_output, _) = run(&fixture, &args)?;
+        assert_eq!(fixture.snapshot()?, before);
+        fixture.write_home(".codex/config.toml", &format!("{first}{second}"))?;
+        let before = fixture.snapshot()?;
+        let (second_code, second_output, _) = run(&fixture, &args)?;
+        assert_eq!(first_code, 0);
+        assert_eq!(second_code, first_code);
+        assert_eq!(first_output, second_output);
+        assert_eq!(fixture.snapshot()?, before);
     }
-    let first_root = fixture.home().join(".codex/.tmp/first");
-    let second_root = fixture.home().join(".codex/.tmp/second");
-    let first_marketplace = marketplace("marketplace", &first_root);
-    let second_marketplace = marketplace("second", &second_root);
-    let first_plugin = plugin(
-        "demo@marketplace",
-        "marketplace",
-        "first",
-        true,
-        &first_root.join("plugins/demo"),
-    );
-    let second_plugin = plugin(
-        "other@second",
-        "second",
-        "second",
-        false,
-        &second_root.join("plugins/other"),
-    );
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [second_marketplace , first_marketplace] }),
-        &json ! ({ "installed" : [second_plugin , first_plugin] , "available" : [] }),
-    )?;
-    let args = ["doctor", "skills", "--agent", "codex", "--scope", "user"];
-    let (_, first_human, _) = run(&fixture, &args)?;
-    let (_, first_json, _) = run(
-        &fixture,
-        &[
-            (args).get(..).ok_or("missing fixture index ..")?,
-            &["--format", "json"],
-        ]
-        .concat(),
-    )?;
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [first_marketplace , second_marketplace] }),
-        &json ! ({ "installed" : [first_plugin , second_plugin] , "available" : [] }),
-    )?;
-    let (_, second_human, _) = run(&fixture, &args)?;
-    let (_, second_json, _) = run(
-        &fixture,
-        &[
-            (args).get(..).ok_or("missing fixture index ..")?,
-            &["--format", "json"],
-        ]
-        .concat(),
-    )?;
-    assert_eq!(first_human, second_human);
-    assert_eq!(first_json, second_json);
-    Ok(())
-}
-#[test]
-fn resolver_only_installed_plugin_is_not_dropped_by_the_config_join()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let fixture = configured_fixture()?;
-    fixture.write_home(".arnes.yaml", &manifest(false, false))?;
-    fixture.write_home(".codex/config.toml", "")?;
-    fixture.write_home(
-        ".codex/plugins/cache/marketplace/demo/revision/.codex-plugin/plugin.json",
-        r#"{"name":"demo","version":"1.0.0"}"#,
-    )?;
-    let root = fixture.home().join(".codex/.tmp/plugins");
-    let path = root.join("plugins/demo");
-    install(
-        &fixture,
-        &json ! ({ "marketplaces" : [marketplace ("marketplace" , & root)] }),
-        &json ! ({ "installed" : [plugin ("demo@marketplace" , "marketplace" , "revision" , true , & path)] , "available" : [] }),
-    )?;
-    let (code, stdout, _) = run(
-        &fixture,
-        &["doctor", "skills", "--agent", "codex", "--scope", "user"],
-    )?;
-    assert_eq!(code, 1, "{stdout}");
-    assert!(stdout.contains("DRIFT plugin · enabled · healthy · unexpected"));
     Ok(())
 }

@@ -115,7 +115,7 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
             plugin.exposure,
             plugin.topology,
             policy(allowed),
-            activation(plugin.exposure),
+            plugin_activation(agent, plugin),
             plugin
                 .path
                 .as_deref()
@@ -127,6 +127,13 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
         human::plugin_group(agent, scope, plugin),
         human::plugin_summary(plugin, policy(allowed)),
     )
+}
+
+const fn plugin_activation(agent: Agent, plugin: &Plugin) -> &'static str {
+    match (agent, plugin.topology, plugin.exposure) {
+        (Agent::Codex, Topology::Unknown, Exposure::Enabled | Exposure::Unknown) => "unknown",
+        _ => activation(plugin.exposure),
+    }
 }
 
 fn skill_diagnostic(
