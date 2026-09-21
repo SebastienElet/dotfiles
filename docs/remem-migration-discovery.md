@@ -1,10 +1,12 @@
-# Migration remem : découverte et blocage
+# Migration remem : découverte et essai de mémoire partagée
 
-État au 21 septembre 2026 : **migration non déployée**. La version publiée
-`v0.6.93` ne partage pas automatiquement l'identité mémoire entre un checkout
-principal et ses worktrees. La demande exclut un adaptateur maison et toute
-modification de remem ; la bascule et le retrait de l'ancienne mémoire restent
-donc suspendus. Cette note est un résultat de découverte, pas une nouvelle ADR.
+État au 21 septembre 2026 : **migration non déployée**. Le partage explicite d'une
+mémoire par projet via MCP fonctionne dans l'essai Codex CLI/Desktop ci-dessous,
+y compris entre worktrees et après suppression du worktree d'origine. Il dépend
+des instructions suivies par les agents. La version publiée `v0.6.93` ne regroupe
+pas automatiquement les worktrees pour ses hooks. Le parcours Claude reste à
+tester après connexion de sa CLI officielle. Cette note rapporte des observations,
+pas une nouvelle ADR ni une garantie de capture automatique.
 
 ## Version et exécuteur vérifiés
 
@@ -50,7 +52,7 @@ L'[ADR-042](adr/042-memoire-durable-locale-partagee.md), encore acceptée, décr
 le moteur actuel et son identité fondée sur `git-common-dir`. Une migration
 effective devra remplacer cette décision explicitement.
 
-## Blocage : identité des worktrees
+## Limite des hooks : identité des worktrees
 
 Dans la version publiée, [l'identité projet](https://github.com/majiayu000/remem/blob/dc5bfc562a0eef4f652a9e6d9aedc5c6f9ab7e1d/src/project_id.rs#L24-L33)
 est la racine du worktree. La résolution utilise
@@ -81,10 +83,10 @@ Markdown. Elles sont classées `legacy_unverified`, avec
 ces écritures manuelles. Le résultat sur B établit seulement l'isolation de
 cette recherche explicitement filtrée.
 
-La reprise exige une version publiée offrant une identité commune native pour
-les worktrees, ou une modification explicite du besoin. Ne pas installer un
-wrapper, compiler un outil d'alias permanent ou supprimer le filtre projet pour
-masquer cette limite.
+Cette limite concerne le routage automatique des hooks. Elle n'interdit pas aux
+agents de fournir explicitement le même `project` aux outils MCP depuis leurs
+worktrees. L'utilisateur a autorisé un essai de ce second chemin. Aucun wrapper,
+outil d'alias permanent ou retrait du filtre projet n'a été ajouté.
 
 ## Vérifications et limites
 
@@ -95,7 +97,8 @@ avec le Codex embarqué `0.154.0-alpha.6.2`.
 La [note upstream sur Desktop](https://github.com/majiayu000/remem/blob/dc5bfc562a0eef4f652a9e6d9aedc5c6f9ab7e1d/docs/research/codex-app-sessionstart-visibility-2026-06-29.md)
 rapporte une injection `SessionStart` visible du modèle, mais pas un bloc visible
 dans la conversation. Elle concerne une version antérieure et ne valide pas
-l'application installée ici. Aucun parcours Desktop réel n'a été lancé.
+les hooks de l'application installée ici. L'essai Desktop réel décrit plus bas
+porte sur MCP, avec les hooks désactivés pour le projet de test.
 
 - Recherche CLI : environ 20 ms par invocation sur cette base de deux entrées.
   Rendu de contexte sans mémoire admissible : 40–50 ms. Ce ne sont ni une mesure
@@ -111,18 +114,104 @@ l'application installée ici. Aucun parcours Desktop réel n'a été lancé.
 - `remem doctor` inspecte la base, mais retourne un échec global : hooks/MCP non
   installés, contrôle Cursor en échec et enrichissement des entrées en attente.
   Aucun état « installation saine » n'est revendiqué.
-- Capture Claude → nouvelle session Codex et trajet inverse, correction ultérieure,
-  reprise après redémarrage de l'agent et retrait de l'ancienne mémoire : **non
-  exécutés**, car la bascule dépend de l'identité projet bloquée.
+- Capture croisée Claude/Codex par hooks, redémarrage de l'application complète et
+  retrait de l'ancienne mémoire : **non exécutés**. La correction et le rappel dans
+  de nouveaux processus/tâches Codex via MCP sont observés dans l'essai suivant.
 - Les limites de 90 s par appel LLM, les baux, les tentatives bornées et le budget
   `worker --once` sont présents dans le code publié. Le budget de 180 s est
   vérifié entre éléments de travail, pas une borne absolue sur un appel en cours.
   Aucun scénario de quota épuisé ou de crash worker n'a été exercé.
 
+## Essai autorisé : mémoire projet explicite via MCP
+
+Le projet fictif est
+`/Users/sebastien/Documents/Codex/2026-09-21/remem-mcp-probe`.
+Ses deux worktrees partagent le même `AGENTS.md`, avec un `CLAUDE.md` qui
+l'importe. L'instruction impose de chercher et d'enregistrer les faits durables
+avec ce chemin canonique comme `project`, sans filtre de branche pour les faits
+de portée projet. Elle demande de conserver la provenance et la branche d'origine.
+Les demandes métier ne rappellent pas aux agents d'utiliser la mémoire.
+
+Le serveur MCP est le binaire publié intact, avec une base SQLCipher séparée sous
+`/tmp/remem-mcp-probe-20260921/store`. Recherche locale `feature-hash`, outils
+natifs `search`, `get_observations`, `save_memory` et `govern_memory` uniquement.
+Les hooks et mémoires natives sont désactivés dans les sessions CLI et la
+configuration locale du projet Desktop. Aucun adaptateur ni moteur n'est ajouté.
+
+| Parcours réellement exécuté                         | Résultat observé                                                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Codex CLI, worktree A, décision fictive             | Recherche préalable, `save_memory`, puis lecture de contrôle ; projet canonique, origine `probe-a`, entrée `id=1` |
+| Nouvelle session CLI, worktree B                    | Retrouve `SABLE-583`, attente de 37 secondes, verrou de 36 secondes                                               |
+| Nouvelle tâche Desktop, checkout principal          | Retrouve les mêmes trois informations par MCP                                                                     |
+| Codex CLI, autre projet, même base                  | Recherche avec sa propre clé projet ; répond « information inconnue »                                             |
+| Correction explicite dans Desktop                   | Réutilise le `topic_key`, met à jour `id=1`, puis relit : attente de 53 secondes, verrou de 52 secondes           |
+| Suppression du worktree A par `git worktree remove` | Worktree propre supprimé, mémoire et checkout principal conservés                                                 |
+| Nouveau processus CLI, worktree B après suppression | Retrouve les valeurs corrigées 53/52                                                                              |
+| Nouvelle tâche Desktop après suppression            | Retrouve les valeurs corrigées 53/52                                                                              |
+| Claude → Codex et Codex → Claude                    | Non exécutés : `claude auth status` retourne `loggedIn=false`, y compris hors sandbox                             |
+
+Les tâches Desktop proviennent d'une tâche de préparation ne contenant que le
+chemin de travail. Elles ne reprennent pas l'historique des décisions fictives ;
+le dernier rappel ne reprend pas non plus la tâche ayant reçu la correction.
+Les versions d'application et de CLI restent celles indiquées plus haut, avec
+`gpt-5.6-luna` et raisonnement `low` pour les agents Codex de l'essai.
+
+### Ce que cet essai ne garantit pas
+
+- Les recherches et écritures sont déclenchées par le modèle sous instruction,
+  pas par une capture systématique des hooks. L'identité canonique est déclarée
+  explicitement dans cette fixture ; sa découverte générique n'est pas testée.
+- Le souvenir reste `legacy_unverified`, avec
+  `classification_reason=legacy_unverified_provenance_missing` et
+  `current_context_eligible=false`. Il est accessible par recherche explicite,
+  sans être rendu admissible à l'injection automatique de contexte.
+- Les premières réponses CLI/Desktop signalent cette réserve ; la CLI finale
+  qualifie même l'information d'inconnue, tandis que le dernier rappel Desktop
+  énonce la valeur corrigée sans réserve. La prudence n'est donc pas uniforme.
+- Supprimer le worktree n'a ni supprimé ni invalidé l'entrée. Le résultat montre
+  la persistance après correction explicite, pas une détection automatique de
+  fausseté. Aucun ancien incident réel ou souvenir utilisateur n'a été importé.
+- Un seul scénario positif et un scénario d'isolation ont été exercés, sans test
+  de concurrence entre corrections. Ce n'est pas une preuve générale de qualité,
+  d'isolation ou de robustesse.
+
+### Mesures et traces
+
+Les journaux natifs remem donnent 18–28 ms pour les premières recherches/lectures
+positives ; les recherches parallèles sans résultat dans le projet témoin montent
+à 38–48 ms. Les sessions CLI complètes durent 31,49 s pour l'écriture, 47,57 s pour
+le premier rappel, 36,29 s pour le témoin et 18,83 s après suppression. Les tours
+Desktop durent 14,401 s pour le premier rappel, 12,615 s pour la correction et
+28,248 s pour le dernier rappel. Le temps complet inclut le modèle et son contexte.
+
+Les quatre sessions CLI rapportent respectivement 152 674, 99 108, 98 581 et
+99 081 tokens d'entrée, dont 113 152, 69 632, 80 896 et 78 848 tokens en cache ;
+635, 486, 386 et 501 tokens de sortie. Ce sont les compteurs de sessions entières,
+pas le coût marginal de la mémoire. Aucun coût monétaire n'est déduit.
+Le quota hebdomadaire du compte passe de 80 % à 79 % disponibles pendant l'essai,
+sans attribution exclusive aux sondes ni à cette tâche.
+
+Les événements CLI, résultats réduits de Desktop, configuration, journaux natifs
+et export Markdown fictif sont sous `/tmp/remem-mcp-probe-20260921/`.
+`observed-results.json` résume les résultats ; `store/remem.log` contient les
+appels MCP et leurs durées. La consultation native ne nécessite pas l'interface
+prototype :
+
+```sh
+export REMEM_DATA_DIR=/tmp/remem-mcp-probe-20260921/store
+/tmp/remem-discovery-20260921/remem search SABLE-583 --project /Users/sebastien/Documents/Codex/2026-09-21/remem-mcp-probe --json
+/tmp/remem-discovery-20260921/remem show 1
+/tmp/remem-discovery-20260921/remem export --markdown --output /tmp/remem-mcp-probe-20260921/export --project /Users/sebastien/Documents/Codex/2026-09-21/remem-mcp-probe
+```
+
+La prochaine vérification dépend de `claude auth login` effectué par l'utilisateur
+avec son abonnement existant. Aucun jeton n'a été extrait, aucun abonnement ni
+appel API facturé de remplacement n'a été configuré.
+
 ## Artefacts et commandes de diagnostic
 
 Aucun composant retiré, aucun souvenir utilisateur migré, aucune configuration
-du harnais modifiée. Les neuf fichiers Claude sont conservés ; leur utilité n'a
+du harnais quotidien modifiée. Les neuf fichiers Claude sont conservés ; leur utilité n'a
 pas été évaluée. Aucune sauvegarde de migration n'a été créée, puisqu'aucune
 écriture sur ces données ou configurations n'a été engagée. Une sauvegarde
 vérifiée reste un préalable à toute bascule ultérieure.
@@ -146,5 +235,8 @@ export REMEM_DATA_DIR=/tmp/remem-discovery-20260921/store
 
 Retour arrière : aucune action nécessaire sur le harnais. Fermer le shell de
 diagnostic retire la variable exportée ; les artefacts temporaires peuvent être
-supprimés après consultation. L'installation reproductible par Moon et le choix
-du canal macOS restent à effectuer seulement lorsque le blocage est levé.
+supprimés après consultation. Le second essai ajoute uniquement le projet fictif
+Desktop et ses fichiers locaux ; le worktree B et les tâches de diagnostic sont
+conservés pour inspection et reprise avec Claude. L'installation reproductible
+par Moon et la migration des données réelles restent à effectuer après les
+vérifications manquantes et le choix explicite du mode de fonctionnement.
