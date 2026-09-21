@@ -35,8 +35,8 @@ tasks:
     script: |-
       set -eu
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/home/.remem/config.toml" "$HOME/.remem/config.toml"
-      "$HOME/.local/bin/remem" encrypt
-      "$HOME/.local/bin/remem" model current
+      "$HOME/.local/bin/remem" encrypt > /dev/null
+      "$HOME/.local/bin/remem" model current > /dev/null
     deps:
       - remem-binary
       - repository:dependencies
@@ -47,11 +47,11 @@ tasks:
   remem-codex:
     script: |-
       set -eu
-      "$HOME/.volta/bin/codex" features disable memories
-      "$HOME/.volta/bin/codex" mcp add remem -- /bin/sh -c 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp'
+      "$HOME/.volta/bin/codex" features disable memories > /dev/null
+      "$HOME/.volta/bin/codex" mcp add remem -- /bin/sh -c 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp' > /dev/null
       printf '\n' >> "$HOME/.codex/config.toml"
       cat "$workspaceRoot/home/.codex/remem-mcp-tools.toml" >> "$HOME/.codex/config.toml"
-      "$HOME/.volta/bin/codex" mcp get remem
+      "$HOME/.volta/bin/codex" mcp get remem > /dev/null
     deps:
       - remem-config
       - codex-binary
@@ -80,6 +80,10 @@ tasks:
     deps:
       - remem-config
       - claude-binary
+      - arnes:install
+    checks:
+      - check: condition
+        script: '"$HOME/.local/bin/arnes" doctor mcp --agent claude --scope user --color never && test "$(plutil -extract autoMemoryEnabled raw "$HOME/.claude/settings.json")" = false'
     toolchains: system
     options:
       os: macos
@@ -111,7 +115,7 @@ tasks:
       plutil -insert RunAtLoad -bool true "$remem_plist"
       plutil -insert StartInterval -integer 300 "$remem_plist"
       plutil -insert ProcessType -string Background "$remem_plist"
-      plutil -lint "$remem_plist"
+      plutil -lint "$remem_plist" > /dev/null
       mv "$remem_plist" "$HOME/Library/LaunchAgents/dev.remem.worker.plist"
       if launchctl print "gui/$(id -u)/dev.remem.worker" >/dev/null 2>&1; then
         launchctl bootout "gui/$(id -u)/dev.remem.worker"
