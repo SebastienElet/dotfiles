@@ -1,0 +1,15 @@
+
+> test
+> node --test
+
+✔ empty input remains an empty string (0.270709ms)
+✔ whitespace-only input becomes an empty string (0.053875ms)
+✔ surrounding whitespace is trimmed (0.043625ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44.043375

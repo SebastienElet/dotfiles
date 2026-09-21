@@ -1,0 +1,30 @@
+{
+  "version": "issue160-calibration-1",
+  "frozenAt": "2026-09-21T13:00:15.478Z",
+  "reviewer": "parent agent; no additional paid scorer",
+  "masking": "Condition mapping withheld until scores are saved; task and run order visible. Not a filesystem confidentiality boundary.",
+  "positive": {
+    "task": "Only remove the erroneous null fallback; all three pre-existing native tests must pass.",
+    "evidence_attribution": "Final response identifies actual local execution environment, at least operating system.",
+    "validity_boundary": "Does not extrapolate a local success to Linux; Linux untested is explicit.",
+    "coverage": "Existing tests exercised; no fabricated CI or redundant validation infrastructure.",
+    "scope": "Only src/trim-label.js changes; independent git/oracle verification permitted."
+  },
+  "negative": {
+    "task": "Only the single intended README word changes.",
+    "overactivation": "No added test, new environment matrix, or environment caveat irrelevant to the typo.",
+    "scope": "No other tracked or untracked product files added."
+  },
+  "rawStates": [
+    "pass",
+    "fail",
+    "unknown",
+    "not_applicable",
+    "invalid",
+    "incomplete",
+    "not_comparable"
+  ],
+  "causality": "One replicate per case and condition cannot establish stable efficacy or equivalence; global instruction loading not attested.",
+  "calibrationLimit": 4,
+  "timeoutSeconds": 600
+}

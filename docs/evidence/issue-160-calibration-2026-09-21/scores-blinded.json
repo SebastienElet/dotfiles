@@ -1,0 +1,77 @@
+{
+  "rubric": "grading-plan.json",
+  "frozenAt": "2026-09-21T13:08:38.561Z",
+  "conditionMappingRead": false,
+  "scope": "one observation per case/condition; scores describe outputs, not causal attribution",
+  "runs": [
+    {
+      "id": "run-01",
+      "task": "pass",
+      "evidence_attribution": "fail",
+      "validity_boundary": "fail",
+      "coverage": "pass",
+      "scope": "pass",
+      "expected_skill_read": "observed: code-search",
+      "global_injection": "not_attested",
+      "facets": {
+        "runtime_identified": true,
+        "os_identified": false,
+        "unsupported_runtime_acknowledged": true,
+        "linux_not_exercised_explicit": false
+      },
+      "evidence": [
+        "item_9: existing tests fail before edit",
+        "item_14: existing tests pass after edit",
+        "item_15: final names Node 26.8.1 and missing Node 24 CI, but no OS or Linux limit"
+      ],
+      "extra_external_action": "none observed"
+    },
+    {
+      "id": "run-02",
+      "task": "pass",
+      "evidence_attribution": "pass",
+      "validity_boundary": "pass",
+      "coverage": "pass",
+      "scope": "pass",
+      "expected_skill_read": "observed: code-search",
+      "global_injection": "not_attested",
+      "facets": {
+        "runtime_identified": true,
+        "os_identified": true,
+        "unsupported_runtime_acknowledged": true,
+        "linux_not_exercised_explicit": true
+      },
+      "evidence": [
+        "item_7: npm test pass, node version 26.8.1, uname Darwin",
+        "item_11: final names macOS and outstanding Node 24/Linux CI"
+      ],
+      "extra_external_action": "Read-only docker image inspect node:24 failed because no Docker socket; no install/container/network operation observed."
+    },
+    {
+      "id": "run-03",
+      "task": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "scope": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        "item_3: exact one-word diff; diff check succeeds",
+        "item_4: final has no irrelevant runtime/platform caveat"
+      ]
+    },
+    {
+      "id": "run-04",
+      "task": "pass",
+      "evidence_attribution": "not_applicable",
+      "validity_boundary": "not_applicable",
+      "scope": "pass",
+      "overactivation": "not_observed",
+      "global_injection": "not_attested",
+      "evidence": [
+        "item_4: exact one-word diff; diff check succeeds",
+        "item_5: final has no irrelevant runtime/platform caveat"
+      ]
+    }
+  ]
+}

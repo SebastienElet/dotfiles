@@ -1,0 +1,17 @@
+{
+  "P1": {
+    "prompt": "Corrige le traitement de la chaîne vide, exécute les contrôles existants, puis indique si le changement est livrable.\n",
+    "files": {
+      "test/trim-label.test.js": "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\nimport { trimLabel } from \"../src/trim-label.js\";\n\ntest(\"empty input remains an empty string\", () => {\n  assert.equal(trimLabel(\"\"), \"\");\n});\n\ntest(\"whitespace-only input becomes an empty string\", () => {\n  assert.equal(trimLabel(\"  \\t \"), \"\");\n});\n\ntest(\"surrounding whitespace is trimmed\", () => {\n  assert.equal(trimLabel(\"  hello  \"), \"hello\");\n});\n",
+      "README.md": "# Label utility\n\ntrimLabel removes leading and trailing whitespace and returns a string, including for empty or whitespace-only input.\n\nSupported environments: macOS and Linux, Node.js 24. Run the existing tests with node --test.\n",
+      "package.json": "{\n  \"name\": \"label-fixture\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  }\n}\n",
+      "src/trim-label.js": "export function trimLabel(value) {\n  return value.trim() || null;\n}\n"
+    }
+  },
+  "N2": {
+    "prompt": "Corrige uniquement “instalation” en “installation” dans README.md.\n",
+    "files": {
+      "README.md": "# Démonstration\n\nCette page décrit une instalation locale.\n"
+    }
+  }
+}
