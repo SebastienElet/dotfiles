@@ -18,8 +18,9 @@ retrieval synchrone de `agent-memory` pour Codex et Claude ; ses garanties
 d'exécution à chaque prompt et de revalidation des sources ne sont pas conservées.
 
 Le 2026-09-22, le mode guidé par les instructions seules n'avait produit aucune
-promotion : `captured_events` restait à zéro alors que le worker avait ingéré
-21 634 messages de transcripts. La table `captured_events` n'est écrite que par
+promotion : `captured_events` restait à zéro alors que l'archive brute comptait
+21 634 messages de transcripts, produits par des appels manuels à `ingest-sessions`
+et non par le worker. La table `captured_events` n'est écrite que par
 les entrypoints de hook `observe`, `session-init` et `summarize` ; `ingest-sessions`
 n'alimente que `raw_messages`, qui sert `search_raw`. L'utilisateur décide donc
 d'installer les hooks de capture, en connaissance de leurs deux limites vérifiées :
