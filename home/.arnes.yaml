@@ -48,8 +48,10 @@ skills:
       - { agent: codex, scope: user }
   - slug: memory-governance
     installations:
-      - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
+  - slug: remem-memory
+    installations:
+      - { agent: claude, scope: user }
       - { agent: codex, scope: user }
   - slug: code-enforcement
     installations:
@@ -152,10 +154,6 @@ hooks:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - id: handoff
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
-  - id: memory
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
@@ -527,6 +525,22 @@ statuslines:
       - context-used
       - context-window-size
 mcp:
+  - name: remem
+    agent: codex
+    scope: user
+    command: /bin/sh
+    args:
+      - -c
+      - 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp'
+    enabled: true
+  - name: remem
+    agent: claude
+    scope: user
+    command: /bin/sh
+    args:
+      - -c
+      - 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp'
+    enabled: true
   - name: apple-notes
     agent: claude
     scope: project

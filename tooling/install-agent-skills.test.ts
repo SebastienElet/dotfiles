@@ -6,6 +6,7 @@ import {
   readFileSync,
   readlinkSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -130,4 +131,84 @@ test("rejects missing skill sources before installing any links", () => {
   expect(
     Bun.file(join(paths.home, ".claude/skills/shared/SKILL.md")).size,
   ).toBe(0);
+});
+
+function memoryMigration(agent: string): ReturnType<typeof fixture> {
+  const paths = fixture();
+  for (const slug of ["memory-governance", "remem-memory"]) {
+    mkdirSync(join(paths.repository, "harness/skills", slug));
+    writeFileSync(
+      join(paths.repository, "harness/skills", slug, "SKILL.md"),
+      "skill\n",
+    );
+  }
+  writeFileSync(
+    join(paths.repository, "home/.arnes.yaml"),
+    Bun.YAML.stringify({
+      version: 1,
+      skills: [
+        { slug: "remem-memory", installations: [{ agent, scope: "user" }] },
+      ],
+    }),
+  );
+  return paths;
+}
+
+test.each(["codex", "claude"])(
+  "retires the owned legacy memory skill for %s after remem deployment",
+  (agent) => {
+    const paths = memoryMigration(agent);
+    const directory = join(
+      paths.home,
+      agent === "codex" ? ".agents/skills" : ".claude/skills",
+    );
+    mkdirSync(directory, { recursive: true });
+    const old = join(directory, "memory-governance");
+    symlinkSync(
+      join(paths.repository, "harness/skills/memory-governance"),
+      old,
+    );
+    expect(run(paths, agent).exitCode).toBe(0);
+    expect(lstatSync(old, { throwIfNoEntry: false })).toBeUndefined();
+    expect(readlinkSync(join(directory, "remem-memory"))).toBe(
+      join(paths.repository, "harness/skills/remem-memory"),
+    );
+    expect(run(paths, agent).exitCode).toBe(0);
+  },
+);
+
+test.each(["file", "foreign-link"])(
+  "preserves a divergent legacy memory %s before changing skills",
+  (kind) => {
+    const paths = memoryMigration("codex");
+    const directory = join(paths.home, ".agents/skills");
+    mkdirSync(directory, { recursive: true });
+    const old = join(directory, "memory-governance");
+    if (kind === "file") {
+      writeFileSync(old, "keep\n");
+    } else {
+      symlinkSync("/unrelated/memory-skill", old);
+    }
+    expect(run(paths).exitCode).not.toBe(0);
+    if (kind === "file") {
+      expect(readFileSync(old, "utf8")).toBe("keep\n");
+    } else {
+      expect(readlinkSync(old)).toBe("/unrelated/memory-skill");
+    }
+    expect(
+      lstatSync(join(directory, "remem-memory"), { throwIfNoEntry: false }),
+    ).toBeUndefined();
+  },
+);
+
+test("keeps Cursor's legacy skill", () => {
+  const paths = memoryMigration("cursor");
+  const directory = join(paths.home, ".cursor/skills");
+  mkdirSync(directory, { recursive: true });
+  const old = join(directory, "memory-governance");
+  symlinkSync(join(paths.repository, "harness/skills/memory-governance"), old);
+  expect(run(paths, "cursor").exitCode).toBe(0);
+  expect(readlinkSync(old)).toBe(
+    join(paths.repository, "harness/skills/memory-governance"),
+  );
 });

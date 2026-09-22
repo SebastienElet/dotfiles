@@ -15,6 +15,9 @@ tasks:
       - claude-rules
       - claude-skills
       - claude-hooks
+      - remem-claude
+      - remem-skills
+      - remem-worker
     toolchains: system
   claude-binary:
     script: |-
@@ -55,7 +58,6 @@ tasks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'
     deps:
       - arnes:install
-      - agent-memory:install
       - agent-handoff:install
     checks:
       - check: condition

@@ -1,0 +1,28 @@
+version = 1
+
+[memory_ai]
+default_host = "codex-cli"
+
+[memory_ai.profiles.codex]
+executor = "codex-cli"
+model = "gpt-5.6-luna"
+reasoning_effort = "low"
+path = "codex"
+
+[memory_ai.hosts.codex-cli]
+memory_profile = "codex"
+
+[memory_ai.hosts.claude-code]
+memory_profile = "codex"
+
+[embeddings]
+provider = "feature-hash"
+
+[rule_compilation]
+enabled = false
+
+[context]
+total_char_limit = 8000
+candidate_fetch_limit = 40
+memory_index_limit = 20
+preference_global_limit = 0

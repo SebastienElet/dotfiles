@@ -95,8 +95,8 @@ tasks:
       - claude
       - codex
       - arnes:install
-      - agent-memory:install
       - agent-handoff:install
+      - agent-memory:install
     toolchains: system
   semctx:
     description: Install or update Semctx plugins for detected agent hosts

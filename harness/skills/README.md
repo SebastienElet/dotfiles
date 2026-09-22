@@ -6,7 +6,7 @@ This directory is the canonical source for user-scoped agent skills.
 
 - One skill per subdirectory.
 - Each skill must include a `SKILL.md` file.
-- Optional folders: `agents/`, `scripts/`, `references/`, `assets/`, `evals/`.
+- Optional folders: `agents/`, `references/`, `scripts/`, `assets/`, `evals/`.
 - Manage skills with `/skill-manager`.
 
 ## Dev
@@ -47,6 +47,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `obsidian-retrieval`  | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                     |
 | `output-discipline`   | Shape responses so decisive information and next actions are easy to find.                       |
 | `prose-edit`          | Revise existing prose while preserving the writer's voice and meaning.                           |
+| `remem-memory`        | Recall and retain project knowledge with the shared local remem MCP server.                      |
 | `skill-manager`       | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes. |
 | `skill-simplify`      | Simplify an identified skill's content.                                                          |
 | `workflow-automation` | Turn evidenced repeated human or agent workflows into supported automation.                      |
