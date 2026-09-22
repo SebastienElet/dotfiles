@@ -66,7 +66,6 @@ macOS with the reported ColGrep binary and no result cache. See
 [Code Search checks](docs/code-search.md) for selection and cache verification.
 
 Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
-`tooling:pr-feedback-skill-test`,
 `agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
 Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
 on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
