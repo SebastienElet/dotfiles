@@ -1,6 +1,6 @@
 use crate::{
     Result, claims, content,
-    model::{Epoch, PREDICATE, Receipt, VERSION, Witness},
+    model::{Capability, Epoch, PREDICATE, Receipt, VERSION, Witness},
     repository, targets,
 };
 use serde_json::{Value, json};
@@ -19,12 +19,16 @@ pub fn gate(epoch: &Epoch, receipt: &Receipt, policy_root: &Path) -> Result<Valu
     let auditor = &receipt.auditor;
     if auditor.host.trim().is_empty()
         || auditor.session_id.trim().is_empty()
-        || auditor.sandbox_mode != "read-only"
+        || auditor.sandbox_mode.trim().is_empty()
     {
         return Err("auditor independence declarations required".into());
     }
-    if !epoch.classifier.triggered {
-        return Ok(json!({"schema_version":VERSION,"decision":"ALLOW","reason":"NOT_APPLICABLE"}));
+    if let Some(isolation) = &auditor.isolation
+        && (isolation.requirement.trim().is_empty()
+            || isolation.enforced != Capability::Known(true)
+            || isolation.evidence.trim().is_empty())
+    {
+        return Err("explicit security obligation requires evidenced technical isolation".into());
     }
     let high = claims::claims(epoch, receipt)?;
     let policy = content::policy(policy_root)?;
@@ -60,17 +64,18 @@ pub fn gate(epoch: &Epoch, receipt: &Receipt, policy_root: &Path) -> Result<Valu
         if witness.evidence.injection_mode != mode {
             return Err("injection mode does not match target scopes".into());
         }
-        evidence(epoch, witness)?;
+        evidence(witness)?;
     }
     if witnessed != high.keys().copied().collect() {
-        return Err("high-impact claims lack witnesses".into());
+        return Err("modified oracles or critical claims lack witnesses".into());
     }
     Ok(
         json!({"schema_version":VERSION,"decision":"ALLOW","reason":"PROOF_ADEQUATE","subject_digest":epoch.subject_digest,"policy_digest":epoch.policy_digest}),
     )
 }
-fn evidence(epoch: &Epoch, witness: &Witness) -> Result<()> {
+fn evidence(witness: &Witness) -> Result<()> {
     let evidence = &witness.evidence;
+    claims::observation(&evidence.provenance)?;
     if evidence.targets_digest != content::bound(&witness.mutant.targets)? {
         return Err("evidence targets digest mismatch".into());
     }
@@ -84,20 +89,11 @@ fn evidence(epoch: &Epoch, witness: &Witness) -> Result<()> {
         return Err("command and normalized expected failure required".into());
     }
     let red = [&evidence.red_stdout, &evidence.red_stderr];
-    let green = [&evidence.green_stdout, &evidence.green_stderr];
-    let red_marker = format!("PROOF_RED:{}:{}", witness.claim_id, witness.mutant_digest);
-    let green_marker = format!("PROOF_GREEN:{}:{}", witness.claim_id, epoch.subject_digest);
     if !red
         .iter()
         .any(|stream| stream.lines().any(|line| line == diagnostic))
-        || !red
-            .iter()
-            .any(|stream| stream.lines().any(|line| line == red_marker))
-        || !green
-            .iter()
-            .any(|stream| stream.lines().any(|line| line == green_marker))
     {
-        return Err("evidence lacks exact diagnostic or bound marker lines".into());
+        return Err("evidence lacks exact diagnostic line".into());
     }
     if witness.red_exit_code == 0
         || witness.green_exit_code != 0

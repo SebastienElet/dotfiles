@@ -102,15 +102,24 @@ invokes it.
    result. On interruption or an ambiguous push result, reconcile remote commits before resuming.
 
 7. **Judge the pushed head independently.** Resolve the SHA now shown by the PR and delegate a full
-   `pr-verdict` review of that exact head to a fresh context, including its barrier. Do not delegate
+   `pr-verdict` review of that exact head to a distinct auditor in a fresh, unforked context, including
+   its barrier. Withhold earlier verdicts and author conclusions until the auditor records its
+   independent first analysis; then reconcile earlier findings and traceable evidence. Verify the
+   candidate remains unchanged. Write-capable tools alone do not invalidate independence; retain
+   unknown capabilities and enforce technical isolation only for an explicit security obligation.
+   Do not delegate
    while a correction is still pending — a head you intend to amend is a head whose verdict you are
    about to throw away. When that review does find a defect in the repair itself, correct it, push
    once, and scope the second delegation to the new delta and its barrier tier instead of repeating
    the whole sweep. Exception: if the aggregate PR diff changes a verification mechanism, require
    `pr-verdict` to renew its `proof-integrity-review` audit over the complete aggregate diff at the
    new head, even when the latest correction is editorial. A receipt from the previous head cannot
-   satisfy that requirement; keep ordinary review work scoped to the correction where appropriate.
-   Record the verdict and its SHA in the journal; an older verdict is historical.
+   satisfy that requirement; regenerate current bindings while reusing traceable observations,
+   including CI, when their relevant inputs are unchanged. Keep ordinary review work scoped to the
+   correction where appropriate. Negative witnesses are required for modified oracles and critical
+   guarantees; other missing evidence blocks only when essential to the decision.
+   Record the verdict, SHA, policy and evidence basis as a new dated journal entry. Preserve older
+   verdicts, including a rejection on the same SHA; policy correction never approves them retroactively.
    All delegated passes stop after phase 5 without publishing comments or opening tickets.
    Return only the final head's verdict as current. Verdict publication remains subject to separate
    user authorization; repair authority alone publishes only the factual summary in step 8.

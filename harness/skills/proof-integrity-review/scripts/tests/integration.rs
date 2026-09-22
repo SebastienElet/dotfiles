@@ -1,4 +1,5 @@
 mod bindings;
+mod proportional;
 mod refusals;
 mod support;
 use serde_json::{Value, json};
@@ -26,16 +27,14 @@ fn refuses_malformed_and_incomplete_receipts() -> Result {
         ("/schema_version", json!(true)),
         ("/verdict", json!("ALLOW")),
         ("/auditor/fresh_session", json!(false)),
+        ("/auditor/independent_first_pass", json!(false)),
         ("/auditor/forked", json!(true)),
         ("/auditor/author_independent", json!(false)),
-        ("/auditor/write_tools_enabled", json!(true)),
-        ("/auditor/persistent_memory", json!(true)),
         ("/auditor/session_id", json!("")),
         ("/claims", json!([])),
         ("/witnesses", json!([])),
         ("/claims/3/paths", json!(["missing"])),
         ("/claims/3/id", json!("proof.fail_closed")),
-        ("/claims/3/impact", json!("low")),
         ("/witnesses/0/red_exit_code", json!(true)),
         ("/witnesses/0/green_exit_code", json!(1)),
         ("/witnesses/0/mutant_digest", json!("stale")),

@@ -22,6 +22,7 @@
   "scripts/src/targets.rs",
   "scripts/tests/bindings/mod.rs",
   "scripts/tests/integration.rs",
+  "scripts/tests/proportional/mod.rs",
   "scripts/tests/refusals/mod.rs",
   "scripts/tests/support/mod.rs"
 ]
