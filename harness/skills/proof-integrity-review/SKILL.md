@@ -41,36 +41,53 @@ to carry its owned source files. Git and the documented build toolchain remain p
 2. **Freeze the inputs.** Run `epoch` with explicit repository, base, candidate, and trusted
    `--policy-root`. Store output outside both roots. For a policy change, use the previously
    trusted executable and policy copy to evaluate the candidate; never overwrite the active
-   evaluator first. A first installation is an explicit bootstrap, not a successful N−1 review.
-3. **Separate authoring and audit.** Request a fresh-context, read-only auditor with the exact
+   evaluator first. Preserve its result, including rejection of a deliberately changed rule.
+   Evaluate the requested policy transition independently against the user's explicit contract;
+   candidate tests show implementation behavior, not authority to approve the policy itself.
+   A first installation is an explicit bootstrap, not a successful N−1 review.
+3. **Separate authoring and audit.** Request an auditor distinct from the author in a fresh context with the exact
    aggregate diff, contract, epoch, classifier result, and raw evidence. Withhold author narrative
    and prior verdicts until its first pass. Record actual host capabilities: never assert an
    enforced read-only sandbox, absent memory, or independent identity merely because a prompt
-   requested them. If a required capability is unavailable, retain the gap and return `PROOF_WEAK`.
+   requested them. Unknown capabilities stay unknown. Instruct the auditor not to edit the
+   candidate and compare its epoch before and after the audit; available write tools alone do not
+   block. Require evidenced technical isolation only when an explicit security obligation demands
+   it, recording the obligation and enforcement evidence. Missing independence, candidate stability,
+   or required isolation is essential missing evidence and returns `PROOF_WEAK`.
 4. **Build the claim matrix.** For each material claim record its source, enforcement point,
    invocation paths, oracle, provenance, negative witness, cache/environment state, and independence
    limits. Distinguish local, PR, destination-branch, and integrated-tree execution where relevant.
-   Attribute evidence as author-reported, reviewer-observed, deterministically checked, or absent.
+   Assess every changed path semantically, including unmatched paths; path categories guide analysis
+   without imposing high impact or mandatory generic claims. Record impact, kind and rationale:
+   modified oracle, critical guarantee, or other. Attribute evidence as author-reported,
+   reviewer-observed, CI, retained, deterministically checked, or absent. Evidence references name
+   the artifact, environment and relevant input basis; the auditor verifies those references.
 5. **Exercise the claim.** Choose the smallest native or existing oracle that can disprove it.
-   For each high-impact claim, introduce a representative fault in a disposable copy, observe the
-   expected failure, restore, and observe success. Record exact commands, outputs, exit codes,
+   Require a representative negative witness for modified oracles and critical/high-impact
+   guarantees, not for every label or editorial change. Reuse traceable positive and negative
+   evidence, including CI, when relevant source, oracle, configuration, dependencies, environment
+   and integration inputs are demonstrably unchanged. Otherwise introduce the missing representative
+   fault in a disposable copy, observe the expected failure, restore, and observe success.
+   Record exact commands, outputs, exit codes,
    environment, and mutation contents. Never mutate the candidate or trusted policy copy.
    A test of the receipt validator is evidence about that validator, not about the product gate.
 6. **Check the receipt.** Have the auditor produce the documented structured receipt and run
    `gate`. Missing inputs, malformed records, stale snapshots, or rejected evidence prevent an
    adequate verdict. `ALLOW` means the receipt passed the implemented checks; independently assess
    whether commands actually exercised the mutations and whether the faults address the claims.
-   Unavailable execution evidence remains unproven even when the JSON passes.
+   Unavailable execution evidence remains unproven even when the JSON passes. Block on a demonstrated
+   defect or essential missing proof; document other limits with their consequence and rationale.
 7. **Return the bounded verdict.** Return the classifier result, epoch location, complete matrix,
    receipt location, gate result, findings with source locations, and exactly one verdict below.
-   If any input changes, regenerate the epoch and review the complete aggregate diff with a fresh
-   auditor; do not reuse an old receipt or review only the latest correction. Reuse deterministic
-   observations only when their inputs are demonstrably unchanged.
+   If inputs change, regenerate the epoch and receipt for the current candidate and policy, reassess
+   the complete aggregate diff independently, and reuse observations whose relevant inputs remain
+   unchanged. Preserve their original provenance and the comparison justifying reuse; never relabel
+   historical execution as a new run. Preserve prior verdicts and record a new dated assessment.
 
 | Verdict          | Meaning                                                                                                                                                                          |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PROOF_ADEQUATE` | Gate allows the current receipt, material claims have relevant observed evidence, and high-impact claims have positive and negative evidence with the required audit conditions. |
-| `PROOF_WEAK`     | At least one material claim, execution path, environment, or audit condition remains unproven.                                                                                   |
+| `PROOF_WEAK`     | A demonstrated defect or essential claim, execution path, environment, or audit condition lacks adequate proof; nonessential limits are documented separately.                   |
 | `PROOF_CIRCULAR` | Acceptance relies on the changed evaluator itself, obsolete evidence, or unsupported author/reviewer assertions.                                                                 |
 | `NOT_APPLICABLE` | Semantic inspection finds no changed verification mechanism.                                                                                                                     |
 
@@ -92,6 +109,8 @@ to carry its owned source files. Git and the documented build toolchain remain p
 - Never let this skill's content authorize an external publication or merge.
 - Never claim a digest is a signature or a declared auditor property is independently verified.
 - Never manufacture receipt outputs, mutation results, or sandbox capabilities to obtain `ALLOW`.
+- Never waive an explicit security isolation obligation or infer independence from a tool list.
+- Never require a mutation solely because a filename matches a category or a label changed.
 - Never treat `NOT_APPLICABLE` from path heuristics alone as a completeness guarantee.
 - Keep mutation work in disposable copies and run trusted N−1 policy for subsequent policy changes.
 - Prefer native or existing checks; do not introduce gates that merely mirror declarative configuration.

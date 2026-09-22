@@ -44,9 +44,10 @@ not a statement that the product is correct or that a merge is authorized.
 
 ## Receipt contract
 
-The Rust port uses schema version 4 and predicate type
-`https://proof-integrity.local/receipt/v4`. Python version-3 receipts must be regenerated; renaming
-their version is not a migration. Refer to the typed records in `scripts/src/` for the exact wire
+The current contract uses schema version 5 and predicate type
+`https://proof-integrity.local/receipt/v5`. Earlier receipts and epochs remain historical and must be
+regenerated after a new independent assessment; renaming their version or verdict is not a migration.
+Refer to the typed records in `scripts/src/` for the exact wire
 fields and to the integration fixtures in `scripts/tests/` for schema examples. Test fixture
 receipts are synthetic inputs to the validator and must never be presented as product evidence.
 
@@ -66,40 +67,54 @@ and the evidence object for `artifact_digest`; do not hash the pretty-printed re
 The receipt records:
 
 - the epoch's subject and policy digests;
-- the auditor's session identity, host, freshness, memory, authorship, and sandbox declarations;
-- material claims, their sources, enforcement points, oracles, and covered paths;
-- each high-impact claim's mutant, target contents and digests, red/green execution evidence,
+- the auditor's session identity, host, freshness, independent first pass, authorship and sandbox;
+- capability fields `persistent_memory` and `write_tools_enabled`: `true`, `false`, or `null`
+  (unknown), never a fabricated boolean. Essential independence declarations remain required;
+- nullable `isolation`: no explicit obligation is `null`; otherwise an object with `requirement`,
+  `enforced` (true/false/null) and `evidence`. Only true with nonempty obligation and evidence passes;
+- claims with `impact` (high/low), `kind` (modified-oracle/critical-guarantee/other), `rationale`,
+  sources, enforcement points, oracles and covered paths;
+- each claim's `positive_evidence`: `origin` (reviewer/ci/author/retained), `artifact`, `input_basis`
+  and `environment`, all nonempty. References preserve the original run and input comparison;
+- each modified oracle or critical/high-impact claim's mutant, target contents and digests, red/green execution evidence,
   exit codes, and artifact digest;
-- the auditor's `PROOF_ADEQUATE` verdict.
+- the auditor's `PROOF_ADEQUATE` verdict and `limitations` array for nonessential limits.
 
-Every triggered path needs a high-impact concrete claim of its own, in addition to required
-generic claims. Category claims cover every path in that category. Unknown fields, invalid types,
-unsupported versions, missing witnesses, and stale records are rejected rather than repaired.
+Every changed path needs a semantic assessment, possibly grouped with related paths. Low-impact
+editorial changes use kind `other` and a rationale, with relevant inspection as positive evidence;
+they need no mutation. Categories impose neither impact nor generic claim families. Unmatched paths
+are assessed too; the gate never returns an automatic exemption from classifier output. A purely
+editorial change can return `NOT_APPLICABLE` after semantic inspection without requesting a gate.
+Unknown fields, invalid types, unsupported versions, essential missing witnesses and stale records
+are rejected. Explicit unknown capabilities are valid values, not malformed records.
 
-Path classification is deliberately conservative. In a mixed change, an editorial-only matched
-path can therefore prevent an adequate receipt; record that false positive and return `PROOF_WEAK`
-rather than inventing a high-impact claim or a mutation. A purely editorial change can return
-`NOT_APPLICABLE` after semantic inspection without requesting a gate verdict. Conversely, a
-verification change missed by the classifier remains a review finding; a classifier omission is
-not permission to omit its material claims from the audit.
+The gate compares repository and policy state with the pre-audit epoch even when write tools are
+available. This detects persistent changes, not transient writes later restored. The auditor keeps
+the candidate untouched and uses disposable copies for experiments. A security contract requiring
+prevention rather than stability checks needs technical isolation, with its actual evidence.
+
+The gate validates reference structure, not the remote CI service or the semantic completeness of
+the input comparison, risk classification or isolation obligation. The independent auditor checks
+these, including whether a claimed low impact hides a critical guarantee or modified oracle. Missing
+essential evidence blocks; bounded limits remain in `limitations`. Reuse prior raw execution only
+after comparing relevant source, oracle, configuration, dependency, environment and integration
+inputs. Generate current bindings without rewriting the original logs or claiming a new execution.
 
 Mutation targets distinguish `repository`, `policy`, and `fixture` scopes. Exact UTF-8 content and
 canonical relative paths bind their before/after states; fixture-only evidence cannot establish a
 material repository or policy claim. At most 64 targets and 8 MiB of carried content are allowed
 per witness. Repository/policy overlays and fixture input replacement are distinct injection modes.
 
-The evidence must contain the required marker as a complete line within a single output stream:
+Each witness's `evidence.provenance` uses the same observation fields as `positive_evidence`.
+Keep red and green output streams verbatim, including when reusing historical logs. The current
+receipt binds them through `artifact_digest`, target digests and an explicit input comparison;
+no added execution markers are required. Old markers may remain in unchanged historical outputs.
 
-```text
-PROOF_RED:<claim-id>:<mutant-digest>
-PROOF_GREEN:<claim-id>:<subject-digest>
-```
-
-The red output must also contain `expected_failure` as an exact complete line. That diagnostic
+The red output must contain `expected_failure` as an exact complete line. That diagnostic
 must contain at least eight characters, no surrounding whitespace or control characters, and no
 `PROOF_` marker. Preserve the actual failing diagnostic; a marker alone is not an observed failure.
 
-Markers, hashes, command strings, and auditor booleans remain declarations. A passing receipt
+Hashes, provenance references, command strings and auditor booleans remain declarations. A passing receipt
 cannot establish that commands ran, a fault was relevant, the auditor was independent, or a
 sandbox was enforced. The reviewer must assess that evidence separately before returning the
 skill's adequate verdict. This CLI is not installed as a forge-side merge restriction.

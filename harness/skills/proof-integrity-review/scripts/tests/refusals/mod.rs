@@ -52,7 +52,7 @@ fn refuses_rebound_mutations_with_unsafe_paths_or_inadequate_sources() -> Result
     Ok(())
 }
 #[test]
-fn refuses_rebound_evidence_without_whole_line_diagnostics_and_markers() -> Result {
+fn refuses_rebound_evidence_without_exact_diagnostic_or_provenance() -> Result {
     let fixture = Fixture::new()?;
     let epoch = fixture.epoch()?;
     let valid = receipt(&epoch)?;
@@ -61,7 +61,7 @@ fn refuses_rebound_evidence_without_whole_line_diagnostics_and_markers() -> Resu
         ("/expected_failure", json!("PROOF_BAD")),
         ("/expected_failure", json!("missing diagnostic")),
         ("/expected_failure", json!("too\nshort")),
-        ("/red_stdout", json!("invalid input rejected")),
+        ("/red_stdout", json!("unexpected failure")),
         (
             "/red_stdout",
             json!(format!(
@@ -72,7 +72,10 @@ fn refuses_rebound_evidence_without_whole_line_diagnostics_and_markers() -> Resu
                     .ok_or("output")?
             )),
         ),
-        ("/green_stdout", json!("marker absent")),
+        ("/provenance/input_basis", json!("")),
+        ("/provenance/artifact", json!("")),
+        ("/provenance/environment", json!("")),
+        ("/provenance/origin", json!("invented")),
         ("/green_exit_code", json!(1)),
         ("/red_exit_code", json!(0)),
         ("/targets_digest", json!(digest(b"other"))),

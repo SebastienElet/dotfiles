@@ -76,12 +76,14 @@ says to post directly.
 
    Inventory every externally observable behavior added, removed or changed by the diff. Start a
    changed-behavior ledger with one row per behavior: the behavior, positive evidence on the exact
-   head, a negative witness, and the result. A negative witness is an executed test-first RED or a
-   controlled faulty variant derived from the exact head, shown to fail when the behavior is removed,
-   reversed or broken. Restore and verify the exact head before running its positive barrier. A
+   head or traceably equivalent relevant inputs, a negative witness requirement with its rationale,
+   and the result. Require negative witnesses for modified oracles and critical guarantees, not
+   systematically for every label. A witness is an executed test-first RED or a controlled faulty
+   variant shown to fail when the guarantee is broken. Existing witnesses are reusable when their
+   relevant inputs are unchanged. Keep experiments in disposable copies and verify candidate stability. A
    passing regression test without an observed failing counterpart is positive evidence only; a
-   green aggregate barrier is evidence for no individual row by itself. Record missing evidence as
-   `absent`, never as an inference.
+   green aggregate count proves no individual row by itself; map its actual tests to the behavior.
+   Record required missing evidence as `absent`, and justified unnecessary witnesses as `not required`.
 
    When the aggregate PR diff changes a verification mechanism (CI routing, test oracles, caches,
    proof policy, or agent review rules), activate `proof-integrity-review` on the same base and
@@ -94,13 +96,18 @@ says to post directly.
 3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
    `<mechanism>`. Only the third form can become a blocker. When the head under review was written
-   in this session, delegate this sweep to a fresh context, read-only and scoped to the diff: the
-   context that produced the diff shares the blind spot that produced the defect, and records
-   `holds` for the class it has just broken. Reconcile the sweep with the changed-behavior ledger:
+   in this session, delegate the review to a distinct auditor in a fresh context with no inherited
+   conversation history, scoped to the diff. Every review requires an auditor distinct from the author
+   in a fresh context with no inherited conversation history and an independent first analysis:
+   withhold prior verdicts and author conclusions until
+   that pass is recorded. Instruct
+   the auditor not to modify the candidate and verify its state before and after. Available write
+   tools alone do not block; technical isolation is mandatory only for an explicit security
+   obligation. Keep unknown capabilities unknown. Reconcile the sweep with the changed-behavior ledger:
    the sweep can add findings, but cannot replace a row or turn absent behavior-level evidence into
    `holds`.
 
-4. **Run the barrier, then declare its holes.** Run lint, typecheck and tests the way the project
+4. **Establish the barrier, then declare its holes.** Run or reuse lint, typecheck and tests the way the project
    runs them — including inside a container when the project requires it, since numbers from the
    wrong runner are not evidence for this head. Read the CI configuration to find the gate that
    actually blocks the merge before running anything: it is often not the package script of the same
@@ -113,17 +120,20 @@ says to post directly.
    interchangeable — "not observed" written over evidence sitting in the description is a false
    statement about the author's work, and a lift criterion asking for a run the PR already shows
    asks them to repeat themselves. What is missing in that case is a control in the repository:
-   name the control, not the re-run. Complete the ledger from evidence actually reproduced during
-   this review; evidence supplied by the author but not reproduced stays attributed and does not
-   satisfy an approval row until reproduced.
+   name the control, not the re-run. Accept traceable CI and retained observations after checking
+   their artifacts and relevant source, oracle, configuration, dependency, environment and integration
+   inputs. Preserve original provenance and the comparison that justifies reuse; a new head need not
+   invalidate an unchanged mechanism's evidence. Reproduce only essential missing or invalidated
+   evidence. Unverifiable evidence remains unproven, not fictitiously reproduced.
 
 5. **Return a verdict.** Exactly one of _changes required_, _approved with reservations_,
    _approved_. Write the phase-5 verdict in the order defined by `assets/verdict-template.md`, with
    the complete changed-behavior ledger before the blocking paragraph. Keep one row per inventoried
    behavior; a prose summary does not replace the rows. Both approval verdicts require every ledger
-   row to contain reproduced positive evidence on the exact head and a reproduced negative witness
-   traceable to its controlled faulty variant, with no contradictory result. Otherwise the verdict
-   is _changes required_, and the missing evidence is the lift criterion. Each other blocking
+   row to have sufficient relevant positive evidence and required negative witnesses, with provenance
+   and no contradictory result. Block on a demonstrated defect or essential missing evidence;
+   explain why that proof is essential and state its lift criterion. Document other evidence limits
+   without automatically blocking or downgrading approval. Each other blocking
    finding carries its named mechanism and its lift criterion — what must become true for the block
    to go away. Reservations are for mechanisms whose consequence is bounded; a mechanism that can
    lose or corrupt data blocks even when the author disagrees. A style, naming or structure
@@ -157,6 +167,9 @@ says to post directly.
    there, and Bitbucket has no reliable equivalent at all. Whenever that native state is
    unavailable, the comment _is_ the verdict and its closing sentence carries the whole enforcement
    — say so in the verdict, so the reader knows nothing mechanical is holding the merge button.
+   A same-head reassessment under changed policy or new evidence is a new dated assessment with
+   its policy and evidence references. Preserve the earlier verdict and append the reassessment
+   inside the existing marked comment; never replace a historical rejection with an approval.
 
 ## Gotchas
 
@@ -186,8 +199,8 @@ says to post directly.
   nothing was observed and makes the merge conditional on steps the author has already run and
   attached, which reads as not having read the PR. Open every attachment in phase 2, and label
   supplied evidence not reproduced here as theirs.
-- **Numbers copied from the PR's own pipeline** — a green pipeline is context for phase 1, never the
-  barrier of phase 4. The barrier is what you ran, authenticated, on the head you checked out.
+- **An unexamined green CI badge** — it does not identify the exercised checks. Inspect traceable
+  logs and relevant inputs; reuse them with their remote provenance instead of demanding a local rerun.
 - **The package script mistaken for the CI gate** — the repository's `lint` script may walk the whole
   tree while the pipeline lints only the changed files. Its count then measures a backlog that
   predates the head under review, and reporting it as the barrier drowns the diff in noise. Take the
@@ -195,14 +208,14 @@ says to post directly.
 
 ## Constraints
 
-- Never approve without having executed the barrier on the exact head under review.
+- Never approve without sufficient traceable barrier evidence applicable to the reviewed candidate.
 - Never write "everything is green": report counts, or report that nothing ran.
 - Never report a count from a command the pipeline does not run; name the gate you executed.
 - Never publish a blocking finding without a named failure mechanism and a lift criterion.
 - Never block on style, naming or structure preference; label it non-blocking.
 - Never open a review that is not anchored on a head SHA.
-- Never issue either approval verdict unless every changed observable behavior has reproduced
-  positive evidence on the exact head and a reproduced negative witness.
+- Never approve with a demonstrated defect or essential proof missing. Require negative witnesses
+  for modified oracles and critical guarantees, with reasoned exemptions for other behavior.
 - Never infer behavior-level evidence from an aggregate green barrier.
 - Never call a passing test a negative witness without an observed failure when the claimed behavior
   is broken.

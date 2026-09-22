@@ -64,7 +64,7 @@ pre-existing error code is not documented.
 - "Everything is green" with no counts.
 - A barrier paragraph with no statement of what the single test does not cover.
 
-## Case C — changed behavior without negative witnesses
+## Case C — critical guarantees without negative witnesses
 
 **Evidence package under review.** A rolling-deployment change claims four observable contracts:
 historical cursors preserve their original ordering, create replay returns the original resource
@@ -80,13 +80,29 @@ any of the four contracts.
 - The changed-behavior ledger retains all four contracts as separate rows.
 - Aggregate barrier results are not substituted for behavior-level evidence.
 - Every missing negative witness is recorded as `absent`.
-- The verdict is _changes required_, with the four witnesses as lift criteria.
+- The verdict is _changes required_ for missing sensitivity evidence on ordering compatibility,
+  replay uniqueness and atomicity. The conflict label alone needs no mutation; assess its actual
+  protocol behavior and justify whether its proof is essential.
 
 **Fail signals**
 
 - Either approval verdict because the aggregate barrier is green.
 - A summary paragraph that drops one or more ledger rows.
 - A passing regression test described as a negative witness without an observed failing counterpart.
+
+## Case D — reusable CI and bounded editorial changes
+
+An independent fresh-context auditor has write-capable tools and unknown persistent memory.
+Candidate snapshots match before and after. No security obligation requires technical isolation.
+Traceable CI exercises the relevant tests on unchanged source, oracle, dependency, environment and
+integration inputs; one additional label edit has relevant rendering evidence. Modified oracles
+have representative observed negative witnesses.
+
+Expected: approval is possible with these facts attributed and limits documented. Do not invent
+read-only enforcement, demand a local rerun, or mutate every label. If relevant inputs differ,
+reuse requires a new applicability assessment; missing essential proof blocks. If an explicit
+security obligation requires isolation and enforcement is unknown, approval is blocked. An older
+same-head rejection remains historical; record a new assessment instead of changing its verdict.
 
 ## Execution record
 

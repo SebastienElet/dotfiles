@@ -17,11 +17,12 @@ or "none observed".>
 
 <Changed-behavior ledger — REQUIRED. One row per externally observable behavior added, removed or
 changed by the diff:
-| Observable behavior | Positive evidence on the exact head | Negative witness | Result |
-The positive evidence was reproduced on the reviewed head. The negative witness identifies the
-executed test-first RED or controlled faulty variant derived from that head and the failure it
-observed; "test passes" alone is not a negative witness. Use `absent` for missing evidence. Either
-approval verdict is invalid while a row is incomplete or contradicted.>
+| Observable behavior | Positive evidence and input basis | Negative witness or exemption | Result |
+Attribute local, CI, author and retained evidence with artifact, environment and unchanged relevant
+inputs. Required negative witnesses identify observed test-first RED or a controlled faulty variant;
+"test passes" alone is not one. Use `absent` for essential missing evidence and `not required` with a
+rationale for other witnesses. A demonstrated defect or essential missing proof prevents approval;
+document other limits without automatically blocking.>
 
 <When verification mechanisms changed, include the proof-integrity result on this exact base/head,
 its gate result, and the locations of its complete claim matrix, epoch and receipt with the
@@ -32,7 +33,7 @@ an adequate proof result does not replace the rest of the review.>
 with one sentence stating what must become true to lift them. Omit this paragraph entirely when
 the verdict is "approved".>
 
-<Barrier paragraph — REQUIRED. Open with "Authenticated local validation on this exact head:"
+<Barrier paragraph — REQUIRED. Name the execution origin and relevant candidate inputs
 and give counts, never adjectives. Then, in the same paragraph, REQUIRED: what this evidence does
 not cover. The verdict is invalid without that second half. Evidence the author supplied — an
 attachment, a pasted output — is named as theirs: never counted as measured here, never reported
@@ -94,8 +95,8 @@ Do not approve or merge this head.
 ## Self-check before publishing
 
 - The marker is the first line, and its SHA is the head you actually checked out.
-- Every changed observable behavior has one ledger row with reproduced positive evidence and an
-  observed negative witness; an aggregate green barrier is not repeated as row-level evidence.
+- Every changed observable behavior has one ledger row with applicable positive evidence and a
+  required negative witness or reasoned exemption; map actual tests rather than aggregate counts.
 - Every clause in the blocking paragraph names a sequence of steps, not a quality judgement.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.

@@ -1,6 +1,6 @@
 use crate::{
     Result,
-    model::{Claim, Epoch, Receipt},
+    model::{Claim, Epoch, Observation, Receipt},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -23,9 +23,9 @@ pub fn reserved(id: &str) -> bool {
     BASE.contains(&id) || AUTHORITY.contains(&id) || ORACLES.contains(&id)
 }
 pub fn claims<'a>(epoch: &Epoch, receipt: &'a Receipt) -> Result<BTreeMap<&'a str, &'a Claim>> {
-    let matched: BTreeSet<_> = epoch
-        .classifier
-        .matched_paths
+    let changed: BTreeSet<_> = epoch
+        .subject
+        .changed_paths
         .iter()
         .map(String::as_str)
         .collect();
@@ -39,50 +39,51 @@ pub fn claims<'a>(epoch: &Epoch, receipt: &'a Receipt) -> Result<BTreeMap<&'a st
             &claim.source,
             &claim.enforcement,
             &claim.oracle,
+            &claim.rationale,
         ]
         .iter()
         .any(|s| s.trim().is_empty())
             || !matches!(claim.impact.as_str(), "high" | "low")
+            || !matches!(
+                claim.kind.as_str(),
+                "modified-oracle" | "critical-guarantee" | "other"
+            )
             || !all.insert(&claim.id)
         {
             return Err("invalid or duplicate claim".into());
         }
+        observation(&claim.positive_evidence)?;
         let paths: BTreeSet<_> = claim.paths.iter().map(String::as_str).collect();
-        if paths.is_empty() || paths.len() != claim.paths.len() || !paths.is_subset(&matched) {
-            return Err("claim paths must uniquely reference the triggered surface".into());
+        if paths.is_empty() || paths.len() != claim.paths.len() || !paths.is_subset(&changed) {
+            return Err("claim paths must uniquely reference the changed surface".into());
         }
-        if claim.impact == "high" {
+        covered.extend(paths);
+        if claim.impact == "high" || claim.kind != "other" {
             high.insert(claim.id.as_str(), claim);
-            if !reserved(&claim.id) {
-                if paths.len() != 1 || claim.id == "material.changed_surface" {
-                    return Err("material claim must identify one concrete path".into());
-                }
-                covered.extend(paths);
-            }
         }
     }
-    if covered != matched {
-        return Err("triggered paths lack concrete high-impact claims".into());
-    }
-    for required in BASE {
-        if !high.contains_key(required) {
-            return Err(format!("missing required claim: {required}").into());
-        }
-    }
-    for (category, required) in [
-        ("authority_contracts", AUTHORITY.as_slice()),
-        ("test_oracles", ORACLES.as_slice()),
-    ] {
-        if let Some(paths) = epoch.classifier.categories.get(category) {
-            for id in required {
-                let claim = high
-                    .get(id)
-                    .ok_or_else(|| format!("missing category claim: {id}"))?;
-                if paths.iter().any(|path| !claim.paths.contains(path)) {
-                    return Err("category claim misses affected paths".into());
-                }
-            }
-        }
+    if covered != changed || receipt.claims.is_empty() {
+        return Err("changed paths lack semantic assessment".into());
     }
     Ok(high)
+}
+
+pub fn observation(evidence: &Observation) -> Result<()> {
+    if [
+        &evidence.artifact,
+        &evidence.input_basis,
+        &evidence.environment,
+    ]
+    .iter()
+    .any(|value| value.trim().is_empty())
+        || !matches!(
+            evidence.origin.as_str(),
+            "reviewer" | "ci" | "author" | "retained"
+        )
+    {
+        return Err(
+            "traceable evidence origin, artifact, input basis and environment required".into(),
+        );
+    }
+    Ok(())
 }
