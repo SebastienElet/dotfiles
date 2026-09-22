@@ -102,8 +102,8 @@ invokes it.
    result. On interruption or an ambiguous push result, reconcile remote commits before resuming.
 
 7. **Judge the pushed head independently.** Resolve the SHA now shown by the PR and delegate a full
-   `pr-verdict` review of that exact head to a distinct auditor in a fresh, unforked context, including
-   its barrier. Withhold earlier verdicts and author conclusions until the auditor records its
+   `pr-verdict` review of that exact head to a distinct auditor in a fresh context with no inherited
+   conversation history, including its barrier. Withhold earlier verdicts and author conclusions until the auditor records its
    independent first analysis; then reconcile earlier findings and traceable evidence. Verify the
    candidate remains unchanged. Write-capable tools alone do not invalidate independence; retain
    unknown capabilities and enforce technical isolation only for an explicit security obligation.

@@ -96,9 +96,10 @@ says to post directly.
 3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
    `<mechanism>`. Only the third form can become a blocker. When the head under review was written
-   in this session, delegate the review to a distinct auditor in a fresh, unforked context, scoped
-   to the diff. Every review requires an auditor distinct from the author in a fresh, unforked
-   context and an independent first analysis: withhold prior verdicts and author conclusions until
+   in this session, delegate the review to a distinct auditor in a fresh context with no inherited
+   conversation history, scoped to the diff. Every review requires an auditor distinct from the author
+   in a fresh context with no inherited conversation history and an independent first analysis:
+   withhold prior verdicts and author conclusions until
    that pass is recorded. Instruct
    the auditor not to modify the candidate and verify its state before and after. Available write
    tools alone do not block; technical isolation is mandatory only for an explicit security
