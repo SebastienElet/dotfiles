@@ -92,3 +92,6 @@ xoxr
 xoxs
 étape
 état
+
+remem
+realpath

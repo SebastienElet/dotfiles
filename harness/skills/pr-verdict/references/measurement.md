@@ -20,10 +20,11 @@ Build the summary from the review's working inventories:
 | `--observable-behaviors`  | Number of rows in the changed-behavior ledger                                                                                                                   |
 | `--evidence-gaps`         | Number of distinct missing-evidence items inventoried in phases 2–4, across both ledger and barrier; an item repeated in several places counts once             |
 
-For evidence gaps, missing positive evidence and a missing negative witness are separate items;
+For evidence gaps, missing positive evidence and a missing required negative witness are separate items;
 an uncovered platform or integration boundary is another item when explicitly inventoried. Keep
 these items in the working inventory before composing the verdict; a blocker and a gap may describe
-the same missing proof but are separate counts. Unknown counts are not zero: complete the inventory
+the same missing proof but are separate counts. A justified `not required` witness is not a gap;
+nonessential limits are not automatically blocking findings. Unknown counts are not zero: complete the inventory
 or report measurement unavailable, without inventing values or changing the verdict.
 
 This synthetic example represents two blocking findings, one reservation, three behavior rows and

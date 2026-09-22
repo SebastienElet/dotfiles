@@ -23,15 +23,18 @@ les fichiers, liens, représentations et commandes déclarés, sans exécuter le
 hooks ni démarrer les serveurs MCP. Les snapshots des fixtures décrites plus bas
 vérifient l'absence de modification de leur dépôt et de leur HOME.
 
-Cette preuve n'autorise pas une garantie universelle d'absence d'écriture ou de
-contact externe : l'inventaire des plugins Codex de `doctor skills` peut lancer
-`codex plugin marketplace list --json` et `codex plugin list --json`. Ce résolveur
-externe reçoit le HOME sélectionné et s'exécute depuis celui-ci, avec
-`CODEX_HOME` fixé à son sous-répertoire `.codex`, un délai de cinq secondes et
-une limite de 1 Mio par flux. Les fixtures ne certifient pas les effets d'un vrai
-binaire Codex. La [frontière externe](arnes-capacites-externes.md#frontières-de-lecture)
-décrit cette restriction ; elle reste une limite à la lecture seule stricte
-demandée par #124, pas une propriété validée ici.
+Doctor ne lance plus le résolveur externe Codex : `doctor skills` lit la
+configuration locale et signale l'inventaire actif des plugins comme `unsupported`.
+Un réglage `enabled=true` conserve son diagnostic de politique mais ne prouve
+ni disponibilité ni activation ; aucun artefact actif n'est déduit du cache.
+La [frontière externe](arnes-capacites-externes.md#frontières-de-lecture) précise
+la capacité d'observation ainsi réduite, conformément à la décision D1 de #111.
+
+L'absence d'exécution du résolveur est exercée par un témoin placé hors des arbres
+snapshotés, sur Doctor direct et agrégé, dans les deux formats. La lecture seule
+du chemin possédé repose sur la suppression de cette exécution ; des snapshots
+identiques ne suffisent toujours pas à exclure toute écriture temporaire effacée.
+Aucun résultat ne certifie une session réelle d'agent.
 
 Cette distinction concerne Doctor : Arnes expose aussi `setup hooks`, `export`,
 `eval` et `measure`, dont certains parcours écrivent. `arnes setup hooks --agent
@@ -94,7 +97,7 @@ et des capacités externes sans inventaire observable.
 Un filtre limite la sélection, pas nécessairement toutes les lectures : MCP
 peut inspecter l'autre portée pour détecter une collision d'enregistrement.
 Les [capacités externes](arnes-capacites-externes.md) détaillent séparément les
-registres Claude, le résolveur Codex, les plugins locaux Cursor et les inventaires
+registres Claude, la configuration Codex, les plugins locaux Cursor et les inventaires
 non observables. Leurs contenus ne sont pas reproduits ici.
 
 ## Formats, états et sorties

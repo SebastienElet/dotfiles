@@ -281,67 +281,21 @@ fn committed_receipt_cannot_replace_candidate_with_dirty_live_target() -> Result
     Ok(())
 }
 
-fn add_claim(receipt: &mut Value, id: &str, paths: &[&str]) -> Result {
-    let mut claim = receipt.pointer("/claims/3").ok_or("claim")?.clone();
-    set(&mut claim, "/id", json!(id))?;
-    set(&mut claim, "/paths", json!(paths))?;
-    receipt
-        .get_mut("claims")
-        .and_then(Value::as_array_mut)
-        .ok_or("claims")?
-        .push(claim);
-    let mut witness = receipt.pointer("/witnesses/3").ok_or("witness")?.clone();
-    set(&mut witness, "/claim_id", json!(id))?;
-    receipt
-        .get_mut("witnesses")
-        .and_then(Value::as_array_mut)
-        .ok_or("witnesses")?
-        .push(witness);
-    rebind(receipt)
-}
 #[test]
-fn requires_category_families_and_full_category_path_coverage() -> Result {
-    for (path, family) in [
-        (
-            "permissions.toml",
-            vec![
-                "authority.source_resolution",
-                "authority.allowed_values",
-                "authority.enforcement_coverage",
-                "authority.citation_fidelity",
-            ],
-        ),
-        (
-            "test_example.py",
-            vec![
-                "test_oracle.invocation_coverage",
-                "test_oracle.defect_detection",
-            ],
-        ),
-    ] {
+fn categories_do_not_require_artificial_high_impact_claims() -> Result {
+    for path in ["permissions.toml", "test_example.py", "custom-check.conf"] {
         let fixture = Fixture::new()?;
-        fs::write(fixture.root().join(path), "oracle")?;
+        fs::write(fixture.root().join(path), "editorial change")?;
         git(fixture.root(), &["add", path])?;
         git(fixture.root(), &["commit", "-m", "category input"])?;
         let epoch = fixture.epoch()?;
         let mut valid = receipt(&epoch)?;
-        add_claim(&mut valid, "concrete.additional", &[path])?;
-        assert!(!fixture.gate(&epoch, &valid)?.status.success());
-        for id in &family {
-            add_claim(&mut valid, id, &[path])?;
-        }
-        let output = fixture.gate(&epoch, &valid)?;
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        let claim = valid
+        assert!(fixture.gate(&epoch, &valid)?.status.success());
+        valid
             .get_mut("claims")
             .and_then(Value::as_array_mut)
-            .and_then(|claims| claims.last_mut())
-            .ok_or("claim")?;
-        set(claim, "/paths", json!(["Makefile"]))?;
+            .ok_or("claims")?
+            .pop();
         assert!(!fixture.gate(&epoch, &valid)?.status.success());
     }
     Ok(())

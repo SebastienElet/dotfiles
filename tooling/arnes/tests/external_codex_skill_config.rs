@@ -1,10 +1,7 @@
 #![cfg(test)]
-#[path = "support/codex.rs"]
-pub mod codex_support;
 #[path = "support/skills.rs"]
 pub mod skill_support;
 pub mod support;
-use serde_json::json;
 use skill_support::run;
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
@@ -25,11 +22,6 @@ fn fixture(config: &str) -> Result<Fixture, Box<dyn std::error::Error + Send + S
             "SKILL_PATH",
             path.to_str().ok_or("required test value is missing")?,
         ),
-    )?;
-    codex_support::install(
-        &fixture,
-        &json ! ({ "marketplaces" : [] }),
-        &json ! ({ "installed" : [] , "available" : [] }),
     )?;
     Ok(fixture)
 }

@@ -119,7 +119,7 @@ pub fn receipt(epoch: &Value) -> Result<Value> {
     let mut claims = Vec::new();
     let mut witnesses = Vec::new();
     for id in ids {
-        claims.push(json!({"id":id,"impact":"high","claim":"recipe refuses invalid input","source":"contract","enforcement":"recipe","oracle":"integration","paths":["Makefile"]}));
+        claims.push(json!({"id":id,"impact":"high","kind":"other","rationale":"invalid input reaches recipe","positive_evidence":{"origin":"reviewer","artifact":"fixture trace","input_basis":"current fixture inputs","environment":"test host"},"claim":"recipe refuses invalid input","source":"contract","enforcement":"recipe","oracle":"integration","paths":["Makefile"]}));
         let targets = json!([{"scope":"repository","path":"Makefile","before_content":"new","after_content":"bad","before_digest":digest(b"new"),"after_digest":digest(b"bad")}]);
         let mutant = json!({"description":"remove refusal", "targets":targets});
         let mutant_digest = bound(&mutant)?;
@@ -127,11 +127,25 @@ pub fn receipt(epoch: &Value) -> Result<Value> {
             .get("subject_digest")
             .and_then(Value::as_str)
             .ok_or("subject")?;
-        let evidence = json!({"command":"fixture-declaration-only", "expected_failure":"invalid input rejected", "red_exit_code":1,"red_stdout":format!("invalid input rejected\nPROOF_RED:{id}:{mutant_digest}\n"),"red_stderr":"","green_exit_code":0,"green_stdout":format!("PROOF_GREEN:{id}:{subject}\n"),"green_stderr":"","targets_digest":bound(&targets)?,"injection_mode":"file-overlay"});
+        let evidence = json!({"provenance":{"origin":"reviewer","artifact":"fixture trace","input_basis":"unchanged fixture inputs","environment":"test host"},"command":"fixture-declaration-only", "expected_failure":"invalid input rejected", "red_exit_code":1,"red_stdout":format!("invalid input rejected\nPROOF_RED:{id}:{mutant_digest}\n"),"red_stderr":"","green_exit_code":0,"green_stdout":format!("PROOF_GREEN:{id}:{subject}\n"),"green_stderr":"","targets_digest":bound(&targets)?,"injection_mode":"file-overlay"});
         witnesses.push(json!({"claim_id":id,"mutant_digest":mutant_digest,"mutant":mutant,"red_exit_code":1,"green_exit_code":0,"artifact_digest":bound(&evidence)?,"evidence":evidence}));
     }
+    for path in epoch
+        .pointer("/subject/changed_paths")
+        .and_then(Value::as_array)
+        .ok_or("paths")?
+    {
+        if path == "Makefile" {
+            continue;
+        }
+        let mut claim = claims.last().ok_or("claim")?.clone();
+        set(&mut claim, "/id", json!(format!("assessment:{path}")))?;
+        set(&mut claim, "/paths", json!([path]))?;
+        set(&mut claim, "/impact", json!("low"))?;
+        claims.push(claim);
+    }
     Ok(
-        json!({"schema_version":4,"predicate_type":"https://proof-integrity.local/receipt/v4","subject_digest":epoch.get("subject_digest").ok_or("subject")?,"policy_digest":epoch.get("policy_digest").ok_or("policy")?,"verdict":"PROOF_ADEQUATE","auditor":{"host":"test","session_id":"independent","fresh_session":true,"forked":false,"persistent_memory":false,"author_independent":true,"sandbox_mode":"read-only","write_tools_enabled":false},"claims":claims,"witnesses":witnesses}),
+        json!({"schema_version":5,"predicate_type":"https://proof-integrity.local/receipt/v5","subject_digest":epoch.get("subject_digest").ok_or("subject")?,"policy_digest":epoch.get("policy_digest").ok_or("policy")?,"verdict":"PROOF_ADEQUATE","auditor":{"host":"test","session_id":"independent","fresh_session":true,"forked":false,"persistent_memory":false,"author_independent":true,"independent_first_pass":true,"isolation":null,"sandbox_mode":"read-only","write_tools_enabled":false},"claims":claims,"witnesses":witnesses,"limitations":[]}),
     )
 }
 pub fn set(value: &mut Value, pointer: &str, replacement: Value) -> Result {

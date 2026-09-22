@@ -1,13 +1,12 @@
 # Verdict cases
 
-Three behavioral cases. Each names the PR or evidence package to review, the verdict it must reach,
-and the criteria that decide pass or fail. Cases A and B are assigned to different forges so that
-both command sets in `references/forges.md` get exercised.
+Three behavioral scenarios, followed by a separately qualified execution record. Expected verdicts
+and pass criteria describe what a case should demonstrate; they are not execution evidence.
 
-Run cases A and B against real pull requests — a case that never touched a forge proves nothing about
-a skill whose first phase is anchoring. Use a scratch repository if no suitable PR exists; the domain
-does not matter, the shape of the diff does. Case C deliberately isolates phase-5 ledger retention
-with an evidence package and makes no claim about forge behavior.
+Cases A and B target Bitbucket and GitHub respectively. Only an observed forge operation can support
+a claim about anchoring or publication. The revised Case B package and Case C isolate phase-5
+decisions on supplied evidence; they do not execute the represented tests or publish a verdict.
+Nothing in this register authorizes another review, approval or publication.
 
 ## Case A — changes required (Bitbucket)
 
@@ -65,7 +64,7 @@ pre-existing error code is not documented.
 - "Everything is green" with no counts.
 - A barrier paragraph with no statement of what the single test does not cover.
 
-## Case C — changed behavior without negative witnesses
+## Case C — critical guarantees without negative witnesses
 
 **Evidence package under review.** A rolling-deployment change claims four observable contracts:
 historical cursors preserve their original ordering, create replay returns the original resource
@@ -81,7 +80,9 @@ any of the four contracts.
 - The changed-behavior ledger retains all four contracts as separate rows.
 - Aggregate barrier results are not substituted for behavior-level evidence.
 - Every missing negative witness is recorded as `absent`.
-- The verdict is _changes required_, with the four witnesses as lift criteria.
+- The verdict is _changes required_ for missing sensitivity evidence on ordering compatibility,
+  replay uniqueness and atomicity. The conflict label alone needs no mutation; assess its actual
+  protocol behavior and justify whether its proof is essential.
 
 **Fail signals**
 
@@ -89,64 +90,61 @@ any of the four contracts.
 - A summary paragraph that drops one or more ledger rows.
 - A passing regression test described as a negative witness without an observed failing counterpart.
 
+## Case D — reusable CI and bounded editorial changes
+
+An independent fresh-context auditor has write-capable tools and unknown persistent memory.
+Candidate snapshots match before and after. No security obligation requires technical isolation.
+Traceable CI exercises the relevant tests on unchanged source, oracle, dependency, environment and
+integration inputs; one additional label edit has relevant rendering evidence. Modified oracles
+have representative observed negative witnesses.
+
+Expected: approval is possible with these facts attributed and limits documented. Do not invent
+read-only enforcement, demand a local rerun, or mutate every label. If relevant inputs differ,
+reuse requires a new applicability assessment; missing essential proof blocks. If an explicit
+security obligation requires isolation and enforcement is unknown, approval is blocked. An older
+same-head rejection remains historical; record a new assessment instead of changing its verdict.
+
 ## Execution record
 
-Cases A and B were run once, on 2026-08-11, phases 1 to 5 only — publication was deliberately not
-reached. A third run, on 2026-08-12, was a real review rather than a case, and went through phase 6.
+Reconciled on 2026-09-19 against accessible sources. **Reported** means a historical account was
+read, but its primary execution trace was not verified here. **Verified observation** means the
+specific tool exchange was inspected; it does not certify the whole review or the current skill.
+The [source record](execution-evidence.md) gives provenance, retained observations and limitations.
+An inaccessible trace is unverified here, not nonexistent.
 
-- **Case A**, on a Bitbucket PR (`bkt`), reached _changes required_ as expected, on the three
-  mechanisms of classes 1, 2 and 3. Two lessons went back into the skill: the reported base was the
-  integration branch while the branch was stacked — the opposite of what the Gotcha then claimed —
-  and the run that mattered most was the first, which produced no verdict at all because the
-  barrier could not install its dependencies. Refusing to rule from that is the skill working, and
-  it is why phase 4 precedes phase 5.
-- **Case B**, on a GitHub PR (`gh`), ran end to end but produced _changes required_ rather than the
-  expected reservations: the target held a measured mechanism that destroys an unversioned file and
-  still reports success. The expectation was wrong about the target, not about the skill — the
-  original target therefore did not exercise the _approved with reservations_ path.
-- **Third run**, on GitHub, phases 1 to 6, first publication the skill has ever performed: a general
-  comment written through a body file, plus a fix ticket and the re-review ticket the procedure then
-  required. Verdict _changes required_, on classes 4 and 5 only. Five gaps came back into the skill.
-  The requester was the
-  author, so GitHub refused the native blocking state and the comment had to carry the enforcement
-  alone — a configuration the skill described only for Bitbucket. The head moved between the metadata
-  read and the barrier, which phase 1's SHA anchoring caught, so the guard is now exercised rather
-  than merely asserted. The repository-wide lint script and the pipeline's gate turned out to be
-  different commands over different file sets, and only the second measures the head. And the
-  non-blocking section grew until it rivalled the blocking one, which is where the three-line cap
-  comes from. Last, the request anticipated a PR that was not open yet, a case phase 1 assumed away.
+| Record                                    | Decision evidence                                                                                                                                                                        | Forge publication                                                                                                                           | Status and source                                                                                                                                     |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Case A, 2026-08-11                        | Historical account reports _changes required_ on Bitbucket, and an earlier attempt that returned no verdict when dependencies could not be installed.                                    | Account says phases 1–5 only; publication deliberately not reached.                                                                         | Reported; primary trace unavailable in this audit. [E1](execution-evidence.md#e1--original-cases-a-and-b).                                            |
+| Original Case B, 2026-08-11               | Historical account reports _changes required_: the real target contained a blocking mechanism, so it did not match the intended reservations scenario.                                   | Account says phases 1–5 only, not an end-to-end publication run.                                                                            | Reported; primary trace unavailable in this audit. [E1](execution-evidence.md#e1--original-cases-a-and-b).                                            |
+| Third historical run, 2026-08-12          | Account reports _changes required_, a moved head detected, and refusal of GitHub's native blocking review on a self-authored PR.                                                         | Account reports a general GitHub comment and tickets, including a re-review ticket required by the procedure then.                          | Reported; neither the original tool responses nor the corresponding comment were verified here. [E2](execution-evidence.md#e2--third-historical-run). |
+| Revised Case B package, 2026-08-28        | Account reports 3/3 _approved with reservations_ decisions with the completed ledger retained, from supplied positive and negative evidence.                                             | Not part of the package evaluation.                                                                                                         | Documented decision-only result; individual outputs not recovered here. [E3](execution-evidence.md#e3--supplied-evidence-packages).                   |
+| Case C package, 2026-08-28                | Account reports candidate retention 3/3; first integrated wording blocks 3/3 but retains rows 0/3; revised wording retains all four rows and blocks 3/3, with witnesses marked `absent`. | Not part of the package evaluation.                                                                                                         | Documented decision-only results; individual outputs not recovered here. [E3](execution-evidence.md#e3--supplied-evidence-packages).                  |
+| Additional GitHub publication, 2026-08-23 | Published text says _approved with reservations_; this predates the behavior ledger and does not establish current approval criteria.                                                    | A `gh pr comment` request with a `pr-verdict` marker returned a comment URL and exit 0; the public comment was read back during this audit. | Verified publication observation. [E4](execution-evidence.md#e4--github-comment-publication).                                                         |
+| Bitbucket repair comment                  | A `pr-fix` repair record is not a `pr-verdict` decision.                                                                                                                                 | Comment presence was confirmed by read-back after the posting pipeline returned an error.                                                   | Verified adjacent operation, excluded from verdict-publication coverage. [E5](execution-evidence.md#e5--bitbucket-repair-comment).                    |
 
-Case C was run on 2026-08-28 in fresh Codex subagent contexts using GPT-5.4 at high reasoning effort.
-The candidate guidance retained all four rows in 3/3 runs. The first integrated wording returned the
-right block in 3/3 runs but retained the ledger rows in 0/3, so it was rejected; after phase 5 gained
-the template-ordered output contract, 3/3 new runs retained all four rows, marked every negative
-witness absent and returned _changes required_, with no contradictory result. The scenario supplied
-an already-run barrier and stopped at phase 5, so it validates verdict reasoning and ledger
-retention, not forge anchoring, command execution or publication.
+The E3 counts remain attributed historical results, not newly reproduced measurements. The supplied
+barrier and negative witnesses test the decision made from that package, not whether the agent
+actually ran those commands. No previously documented experiment was repeated for this audit.
 
-The revised Case B evidence package was run on 2026-08-28 in three fresh contexts with the same model
-and effort. All three retained the completed ledger row and returned _approved with reservations_;
-no contradictory result was observed. This isolates the approval decision after exact-head positive
-evidence and a controlled negative witness were supplied; it does not replace the original GitHub
-forge run.
+## Current scope and remaining gaps
 
-Nothing has yet validated: the marker's idempotent update, the duplicate-verdict guard, or Bitbucket
-comment publication.
+These records predate the later measurement, composition and proof-integrity requirements; see the
+[revision boundary](execution-evidence.md#revision-boundary). They do not validate today's complete
+six-phase workflow, runtime skill selection, measurement emission, or an applicable proof audit.
 
-Keep this record free of anything belonging to the reviewed repositories — no PR numbers, commit
-SHAs, branch names, build counts or defect details. A skill file is committed and published; the
-work it was exercised on usually is not.
+The retained sources do not establish:
 
-## Declared gaps in these cases
+- Publication of a `pr-verdict` comment on Bitbucket. E5 establishes a repair comment only; other
+  historical publication traces mentioned in the issue remain unverified here.
+- Updating an existing verdict with the same marker, avoiding a duplicate on replay, or preserving
+  the old verdict when a new head receives a new comment. A search before a single post proves none
+  of these outcomes.
+- Successful GitHub native blocking review. E2 reports a refusal; E4 is a general comment.
+- An unconditional _approved_ decision supported by a complete behavior ledger, or a native forge
+  approval. E3 reports the reservations decision only.
+- Independent recovery of the E1–E3 execution outputs, including the claimed moved-head detection
+  and the E3 per-run ledger rows.
 
-`gh pr review --request-changes` — GitHub's native blocking state — is exercised by neither case,
-since the blocking case is assigned to Bitbucket. The third run attempted it and GitHub refused,
-the account being the PR's author; that measures the refusal, not the success path. Run case A a
-second time on GitHub, on a PR the account did not write, or the enforcement path stays unverified.
-
-Flat _approved_ has never been produced. The revised Case B evidence package exercises _approved with
-reservations_, but no recorded run yet proves that a clean review with complete ledger rows ends in
-an unconditional approval.
-
-Do not let the runs that went green imply either gap is covered: that is the same substitution of a
-green for a guarantee that phase 4 exists to prevent.
+These are limits of the retained evidence, not claims that the paths have never run. One successful
+comment or a reported 3/3 result is not a reliability guarantee. Keep any future evidence minimal
+and anonymized; do not retain private identities, repository coordinates, ticket IDs or full logs.

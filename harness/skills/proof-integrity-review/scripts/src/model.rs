@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-pub const VERSION: u32 = 4;
-pub const PREDICATE: &str = "https://proof-integrity.local/receipt/v4";
+pub const VERSION: u32 = 5;
+pub const PREDICATE: &str = "https://proof-integrity.local/receipt/v5";
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -60,6 +60,7 @@ pub struct Receipt {
     pub auditor: Auditor,
     pub claims: Vec<Claim>,
     pub witnesses: Vec<Witness>,
+    pub limitations: Vec<String>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -68,22 +69,48 @@ pub struct Auditor {
     pub session_id: String,
     pub fresh_session: Affirmed,
     pub forked: Denied,
-    pub persistent_memory: Denied,
+    pub persistent_memory: Capability,
     pub author_independent: Affirmed,
+    pub independent_first_pass: Affirmed,
     pub sandbox_mode: String,
-    pub write_tools_enabled: Denied,
+    pub write_tools_enabled: Capability,
+    pub isolation: Option<Isolation>,
+}
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum Capability {
+    Known(bool),
+    Unknown,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Isolation {
+    pub requirement: String,
+    pub enforced: Capability,
+    pub evidence: String,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Claim {
     pub id: String,
     pub impact: String,
+    pub kind: String,
+    pub rationale: String,
     #[serde(rename = "claim")]
     pub statement: String,
     pub source: String,
     pub enforcement: String,
     pub oracle: String,
     pub paths: Vec<String>,
+    pub positive_evidence: Observation,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Observation {
+    pub origin: String,
+    pub artifact: String,
+    pub input_basis: String,
+    pub environment: String,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -115,6 +142,7 @@ pub struct Target {
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Evidence {
+    pub provenance: Observation,
     pub command: String,
     pub expected_failure: String,
     pub red_exit_code: i32,
