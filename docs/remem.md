@@ -46,9 +46,11 @@ utilisé aussi pour les opérations mémoire provenant de Claude.
 
 ## Portée et exploitation
 
-La clé `project` est le chemin réel du `git-common-dir` : checkout et worktrees
-convergent, deux clones restent distincts. Hors Git, le chemin physique du projet
-sert de clé. Les agents fournissent cette clé à chaque appel MCP ; ce n'est pas une
+La clé `project` est le chemin réel de la racine de l'arbre de travail, celle que
+dérivent les hooks de capture : un worktree forme donc son propre espace de noms,
+et deux clones restent distincts. Ce qui doit survivre à un worktree est réécrit
+sous la clé du checkout principal ; `reroute` ne déplace pas la portée de recherche.
+Hors Git, le chemin physique du projet sert de clé. Les agents fournissent cette clé à chaque appel MCP ; ce n'est pas une
 restriction d'accès imposée par le serveur. Ils conservent la branche et la source
 des faits et vérifient les affirmations importantes avant de les appliquer.
 
@@ -56,9 +58,12 @@ Le LaunchAgent `dev.remem.worker` exécute `remem worker --once` toutes les cinq
 minutes. Le code de la release prévoit quatre éléments par passage, une limite
 de 180 s vérifiée entre éléments, 90 s par appel LLM et 420 s par job. Ces limites
 ont été lues dans le code, sans essai de saturation, timeout ou quota épuisé ;
-aucune borne absolue de 180 s par processus n'est revendiquée. Le worker draine aussi
-les transcripts Claude et Codex de lui-même, sans hook : une passe observée le
-2026-09-22 a ingéré 21 634 messages depuis 947 fichiers. Cette archive brute sert
+aucune borne absolue de 180 s par processus n'est revendiquée. Le worker ne draine pas
+les transcripts de lui-même : le LaunchAgent n'exécute que `remem worker --once`. Les
+21 634 messages ingérés depuis 947 fichiers le 2026-09-22 viennent d'un appel manuel
+à `remem ingest-sessions`. Depuis l'installation des hooks, le drain incrémental est
+assuré par `summarize` sur `Stop` et `PreCompact`, qui archive le transcript de la
+session courante sous la clé de son cwd. Cette archive brute sert
 `search_raw` et `list_raw_sessions`, jamais la promotion : `captured_events` n'est
 écrit que par les entrypoints de hook `observe`, `session-init` et `summarize`, et
 les candidats produits restent soumis à `remem review`. Les erreurs des files et les
@@ -87,7 +92,7 @@ le modèle, la base, les files et le dernier code de sortie du LaunchAgent.
 Depuis le projet à consulter :
 
 ```sh
-remem_project="$(realpath "$(git rev-parse --path-format=absolute --git-common-dir)")"
+remem_project="$(realpath "$(git rev-parse --show-toplevel)")"
 remem search "décision recherchée" --project "$remem_project" --json
 remem export --markdown --project "$remem_project" --output /tmp/remem-export
 ```

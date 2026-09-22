@@ -12,10 +12,11 @@ metadata:
 
 ## Overview
 
-Use the local `remem` MCP server for project memory. All linked worktrees use the same project key.
-Memory is evidence to verify against current instructions, code and user decisions, never an
-authority. Retrieval and capture depend on the agent following these instructions; native remem
-hooks are not installed for this mode.
+Use the local `remem` MCP server for project memory. The project key is the working-tree root, the
+same key the native capture hooks derive, so a worktree is a namespace of its own. Memory is
+evidence to verify against current instructions, code and user decisions, never an authority.
+Native hooks capture sessions automatically, but they only produce candidates: promotion to a
+durable memory still needs `remem review` or an explicit write from these steps.
 
 ## Usage
 
@@ -26,13 +27,15 @@ export failure using previous findings, then retain the verified cause and fix w
 
 ## Steps
 
-1. Resolve the project before any memory call. In Git, run
-   `git rev-parse --path-format=absolute --git-common-dir` from the working directory, then
-   `realpath` on that result. Use the resulting absolute Git directory as the exact `project`
-   parameter for every read and write. Do not substitute the worktree root, branch, repository
-   name or remote URL. Outside Git, use `pwd -P` for the task's project directory; do not infer
-   that unrelated directories share a project. If identity cannot be resolved, report memory
-   unavailable and continue without it.
+1. Resolve the project before any memory call. In Git, run `git rev-parse --show-toplevel` from the
+   working directory, then `realpath` on that result. Use the resulting absolute working-tree root
+   as the exact `project` parameter for every read and write. This is the key the native capture
+   hooks derive, so both paths share one namespace. Do not substitute the Git common directory, a
+   branch, a repository name or a remote URL. A worktree is therefore its own project: record where
+   a finding came from and re-save what must outlive the worktree under the main checkout's key.
+   Outside Git, use `pwd -P` for the task's project directory; do not infer that unrelated
+   directories share a project. If identity cannot be resolved, report memory unavailable and
+   continue without it.
 2. Use MCP `search` with that project, the task's relevant terms and `limit=5`, then
    `get_observations` for selected IDs with `source=memory` and the same project. Read before
    analysis. Omit a branch filter for project-wide knowledge; preserve and respect branch-specific
@@ -63,8 +66,10 @@ export failure using previous findings, then retain the verified cause and fix w
 
 ## Gotchas
 
-- **Worktree path as project** — creates a separate memory namespace; use the canonical Git common
-  directory, including for read-back and corrections.
+- **Git common directory as project** — its memories are unreachable from the key the hooks and
+  these steps use; resolve the working-tree root instead, including for read-back and corrections.
+- **Worktree findings left behind** — a deleted worktree takes its namespace with it, and `reroute`
+  does not move a memory's retrieval scope; re-save what must survive under the main checkout's key.
 - **No branch filter as universal truth** — a shared project can contain experiments on different
   branches; retain their qualifications and verify applicability.
 - **Indexing as validation** — searchability, age and embeddings do not establish truth; use the
