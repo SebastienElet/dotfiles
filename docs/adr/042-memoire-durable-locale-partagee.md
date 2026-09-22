@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-21
+- **Révision** : 2026-09-22
 
 ## Contexte
 
@@ -17,6 +17,15 @@ permet de choisir explicitement une identité commune. Ce chemin remplace le
 retrieval synchrone de `agent-memory` pour Codex et Claude ; ses garanties
 d'exécution à chaque prompt et de revalidation des sources ne sont pas conservées.
 
+Le 2026-09-22, le mode guidé par les instructions seules n'avait produit aucune
+promotion : `captured_events` restait à zéro alors que le worker avait ingéré
+21 634 messages de transcripts. La table `captured_events` n'est écrite que par
+les entrypoints de hook `observe`, `session-init` et `summarize` ; `ingest-sessions`
+n'alimente que `raw_messages`, qui sert `search_raw`. L'utilisateur décide donc
+d'installer les hooks de capture, en connaissance de leurs deux limites vérifiées :
+la clé `project` des hooks est le chemin physique du cwd, et la promotion des
+candidats reste soumise à `remem review`.
+
 ## Décision
 
 - Remem intact possède la base SQLCipher locale sous `~/.remem/`, les index,
@@ -30,9 +39,21 @@ d'exécution à chaque prompt et de revalidation des sources ne sont pas conserv
   du projet. Deux clones restent distincts. La portée repose sur l'agent ; le
   aucune garantie d'isolation d'accès entre projets n'est revendiquée ici.
 - Une instruction globale minimale demande le rappel avant analyse et la
-  conservation des connaissances utiles avant livraison. Aucun hook de capture
-  remem n'est installé. Arnes retire ses hooks mémoire Codex/Claude et les tâches
-  de setup désactivent leurs mémoires natives.
+  conservation des connaissances utiles avant livraison. Arnes retire ses hooks
+  mémoire Codex/Claude et les tâches de setup désactivent leurs mémoires natives.
+- Les hooks de capture natifs sont installés par `harness:remem-hooks`, qui appelle
+  `remem install --hooks-only` pour les deux hôtes : six entrées Claude, trois
+  entrées Codex, dont la capture reste `drain-only`. La tâche restaure ensuite
+  `home/.remem/config.toml`, que `remem install` réécrit à travers le lien déployé
+  en y ajoutant un profil `api.anthropic.com` contraire à la contrainte d'absence
+  d'API payante. Arnes préserve ces entrées : ses suppressions ne visent que ses
+  propres commandes.
+- Deux espaces de noms coexistent volontairement. Les hooks écrivent sous le chemin
+  physique du cwd, donc un worktree reste distinct de son checkout ; le skill
+  `remem-memory` continue d'écrire et de lire sous le `git-common-dir` réel. Aucune
+  rapatriation après coup n'est possible : `reroute --target-project` ne change ni
+  `memories.project` ni la portée de recherche. La convergence n'existe en amont que
+  par les alias de projet, dont le binaire publié n'expose aucune commande.
 - Le LaunchAgent exécute le worker natif `--once` toutes les cinq minutes.
   Cette intégration ne redéfinit pas ses budgets, baux ou tentatives. Les agents
   doivent signaler un échec direct de `save_memory` sans prétendre une mise en file.
@@ -52,6 +73,20 @@ CLI/Desktop, une correction et la suppression d'un worktree. Ils ne prouvent ni
 fiabilité universelle du suivi des instructions, ni vérité des faits, ni
 comportement Claude réel, ni résistance aux corrections concurrentes.
 La classification `legacy_unverified` reste une limite du chemin MCP testé.
+
+Les hooks installés le 2026-09-22 ont été vérifiés par lecture des destinations et
+par exécution de `arnes setup hooks` sur les deux hôtes, qui a conservé les six et
+trois entrées. La chaîne de capture est active dans l'heure qui a suivi :
+`captured_events=64 -> observations=25 -> candidates=20 -> promoted=0`, avec
+`pending_review=20`, et le hook `session-init` injecte un index de candidats au
+prompt. La promotion reste donc à démontrer : elle attend `remem review`, comme
+l'annonçait l'issue amont #475. Les candidats observés portent une clé de worktree,
+ce qui confirme le cloisonnement décrit plus haut.
+
+`remem doctor` rapporte par ailleurs `0/6 registered` là où `remem install --repair`
+rapporte `6/6` sur le même fichier. Cette divergence, non résolue, coexiste avec une
+dérive de binaire signalée par remem, le MCP étant déclaré via `/bin/sh` par
+`home/.arnes.yaml`.
 
 La [procédure d'exploitation](../remem.md) décrit sources, diagnostics, sauvegardes
 et retour arrière. Le retrait des souvenirs d'origine est subordonné à leur

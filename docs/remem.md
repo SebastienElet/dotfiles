@@ -4,7 +4,7 @@ Codex CLI et Desktop utilisent le même serveur MCP local remem `0.6.93`. Claude
 dispose d'une cible de configuration, sans validation LLM sur ce poste faute
 d'abonnement. Le skill `remem-memory` demande aux agents de rechercher avant
 l'analyse et de conserver les décisions, corrections, causes et procédures utiles.
-Ce mode dépend du suivi des instructions ; les hooks de capture remem sont désactivés.
+Depuis le 2026-09-22, les hooks de capture natifs complètent ce suivi d'instructions.
 
 ## Installation et sources
 
@@ -16,10 +16,15 @@ moon run harness:remem-claude
 moon run harness:claude-hooks
 ```
 
-La première cible installe Codex ; les deux suivantes configurent Claude sans
-exiger une connexion à son modèle. Fermer puis ouvrir une nouvelle tâche pour
-charger les nouvelles instructions et le MCP. Ne pas lancer `remem install`, qui
-ajouterait les hooks natifs séparant les worktrees.
+La première cible installe Codex et les hooks de capture des deux hôtes ; les deux
+suivantes configurent Claude sans exiger une connexion à son modèle. Fermer puis
+ouvrir une nouvelle tâche pour
+charger les nouvelles instructions et le MCP. Les hooks ne prennent effet qu'au
+prochain démarrage de chaque hôte.
+
+Ne pas lancer `remem install` à la main : `harness:remem-hooks` le fait avec
+`--hooks-only`, puis restaure `home/.remem/config.toml`, que cette commande
+réécrit à travers le lien déployé en y ajoutant un profil `api.anthropic.com`.
 
 - `.moon/tasks/harness-remem.yml` fixe le tag et l'installateur upstream par commit.
 - `home/.remem/config.toml` est lié à `~/.remem/config.toml`. Modifier cette source
@@ -51,10 +56,14 @@ Le LaunchAgent `dev.remem.worker` exécute `remem worker --once` toutes les cinq
 minutes. Le code de la release prévoit quatre éléments par passage, une limite
 de 180 s vérifiée entre éléments, 90 s par appel LLM et 420 s par job. Ces limites
 ont été lues dans le code, sans essai de saturation, timeout ou quota épuisé ;
-aucune borne absolue de 180 s par processus n'est revendiquée. Aucun transcript n'est
-collecté par des hooks ; le worker traite les travaux créés par les opérations MCP.
-Les erreurs des files et les logs natifs restent consultables ; un échec direct
-de `save_memory` n'est pas une preuve de mise en file.
+aucune borne absolue de 180 s par processus n'est revendiquée. Le worker draine aussi
+les transcripts Claude et Codex de lui-même, sans hook : une passe observée le
+2026-09-22 a ingéré 21 634 messages depuis 947 fichiers. Cette archive brute sert
+`search_raw` et `list_raw_sessions`, jamais la promotion : `captured_events` n'est
+écrit que par les entrypoints de hook `observe`, `session-init` et `summarize`, et
+les candidats produits restent soumis à `remem review`. Les erreurs des files et les
+logs natifs restent consultables ; un échec direct de `save_memory` n'est pas une
+preuve de mise en file.
 
 ```sh
 remem status --json
@@ -66,10 +75,14 @@ launchctl print "gui/$(id -u)/dev.remem.worker"
 tail -n 60 ~/.remem/remem.log
 ```
 
-`remem doctor` signale normalement les hooks natifs absents dans ce mode MCP :
-ne pas les réinstaller pour faire disparaître ce diagnostic. Vérifier séparément
-le serveur enregistré avec `codex mcp get remem`, le modèle, la base, les files
-et le dernier code de sortie du LaunchAgent.
+`remem doctor` rapporte `Hooks (claude): 0/6 registered` et `Hooks (codex): no remem
+hooks` alors que les entrées sont présentes et que `remem install --target claude
+--repair` répond `6/6 registered` sur le même fichier. Ce diagnostic n'est pas une
+preuve d'absence : compter les commandes déployées, comme le fait le contrôle de
+`harness:remem-hooks`. Remem signale par ailleurs une dérive de binaire, le MCP étant
+déclaré via `/bin/sh` par `home/.arnes.yaml` quand les hooks appellent le binaire
+directement. Vérifier séparément le serveur enregistré avec `codex mcp get remem`,
+le modèle, la base, les files et le dernier code de sortie du LaunchAgent.
 
 Depuis le projet à consulter :
 

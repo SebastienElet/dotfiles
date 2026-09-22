@@ -10,6 +10,7 @@ tasks:
     command: noop
     deps:
       - remem-codex
+      - remem-hooks
       - remem-skills
       - remem-worker
       - codex-instructions
@@ -84,6 +85,28 @@ tasks:
     checks:
       - check: condition
         script: '"$HOME/.local/bin/arnes" doctor mcp --agent claude --scope user --color never && test "$(plutil -extract autoMemoryEnabled raw "$HOME/.claude/settings.json")" = false'
+    toolchains: system
+    options:
+      os: macos
+      mutex: harness-mutation
+  remem-hooks:
+    script: |-
+      set -eu
+      # remem install rewrites runtime defaults through the deployed ~/.remem/config.toml
+      # symlink, adding an api.anthropic.com profile to the tracked source; restore it.
+      remem_config="$(mktemp)"
+      trap 'rm -f "$remem_config"' EXIT
+      cat "$HOME/.remem/config.toml" > "$remem_config"
+      "$HOME/.local/bin/remem" install --target claude --hooks-only > /dev/null
+      "$HOME/.local/bin/remem" install --target codex --hooks-only > /dev/null
+      cat "$remem_config" > "$HOME/.remem/config.toml"
+    deps:
+      - remem-config
+      - claude-hooks
+      - codex-hooks
+    checks:
+      - check: condition
+        script: 'test "$(grep -cF "$HOME/.local/bin/remem" "$HOME/.claude/settings.json")" -eq 6 && test "$(grep -cF "$HOME/.local/bin/remem" "$HOME/.codex/hooks.json")" -eq 3'
     toolchains: system
     options:
       os: macos
