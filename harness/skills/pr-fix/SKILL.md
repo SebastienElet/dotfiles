@@ -7,7 +7,7 @@ description: >
   review findings.
 compatibility: >
   Requires the `pr-verdict` skill, authenticated `gh` or `bkt`, write access to the PR source branch,
-  and the repository's validation toolchain.
+  reviewer permission to approve it, and the repository's validation toolchain.
 metadata:
   category: dev
 ---
@@ -17,17 +17,19 @@ metadata:
 ## Overview
 
 Turn a head-specific verdict into reviewed corrections on the contributor's branch. The explicit
-repair request authorizes edits, commits and a standard push to that branch; it does not authorize a
-force-push, issue creation or verdict publication. The repaired head earns its own verdict from a
+repair request authorizes edits, commits, a standard push to that branch and, once the repaired
+head is independently approved with green required CI, the native forge approval of that head. It
+does not authorize a force-push, issue creation, verdict publication, merge or merge queue entry. The repaired head earns its own verdict from a
 fresh context because the context that wrote a fix cannot independently validate it.
-Accumulate corrections in a local journal across passes and sessions. Publish one cumulative repair
-record only when the current head is independently approved and its required remote CI is green.
-This factual record engages no merge decision and needs no separate publication consent.
+Accumulate corrections in a local journal across passes and sessions. Approve natively, then
+publish one cumulative repair record, only when the current head is independently approved and its
+required remote CI is green. Neither engages a merge decision or needs separate consent; an explicit
+user prohibition of approval still wins.
 
 ## Usage
 
 `/pr-fix <pr-number|pr-url>` — review the current head, apply bounded corrections, push them to the
-PR source branch, then return a verdict on the pushed head.
+PR source branch, return a verdict on the pushed head, then approve it natively when it qualifies.
 
 Typical cases: "fix the blockers on PR 1042", "review this PR and correct the issues directly", or
 "we can push small review fixes to the contributor's branch". A request only to judge, approve or
@@ -122,20 +124,31 @@ invokes it.
    verdicts, including a rejection on the same SHA; policy correction never approves them retroactively.
    All delegated passes stop after phase 5 without publishing comments or opening tickets.
    Return only the final head's verdict as current. Verdict publication remains subject to separate
-   user authorization; repair authority alone publishes only the factual summary in step 8.
+   user authorization; repair authority alone adds only the native approval and the factual
+   summary in step 8.
 
-8. **Publish once approved.** Re-read the PR head and required remote checks. Publish only when
+8. **Approve, then publish.** Re-read the PR head and required remote checks. Continue only when
    the independent verdict is exactly `approved`, the required remote CI has succeeded on that
    same SHA, and no correction remains pending. `approved with reservations`, failed or pending CI,
    unavailable evidence, or a moved head keeps the journal pending with no intermediate comment.
    When no remote check is required, record that fact explicitly instead of claiming CI passed.
    A merged PR still requires evidence for the reviewed source head; merge alone is no substitute.
 
+   Read `references/native-approval.md` and apply its gate and procedure without asking again:
+   this invocation already authorized the approval. Record each approval state in the journal with
+   account, SHA and time. A confirmed or already present approval, a refusal, a user prohibition or
+   an own PR lets publication continue with that outcome stated; an uncertain or withdrawn approval
+   pauses it.
+   The approval never authorizes merging or adding the PR to a merge queue; each requires a
+   separate explicit request.
+
    Build `assets/repair-record.md` from all journal passes in the PR's language: one opening sentence
-   with the final SHA, one short bullet per corrected problem, then validation counts and limits.
+   with the final SHA, one short bullet per corrected problem, validation counts and limits, then
+   the independent verdict and the verified native approval state as separate lines.
    Consolidate repeated fixes by their final outcome and omit superseded attempts; retain their
    history and detailed mechanisms in the journal. Block publication if missing history prevents
-   an accurate cumulative summary. If nothing was corrected, no repair comment is needed.
+   an accurate cumulative summary. If nothing was corrected, no repair comment is needed; the
+   native approval still applies and its state is reported in step 9.
 
    Search all existing comments for the stable marker `<!-- pr-fix:<pr> -->`. Update the matching
    comment only when owned by the publishing account; otherwise keep publication pending and report
@@ -145,9 +158,11 @@ invokes it.
    returned comment ID, URL and published SHA in the journal. After a timeout or uncertain response,
    re-read remote comments before retrying; if lookup fails, keep publication pending.
 
-9. **Close or pause the repair.** Report the final SHA, verdict, journal path and either the summary
-   URL or the reason publication is pending. Keep the journal across sessions and after publication;
-   a later correction resumes it and updates the same comment only after renewed approval and CI.
+9. **Close or pause the repair.** Report the final SHA, verdict, native approval state, journal path
+   and either the summary URL or the reason publication is pending. On Bitbucket, report the PR state
+   beside the reviewer approval. Keep the journal across sessions and after publication; a later
+   correction resumes it, renews the native approval on the new head and updates the same comment
+   only after renewed independent approval and CI.
    Do not create a fix ticket for a defect corrected by this run. Remove the temporary worktree only
    after its commits are pushed and it is clean; retain the journal even when removing the worktree.
 
@@ -173,6 +188,12 @@ invokes it.
   journal and summarize the final behavior once per corrected problem in the public comment.
 - **The journal lives in a temporary worktree** — cleanup loses earlier passes. Use the stable
   PR path outside the checkout and reload it whenever another session resumes the repair.
+- **The repair record stands in for the approval** — the PR shows a published summary and an
+  `approved` review while the forge still lacks a reviewer approval, so merge checks and teammates
+  wait on an action nobody performed. Approve natively in step 8, verify it by reading approvals
+  back, and state its absence explicitly whenever it was refused or not performed.
+- **A Bitbucket approval read as a PR state** — the reviewer's `approved` participant flag is
+  confused with an approved or merged PR, whose `state` stays `OPEN`. Report both separately.
 - **A timeout is treated as a failed publication** — a blind retry duplicates an accepted comment.
   Look up the stable PR marker before retrying and preserve the journal when lookup is unavailable.
 - **A failed push worktree is discarded** — the only copy of useful commits becomes hard to recover.
@@ -190,6 +211,12 @@ invokes it.
 - Never force-push, overwrite a moved head or guess the PR source repository or ref.
 - Never publish a verdict, create an issue or open another PR from repair authority alone; the
   mandatory factual repair record is not a verdict and requires no confirmation.
+- Never approve natively before independent `approved`, successful required remote CI on the
+  freshly re-read head and no pending correction, against an explicit user prohibition, or on a PR
+  the authenticated account authored.
+- Never report a native approval that was not read back from the forge, and never replace a
+  refused or uncertain approval with a comment, task or reaction.
+- Never merge a PR or add it to a merge queue from repair authority or a native approval.
 - Never publish a repair summary before independent `approved` and successful required remote CI
   on the current head; pause with the journal intact when that condition is unmet.
 - Never create a new repair comment merely because the SHA changed; use the stable PR marker,
@@ -206,4 +233,6 @@ invokes it.
 ## References
 
 - [assets/repair-journal.md](assets/repair-journal.md) — local cumulative state, loaded in step 1.
+- [references/native-approval.md](references/native-approval.md) — approval gate, forge commands
+  and resume states, read in step 8.
 - [assets/repair-record.md](assets/repair-record.md) — concise public summary, filled in step 8.
