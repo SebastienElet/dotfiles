@@ -66,6 +66,7 @@ rustup
 référence
 scrapling
 sdef
+semctx
 startswith
 stylua
 subfolders
