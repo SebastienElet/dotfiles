@@ -57,7 +57,6 @@ tasks:
     deps:
       - repository:typescript-test
       - upgrade-test
-      - pr-feedback-skill-test
       - code-search-test
       - deployment-test
       - hunspell-test
@@ -218,16 +217,6 @@ tasks:
     inputs:
       - "@group(toolingSources)"
       - "@group(rootToolchain)"
-  pr-feedback-skill-test:
-    command: tooling/pr-feedback-skill-test
-    toolchains: system
-    options:
-      runFromWorkspaceRoot: true
-    inputs:
-      - moon.yml
-      - pr-feedback-skill-test
-      - /harness/skills/pr-feedback/SKILL.md
-      - /.github/workflows/test-deployment.yml
   smoke-minimal:
     command: bun tooling/smoke-minimal.ts
     deps:
