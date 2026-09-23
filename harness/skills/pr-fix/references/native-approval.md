@@ -58,10 +58,10 @@ pointing to the repair record; it is not a verdict. Bitbucket approval carries n
 7. An ambiguous result — timeout, network error, unparseable output — is resolved by reading
    approvals before any retry. Retry the approve call only when the read shows no approval. If the
    read itself fails, keep `Native approval: uncertain` and pause publication; never report it.
-8. If the head moved between the gate and the confirmation, the approval may attach to an
-   unreviewed head. On Bitbucket, withdraw it, verify `approved: false` and re-anchor; a failed
-   withdrawal or unreadable result is `uncertain` and is reported to the user as an approval that
-   may cover an unreviewed head. On GitHub, the review stays bound to its `commit_id`; report that
+8. If the head moved between the gate and the confirmation, the approval may attach to a
+   head no one reviewed. On Bitbucket, withdraw it, verify `approved: false` and re-anchor; a
+   failed withdrawal or unreadable result is `uncertain` and is reported to the user as an approval
+   that may cover a head no one reviewed. On GitHub, the review stays bound to its `commit_id`; report that
    it concerns the older SHA. Either way the moved head keeps the repair pending.
 
 ## Journal states
