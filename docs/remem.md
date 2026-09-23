@@ -1,8 +1,7 @@
 # Mémoire du harnais avec remem
 
-Codex CLI et Desktop utilisent le même serveur MCP local remem `0.6.93`. Claude
-dispose d'une cible de configuration, sans validation LLM sur ce poste faute
-d'abonnement. Le skill `remem-memory` demande aux agents de rechercher avant
+Codex CLI et Desktop et Claude Code utilisent le même serveur MCP local remem
+`0.6.93`. Le skill `remem-memory` demande aux agents de rechercher avant
 l'analyse et de conserver les décisions, corrections, causes et procédures utiles.
 Depuis le 2026-09-22, les hooks de capture natifs complètent ce suivi d'instructions.
 
@@ -21,6 +20,18 @@ suivantes configurent Claude sans exiger une connexion à son modèle. Fermer pu
 ouvrir une nouvelle tâche pour
 charger les nouvelles instructions et le MCP. Les hooks ne prennent effet qu'au
 prochain démarrage de chaque hôte.
+
+Codex n'exécute un hook non géré qu'après approbation de sa définition exacte :
+il enregistre un `trusted_hash` par emplacement `<événement>:<groupe>:<hook>` dans
+la table `[hooks.state]` de `~/.codex/config.toml` et ignore sans erreur les hooks
+nouveaux ou modifiés
+([documentation Codex](https://learn.chatgpt.com/docs/hooks)). Après chaque
+exécution qui réécrit `~/.codex/hooks.json`, dont `harness:remem-hooks` et
+`arnes setup hooks`, ouvrir `/hooks` dans la CLI Codex et approuver les entrées
+signalées. Un décalage d'index suffit à invalider l'approbation des hooks qui
+suivent. Le contrôle de la tâche Moon compte les commandes déployées, pas leur
+approbation. Pour vérifier la capture, compter les lignes `host=codex-cli` de
+`~/.remem/remem.log` après un prompt dans une vraie session Codex.
 
 Ne pas lancer `remem install` à la main : `harness:remem-hooks` le fait avec
 `--hooks-only`, puis restaure `home/.remem/config.toml`, que cette commande
@@ -82,12 +93,16 @@ tail -n 60 ~/.remem/remem.log
 
 `remem doctor` rapporte `Hooks (claude): 0/6 registered` et `Hooks (codex): no remem
 hooks` alors que les entrées sont présentes et que `remem install --target claude
---repair` répond `6/6 registered` sur le même fichier. Ce diagnostic n'est pas une
-preuve d'absence : compter les commandes déployées, comme le fait le contrôle de
-`harness:remem-hooks`. Remem signale par ailleurs une dérive de binaire, le MCP étant
-déclaré via `/bin/sh` par `home/.arnes.yaml` quand les hooks appellent le binaire
-directement. Vérifier séparément le serveur enregistré avec `codex mcp get remem`,
-le modèle, la base, les files et le dernier code de sortie du LaunchAgent.
+--repair` répond `6/6 registered` sur le même fichier. Le défaut est amont : en
+`0.6.93`, le doctor prend la commande MCP enregistrée comme binaire attendu des hooks
+(`expected_hook_executable`, `src/doctor/environment.rs`), soit `/bin/sh`, le wrapper
+que `home/.arnes.yaml` déclare pour fixer le `PATH`. Toute entrée qui appelle
+`~/.local/bin/remem` est donc jugée périmée. Le même calcul produit l'avertissement
+`Hook Integrity Warning` injecté au démarrage des sessions Claude, dont la commande
+`Repair` proposée ne corrige rien. Ce diagnostic n'est pas une preuve d'absence :
+compter les commandes déployées, comme le fait le contrôle de `harness:remem-hooks`.
+Vérifier séparément le serveur enregistré avec `codex mcp get remem`, le modèle, la
+base, les files et le dernier code de sortie du LaunchAgent.
 
 Depuis le projet à consulter :
 
@@ -96,6 +111,36 @@ remem_project="$(realpath "$(git rev-parse --show-toplevel)")"
 remem search "décision recherchée" --project "$remem_project" --json
 remem export --markdown --project "$remem_project" --output /tmp/remem-export
 ```
+
+## Injection et revue des candidats
+
+Le contexte injecté par `context` et `session-init` n'admet qu'une mémoire dont la
+provenance est prouvée : issue d'un candidat approuvé ou portant des événements de
+preuve (`src/truth/visibility.rs`). Une mémoire écrite par `save_memory` n'en porte
+aucun : elle reste `legacy_unverified`, trouvable par `search`, jamais injectée. Au
+démarrage, un agent ne retrouve donc ces faits que par la recherche que demande
+`remem-memory`. Seule l'approbation par `remem review` alimente l'injection, sous la
+clé du candidat : celle du worktree où la session a tourné. L'exposition CLI des
+alias d'identité, qui permettrait de converger, est demandée dans
+[majiayu000/remem#1086](https://github.com/majiayu000/remem/issues/1086).
+
+Aucun réglage de la `0.6.93` ne réduit les candidats issus des résumés : chaque
+résumé `Stop` ou `PreCompact` en produit sans condition, et
+`promotion.summary_gate_mode` ne décide que de leur promotion. Aucun candidat
+n'expire. La revue est le coût du mode automatique. La lancer avant de supprimer un
+worktree, dont l'espace de noms disparaît avec lui, et chaque semaine sinon :
+
+```sh
+remem review blocked
+remem review discard-batch -p "$remem_project" --contains "[Context:" --reason "summary recap"
+remem review list -p "$remem_project" -n 50
+```
+
+Le préfixe `[Context:` n'apparaît que dans des candidats issus de résumés, mais pas
+dans tous : ce filtre repose sur un format de texte, pas sur un contrat. Sans `--yes`,
+`discard-batch` affiche la sélection et demande confirmation. Les candidats restants,
+surtout ceux issus d'observations, sont approuvés ou rejetés un par un. Un fait utile
+capturé dans un worktree est réécrit sous la clé du checkout principal avant rejet.
 
 La classification `legacy_unverified` ne démontre ni vérité ni fausseté. Une
 correction remplace explicitement l'ancien énoncé ; une suppression de worktree

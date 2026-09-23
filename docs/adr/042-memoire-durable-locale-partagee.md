@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-22
+- **Révision** : 2026-09-23
 
 ## Contexte
 
@@ -89,9 +89,12 @@ ce qui confirme le cloisonnement décrit plus haut.
 
 `remem doctor` rapporte par ailleurs `Hooks (claude): 0/6 registered` là où
 `remem install --repair` rapporte `6/6` sur le même fichier, et `Hooks (codex): no
-remem hooks` alors que trois entrées sont déployées. Cette divergence, non résolue
-sur les deux hôtes, coexiste avec une dérive de binaire signalée par remem, le MCP
-étant déclaré via `/bin/sh` par `home/.arnes.yaml`.
+remem hooks` alors que trois entrées sont déployées. Le 2026-09-23, la cause est
+établie dans le code de la `0.6.93` : le doctor prend la commande MCP, le wrapper
+`/bin/sh` déclaré par `home/.arnes.yaml`, comme binaire attendu des hooks. Le défaut
+est amont et documenté dans la [procédure](../remem.md), sans contournement local.
+Les trois hooks Codex n'ont tiré dans aucune session réelle jusqu'au 2026-09-23 :
+Codex ignore les hooks dont la définition n'a pas été approuvée dans `/hooks`.
 
 La [procédure d'exploitation](../remem.md) décrit sources, diagnostics, sauvegardes
 et retour arrière. Le retrait des souvenirs d'origine est subordonné à leur
