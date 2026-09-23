@@ -98,4 +98,5 @@ Escalate only when the previous tier fails; never start above the first tier:
   — upstream defect, protocol quirk, deliberate deviation — and names that fact. Doc comments
   a project's tooling requires are out of scope.
 - List in the delivery note every comment you added, and the outside fact each one records.
-  An empty list is the expected outcome.
+  When no comments were added, omit only this inventory; retain the checks performed,
+  their execution environment and the supported targets not exercised.

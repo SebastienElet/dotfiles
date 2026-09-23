@@ -39,7 +39,8 @@ restée en place, qui redisait mot pour mot ce qui avait déjà été mesuré co
   — upstream defect, protocol quirk, deliberate deviation — and names that fact. Doc comments
   a project's tooling requires are out of scope.
 - List in the delivery note every comment you added, and the outside fact each one records.
-  An empty list is the expected outcome.
+  When no comments were added, omit only this inventory; retain the checks performed,
+  their execution environment and the supported targets not exercised.
 ```
 
 Le défaut est inversé : zéro commentaire, une exception nommée. La seconde puce est le seul acte
@@ -57,15 +58,16 @@ l'[ADR-035](035-agents-md-elague-par-mesure.md) arrête.
 
 ## Conséquences
 
-- **Non mesuré, contrairement à ce qu'exige l'ADR-036.** L'écart est assumé, non ignoré : le statut
-  de ces deux puces est « supposé portant », pas « constaté ». L'ablation reste à faire, et la
-  facette à isoler est la comptabilité dans le compte rendu : issue #78, qui porte le protocole,
-  les facettes et les quatre issues possibles.
+- **Admission initiale non mesurée, contrairement à ce qu'exige l'ADR-036.** L'écart d'origine
+  est assumé : à l'adoption, ces deux puces étaient « supposées portantes », pas « constatées ».
+  La comptabilité dans le compte rendu est une facette à isoler par ablation : issue #78,
+  qui porte le protocole, les facettes et les quatre issues possibles.
 - Le risque symétrique est la sur-correction : les 175 commentaires d'une ligne mesurés dans #59
   sont précisément ce que la clause d'exception doit préserver. Une mesure qui les verrait
   disparaître infirmerait la rédaction, pas seulement son intensité.
-- La seconde puce contraint le compte rendu, en tension avec le registre télégraphique de `8d175f2`.
-  Le garde-fou est sa dernière phrase : la liste vide est le cas attendu.
+- La seconde puce exige le compte rendu des commentaires effectivement ajoutés et de leur
+  justification. En l'absence de commentaire ajouté, cet inventaire est omis ; la règle
+  d'admissibilité et l'obligation de justifier chaque ajout restent inchangées.
 - La règle de langue applicable à ce dépôt n'est plus énoncée qu'à deux endroits : la contrainte du
   skill `dotfiles` pour l'anglais, `docs/AGENTS.md` pour l'exception française. Le skill a été
   corrigé en conséquence, sa formulation absolue contredisant l'exception.
