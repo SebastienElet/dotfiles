@@ -54,6 +54,20 @@ Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and
   `code-search` explicitly.
 - Keep the main thread for orchestration and decisions.
 
+## Semctx
+
+A repository whose Git root contains `.semctx/` is semctx-enabled. There, semctx carries the proof
+of a change; `code-search` still locates code, semctx never does.
+
+- **Load the tools first.** They are deferred MCP tools: discover them before concluding that
+  the server is unavailable, then pass the absolute Git root as `repositoryRoot` on every call.
+- **Before a non-trivial edit**, follow the `semctx-control` skill: open or reuse a change
+  contract and pull the semantic slice of its invariants.
+- **Before a commit or push**, run `semctx_verify_change` then `semctx_change_verify`, and run
+  the tests they recommend. Never conclude on a BLOCK.
+- **Read-only work** — audit, diagnosis, explanation — uses only read-only semctx surfaces and
+  writes no semantic file or handoff.
+
 ## Web Fetching
 
 Escalate only when the previous tier fails; never start above the first tier:

@@ -1,0 +1,11 @@
+#!/usr/bin/env bun
+
+import { runSemctxNudge } from "./semctx-nudge.ts";
+
+const result = runSemctxNudge(await Bun.stdin.text());
+if (result.stdout !== undefined) {
+  process.stdout.write(result.stdout);
+}
+if (result.stderr !== undefined) {
+  process.stderr.write(`${result.stderr}\n`);
+}
