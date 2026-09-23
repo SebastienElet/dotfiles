@@ -17,17 +17,17 @@ about. Look for it before falling back here.
 
 ## Command parity
 
-| Step                | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                  |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Metadata            | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                           |
-| Head SHA            | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash`, DC `.fromRef.latestCommit` — confirm the path against the actual payload |
-| Fetch the head      | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                              |
-| CI state            | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                |
-| Diff                | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                  |
-| Existing comments   | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                       |
-| Publish             | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                    |
-| Update              | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                            |
-| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                             |
+| Step                | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadata            | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                                                       |
+| Head SHA            | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash` (12-character abbreviation), DC `.fromRef.latestCommit` — confirm the path against the actual payload |
+| Fetch the head      | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                                                          |
+| CI state            | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                                            |
+| Diff                | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                                              |
+| Existing comments   | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                                                   |
+| Publish             | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                                                |
+| Update              | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                                                        |
+| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                                                         |
 
 `bkt` covers both Bitbucket Cloud and Data Center; the two differ on JSON shape and on some flags
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
@@ -65,6 +65,10 @@ test "$(git rev-parse HEAD)" = "$(git rev-parse a1b2c3d4e5f6)" || echo "head mov
 
 If the SHA is gone from the local objects, the head was force-pushed while you were reading it. Stop
 and re-anchor: everything measured so far belongs to a commit nobody will merge.
+
+Bitbucket Cloud returns only the first 12 characters of the head hash (`bkt` 0.32.1). Require the
+value to be non-empty and resolve it with `git rev-parse` as above. Comparing it to
+`git rev-parse HEAD` as a string rejects the right commit.
 
 ## Resolving the repair target
 
@@ -127,8 +131,14 @@ The marker is the lookup key. Search the comment bodies for `<!-- pr-verdict:` b
 gh pr view 1042 --json comments \
   --jq '.comments[] | select(.body | startswith("<!-- pr-verdict:")) | {id, body: .body[0:60]}'
 
-bkt pr comments 1042 --json --jq '.[] | select(.content.raw // .text | startswith("<!-- pr-verdict:"))'
+bkt pr comments 1042 --json |
+  jq '(.comments // [])[] | select(.content.raw // .text | startswith("<!-- pr-verdict:")) | {id}'
 ```
+
+On Bitbucket Cloud, `bkt pr comments --json` wraps the list in `{comments, repo, workspace}`, and
+`.comments` is `null` when the PR has no comment (`bkt` 0.32.1). The Data Center shape has not been
+checked. Pipe the output to `jq` instead of using `--jq`: the built-in evaluator prints `null` for an
+empty result, which looks like a match.
 
 Same `<pr>:<sha>` → update that comment. Different SHA → publish a new verdict and leave the old one
 in place; it is the record of what was judged on the superseded head.
