@@ -14,7 +14,7 @@
         "oxlint": "1.80.0",
         "oxlint-tsgolint": "7.0.2001",
         "prettier": "3.9.6",
-        "semctx": "0.3.0",
+        "semctx": "0.3.1",
         "typescript": "7.0.2",
       },
     },
@@ -364,7 +364,7 @@
 
     "resolve-from": ["resolve-from@5.0.0", "", {}, "sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw=="],
 
-    "semctx": ["semctx@0.3.0", "", { "bin": { "semctx": "dist/index.js" } }, "sha512-3lXWIITfkwIPwIhQEWT0QAD+L8lXIfLpfVUsICG8/9ub1DL5FIrOS9GHWOEI1gaAeoJ5L6o0Vkf2UJ0DBZvYeA=="],
+    "semctx": ["semctx@0.3.1", "", { "bin": { "semctx": "dist/index.js" } }, "sha512-8UXMV3dAkaHijbBfOdp1Z50Y8BVjrxGhK2WHJ1E424Yx7zrfOHGJBe3Tkw0XYr6Rz/nS1pRQhhnjZu4lOgpH5A=="],
 
     "semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
 
