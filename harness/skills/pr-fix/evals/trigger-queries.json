@@ -41,6 +41,11 @@
       "query": "Post the verdict you prepared on PR 1042",
       "should_activate": false,
       "reason": "Publishing a verdict does not authorize branch mutation"
+    },
+    {
+      "query": "Approve PR 1042 and add it to the merge queue",
+      "should_activate": false,
+      "reason": "A standalone approval or queue request authorizes no repair; pr-fix approves only a head its own repair qualified"
     }
   ]
 }

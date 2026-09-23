@@ -13,8 +13,11 @@ PR: <canonical URL>
 Source: <repository and ref>
 Initial head: <SHA>
 Current head: <SHA>
-Status: <in progress | pending validation | pending publication | published>
+Status: <in progress | pending validation | pending approval | pending publication | published>
 Pending: <remaining correction, check, decision or publication error; none when complete>
+Independent verdict: <result and reviewed SHA, or pending>
+Native approval: <state from references/native-approval.md, account, SHA and time>
+PR state: <forge state read with the approval, e.g. OPEN>
 Comment: <ID and URL, or not published>
 Published head: <SHA, or not published>
 
@@ -31,6 +34,7 @@ Published head: <SHA, or not published>
   Barrier: <tier, commands, counts, environment and evidence limits>.
   Independent verdict: <result and reviewed SHA, or pending>.
   Required remote CI: <result URL and SHA, pending, unavailable or none required>.
+  Native approval: <each state reached in this pass, with account, SHA and time, or not reached>.
 
 ## Deliberate omissions
 
@@ -46,3 +50,6 @@ Published head: <SHA, or not published>
 - After an uncertain publication, find the stable PR marker remotely before retrying; a missing
   local comment ID does not prove that the comment was never created.
 - If history is incomplete, record the gap and recover only verifiable facts before summarizing.
+- After `requested` or `uncertain`, read the forge's approvals before calling approve again; a
+  missing local confirmation does not prove that the approval was never recorded.
+- A new head invalidates `confirmed` for the record: renew verdict, CI and native approval on it.
