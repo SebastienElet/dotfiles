@@ -1,9 +1,9 @@
 {
   "CopilotChat.nvim": { "branch": "main", "commit": "004ced055d8db59561cfcddc5f141ccd8d5a033b" },
   "LazyVim": { "branch": "main", "commit": "999700997f72227187d49d8b92667183dc7fc809" },
-  "SchemaStore.nvim": { "branch": "main", "commit": "76faabd8d091e4316ec8e1e90aa9371210b574b3" },
+  "SchemaStore.nvim": { "branch": "main", "commit": "12dd0de1f15d598db2cc0d075f4f0d13a3290d4d" },
   "auto-dark-mode.nvim": { "branch": "main", "commit": "2b16a24c202892e61fca7df4d2d7c4c872a44165" },
-  "avante.nvim": { "branch": "main", "commit": "614f32358c30276f8dc41b0beb6a2989cc6009af" },
+  "avante.nvim": { "branch": "main", "commit": "aa05b85fb2d139307ad3f3801c3683cb1a1318f1" },
   "blink-copilot": { "branch": "main", "commit": "7ad8209b2f880a2840c94cdcd80ab4dc511d4f39" },
   "blink.cmp": { "branch": "main", "commit": "78336bc89ee5365633bcf754d93df01678b5c08f" },
   "bufferline.nvim": { "branch": "main", "commit": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3" },
