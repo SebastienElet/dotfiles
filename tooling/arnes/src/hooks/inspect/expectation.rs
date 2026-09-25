@@ -1,7 +1,8 @@
 use super::super::adapters::Policy;
 use super::super::{
-    HooksError, handoff_aliases, handoff_path, measurement_command, measurement_path,
-    memory_command, memory_path, output_discipline_command,
+    HooksError, MatchedHandler, OUTPUT_DISCIPLINE, format_edited_file_handler,
+    format_edited_file_path, handoff_aliases, handoff_path, measurement_command, measurement_path,
+    memory_command, memory_path, output_discipline_command, quoted_command,
 };
 use super::{drift, error};
 use crate::Roots;
@@ -19,6 +20,7 @@ pub struct Expectation {
     pub nested: bool,
     pub command: String,
     pub superseded: Vec<String>,
+    pub settings: Option<MatchedHandler>,
     path: PathBuf,
     label: &'static str,
 }
@@ -37,6 +39,7 @@ pub fn expectation(
                 nested: true,
                 command: output_discipline_command(&path)?,
                 superseded: Vec::new(),
+                settings: Some(OUTPUT_DISCIPLINE),
                 path,
                 label: "~/.local/bin/arnes",
             })
@@ -48,6 +51,7 @@ pub fn expectation(
                 nested: policy.nested,
                 command: measurement_command(&path, agent)?,
                 superseded: Vec::new(),
+                settings: None,
                 path,
                 label: "~/.local/bin/arnes",
             })
@@ -63,6 +67,7 @@ pub fn expectation(
                 nested: true,
                 command,
                 superseded: aliases.collect(),
+                settings: None,
                 path,
                 label: "~/.local/bin/agent-handoff",
             })
@@ -79,8 +84,21 @@ pub fn expectation(
                 nested: policy.nested,
                 command,
                 superseded: Vec::new(),
+                settings: None,
                 path,
                 label: "~/.local/bin/agent-memory",
+            })
+        }
+        HookKind::FormatEditedFile => {
+            let path = format_edited_file_path(roots.deployment_repository());
+            Ok(Expectation {
+                events: vec![super::super::FORMAT_EDITED_FILE_EVENT],
+                nested: policy.nested,
+                command: quoted_command(&path)?,
+                superseded: Vec::new(),
+                settings: Some(format_edited_file_handler(agent)?),
+                path,
+                label: "tooling/format-edited-file",
             })
         }
     }

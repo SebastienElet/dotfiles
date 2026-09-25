@@ -53,6 +53,7 @@ pub struct Policy {
     pub handoff_args: bool,
     pub handoff_execution_fields: &'static [&'static str],
     pub memory_event: Option<&'static str>,
+    pub format_edited_file_matcher: Option<&'static str>,
 }
 
 pub const fn policy(agent: Agent) -> Policy {
@@ -66,6 +67,7 @@ pub const fn policy(agent: Agent) -> Policy {
             handoff_args: false,
             handoff_execution_fields: &["async"],
             memory_event: Some("UserPromptSubmit"),
+            format_edited_file_matcher: Some("apply_patch"),
         },
         Agent::Claude => Policy {
             directory: ".claude",
@@ -76,6 +78,7 @@ pub const fn policy(agent: Agent) -> Policy {
             handoff_args: true,
             handoff_execution_fields: &["async", "asyncRewake", "once", "if"],
             memory_event: Some("UserPromptSubmit"),
+            format_edited_file_matcher: Some("Edit|Write|MultiEdit"),
         },
         Agent::Cursor => Policy {
             directory: ".cursor",
@@ -86,6 +89,7 @@ pub const fn policy(agent: Agent) -> Policy {
             handoff_args: false,
             handoff_execution_fields: &[],
             memory_event: None,
+            format_edited_file_matcher: None,
         },
     }
 }

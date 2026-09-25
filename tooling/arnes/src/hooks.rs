@@ -15,9 +15,21 @@ mod ownership;
 mod reconcile;
 mod validate;
 
-const OUTPUT_DISCIPLINE_MATCHER: &str = "startup|resume|clear|compact";
+const OUTPUT_DISCIPLINE: MatchedHandler = MatchedHandler {
+    event: "SessionStart",
+    matcher: "startup|resume|clear|compact",
+    timeout_seconds: 30,
+};
+const FORMAT_EDITED_FILE_EVENT: &str = "PostToolUse";
+const FORMAT_EDITED_FILE_TIMEOUT_SECONDS: u64 = 30;
 const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
 pub use inspect::diagnose;
+
+pub struct MatchedHandler {
+    pub event: &'static str,
+    pub matcher: &'static str,
+    pub timeout_seconds: u64,
+}
 
 #[derive(Args, Clone, Copy)]
 pub struct SetupHooksArgs {
@@ -71,7 +83,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     ownership::remove_everywhere(&mut config, args.agent, &output_discipline)?;
     if desired.contains(&HookKind::OutputDiscipline) {
         validate_command(&measurement_path)?;
-        reconcile::output_discipline(&mut config, &output_discipline)?;
+        reconcile::matched_handler(&mut config, &OUTPUT_DISCIPLINE, &output_discipline)?;
     }
     if desired.contains(&HookKind::Measurement) {
         validate_command(&measurement_path)?;
@@ -98,6 +110,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
             MEMORY_HOOK_TIMEOUT_SECONDS,
         )?;
     }
+    reconcile_format_edited_file(&mut config, &roots, args.agent, &desired)?;
     if desired.contains(&HookKind::Handoff) {
         validate_command(&handoff_path)?;
         reconcile::handoff(
@@ -112,6 +125,43 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
         }
     }
     file.replace(&serde_json::to_vec_pretty(&config)?)
+}
+
+fn reconcile_format_edited_file(
+    config: &mut serde_json::Value,
+    roots: &Roots,
+    agent: Agent,
+    desired: &[HookKind],
+) -> Result<(), HooksError> {
+    let path = format_edited_file_path(roots.deployment_repository());
+    let command = quoted_command(&path)?;
+    ownership::remove_everywhere(config, agent, &command)?;
+    if !desired.contains(&HookKind::FormatEditedFile) {
+        return Ok(());
+    }
+    let settings = format_edited_file_handler(agent)?;
+    validate_command(&path)?;
+    reconcile::matched_handler(config, &settings, &command)
+}
+
+fn format_edited_file_path(repository: &Path) -> PathBuf {
+    repository.join("tooling/format-edited-file")
+}
+
+fn format_edited_file_handler(agent: Agent) -> Result<MatchedHandler, HooksError> {
+    let matcher = adapters::policy(agent)
+        .format_edited_file_matcher
+        .ok_or_else(|| HooksError::new("Cursor does not support the format-edited-file hook"))?;
+    Ok(MatchedHandler {
+        event: FORMAT_EDITED_FILE_EVENT,
+        matcher,
+        timeout_seconds: FORMAT_EDITED_FILE_TIMEOUT_SECONDS,
+    })
+}
+
+fn quoted_command(command: &Path) -> Result<String, HooksError> {
+    let command = path_string(command)?;
+    Ok(format!("'{}'", command.replace('\'', "'\\''")))
 }
 
 fn measurement_path(home: &Path) -> PathBuf {

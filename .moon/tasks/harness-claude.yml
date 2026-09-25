@@ -58,6 +58,7 @@ tasks:
   claude-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'
     deps:
+      - repository:dependencies
       - arnes:install
       - agent-handoff:install
     checks:

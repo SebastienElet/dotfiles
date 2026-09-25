@@ -11,11 +11,12 @@ mod comparison;
 mod expectation;
 mod presence;
 
-const KINDS: [HookKind; 4] = [
+const KINDS: [HookKind; 5] = [
     HookKind::Measurement,
     HookKind::Handoff,
     HookKind::Memory,
     HookKind::OutputDiscipline,
+    HookKind::FormatEditedFile,
 ];
 
 #[must_use]
@@ -74,9 +75,14 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
         KINDS
             .into_iter()
             .filter(|kind| {
-                *kind != HookKind::Memory
-                    || policy.memory_event.is_some()
-                    || declared.contains(kind)
+                declared.contains(kind)
+                    || match kind {
+                        HookKind::Memory => policy.memory_event.is_some(),
+                        HookKind::FormatEditedFile => policy.format_edited_file_matcher.is_some(),
+                        HookKind::Measurement | HookKind::Handoff | HookKind::OutputDiscipline => {
+                            true
+                        }
+                    }
             })
             .filter_map(|kind| {
                 diagnose_kind(
@@ -130,11 +136,13 @@ fn diagnose_kind(
     if let Some(diagnostic) = expectation.command_state(subject, kind) {
         return Some(diagnostic);
     }
-    if kind == HookKind::OutputDiscipline
-        && !presence::output_discipline_matches(config, &expectation.command)
+    if let Some(settings) = &expectation.settings
+        && !installed.is_empty()
+        && !presence::matched_handler(config, settings, &expectation.command)
     {
         return Some(drift(format!(
-            "{subject} {kind} hook has incorrect SessionStart matcher or execution settings"
+            "{subject} {kind} hook has incorrect {} matcher or execution settings",
+            settings.event
         )));
     }
     Some(comparison::compare(

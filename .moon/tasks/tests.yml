@@ -11,6 +11,7 @@ fileGroups:
     - tooling/scrapling-mcp
     - tooling/install-homebrew
     - tooling/git-main-branch
+    - tooling/format-edited-file
     - tooling/upgrade
     - tooling/agent-memory/Cargo.toml
     - tooling/agent-memory/Cargo.lock
@@ -42,6 +43,8 @@ tasks:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,code-search-*,colgrep-search*}.ts"
     deps:
       - agent-memory:build
+      - fish-setup
+      - rust
     inputs:
       - "@group(generalTypeScriptTests)"
       - "@group(typescriptToolchain)"

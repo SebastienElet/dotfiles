@@ -10,6 +10,8 @@ pub enum HookKind {
     Memory,
     #[serde(rename = "output-discipline")]
     OutputDiscipline,
+    #[serde(rename = "format-edited-file")]
+    FormatEditedFile,
 }
 
 impl Display for HookKind {
@@ -19,6 +21,7 @@ impl Display for HookKind {
             Self::Handoff => "handoff",
             Self::Memory => "memory",
             Self::OutputDiscipline => "output-discipline",
+            Self::FormatEditedFile => "format-edited-file",
         })
     }
 }

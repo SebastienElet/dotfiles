@@ -157,6 +157,10 @@ hooks:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
+  - id: format-edited-file
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
 external:
   roots:
     - agent: codex

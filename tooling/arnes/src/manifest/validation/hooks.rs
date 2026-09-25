@@ -36,8 +36,10 @@ pub(super) fn validate(
                     "hooks only support the user scope",
                 ));
             }
-            if matches!(hook.id, HookKind::Handoff | HookKind::OutputDiscipline)
-                && installation.agent == Agent::Cursor
+            if matches!(
+                hook.id,
+                HookKind::Handoff | HookKind::OutputDiscipline | HookKind::FormatEditedFile
+            ) && installation.agent == Agent::Cursor
             {
                 return Err(ManifestError::new(
                     installation_field("agent"),

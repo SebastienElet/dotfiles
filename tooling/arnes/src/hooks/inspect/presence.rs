@@ -1,4 +1,4 @@
-use super::super::ownership;
+use super::super::{MatchedHandler, ownership};
 use serde_json::Value;
 
 pub fn events(config: &Value, nested: bool, command: &str) -> Vec<String> {
@@ -28,10 +28,10 @@ fn contains(entries: &Value, nested: bool, command: &str) -> bool {
         .any(|handler| ownership::direct(handler, command))
 }
 
-pub fn output_discipline_matches(config: &Value, command: &str) -> bool {
+pub fn matched_handler(config: &Value, settings: &MatchedHandler, command: &str) -> bool {
     let Some(groups) = config
         .get("hooks")
-        .and_then(|hooks| hooks.get("SessionStart"))
+        .and_then(|hooks| hooks.get(settings.event))
         .and_then(Value::as_array)
     else {
         return false;
@@ -48,7 +48,7 @@ pub fn output_discipline_matches(config: &Value, command: &str) -> bool {
                 .map(move |handler| (group, handler))
         })
         .collect::<Vec<_>>();
-    matches!(installed.as_slice(), [(group, handler)] if group.get("matcher").and_then(Value::as_str) == Some(super::super::OUTPUT_DISCIPLINE_MATCHER)
-        && handler.get("timeout").and_then(Value::as_u64) == Some(30)
+    matches!(installed.as_slice(), [(group, handler)] if group.get("matcher").and_then(Value::as_str) == Some(settings.matcher)
+        && handler.get("timeout").and_then(Value::as_u64) == Some(settings.timeout_seconds)
         && ["async", "asyncRewake", "once", "if"].iter().all(|field| handler.get(*field).is_none()))
 }

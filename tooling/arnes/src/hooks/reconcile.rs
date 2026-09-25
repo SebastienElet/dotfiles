@@ -195,7 +195,11 @@ fn remove_excluded(
     Ok(())
 }
 
-pub(super) fn output_discipline(config: &mut Value, command: &str) -> Result<(), HooksError> {
+pub(super) fn matched_handler(
+    config: &mut Value,
+    settings: &super::MatchedHandler,
+    command: &str,
+) -> Result<(), HooksError> {
     let config = config
         .as_object_mut()
         .ok_or_else(|| HooksError::new("hook configuration must be an object"))?;
@@ -205,10 +209,10 @@ pub(super) fn output_discipline(config: &mut Value, command: &str) -> Result<(),
         .as_object_mut()
         .ok_or_else(|| HooksError::new("hooks must be an object"))?;
     let entries = hooks
-        .entry("SessionStart")
+        .entry(settings.event)
         .or_insert_with(|| json!([]))
         .as_array_mut()
-        .ok_or_else(|| HooksError::new("SessionStart must be an array"))?;
-    entries.push(json!({"matcher":super::OUTPUT_DISCIPLINE_MATCHER,"hooks":[{"type":"command","command":command,"timeout":30}]}));
+        .ok_or_else(|| HooksError::new(format!("{} must be an array", settings.event)))?;
+    entries.push(json!({"matcher":settings.matcher,"hooks":[{"type":"command","command":command,"timeout":settings.timeout_seconds}]}));
     Ok(())
 }

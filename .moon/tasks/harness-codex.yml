@@ -54,6 +54,7 @@ tasks:
   codex-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent codex'
     deps:
+      - repository:dependencies
       - arnes:install
       - agent-handoff:install
     checks:

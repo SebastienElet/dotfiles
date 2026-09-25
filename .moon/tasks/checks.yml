@@ -54,7 +54,7 @@ fileGroups:
     - .github/workflows/test-fish.yml
 tasks:
   prettier-check:
-    command: bun tooling/check-prettier.ts --check "**/*.{yml,yaml,md,json}" "!home/.config/nvim/lazy-lock.json" "!home/.config/nvim/lazyvim.json"
+    command: bun tooling/check-prettier.ts --check "**/*.{yml,yaml,md,json}"
     inputs:
       - "@group(prettierFiles)"
       - tooling/check-prettier.ts

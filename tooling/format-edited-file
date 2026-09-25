@@ -1,0 +1,45 @@
+#!/usr/bin/env bun
+
+import {
+  formatEditedFiles,
+  repositoryCommonDirectoryOf,
+  singleLine,
+} from "./format-edited-file.ts";
+import { editedPaths } from "./format-edited-file-input.ts";
+
+const formatterTimeoutMilliseconds = 10_000;
+
+async function reports(): Promise<readonly string[]> {
+  const edited = editedPaths(await Bun.stdin.text());
+  if (!edited.success) {
+    return [
+      `format-edited-file: unreadable hook input: ${singleLine(edited.reason)}.`,
+    ];
+  }
+  const repositoryCommonDirectory = await repositoryCommonDirectoryOf(
+    import.meta.dir,
+  );
+  if (repositoryCommonDirectory === undefined) {
+    return ["format-edited-file: the dotfiles checkout is not a Git repository."];
+  }
+  return formatEditedFiles(edited.paths, {
+    environment: process.env,
+    repositoryCommonDirectory,
+    timeoutMilliseconds: formatterTimeoutMilliseconds,
+  });
+}
+
+const lines = await reports().catch((error: unknown) => [
+  `format-edited-file: ${singleLine(error instanceof Error ? error.message : String(error))}.`,
+]);
+if (lines.length > 0) {
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        additionalContext: lines.join("\n"),
+        hookEventName: "PostToolUse",
+      },
+    }),
+  );
+}
+process.exit(0);
