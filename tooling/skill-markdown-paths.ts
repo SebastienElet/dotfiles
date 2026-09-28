@@ -3,6 +3,10 @@ import { existsSync } from "node:fs";
 import { z } from "zod";
 
 const pathsSchema = z.array(z.string().min(1).endsWith(".md")).min(1);
+const skillMarkdownPathspecs = [
+  "harness/skills/**/*.md",
+  ".agents/skills/**/*.md",
+] as const;
 
 function skillMarkdownPaths(): readonly string[] {
   const result = checkCommand([
@@ -10,8 +14,7 @@ function skillMarkdownPaths(): readonly string[] {
     "ls-files",
     "-z",
     "--",
-    "harness/skills/**/*.md",
-    ".agents/skills/**/*.md",
+    ...skillMarkdownPathspecs,
   ]);
   const output = new TextDecoder("utf-8", { fatal: true }).decode(
     result.stdout,
@@ -35,4 +38,4 @@ function requiredFiles(patterns: readonly string[]): readonly string[] {
   });
 }
 
-export { requiredFiles, skillMarkdownPaths };
+export { requiredFiles, skillMarkdownPaths, skillMarkdownPathspecs };

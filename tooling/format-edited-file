@@ -5,9 +5,11 @@ import {
   repositoryCommonDirectoryOf,
   singleLine,
 } from "./format-edited-file.ts";
+import { checkEditedFileSpelling } from "./check-edited-file-spelling.ts";
 import { editedPaths } from "./format-edited-file-input.ts";
 
 const formatterTimeoutMilliseconds = 10_000;
+const spellingCommandTimeoutMilliseconds = 5000;
 
 async function reports(): Promise<readonly string[]> {
   const edited = editedPaths(await Bun.stdin.text());
@@ -22,11 +24,17 @@ async function reports(): Promise<readonly string[]> {
   if (repositoryCommonDirectory === undefined) {
     return ["format-edited-file: the dotfiles checkout is not a Git repository."];
   }
-  return formatEditedFiles(edited.paths, {
+  const formatReports = await formatEditedFiles(edited.paths, {
     environment: process.env,
     repositoryCommonDirectory,
     timeoutMilliseconds: formatterTimeoutMilliseconds,
   });
+  const spellingReports = await checkEditedFileSpelling(edited.paths, {
+    environment: process.env,
+    repositoryCommonDirectory,
+    timeoutMilliseconds: spellingCommandTimeoutMilliseconds,
+  });
+  return [...formatReports, ...spellingReports];
 }
 
 const lines = await reports().catch((error: unknown) => [
