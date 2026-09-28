@@ -34,8 +34,8 @@ decides when the change lands.
 ## Steps
 
 1. **Read the authority.** Read the architecture decision section of the root `AGENTS.md`,
-   `docs/AGENTS.md`, and `docs/adr/README.md` completely: scope, language, reliability of
-   motivations and index. Where they disagree with this skill, follow them and report the drift.
+   `docs/AGENTS.md`, and `docs/adr/README.md` completely: scope, numbering, language, reliability
+   of motivations and index. Where they disagree with this skill, follow them and report the drift.
 2. **Gate the request.** An ADR records a structural decision still in force. Stop with a short
    explanation, writing nothing, when:
    - the change is routine in the sense of the root `AGENTS.md`, whose examples are a tool target,
@@ -60,10 +60,9 @@ decides when the change lands.
    amended is unclear from the request, ask.
 
 4. **Assign the number and filename.**
-   - A successor on the same subject as a replaced ADR reuses its number. Precedents: ADR-037,
-     whose commit `6f768c1` states the rule, and ADR-039.
-   - Any other decision takes the highest number ever used plus one. Retired numbers without a
-     successor stay unused, such as 020, 030 and 032. Compute it from history and the working tree:
+   - Apply the numbering section of `docs/adr/README.md`. Retired numbers are absent from the
+     directory listing, so compute the highest number ever assigned from history and the working
+     tree:
 
      ```bash
      (git log --format= --name-only HEAD main -- docs/adr/; ls docs/adr/*.md) |
@@ -113,7 +112,7 @@ decides when the change lands.
 
 - **Filling a gap in the numbering** — the listing shows 020, 030 and 032 free, but they belong to
   retired decisions on other subjects; reusing one merges two subjects under one number in Git
-  history. Take the highest number ever used plus one, except for a same-subject successor.
+  history. Apply the numbering section of `docs/adr/README.md` to the number computed in step 4.
 - **Keeping a replaced ADR with a superseded status** — the index records only decisions in force
   and every ADR carries the same status value, so a second value would be a new convention. Remove
   the replaced file and record its decision among the successor's rejected alternatives.
