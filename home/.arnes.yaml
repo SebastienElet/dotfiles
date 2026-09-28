@@ -14,8 +14,8 @@ agents:
   - id: codex
     scopes: [user, project]
     user_config:
-      model: gpt-5.6-sol
-      effort: medium
+      model: gpt-6-astra
+      effort: high
       context_window: 512000
 skills:
   - slug: output-discipline
@@ -198,6 +198,17 @@ external:
         plugin: sites@openai-bundled,
         slug: sites-hosting,
       }
+    - agent: claude
+      scope: user
+      origin: managed
+      slug: synced
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: semctx@semctx-stable,
+        slug: index-control-plane,
+      }
     - {
         agent: claude,
         scope: user,
@@ -225,6 +236,13 @@ external:
         origin: plugin,
         plugin: superpowers@claude-plugins-official,
         slug: brainstorming,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: superpowers@claude-plugins-official,
+        slug: diagnosing-superpowers,
       }
     - {
         agent: claude,
@@ -525,6 +543,7 @@ statuslines:
     scope: user
     items:
       - model-with-reasoning
+      - git-branch
       - current-dir
       - context-used
       - context-window-size
