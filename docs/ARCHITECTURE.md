@@ -60,9 +60,9 @@ Les [User Rules de Cursor](https://docs.cursor.com/context/rules) sont distribu�
 `~/.cursor/rules` depuis leurs sources canoniques dans `harness/rules/`.
 
 Les skills user vivent dans `harness/skills/` et sont déployées individuellement
-vers les répertoires utilisateur de Claude, Cursor et Codex. Pour Claude et Codex,
-le déploiement Moon sélectionne les installations user dans le manifeste Arnes existant ;
-Cursor reste dans le profil optionnel Make. Les skills propres
+vers les répertoires utilisateur de Claude, Cursor et Codex. Le déploiement Moon
+sélectionne les installations user dans le manifeste Arnes existant ; celui de Cursor,
+`harness:cursor`, reste hors du minimal et appartient au profil optionnel. Les skills propres
 au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et
 `.cursor/skills` restent leurs adaptateurs de découverte projet. Un slug ne doit
 pas exister dans les deux collections, car les agents peuvent alors exposer les

@@ -1,0 +1,42 @@
+inheritedBy:
+  tags:
+    - harness
+taskOptions:
+  cache: false
+  runInCI: false
+  runFromWorkspaceRoot: true
+tasks:
+  cursor:
+    description: Deploy the optional Cursor harness configuration
+    command: noop
+    deps:
+      - cursor-rules
+      - cursor-skills
+      - cursor-hooks
+    toolchains: system
+  cursor-rules:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/memory-governance-cursor.mdc" "$HOME/.cursor/rules/memory-governance-cursor.mdc"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+  cursor-skills:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" cursor
+    deps:
+      - repository:dependencies
+      - proof-integrity:build
+    toolchains: bun
+  cursor-hooks:
+    script: '"$HOME/.local/bin/arnes" setup hooks --agent cursor'
+    deps:
+      - arnes:install
+      - agent-memory:install
+    checks:
+      - check: condition
+        script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'
+    toolchains: system
+    options:
+      mutex: harness-mutation

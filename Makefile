@@ -67,54 +67,8 @@ postgresql: ~/.psqlrc
 	@${CREATE_SYMLINK}
 
 .PHONY: cursor
-cursor: ~/.cursor/rules/memory-governance-cursor.mdc ~/.cursor/skills/claude-developer ~/.cursor/skills/code-search ~/.cursor/skills/code-enforcement ~/.cursor/skills/harness-reflection ~/.cursor/skills/issue-creation ~/.cursor/skills/linear-issue-spec ~/.cursor/skills/linear-start ~/.cursor/skills/linear-sync ~/.cursor/skills/linear-workflow ~/.cursor/skills/memory-governance ~/.cursor/skills/obsidian-retrieval ~/.cursor/skills/pr-fix ~/.cursor/skills/pr-feedback ~/.cursor/skills/pr-verdict ~/.cursor/skills/requirements-clarification ~/.cursor/skills/skill-manager ~/.cursor/skills/workflow-automation cursor-hooks
-~/.cursor/skills:
-	mkdir -p $@
-~/.cursor/rules:
-	mkdir -p $@
-~/.cursor/rules/memory-governance-cursor.mdc: ${DOTFILES_PATH}/harness/rules/memory-governance-cursor.mdc FORCE | ~/.cursor/rules
-	@${CREATE_SYMLINK}
-~/.cursor/skills/claude-developer: ${DOTFILES_PATH}/harness/skills/claude-developer FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/code-search: ${DOTFILES_PATH}/harness/skills/code-search FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/code-enforcement: ${DOTFILES_PATH}/harness/skills/code-enforcement FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/issue-creation: ${DOTFILES_PATH}/harness/skills/issue-creation FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/harness-reflection: ${DOTFILES_PATH}/harness/skills/harness-reflection FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/linear-issue-spec: ${DOTFILES_PATH}/harness/skills/linear-issue-spec FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/linear-start: ${DOTFILES_PATH}/harness/skills/linear-start FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/linear-sync: ${DOTFILES_PATH}/harness/skills/linear-sync FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/linear-workflow: ${DOTFILES_PATH}/harness/skills/linear-workflow FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/memory-governance: ${DOTFILES_PATH}/harness/skills/memory-governance FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/obsidian-retrieval: ${DOTFILES_PATH}/harness/skills/obsidian-retrieval FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/pr-fix: ${DOTFILES_PATH}/harness/skills/pr-fix FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/pr-feedback: ${DOTFILES_PATH}/harness/skills/pr-feedback FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/pr-verdict: ${DOTFILES_PATH}/harness/skills/pr-verdict FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-cursor: ~/.cursor/skills/proof-integrity-review
-~/.cursor/skills/proof-integrity-review: ${DOTFILES_PATH}/harness/skills/proof-integrity-review FORCE | ~/.cursor/skills proof-integrity
-	@${CREATE_SYMLINK}
-~/.cursor/skills/requirements-clarification: ${DOTFILES_PATH}/harness/skills/requirements-clarification FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/skill-manager: ${DOTFILES_PATH}/harness/skills/skill-manager FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-~/.cursor/skills/workflow-automation: ${DOTFILES_PATH}/harness/skills/workflow-automation FORCE | ~/.cursor/skills
-	@${CREATE_SYMLINK}
-
-.PHONY: cursor-hooks
-cursor-hooks: arnes agent-memory
-	@"${LOCAL_BIN}/arnes" doctor hooks --agent cursor --color never >/dev/null 2>&1 || "${LOCAL_BIN}/arnes" setup hooks --agent cursor
+cursor:
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:cursor
 
 .PHONY: obsidian-retrieval-test
 obsidian-retrieval-test: ${BREW_BIN}/bun
@@ -224,10 +178,6 @@ agent-memory:
 .PHONY: agent-handoff
 agent-handoff:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) agent-handoff:install
-
-.PHONY: proof-integrity
-proof-integrity:
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) proof-integrity:build
 
 .PHONY: claude-code
 claude-code:
