@@ -17,6 +17,14 @@ Exception : un retrait dont la justification est mesurée et réutilisable fait
 l'objet d'une ADR propre, la décision en vigueur étant alors « ne pas
 utiliser » (ADR-033, ADR-034).
 
+## Numérotation
+
+Une nouvelle décision prend le plus grand numéro jamais attribué, plus un. Le
+numéro d'une décision retirée sans successeur n'est pas réattribué ; les trous
+de l'index (020, 030, 032) en proviennent. Une décision qui en remplace une
+autre sur le même sujet reprend son numéro, comme ADR-037 (commit `6f768c1`)
+et ADR-039.
+
 ## Langue
 
 Les ADR sont rédigées en français, par exception à la règle « documentation en
