@@ -22,6 +22,7 @@ node_modules/
 .claude/*
 !.claude/skills
 !.claude/settings.json
+!.claude/agents/
 .claude-flow/
 
 # Git worktrees
