@@ -15,6 +15,7 @@ import {
 } from "./deployment-moon-test-support.ts";
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
 afterEach(() => {
   cleanupDeploymentFixtures();
@@ -87,7 +88,7 @@ test("deploys the Cursor memory rule from its canonical source", () => {
     ".cursor/rules/memory-governance-cursor.mdc",
   );
 
-  expectSuccess(runMake(fixture, [destination], { repository: project }));
+  expectSuccess(runDeploymentMoon(fixture, ["harness:cursor-rules"]));
   expect(linkTarget(destination)).toBe(source);
 });
 

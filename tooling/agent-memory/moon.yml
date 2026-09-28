@@ -12,9 +12,13 @@ fileGroups:
     - /.prototools
     - /Makefile
     - /tooling/deployment-agent-memory.test.ts
+    - /tooling/deployment-moon-runner.ts
     - /tooling/deployment-moon-test-support.ts
     - /tooling/deployment-test-support.ts
+    - /tooling/deploy-link.ts
+    - /harness/moon.yml
     - /harness/rules/memory-governance-cursor.mdc
+    - /.moon/tasks/harness-cursor.yml
 tasks:
   install:
     description: Install the Agent Memory executable
