@@ -11,10 +11,11 @@ This directory is the canonical source for repository-scoped agent skills.
 
 ## Dev
 
-| Skill     | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| `neovim`  | Maintain this repository's Neovim and LazyVim configuration. |
-| `scripts` | Choose and maintain repository scripting boundaries.         |
+| Skill        | Description                                                                         |
+| ------------ | ----------------------------------------------------------------------------------- |
+| `adr-record` | Record one architecture decision as an ADR in docs/adr/ and keep its index current. |
+| `neovim`     | Maintain this repository's Neovim and LazyVim configuration.                        |
+| `scripts`    | Choose and maintain repository scripting boundaries.                                |
 
 ## Ops
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "ADR Record"
+  short_description: "Record an architecture decision in docs/adr"
+  default_prompt: "Use $adr-record to record this decision as an ADR and update the ADR index."
+
+policy:
+  allow_implicit_invocation: false
