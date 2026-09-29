@@ -44,19 +44,32 @@ L'activation des plugins de projet n'a aucun registre filesystem : le scope proj
 aucun plugin Codex.
 
 Doctor ne lance aucune commande Codex pour inventorier les plugins. Les commandes de résolution
-introduites par #166/#168 ont été retirées selon D1 de #111 : leurs effets externes ne pouvaient
-pas être déduits des snapshots. L'inventaire actif reste explicitement `unsupported`, même lorsque
-la configuration ne mentionne aucun plugin ; ce silence local ne prouve pas une installation vide.
+introduites par #166/#168 restent retirées : `codex plugin list` interroge aussi les marketplaces
+distantes, et les effets d'un processus enfant ne se déduisent pas des snapshots.
 
 Arnes lit les entrées de plugins dans `~/.codex/config.toml` et distingue `enabled=true`,
-`enabled=false` et l'absence du champ. Une entrée activée hors politique reste `drift` ; une entrée
-autorisée, désactivée ou d'exposition inconnue reste `unsupported` faute de topologie observable.
-Pour une entrée activée, `exposure=enabled` décrit le réglage, tandis que `activation=unknown`
-signale l'absence d'observation de disponibilité. Une configuration malformée reste une erreur.
+`enabled=false` et l'absence du champ. Selon la documentation Codex, chaque plugin est installé sous
+`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`, d'où Codex charge au moins la copie d'un
+plugin local ; `codex plugin remove` supprime ce cache. Pour chaque entrée `<plugin>@<marketplace>`,
+Doctor lit donc ce seul répertoire, ignore ses entrées cachées de staging et résout les liens
+symboliques, comme `latest`, qui restent dans ce répertoire :
 
-Installation active, version, artefact, chemin, topologie et skills d'un plugin Codex ne sont plus
-résolus. Aucun cache n'est inspecté pour choisir un artefact, même solitaire. Les racines déclarées
-de skills standalone/système et leurs réglages `[[skills.config]]` restent audités séparément.
+- un artefact unique est l'installation : son `.codex-plugin/plugin.json`, qui doit porter le nom
+  du plugin, fournit version et skills, soumis à la même politique que ceux d'un plugin Claude ;
+- aucun artefact donne `topology=missing` : `drift` avec `activation=unavailable` si l'entrée est
+  activée, `healthy` si elle est désactivée ;
+- plusieurs artefacts distincts laissent le plugin `unsupported` : l'artefact actif n'est pas
+  observable sans le résolveur Codex ;
+- un artefact qui sort de son répertoire ou pend, et un manifeste d'un autre nom sont des erreurs ;
+- un identifiant sans `@<marketplace>` ne désigne aucun répertoire et reste `unsupported`.
+
+Une entrée activée hors politique reste `drift` ; une exposition inconnue reste `unsupported`.
+`exposure=enabled` décrit le réglage et `activation=available-not-runtime-observed` rappelle
+qu'aucune session n'est observée. Une configuration malformée reste une erreur. Un plugin présent
+dans le cache sans entrée de configuration n'est pas audité, pas plus que les réglages de plugins
+fournis par le dépôt, une configuration gérée ou le système : ces limites sont documentées ici
+plutôt que signalées à chaque exécution. Les racines déclarées de skills standalone/système et leurs
+réglages `[[skills.config]]` restent audités séparément.
 
 Sources : [Build skills](https://learn.chatgpt.com/docs/build-skills),
 [Plugins](https://learn.chatgpt.com/docs/plugins),

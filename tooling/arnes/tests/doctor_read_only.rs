@@ -48,9 +48,6 @@ fn codex_inventory_never_executes_a_resolver_from_direct_or_aggregate_doctor()
                 );
                 assert!(output.stderr.is_empty());
                 assert_ne!(output.status.code(), Some(2));
-                let stdout = String::from_utf8(output.stdout)?;
-                assert!(stdout.contains("read-only"), "{stdout}");
-                assert!(stdout.to_lowercase().contains("unsupported"), "{stdout}");
             }
         }
     }

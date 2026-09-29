@@ -1,12 +1,11 @@
-use super::model::{Exposure, Plugin, Topology, plugin_diagnostics};
+use super::model::{Exposure, plugin_diagnostics};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, Manifest, Scope};
 use std::path::Path;
 
+mod cache;
 mod config;
-
-const INVENTORY_UNAVAILABLE: &str = "active plugin inventory is unavailable in read-only Doctor; the external Codex resolver is not executed";
 
 pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Diagnostic> {
     if scope == Scope::Project {
@@ -29,33 +28,16 @@ pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Di
     let plugins = config
         .plugins
         .into_iter()
-        .map(|(id, plugin)| configured_plugin(id, plugin.enabled))
+        .map(|(id, plugin)| cache::resolve(roots.home(), id, configured_exposure(plugin.enabled)))
         .collect();
-    let mut diagnostics = plugin_diagnostics(policy, Agent::Codex, scope, plugins);
-    diagnostics.push(Diagnostic::new(
-        "skills",
-        State::Unsupported,
-        format!(
-            "external codex user plugin resolution origin=plugin ownership=external exposure=unknown topology=unknown policy=unknown activation=unknown detail={INVENTORY_UNAVAILABLE}"
-        ),
-    ));
-    diagnostics
+    plugin_diagnostics(policy, Agent::Codex, scope, plugins)
 }
 
-fn configured_plugin(id: String, enabled: Option<bool>) -> Plugin {
-    Plugin {
-        id,
-        artifact: None,
-        version: None,
-        path: None,
-        exposure: match enabled {
-            Some(true) => Exposure::Enabled,
-            Some(false) => Exposure::Disabled,
-            None => Exposure::Unknown,
-        },
-        topology: Topology::Unknown,
-        detail: Some(INVENTORY_UNAVAILABLE.to_owned()),
-        skills: Vec::new(),
+const fn configured_exposure(enabled: Option<bool>) -> Exposure {
+    match enabled {
+        Some(true) => Exposure::Enabled,
+        Some(false) => Exposure::Disabled,
+        None => Exposure::Unknown,
     }
 }
 

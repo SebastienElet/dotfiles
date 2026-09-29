@@ -438,6 +438,13 @@ external:
         scope: user,
         origin: plugin,
         plugin: semctx-control@semctx-stable,
+        slug: index-control-plane,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
+        plugin: semctx-control@semctx-stable,
         slug: semctx-control,
       }
     - {

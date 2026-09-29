@@ -28,6 +28,7 @@ pub(super) enum Topology {
     Healthy,
     Broken,
     Unreadable,
+    Missing,
     Unknown,
 }
 
@@ -37,6 +38,7 @@ impl Display for Topology {
             Self::Healthy => "healthy",
             Self::Broken => "broken",
             Self::Unreadable => "unreadable",
+            Self::Missing => "missing",
             Self::Unknown => "unknown",
         })
     }
@@ -131,6 +133,7 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
 
 const fn plugin_activation(agent: Agent, plugin: &Plugin) -> &'static str {
     match (agent, plugin.topology, plugin.exposure) {
+        (_, Topology::Missing, Exposure::Enabled) => "unavailable",
         (Agent::Codex, Topology::Unknown, Exposure::Enabled | Exposure::Unknown) => "unknown",
         _ => activation(plugin.exposure),
     }
@@ -195,7 +198,7 @@ pub(super) fn external_skill_diagnostic(
 const fn state(topology: Topology, exposure: Exposure, allowed: bool) -> State {
     match (topology, exposure, allowed) {
         (Topology::Broken | Topology::Unreadable, _, _) => State::Error,
-        (_, Exposure::Enabled, false) => State::Drift,
+        (Topology::Missing, Exposure::Enabled, _) | (_, Exposure::Enabled, false) => State::Drift,
         (Topology::Unknown, _, _) | (_, Exposure::Unknown, _) => State::Unsupported,
         _ => State::Healthy,
     }

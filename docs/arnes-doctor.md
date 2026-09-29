@@ -24,11 +24,12 @@ hooks ni démarrer les serveurs MCP. Les snapshots des fixtures décrites plus b
 vérifient l'absence de modification de leur dépôt et de leur HOME.
 
 Doctor ne lance plus le résolveur externe Codex : `doctor skills` lit la
-configuration locale et signale l'inventaire actif des plugins comme `unsupported`.
-Un réglage `enabled=true` conserve son diagnostic de politique mais ne prouve
-ni disponibilité ni activation ; aucun artefact actif n'est déduit du cache.
-La [frontière externe](arnes-capacites-externes.md#frontières-de-lecture) précise
-la capacité d'observation ainsi réduite, conformément à la décision D1 de #111.
+configuration locale puis, pour chaque plugin qu'elle déclare, son seul répertoire
+dans le cache d'installation `~/.codex/plugins/cache`. Un artefact unique y est
+inspecté ; plusieurs artefacts distincts laissent le plugin `unsupported`. Un
+réglage `enabled=true` ne prouve pas l'activation en session. La
+[référence externe](arnes-capacites-externes.md#codex) détaille ces règles, qui
+révisent la décision D1 de #111 sans rétablir l'exécution de Codex.
 
 L'absence d'exécution du résolveur est exercée par un témoin placé hors des arbres
 snapshotés, sur Doctor direct et agrégé, dans les deux formats. La lecture seule
