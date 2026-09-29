@@ -4,7 +4,7 @@ mod refusals;
 mod support;
 use serde_json::{Value, json};
 use std::fs;
-use support::{Fixture, Result, cli, git, receipt, set};
+use support::{Fixture, Result, cli, digest, git, receipt, set};
 
 #[test]
 fn accepts_complete_bound_declarations() -> Result {
@@ -125,6 +125,62 @@ fn refuses_hidden_index_flags() -> Result {
             fixture.root().join("policy").to_str().ok_or("path")?,
         ])?;
         assert!(!output.status.success());
+    }
+    Ok(())
+}
+fn commit_file(fixture: &Fixture, path: &str) -> Result {
+    let file = fixture.root().join(path);
+    fs::create_dir_all(file.parent().ok_or("parent")?)?;
+    fs::write(file, "tracked")?;
+    git(fixture.root(), &["--literal-pathspecs", "add", "--", path])?;
+    git(fixture.root(), &["commit", "-m", "tracked path"])
+}
+#[test]
+fn binds_tracked_paths_with_a_colon_inside_a_component() -> Result {
+    for path in ["cli/payment-transfer:group:delete.ts", "ab:c", "dir/C:x"] {
+        let fixture = Fixture::new()?;
+        commit_file(&fixture, path)?;
+        let epoch = fixture.epoch()?;
+        let bound = json!({"digest": digest(b"tracked"), "kind": "file", "path": path});
+        for pointer in ["/subject/path_states", "/subject/input_states"] {
+            assert!(
+                epoch
+                    .pointer(pointer)
+                    .and_then(Value::as_array)
+                    .ok_or("states")?
+                    .contains(&bound),
+                "{pointer} does not bind {path} to its content"
+            );
+        }
+    }
+    Ok(())
+}
+#[test]
+fn refuses_tracked_paths_read_as_pathspec_magic_or_drive_prefix() -> Result {
+    for path in [":magic", ":(glob)x", ":/x", "c:x", "C:/x"] {
+        let fixture = Fixture::new()?;
+        commit_file(&fixture, path)?;
+        let output = cli(&[
+            "epoch",
+            "--repository",
+            fixture.root().to_str().ok_or("path")?,
+            "--base",
+            "base",
+            "--head",
+            "HEAD",
+            "--policy-root",
+            fixture.root().join("policy").to_str().ok_or("path")?,
+        ])?;
+        let diagnostic = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(!output.status.success(), "accepted path {path}");
+        assert!(
+            diagnostic.contains(&format!("{path:?}").replace('"', "\\\"")),
+            "diagnostic does not name {path}: {diagnostic}"
+        );
     }
     Ok(())
 }

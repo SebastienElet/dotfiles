@@ -17,12 +17,21 @@ pub fn relative(path: &str) -> Result<()> {
     if path.is_empty()
         || path.starts_with('/')
         || path.contains('\\')
-        || path.contains(':')
+        // Git reads a pathspec starting with ':' as magic, and `X:` is a Windows drive prefix.
+        || path.starts_with(':')
+        || has_drive_prefix(path)
         || path.split('/').any(|part| matches!(part, "" | "." | ".."))
     {
-        return Err("path must be canonical and relative".into());
+        return Err(format!("path must be canonical and relative: {path:?}").into());
     }
     Ok(())
+}
+fn has_drive_prefix(path: &str) -> bool {
+    let mut characters = path.chars();
+    matches!(
+        (characters.next(), characters.next()),
+        (Some(letter), Some(':')) if letter.is_ascii_alphabetic()
+    )
 }
 pub fn target_path(path: &str) -> Result<()> {
     relative(path)?;
