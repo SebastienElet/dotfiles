@@ -14,7 +14,7 @@ agents:
   - id: codex
     scopes: [user, project]
     user_config:
-      model: gpt-6-astra
+      model: gpt-5.6-sol
       effort: high
       context_window: 512000
 skills:
