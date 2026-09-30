@@ -146,3 +146,45 @@ fn reads_claude_project_disabled_state() -> Result<(), Box<dyn std::error::Error
     );
     Ok(())
 }
+
+#[test]
+fn environment_references_follow_each_agents_native_syntax_without_retaining_literals()
+-> Result<(), Box<dyn std::error::Error>> {
+    use crate::mcp::observed::EnvironmentValue;
+
+    let (_root, roots) = roots()?;
+    for (agent, path, reference, unsupported) in [
+        (
+            Agent::Cursor,
+            ".cursor/mcp.json",
+            "${env:TOKEN}",
+            "${TOKEN}",
+        ),
+        (Agent::Claude, ".claude.json", "${TOKEN}", "${env:TOKEN}"),
+    ] {
+        write(
+            &roots.home().join(path),
+            &format!(
+                r#"{{"mcpServers":{{"managed":{{"command":"mcp","env":{{"TOKEN":"{reference}","UNSUPPORTED":"{unsupported}","PRIVATE":"actual-secret","DEFAULT":"${{TOKEN:-actual-secret}}"}}}}}}}}"#
+            ),
+        )?;
+        let observed =
+            load(&roots, agent, Scope::User, &["managed"])?.ok_or("missing configuration")?;
+        let registration = observed
+            .registrations
+            .get("managed")
+            .ok_or("missing registration")?;
+        assert_eq!(
+            registration.environment.get("TOKEN"),
+            Some(&EnvironmentValue::Reference("TOKEN".to_owned()))
+        );
+        for name in ["UNSUPPORTED", "PRIVATE", "DEFAULT"] {
+            assert_eq!(
+                registration.environment.get(name),
+                Some(&EnvironmentValue::RedactedLiteral)
+            );
+        }
+        assert!(!format!("{observed:?}").contains("actual-secret"));
+    }
+    Ok(())
+}

@@ -7,7 +7,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-pub(super) fn diagnose(roots: &Roots, registration: McpRegistration<'_>) -> Option<Diagnostic> {
+pub fn diagnose(roots: &Roots, registration: McpRegistration<'_>) -> Option<Diagnostic> {
     let identity = format!(
         "{} {} {}",
         registration.agent, registration.scope, registration.name
@@ -75,7 +75,11 @@ fn escapes_scope(roots: &Roots, scope: Scope, command: &str, candidate: &Path) -
     canonical_within(candidate, root).is_none()
 }
 
-fn candidate(roots: &Roots, scope: Scope, command: &str) -> Result<Option<PathBuf>, &'static str> {
+pub fn candidate(
+    roots: &Roots,
+    scope: Scope,
+    command: &str,
+) -> Result<Option<PathBuf>, &'static str> {
     if command.contains(std::path::MAIN_SEPARATOR) {
         let path = PathBuf::from(command);
         let root = match scope {
@@ -94,7 +98,9 @@ fn candidate(roots: &Roots, scope: Scope, command: &str) -> Result<Option<PathBu
         let candidate = directory.join(command);
         match fs::metadata(&candidate) {
             Ok(metadata) if metadata.is_file() && metadata.permissions().mode() & 0o111 != 0 => {
-                return Ok(Some(candidate));
+                return std::path::absolute(candidate)
+                    .map(Some)
+                    .map_err(|_| "working directory could not be resolved");
             }
             Ok(metadata) if !metadata.is_file() => {
                 invalid.get_or_insert("command in PATH is not a file");

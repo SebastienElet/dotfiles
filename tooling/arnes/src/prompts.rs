@@ -4,7 +4,7 @@ use crate::manifest::{Agent, Manifest, Prompt, PromptProjection, PromptRepresent
 
 pub(crate) mod capability;
 mod projection;
-mod source;
+pub(crate) mod source;
 mod topology;
 mod variables;
 

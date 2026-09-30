@@ -7,6 +7,32 @@ use support::Fixture;
 
 type TestResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
+#[test]
+fn statusline_native_file_and_lock_are_reserved_before_any_write() -> TestResult {
+    for source in [".codex/config.toml", ".codex/.config.toml.lock"] {
+        let fixture = Fixture::new()?;
+        let prompt = format!(
+            "\nprompts:\n  - id: canonical\n    source: {{ root: repository, path: {source} }}\n    includes: []\n    variables: []\n    projections: []\n"
+        );
+        fixture.write_home(".arnes.yaml", &(manifest("project") + &prompt))?;
+        fixture.write_repository(
+            source,
+            if source == ".codex/config.toml" {
+                "model = 'source'\n"
+            } else {
+                "Canonical lock source\n"
+            },
+        )?;
+        let before = fixture.snapshot()?;
+        assert_eq!(
+            synchronize(&fixture, "codex", "project")?.status.code(),
+            Some(1)
+        );
+        assert_eq!(fixture.snapshot()?, before);
+    }
+    Ok(())
+}
+
 fn manifest(scope: &str) -> String {
     format!(
         "version: 1\nagents:\n  - id: codex\n    scopes: [user, project]\n  - id: claude\n    scopes: [user]\nstatuslines:\n  - {{ agent: codex, scope: {scope}, items: [model, current-dir] }}\nresources: []\n"

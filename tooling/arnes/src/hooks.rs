@@ -148,6 +148,19 @@ fn format_edited_file_path(repository: &Path) -> PathBuf {
     repository.join("tooling/format-edited-file")
 }
 
+pub(crate) fn source_paths(roots: &Roots, manifest: &manifest::Manifest) -> Vec<PathBuf> {
+    manifest
+        .combinations()
+        .flat_map(|(agent, scope)| manifest.hooks(agent, scope))
+        .map(|kind| match kind {
+            HookKind::Measurement | HookKind::OutputDiscipline => measurement_path(roots.home()),
+            HookKind::Memory => memory_path(roots.home()),
+            HookKind::Handoff => handoff_path(roots.home()),
+            HookKind::FormatEditedFile => format_edited_file_path(roots.deployment_repository()),
+        })
+        .collect()
+}
+
 fn format_edited_file_handler(agent: Agent) -> Result<MatchedHandler, HooksError> {
     let matcher = adapters::policy(agent)
         .format_edited_file_matcher

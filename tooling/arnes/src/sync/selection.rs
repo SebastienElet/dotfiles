@@ -23,6 +23,29 @@ pub(super) struct LinkIntent {
 }
 
 impl LinkIntent {
+    pub(super) fn regular_file(
+        roots: &Roots,
+        id: String,
+        root: PathBuf,
+        destination: PathBuf,
+        source: PathBuf,
+        source_root: PathBuf,
+        scope: Scope,
+    ) -> Result<Self, String> {
+        let intent = Self {
+            id,
+            root,
+            destination,
+            source,
+            source_root,
+            kind: SourceKind::Rule,
+        };
+        if scope == Scope::User {
+            validate_user_destination(roots, &intent)?;
+        }
+        Ok(intent)
+    }
+
     pub fn protected_source(&self) -> Result<PathBuf, String> {
         let protected = match self.kind {
             SourceKind::Rule | SourceKind::SkillRoot => self.source.as_path(),
@@ -233,11 +256,16 @@ pub(super) fn select(
                 }
             }
         }
-        SyncResource::Statusline => {
+        SyncResource::Config
+        | SyncResource::Instructions
+        | SyncResource::Prompts
+        | SyncResource::Commands
+        | SyncResource::Mcp
+        | SyncResource::Statusline => {
             return Err(SyncEntry::new(
                 "selection",
                 SyncState::Unsupported,
-                "statusline is not a link projection",
+                "resource is not a link projection",
             ));
         }
     }

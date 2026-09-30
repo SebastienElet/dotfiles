@@ -2,10 +2,7 @@ use super::observed::{EnvironmentValue, ObservedRegistration};
 use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::McpRegistration;
 
-pub(super) fn diagnose(
-    expected: McpRegistration<'_>,
-    observed: &ObservedRegistration,
-) -> Vec<Diagnostic> {
+pub fn diagnose(expected: McpRegistration<'_>, observed: &ObservedRegistration) -> Vec<Diagnostic> {
     let identity = format!("{} {} {}", expected.agent, expected.scope, expected.name);
     let mut diagnostics = Vec::new();
     if expected.command != observed.command {
