@@ -3,6 +3,44 @@ use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 
 #[test]
+fn refuses_publication_when_the_configuration_directory_moves_into_a_source()
+-> Result<(), Box<dyn std::error::Error>> {
+    let root = tempfile::tempdir()?;
+    let home = root.path().join("home");
+    let directory = home.join(".codex");
+    let moved = root.path().join("source");
+    fs::create_dir_all(&directory)?;
+    fs::write(directory.join("config.toml"), b"original")?;
+    let config = ConfigFile::open(&home, ".codex", "config.toml")?;
+    fs::rename(&directory, &moved)?;
+    fs::create_dir(&directory)?;
+    fs::write(directory.join("config.toml"), b"concurrent")?;
+    assert!(config.replace(b"replacement").is_err());
+    assert_eq!(fs::read(moved.join("config.toml"))?, b"original");
+    assert_eq!(fs::read(directory.join("config.toml"))?, b"concurrent");
+    Ok(())
+}
+
+#[test]
+fn refuses_publication_when_the_scope_root_is_relocated() -> Result<(), Box<dyn std::error::Error>>
+{
+    let root = tempfile::tempdir()?;
+    let home = root.path().join("home");
+    let directory = home.join(".codex");
+    let moved = root.path().join("source");
+    fs::create_dir_all(&directory)?;
+    fs::write(directory.join("config.toml"), b"original")?;
+    let config = ConfigFile::open(&home, ".codex", "config.toml")?;
+    fs::rename(&home, &moved)?;
+    fs::create_dir_all(&directory)?;
+    fs::write(directory.join("config.toml"), b"concurrent")?;
+    assert!(config.replace(b"replacement").is_err());
+    assert_eq!(fs::read(moved.join(".codex/config.toml"))?, b"original");
+    assert_eq!(fs::read(directory.join("config.toml"))?, b"concurrent");
+    Ok(())
+}
+
+#[test]
 fn refuses_an_in_place_mutation_after_validation_and_restores_the_newer_content()
 -> Result<(), Box<dyn std::error::Error>> {
     let root = tempfile::tempdir()?;

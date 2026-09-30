@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 mod adapters;
 mod inspect;
-mod io;
+pub(crate) mod io;
 mod json_value;
 mod ownership;
 mod reconcile;
