@@ -239,6 +239,23 @@ fn a_distinct_deployment_manifest_does_not_authorize_writing_current_repository_
 }
 
 #[test]
+fn a_conforming_statusline_with_an_unmanaged_nan_value_is_not_rewritten() -> TestResult {
+    let fixture = Fixture::new()?;
+    fixture.write_home(".arnes.yaml", &manifest("user"))?;
+    let original = "metric=nan\n[tui]\nstatus_line=[\"model\",\"current-dir\"]\n";
+    fixture.write_home(".codex/config.toml", original)?;
+    let path = fixture.home().join(".codex/config.toml");
+    let before = fs::metadata(&path)?;
+    let output = synchronize(&fixture, "codex", "user")?;
+    assert_eq!(output.status.code(), Some(0));
+    assert!(String::from_utf8(output.stdout)?.contains("current"));
+    assert_eq!(fs::read_to_string(&path)?, original);
+    assert_eq!(fs::metadata(&path)?.ino(), before.ino());
+    assert_eq!(fs::metadata(&path)?.modified()?, before.modified()?);
+    Ok(())
+}
+
+#[test]
 fn publication_failure_preserves_existing_configuration() -> TestResult {
     let fixture = Fixture::new()?;
     fixture.write_home(".arnes.yaml", &manifest("user"))?;

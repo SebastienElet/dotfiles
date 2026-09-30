@@ -17,19 +17,21 @@ pub(super) fn update_toml(
     else {
         return SyncEntry::new(id, SyncState::Refused, "configuration is malformed");
     };
-    let before = document.clone();
+    let Ok(before) = toml::to_string(&document) else {
+        return failed(id, "configuration could not be rendered");
+    };
     if let Err(message) = edit(&mut document) {
         return SyncEntry::new(id, SyncState::Refused, message);
     }
-    if before == document {
+    let Ok(rendered) = toml::to_string(&document) else {
+        return failed(id, "configuration could not be rendered");
+    };
+    if before == rendered {
         return match file.replace(&original) {
             Ok(()) => SyncEntry::new(id, SyncState::Current, "managed values are conforming"),
             Err(_) => failed(id, "configuration changed during synchronization"),
         };
     }
-    let Ok(rendered) = toml::to_string(&document) else {
-        return failed(id, "configuration could not be rendered");
-    };
     match file.replace(rendered.as_bytes()) {
         Ok(()) => SyncEntry::new(id, SyncState::Applied, "managed values synchronized"),
         Err(_) => failed(id, "configuration publication failed"),
