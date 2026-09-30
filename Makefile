@@ -7,7 +7,7 @@ SCRAPLING_IMAGE?=pyd4vinci/scrapling
 CLOAKBROWSER_IMAGE?=cloakhq/cloakbrowser:0.5.3
 DOCKER_UNAVAILABLE_POLICY?=require-docker
 DOTFILES_PATH:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-CREATE_SYMLINK=if [ -L "$@" ] && [ "$$(readlink "$@")" = "$<" ]; then exit 0; fi; if [ -e "$@" ] || [ -L "$@" ]; then echo "Error: $@ exists and is not the expected symbolic link" >&2; exit 1; fi; echo "ln -s $< $@"; ln -s "$<" "$@"
+DEPLOY_LINK=bun --config=/dev/null --no-env-file "${DOTFILES_PATH}/tooling/deploy-link.ts"
 SKIP_PAID_APPS?=0
 MOON_EXEC?=moon exec --quiet
 export HOMEBREW_NO_ASK:=1
@@ -64,7 +64,7 @@ docker:
 .PHONY: postgresql
 postgresql: ~/.psqlrc
 ~/.psqlrc: ${DOTFILES_PATH}/home/.psqlrc FORCE
-	@${CREATE_SYMLINK}
+	@${DEPLOY_LINK} "$<" "$@"
 
 .PHONY: cursor
 cursor:
@@ -85,10 +85,8 @@ verify-scrapling-docker:
 	@"${DOTFILES_PATH}/tooling/install-docker-artifact" verify scrapling "${DOCKER_UNAVAILABLE_POLICY}" "${SCRAPLING_IMAGE}"
 
 # MCP command for agents: starts the shared container on demand instead of one per session.
-${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/tooling/scrapling-mcp FORCE | ${LOCAL_BIN}
-	@${CREATE_SYMLINK}
-${LOCAL_BIN}:
-	mkdir -p $@
+${LOCAL_BIN}/scrapling_mcp: ${DOTFILES_PATH}/tooling/scrapling-mcp FORCE
+	@${DEPLOY_LINK} "$<" "$@"
 
 .PHONY: cloakbrowser
 cloakbrowser: docker
