@@ -77,7 +77,11 @@ octets UTF-8 invalides, normalisation des chemins et erreurs natives Git.
 déploiements Moon sélectionnés du profil minimal, sans leurs dépendances globales. Une preuve
 distincte couvre les liens Cursor, PostgreSQL et Scrapling du profil optionnel ; elle n’installe
 pas leurs applications ou conteneurs tiers. Les fichiers Fisher déjà présents dans les sources
-restent conservés après suppression du lien Fish.
+restent conservés après suppression du lien Fish. Le snapshot des artefacts exclut les caches
+runtime, dont `~/.bun/install/cache` ; les fichiers de ce cache sont comparés avant et après le
+nettoyage en octets exacts, avec une sentinelle étrangère. Les tests `deployment-agent-memory.test.ts`
+et `deployment-agent-handoff.test.ts` invoquent `make clean` dans un home temporaire : le lien vers
+le binaire attendu disparaît, les fichiers, répertoires et liens étrangers sont conservés.
 
 Ces observations portables ne remplacent pas la reconstruction complète du profil minimal sur
 un runner macOS dédié, les diagnostics Arnes des seules ressources qu’ils couvrent ou la preuve

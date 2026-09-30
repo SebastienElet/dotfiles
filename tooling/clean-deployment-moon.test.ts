@@ -35,23 +35,43 @@ function clean(home: string): ReturnType<typeof runDeploymentMoon> {
   return runDeploymentMoon({ home }, ["repository:clean"]);
 }
 
-function identities(
-  paths: readonly string[],
-): readonly Readonly<{ path: string; kind: string; content: string }>[] {
+function identities(paths: readonly string[]): readonly Readonly<{
+  path: string;
+  kind: string;
+  content: string | Buffer;
+}>[] {
   return paths.map((path) => ({
     path,
     kind: lstatSync(path).isSymbolicLink() ? "link" : "file",
     content: lstatSync(path).isSymbolicLink()
       ? readlinkSync(path)
-      : readFileSync(path, "utf8"),
+      : readFileSync(path),
   }));
 }
 
 function deployedArtifacts(home: string): readonly string[] {
-  const runtimeCaches = [join(home, "Library/Caches"), join(home, ".cache")];
+  const runtimeCaches = [
+    join(home, "Library/Caches"),
+    join(home, ".cache"),
+    join(home, ".bun/install/cache"),
+  ];
   return deployedFiles(home).filter(
     (path) => !runtimeCaches.some((cache) => path.startsWith(`${cache}${sep}`)),
   );
+}
+
+function cacheFixture(home: string): Readonly<{
+  directory: string;
+  before: ReturnType<typeof identities>;
+}> {
+  const directory = join(home, ".bun/install/cache");
+  const invalidUtf8Byte = 0xff;
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(directory, "foreign-package-cache"),
+    Buffer.from([0, invalidUtf8Byte, 1]),
+  );
+  return { directory, before: identities(deployedFiles(directory)) };
 }
 
 test("cleans and reinstalls portable minimal Moon deployments without global dependencies", () => {
@@ -76,6 +96,7 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
     "agent-handoff:binary",
   ];
   expectSuccess(runDeploymentMoon(fixture, tasks));
+  const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
     (path) => path !== join(fixture.home, ".gitconfig"),
   );
@@ -84,8 +105,10 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   const source = readFileSync(join(project, "harness/AGENTS.md"), "utf8");
   expectSuccess(clean(fixture.home));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
+  expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expect(readFileSync(join(project, "harness/AGENTS.md"), "utf8")).toBe(source);
   expectSuccess(clean(fixture.home));
+  expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks));
   expect(identities(files)).toEqual(before);
 });
@@ -107,10 +130,12 @@ test("cleans and reinstalls optional Cursor, PostgreSQL and Scrapling links sepa
   expectSuccess(runDeploymentMoon(fixture, tasks));
   expectSuccess(postgresql());
   expectSuccess(scrapling());
+  const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home);
   const before = identities(files);
   expectSuccess(clean(fixture.home));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
+  expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks));
   expectSuccess(postgresql());
   expectSuccess(scrapling());

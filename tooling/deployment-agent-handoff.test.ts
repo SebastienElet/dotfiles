@@ -13,7 +13,13 @@ import {
   createMoonDeploymentFixture,
   runMoon,
 } from "./deployment-moon-test-support.ts";
-import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 afterEach(() => {
@@ -89,29 +95,85 @@ test("propagates a handoff deployment failure", () => {
   expect(result.stderr).toContain("Not a directory");
 });
 
-test.each(["file", "directory", "symlink"] as const)(
-  "clean removes the owned handoff %s destination only",
-  (destinationType) => {
-    const fixture = createDeploymentFixture("handoff-clean");
-    const destination = join(fixture.home, ".local/bin/agent-handoff");
-    const neighbor = join(fixture.home, ".local/bin/keep");
-    const external = join(fixture.root, "external");
-    mkdirSync(join(fixture.home, ".local/bin"), { recursive: true });
-    if (destinationType === "directory") {
-      mkdirSync(destination);
-    } else if (destinationType === "symlink") {
-      mkdirSync(external);
-      symlinkSync(external, destination);
-    } else {
-      writeFileSync(destination, "handoff\n");
-    }
-    writeFileSync(neighbor, "keep\n");
+type CleanupDestination = "owned-link" | "file" | "directory" | "foreign-link";
+type CleanupFixture = Readonly<{
+  fixture: ReturnType<typeof createDeploymentFixture>;
+  destination: string;
+  source: string;
+  sourceBefore: Buffer<ArrayBuffer> | undefined;
+  neighbor: string;
+  external: string;
+}>;
 
-    expectSuccess(runMake(fixture, ["clean"], { repository: project }));
-    expect(pathExists(destination)).toBeFalse();
-    expect(pathExists(neighbor)).toBeTrue();
-    if (destinationType === "symlink") {
-      expect(pathExists(external)).toBeTrue();
+function cleanupFixture(destinationType: CleanupDestination): CleanupFixture {
+  const fixture = createDeploymentFixture("handoff-clean");
+  const destination = join(fixture.home, ".local/bin/agent-handoff");
+  const source = join(
+    project,
+    "tooling/agent-handoff/target/release/agent-handoff",
+  );
+  const neighbor = join(fixture.home, ".local/bin/keep");
+  const external = join(fixture.root, "external");
+  mkdirSync(join(fixture.home, ".local/bin"), { recursive: true });
+  writeFileSync(external, "external\n");
+  if (destinationType === "directory") {
+    mkdirSync(destination);
+    writeFileSync(join(destination, "keep"), "directory\n");
+  } else if (destinationType === "owned-link") {
+    symlinkSync(source, destination);
+  } else if (destinationType === "foreign-link") {
+    symlinkSync(external, destination);
+  } else {
+    writeFileSync(destination, "handoff\n");
+  }
+  writeFileSync(neighbor, "keep\n");
+  const sourceBefore = pathExists(source) ? readFileSync(source) : undefined;
+  return { fixture, destination, source, sourceBefore, neighbor, external };
+}
+
+test.each([
+  { destinationType: "owned-link", removed: true },
+  { destinationType: "file", removed: false },
+  { destinationType: "directory", removed: false },
+  { destinationType: "foreign-link", removed: false },
+] as const)(
+  "clean removes the handoff destination only when its link is owned: $destinationType",
+  ({ destinationType, removed }) => {
+    const { fixture, destination, source, sourceBefore, neighbor, external } =
+      cleanupFixture(destinationType);
+
+    expectSuccess(
+      runMake(fixture, ["clean"], {
+        repository: project,
+        environment: {
+          MOON_HOME:
+            process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
+          PROTO_HOME:
+            process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+          PROTO_OFFLINE: "true",
+        },
+        variables: {
+          MOON_EXEC:
+            "moon exec --quiet --ignore-ci-checks --no-actions --upstream none",
+        },
+      }),
+    );
+    expect(pathExists(destination)).toBe(!removed);
+    expect(readFileSync(neighbor, "utf8")).toBe("keep\n");
+    expect(readFileSync(external, "utf8")).toBe("external\n");
+    if (sourceBefore !== undefined) {
+      expect(readFileSync(source)).toEqual(sourceBefore);
+    }
+    if (destinationType === "file") {
+      expect(readFileSync(destination, "utf8")).toBe("handoff\n");
+    }
+    if (destinationType === "directory") {
+      expect(readFileSync(join(destination, "keep"), "utf8")).toBe(
+        "directory\n",
+      );
+    }
+    if (destinationType === "foreign-link") {
+      expect(linkTarget(destination)).toBe(external);
     }
   },
 );
