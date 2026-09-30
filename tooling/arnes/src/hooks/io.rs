@@ -5,7 +5,10 @@ use std::io::{Read, Write};
 use std::os::unix::fs::MetadataExt;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{io, path::Path};
+use std::{
+    io,
+    path::{Path, PathBuf},
+};
 
 #[cfg(test)]
 mod test_hook;
@@ -26,6 +29,9 @@ struct Snapshot {
 }
 
 pub struct ConfigFile {
+    home: File,
+    home_path: PathBuf,
+    directory_name: String,
     directory: File,
     name: String,
     original: Option<Snapshot>,
@@ -34,18 +40,24 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     pub fn open(home: &Path, agent_directory: &str, name: &str) -> Result<Self, HooksError> {
+        let home_path = home.to_owned();
         let home = open_directory(home)?;
         create_directory(&home, agent_directory)?;
         let directory = open_directory_at(&home, agent_directory)?;
         let lock = open_lock(&directory, &format!(".{name}.lock"))?;
         lock.lock()?;
-        let original = read_at(&directory, name)?;
-        Ok(Self {
+        let mut file = Self {
+            home,
+            home_path,
+            directory_name: agent_directory.to_owned(),
             directory,
             name: name.to_owned(),
-            original,
+            original: None,
             _lock: lock,
-        })
+        };
+        file.check_directory()?;
+        file.original = read_at(&file.directory, name)?;
+        Ok(file)
     }
 
     pub fn content(&self) -> Option<&[u8]> {
@@ -55,6 +67,7 @@ impl ConfigFile {
     }
 
     pub fn replace(self, bytes: &[u8]) -> Result<(), HooksError> {
+        self.check_directory()?;
         if self
             .original
             .as_ref()
@@ -90,11 +103,13 @@ impl ConfigFile {
     }
 
     fn commit(&self, temporary: &str, expected: &Snapshot) -> Result<(), HooksError> {
+        self.check_directory()?;
         match &self.original {
             None => rename_new(&self.directory, temporary, &self.name)?,
             Some(original) => replace_existing(&self.directory, temporary, &self.name, original)?,
         }
         run_after_publish_hook();
+        self.check_directory()?;
         if read_at(&self.directory, &self.name)?.as_ref() != Some(expected) {
             return Err(changed());
         }
@@ -104,6 +119,21 @@ impl ConfigFile {
         rustix::fs::fsync(&self.directory).map_err(errno)?;
         Ok(())
     }
+
+    fn check_directory(&self) -> Result<(), HooksError> {
+        let home = open_directory(&self.home_path).map_err(|_| changed())?;
+        let directory = open_directory_at(&home, &self.directory_name).map_err(|_| changed())?;
+        if !same_directory(&home, &self.home)? || !same_directory(&directory, &self.directory)? {
+            return Err(changed());
+        }
+        Ok(())
+    }
+}
+
+fn same_directory(left: &File, right: &File) -> Result<bool, HooksError> {
+    let left = left.metadata()?;
+    let right = right.metadata()?;
+    Ok(left.dev() == right.dev() && left.ino() == right.ino())
 }
 
 fn open_directory(path: &Path) -> Result<File, HooksError> {

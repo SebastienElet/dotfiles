@@ -42,8 +42,9 @@ Cette distinction concerne Doctor : Arnes expose aussi `setup hooks`, `export`,
 claude` réconcilie explicitement les hooks user déclarés ; `doctor hooks` observe
 leur état. Setup cible un seul agent obligatoire (`claude`, `cursor` ou `codex`),
 avec `--scope user` par défaut ; `project` est refusé. Il ne constitue pas une
-synchronisation générale. Aucune commande `arnes sync` n'est disponible : une
-synchronisation éventuelle n'est pas un comportement livré.
+synchronisation générale. [Arnes Sync](arnes-sync.md) traite séparément les
+skills, les rules user et les statuslines Codex, avec agent et portée explicites.
+Les autres familles restent hors de cette commande.
 
 ## Sélection, environnement et valeurs par défaut
 

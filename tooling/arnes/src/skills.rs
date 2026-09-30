@@ -4,10 +4,10 @@ use crate::manifest::{Agent, Manifest, Scope, SkillLayout, SkillProjection};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-mod discovery;
+pub(crate) mod discovery;
 mod external;
 mod projection;
-mod references;
+pub(crate) mod references;
 
 #[must_use]
 pub fn diagnose(
