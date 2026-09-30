@@ -31,8 +31,11 @@ function deployedFiles(directory: string): readonly string[] {
   });
 }
 
-function clean(home: string): ReturnType<typeof runDeploymentMoon> {
-  return runDeploymentMoon({ home }, ["repository:clean"]);
+function clean(
+  home: string,
+  environment: Readonly<NodeJS.ProcessEnv>,
+): ReturnType<typeof runDeploymentMoon> {
+  return runDeploymentMoon({ home }, ["repository:clean"], environment);
 }
 
 function identities(paths: readonly string[]): readonly Readonly<{
@@ -76,6 +79,12 @@ function cacheFixture(home: string): Readonly<{
 
 test("cleans and reinstalls portable minimal Moon deployments without global dependencies", () => {
   const fixture = createDeploymentFixture("clean-moon-minimal");
+  const environment = {
+    BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
+      fixture.root,
+      "runtime-transpiler-cache",
+    ),
+  };
   const tasks = [
     "home:nvim",
     "home:wezterm",
@@ -95,7 +104,7 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
     "agent-memory:binary",
     "agent-handoff:binary",
   ];
-  expectSuccess(runDeploymentMoon(fixture, tasks));
+  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
     (path) => path !== join(fixture.home, ".gitconfig"),
@@ -103,40 +112,50 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   expect(files.length).toBeGreaterThan(0);
   const before = identities(files);
   const source = readFileSync(join(project, "harness/AGENTS.md"), "utf8");
-  expectSuccess(clean(fixture.home));
+  expectSuccess(clean(fixture.home, environment));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expect(readFileSync(join(project, "harness/AGENTS.md"), "utf8")).toBe(source);
-  expectSuccess(clean(fixture.home));
+  expectSuccess(clean(fixture.home, environment));
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
-  expectSuccess(runDeploymentMoon(fixture, tasks));
+  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expect(identities(files)).toEqual(before);
 });
 
 test("cleans and reinstalls optional Cursor, PostgreSQL and Scrapling links separately", () => {
   const fixture = createDeploymentFixture("clean-moon-optional");
+  const environment = {
+    BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
+      fixture.root,
+      "runtime-transpiler-cache",
+    ),
+  };
   const tasks = ["harness:cursor-rules", "harness:cursor-skills"];
   const postgresql = (): ReturnType<typeof runMake> =>
-    runMake(fixture, ["postgresql"], { repository: project });
+    runMake(fixture, ["postgresql"], { repository: project, environment });
   const scrapling = (): ReturnType<typeof runDeploymentHelper> =>
-    runDeploymentHelper(fixture, {
-      helper: "deploy-link.ts",
-      arguments: [
-        join(project, "tooling/scrapling-mcp"),
-        join(fixture.home, ".local/bin/scrapling_mcp"),
-      ],
-    });
+    runDeploymentHelper(
+      fixture,
+      {
+        helper: "deploy-link.ts",
+        arguments: [
+          join(project, "tooling/scrapling-mcp"),
+          join(fixture.home, ".local/bin/scrapling_mcp"),
+        ],
+      },
+      environment,
+    );
   mkdirSync(join(fixture.home, ".local/bin"), { recursive: true });
-  expectSuccess(runDeploymentMoon(fixture, tasks));
+  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
   expectSuccess(scrapling());
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home);
   const before = identities(files);
-  expectSuccess(clean(fixture.home));
+  expectSuccess(clean(fixture.home, environment));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
-  expectSuccess(runDeploymentMoon(fixture, tasks));
+  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
   expectSuccess(scrapling());
   expect(identities(files)).toEqual(before);

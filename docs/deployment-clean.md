@@ -79,7 +79,11 @@ distincte couvre les liens Cursor, PostgreSQL et Scrapling du profil optionnel ;
 pas leurs applications ou conteneurs tiers. Les fichiers Fisher déjà présents dans les sources
 restent conservés après suppression du lien Fish. Le snapshot des artefacts exclut les caches
 runtime, dont `~/.bun/install/cache` ; les fichiers de ce cache sont comparés avant et après le
-nettoyage en octets exacts, avec une sentinelle étrangère. Les tests `deployment-agent-memory.test.ts`
+nettoyage en octets exacts, avec une sentinelle étrangère. Pour ces fixtures, le cache actif du
+transpiler Bun est isolé dans un dossier frère du home via
+[`BUN_RUNTIME_TRANSPILER_CACHE_PATH`](https://bun.sh/docs/runtime/environment-variables#runtime-transpiler-caching) :
+ses écritures `.pile` ne sont pas attribuées au nettoyage. Les assertions de conservation du cache
+étranger restent inchangées. Les tests `deployment-agent-memory.test.ts`
 et `deployment-agent-handoff.test.ts` invoquent `make clean` dans un home temporaire : le lien vers
 le binaire attendu disparaît, les fichiers, répertoires et liens étrangers sont conservés.
 
