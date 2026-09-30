@@ -46,68 +46,40 @@ tasks:
       os: macos
       mutex: harness-mutation
   remem-codex:
-    script: |-
-      set -eu
-      "$HOME/.volta/bin/codex" features disable memories > /dev/null
-      "$HOME/.volta/bin/codex" mcp add remem -- /bin/sh -c 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp' > /dev/null
-      printf '\n' >> "$HOME/.codex/config.toml"
-      cat "$workspaceRoot/home/.codex/remem-mcp-tools.toml" >> "$HOME/.codex/config.toml"
-      "$HOME/.volta/bin/codex" mcp get remem > /dev/null
+    script: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-codex-install.ts" "$workspaceRoot" "$HOME"
     deps:
       - remem-config
       - codex-binary
-    toolchains: system
+      - repository:dependencies
+    toolchains: bun
     options:
       os: macos
       mutex: harness-mutation
   remem-claude:
-    script: |-
-      set -eu
-      if claude mcp get remem >/dev/null 2>&1; then
-        claude mcp remove --scope user remem
-      fi
-      claude mcp add --scope user remem -- /bin/sh -c 'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp'
-      remem_settings="$(mktemp)"
-      trap 'rm -f "$remem_settings"' EXIT
-      if [ -f "$HOME/.claude/settings.json" ]; then
-        cp "$HOME/.claude/settings.json" "$remem_settings"
-      else
-        printf '{}\n' > "$remem_settings"
-      fi
-      plutil -convert xml1 "$remem_settings"
-      plutil -replace autoMemoryEnabled -bool false "$remem_settings"
-      plutil -convert json "$remem_settings"
-      mv "$remem_settings" "$HOME/.claude/settings.json"
+    script: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-claude-install.ts" install "$HOME"
     deps:
       - remem-config
       - claude-binary
       - arnes:install
+      - repository:dependencies
     checks:
       - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor mcp --agent claude --scope user --color never && test "$(plutil -extract autoMemoryEnabled raw "$HOME/.claude/settings.json")" = false'
-    toolchains: system
+        script: '"$HOME/.local/bin/arnes" doctor mcp --agent claude --scope user --color never && bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-claude-install.ts" verify "$HOME"'
+    toolchains: bun
     options:
       os: macos
       mutex: harness-mutation
   remem-hooks:
-    script: |-
-      set -eu
-      # remem install rewrites runtime defaults through the deployed ~/.remem/config.toml
-      # symlink, adding an api.anthropic.com profile to the tracked source; restore it.
-      remem_config="$(mktemp)"
-      trap 'rm -f "$remem_config"' EXIT
-      cat "$HOME/.remem/config.toml" > "$remem_config"
-      "$HOME/.local/bin/remem" install --target claude --hooks-only > /dev/null
-      "$HOME/.local/bin/remem" install --target codex --hooks-only > /dev/null
-      cat "$remem_config" > "$HOME/.remem/config.toml"
+    script: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-hooks-install.ts" install "$HOME"
     deps:
       - remem-config
       - claude-hooks
       - codex-hooks
+      - repository:dependencies
     checks:
       - check: condition
-        script: 'test "$(grep -cF "$HOME/.local/bin/remem" "$HOME/.claude/settings.json")" -eq 6 && test "$(grep -cF "$HOME/.local/bin/remem" "$HOME/.codex/hooks.json")" -eq 3'
-    toolchains: system
+        script: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-hooks-install.ts" verify "$HOME"
+    toolchains: bun
     options:
       os: macos
       mutex: harness-mutation
@@ -122,31 +94,11 @@ tasks:
     options:
       mutex: harness-mutation
   remem-worker:
-    script: |-
-      set -eu
-      mkdir -p "$HOME/Library/LaunchAgents"
-      remem_plist="$(mktemp)"
-      trap 'rm -f "$remem_plist"' EXIT
-      plutil -create xml1 "$remem_plist"
-      plutil -insert Label -string dev.remem.worker "$remem_plist"
-      plutil -insert ProgramArguments -array "$remem_plist"
-      plutil -insert ProgramArguments.0 -string "$HOME/.local/bin/remem" "$remem_plist"
-      plutil -insert ProgramArguments.1 -string worker "$remem_plist"
-      plutil -insert ProgramArguments.2 -string --once "$remem_plist"
-      plutil -insert EnvironmentVariables -dictionary "$remem_plist"
-      plutil -insert EnvironmentVariables.PATH -string "$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$remem_plist"
-      plutil -insert RunAtLoad -bool true "$remem_plist"
-      plutil -insert StartInterval -integer 300 "$remem_plist"
-      plutil -insert ProcessType -string Background "$remem_plist"
-      plutil -lint "$remem_plist" > /dev/null
-      mv "$remem_plist" "$HOME/Library/LaunchAgents/dev.remem.worker.plist"
-      if launchctl print "gui/$(id -u)/dev.remem.worker" >/dev/null 2>&1; then
-        launchctl bootout "gui/$(id -u)/dev.remem.worker"
-      fi
-      launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/dev.remem.worker.plist"
+    script: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/remem-worker-install.ts" "$HOME"
     deps:
       - remem-config
-    toolchains: system
+      - repository:dependencies
+    toolchains: bun
     options:
       os: macos
       mutex: harness-mutation
