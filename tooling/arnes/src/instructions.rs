@@ -3,7 +3,7 @@ use crate::diagnostic::{Diagnostic, State};
 use crate::manifest::{Agent, Manifest, Scope};
 
 mod checks;
-mod projection;
+pub(crate) mod projection;
 
 #[must_use]
 pub fn diagnose(

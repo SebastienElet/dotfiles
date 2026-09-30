@@ -1,8 +1,8 @@
-mod command;
-mod comparison;
-mod configuration;
-mod json;
-mod observed;
+pub(crate) mod command;
+pub(crate) mod comparison;
+pub(crate) mod configuration;
+pub(crate) mod json;
+pub(crate) mod observed;
 
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};

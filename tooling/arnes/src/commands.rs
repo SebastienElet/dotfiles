@@ -5,8 +5,8 @@ use crate::prompts::{self, Failure, ProjectionTracker};
 use std::collections::HashSet;
 use std::path::Path;
 
-mod binding;
-mod capability;
+pub(crate) mod binding;
+pub(crate) mod capability;
 #[cfg(test)]
 mod tests;
 

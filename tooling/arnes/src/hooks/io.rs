@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
     io,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 
 #[cfg(test)]
@@ -31,7 +31,7 @@ struct Snapshot {
 pub struct ConfigFile {
     home: File,
     home_path: PathBuf,
-    directory_name: String,
+    directory_components: Vec<String>,
     directory: File,
     name: String,
     original: Option<Snapshot>,
@@ -40,23 +40,30 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     pub fn open(home: &Path, agent_directory: &str, name: &str) -> Result<Self, HooksError> {
+        Self::open_path(home, &Path::new(agent_directory).join(name))
+    }
+
+    pub fn open_path(home: &Path, path: &Path) -> Result<Self, HooksError> {
+        let mut components = confined_components(path)?;
+        let name = components
+            .pop()
+            .ok_or_else(|| HooksError::new("configuration path is empty"))?;
         let home_path = home.to_owned();
         let home = open_directory(home)?;
-        create_directory(&home, agent_directory)?;
-        let directory = open_directory_at(&home, agent_directory)?;
+        let directory = descend(&home, &components, true)?;
         let lock = open_lock(&directory, &format!(".{name}.lock"))?;
         lock.lock()?;
         let mut file = Self {
             home,
             home_path,
-            directory_name: agent_directory.to_owned(),
+            directory_components: components,
             directory,
-            name: name.to_owned(),
+            name,
             original: None,
             _lock: lock,
         };
         file.check_directory()?;
-        file.original = read_at(&file.directory, name)?;
+        file.original = read_at(&file.directory, &file.name)?;
         Ok(file)
     }
 
@@ -66,15 +73,23 @@ impl ConfigFile {
             .map(|snapshot| snapshot.bytes.as_slice())
     }
 
-    pub fn replace(self, bytes: &[u8]) -> Result<(), HooksError> {
-        self.check_directory()?;
-        if self
-            .original
+    pub fn identity(&self) -> Option<(u64, u64)> {
+        self.original
             .as_ref()
-            .is_some_and(|snapshot| snapshot.bytes == bytes)
+            .map(|snapshot| (snapshot.device, snapshot.inode))
+    }
+
+    pub fn replace(self, bytes: &[u8]) -> Result<(), HooksError> {
+        self.replace_with_identity(bytes).map(|_| ())
+    }
+
+    pub fn replace_with_identity(self, bytes: &[u8]) -> Result<(u64, u64), HooksError> {
+        self.check_directory()?;
+        if let Some(original) = self.original.as_ref()
+            && original.bytes == bytes
         {
             if read_at(&self.directory, &self.name)?.as_ref() == self.original.as_ref() {
-                return Ok(());
+                return Ok((original.device, original.inode));
             }
             return Err(HooksError::new(
                 "hook configuration changed during installation",
@@ -99,7 +114,7 @@ impl ConfigFile {
         if result.is_err() {
             let _ = rustix::fs::unlinkat(&self.directory, &temporary, AtFlags::empty());
         }
-        result
+        result.map(|()| (expected.device, expected.inode))
     }
 
     fn commit(&self, temporary: &str, expected: &Snapshot) -> Result<(), HooksError> {
@@ -122,12 +137,41 @@ impl ConfigFile {
 
     fn check_directory(&self) -> Result<(), HooksError> {
         let home = open_directory(&self.home_path).map_err(|_| changed())?;
-        let directory = open_directory_at(&home, &self.directory_name).map_err(|_| changed())?;
+        let directory = descend(&home, &self.directory_components, false).map_err(|_| changed())?;
         if !same_directory(&home, &self.home)? || !same_directory(&directory, &self.directory)? {
             return Err(changed());
         }
         Ok(())
     }
+}
+
+fn confined_components(path: &Path) -> Result<Vec<String>, HooksError> {
+    path.components()
+        .filter(|component| *component != Component::CurDir)
+        .map(|component| match component {
+            Component::Normal(name) => name
+                .to_str()
+                .map(str::to_owned)
+                .ok_or_else(|| HooksError::new("configuration path is not valid UTF-8")),
+            Component::Prefix(_)
+            | Component::RootDir
+            | Component::CurDir
+            | Component::ParentDir => Err(HooksError::new(
+                "configuration path must remain inside its root",
+            )),
+        })
+        .collect()
+}
+
+fn descend(root: &File, components: &[String], create: bool) -> Result<File, HooksError> {
+    let mut directory = root.try_clone()?;
+    for component in components {
+        if create {
+            create_directory(&directory, component)?;
+        }
+        directory = open_directory_at(&directory, component)?;
+    }
+    Ok(directory)
 }
 
 fn same_directory(left: &File, right: &File) -> Result<bool, HooksError> {

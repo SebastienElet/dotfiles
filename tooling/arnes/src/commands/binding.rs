@@ -1,6 +1,6 @@
 use serde_yaml_ng::{Mapping, Value};
 
-pub(super) fn validate(contents: &str, expected: &str) -> Result<(), &'static str> {
+pub fn validate(contents: &str, expected: &str) -> Result<(), &'static str> {
     let normalized = contents.replace("\r\n", "\n");
     let frontmatter = normalized
         .strip_prefix("---\n")

@@ -6,25 +6,13 @@ fn refuses_relative_state_and_state_inside_the_observed_repository()
     let payload = br#"{"session_id":"session","event":"SessionStart"}"#;
     let mut relative = harness.command("codex");
     relative.env("XDG_STATE_HOME", "relative/state");
-    let mut child = relative.spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(payload)?;
-    let output = child.wait_with_output()?;
+    let output = relative.stdin(payload_input(&harness, payload)?).output()?;
     assert_advisory_failure(&output);
     assert!(String::from_utf8(output.stderr)?.contains("absolute"));
     git(&harness.repository, &["init"])?;
     let mut inside = harness.command("codex");
     inside.env("XDG_STATE_HOME", harness.repository.join("state"));
-    let mut child = inside.spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(payload)?;
-    let output = child.wait_with_output()?;
+    let output = inside.stdin(payload_input(&harness, payload)?).output()?;
     assert_advisory_failure(&output);
     assert!(String::from_utf8(output.stderr)?.contains("repository"));
     Ok(())
@@ -36,23 +24,17 @@ fn refuses_state_inside_git_root_when_git_is_unavailable_from_a_subdirectory()
     git(&harness.repository, &["init"])?;
     let nested = harness.repository.join("nested");
     fs::create_dir(&nested)?;
-    let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
+    let output = Command::new(env!("CARGO_BIN_EXE_arnes"))
         .args(["measure", "hook", "--agent", "codex"])
         .current_dir(nested)
         .env_clear()
         .env("HOME", &harness.home)
         .env("PATH", "/nonexistent")
         .env("XDG_STATE_HOME", harness.repository.join("state"))
-        .stdin(Stdio::piped())
+        .stdin(payload_input(&harness, br#"{"session_id":"session"}"#)?)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(br#"{"session_id":"session"}"#)?;
-    let output = child.wait_with_output()?;
+        .output()?;
     assert_advisory_failure(&output);
     assert!(!harness.repository.join("state").exists());
     Ok(())
@@ -79,16 +61,20 @@ fn refuses_state_inside_repository_observed_only_through_git_environment()
         .env("GIT_DIR", &git_dir)
         .env("GIT_WORK_TREE", &harness.repository)
         .env("XDG_STATE_HOME", &state);
-    let mut child = command.spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(br#"{"session_id":"session"}"#)?;
-    let output = child.wait_with_output()?;
+    let output = command
+        .stdin(payload_input(&harness, br#"{"session_id":"session"}"#)?)
+        .output()?;
     assert_advisory_failure(&output);
     assert!(!state.exists());
     Ok(())
+}
+fn payload_input(
+    harness: &Harness,
+    payload: &[u8],
+) -> Result<Stdio, Box<dyn std::error::Error + Send + Sync>> {
+    let input = harness.root.path().join("state-refusal-input.json");
+    fs::write(&input, payload)?;
+    Ok(Stdio::from(fs::File::open(input)?))
 }
 #[test]
 fn nested_fake_git_marker_cannot_shrink_the_protected_repository()

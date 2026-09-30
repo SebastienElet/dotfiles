@@ -44,7 +44,7 @@ fn registration(
     let entry = object(value, name)?;
     let command = string_field(entry, name, "command")?.to_owned();
     let args = string_array(entry.get("args"), name, "args")?;
-    let environment = environment_map(entry.get("env"), name)?;
+    let environment = environment_map(entry.get("env"), name, claude)?;
     Ok(ObservedRegistration {
         command,
         args,
@@ -95,6 +95,7 @@ fn string_array(
 fn environment_map(
     value: Option<&Value>,
     name: &str,
+    claude: bool,
 ) -> Result<BTreeMap<String, EnvironmentValue>, ConfigurationError> {
     let Some(value) = value else {
         return Ok(BTreeMap::new());
@@ -105,19 +106,26 @@ fn environment_map(
             let value = value.as_str().ok_or_else(|| {
                 ConfigurationError::new(format!("{name}.env.{key} must be a string"))
             })?;
-            Ok((key.clone(), environment_value(value)))
+            Ok((key.clone(), environment_value(value, claude)))
         })
         .collect()
 }
 
-fn environment_value(value: &str) -> EnvironmentValue {
+fn environment_value(value: &str, claude: bool) -> EnvironmentValue {
+    let prefix = if claude { "${" } else { "${env:" };
     value
-        .strip_prefix("${")
+        .strip_prefix(prefix)
         .and_then(|value| value.strip_suffix('}'))
-        .filter(|value| !value.is_empty())
+        .filter(|value| valid_environment_name(value))
         .map_or(EnvironmentValue::RedactedLiteral, |value| {
             EnvironmentValue::Reference(value.to_owned())
         })
+}
+
+fn valid_environment_name(name: &str) -> bool {
+    let mut bytes = name.bytes();
+    matches!(bytes.next(), Some(b'A'..=b'Z' | b'a'..=b'z' | b'_'))
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
 }
 
 fn claude_disabled(roots: &Roots) -> Result<Vec<String>, ConfigurationError> {

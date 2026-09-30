@@ -37,6 +37,11 @@ pub(super) fn synchronize(
             "user scope aliases a canonical source",
         )];
     }
+    let protection = super::sources::publication_paths(&[".codex/config.toml".into()])
+        .and_then(|paths| super::sources::protect_mutations(roots, manifest, scope, &paths));
+    if let Err(message) = protection {
+        return vec![SyncEntry::new("statusline", SyncState::Refused, message)];
+    }
     let items = declaration
         .items
         .iter()

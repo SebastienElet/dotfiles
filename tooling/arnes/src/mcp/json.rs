@@ -3,7 +3,7 @@ use serde_json::{Map, Number, Value};
 use std::collections::HashSet;
 use std::fmt;
 
-pub(super) fn parse(bytes: &[u8]) -> Result<Value, serde_json::Error> {
+pub fn parse(bytes: &[u8]) -> Result<Value, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let value = ValueSeed.deserialize(&mut deserializer)?;
     deserializer.end()?;

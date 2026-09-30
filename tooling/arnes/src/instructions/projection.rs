@@ -4,7 +4,7 @@ use super::checks::{
 };
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
-use crate::files::includes::{self, Resolver};
+use crate::files::includes::{self, IncludeError, Resolver};
 use crate::manifest::{Agent, InstructionResource, Scope};
 use std::fs;
 use std::path::Path;
@@ -123,21 +123,10 @@ fn diagnose_generated(
     if let Err(diagnostic) = expected_file(destination, roots.home(), subject) {
         return diagnostic;
     }
-    let resolver = Resolver::new(source_root);
-    if let Err(error) = resolver.walk(source) {
-        return include_diagnostic(subject, error, State::Error);
-    }
-    let mut expected = includes::without_leading_imports(source_contents);
-    for include in includes::leading_imports(source_contents) {
-        let path = match resolver.resolve(source.parent().unwrap_or(source_root), &include) {
-            Ok(path) => path,
-            Err(error) => return include_diagnostic(subject, error, State::Error),
-        };
-        match resolver.read(&path) {
-            Ok(contents) => expected.push_str(&contents),
-            Err(error) => return include_diagnostic(subject, error, State::Error),
-        }
-    }
+    let expected = match generated_contents(source_root, source, source_contents) {
+        Ok(expected) => expected,
+        Err(error) => return include_diagnostic(subject, error, State::Error),
+    };
     match fs::read_to_string(destination) {
         Ok(contents) if contents == expected => healthy(subject, &relative(destination, roots)),
         Ok(_) => Diagnostic::new(
@@ -157,4 +146,19 @@ fn diagnose_generated(
             ),
         ),
     }
+}
+
+pub fn generated_contents(
+    source_root: &Path,
+    source: &Path,
+    source_contents: &str,
+) -> Result<String, IncludeError> {
+    let resolver = Resolver::new(source_root);
+    resolver.walk(source)?;
+    let mut expected = includes::without_leading_imports(source_contents);
+    for include in includes::leading_imports(source_contents) {
+        let path = resolver.resolve(source.parent().unwrap_or(source_root), &include)?;
+        expected.push_str(&resolver.read(&path)?);
+    }
+    Ok(expected)
 }

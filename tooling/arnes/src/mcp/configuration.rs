@@ -10,7 +10,7 @@ mod agent_json;
 mod codex;
 
 #[derive(Debug)]
-pub(super) struct ConfigurationError(String);
+pub struct ConfigurationError(String);
 
 impl std::error::Error for ConfigurationError {}
 
@@ -26,7 +26,7 @@ impl Display for ConfigurationError {
     }
 }
 
-pub(super) fn load(
+pub fn load(
     roots: &Roots,
     agent: Agent,
     scope: Scope,

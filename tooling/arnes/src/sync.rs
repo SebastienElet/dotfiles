@@ -4,14 +4,24 @@ use clap::ValueEnum;
 use serde::Serialize;
 use std::fmt::{self, Display};
 
+mod config;
+mod instructions;
 mod links;
+mod markdown;
+mod mcp;
 mod native_file;
 mod selection;
+mod sources;
 mod statusline;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SyncResource {
+    Config,
+    Instructions,
+    Prompts,
+    Commands,
+    Mcp,
     Skills,
     Rules,
     Statusline,
@@ -20,6 +30,11 @@ pub enum SyncResource {
 impl Display for SyncResource {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self {
+            Self::Config => "config",
+            Self::Instructions => "instructions",
+            Self::Prompts => "prompts",
+            Self::Commands => "commands",
+            Self::Mcp => "mcp",
             Self::Skills => "skills",
             Self::Rules => "rules",
             Self::Statusline => "statusline",
@@ -106,10 +121,16 @@ pub fn run(
     scope: Scope,
 ) -> SyncReport {
     let entries = match resource {
+        SyncResource::Config => config::synchronize(roots, manifest, agent, scope),
+        SyncResource::Instructions => instructions::synchronize(roots, manifest, agent, scope),
+        SyncResource::Mcp => mcp::synchronize(roots, manifest, agent, scope),
+        SyncResource::Prompts | SyncResource::Commands => {
+            markdown::synchronize(roots, manifest, resource, agent, scope)
+        }
         SyncResource::Skills | SyncResource::Rules => {
             match selection::select(roots, manifest, resource, agent, scope) {
                 Err(entry) => vec![entry],
-                Ok(selected) => links::synchronize(selected),
+                Ok(selected) => synchronize_links(roots, manifest, scope, selected),
             }
         }
         SyncResource::Statusline => statusline::synchronize(roots, manifest, agent, scope),
@@ -120,4 +141,26 @@ pub fn run(
         scope: scope.to_string(),
         entries,
     }
+}
+
+fn synchronize_links(
+    roots: &Roots,
+    manifest: &Manifest,
+    scope: Scope,
+    selected: Vec<selection::LinkIntent>,
+) -> Vec<SyncEntry> {
+    let paths = selected
+        .iter()
+        .filter(|intent| {
+            std::fs::symlink_metadata(intent.root.join(&intent.destination))
+                .is_err_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+        })
+        .map(|intent| intent.destination.clone())
+        .collect::<Vec<_>>();
+    if !paths.is_empty()
+        && let Err(message) = sources::protect_mutations(roots, manifest, scope, &paths)
+    {
+        return vec![SyncEntry::new("selection", SyncState::Refused, message)];
+    }
+    links::synchronize(selected)
 }

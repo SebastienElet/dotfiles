@@ -1,4 +1,4 @@
-# Arnes Sync : skills, rules et statusline
+# Arnes Sync : ressources déclarées
 
 `arnes sync` synchronise les ressources prises en charge déclarées dans
 `$HOME/.arnes.yaml`. La ressource, l'agent et la portée sont obligatoires :
@@ -8,6 +8,11 @@ arnes sync skills --agent codex --scope user
 arnes sync skills --agent claude --scope project --format json
 arnes sync rules --agent cursor --scope user
 arnes sync statusline --agent codex --scope project
+arnes sync config --agent claude --scope user
+arnes sync instructions --agent codex --scope user
+arnes sync prompts --agent cursor --scope project
+arnes sync commands --agent claude --scope project
+arnes sync mcp --agent claude --scope project
 ```
 
 Les skills user sont des liens feuille vers `harness/skills/` du checkout
@@ -15,6 +20,15 @@ identifié par le manifeste déployé. Les skills project sont des liens racine
 vers `.agents/skills/` du dépôt courant. Les trois agents sont pris en charge.
 Les rules restent limitées à Claude et Cursor user ; leurs sources restent
 relatives au dépôt courant, comme dans Doctor.
+
+Les [configurations natives et MCP](arnes-sync-native.md) ainsi que les
+[instructions, prompts et commandes](arnes-sync-markdown.md) ont leurs limites
+de représentation et de propriété détaillées séparément. Config synchronise les
+valeurs user déclarées ; les instructions couvrent Claude user/project et Codex
+user. Prompts couvre Claude user/project et Cursor project ; commands reste
+limité à Claude user/project. MCP traite les inscriptions locales des trois agents,
+avec leurs limites d'état enabled. Aucun de ces parcours ne lance une session
+d'agent ou un serveur MCP.
 
 Les [ADR-001](adr/001-makefile-installateur.md),
 [ADR-003](adr/003-deploiement-par-symlinks.md),
@@ -25,8 +39,8 @@ d'installation. Sync n'installe aucun agent, outil, dépendance ou plugin.
 
 ## Mutations et refus
 
-Le manifeste entier et les sources sélectionnées sont validés avant toute
-création de projection. `SKILL.md` et ses ressources relatives doivent être
+Pour les liens de skills et rules, le manifeste entier et les sources sélectionnées
+sont validés avant toute création de projection. `SKILL.md` et ses ressources relatives doivent être
 présents et confinés. Une source invalide ou une collision refuse la sélection
 avant création ; les projections conformes restent préservées.
 
@@ -94,7 +108,8 @@ une limite d'inventaire externe ne signifie pas que Sync possède ces ressources
 La conformité des fichiers ne prouve ni leur activation ni leur chargement par
 une session d'agent.
 
-Les tests `sync_links`, `sync_errors`, `sync_statusline` et `sync::links::tests` exercent la CLI,
+Les tests `sync_links`, `sync_errors`, `sync_statusline`, `sync_config`, `sync_mcp`,
+`sync_instructions`, `sync_prompts`, `sync_commands` et `sync::links::tests` exercent la CLI,
 Doctor ciblé, le rejeu, les collisions, les références invalides, la préservation
 des voisins et les changements intervenant après validation. Les tests utilisent
 des dépôts et HOME temporaires. La livraison doit nommer macOS et Ubuntu comme
