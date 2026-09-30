@@ -8,7 +8,7 @@ import { join } from "node:path";
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 function runDeploymentMoon(
-  fixture: DeploymentFixture,
+  fixture: Pick<DeploymentFixture, "home">,
   tasks: readonly string[],
   environment: Readonly<NodeJS.ProcessEnv> = {},
 ): CommandResult {

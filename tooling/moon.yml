@@ -31,6 +31,13 @@ fileGroups:
     - /harness/skills/code-search/**/*
   linkDeployment:
     - deployment-links.test.ts
+    - moon/optional-links.test.ts
+    - remem-moon.test.ts
+    - remem-*.ts
+    - docker-install-test-provider.ts
+    - install-docker-artifact
+    - install-docker-artifact.ts
+    - scrapling-mcp
     - design-claim-audit.test.ts
     - deployment-moon-runner.ts
     - deployment-test-support.ts
@@ -39,7 +46,9 @@ fileGroups:
     - install-agent-skills*.ts
     - colgrep-search-cli.ts
     - /home/moon.yml
+    - /home/.psqlrc
     - /home/.arnes.yaml
+    - /home/.codex/remem-mcp-tools.toml
     - /home/.codex/agents/design-claim-auditor.toml
     - /home/.config/starship.toml
     - /home/.config/tmux/**/*
@@ -51,6 +60,9 @@ fileGroups:
     - /harness/skills/*/SKILL.md
     - /.moon/tasks/harness-claude.yml
     - /.moon/tasks/harness-codex.yml
+    - /.moon/tasks/harness-cursor.yml
+    - /.moon/tasks/harness-remem.yml
+    - /Makefile
 tasks:
   test:
     command: noop
@@ -69,7 +81,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/remem-moon.test.ts
     deps:
       - repository:dependencies
     options:

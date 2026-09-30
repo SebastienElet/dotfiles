@@ -1,11 +1,11 @@
 import {
   chmodSync,
-  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,7 +33,10 @@ type UtilityResult = Readonly<{
 
 function installFake(path: string): void {
   mkdirSync(dirname(path), { recursive: true });
-  copyFileSync(fakeCommand, path);
+  writeFileSync(
+    path,
+    `#!/usr/bin/env bun\nimport ${JSON.stringify(fakeCommand)};\n`,
+  );
   chmodSync(path, executableMode);
 }
 
