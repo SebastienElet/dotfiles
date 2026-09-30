@@ -1,11 +1,24 @@
+import type {
+  CommandResult,
+  DeploymentFixture,
+} from "../deployment-test-support.ts";
 import { afterEach, expect, test } from "bun:test";
+import {
+  cleanupDeploymentFixtures,
+  createDeploymentFixture,
+  project,
+  requireCommand,
+  runMake,
+} from "../deployment-test-support.ts";
 import { dirname, join } from "node:path";
 import {
   lstatSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readlinkSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -54,6 +67,7 @@ afterEach(() => {
   for (const fixture of fixtures.splice(0)) {
     rmSync(fixture, { recursive: true, force: true });
   }
+  cleanupDeploymentFixtures();
 });
 
 test("links psqlrc and replays silently", () => {
@@ -81,4 +95,134 @@ test("refuses a divergent psqlrc without replacing it", () => {
     `${destination} exists and is not the expected symbolic link`,
   );
   expect(readFileSync(destination, "utf8")).toBe("personal\n");
+});
+
+function scraplingFixture(): Readonly<{
+  destination: string;
+  fixture: DeploymentFixture;
+  trace: string;
+}> {
+  const fixture = createDeploymentFixture("optional-scrapling");
+  const destination = join(fixture.home, ".local", "bin", "scrapling_mcp");
+  const trace = join(fixture.root, "docker-trace");
+  mkdirSync(dirname(destination), { recursive: true });
+  symlinkSync(
+    join(project, "tooling", "docker-install-test-provider.ts"),
+    join(fixture.bin, "docker"),
+  );
+  writeFileSync(trace, "");
+  return { destination, fixture, trace };
+}
+
+function makeScrapling(
+  fixture: DeploymentFixture,
+  trace: string,
+): CommandResult {
+  return runMake(fixture, ["scrapling"], {
+    repository: project,
+    variables: {
+      LOCAL_BIN: join(fixture.home, ".local", "bin"),
+      DOCKER_UNAVAILABLE_POLICY: "allow-skip",
+    },
+    environment: {
+      DOCKER_INSTALL_TEST_SCENARIO: "daemon-unavailable",
+      DOCKER_INSTALL_TEST_STATE: trace,
+      DOCKER_INSTALL_TEST_TARGET: "scrapling",
+      PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+    },
+  });
+}
+
+test("make scrapling creates its link and preserves it on replay", () => {
+  const { destination, fixture, trace } = scraplingFixture();
+  const source = join(project, "tooling", "scrapling-mcp");
+
+  expect(makeScrapling(fixture, trace).exitCode).toBe(0);
+  expect(readlinkSync(destination)).toBe(source);
+  const inode = lstatSync(destination).ino;
+
+  expect(makeScrapling(fixture, trace).exitCode).toBe(0);
+  expect(lstatSync(destination).ino).toBe(inode);
+});
+
+test("make scrapling refuses an occupied link destination", () => {
+  const { destination, fixture, trace } = scraplingFixture();
+  writeFileSync(destination, "personal\n");
+
+  const result = makeScrapling(fixture, trace);
+
+  expect(result.exitCode).not.toBe(0);
+  expect(readFileSync(destination, "utf8")).toBe("personal\n");
+  expect(readFileSync(trace, "utf8")).toBe("");
+});
+
+function cursorFixture(): Readonly<{
+  fixture: DeploymentFixture;
+  trace: string;
+}> {
+  const fixture = createDeploymentFixture("optional-cursor");
+  const trace = join(fixture.root, "arnes-trace");
+  const arnes = join(fixture.home, ".local", "bin", "arnes");
+  mkdirSync(dirname(arnes), { recursive: true });
+  symlinkSync(join(project, "tooling", "remem-fake-command.ts"), arnes);
+  writeFileSync(trace, "");
+  return { fixture, trace };
+}
+
+function makeCursor(fixture: DeploymentFixture, trace: string): CommandResult {
+  const moon = process.env.DEPLOYMENT_MOON ?? requireCommand("moon");
+  return runMake(fixture, ["cursor"], {
+    repository: project,
+    variables: {
+      MOON_EXEC: `${moon} exec --quiet --ignore-ci-checks --no-actions --upstream direct`,
+    },
+    environment: {
+      FAKE_TRACE: trace,
+      MOON_HOME: process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
+      PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      PROTO_HOME:
+        process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+      PROTO_OFFLINE: "true",
+    },
+  });
+}
+
+test("make cursor deploys the rule and skills without global dependencies", () => {
+  const { fixture, trace } = cursorFixture();
+  const rule = join(
+    fixture.home,
+    ".cursor",
+    "rules",
+    "memory-governance-cursor.mdc",
+  );
+  const skill = join(fixture.home, ".cursor", "skills", "code-search");
+
+  expect(makeCursor(fixture, trace).exitCode).toBe(0);
+  expect(readlinkSync(rule)).toBe(
+    join(project, "harness", "rules", "memory-governance-cursor.mdc"),
+  );
+  expect(readlinkSync(skill)).toBe(
+    join(project, "harness", "skills", "code-search"),
+  );
+  const ruleInode = lstatSync(rule).ino;
+
+  expect(makeCursor(fixture, trace).exitCode).toBe(0);
+  expect(lstatSync(rule).ino).toBe(ruleInode);
+});
+
+test("make cursor preserves a divergent rule and returns failure", () => {
+  const { fixture, trace } = cursorFixture();
+  const rule = join(
+    fixture.home,
+    ".cursor",
+    "rules",
+    "memory-governance-cursor.mdc",
+  );
+  mkdirSync(dirname(rule), { recursive: true });
+  writeFileSync(rule, "personal\n");
+
+  const result = makeCursor(fixture, trace);
+
+  expect(result.exitCode).not.toBe(0);
+  expect(readFileSync(rule, "utf8")).toBe("personal\n");
 });

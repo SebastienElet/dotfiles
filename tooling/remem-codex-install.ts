@@ -35,24 +35,32 @@ function parsedTools(configuration: string): Record<string, unknown> {
     .tools;
 }
 
+function validateExistingConfiguration(path: string): void {
+  try {
+    Bun.TOML.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+}
+
 function install(workspaceRoot: string, home: string): void {
   const codex = join(home, ".volta", "bin", "codex");
   const toolsSource = readFileSync(
     join(workspaceRoot, "home", ".codex", "remem-mcp-tools.toml"),
     "utf8",
   );
+  const expectedTools = parsedTools(`[mcp_servers.remem]\n\n${toolsSource}`);
+  const path = join(home, ".codex", "config.toml");
+  validateExistingConfiguration(path);
   run([codex, "features", "disable", "memories"], { discardStdout: true });
   run([codex, "mcp", "add", "remem", ...mcpServerArguments], {
     discardStdout: true,
   });
-  const path = join(home, ".codex", "config.toml");
   const updated = `${withoutRememTools(readFileSync(path, "utf8")).trimEnd()}\n\n${toolsSource}`;
-  if (
-    !isDeepStrictEqual(
-      parsedTools(updated),
-      parsedTools(`[mcp_servers.remem]\n\n${toolsSource}`),
-    )
-  ) {
+  if (!isDeepStrictEqual(parsedTools(updated), expectedTools)) {
     throw new Error(
       `${path} would not carry the tracked remem tool permissions`,
     );
