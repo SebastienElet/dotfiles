@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-07
+- **Révision** : 2026-09-30
 
 ## Contexte
 
@@ -31,8 +31,11 @@ Les comportements de configuration spécifiques restent locaux à leurs utilitai
   en cas d'échec ; cette restauration n'est pas une transaction sur tous les fichiers du plugin.
 
 Les destinations et les sources restent celles de l'ADR-038. Une suppression ou reconstruction
-plus large est une action explicite ; `make clean` conserve sa portée actuelle limitée et
-ne constitue pas une remise à zéro générale du poste.
+plus large est une action explicite. La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152)
+étend `make clean`, délégué à `repository:clean`, aux artefacts déployés possédés des profils
+minimal et optionnel, en conservant sources, données personnelles et paquets tiers.
+La présence du plist remem reste une frontière bloquée avant mutation tant que l’arrêt du service
+n'est pas décidé. Cette commande ne constitue pas une remise à zéro générale du poste.
 
 ## Conséquences
 

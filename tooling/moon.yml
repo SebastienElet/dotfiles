@@ -81,7 +81,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/remem-moon.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/remem-moon.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
     deps:
       - repository:dependencies
     options:
@@ -90,6 +90,7 @@ tasks:
     inputs:
       - "@group(bunTestSupport)"
       - "@group(linkDeployment)"
+      - clean-deployment*.ts
       - deployment-fish.test.ts
       - deployment-xdg.test.ts
       - deployment-test-provider.ts
