@@ -80,6 +80,17 @@ macosTest("Moon remem-codex preserves its config on replay", () => {
 
   expect(runTask(fixture, "remem-codex").exitCode).toBe(0);
   const installed = readFileSync(config, "utf8");
+  expect(installed).toContain("[mcp_servers.remem.tools.save_memory]");
+  expect(
+    readTrace(fixture).map(({ arguments: [command, subcommand] }) => [
+      command,
+      subcommand,
+    ]),
+  ).toEqual([
+    ["features", "disable"],
+    ["mcp", "add"],
+    ["mcp", "get"],
+  ]);
   expect(runTask(fixture, "remem-codex").exitCode).toBe(0);
   expect(readFileSync(config, "utf8")).toBe(installed);
   expect(installed).toContain('model = "gpt"');

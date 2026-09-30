@@ -137,7 +137,12 @@ test("make scrapling creates its link and preserves it on replay", () => {
   const { destination, fixture, trace } = scraplingFixture();
   const source = join(project, "tooling", "scrapling-mcp");
 
-  expect(makeScrapling(fixture, trace).exitCode).toBe(0);
+  const firstRun = makeScrapling(fixture, trace);
+  expect(firstRun.exitCode).toBe(0);
+  expect(firstRun.stdout).toContain(
+    "docker-install target=scrapling result=skipped",
+  );
+  expect(readFileSync(trace, "utf8")).toContain("info\n");
   expect(readlinkSync(destination)).toBe(source);
   const inode = lstatSync(destination).ino;
 
@@ -177,6 +182,7 @@ function makeCursor(fixture: DeploymentFixture, trace: string): CommandResult {
       MOON_EXEC: `${moon} exec --quiet --ignore-ci-checks --no-actions --upstream direct`,
     },
     environment: {
+      FAKE_FAIL_ON: "doctor hooks",
       FAKE_TRACE: trace,
       MOON_HOME: process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
       PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
@@ -203,6 +209,9 @@ test("make cursor deploys the rule and skills without global dependencies", () =
   );
   expect(readlinkSync(skill)).toBe(
     join(project, "harness", "skills", "code-search"),
+  );
+  expect(readFileSync(trace, "utf8")).toContain(
+    '"arguments":["setup","hooks","--agent","cursor"]',
   );
   const ruleInode = lstatSync(rule).ino;
 

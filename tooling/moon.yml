@@ -35,6 +35,8 @@ fileGroups:
     - remem-moon.test.ts
     - remem-*.ts
     - docker-install-test-provider.ts
+    - install-docker-artifact
+    - install-docker-artifact.ts
     - scrapling-mcp
     - design-claim-audit.test.ts
     - deployment-moon-runner.ts
@@ -44,7 +46,9 @@ fileGroups:
     - install-agent-skills*.ts
     - colgrep-search-cli.ts
     - /home/moon.yml
+    - /home/.psqlrc
     - /home/.arnes.yaml
+    - /home/.codex/remem-mcp-tools.toml
     - /home/.codex/agents/design-claim-auditor.toml
     - /home/.config/starship.toml
     - /home/.config/tmux/**/*
@@ -58,6 +62,7 @@ fileGroups:
     - /.moon/tasks/harness-codex.yml
     - /.moon/tasks/harness-cursor.yml
     - /.moon/tasks/harness-remem.yml
+    - /Makefile
 tasks:
   test:
     command: noop
