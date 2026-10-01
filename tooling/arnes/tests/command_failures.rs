@@ -100,11 +100,7 @@ fn projection_contract_failures_are_explicit()
         ".claude/commands/deploy.md",
     );
     fixture.write_home(".arnes.yaml", &manifest(&symlinked, &commands))?;
-    assert_state(
-        &fixture,
-        0,
-        "symlink projections have no stable agent contract",
-    )?;
+    assert_state(&fixture, 2, "source harness/prompts/deploy.md is missing")?;
     Ok(())
 }
 #[test]

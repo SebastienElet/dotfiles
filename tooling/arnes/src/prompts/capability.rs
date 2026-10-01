@@ -8,3 +8,10 @@ pub fn registry(agent: Agent, scope: Scope) -> Option<&'static Path> {
         _ => None,
     }
 }
+
+pub const fn symlink(agent: Agent, scope: Scope) -> bool {
+    matches!(
+        (agent, scope),
+        (Agent::Claude, Scope::User | Scope::Project)
+    )
+}

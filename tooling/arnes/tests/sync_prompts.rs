@@ -191,12 +191,9 @@ fn unsupported_prompt_representations_and_combinations_do_not_mutate() -> TestRe
         &MANIFEST.replace("representation: rendered", "representation: symlink"),
     )?;
     let before = fixture.snapshot()?;
-    assert!(
-        !fixture
-            .command(["sync", "prompts", "--agent", "claude", "--scope", "user"])?
-            .status
-            .success()
-    );
+    let output = fixture.command(["sync", "prompts", "--agent", "cursor", "--scope", "project"])?;
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Unsupported"));
     assert_eq!(fixture.snapshot()?, before);
     Ok(())
 }
@@ -287,6 +284,179 @@ commands:"
                 ),
             ),
         )?;
+        let before = fixture.snapshot()?;
+        let output =
+            fixture.command(["sync", "prompts", "--agent", "claude", "--scope", "project"])?;
+        assert!(!output.status.success());
+        assert_eq!(fixture.snapshot()?, before);
+    }
+    Ok(())
+}
+
+fn symlink_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = fixture()?;
+    fixture.write_home(
+        ".arnes.yaml",
+        &MANIFEST
+            .replace("representation: rendered", "representation: symlink")
+            .replace("representation: file", "representation: symlink"),
+    )?;
+    Ok(fixture)
+}
+
+#[test]
+fn publishes_claude_links_and_replays_without_receipts_or_rewriting() -> TestResult {
+    for scope in ["user", "project"] {
+        let fixture = symlink_fixture()?;
+        let root = if scope == "user" {
+            fixture.home()
+        } else {
+            fixture.repository()
+        };
+        let path = root.join(".claude/commands/review.md");
+        let args = ["sync", "prompts", "--agent", "claude", "--scope", scope];
+        let output = fixture.command(args)?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert_eq!(
+            fs::canonicalize(&path)?,
+            fs::canonicalize(fixture.repository().join("harness/prompts/review.md"))?
+        );
+        assert_eq!(fs::read_to_string(&path)?, SOURCE);
+        let inode = fs::symlink_metadata(&path)?.ino();
+        let before = fixture.snapshot()?;
+        assert!(fixture.command(args)?.status.success());
+        assert_eq!(fixture.snapshot()?, before);
+        assert_eq!(fs::symlink_metadata(&path)?.ino(), inode);
+        assert!(!root.join(".claude/commands/.review.md.arnes.json").exists());
+        fixture.write_repository(
+            "harness/prompts/review.md",
+            &SOURCE.replace("Review $TARGET", "Updated $TARGET"),
+        )?;
+        let before = fixture.snapshot()?;
+        assert!(fixture.command(args)?.status.success());
+        assert_eq!(fixture.snapshot()?, before);
+        for resource in ["prompts", "commands"] {
+            assert!(
+                fixture
+                    .command(["doctor", resource, "--agent", "claude", "--scope", scope])?
+                    .status
+                    .success()
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn invalid_link_inputs_and_foreign_destinations_are_preserved() -> TestResult {
+    for scope in ["user", "project"] {
+        for kind in [
+            "regular",
+            "directory",
+            "wrong",
+            "dangling",
+            "missing-source",
+            "missing-include",
+            "variable",
+            "cycle",
+            "source-outside",
+            "parent-link",
+            "hardlink",
+            "description",
+        ] {
+            let fixture = symlink_fixture()?;
+            let root = if scope == "user" {
+                fixture.home()
+            } else {
+                fixture.repository()
+            };
+            let source = fixture.repository().join("harness/prompts/review.md");
+            let path = root.join(".claude/commands/review.md");
+            fs::create_dir_all(path.parent().ok_or("missing parent")?)?;
+            match kind {
+                "regular" => fs::write(&path, SOURCE)?,
+                "directory" => fs::create_dir(&path)?,
+                "wrong" => symlink(
+                    fixture.repository().join("harness/prompts/context.md"),
+                    &path,
+                )?,
+                "dangling" => symlink("absent.md", &path)?,
+                "missing-source" => fs::remove_file(&source)?,
+                "missing-include" => {
+                    fs::remove_file(fixture.repository().join("harness/prompts/context.md"))?;
+                }
+                "variable" => fs::write(&source, "$UNKNOWN\n")?,
+                "cycle" => {
+                    fixture.write_repository("harness/prompts/context.md", "@review.md\n")?;
+                }
+                "source-outside" => {
+                    fixture.write_home("outside.md", SOURCE)?;
+                    fs::remove_file(&source)?;
+                    symlink(fixture.home().join("outside.md"), &source)?;
+                }
+                "parent-link" => {
+                    fs::remove_dir_all(root.join(".claude"))?;
+                    fs::create_dir(root.join("redirect"))?;
+                    symlink(root.join("redirect"), root.join(".claude"))?;
+                }
+                "hardlink" => fs::hard_link(&source, &path)?,
+                "description" => fixture.write_home(
+                    ".arnes.yaml",
+                    &MANIFEST
+                        .replace("representation: rendered", "representation: symlink")
+                        .replace("representation: file", "representation: symlink")
+                        .replace("description: Review changes", "description: Different"),
+                )?,
+                _ => return Err("unknown fixture".into()),
+            }
+            let before = fixture.snapshot()?;
+            let output =
+                fixture.command(["sync", "prompts", "--agent", "claude", "--scope", scope])?;
+            assert!(!output.status.success(), "{scope}/{kind}");
+            assert_eq!(fixture.snapshot()?, before, "{scope}/{kind}");
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn mixed_markdown_selection_is_prepared_before_any_publication() -> TestResult {
+    for (first, second) in [("rendered", "symlink"), ("symlink", "rendered")] {
+        let fixture = fixture()?;
+        let second_prompt = format!(
+            "\n  - id: linked\n    source: {{ root: repository, path: harness/prompts/linked.md }}\n    includes: []\n    variables: []\n    projections:\n      - {{ agent: claude, scope: user, representation: {second}, destination: {{ root: home, path: .claude/commands/linked.md }} }}\ncommands:"
+        );
+        fixture.write_home(
+            ".arnes.yaml",
+            &MANIFEST
+                .replace(
+                    "agent: claude, scope: user, representation: rendered",
+                    &format!("agent: claude, scope: user, representation: {first}"),
+                )
+                .replace("\ncommands:", &second_prompt),
+        )?;
+        fixture.write_repository("harness/prompts/linked.md", "Linked\n")?;
+        fixture.write_home(".claude/commands/linked.md", "Local command\n")?;
+        let before = fixture.snapshot()?;
+        let output =
+            fixture.command(["sync", "prompts", "--agent", "claude", "--scope", "user"])?;
+        assert!(!output.status.success());
+        assert_eq!(fixture.snapshot()?, before);
+        assert!(!fixture.home().join(".claude/commands/review.md").exists());
+    }
+    Ok(())
+}
+
+#[test]
+fn link_publication_cannot_alias_another_declared_source() -> TestResult {
+    for source in [".claude/commands/review.md", ".claude/commands"] {
+        let fixture = symlink_fixture()?;
+        let manifest = MANIFEST.replace("representation: rendered", "representation: symlink").replace("representation: file", "representation: symlink").replace("\ncommands:", &format!("\n  - id: reserved\n    source: {{ root: repository, path: {source} }}\n    includes: []\n    variables: []\n    projections: []\ncommands:"));
+        fixture.write_home(".arnes.yaml", &manifest)?;
         let before = fixture.snapshot()?;
         let output =
             fixture.command(["sync", "prompts", "--agent", "claude", "--scope", "project"])?;

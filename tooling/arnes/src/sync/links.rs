@@ -10,7 +10,7 @@ use std::path::{Component, Path, PathBuf};
 #[cfg(test)]
 mod tests;
 
-struct PreparedLink {
+pub(super) struct PreparedLink {
     intent: LinkIntent,
     source: PathBuf,
     protected_source: PathBuf,
@@ -45,7 +45,7 @@ pub(super) fn synchronize(selected: Vec<LinkIntent>) -> Vec<SyncEntry> {
     prepared.into_iter().map(publish).collect()
 }
 
-fn prepare(intent: LinkIntent) -> Result<PreparedLink, SyncEntry> {
+pub(super) fn prepare(intent: LinkIntent) -> Result<PreparedLink, SyncEntry> {
     let refused = |message| SyncEntry::new(&intent.id, SyncState::Refused, message);
     let source = intent.source().map_err(refused)?;
     let protected_source = intent.protected_source().map_err(refused)?;
@@ -128,7 +128,7 @@ fn validate_parent(root: &Path, destination: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn publish(link: PreparedLink) -> SyncEntry {
+pub(super) fn publish(link: PreparedLink) -> SyncEntry {
     match publish_link(&link) {
         Ok(state) => SyncEntry::new(link.intent.id, state, "managed link is conforming"),
         Err(message) => SyncEntry::new(link.intent.id, SyncState::Failed, message),

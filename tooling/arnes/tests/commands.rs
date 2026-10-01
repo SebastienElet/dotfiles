@@ -315,3 +315,61 @@ fn default_doctor_reuses_filtered_command_diagnostics()
     assert_eq!(aggregate, direct);
     Ok(())
 }
+
+#[test]
+fn command_selection_cannot_hide_an_unbound_prompt_source_alias()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    for scope in ["user", "project"] {
+        for alias in ["symlink", "hardlink"] {
+            let fixture = Fixture::new()?;
+            let prompts = format!(
+                "{}{}",
+                prompt(
+                    "first",
+                    "claude",
+                    scope,
+                    "symlink",
+                    ".claude/commands/first.md"
+                ),
+                prompt(
+                    "second",
+                    "claude",
+                    scope,
+                    "symlink",
+                    ".claude/commands/second.md"
+                )
+            );
+            let commands = command(
+                "first",
+                "first",
+                &format!("      - {{ agent: claude, scope: {scope} }}\n"),
+            );
+            fixture.write_home(".arnes.yaml", &manifest(&prompts, &commands))?;
+            fixture.write_repository("harness/prompts/first.md", CONTENTS)?;
+            let first = fixture.repository().join("harness/prompts/first.md");
+            let second = fixture.repository().join("harness/prompts/second.md");
+            if alias == "symlink" {
+                std::os::unix::fs::symlink("first.md", &second)?;
+            } else {
+                std::fs::hard_link(&first, &second)?;
+            }
+            let root = if scope == "user" {
+                fixture.home()
+            } else {
+                fixture.repository()
+            };
+            std::fs::create_dir_all(root.join(".claude/commands"))?;
+            std::os::unix::fs::symlink(&first, root.join(".claude/commands/first.md"))?;
+            std::os::unix::fs::symlink(&second, root.join(".claude/commands/second.md"))?;
+            let (code, stdout, _) = run(
+                &fixture,
+                &[
+                    "doctor", "commands", "--agent", "claude", "--scope", scope, "-v",
+                ],
+            )?;
+            assert_eq!(code, 2, "{scope}/{alias}: {stdout}");
+            assert!(stdout.contains("ambiguous source"), "{stdout}");
+        }
+    }
+    Ok(())
+}

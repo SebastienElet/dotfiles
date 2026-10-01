@@ -19,22 +19,27 @@ exécutée pour faire cette synchronisation.
 
 ## Représentations prises en charge
 
-| Ressource    | Agent et portée                     | Publication                                        |
-| ------------ | ----------------------------------- | -------------------------------------------------- |
-| Instructions | Claude user                         | Liens vers les sources du harnais                  |
-| Instructions | Claude project                      | Fichier contenant l'include de la source déclarée  |
-| Instructions | Codex user                          | Contenu assemblé suivant le renderer du Doctor     |
-| Prompts      | Claude user/project, Cursor project | Fichier direct ou contenu rendu déclaré            |
-| Commandes    | Claude user/project                 | Même fichier que la projection du prompt référencé |
+| Ressource    | Agent et portée     | Publication                                          |
+| ------------ | ------------------- | ---------------------------------------------------- |
+| Instructions | Claude user         | Liens vers les sources du harnais                    |
+| Instructions | Claude project      | Fichier contenant l'include de la source déclarée    |
+| Instructions | Codex user          | Contenu assemblé suivant le renderer du Doctor       |
+| Prompts      | Claude user/project | Fichier direct, contenu rendu ou lien vers la source |
+| Prompts      | Cursor project      | Fichier direct ou contenu rendu déclaré              |
+| Commandes    | Claude user/project | Même artefact que la projection du prompt référencé  |
 
 Cursor instructions, Codex project instructions, Codex prompts, Cursor user
 prompts et les commandes Cursor/Codex ne sont pas pris en charge. Les projections
-de prompts par symlink restent refusées, conformément au périmètre de #158.
+de prompts Cursor par symlink restent `Unsupported` : leur contrat natif n'est pas
+établi.
 
 Les includes, leur frontière et leurs cycles sont contrôlés avec le résolveur
 existant. Les projections de prompts utilisent exactement les représentations
-`file` et `rendered` déjà reconnues par Doctor. Les variables déclarées sont des
-noms de références : la synchronisation conserve `$NAME`, `${NAME}` et les
+`file`, `rendered` et, pour Claude, `symlink` reconnues par Doctor. Une projection
+liée conserve le texte direct de la source ; elle n'assemble pas les includes.
+Doctor vérifie la source, les includes et les variables, puis le type de
+destination, sa frontière, sa cible canonique attendue et le contenu lu à travers
+le lien. Les variables déclarées sont des noms de références : la synchronisation conserve `$NAME`, `${NAME}` et les
 arguments natifs dans le texte ; elle n'invente aucune valeur à substituer.
 
 Une commande utilise la projection Claude du prompt déclaré. Son nom doit
@@ -46,9 +51,9 @@ même artefact et le même propriétaire de publication.
 
 ## Propriété et rejeu
 
-Une destination absente peut être créée. Un lien Claude user attendu reste
-inchangé ; tout autre lien, fichier ou type de destination est conservé avec
-refus. Les instructions locales Claude project qui incluent déjà la source sont
+Une destination absente peut être créée. Un lien d'instructions Claude user ou de
+prompt Claude user/project attendu reste inchangé, sans reçu ; tout autre lien,
+fichier ou type de destination est conservé avec refus. Les instructions locales Claude project qui incluent déjà la source sont
 conformes et restent intactes. Un fichier project préexistant sans cet include et
 sans provenance n'est jamais modifié pour l'ajouter.
 
@@ -80,9 +85,9 @@ des raccourcis d'adoption.
 
 Toute la sélection est préparée avant publication : capacités, sources, includes,
 variables, collisions, descriptions et preuves de propriété. Une erreur de cette
-préparation laisse les destinations sélectionnées intactes. La source est rendue
-de nouveau avant de publier chaque fichier ; un changement observé arrête cette
-publication.
+préparation laisse les destinations sélectionnées intactes. La source est validée
+et sa représentation est recalculée avant de publier chaque artefact ; un
+changement observé arrête cette publication.
 
 L'écrivain natif refuse les traversées de parents symboliques, vérifie les
 snapshots et publie par fichier temporaire puis renommage. Un échec ne produit
@@ -110,3 +115,10 @@ les résultats du Doctor, le rejeu, les refus et les échecs de publication. Les
 preuves locales sont produites sur macOS arm64 avec Rust/Cargo 1.98.1 ; Ubuntu est
 la seconde cible et reste à vérifier en CI. Des fichiers conformes ne prouvent
 pas qu'une session Claude, Cursor ou Codex les a effectivement chargés.
+
+L'[expérience native de #158](https://github.com/SebastienElet/dotfiles/issues/158#issuecomment-5916221908)
+avec Claude Code 2.1.280 a observé `/probe-user` dans `slash_commands` à l'initialisation avec une configuration isolée et un
+lien user, contrairement au témoin absent. Elle n'a pas invoqué la commande ni
+vérifié l'authentification ou le chargement complet des includes. Cette observation
+ne garantit pas l'exécution d'une commande liée dans une session Claude ; la
+prise en charge project est vérifiée ici par les oracles Arnes.

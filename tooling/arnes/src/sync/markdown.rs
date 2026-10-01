@@ -5,6 +5,7 @@ use crate::manifest::{Agent, Manifest, Scope};
 use crate::prompts::ProjectionTracker;
 
 pub(super) mod owned;
+mod publication;
 mod selection;
 
 pub(super) fn synchronize(
@@ -61,12 +62,24 @@ pub(super) fn synchronize(
             .validate(roots, candidate.prompt, candidate.projection)
             .map_err(|_| "Markdown source or destination collides with another resource")
             .and_then(|()| selection::contents(roots, manifest, &candidate));
-        match result.and_then(|contents| selection::intent(roots, manifest, &candidate, contents)) {
-            Ok(intent) => match owned::prepare(intent) {
+        match result {
+            Ok(contents) => match publication::prepare(roots, manifest, &candidate, contents) {
                 Ok(projection) => prepared.push((candidate, projection)),
                 Err(entry) => refused.push(entry),
             },
-            Err(message) => refused.push(SyncEntry::new(candidate.id, SyncState::Refused, message)),
+            Err(message) => {
+                let state = if candidate.projection.representation
+                    == crate::manifest::PromptRepresentation::Symlink
+                    && !crate::prompts::capability::symlink(
+                        candidate.projection.agent,
+                        candidate.projection.scope,
+                    ) {
+                    SyncState::Unsupported
+                } else {
+                    SyncState::Refused
+                };
+                refused.push(SyncEntry::new(candidate.id, state, message));
+            }
         }
     }
     if !refused.is_empty() {
@@ -85,7 +98,7 @@ pub(super) fn synchronize(
             |(candidate, projection)| match selection::contents(roots, manifest, &candidate) {
                 Ok(contents) if contents == projection.expected() => projection.publish(),
                 _ => SyncEntry::new(
-                    projection.id(),
+                    candidate.id,
                     SyncState::Failed,
                     "canonical source changed before publication",
                 ),
