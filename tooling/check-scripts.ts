@@ -1,5 +1,5 @@
-import { readFileSync, statSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { z } from "zod";
 
 const argumentOffset = 2;
@@ -114,11 +114,23 @@ function selectShellCheck(arguments_: readonly string[]): number {
 }
 
 function workspacePath(path: string): string {
-  const local = relative(process.cwd(), resolve(path));
-  if (local === ".." || local.startsWith("../")) {
-    throw new Error(`Changed Shell path is outside the workspace: ${path}`);
+  const root = process.cwd();
+  const absolute = resolve(path);
+  const local = relative(root, absolute);
+  if (local !== ".." && !local.startsWith("../")) {
+    return local || ".";
   }
-  return local || ".";
+  let ancestor = absolute;
+  while (true) {
+    if (existsSync(ancestor) && realpathSync(ancestor) === root) {
+      return relative(ancestor, absolute) || ".";
+    }
+    const parent = dirname(ancestor);
+    if (parent === ancestor) {
+      throw new Error(`Changed Shell path is outside the workspace: ${path}`);
+    }
+    ancestor = parent;
+  }
 }
 
 function checkFiles(

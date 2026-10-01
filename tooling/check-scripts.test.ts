@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -174,6 +175,57 @@ test.each(["./tooling/upgrade", "absolute"])(
     expect(result.exitCode).toBe(failureStatus);
   },
 );
+
+test.each(["tooling/upgrade", "deleted script.sh", "."])(
+  "selects Shell paths through a workspace alias: %s",
+  (path) => {
+    const root = fixture();
+    const aliases = mkdtempSync(join(tmpdir(), "check-scripts-aliases-"));
+    roots.push(aliases);
+    const alias = join(aliases, "workspace with spaces");
+    symlinkSync(root, alias);
+    const moon = join(root, "bin/moon");
+    writeFileSync(moon, "#!/bin/sh\ncat\nexit 31\n");
+    chmodSync(moon, executableMode);
+    const result = run(root, "shell-ci", [
+      join(alias, "tooling/check-scripts.ts"),
+      "--",
+      join(alias, path),
+    ]);
+    expect(result.exitCode).toBe(failureStatus);
+    expect(JSON.parse(result.stdout.toString())).toEqual({ files: [path] });
+  },
+);
+
+test("refuses an absolute Shell path outside the workspace", () => {
+  const root = fixture();
+  const outside = fixture();
+  const result = run(root, "shell-ci", [
+    "tooling/check-scripts.ts",
+    "--",
+    join(outside, "tooling/upgrade"),
+  ]);
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toContain("outside the workspace");
+});
+
+test("preserves the tracked identity of a leaf symlink", () => {
+  const root = fixture();
+  symlinkSync("upgrade", join(root, "tooling/linked script.sh"));
+  index(root);
+  const moon = join(root, "bin/moon");
+  writeFileSync(moon, "#!/bin/sh\ncat\nexit 31\n");
+  chmodSync(moon, executableMode);
+  const result = run(root, "shell-ci", [
+    "tooling/check-scripts.ts",
+    "--",
+    join(root, "tooling/linked script.sh"),
+  ]);
+  expect(result.exitCode).toBe(failureStatus);
+  expect(JSON.parse(result.stdout.toString())).toEqual({
+    files: ["tooling/linked script.sh"],
+  });
+});
 
 test.each(["tooling/broken", "broken name.sh"])(
   "checks newly indexed %s and propagates tool failure",
