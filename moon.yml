@@ -13,6 +13,7 @@ tasks:
       runInCI: false
     inputs:
       - /tooling/clean-deployment*.ts
+      - /tooling/clean-deployment-worker-inspect.js
       - /home/.arnes.yaml
   install:
     description: Install the minimal workstation

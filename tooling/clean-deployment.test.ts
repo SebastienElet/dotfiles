@@ -230,8 +230,11 @@ test("preserves memory databases, credentials, application data and third party 
     ".local/share/nvim/data",
     ".cache/nvim/cache",
     ".remem/memory.db",
+    ".remem/key",
+    ".remem/remem.log",
     ".codex/auth.json",
     ".local/bin/remem",
+    ".local/bin/remem-hook",
     ".tmux/plugins/tpm/tpm",
   ];
   for (const path of retained) {
@@ -244,7 +247,7 @@ test("preserves memory databases, credentials, application data and third party 
   }
 });
 
-test("reports the unresolved worker service before removing its config or deployments", () => {
+test("refuses an invalid worker plist before removing deployments", () => {
   const context = fixture();
   const { destination } = managedLink(context);
   const plist = join(
@@ -255,7 +258,7 @@ test("reports the unresolved worker service before removing its config or deploy
   writeFileSync(plist, "owned worker definition\n");
   const result = clean(context);
   expect(result.exitCode).not.toBe(0);
-  expect(result.stderr).toContain("Worker service cleanup is unresolved");
+  expect(result.stderr).toContain("Error:");
   expect(pathExists(destination)).toBeTrue();
   expect(readFileSync(plist, "utf8")).toBe("owned worker definition\n");
 });

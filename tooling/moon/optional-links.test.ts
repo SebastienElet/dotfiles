@@ -169,7 +169,7 @@ function cursorFixture(): Readonly<{
   const trace = join(fixture.root, "arnes-trace");
   const arnes = join(fixture.home, ".local", "bin", "arnes");
   mkdirSync(dirname(arnes), { recursive: true });
-  symlinkSync(join(project, "tooling", "remem-fake-command.ts"), arnes);
+  symlinkSync(join(project, "tooling", "deployment-test-command.ts"), arnes);
   writeFileSync(trace, "");
   return { fixture, trace };
 }

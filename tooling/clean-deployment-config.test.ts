@@ -19,22 +19,6 @@ function fixture(): ReturnType<typeof createDeploymentFixture> {
     JSON.stringify({
       version: 1,
       skills: [],
-      mcp: [
-        {
-          name: "remem",
-          agent: "codex",
-          scope: "user",
-          command: "/bin/sh",
-          args: ["-c", mcpCommand],
-        },
-        {
-          name: "remem",
-          agent: "claude",
-          scope: "user",
-          command: "/bin/sh",
-          args: ["-c", mcpCommand],
-        },
-      ],
     }),
   );
   return context;

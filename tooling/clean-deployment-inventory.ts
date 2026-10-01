@@ -56,6 +56,8 @@ const links = [
   ["home/.config/cspell/user.txt", ".config/cspell/user.txt"],
   ["home/.arnes.yaml", ".arnes.yaml"],
   ["home/.remem/config.toml", ".remem/config.toml"],
+  ["harness/skills/remem-memory", ".agents/skills/remem-memory"],
+  ["harness/skills/remem-memory", ".claude/skills/remem-memory"],
   ["home/.psqlrc", ".psqlrc"],
   ["harness/AGENTS.md", ".claude/CLAUDE.md"],
   ["harness/SOUL.md", ".claude/SOUL.md"],
@@ -123,14 +125,28 @@ function deploymentArtifacts(
   ];
 }
 
+const retiredRememCommand =
+  'export PATH="$HOME/.local/bin:$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; exec "$HOME/.local/bin/remem" mcp';
+const retiredRegistrations: readonly McpRegistration[] = [
+  "claude",
+  "codex",
+].map((agent) => ({
+  name: "remem",
+  agent: agentSchema.parse(agent),
+  scope: "user",
+  command: "/bin/sh",
+  args: ["-c", retiredRememCommand],
+}));
+
 function mcpRegistrations(repository: string): readonly McpRegistration[] {
-  return manifestSchema
+  const current = manifestSchema
     .parse(
       Bun.YAML.parse(
         readFileSync(join(repository, "home/.arnes.yaml"), "utf8"),
       ),
     )
     .mcp.filter((registration) => registration.scope === "user");
+  return [...current, ...retiredRegistrations];
 }
 
 export { deploymentArtifacts, mcpRegistrations };

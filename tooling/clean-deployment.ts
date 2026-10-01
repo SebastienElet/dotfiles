@@ -11,9 +11,10 @@ import {
   cleanRoots,
   verifyParents,
 } from "./clean-deployment-paths.ts";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { lstatSync, readlinkSync, unlinkSync } from "node:fs";
 import { gitIncludeUpdates } from "./clean-deployment-git.ts";
+import { prepareWorkerCleanup } from "./clean-deployment-worker.ts";
 import { z } from "zod";
 
 const pathSchema = z.string().min(1);
@@ -86,7 +87,6 @@ function cleanDeployment(
   apply: boolean,
 ): void {
   const roots = cleanRoots(repository, home);
-  requireWorkerDecision(roots);
   const artifacts = deploymentArtifacts(roots.repository, roots.home);
   for (const artifact of artifacts) {
     verifyParents(roots.home, roots.repository, artifact.destination);
@@ -102,6 +102,7 @@ function cleanDeployment(
     })),
     ...gitIncludeUpdates(roots.repository, roots.home),
   ];
+  const worker = prepareWorkerCleanup(roots, { homeAliases: [resolve(home)] });
   const configActions = updates.map((update) => (): void => {
     if (apply) {
       update.apply();
@@ -113,19 +114,8 @@ function cleanDeployment(
   const artifactActions = artifacts.map((artifact) => (): void => {
     cleanArtifact(artifact, roots, apply);
   });
+  worker?.(apply);
   executeCleanup([...configActions, ...artifactActions]);
-}
-
-function requireWorkerDecision(
-  roots: Readonly<{ repository: string; home: string }>,
-): void {
-  const path = join(roots.home, "Library/LaunchAgents/dev.remem.worker.plist");
-  verifyParents(roots.home, roots.repository, path);
-  if (lstatSync(path, { throwIfNoEntry: false }) !== undefined) {
-    throw new Error(
-      `Worker service cleanup is unresolved: ${path}; preserve the service and its configuration until its lifecycle is decided`,
-    );
-  }
 }
 
 if (import.meta.main) {

@@ -9,7 +9,6 @@ const snapshotPaths = [
   ".agents/skills",
   ".arnes.yaml",
   ".claude",
-  ".claude.json",
   ".codex/AGENTS.md",
   ".codex/agents",
   ".config/bat",
@@ -99,28 +98,73 @@ function snapshot(home: string): string {
   return createHash("sha256").update(result.stdout).digest("hex");
 }
 
+type ProfileOperations = Readonly<{
+  install: () => Readonly<{
+    stdout: Readonly<Buffer>;
+    stderr: Readonly<Buffer>;
+  }>;
+  clean: () => Readonly<{ stdout: Readonly<Buffer>; stderr: Readonly<Buffer> }>;
+  verify: () => void;
+  snapshot: () => string;
+}>;
+
+function emitResult(
+  result: Readonly<{ stdout: Readonly<Buffer>; stderr: Readonly<Buffer> }>,
+): void {
+  process.stdout.write(result.stdout);
+  process.stderr.write(result.stderr);
+}
+
+function verifyReplay(operations: ProfileOperations): void {
+  const before = operations.snapshot();
+  const repeat = operations.install();
+  if (repeat.stdout.length > 0 || repeat.stderr.length > 0) {
+    emitResult(repeat);
+    throw new Error("Repeated installation must be silent");
+  }
+  if (operations.snapshot() !== before) {
+    throw new Error("Installed artifacts changed on repeat installation");
+  }
+  operations.verify();
+}
+
+function smokeMinimalProfile(operations: ProfileOperations): void {
+  emitResult(operations.install());
+  operations.verify();
+  verifyReplay(operations);
+  emitResult(operations.clean());
+  emitResult(operations.install());
+  operations.verify();
+  verifyReplay(operations);
+}
+
 function main(): void {
   const home = pathSchema.parse(process.env.HOME);
   const root = resolve(import.meta.dir, "..");
-  const first = checkCommand(installCommand);
-  process.stdout.write(first.stdout);
-  process.stderr.write(first.stderr);
-  verifyInstallation(home, root);
-  const before = snapshot(home);
-  const repeat = checkCommand(installCommand);
-  if (repeat.stdout.length > 0 || repeat.stderr.length > 0) {
-    process.stdout.write(repeat.stdout);
-    process.stderr.write(repeat.stderr);
-    throw new Error("Repeated installation must be silent");
-  }
-  if (snapshot(home) !== before) {
-    throw new Error("Installed artifacts changed on repeat installation");
-  }
-  verifyInstallation(home, root);
+  smokeMinimalProfile({
+    install: () => checkCommand(installCommand),
+    clean: () =>
+      checkCommand([
+        "moon",
+        "exec",
+        "--quiet",
+        "--ignore-ci-checks",
+        "repository:clean",
+      ]),
+    verify: () => {
+      verifyInstallation(home, root);
+    },
+    snapshot: () => snapshot(home),
+  });
 }
 
-try {
-  main();
-} catch (error) {
-  reportCheckFailure(error);
+if (import.meta.main) {
+  try {
+    main();
+  } catch (error) {
+    reportCheckFailure(error);
+  }
 }
+
+export { smokeMinimalProfile };
+export type { ProfileOperations };

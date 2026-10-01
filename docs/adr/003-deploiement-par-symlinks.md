@@ -34,8 +34,9 @@ Les destinations et les sources restent celles de l'ADR-038. Une suppression ou 
 plus large est une action explicite. La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152)
 étend `make clean`, délégué à `repository:clean`, aux artefacts déployés possédés des profils
 minimal et optionnel, en conservant sources, données personnelles et paquets tiers.
-La présence du plist remem reste une frontière bloquée avant mutation tant que l’arrêt du service
-n'est pas décidé. Cette commande ne constitue pas une remise à zéro générale du poste.
+Le [retrait de remem](../remem.md), autorisé le 2026-10-01, arrête uniquement le worker reconnu
+avant de retirer ses artefacts possédés, en conservant ses données. Une identité native inconnue
+ou étrangère provoque un refus. Cette commande ne constitue pas une remise à zéro générale du poste.
 
 ## Conséquences
 
