@@ -1,0 +1,22 @@
+tags:
+  - rust-cli
+env:
+  RUSTFLAGS: -Funsafe-code
+fileGroups:
+  rust:
+    - /.github/workflows/test-bitbucket-linear.yml
+    - /tooling/bitbucket-linear-sync
+tasks:
+  build:
+    deps:
+      - repository:rust
+    options:
+      cache: false
+      mutex: bitbucket-linear-cargo-target
+      runInCI: false
+    toolchains: system
+    command: cargo build --release --locked
+  test:
+    options:
+      cache: false
+      mutex: bitbucket-linear-cargo-target

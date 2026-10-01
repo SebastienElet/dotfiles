@@ -35,6 +35,9 @@ tasks:
       - arnes:fmt
       - arnes:clippy
       - arnes:check
+      - bitbucket-linear-sync:fmt
+      - bitbucket-linear-sync:clippy
+      - bitbucket-linear-sync:check
       - agent-memory:fmt
       - agent-memory:clippy
       - agent-handoff:fmt
@@ -50,6 +53,7 @@ tasks:
       - fish-test
       - tooling:test
       - arnes:test
+      - bitbucket-linear-sync:test
       - agent-memory:test
       - agent-handoff:test
       - proof-integrity:test

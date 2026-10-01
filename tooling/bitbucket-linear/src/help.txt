@@ -1,0 +1,67 @@
+Inspection is the default. --apply prints the complete plan before mutations.
+
+CONFIGURATION
+  Build: moon run bitbucket-linear-sync:build
+  Run: tooling/bitbucket-linear-sync --config reconciliation.json [--apply] [--json]
+  Authenticate bkt and linear separately; configuration contains no secrets.
+  bktContext must uniquely target api.bitbucket.org. linearWorkspace is explicit.
+  Supported targets: macOS and Ubuntu, with bkt and linear installed.
+
+  {
+    "bktContext": "work",
+    "linearWorkspace": "work",
+    "repositories": [{
+      "workspace": "acme",
+      "repository": "app",
+      "teamKey": "ENG",
+      "teamId": "00000000-0000-4000-8000-000000000001",
+      "completedStateId": "00000000-0000-4000-8000-000000000002"
+    }]
+  }
+
+  UUIDs above are examples. Obtain actual team and workflow-state UUIDs from Linear.
+  completedStateId is optional when exactly one completed state exists in the team.
+  Duplicate repositories, unknown keys and inconsistent team settings are invalid.
+
+DECISIONS
+  All configured repositories, all authors, OPEN/MERGED/DECLINED PRs and all pages
+  are read. Identity, URLs, fields, totals, cursors and mutation results are checked.
+  Title, source branch and description must yield exactly one distinct configured
+  issue identifier, using ASCII lexical boundaries and case-insensitive deduplication.
+  Missing identifiers are ignored; ambiguous or wrong-team matches cannot mutate.
+  Attachments use the canonical Bitbucket URL, PR title and current PR state.
+  Duplicate attachments block their issue. Existing conforming links are unchanged.
+  Completion requires an active issue, complete inventory, at least one MERGED PR,
+  no OPEN PR, a resolved completed state and successful, freshly checked attachments.
+  Canceled/completed issues are never moved; issues observed as archived in the plan are not mutated.
+
+REPLAY AND LIMITS
+  Actions are ordered by issue identifier then URL. A failed attachment blocks its
+  issue's completion; independent actions continue. Incomplete repository inventory
+  blocks completion throughout the affected team. Each invocation reads both
+  providers again and recalculates; already satisfied actions cause no writes.
+  Commands are sequential, limited to 30 seconds and bounded output, without retries.
+  A timed-out mutation has an unknown outcome: inspect afresh before re-applying.
+  State and attachments are reread before completion. No cross-provider transaction
+  or atomic protection against all concurrent changes exists; later runs repair drift.
+  Bitbucket is never modified. This command does not inspect proof checkboxes and
+  does not replace the agent linear-sync workflow.
+  Authenticated multi-page/multi-author collection, real idempotence, partial-failure
+  recovery and completion require qualification on explicitly designated disposable
+  provider resources. Automated fixture tests alone do not establish those guarantees.
+
+OUTPUT AND EXIT CODES
+  --json emits two JSON lines: phase "plan", then phase "result". The plan retains
+  provider identities, observed issue/PR states, actions and blocking reasons.
+  Statuses: unchanged, linked, updated, completed, ambiguous, ignored, failed.
+  PR descriptions, secrets and raw provider diagnostics are never printed.
+  0: complete inspection or successful apply.
+  1: provider, inventory, ambiguity, mutation or output failure.
+  2: invalid usage/configuration before any provider operation.
+
+PROVIDER CONTRACTS
+  https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/
+  https://developer.atlassian.com/cloud/bitbucket/rest/intro/#pagination
+  https://linear.app/developers/pagination
+  https://linear.app/developers/graphql
+  https://linear.app/developers/attachments (issue ID + URL is the upsert key)
