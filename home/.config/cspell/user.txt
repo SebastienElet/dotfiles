@@ -97,3 +97,9 @@ xoxs
 remem
 realpath
 toplevel
+confirmer
+ooxml
+pentest
+pssi
+renseigner
+sécurité

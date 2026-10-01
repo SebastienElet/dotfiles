@@ -1,0 +1,14 @@
+schema_version: 1
+document:
+  business_unit: null
+  legal_entity: null
+  applications: []
+  version: null
+  status: draft
+  author: null
+  approvers: []
+  distribution: null
+sources: []
+facts: []
+open_points: []
+history: []
