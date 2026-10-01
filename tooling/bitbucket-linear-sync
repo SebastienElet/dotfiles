@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-exec "$(dirname "$0")/bitbucket-linear/target/release/bitbucket-linear-sync" "$@"

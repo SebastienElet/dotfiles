@@ -5,7 +5,7 @@ env:
 fileGroups:
   rust:
     - /.github/workflows/test-bitbucket-linear.yml
-    - /tooling/bitbucket-linear-sync
+    - /home/.config/fish/conf.d/aliases.fish
 tasks:
   build:
     deps:

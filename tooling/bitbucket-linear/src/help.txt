@@ -2,7 +2,7 @@ Inspection is the default. --apply prints the complete plan before mutations.
 
 CONFIGURATION
   Build: moon run bitbucket-linear-sync:build
-  Run: tooling/bitbucket-linear-sync --config reconciliation.json [--apply] [--json]
+  Run (Fish): bitbucket-linear-sync --config reconciliation.json [--apply] [--json]
   Authenticate bkt and linear separately; configuration contains no secrets.
   bktContext must uniquely target api.bitbucket.org. linearWorkspace is explicit.
   Supported targets: macOS and Ubuntu, with bkt and linear installed.

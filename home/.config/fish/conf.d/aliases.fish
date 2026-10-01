@@ -7,6 +7,7 @@ alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistr
 alias t='tmux'
 alias tm='tmux'
 alias upgrade='~/.dotfiles/tooling/upgrade'
+alias bitbucket-linear-sync='~/.dotfiles/tooling/bitbucket-linear/target/release/bitbucket-linear-sync'
 
 if type -q nvim
     alias vim='nvim'
