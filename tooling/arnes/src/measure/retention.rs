@@ -39,9 +39,6 @@ struct ExpiredRun {
 
 pub fn retain(store: &Store, now_ms: u64) -> Result<(), MeasureError> {
     let state_path = store.state_path("retention.json");
-    if read_state(&state_path)?.is_some_and(|state| suppresses_sweep(&state, now_ms)) {
-        return Ok(());
-    }
     let lock = open_private_append(&store.state_path("retention.lock"))?;
     lock.lock()?;
     if read_state(&state_path)?.is_some_and(|state| suppresses_sweep(&state, now_ms)) {

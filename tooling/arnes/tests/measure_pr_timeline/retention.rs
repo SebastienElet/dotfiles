@@ -1,7 +1,7 @@
 use super::support::*;
-use std::io::Write;
-use std::os::unix::fs::symlink;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::io::{Read, Write};
+use std::os::unix::fs::{OpenOptionsExt, symlink};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 const DAY_MS: u64 = 86_400_000;
 #[test]
 fn expires_the_whole_pr_timeline_at_90_days() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
@@ -297,4 +297,79 @@ fn now_ms() -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         .duration_since(UNIX_EPOCH)?
         .as_millis()
         .try_into()?)
+}
+
+#[test]
+fn pr_verdict_waits_for_atomic_retention_publication_before_reading_state()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let harness = Harness::new()?;
+    assert_status(&harness.record(&[])?, "recorded");
+    let root = harness.measure_root();
+    let lock = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.join("retention.lock"))?;
+    lock.lock()?;
+    let mut child = harness.command(&[("--head-sha", OTHER_SHA)]).spawn()?;
+    wait_for_second_timeline_event(&harness.timeline()?)?;
+    let waiting_until = Instant::now() + Duration::from_millis(100);
+    loop {
+        if child.try_wait()?.is_some() {
+            let output = child.wait_with_output()?;
+            return Err(format!(
+                "PR verdict read retention state before its writer released the lock: {output:#?}"
+            )
+            .into());
+        }
+        if Instant::now() >= waiting_until {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    let mut replacement = retention_state(&harness)?;
+    let object = replacement
+        .as_object_mut()
+        .ok_or("retention state is not an object")?;
+    object.insert("swept_at_ms".to_owned(), json!(0));
+    object.insert("next_sweep_at_ms".to_owned(), json!(0));
+    let temporary = root.join("retention.tmp-fixture");
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&temporary)?;
+    serde_json::to_writer(&mut file, &replacement)?;
+    file.sync_all()?;
+    fs::rename(&temporary, root.join("retention.json"))?;
+    drop(lock);
+    assert_status(&child.wait_with_output()?, "recorded");
+    assert_eq!(harness.events()?.len(), 2);
+    let maintained = retention_state(&harness)?;
+    assert!(
+        maintained
+            .get("next_sweep_at_ms")
+            .and_then(Value::as_u64)
+            .ok_or("retention deadline is missing")?
+            > now_ms()?
+    );
+    Ok(())
+}
+
+fn wait_for_second_timeline_event(
+    path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        let mut file = fs::File::open(path)?;
+        file.lock_shared()?;
+        let mut records = String::new();
+        file.read_to_string(&mut records)?;
+        if records.lines().count() == 2 {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err("PR verdict did not publish its event before the retention barrier".into());
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
 }
