@@ -61,15 +61,19 @@ pub(super) fn contents(
     manifest: &Manifest,
     candidate: &Candidate<'_>,
 ) -> Result<String, &'static str> {
-    if candidate.projection.representation == PromptRepresentation::Symlink {
+    if candidate.projection.representation == PromptRepresentation::Symlink
+        && !crate::prompts::capability::symlink(
+            candidate.projection.agent,
+            candidate.projection.scope,
+        )
+    {
         return Err("symlink prompt projections are unsupported");
     }
     let expected = source::validate(roots, candidate.prompt)
         .map_err(|_| "prompt source, includes or variables are invalid")?;
     let contents = match candidate.projection.representation {
-        PromptRepresentation::File => expected.direct,
+        PromptRepresentation::File | PromptRepresentation::Symlink => expected.direct,
         PromptRepresentation::Rendered => expected.rendered,
-        PromptRepresentation::Symlink => return Err("symlink prompt projections are unsupported"),
     };
     for command in manifest
         .commands()

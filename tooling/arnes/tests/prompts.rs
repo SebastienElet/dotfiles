@@ -95,17 +95,17 @@ fn supported_combinations_without_managed_projections_are_explicitly_unsupported
     Ok(())
 }
 #[test]
-fn symlink_representation_is_unsupported_without_inspecting_its_source()
+fn cursor_symlink_representation_is_unsupported_without_inspecting_its_source()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = Fixture::new()?;
     fixture.write_home(
         ".arnes.yaml",
-        &manifest(&project_prompt("missing", "claude", "symlink")),
+        &manifest(&project_prompt("missing", "cursor", "symlink")),
     )?;
     let (code, stdout, _) = run(
         &fixture,
         &[
-            "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
+            "doctor", "prompts", "--agent", "cursor", "--scope", "project", "-v",
         ],
     )?;
     assert_eq!(code, 0, "{stdout}");
@@ -243,5 +243,162 @@ fn default_doctor_reuses_filtered_prompt_diagnostics()
         .map(|(_, entry)| entry)
         .collect::<Vec<_>>();
     assert_eq!(aggregate, direct);
+    Ok(())
+}
+
+#[test]
+fn claude_symlink_doctor_checks_target_and_source_without_mutation()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    for kind in [
+        "healthy",
+        "relative",
+        "missing",
+        "wrong",
+        "dangling",
+        "regular",
+        "variable",
+        "source-outside",
+        "parent-outside",
+    ] {
+        let fixture = Fixture::new()?;
+        fixture.write_home(
+            ".arnes.yaml",
+            &manifest(&project_prompt("review", "claude", "symlink")),
+        )?;
+        fixture.write_repository("harness/prompts/review.md", "Review\n")?;
+        fixture.write_repository(".claude/commands/neighbor.md", "Neighbor\n")?;
+        let source = fixture.repository().join("harness/prompts/review.md");
+        let destination = fixture.repository().join(".claude/commands/review.md");
+        match kind {
+            "missing" => {}
+            "regular" => std::fs::write(&destination, "Review\n")?,
+            "wrong" => std::os::unix::fs::symlink("neighbor.md", &destination)?,
+            "dangling" => std::os::unix::fs::symlink("absent.md", &destination)?,
+            "relative" => {
+                std::os::unix::fs::symlink("../../harness/prompts/review.md", &destination)?;
+            }
+            "source-outside" => {
+                fixture.write_home("outside.md", "Review\n")?;
+                std::fs::remove_file(&source)?;
+                std::os::unix::fs::symlink(fixture.home().join("outside.md"), &source)?;
+                std::os::unix::fs::symlink(&source, &destination)?;
+            }
+            "parent-outside" => {
+                std::fs::remove_dir_all(fixture.repository().join(".claude"))?;
+                fixture.write_home("commands/neighbor.md", "Neighbor\n")?;
+                std::os::unix::fs::symlink(fixture.home(), fixture.repository().join(".claude"))?;
+                std::os::unix::fs::symlink(&source, &destination)?;
+            }
+            _ => {
+                if kind == "variable" {
+                    std::fs::write(&source, "$UNKNOWN\n")?;
+                }
+                std::os::unix::fs::symlink(&source, &destination)?;
+            }
+        }
+        let (code, stdout, _) = run(
+            &fixture,
+            &[
+                "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
+            ],
+        )?;
+        assert_eq!(
+            code == 0,
+            matches!(kind, "healthy" | "relative"),
+            "{kind}: {stdout}"
+        );
+        assert!(!stdout.contains("unsupported"), "{kind}: {stdout}");
+    }
+    Ok(())
+}
+
+#[test]
+fn linked_prompt_destinations_and_sources_still_have_distinct_owners()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    for kind in ["source", "destination", "resource"] {
+        let fixture = Fixture::new()?;
+        let first = project_prompt("first", "claude", "symlink");
+        let mut second = project_prompt("second", "claude", "symlink");
+        match kind {
+            "destination" => {
+                second = second.replace(
+                    ".claude/commands/second.md",
+                    ".claude/commands/alias/first.md",
+                );
+            }
+            "source" | "resource" => {}
+            _ => return Err("unknown fixture".into()),
+        }
+        let mut contents = manifest(&format!("{first}{second}"));
+        if kind == "resource" {
+            contents = contents.replace("resources: []", "resources:\n  - id: occupied\n    agent: claude\n    scope: project\n    kind: instructions\n    source: { root: repository, path: harness/instructions.md }\n    destination: { root: repository, path: .claude/commands/first.md }");
+            fixture.write_repository("harness/instructions.md", "Instructions\n")?;
+        }
+        fixture.write_home(".arnes.yaml", &contents)?;
+        fixture.write_repository("harness/prompts/first.md", "First\n")?;
+        if kind == "source" {
+            std::os::unix::fs::symlink(
+                "first.md",
+                fixture.repository().join("harness/prompts/second.md"),
+            )?;
+        } else {
+            fixture.write_repository("harness/prompts/second.md", "Second\n")?;
+        }
+        fixture.write_repository(".claude/commands/neighbor.md", "Neighbor\n")?;
+        if kind == "destination" {
+            std::os::unix::fs::symlink(".", fixture.repository().join(".claude/commands/alias"))?;
+        }
+        std::os::unix::fs::symlink(
+            fixture.repository().join("harness/prompts/first.md"),
+            fixture.repository().join(".claude/commands/first.md"),
+        )?;
+        if kind != "destination" {
+            std::os::unix::fs::symlink(
+                fixture.repository().join(if kind == "source" {
+                    "harness/prompts/first.md"
+                } else {
+                    "harness/prompts/second.md"
+                }),
+                fixture.repository().join(".claude/commands/second.md"),
+            )?;
+        }
+        let (code, stdout, stderr) = run(
+            &fixture,
+            &[
+                "doctor", "prompts", "--agent", "claude", "--scope", "project", "-v",
+            ],
+        )?;
+        assert_ne!(code, 0, "{kind}: {stdout}{stderr}");
+        assert!(
+            stdout.contains("ambiguous") || stdout.contains("duplicates"),
+            "{kind}: {stdout}{stderr}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn unsupported_cursor_link_does_not_claim_a_source_alias()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = Fixture::new()?;
+    let prompts = format!(
+        "{}{}",
+        project_prompt("first", "cursor", "symlink"),
+        project_prompt("second", "cursor", "symlink")
+    );
+    fixture.write_home(".arnes.yaml", &manifest(&prompts))?;
+    fixture.write_repository("harness/prompts/first.md", "First\n")?;
+    std::os::unix::fs::symlink(
+        "first.md",
+        fixture.repository().join("harness/prompts/second.md"),
+    )?;
+    let (code, stdout, _) = run(
+        &fixture,
+        &[
+            "doctor", "prompts", "--agent", "cursor", "--scope", "project", "-v",
+        ],
+    )?;
+    assert_eq!(code, 0, "{stdout}");
+    assert!(stdout.contains("2 unsupported"), "{stdout}");
     Ok(())
 }

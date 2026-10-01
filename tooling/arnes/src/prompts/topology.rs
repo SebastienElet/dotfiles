@@ -10,7 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 
 pub struct Tracker {
-    sources: HashMap<Identity, String>,
+    sources: HashMap<Identity, Vec<String>>,
     destinations: HashMap<Identity, DestinationOwner>,
 }
 
@@ -25,6 +25,16 @@ impl Tracker {
             .filter(|(scope, _)| scopes.contains(scope))
         {
             tracker.seed_resource(roots, scope, path);
+        }
+        for prompt in manifest.prompts().filter(|prompt| {
+            prompt.projections().any(|projection| {
+                scopes.contains(&projection.scope) && !unsupported_link(projection)
+            })
+        }) {
+            let source = roots.repository().join(prompt.source());
+            for identity in canonical_identities(&source, roots.repository()) {
+                tracker.record_source(identity, prompt);
+            }
         }
         tracker
     }
@@ -50,13 +60,17 @@ impl Tracker {
         prompt: Prompt<'_>,
         projection: PromptProjection<'_>,
     ) {
-        if projection.representation == PromptRepresentation::Symlink {
+        if unsupported_link(projection) {
             return;
         }
         let destination = destination(roots, projection.scope, projection.destination);
         let owner =
             DestinationOwner::prompt(prompt.id(), label(projection.scope, projection.destination));
-        for identity in planned_identities(&destination, boundary(roots, projection.scope)) {
+        for identity in destination_identities(
+            &destination,
+            boundary(roots, projection.scope),
+            projection.representation,
+        ) {
             self.destinations
                 .entry(identity)
                 .or_insert_with(|| owner.clone());
@@ -69,7 +83,7 @@ impl Tracker {
         prompt: Prompt<'_>,
         projection: PromptProjection<'_>,
     ) -> Result<(), Failure> {
-        if projection.representation == PromptRepresentation::Symlink {
+        if unsupported_link(projection) {
             return Ok(());
         }
         self.validate_source(roots, prompt)?;
@@ -95,16 +109,25 @@ impl Tracker {
             {
                 return Err(ambiguous("source", prompt.id(), &previous.label));
             }
-            if let Some(previous) = self.sources.get(identity)
-                && previous != prompt.id()
+            if let Some(previous) = self
+                .sources
+                .get(identity)
+                .and_then(|owners| owners.iter().find(|owner| owner.as_str() != prompt.id()))
             {
                 return Err(ambiguous("source", prompt.id(), previous));
             }
         }
         for identity in identities {
-            self.sources.insert(identity, prompt.id().to_owned());
+            self.record_source(identity, prompt);
         }
         Ok(())
+    }
+
+    fn record_source(&mut self, identity: Identity, prompt: Prompt<'_>) {
+        let owners = self.sources.entry(identity).or_default();
+        if !owners.iter().any(|owner| owner == prompt.id()) {
+            owners.push(prompt.id().to_owned());
+        }
     }
 
     fn validate_destination(
@@ -114,16 +137,21 @@ impl Tracker {
         projection: PromptProjection<'_>,
     ) -> Result<(), Failure> {
         let destination = destination(roots, projection.scope, projection.destination);
-        let identities = planned_identities(&destination, boundary(roots, projection.scope));
+        let identities = destination_identities(
+            &destination,
+            boundary(roots, projection.scope),
+            projection.representation,
+        );
         let current = label(projection.scope, projection.destination);
         for identity in &identities {
-            if let Some(previous) = self.sources.get(identity) {
-                let direct = projection.scope == Scope::Project
-                    && projection.representation == PromptRepresentation::File
-                    && previous == prompt.id();
-                if !direct {
-                    return Err(ambiguous("destination", &current, previous));
-                }
+            if let Some(previous) = self.sources.get(identity).and_then(|owners| {
+                owners.iter().find(|owner| {
+                    projection.scope != Scope::Project
+                        || projection.representation != PromptRepresentation::File
+                        || owner.as_str() != prompt.id()
+                })
+            }) {
+                return Err(ambiguous("destination", &current, previous));
             }
             if let Some(previous) = self.destinations.get(identity) {
                 return Err(ambiguous("destination", &current, &previous.label));
@@ -200,4 +228,35 @@ fn ambiguous(kind: &str, current: &str, previous: &str) -> Failure {
         format!("{kind} {current} aliases managed {kind} {previous}"),
         format!("ambiguous {kind}"),
     )
+}
+
+fn destination_identities(
+    path: &std::path::Path,
+    root: &std::path::Path,
+    representation: PromptRepresentation,
+) -> Vec<Identity> {
+    if representation != PromptRepresentation::Symlink {
+        return planned_identities(path, root);
+    }
+    let Some(parent) = path
+        .parent()
+        .and_then(|parent| planned_within(parent, root))
+    else {
+        return Vec::new();
+    };
+    let Some(name) = path.file_name() else {
+        return Vec::new();
+    };
+    let mut identities = vec![Identity::Path(parent.join(name))];
+    if fs::symlink_metadata(path).is_ok_and(|metadata| !metadata.file_type().is_symlink())
+        && let Some(identity) = file_identity_within(path, root)
+    {
+        identities.push(Identity::File(identity));
+    }
+    identities
+}
+
+fn unsupported_link(projection: PromptProjection<'_>) -> bool {
+    projection.representation == PromptRepresentation::Symlink
+        && !super::capability::symlink(projection.agent, projection.scope)
 }

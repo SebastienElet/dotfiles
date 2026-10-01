@@ -101,10 +101,6 @@ impl Prepared {
         &self.intent.contents
     }
 
-    pub(in crate::sync) fn id(&self) -> &str {
-        &self.intent.id
-    }
-
     pub(in crate::sync) fn publish(self) -> SyncEntry {
         if self.current {
             return SyncEntry::new(

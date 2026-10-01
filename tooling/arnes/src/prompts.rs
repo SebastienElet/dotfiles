@@ -83,7 +83,9 @@ pub(crate) fn validate_projection(
     prompt: Prompt<'_>,
     projection: PromptProjection<'_>,
 ) -> Result<String, Failure> {
-    if projection.representation == PromptRepresentation::Symlink {
+    if projection.representation == PromptRepresentation::Symlink
+        && !capability::symlink(projection.agent, projection.scope)
+    {
         return Err(Failure::new(
             State::Unsupported,
             "symlink projections have no stable agent contract",
@@ -91,7 +93,7 @@ pub(crate) fn validate_projection(
         ));
     }
     let expected = source::validate(roots, prompt)?;
-    projection::validate(roots, projection, &expected)
+    projection::validate(roots, prompt, projection, &expected)
 }
 
 fn unsupported_combination(agent: Option<Agent>, scope: Option<Scope>) -> Diagnostic {

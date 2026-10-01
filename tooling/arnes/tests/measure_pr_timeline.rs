@@ -149,21 +149,29 @@ fn concurrent_retries_record_exactly_one_event()
             },
         )
         .collect::<Result<Vec<_>, _>>()?;
+    assert!(
+        outputs.iter().all(|output| output.status.success()),
+        "{outputs:#?}"
+    );
     assert_eq!(
         outputs
             .iter()
             .filter(|output| output.stdout == b"recorded\n")
             .count(),
-        1
+        1,
+        "{outputs:#?}"
     );
     assert_eq!(
         outputs
             .iter()
             .filter(|output| output.stdout == b"duplicate\n")
             .count(),
-        7
+        7,
+        "{outputs:#?}"
     );
-    assert!(outputs.iter().all(|output| output.status.success()));
-    assert_eq!(harness.events()?.len(), 1);
+    let events = harness
+        .events()
+        .map_err(|error| format!("{error}; {outputs:#?}"))?;
+    assert_eq!(events.len(), 1, "{outputs:#?}");
     Ok(())
 }
