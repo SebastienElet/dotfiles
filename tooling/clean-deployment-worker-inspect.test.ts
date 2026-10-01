@@ -50,17 +50,20 @@ test("selects only the worker identity without returning environment or other jo
 });
 
 test.each([
-  null,
-  undefined,
-  {},
-  [null],
-  ["foreign"],
-  [{}],
-  [{ Label: 2 }],
-  [{ Label: "foreign" }, { Label: undefined }],
-])("refuses incomplete or malformed native snapshot %j", (snapshot) => {
-  expect(() => inspect(snapshot)).toThrow();
-});
+  { snapshot: null },
+  { snapshot: undefined },
+  { snapshot: {} },
+  { snapshot: [null] },
+  { snapshot: ["foreign"] },
+  { snapshot: [{}] },
+  { snapshot: [{ Label: 2 }] },
+  { snapshot: [{ Label: "foreign" }, { Label: undefined }] },
+])(
+  "refuses incomplete or malformed native snapshot %j",
+  ({ snapshot }: Readonly<{ snapshot: unknown }>) => {
+    expect(() => inspect(snapshot)).toThrow();
+  },
+);
 
 test("refuses duplicate native service labels", () => {
   expect(() => inspect([{ Label: label }, { Label: label }])).toThrow();
