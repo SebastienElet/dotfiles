@@ -98,21 +98,22 @@ function snapshot(home: string): string {
   return createHash("sha256").update(result.stdout).digest("hex");
 }
 
+type ProfileOutput = Readonly<{ stdout: string; stderr: string }>;
 type ProfileOperations = Readonly<{
-  install: () => Readonly<{
-    stdout: Readonly<Buffer>;
-    stderr: Readonly<Buffer>;
-  }>;
-  clean: () => Readonly<{ stdout: Readonly<Buffer>; stderr: Readonly<Buffer> }>;
+  install: () => ProfileOutput;
+  clean: () => ProfileOutput;
   verify: () => void;
   snapshot: () => string;
 }>;
 
-function emitResult(
-  result: Readonly<{ stdout: Readonly<Buffer>; stderr: Readonly<Buffer> }>,
-): void {
+function emitResult(result: ProfileOutput): void {
   process.stdout.write(result.stdout);
   process.stderr.write(result.stderr);
+}
+
+function profileCommand(command: readonly string[]): ProfileOutput {
+  const result = checkCommand(command);
+  return { stdout: result.stdout.toString(), stderr: result.stderr.toString() };
 }
 
 function verifyReplay(operations: ProfileOperations): void {
@@ -142,9 +143,9 @@ function main(): void {
   const home = pathSchema.parse(process.env.HOME);
   const root = resolve(import.meta.dir, "..");
   smokeMinimalProfile({
-    install: () => checkCommand(installCommand),
+    install: () => profileCommand(installCommand),
     clean: () =>
-      checkCommand([
+      profileCommand([
         "moon",
         "exec",
         "--quiet",

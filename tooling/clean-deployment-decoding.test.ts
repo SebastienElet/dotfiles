@@ -2,10 +2,17 @@ import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
+  pathExists,
   runDeploymentHelper,
 } from "./deployment-test-support.ts";
 import { dirname, join } from "node:path";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 
 afterEach(cleanupDeploymentFixtures);
 type Fixture = ReturnType<typeof createDeploymentFixture>;
@@ -82,3 +89,27 @@ test.each([".claude/settings.json", ".codex/config.toml"])(
     expect(readFileSync(generated, "utf8")).toBe("keep\n");
   },
 );
+
+test("refuses an indeterminate link destination before removing an earlier owned artifact", () => {
+  const context = createDeploymentFixture("indeterminate-preflight");
+  mkdirSync(join(context.repository, "home"));
+  writeFileSync(
+    join(context.repository, "home/.arnes.yaml"),
+    "version: 1\nskills: []\n",
+  );
+  const fish = join(context.home, ".config/fish");
+  mkdirSync(dirname(fish), { recursive: true });
+  symlinkSync(join(context.repository, "home/.config/fish"), fish);
+  const broken = join(context.root, "broken-parent");
+  symlinkSync(join(context.root, "absent"), broken);
+  symlinkSync(join(broken, "nvim"), join(context.home, ".config/nvim"));
+  const result = runDeploymentHelper(context, {
+    helper: "clean-deployment.ts",
+    arguments: [context.repository, context.home, "--apply"],
+  });
+  expect(result.exitCode).not.toBe(0);
+  expect(pathExists(fish)).toBeTrue();
+  expect(readlinkSync(fish)).toBe(
+    join(context.repository, "home/.config/fish"),
+  );
+});

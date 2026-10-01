@@ -90,6 +90,7 @@ function cleanDeployment(
   const artifacts = deploymentArtifacts(roots.repository, roots.home);
   for (const artifact of artifacts) {
     verifyParents(roots.home, roots.repository, artifact.destination);
+    ownedArtifact(artifact);
   }
   const updates = [
     ...configurationUpdates(roots.repository, roots.home, [
