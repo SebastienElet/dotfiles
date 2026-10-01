@@ -230,6 +230,9 @@ $(HOME)/.claude/skills/%: FORCE
 $(HOME)/.agents/skills/%: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:codex-skills
 
+$(HOME)/.cursor/skills/%: FORCE
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:cursor-skills
+
 ${LOCAL_BIN}/colgrep-search: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) tooling:colgrep-search-install
 
