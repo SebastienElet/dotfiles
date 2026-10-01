@@ -14,7 +14,6 @@ tasks:
       - codex-agents
       - codex-skills
       - codex-hooks
-      - remem
     toolchains: system
   codex-binary:
     script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" volta install @openai/codex

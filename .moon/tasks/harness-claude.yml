@@ -15,10 +15,6 @@ tasks:
       - claude-rules
       - claude-skills
       - claude-hooks
-      - remem-claude
-      - remem-hooks
-      - remem-skills
-      - remem-worker
     toolchains: system
   claude-binary:
     script: |-

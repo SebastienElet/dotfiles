@@ -2,6 +2,19 @@ language: typescript
 tags:
   - repository
 tasks:
+  clean:
+    description: Remove owned deployed artifacts from both workstation profiles
+    command: bun --config=/dev/null --no-env-file tooling/clean-deployment.ts "$workspaceRoot" "$HOME" --apply
+    deps:
+      - dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
+    inputs:
+      - /tooling/clean-deployment*.ts
+      - /tooling/clean-deployment-worker-inspect.js
+      - /home/.arnes.yaml
   install:
     description: Install the minimal workstation
     command: noop

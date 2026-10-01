@@ -131,11 +131,7 @@ moon:
 
 .PHONY: clean
 clean:
-	rm -rf ~/.local/bin/agent-handoff
-	rm -rf ~/.local/bin/agent-memory
-	rm -rf ~/.config/nvim
-	rm -rf ~/.local/share/nvim
-	rm -rf ~/.cache/nvim
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:clean
 
 .PHONY: bat
 bat:

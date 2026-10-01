@@ -32,8 +32,6 @@ fileGroups:
   linkDeployment:
     - deployment-links.test.ts
     - moon/optional-links.test.ts
-    - remem-moon.test.ts
-    - remem-*.ts
     - docker-install-test-provider.ts
     - install-docker-artifact
     - install-docker-artifact.ts
@@ -41,6 +39,7 @@ fileGroups:
     - design-claim-audit.test.ts
     - deployment-moon-runner.ts
     - deployment-test-support.ts
+    - deployment-test-command.ts
     - deploy-link*.ts
     - assemble-agent-instructions*.ts
     - install-agent-skills*.ts
@@ -48,7 +47,6 @@ fileGroups:
     - /home/moon.yml
     - /home/.psqlrc
     - /home/.arnes.yaml
-    - /home/.codex/remem-mcp-tools.toml
     - /home/.codex/agents/design-claim-auditor.toml
     - /home/.config/starship.toml
     - /home/.config/tmux/**/*
@@ -61,7 +59,6 @@ fileGroups:
     - /.moon/tasks/harness-claude.yml
     - /.moon/tasks/harness-codex.yml
     - /.moon/tasks/harness-cursor.yml
-    - /.moon/tasks/harness-remem.yml
     - /Makefile
 tasks:
   test:
@@ -81,7 +78,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/remem-moon.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/clean-deployment-worker-marker.test.ts tooling/clean-deployment-worker-owner.test.ts tooling/clean-deployment-worker-inspect.test.ts tooling/clean-deployment-remem.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
     deps:
       - repository:dependencies
     options:
@@ -90,6 +87,8 @@ tasks:
     inputs:
       - "@group(bunTestSupport)"
       - "@group(linkDeployment)"
+      - clean-deployment*.ts
+      - clean-deployment-worker-inspect.js
       - deployment-fish.test.ts
       - deployment-xdg.test.ts
       - deployment-test-provider.ts
@@ -98,6 +97,20 @@ tasks:
       - /home/.config/fish/**/*
       - /home/.config/git/**/*
       - /home/.config/wezterm/**/*
+      - /.github/workflows/test-deployment.yml
+  worker-native-test:
+    command: bun --config=/dev/null --no-env-file test --timeout 30000 ./tooling/clean-deployment-worker-native.integration.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+      os: macos
+    inputs:
+      - "@group(bunTestSupport)"
+      - clean-deployment-worker*
+      - clean-deployment-paths.ts
+      - deployment-test-support.ts
       - /.github/workflows/test-deployment.yml
   hunspell-test:
     command: bun --config=/dev/null --no-env-file test tooling/install-hunspell-dictionary.test.ts tooling/install-hunspell-dictionary-failures.test.ts
