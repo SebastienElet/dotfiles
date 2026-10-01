@@ -1,11 +1,11 @@
 # Rust checks
 
-`agent-handoff`, `agent-memory`, and `arnes` remain independent packages under
+`agent-handoff`, `agent-memory`, `arnes`, and `bitbucket-linear-sync` remain independent packages under
 `tooling/`, with their existing lockfiles and deployment directories.
 
 ## Policy
 
-All three manifests use the following native policy, without disabled group
+All four manifests use the following native policy, without disabled group
 members or local `allow`/`expect` suppressions:
 
 ```toml
@@ -98,7 +98,7 @@ worktree whose runtimes and package dependencies are already installed, use
 installation dependencies. Root Clippy/rustfmt configuration changes are inputs
 to all Rust verification tasks and their affected CI selection.
 
-Agent Memory and Agent Handoff CI target macOS and Ubuntu; Arnes CI targets
+Agent Memory, Agent Handoff, and Bitbucket Linear CI target macOS and Ubuntu; Arnes CI targets
 Ubuntu. Local evidence applies only to the platform exercised. Remote CI must
 pass before merge.
 
