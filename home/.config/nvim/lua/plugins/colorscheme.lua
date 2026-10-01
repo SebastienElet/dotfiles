@@ -1,20 +1,16 @@
 return {
   {
-    "projekt0n/github-nvim-theme",
-    name = "github-theme",
+    "catppuccin/nvim",
+    name = "catppuccin",
     lazy = false,
     priority = 1000,
-    config = function()
-      require("github-theme").setup({
-        options = {
-          transparent = false,
-          dim_inactive = false,
-          styles = {
-            comments = "italic",
-          },
-        },
-      })
-    end,
+    opts = {
+      flavour = "auto",
+      background = {
+        light = "latte",
+        dark = "mocha",
+      },
+    },
   },
 
   {
@@ -23,11 +19,11 @@ return {
       update_interval = 5000,
       set_dark_mode = function()
         vim.o.background = "dark"
-        vim.cmd("colorscheme github_dark")
+        vim.cmd("colorscheme catppuccin")
       end,
       set_light_mode = function()
         vim.o.background = "light"
-        vim.cmd("colorscheme github_light")
+        vim.cmd("colorscheme catppuccin")
       end,
     },
   },
@@ -35,7 +31,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = function() end, -- Handled by auto-dark-mode
+      colorscheme = "catppuccin",
     },
   },
 }
