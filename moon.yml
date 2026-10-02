@@ -29,6 +29,23 @@ tasks:
       cache: false
       os: macos
       runInCI: false
+  optional-artifacts:
+    description: Install the optional workstation artifacts
+    command: noop
+    deps:
+      - harness:cursor
+      - repository:cloakbrowser
+      - repository:scrapling
+      - home:postgresql
+      - repository:daisydisk
+      - repository:things-3
+      - repository:lumen
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runDepsInParallel: false
+      runInCI: false
   check:
     description: Run repository static checks
     command: noop
