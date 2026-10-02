@@ -33,12 +33,7 @@ type DockerInstallOptions = Readonly<{
 type DockerInstallFixture = Readonly<{
   home: string;
   binaryDirectory: string;
-  localBinaryDirectory: string;
   trace: string;
-}>;
-type MakeArgumentOptions = Readonly<{
-  imageOverride: string | undefined;
-  policy: string;
 }>;
 type DockerInstallResult = Readonly<{
   exitCode: number;
@@ -56,13 +51,15 @@ function runDockerInstallTarget(
   const { dockerProviderAvailable = true, imageOverride, policy } = options;
   const fixture = createDockerInstallFixture(dockerProviderAvailable);
   const result = Bun.spawnSync({
-    cmd:
-      target === "scrapling"
-        ? moonScraplingArguments(options.upstreamNone === true)
-        : makeArguments(target, fixture, {
-            imageOverride,
-            policy: policy ?? "require-docker",
-          }),
+    cmd: [
+      process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
+      "exec",
+      "--quiet",
+      "--ignore-ci-checks",
+      "--no-actions",
+      ...(options.upstreamNone === true ? ["--upstream", "none"] : []),
+      `repository:${target}`,
+    ],
     cwd: repositoryRoot,
     env: {
       ...process.env,
@@ -72,7 +69,8 @@ function runDockerInstallTarget(
         process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
       PROTO_OFFLINE: "true",
       DOCKER_UNAVAILABLE_POLICY: policy,
-      SCRAPLING_IMAGE: imageOverride,
+      SCRAPLING_IMAGE: target === "scrapling" ? imageOverride : undefined,
+      CLOAKBROWSER_IMAGE: target === "cloakbrowser" ? imageOverride : undefined,
       DOCKER_INSTALL_TEST_SCENARIO: scenario,
       DOCKER_INSTALL_TEST_STATE: fixture.trace,
       DOCKER_INSTALL_TEST_TARGET: target,
@@ -92,45 +90,25 @@ function runDockerInstallTarget(
   };
 }
 
-function moonScraplingArguments(upstreamNone: boolean): string[] {
-  return [
-    process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
-    "exec",
-    "--quiet",
-    "--ignore-ci-checks",
-    "--no-actions",
-    ...(upstreamNone ? ["--upstream", "none"] : []),
-    "repository:scrapling",
-  ];
-}
-
 function createDockerInstallFixture(
   dockerProviderAvailable: boolean,
 ): DockerInstallFixture {
   const root = mkdtempSync(join(tmpdir(), "docker-install-"));
   const home = join(root, "home");
   const binaryDirectory = join(root, "bin");
-  const localBinaryDirectory = join(root, "local-bin");
   const trace = join(root, "docker-trace");
   fixtures.push(root);
   mkdirSync(home);
   mkdirSync(binaryDirectory);
   symlinkSync(process.execPath, join(binaryDirectory, "bun"));
-  mkdirSync(localBinaryDirectory);
   writeFileSync(trace, "");
   chmodSync(provider, executableMode);
   symlinkRequiredCommand("git", binaryDirectory);
   symlinkRequiredCommand("bash", binaryDirectory);
-  symlinkRequiredCommand("readlink", binaryDirectory);
-  symlinkRequiredCommand("uname", binaryDirectory);
   if (dockerProviderAvailable) {
     symlinkSync(provider, join(binaryDirectory, "docker"));
   }
-  symlinkSync(
-    join(repositoryRoot, "tooling", "scrapling-mcp"),
-    join(localBinaryDirectory, "scrapling_mcp"),
-  );
-  return { home, binaryDirectory, localBinaryDirectory, trace };
+  return { home, binaryDirectory, trace };
 }
 
 function symlinkRequiredCommand(command: string, destination: string): void {
@@ -139,28 +117,6 @@ function symlinkRequiredCommand(command: string, destination: string): void {
     throw new Error(`${command} is unavailable`);
   }
   symlinkSync(executable, join(destination, command));
-}
-
-function makeArguments(
-  target: DockerInstallTarget,
-  fixture: DockerInstallFixture,
-  options: MakeArgumentOptions,
-): string[] {
-  const imageAssignment =
-    options.imageOverride === undefined
-      ? []
-      : [
-          `${target === "scrapling" ? "SCRAPLING_IMAGE" : "CLOAKBROWSER_IMAGE"}=${options.imageOverride}`,
-        ];
-  return [
-    requireCommand("make"),
-    "--no-print-directory",
-    "--old-file=bun",
-    target,
-    `LOCAL_BIN=${fixture.localBinaryDirectory}`,
-    `DOCKER_UNAVAILABLE_POLICY=${options.policy}`,
-    ...imageAssignment,
-  ];
 }
 
 function cleanupDockerInstallFixtures(): void {
