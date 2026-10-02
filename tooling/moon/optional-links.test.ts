@@ -14,82 +14,37 @@ import { dirname, join } from "node:path";
 import {
   lstatSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   readlinkSync,
-  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { tmpdir } from "node:os";
+import { runDeploymentMoon } from "../deployment-moon-runner.ts";
 
-const repository = fileURLToPath(new URL("../..", import.meta.url));
-const psqlrcSource = join(repository, "home", ".psqlrc");
-const fixtures: string[] = [];
+const psqlrcSource = join(project, "home", ".psqlrc");
 const cursorDeploymentAndReplayTimeout = 30_000;
 
-function makePostgresql(home: string): Readonly<{
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-}> {
-  const result = Bun.spawnSync(
-    [
-      "/usr/bin/make",
-      "--no-print-directory",
-      "-f",
-      join(repository, "Makefile"),
-      "postgresql",
-    ],
-    {
-      env: {
-        HOME: home,
-        PATH: `${dirname(process.execPath)}:/usr/bin:/bin`,
-      },
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
-  return {
-    exitCode: result.exitCode,
-    stdout: result.stdout.toString(),
-    stderr: result.stderr.toString(),
-  };
-}
-
-function createHome(): string {
-  const home = mkdtempSync(join(tmpdir(), "optional-links-test-"));
-  fixtures.push(home);
-  return home;
-}
-
-afterEach(() => {
-  for (const fixture of fixtures.splice(0)) {
-    rmSync(fixture, { recursive: true, force: true });
-  }
-  cleanupDeploymentFixtures();
-});
+afterEach(cleanupDeploymentFixtures);
 
 test("links psqlrc and replays silently", () => {
-  const home = createHome();
-  expect(makePostgresql(home).exitCode).toBe(0);
-  const destination = join(home, ".psqlrc");
+  const fixture = createDeploymentFixture("optional-postgresql");
+  expect(runDeploymentMoon(fixture, ["home:postgresql"]).exitCode).toBe(0);
+  const destination = join(fixture.home, ".psqlrc");
   expect(readlinkSync(destination)).toBe(psqlrcSource);
   const before = lstatSync(destination).ino;
 
-  const replay = makePostgresql(home);
+  const replay = runDeploymentMoon(fixture, ["home:postgresql"]);
 
   expect(replay).toEqual({ exitCode: 0, stdout: "", stderr: "" });
   expect(lstatSync(destination).ino).toBe(before);
 });
 
 test("refuses a divergent psqlrc without replacing it", () => {
-  const home = createHome();
-  const destination = join(home, ".psqlrc");
+  const fixture = createDeploymentFixture("optional-postgresql-collision");
+  const destination = join(fixture.home, ".psqlrc");
   writeFileSync(destination, "personal\n");
 
-  const result = makePostgresql(home);
+  const result = runDeploymentMoon(fixture, ["home:postgresql"]);
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr).toContain(
