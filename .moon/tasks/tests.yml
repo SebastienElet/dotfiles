@@ -30,6 +30,7 @@ fileGroups:
     - .moon/tasks/workstation.yml
     - .moon/tasks/javascript.yml
     - .moon/tasks/checks.yml
+    - .moon/tasks/docker.yml
     - .oxlintrc.json
     - .prototools
     - .github/dependabot.yml
