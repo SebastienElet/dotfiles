@@ -12,7 +12,7 @@ metadata:
 
 ## Overview
 
-Maintain the Neovim configuration rooted at `home/.config/nvim/`. The `Makefile` symlinks this
+Maintain the Neovim configuration rooted at `home/.config/nvim/`. Moon's `home:nvim` task symlinks this
 directory to the runtime path `~/.config/nvim`, so edit repository paths rather than the symlink
 destination.
 
@@ -52,7 +52,7 @@ Examples:
 
 ## Gotchas
 
-- **Editing `~/.config/nvim` as a separate copy** — the `Makefile` symlinks
+- **Editing `~/.config/nvim` as a separate copy** — Moon's `home:nvim` task symlinks
   `home/.config/nvim/` there; edit the repository source.
 - **Centralizing every keymap** — moving plugin-owned mappings out of `keys` can break lazy loading;
   determine ownership first.

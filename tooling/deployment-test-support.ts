@@ -25,7 +25,6 @@ type CommandResult = Readonly<{
 }>;
 
 const project = join(import.meta.dir, "..");
-const makefile = join(project, "Makefile");
 const provider = join(import.meta.dir, "deployment-test-provider.ts");
 const fixtures: string[] = [];
 const executableFileMode = 0o755;
@@ -49,49 +48,6 @@ function cleanupDeploymentFixtures(): void {
   for (const root of fixtures.splice(0)) {
     rmSync(root, { force: true, recursive: true });
   }
-}
-
-function runMake(
-  fixture: DeploymentFixture,
-  targets: readonly string[],
-  options: Readonly<{
-    repository?: string;
-    environment?: Readonly<NodeJS.ProcessEnv>;
-    variables?: Readonly<Record<string, string>>;
-    dryRun?: boolean;
-    cwd?: string;
-    make?: string;
-  }> = {},
-): CommandResult {
-  const repository = options.repository ?? fixture.repository;
-  const result = Bun.spawnSync(
-    [
-      options.make ?? requireCommand("make"),
-      ...(options.dryRun === true ? ["-n"] : []),
-      "-f",
-      makefile,
-      `DOTFILES_PATH=${repository}`,
-      ...Object.entries(options.variables ?? {}).map(
-        ([name, value]: readonly [string, string]) => `${name}=${value}`,
-      ),
-      ...targets,
-    ],
-    {
-      cwd: options.cwd ?? fixture.root,
-      env: {
-        ...process.env,
-        HOME: fixture.home,
-        ...options.environment,
-      },
-      stderr: "pipe",
-      stdout: "pipe",
-    },
-  );
-  return {
-    exitCode: result.exitCode,
-    stderr: decode(result.stderr),
-    stdout: decode(result.stdout),
-  };
 }
 
 function installProvider(fixture: DeploymentFixture, command: string): string {
@@ -191,7 +147,6 @@ export {
   pathExists,
   project,
   requireCommand,
-  runMake,
   runDeploymentHelper,
 };
 export type { CommandResult, DeploymentFixture };
