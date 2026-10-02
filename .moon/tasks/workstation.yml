@@ -237,17 +237,38 @@ tasks:
       cache: false
       mutex: volta
       runInCI: false
+  things-3:
+    description: Verify the optional Things 3 application after preparing its CLI
+    script: |-
+      bun --config=/dev/null --no-env-file --no-install tooling/things3-install.ts verify-app "${APP_BIN:-/Applications}/Things3.app"
+    deps:
+      - target: things3-cli-wrapper
+        env:
+          THINGS3_PAID_CONTEXT: "1"
+    inputs:
+      - tooling/things3-install.ts
+      - package.json
+      - bun.lock
+    toolchains: bun
+    options:
+      cache: false
+      os: macos
+      runInCI: false
   things3-cli-wrapper:
     description: Install the Things 3 CLI wrapper with npm
     script: |-
-      "$HOME/.volta/bin/npm" install -g @dougskinner/thangs
+      bun --config=/dev/null --no-env-file --no-install tooling/things3-install.ts install-cli
     deps:
       - node
     checks:
       - check: condition
         script: |-
           test -x "$HOME/.volta/bin/thangs"
-    toolchains: system
+    inputs:
+      - tooling/things3-install.ts
+      - package.json
+      - bun.lock
+    toolchains: bun
     options:
       cache: false
       mutex: volta
