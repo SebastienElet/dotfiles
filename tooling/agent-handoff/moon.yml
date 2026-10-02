@@ -47,6 +47,7 @@ tasks:
     options:
       mutex: agent-handoff-cargo-target
   build:
+    toolchains: rust
     script: |
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e

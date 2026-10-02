@@ -20,6 +20,8 @@ fileGroups:
     - tooling/agent-memory/build*.rs
     - tooling/agent-memory/src/**/*
     - .cargo/**/*
+    - rust-toolchain.toml
+    - .moon/toolchains.yml
     - .moon/tasks/rust.yml
     - .moon/tasks/workstation.yml
     - .moon/tasks/javascript.yml

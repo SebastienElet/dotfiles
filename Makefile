@@ -247,7 +247,7 @@ ${VOLTA_BIN}/pnpm: FORCE
 ${BREW_BIN}/volta: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:volta
 
-${BREW_BIN}/cargo: FORCE
+${HOME}/.cargo/bin/cargo: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:rust
 
 ~/cspell.json ~/.config/cspell/user.txt: FORCE

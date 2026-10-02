@@ -14,7 +14,7 @@ tasks:
       cache: false
       mutex: bitbucket-linear-cargo-target
       runInCI: false
-    toolchains: system
+    toolchains: rust
     command: cargo build --release --locked
   test:
     options:

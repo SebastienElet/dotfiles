@@ -13,6 +13,8 @@ fileGroups:
     - /.cargo/**/*
     - /clippy.toml
     - /rustfmt.toml
+    - /rust-toolchain.toml
+    - /.moon/toolchains.yml
     - /LICENSE
     - /tooling/RUST.md
 tasks:
@@ -25,7 +27,7 @@ tasks:
         cargo fmt --version
     inputs:
       - "@group(rust)"
-    toolchains: system
+    toolchains: rust
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo fmt --all --check
@@ -38,7 +40,7 @@ tasks:
         cargo clippy --version
     inputs:
       - "@group(rust)"
-    toolchains: system
+    toolchains: rust
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
@@ -47,7 +49,7 @@ tasks:
       - repository:rust
     inputs:
       - "@group(rust)"
-    toolchains: system
+    toolchains: rust
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo check --workspace --all-targets --all-features --locked
@@ -56,7 +58,7 @@ tasks:
       - repository:rust
     inputs:
       - "@group(rust)"
-    toolchains: system
+    toolchains: rust
     env:
       RUSTDOCFLAGS: -Dwarnings
     script: |-
@@ -67,7 +69,7 @@ tasks:
       - repository:rust
     inputs:
       - "@group(rust)"
-    toolchains: system
+    toolchains: rust
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo test --workspace --all-features --locked

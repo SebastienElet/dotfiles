@@ -16,6 +16,7 @@ fileGroups:
     - /bun.lock
     - /.moon/**/*
     - /.prototools
+    - /rust-toolchain.toml
     - /moon.yml
     - /.github/workflows/test-harness.yml
 
@@ -45,7 +46,7 @@ tasks:
       runInCI: true
   validate-evals:
     command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evals
-    toolchains: system
+    toolchains: rust
     deps:
       - repository:rust
     inputs:
@@ -56,7 +57,7 @@ tasks:
       mutex: arnes-cargo-target
   validate-evidence:
     command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evidence
-    toolchains: system
+    toolchains: rust
     deps:
       - repository:rust
     inputs:
@@ -75,7 +76,7 @@ tasks:
   eval:
     description: Manually run selected live Codex evaluations using LLM quota
     command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval run
-    toolchains: system
+    toolchains: rust
     deps:
       - repository:rust
     options:
@@ -83,7 +84,7 @@ tasks:
   compare:
     description: Compare reports with identical recorded experimental controls
     command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval compare
-    toolchains: system
+    toolchains: rust
     deps:
       - repository:rust
     options:
