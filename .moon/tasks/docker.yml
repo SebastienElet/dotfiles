@@ -41,3 +41,15 @@ tasks:
     options:
       cache: false
       runInCI: false
+  verify-scrapling-docker:
+    description: Verify the local Scrapling Docker image without installing it
+    script: |-
+      "$workspaceRoot/tooling/install-docker-artifact" verify scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${SCRAPLING_IMAGE-pyd4vinci/scrapling}"
+    deps:
+      - docker
+      - dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runDepsInParallel: false
+      runInCI: false
