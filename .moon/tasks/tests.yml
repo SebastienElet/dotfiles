@@ -11,6 +11,7 @@ fileGroups:
     - tooling/deploy-link.ts
     - tooling/scrapling-mcp
     - tooling/check-docker-cli
+    - tooling/install-moon
     - tooling/install-homebrew
     - tooling/git-main-branch
     - tooling/format-edited-file

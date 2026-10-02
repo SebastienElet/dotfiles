@@ -160,6 +160,7 @@ tasks:
       cache: false
     inputs:
       - install.test.ts
+      - install-moon
       - /install.sh
       - /package.json
       - /bun.lock

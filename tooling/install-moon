@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -e
+
+moon_installer="$(curl -fsSL --connect-timeout 10 --max-time 60 https://moonrepo.dev/install/moon.sh)"
+exec /bin/bash -c "$moon_installer"
