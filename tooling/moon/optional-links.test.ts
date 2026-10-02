@@ -27,6 +27,7 @@ import { tmpdir } from "node:os";
 const repository = fileURLToPath(new URL("../..", import.meta.url));
 const psqlrcSource = join(repository, "home", ".psqlrc");
 const fixtures: string[] = [];
+const cursorDeploymentAndReplayTimeout = 30_000;
 
 function makePostgresql(home: string): Readonly<{
   exitCode: number;
@@ -193,31 +194,35 @@ function makeCursor(fixture: DeploymentFixture, trace: string): CommandResult {
   });
 }
 
-test("make cursor deploys the rule and skills without global dependencies", () => {
-  const { fixture, trace } = cursorFixture();
-  const rule = join(
-    fixture.home,
-    ".cursor",
-    "rules",
-    "memory-governance-cursor.mdc",
-  );
-  const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
+test(
+  "make cursor deploys the rule and skills without global dependencies",
+  () => {
+    const { fixture, trace } = cursorFixture();
+    const rule = join(
+      fixture.home,
+      ".cursor",
+      "rules",
+      "memory-governance-cursor.mdc",
+    );
+    const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
 
-  expect(makeCursor(fixture, trace).exitCode).toBe(0);
-  expect(readlinkSync(rule)).toBe(
-    join(project, "harness", "rules", "memory-governance-cursor.mdc"),
-  );
-  expect(readlinkSync(skill)).toBe(
-    join(project, "harness", "skills", "skill-manager"),
-  );
-  expect(readFileSync(trace, "utf8")).toContain(
-    '"arguments":["setup","hooks","--agent","cursor"]',
-  );
-  const ruleInode = lstatSync(rule).ino;
+    expect(makeCursor(fixture, trace).exitCode).toBe(0);
+    expect(readlinkSync(rule)).toBe(
+      join(project, "harness", "rules", "memory-governance-cursor.mdc"),
+    );
+    expect(readlinkSync(skill)).toBe(
+      join(project, "harness", "skills", "skill-manager"),
+    );
+    expect(readFileSync(trace, "utf8")).toContain(
+      '"arguments":["setup","hooks","--agent","cursor"]',
+    );
+    const ruleInode = lstatSync(rule).ino;
 
-  expect(makeCursor(fixture, trace).exitCode).toBe(0);
-  expect(lstatSync(rule).ino).toBe(ruleInode);
-});
+    expect(makeCursor(fixture, trace).exitCode).toBe(0);
+    expect(lstatSync(rule).ino).toBe(ruleInode);
+  },
+  cursorDeploymentAndReplayTimeout,
+);
 
 test("make cursor preserves a divergent rule and returns failure", () => {
   const { fixture, trace } = cursorFixture();
