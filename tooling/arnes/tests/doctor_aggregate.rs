@@ -280,7 +280,7 @@ fn aggregate_preserves_one_fixture_through_healthy_drift_and_fatal_states()
             let output = fixture.command(["doctor", "--format", format])?;
             assert_eq!(fixture.snapshot()?, before, "{state}, {format}");
             assert_eq!(output.status.code(), Some(exit_code), "{state}, {format}");
-            assert!(output.stderr.is_empty());
+            assert_eq!(output.stderr, [] as [u8; 0]);
             if format == "json" {
                 let diagnostics = json(&output)?;
                 assert!(diagnostics.iter().any(|diagnostic| {
@@ -288,7 +288,7 @@ fn aggregate_preserves_one_fixture_through_healthy_drift_and_fatal_states()
                         && diagnostic.get("state").and_then(Value::as_str) == Some(state)
                 }));
             } else {
-                assert!(!output.stdout.is_empty());
+                assert_ne!(output.stdout, [] as [u8; 0]);
             }
         }
         match exit_code {
@@ -313,7 +313,7 @@ fn undeclared_cursor_aggregate_is_unsupported_instead_of_healthy()
         .iter()
         .filter(|diagnostic| diagnostic.get("resource").and_then(Value::as_str) != Some("manifest"))
         .collect::<Vec<_>>();
-    assert!(!resources.is_empty());
+    assert_ne!(resources, [] as [&serde_json::Value; 0]);
     assert!(resources.iter().all(|diagnostic| {
         diagnostic.get("state").and_then(Value::as_str) == Some("unsupported")
     }));

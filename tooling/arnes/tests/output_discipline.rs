@@ -14,8 +14,8 @@ fn absent_marker_is_silent_even_with_broken_deployment() -> Result {
     symlink("/missing/deployment", fixture.home().join(".arnes.yaml"))?;
     let output = fixture.command(["output-discipline"])?;
     assert!(output.status.success());
-    assert!(output.stdout.is_empty());
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 
@@ -33,7 +33,7 @@ fn opt_in_loads_canonical_source_outside_repository_and_strips_frontmatter() -> 
         fixture.write_home(".claude/.output-discipline-always", "")?;
         let output = fixture.command_from(fixture.home(), ["output-discipline"])?;
         assert!(output.status.success());
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let text = String::from_utf8(output.stdout)?;
         assert!(text.starts_with("OUTPUT DISCIPLINE ACTIVE"));
         assert!(text.ends_with(&format!("{body}\n")), "{text}");
@@ -62,7 +62,7 @@ fn custom_config_directory_controls_opt_in() -> Result {
             .output()?;
         assert!(output.status.success());
         assert_eq!(!output.stdout.is_empty(), enabled);
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
     }
     Ok(())
 }
@@ -78,7 +78,7 @@ fn missing_or_unreadable_source_warns_without_blocking_session() -> Result {
         }
         let output = fixture.command(["output-discipline"])?;
         assert!(output.status.success());
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8(output.stderr)?.contains(SOURCE));
     }
     Ok(())
@@ -192,7 +192,7 @@ fn each_invocation_reloads_when_marker_is_present() -> Result {
     let second = fixture.command(["output-discipline"])?;
     assert!(first.status.success());
     assert_eq!(first.stdout, second.stdout);
-    assert!(!second.stdout.is_empty());
+    assert_ne!(second.stdout, [] as [u8; 0]);
     Ok(())
 }
 
@@ -203,7 +203,7 @@ fn broken_deployment_warns_only_when_opted_in() -> Result {
     symlink("/missing/deployment", fixture.home().join(".arnes.yaml"))?;
     let output = fixture.command(["output-discipline"])?;
     assert!(output.status.success());
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(String::from_utf8(output.stderr)?.contains("symlink could not be resolved"));
     Ok(())
 }
@@ -270,7 +270,7 @@ fn missing_or_ordinary_manifest_never_loads_current_project_skill() -> Result {
             "{}",
             String::from_utf8_lossy(&output.stdout)
         );
-        assert!(!output.stderr.is_empty());
+        assert_ne!(output.stderr, [] as [u8; 0]);
     }
     Ok(())
 }

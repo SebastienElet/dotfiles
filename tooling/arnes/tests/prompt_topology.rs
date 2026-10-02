@@ -75,7 +75,7 @@ fn resolved_source_destination_aliases_only_allow_direct_project_files()
             assert_eq!(code, 2, "{stdout}");
             assert!(stdout.contains("aliases managed destination deploy"));
         }
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -105,7 +105,7 @@ fn filtered_scopes_ignore_hardlinked_resources_in_distinct_roots()
     let (code, stdout, stderr) = run(&fixture, CLAUDE_USER)?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("\"state\": \"healthy\""));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 fn assert_collision(
@@ -115,6 +115,6 @@ fn assert_collision(
     let (code, stdout, stderr) = run(fixture, CLAUDE_PROJECT)?;
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

@@ -25,7 +25,7 @@ fn user_scope_is_default_for_supported_and_unsupported_projections()
     ] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -151,7 +151,7 @@ fn undeclared_filtered_combinations_are_unsupported()
         stdout,
         "Instructions · user scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported instructions: codex user instruction projection is not declared or supported\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

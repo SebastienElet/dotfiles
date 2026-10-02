@@ -12,7 +12,7 @@ fn rejects_missing_session_without_persisting_the_payload()
     )?;
     assert_advisory_failure(&output);
     assert!(String::from_utf8(output.stderr)?.contains("session_id"));
-    assert!(harness.runs()?.is_empty());
+    assert_eq!(harness.runs()?, [] as [std::path::PathBuf; 0]);
     let invalid = fs::read_to_string(harness.measure_root().join("invalid.jsonl"))?;
     assert!(!invalid.contains(secret));
     Ok(())
@@ -52,7 +52,7 @@ fn invalid_and_oversized_json_store_only_safe_metadata()
                 .get("payload")
                 .is_none()
         );
-        assert!(harness.runs()?.is_empty());
+        assert_eq!(harness.runs()?, [] as [std::path::PathBuf; 0]);
     };
     Ok(())
 }
@@ -108,7 +108,7 @@ fn recursively_duplicate_json_keys_are_advisory_and_never_create_a_run()
     let payload = br#"{"session_id":"session","nested":{"value":1,"value":2}}"#;
     let output = harness.run("codex", payload)?;
     assert_advisory_failure(&output);
-    assert!(harness.runs()?.is_empty());
+    assert_eq!(harness.runs()?, [] as [std::path::PathBuf; 0]);
     let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"))?;
     assert_eq!(invalid.len(), 1);
     assert_eq!(

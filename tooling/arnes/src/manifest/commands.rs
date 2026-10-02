@@ -57,6 +57,7 @@ impl<'a> Command<'a> {
         &self.declaration.prompt
     }
 
+    #[must_use = "iterate bindings to inspect the command's installations"]
     pub fn bindings(self) -> impl ExactSizeIterator<Item = CommandBinding<'a>> {
         self.declaration
             .bindings

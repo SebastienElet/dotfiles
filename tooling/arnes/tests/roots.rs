@@ -28,7 +28,7 @@ fn manifest_doctor_rejects_a_deployment_link_without_the_repository_layout()
             "Manifest\n✓ 0 healthy\n\nerror manifest: repository: deployed .arnes.yaml must resolve from home/.arnes.yaml\n",
             "{target}"
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert_eq!(fixture.snapshot()?, before);
     };
     Ok(())

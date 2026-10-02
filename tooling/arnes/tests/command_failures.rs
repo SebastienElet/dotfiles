@@ -20,7 +20,7 @@ fn assert_state(
     let (actual, stdout, stderr) = run(fixture, CLAUDE_PROJECT)?;
     assert_eq!(actual, code, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -59,7 +59,7 @@ fn unreadable_source_and_destination_are_errors()
         let (code, stdout, stderr) = output_tuple(output)?;
         assert_eq!(code, 2, "{stdout}");
         assert!(stdout.contains("could not be read"));
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -235,6 +235,6 @@ fn the_highest_state_controls_the_exit_code() -> Result<(), Box<dyn std::error::
     assert!(stdout.contains("unsupported"));
     assert!(stdout.contains("drift"));
     assert!(stdout.contains("error"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

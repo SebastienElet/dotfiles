@@ -99,7 +99,7 @@ pub fn assert_success(output: &Output) {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(
         output.stderr.is_empty(),
         "stderr: {}",
@@ -108,8 +108,8 @@ pub fn assert_success(output: &Output) {
 }
 pub fn assert_advisory_failure(output: &Output) {
     assert_eq!(output.status.code(), Some(0));
-    assert!(output.stdout.is_empty());
-    assert!(!output.stderr.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
+    assert_ne!(output.stderr, [] as [u8; 0]);
 }
 pub fn run_at(
     harness: &Harness,

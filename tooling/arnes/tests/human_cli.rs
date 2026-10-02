@@ -21,7 +21,7 @@ fn doctor_help_lists_verbose_options() -> Result<(), Box<dyn std::error::Error +
     let stdout = String::from_utf8(output.stdout)?;
     assert_eq!(output.status.code(), Some(0));
     assert!(stdout.contains("-v, --verbose"), "{stdout}");
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -34,7 +34,7 @@ fn doctor_help_lists_color_options() -> Result<(), Box<dyn std::error::Error + S
         assert!(stdout.contains(choice), "{stdout}");
     }
     assert!(stdout.contains("[default: auto]"), "{stdout}");
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -112,7 +112,7 @@ fn always_colors_redirected_output_and_overrides_no_color()
         strip_ansi(&String::from_utf8(output.stdout)?),
         String::from_utf8(plain.stdout)?
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     assert_eq!(fixture.snapshot()?, before);
     Ok(())
 }
@@ -137,7 +137,7 @@ fn duplicate_format_is_rejected_by_clap() -> Result<(), Box<dyn std::error::Erro
     let output = run(&["doctor", "skills", "--format", "human", "--format", "json"])?;
     let stderr = String::from_utf8(output.stderr)?;
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(stderr.contains("cannot be used multiple times"), "{stderr}");
     Ok(())
 }
@@ -146,7 +146,7 @@ fn duplicate_color_is_rejected_by_clap() -> Result<(), Box<dyn std::error::Error
     let output = run(&["doctor", "skills", "--color", "auto", "--color", "never"])?;
     let stderr = String::from_utf8(output.stderr)?;
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(stderr.contains("cannot be used multiple times"), "{stderr}");
     Ok(())
 }
@@ -155,7 +155,7 @@ fn unknown_color_is_rejected_by_clap() -> Result<(), Box<dyn std::error::Error +
     let output = run(&["doctor", "skills", "--color", "sometimes"])?;
     let stderr = String::from_utf8(output.stderr)?;
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(stderr.contains("invalid value 'sometimes'"), "{stderr}");
     Ok(())
 }
@@ -177,7 +177,7 @@ fn verbose_restores_healthy_details_before_or_after_the_resource()
             String::from_utf8(output.stdout)?,
             "Manifest\n✓ 1 healthy\n\nhealthy manifest: manifest is valid\n"
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
     }
     assert_eq!(fixture.snapshot()?, before);
     Ok(())

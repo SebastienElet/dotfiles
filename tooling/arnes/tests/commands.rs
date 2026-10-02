@@ -22,7 +22,7 @@ fn claude_user_and_project_bindings_are_healthy()
         assert_eq!(code, 0, "{stdout}");
         assert!(stdout.contains(&format!("claude {scope} commands")));
         assert!(stdout.contains("healthy     deploy · current"));
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -50,7 +50,7 @@ fn command_diagnostics_are_json_and_read_only()
             .ok_or("missing fixture index state")?,
         "healthy"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -65,7 +65,7 @@ fn doctor_commands_routes_root_errors_to_commands()
     let (code, stdout, stderr) = output_tuple(output)?;
     assert_eq!(code, 2);
     assert!(stdout.contains("error commands:"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -95,7 +95,7 @@ fn cursor_and_codex_are_unsupported_without_prompt_io()
         assert_eq!(code, 0, "{stdout}");
         assert!(stdout.contains("capability · unsupported"));
         assert!(!stdout.contains("source"));
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -144,7 +144,7 @@ fn filters_exclude_bindings_before_io() -> Result<(), Box<dyn std::error::Error 
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("selected · current"));
     assert!(!stdout.contains("missing"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -159,7 +159,7 @@ fn an_empty_filtered_selection_is_unsupported()
     )?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("capability · unsupported"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -256,7 +256,7 @@ fn unmanaged_and_plugin_neighbors_are_ignored()
     assert_eq!(code, 0, "{stdout}");
     assert!(!stdout.contains("unmanaged"));
     assert!(!stdout.contains("opsx"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -273,7 +273,7 @@ fn crlf_frontmatter_is_supported() -> Result<(), Box<dyn std::error::Error + Sen
     )?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy     deploy · current"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

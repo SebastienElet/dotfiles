@@ -46,7 +46,7 @@ fn codex_inventory_never_executes_a_resolver_from_direct_or_aggregate_doctor()
                     !witness.exists(),
                     "Doctor executed the external Codex resolver: {selector:?} {format} {config:?}"
                 );
-                assert!(output.stderr.is_empty());
+                assert_eq!(output.stderr, [] as [u8; 0]);
                 assert_ne!(output.status.code(), Some(2));
             }
         }

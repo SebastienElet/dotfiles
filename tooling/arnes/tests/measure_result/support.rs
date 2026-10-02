@@ -164,11 +164,11 @@ pub fn assert_success(output: &Output) {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
 }
 pub fn assert_failure(output: &Output, expected: &str) {
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains(expected), "stderr: {stderr}");
 }

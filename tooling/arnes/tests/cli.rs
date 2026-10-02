@@ -30,7 +30,7 @@ fn manifest(name: &str) -> Result<String, Box<dyn std::error::Error + Send + Syn
 fn help_lists_doctor_resources() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let output = run(&["doctor", "--help"])?;
     assert_eq!(output.status.code(), Some(0));
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     let stdout = String::from_utf8(output.stdout)?;
     let _: () = for resource in [
         "manifest",
@@ -53,7 +53,7 @@ fn version_succeeds() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let output = run(&["--version"])?;
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(String::from_utf8(output.stdout)?, "arnes 0.1.0\n");
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -72,7 +72,7 @@ fn doctor_accepts_shared_options_without_reading_the_environment()
         String::from_utf8(output.stdout)?,
         "Skills · project scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nCODEX\n  1 unsupported · 0 healthy\n\n  UNSUPPORTED codex project skill projection is not declared or supported\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -86,7 +86,7 @@ fn json_doctor_emits_the_manifest_diagnostic()
         String::from_utf8(output.stdout)?,
         "[\n  {\n    \"resource\": \"manifest\",\n    \"state\": \"healthy\",\n    \"message\": \"manifest is valid\"\n  }\n]\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -100,7 +100,7 @@ fn manifest_doctor_loads_from_the_injected_home()
         String::from_utf8(output.stdout)?,
         "Manifest\n✓ 1 healthy\n\nhealthy manifest: manifest is valid\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -114,7 +114,7 @@ fn manifest_doctor_reports_invalid_manifests()
         String::from_utf8(output.stdout)?,
         "Manifest\n✓ 0 healthy\n\nerror manifest: version: unsupported version 2; expected 1\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -127,7 +127,7 @@ fn operational_failures_use_json_and_exit_two()
         String::from_utf8(output.stdout)?,
         "[\n  {\n    \"resource\": \"manifest\",\n    \"state\": \"error\",\n    \"message\": \"manifest: .arnes.yaml was not found\"\n  }\n]\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -144,7 +144,7 @@ fn output_failures_exit_two_instead_of_passing_silently()
         .env("HOME", fixture.home())
         .output()?;
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(String::from_utf8(output.stderr)?.starts_with("output: could not write diagnostics:"));
     Ok(())
 }
@@ -163,7 +163,7 @@ fn manifest_and_default_doctors_require_home_without_fallback()
             String::from_utf8(output.stdout)?,
             "Manifest\n✓ 0 healthy\n\nerror manifest: HOME: environment variable is required\n"
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
     };
     Ok(())
 }
@@ -176,7 +176,7 @@ fn skills_doctor_requires_injected_home_without_fallback()
         String::from_utf8(output.stdout)?,
         "Skills · user scope · all agents\n✓ 0 healthy\n\nerror skills: HOME: environment variable is required\n"
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     Ok(())
 }
 #[test]
@@ -195,7 +195,7 @@ fn manifest_doctor_rejects_home_paths_relative_to_the_repository()
             String::from_utf8(output.stdout)?,
             format!("Manifest\n✓ 0 healthy\n\nerror manifest: {message}\n")
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
     };
     Ok(())
 }
@@ -227,7 +227,7 @@ fn invalid_values_exit_two_with_actionable_messages()
         args.push(value);
         let output = run(&args)?;
         assert_eq!(output.status.code(), Some(2));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(output.stderr)?;
         assert!(stderr.contains("invalid value 'unknown'"), "{stderr}");
         assert!(stderr.contains(expected), "{stderr}");

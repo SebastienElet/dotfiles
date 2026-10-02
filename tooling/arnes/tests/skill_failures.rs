@@ -177,6 +177,6 @@ fn manifest_failures_fail_closed_as_skill_errors()
         stdout,
         "Skills · user scope · all agents\n✓ 0 healthy\n\nerror skills: version: unsupported version 2; expected 1\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

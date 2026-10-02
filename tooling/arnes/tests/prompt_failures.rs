@@ -208,7 +208,7 @@ fn assert_error(
     let (code, stdout, stderr) = run(fixture, CLAUDE_PROJECT)?;
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 fn assert_drift(
@@ -218,7 +218,7 @@ fn assert_drift(
     let (code, stdout, stderr) = run(fixture, CLAUDE_PROJECT)?;
     assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 fn source(fixture: &Fixture) -> std::path::PathBuf {
