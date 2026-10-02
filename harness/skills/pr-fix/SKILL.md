@@ -18,18 +18,21 @@ metadata:
 
 Turn a head-specific verdict into reviewed corrections on the contributor's branch. The explicit
 repair request authorizes edits, commits, a standard push to that branch and, once the repaired
-head is independently approved with green required CI, the native forge approval of that head. It
-does not authorize a force-push, issue creation, verdict publication, merge or merge queue entry. The repaired head earns its own verdict from a
+head is independently approved with green required CI, the question that precedes the native forge
+approval of that head. It does not authorize a force-push, issue creation, verdict publication,
+native approval, merge or merge queue entry: verdict publication and approval each wait for the
+user's explicit answer in step 8. The repaired head earns its own verdict from a
 fresh context because the context that wrote a fix cannot independently validate it.
-Accumulate corrections in a local journal across passes and sessions. Approve natively, then
-publish one cumulative repair record, only when the current head is independently approved and its
-required remote CI is green. Neither engages a merge decision or needs separate consent; an explicit
-user prohibition of approval still wins.
+Accumulate corrections in a local journal across passes and sessions. Ask, then act on the answer,
+then publish one cumulative repair record, only when the current head is independently approved and
+its required remote CI is green. The repair record engages no merge decision and needs no separate
+consent; an explicit user prohibition of approval still wins.
 
 ## Usage
 
 `/pr-fix <pr-number|pr-url>` — review the current head, apply bounded corrections, push them to the
-PR source branch, return a verdict on the pushed head, then approve it natively when it qualifies.
+PR source branch, return a verdict on the pushed head, then, when it qualifies, ask the user whether
+to publish that verdict and approve it natively.
 
 Typical cases: "fix the blockers on PR 1042", "review this PR and correct the issues directly", or
 "we can push small review fixes to the contributor's branch". A request only to judge, approve or
@@ -123,22 +126,44 @@ invokes it.
    Record the verdict, SHA, policy and evidence basis as a new dated journal entry. Preserve older
    verdicts, including a rejection on the same SHA; policy correction never approves them retroactively.
    All delegated passes stop after phase 5 without publishing comments or opening tickets.
-   Return only the final head's verdict as current. Verdict publication remains subject to separate
-   user authorization; repair authority alone adds only the native approval and the factual
-   summary in step 8.
+   Return only the final head's verdict as current. Repair authority alone adds only the factual
+   summary in step 8; verdict publication and native approval follow the user's answer there.
 
-8. **Approve, then publish.** Re-read the PR head and required remote checks. Continue only when
+8. **Ask, approve, then publish.** Re-read the PR head and required remote checks. Continue only when
    the independent verdict is exactly `approved`, the required remote CI has succeeded on that
-   same SHA, and no correction remains pending. `approved with reservations`, failed or pending CI,
-   unavailable evidence, or a moved head keeps the journal pending with no intermediate comment.
+   same SHA, and no correction remains pending. Failed or pending CI, unavailable evidence, or a
+   moved head keeps the journal pending with no intermediate comment.
    When no remote check is required, record that fact explicitly instead of claiming CI passed.
    A merged PR still requires evidence for the reviewed source head; merge alone is no substitute.
 
-   Read `references/native-approval.md` and apply its gate and procedure without asking again:
-   this invocation already authorized the approval. Record each approval state in the journal with
-   account, SHA and time. A confirmed or already present approval, a refusal, a user prohibition or
-   an own PR lets publication continue with that outcome stated; an uncertain or withdrawn approval
-   pauses it.
+   `approved with reservations` keeps the journal pending and proposes no approval: list each
+   reservation and the decision expected from the user, then stop.
+
+   When the approval gate in `references/native-approval.md` holds, present these three items and
+   wait for the answer:
+   1. the independent verdict (`approved`), the head SHA and the SHA of the CI run;
+   2. the draft verdict comment, built from `pr-verdict/assets/verdict-template.md` in the PR's
+      language, written to the scratchpad and carrying its marker
+      `<!-- pr-verdict:<pr>:<sha12> -->`;
+   3. the question "Publish this verdict, then approve?" in the user's language, with three
+      answers: publish and approve, approve only, do nothing.
+
+   Never publish the verdict or approve before an explicit answer; the invocation of this workflow,
+   an earlier general authorization or silence is not one. The answer binds the presented SHA: after
+   it, re-read the head, and if it moved discard the answer and ask again on the new head. When no
+   user can answer, keep the journal pending, record the awaited answer and report it.
+
+   - **Publish and approve:** publish the draft through `pr-verdict/references/forges.md` (its
+     marker lookup updates a same-head verdict in place), read it back, record its comment ID and URL
+     in the journal, then approve. A failed or uncertain publication pauses the approval until a
+     remote read by marker settles it.
+   - **Approve only:** approve without publishing the verdict.
+   - **Do nothing:** publish and approve nothing; record `Native approval: not performed — user declined`.
+
+   Approve by applying `references/native-approval.md`. Record each approval state in the journal
+   with account, SHA and time. A confirmed or already present approval, a refusal, a user decline
+   or prohibition, or an own PR lets publication continue with that outcome stated; an uncertain or
+   withdrawn approval pauses it.
    The approval never authorizes merging or adding the PR to a merge queue; each requires a
    separate explicit request.
 
@@ -182,7 +207,10 @@ invokes it.
 - **Repair publication and verdict publication are conflated** — either a team-visible merge
   decision appears without consent or each pass solicits premature replies. Keep intermediate
   results in the journal and publish the cumulative factual summary after final approval and CI;
-  keep verdict publication subject to separate consent.
+  publish the verdict only on the user's "publish and approve" answer.
+- **The invocation is read as consent to approve** — the PR is approved, and its verdict possibly
+  published, on a head the user never saw presented. Present the verdict, draft and question in
+  step 8 and act only on the explicit answer, re-asking when the head moved.
 - **The record follows commits instead of mechanisms** — commits expose chronology but omit why a
   correction works, while one problem may span several commits. Keep mechanisms and proofs in the
   journal and summarize the final behavior once per corrected problem in the public comment.
@@ -190,8 +218,9 @@ invokes it.
   PR path outside the checkout and reload it whenever another session resumes the repair.
 - **The repair record stands in for the approval** — the PR shows a published summary and an
   `approved` review while the forge still lacks a reviewer approval, so merge checks and teammates
-  wait on an action nobody performed. Approve natively in step 8, verify it by reading approvals
-  back, and state its absence explicitly whenever it was refused or not performed.
+  wait on an action nobody performed. Approve natively in step 8 once the user's answer allows it,
+  verify it by reading approvals back, and state its absence explicitly whenever it was refused,
+  declined or not performed.
 - **A Bitbucket approval read as a PR state** — the reviewer's `approved` participant flag is
   confused with an approved or merged PR, whose `state` stays `OPEN`. Report both separately.
 - **A timeout is treated as a failed publication** — a blind retry duplicates an accepted comment.
@@ -210,10 +239,14 @@ invokes it.
 - Never mutate a PR unless the user explicitly asked to correct it or invoked `pr-fix`.
 - Never force-push, overwrite a moved head or guess the PR source repository or ref.
 - Never publish a verdict, create an issue or open another PR from repair authority alone; the
-  mandatory factual repair record is not a verdict and requires no confirmation.
+  mandatory factual repair record is not a verdict and requires no confirmation. Publish a verdict
+  only after the user answers "publish and approve" on the presented head.
 - Never approve natively before independent `approved`, successful required remote CI on the
-  freshly re-read head and no pending correction, against an explicit user prohibition, or on a PR
-  the authenticated account authored.
+  freshly re-read head and no pending correction, without the user's explicit "publish and approve"
+  or "approve only" answer on that head, against an explicit user prohibition, or on a PR the
+  authenticated account authored.
+- Never propose approval for `approved with reservations`; list the reservation and the decision
+  expected.
 - Never report a native approval that was not read back from the forge, and never replace a
   refused or uncertain approval with a comment, task or reaction.
 - Never merge a PR or add it to a merge queue from repair authority or a native approval.

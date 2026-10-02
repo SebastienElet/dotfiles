@@ -1,6 +1,7 @@
 # Native approval
 
-Read this in step 8, after the approval gate holds and before building the repair record. A
+Read this in step 8: evaluate the gate before asking the user, and run the procedure only after
+their answer allows approval and before building the repair record. A
 repository's own forge skill wins over these raw commands. `pr-verdict` never runs this procedure:
 native approval belongs to the `pr-fix` invocation, not to the composed review.
 
@@ -14,9 +15,13 @@ Approve only when every condition holds on one freshly read head SHA:
 - the user has not forbidden approval in this invocation or an earlier message about this PR;
 - the authenticated account is not the PR author.
 
+Approving additionally requires the user's explicit "publish and approve" or "approve only" answer
+to the step 8 question, given for this SHA. A moved head voids the answer.
+
 A failed condition records `Native approval: not performed — <condition>` and skips the forge call.
 `approved with reservations`, pending or failed CI and a moved head keep the repair pending exactly
-as step 8 requires; a user prohibition or own PR is a final outcome, not a pending one.
+as step 8 requires; a user prohibition, a user decline or own PR is a final outcome, not a pending
+one.
 
 ## Commands
 
