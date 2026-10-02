@@ -121,6 +121,14 @@ tasks:
     options:
       cache: false
       runInCI: false
+  postgresql:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.psqlrc" "$HOME/.psqlrc"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
   arnes-config:
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.arnes.yaml" "$HOME/.arnes.yaml"
     deps:

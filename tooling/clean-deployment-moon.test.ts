@@ -6,7 +6,6 @@ import {
   pathExists,
   project,
   runDeploymentHelper,
-  runMake,
 } from "./deployment-test-support.ts";
 import { dirname, join, sep } from "node:path";
 import {
@@ -130,8 +129,8 @@ test("cleans and reinstalls optional Cursor, PostgreSQL and Scrapling links sepa
     ),
   };
   const tasks = ["harness:cursor-rules", "harness:cursor-skills"];
-  const postgresql = (): ReturnType<typeof runMake> =>
-    runMake(fixture, ["postgresql"], { repository: project, environment });
+  const postgresql = (): ReturnType<typeof runDeploymentMoon> =>
+    runDeploymentMoon(fixture, ["home:postgresql"], environment);
   const scrapling = (): ReturnType<typeof runDeploymentHelper> =>
     runDeploymentHelper(
       fixture,
