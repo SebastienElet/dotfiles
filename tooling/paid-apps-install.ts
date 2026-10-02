@@ -13,7 +13,7 @@ const environmentSchema = z.object({
 });
 const argumentOffset = 2;
 
-function runThingsInstallation(): number {
+function runPaidAppInstallation(): number {
   const invocation = invocationSchema.parse(Bun.argv.slice(argumentOffset));
   const environment = environmentSchema.parse(process.env);
   if (invocation[0] === "install-cli") {
@@ -46,7 +46,7 @@ function runThingsInstallation(): number {
 }
 
 try {
-  process.exitCode = runThingsInstallation();
+  process.exitCode = runPaidAppInstallation();
 } catch (error) {
   process.stderr.write(
     `Error: ${error instanceof Error ? error.message : String(error)}\n`,
