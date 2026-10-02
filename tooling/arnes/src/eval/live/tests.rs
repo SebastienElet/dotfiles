@@ -1,19 +1,22 @@
 use super::*;
-use std::{collections::BTreeMap, fs, os::unix::fs::PermissionsExt, path::Path};
+use std::{
+    collections::BTreeMap,
+    fs,
+    os::unix::fs::{PermissionsExt, symlink},
+    path::Path,
+};
 
 fn provider(
     script: &str,
     authentication: Authentication,
 ) -> Result<(tempfile::TempDir, Codex), std::io::Error> {
     let directory = tempfile::tempdir()?;
-    let command = directory.path().join("provider");
-    fs::write(
+    fs::write(directory.path().join("provider"), script)?;
+    let command = directory.path().join("codex");
+    symlink(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("src/eval/live/provider-fixture"),
         &command,
-        format!(
-            "#!/bin/sh\nif [ \"$1\" = --version ]; then printf synthetic; exit 0; fi\n{script}\n"
-        ),
     )?;
-    fs::set_permissions(&command, fs::Permissions::from_mode(0o755))?;
     Ok((
         directory,
         Codex {
@@ -118,6 +121,22 @@ fn live_protocol_runs_with_exact_stdin_fresh_home_and_explicit_controls()
     ] {
         assert!(args.lines().any(|line| line == argument));
     }
+    Ok(())
+}
+
+#[test]
+fn provider_runs_while_its_script_has_an_open_writer() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, codex) = provider(
+        "printf '%s\\n' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":0,\"cached_input_tokens\":0,\"output_tokens\":0}}'",
+        Authentication::default(),
+    )?;
+    let writer = fs::OpenOptions::new()
+        .write(true)
+        .open(directory.path().join("provider"))?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
+    let result = codex.execute(&fixture, "", &options())?;
+    assert_eq!(result.error, None);
+    drop(writer);
     Ok(())
 }
 
