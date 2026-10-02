@@ -1,0 +1,11 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  docker:
+    description: Verify that the Docker CLI is available
+    script: |-
+      command -v docker >/dev/null || { echo "Error: Docker CLI unavailable" >&2; exit 1; }
+    toolchains: system
+    options:
+      cache: false
