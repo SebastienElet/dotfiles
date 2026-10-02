@@ -17,7 +17,9 @@ référencé par [ADR-002](adr/002-homebrew-source-unique.md).
 | Dictionnaires Hunspell   | Commit LibreOffice déclaré         | SHA-256 déclaré                              | Changement du commit et du checksum        | Destination identique conservée, divergence refusée       |
 | Lumen (Sonpiaz)          | DMG officiel `0.1.0`               | SHA-256 et signature du bundle vérifiés      | Changement explicite de version et SHA-256 | Application signée existante conservée, collision refusée |
 
-Lumen est installé par `make optional` ou `make lumen`, via `tooling/install-lumen.ts`.
+Lumen est installé par `moon run repository:lumen`, via `tooling/install-lumen.ts`, vers
+`/Applications`. La tâche prépare les dépendances Bun sans installer le profil Homebrew optionnel.
+Les points d’entrée `make optional` et `make lumen` restent disponibles pendant la transition.
 Le DMG publié pour cette version contient uniquement un exécutable Apple Silicon, malgré la
 compatibilité Intel annoncée dans le README amont ; l'installation refuse donc Intel.
 Le cask Homebrew `lumen` concerne un autre logiciel (luminosité automatique), et le tap Sonpiaz

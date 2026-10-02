@@ -82,6 +82,18 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask silverstein/tap/minutes
+  lumen:
+    description: Install the optional Lumen system monitor
+    command: bun --config=/dev/null --no-env-file --no-install tooling/install-lumen.ts /Applications
+    deps:
+      - dependencies
+    inputs:
+      - /tooling/install-lumen.ts
+    toolchains: bun
+    options:
+      cache: false
+      os: macos
+      runInCI: false
   rust:
     description: Install the repository Rust toolchain with rustup
     checks:
