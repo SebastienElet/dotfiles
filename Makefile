@@ -70,12 +70,6 @@ postgresql: ~/.psqlrc
 cursor:
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:cursor
 
-.PHONY: obsidian-retrieval-test
-obsidian-retrieval-test: ${BREW_BIN}/bun
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" ci
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" run typecheck
-	cd "${DOTFILES_PATH}" && "${BREW_BIN}/bun" test tooling/obsidian-retrieval/contract.test.ts
-
 .PHONY: scrapling
 scrapling: docker ${LOCAL_BIN}/scrapling_mcp
 	@"${DOTFILES_PATH}/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY}" "${SCRAPLING_IMAGE}"
