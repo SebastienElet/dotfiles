@@ -134,6 +134,16 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: disaster-recovery-plan
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: security-assurance-plan
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
 hooks:
   - id: output-discipline
     installations:
@@ -163,6 +173,7 @@ external:
     - { agent: claude, scope: user, id: superpowers@claude-plugins-official }
     - { agent: cursor, scope: user, id: superpowers }
     - { agent: codex, scope: user, id: chrome@openai-bundled }
+    - { agent: codex, scope: user, id: code-review@openai-bundled }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
     - { agent: codex, scope: user, id: computer-use@openai-bundled }
     - { agent: codex, scope: user, id: github@openai-curated }
