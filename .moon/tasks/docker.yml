@@ -10,3 +10,15 @@ tasks:
     toolchains: system
     options:
       cache: false
+  scrapling:
+    description: Install the Scrapling MCP launcher and Docker image
+    script: |-
+      "$workspaceRoot/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${SCRAPLING_IMAGE-pyd4vinci/scrapling}"
+    deps:
+      - docker
+      - tooling:scrapling-mcp
+    toolchains: bun
+    options:
+      cache: false
+      runDepsInParallel: false
+      runInCI: false

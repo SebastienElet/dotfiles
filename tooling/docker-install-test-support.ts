@@ -1,5 +1,6 @@
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -7,11 +8,11 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
+import { requireCommand } from "./deployment-test-support.ts";
 import { tmpdir } from "node:os";
 
 const repositoryRoot = resolve(import.meta.dir, "..");
-const make = Bun.which("make");
 const provider = resolve(import.meta.dir, "docker-install-test-provider.ts");
 const executableMode = 0o755;
 const fixtures: string[] = [];
@@ -29,45 +30,59 @@ type DockerInstallOptions = Readonly<{
   policy?: string;
 }>;
 type DockerInstallFixture = Readonly<{
+  home: string;
   binaryDirectory: string;
   localBinaryDirectory: string;
-  makeCommand: string;
   trace: string;
 }>;
 type MakeArgumentOptions = Readonly<{
   imageOverride: string | undefined;
   policy: string;
 }>;
-type MakeResult = Readonly<{
+type DockerInstallResult = Readonly<{
   exitCode: number;
   stderr: string;
   stdout: string;
   trace: string;
+  scraplingLinkExists: boolean;
 }>;
 
 function runDockerInstallTarget(
   target: DockerInstallTarget,
   scenario: DockerInstallScenario,
   options: DockerInstallOptions = {},
-): MakeResult {
-  if (make === null) {
-    throw new Error("make is unavailable");
-  }
-  const {
-    dockerProviderAvailable = true,
-    imageOverride,
-    policy = "allow-skip",
-  } = options;
-  const fixture = createDockerInstallFixture(dockerProviderAvailable, make);
+): DockerInstallResult {
+  const { dockerProviderAvailable = true, imageOverride, policy } = options;
+  const fixture = createDockerInstallFixture(dockerProviderAvailable);
   const result = Bun.spawnSync({
-    cmd: makeArguments(target, fixture, { imageOverride, policy }),
+    cmd:
+      target === "scrapling"
+        ? [
+            process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
+            "exec",
+            "--quiet",
+            "--ignore-ci-checks",
+            "--no-actions",
+            "repository:scrapling",
+          ]
+        : makeArguments(target, fixture, {
+            imageOverride,
+            policy: policy ?? "require-docker",
+          }),
     cwd: repositoryRoot,
     env: {
       ...process.env,
+      HOME: fixture.home,
+      MOON_HOME: process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
+      PROTO_HOME:
+        process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+      PROTO_OFFLINE: "true",
+      DOCKER_UNAVAILABLE_POLICY: policy,
+      SCRAPLING_IMAGE: imageOverride,
       DOCKER_INSTALL_TEST_SCENARIO: scenario,
       DOCKER_INSTALL_TEST_STATE: fixture.trace,
       DOCKER_INSTALL_TEST_TARGET: target,
-      PATH: `${fixture.binaryDirectory}:${dirname(process.execPath)}`,
+      PATH: fixture.binaryDirectory,
     },
     stderr: "pipe",
     stdout: "pipe",
@@ -77,22 +92,29 @@ function runDockerInstallTarget(
     stderr: result.stderr.toString(),
     stdout: result.stdout.toString(),
     trace: readFileSync(fixture.trace, "utf8"),
+    scraplingLinkExists: existsSync(
+      join(fixture.home, ".local/bin/scrapling_mcp"),
+    ),
   };
 }
 
 function createDockerInstallFixture(
   dockerProviderAvailable: boolean,
-  makeCommand: string,
 ): DockerInstallFixture {
   const root = mkdtempSync(join(tmpdir(), "docker-install-"));
+  const home = join(root, "home");
   const binaryDirectory = join(root, "bin");
   const localBinaryDirectory = join(root, "local-bin");
   const trace = join(root, "docker-trace");
   fixtures.push(root);
+  mkdirSync(home);
   mkdirSync(binaryDirectory);
+  symlinkSync(process.execPath, join(binaryDirectory, "bun"));
   mkdirSync(localBinaryDirectory);
   writeFileSync(trace, "");
   chmodSync(provider, executableMode);
+  symlinkRequiredCommand("git", binaryDirectory);
+  symlinkRequiredCommand("bash", binaryDirectory);
   symlinkRequiredCommand("readlink", binaryDirectory);
   symlinkRequiredCommand("uname", binaryDirectory);
   if (dockerProviderAvailable) {
@@ -102,7 +124,7 @@ function createDockerInstallFixture(
     join(repositoryRoot, "tooling", "scrapling-mcp"),
     join(localBinaryDirectory, "scrapling_mcp"),
   );
-  return { binaryDirectory, localBinaryDirectory, makeCommand, trace };
+  return { home, binaryDirectory, localBinaryDirectory, trace };
 }
 
 function symlinkRequiredCommand(command: string, destination: string): void {
@@ -125,7 +147,7 @@ function makeArguments(
           `${target === "scrapling" ? "SCRAPLING_IMAGE" : "CLOAKBROWSER_IMAGE"}=${options.imageOverride}`,
         ];
   return [
-    fixture.makeCommand,
+    requireCommand("make"),
     "--no-print-directory",
     "--old-file=bun",
     target,
@@ -146,5 +168,5 @@ export {
   runDockerInstallTarget,
   type DockerInstallScenario,
   type DockerInstallTarget,
-  type MakeResult,
+  type DockerInstallResult,
 };

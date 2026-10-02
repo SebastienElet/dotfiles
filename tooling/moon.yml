@@ -55,6 +55,14 @@ fileGroups:
     - /.moon/tasks/harness-cursor.yml
     - /Makefile
 tasks:
+  scrapling-mcp:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/scrapling-mcp" "$HOME/.local/bin/scrapling_mcp"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
   test:
     command: noop
     deps:
