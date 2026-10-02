@@ -23,7 +23,6 @@ tasks:
       - pnpm
       - home:install
       - harness:install
-      - tooling:colgrep-search-install
       - jq-setup
     toolchains: system
     options:

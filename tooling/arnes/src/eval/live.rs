@@ -65,7 +65,7 @@ impl Codex {
             volta_home,
         };
         let executable = env::current_exe().map_err(|error| error.to_string())?;
-        let fixture = Fixture::prepare(&BTreeMap::new(), "", "", &executable)?;
+        let fixture = Fixture::prepare(&BTreeMap::new(), "", &executable)?;
         codex.version = codex.isolated_version(&fixture, &codex.environment(&fixture)?)?;
         Ok(codex)
     }

@@ -201,14 +201,14 @@ test("make cursor deploys the rule and skills without global dependencies", () =
     "rules",
     "memory-governance-cursor.mdc",
   );
-  const skill = join(fixture.home, ".cursor", "skills", "code-search");
+  const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
 
   expect(makeCursor(fixture, trace).exitCode).toBe(0);
   expect(readlinkSync(rule)).toBe(
     join(project, "harness", "rules", "memory-governance-cursor.mdc"),
   );
   expect(readlinkSync(skill)).toBe(
-    join(project, "harness", "skills", "code-search"),
+    join(project, "harness", "skills", "skill-manager"),
   );
   expect(readFileSync(trace, "utf8")).toContain(
     '"arguments":["setup","hooks","--agent","cursor"]',

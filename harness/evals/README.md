@@ -8,18 +8,17 @@ may write their normal caches and build artifacts, but no deployed harness or hi
 is changed. Rust/Cargo, Git, and the repository's Moon/Bun toolchain are prerequisites for the aggregate check;
 the evaluation engine itself is the Arnes binary and does not require Bun.
 
-The GitHub Actions workflow `test-harness.yml` runs exactly `moon run harness:check` for every PR
-and push to main. It has no affected-file or path filter, so changes to the manifest, projections,
-skills, runner, evidence, Moon, or CI cannot escape through a stale filter. Task-level `runInCI`
-overrides enable only the new deterministic tasks; operational harness tasks retain their settings.
-The new tasks retain the project's disabled cache and declare evaluation inputs. Arnes retains its
-own inputs, mutex, and cache policy.
+The GitHub Actions workflow `test-harness.yml` selects `harness:validate-evals` and
+`harness:validate-evidence` with `moon ci --downstream none` for PRs and pushes to main.
+Arnes, TypeScript and text checks run in their dedicated workflows; CI does not invoke the local
+aggregate `harness:check`. Evaluation tasks retain the project's disabled cache and declare
+their inputs. Arnes retains its own inputs, mutex, and cache policy.
 
 ## Data and ownership
 
-- `cases.json`: three behavior contracts with stable IDs, source sections, prompt or trigger-query
+- `cases.json`: two behavior contracts with stable IDs, source sections, prompt or trigger-query
   reference, fixture, versioned oracle, and explicit success/failure conditions.
-- `fixtures/code-search-v1.json`: a tiny synthetic monorepo, with no dependency installation.
+- `fixtures/repository-lookup-v1.json`: a tiny synthetic monorepo, with no dependency installation.
 - `variants/no-op.md`: an explicit neutral replacement for the evaluated instruction section.
 - `evidence/`: optional retained reports, never a prerequisite for a green check.
 - [tooling/arnes/src/eval/](../../tooling/arnes/src/eval/): Arnes owns the execution engine,
@@ -28,8 +27,8 @@ own inputs, mutex, and cache policy.
 
 `skill-manager/references/evals.md` owns activation-scenario semantics. `validate-evals` implements
 that existing contract for both tracked skill collections and verifies the new case references.
-The structural case refers to an existing query without copying its prompt. The literal case
-permits skill activation, consistent with the existing scenario; it rejects conceptual search.
+No particular skill activation contract is required. The current cases cover exact literal lookup
+and reading a known path, using native command names.
 Arnes owns deployment validation; its existing tests exercise synthetic projections and the real
 manifest/Moon deployments in temporary homes. They do not attest every current installation on your machine.
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
@@ -43,7 +42,7 @@ Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rule
 with saved `auth.json` or `CODEX_API_KEY`, and supply the exact model ID you intend to measure:
 
 ```bash
-moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only code-search-structural --runs 1 --report harness/evals/evidence/candidate.json
+moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only repository-literal --runs 1 --report harness/evals/evidence/candidate.json
 ```
 
 `arnes eval` exposes `validate-evals`, `validate-evidence [reports]`, `fixture-smoke`,
@@ -71,33 +70,35 @@ after publishing the new report. Existing report paths are refused before any li
 and publication uses an exclusive hard link to prevent races from overwriting history.
 
 Each replicate receives a fresh temporary HOME, Codex home, and synthetic workspace. Only the
-`Context Management` section from `harness/AGENTS.md` and the canonical `code-search` skill are
-installed; USER/SOUL and other deployed instructions, plugins, hooks, and MCP configuration are not
+`Context Management` section from `harness/AGENTS.md` is installed; USER/SOUL and other deployed instructions, plugins, hooks, and MCP configuration are not
 part of this first experiment. Saved auth is copied temporarily when needed, never into evidence.
 The runner passes the exact declared UTF-8 prompt on stdin, disables user configuration and rules,
 uses workspace-write with agent-command network disabled, and requests no approvals.
 
-PATH shims record successful reads and search invocations. For a structural PASS, the skill read
-must precede conceptual search; for a literal PASS, exact `rg` must occur without conceptual search;
-for a known-path PASS, the target must be read without exploration. Other ways of reading a file
-can yield false negatives. The shims simulate external tools, not an agent, and are not protected
-against a deliberately tampering agent. They prove neither ColGrep retrieval quality nor internal
-skill activation. No final-answer self-report is used by the oracle. The same synthetic commands and criteria are
-preserved by the Rust port; the instrumentation is not broadened to arbitrary file-reading methods.
+PATH shims record reads and search invocations with their exit status. For a literal PASS, exact
+`rg` must occur; for a known-path PASS, the target must be read without exploration. Only synthetic
+`cat`, `rg`, and `fd` are installed. Other ways of reading a file can yield false negatives. The
+shims simulate external tools and are not protected against a deliberately tampering agent. They
+do not measure native tool quality. No final-answer self-report is used by the oracle.
 
 ## Evidence and comparison
 
 Reports record version, case snapshots, prompt bytes/fingerprints, source fingerprints, agent and
-version, requested model, Git revision and tested instruction/skill fingerprints, fixture/executable
+version, requested model, Git revision and tested instruction fingerprints, fixture/executable
 fingerprints, controls, environment, date, replicate count, PASS/FAIL/INVALID results, observations,
 tokens/tool calls/duration when available, and limitations. Missing measurements remain null.
 Timeout, nonzero exit, output overflow, broken events, or unreadable observation logs become
 INVALID, never PASS. Raw transcripts and arbitrary tool arguments are not retained.
 
-Version 1 reports produced by the previous Bun engine remain readable and validatable. New reports
-record `environment.runtime` instead of `environment.bun`, and fingerprint the running Arnes binary;
-comparisons between engines or different binaries are refused. Scenario IDs, prompts, oracles,
-PASS/FAIL/INVALID meanings, and publication rules are unchanged.
+Version 1 reports produced by the previous Bun engine and retired code-search cases remain
+readable and validatable. Historical reports retain their skill fingerprint and the original
+versioned oracles, including structural activation and ColGrep observations. Current reports omit
+`harness.skillFingerprint` and declare `shell-with-synthetic-cat-rg-fd-v1`; previous reports retain
+`shell-with-synthetic-cat-rg-fd-colgrep-v1`. The old fixture identity remains valid for stored
+snapshots, but it is no longer installed or selected by current cases. New reports record
+`environment.runtime` instead of `environment.bun`, and fingerprint the running Arnes binary.
+Comparisons across different cases, tool controls, engines, or binaries are refused.
+PASS/FAIL/INVALID meanings and publication rules are preserved.
 
 Historical validation checks the stored snapshot and recomputes its versioned oracle, not the
 current harness bytes: changing a prompt or instruction does not rewrite yesterday's evidence.
@@ -107,8 +108,8 @@ Review retained reports before committing. Never retain secrets or private mater
 Produce baseline and candidate explicitly with the same model, cases, runs, budget, and environment:
 
 ```bash
-moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only code-search-structural,code-search-literal,code-search-known-path --runs 3 --variant-file harness/evals/variants/no-op.md --report harness/evals/evidence/baseline.json
-moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only code-search-structural,code-search-literal,code-search-known-path --runs 3 --report harness/evals/evidence/candidate.json
+moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only repository-literal,repository-known-path --runs 3 --variant-file harness/evals/variants/no-op.md --report harness/evals/evidence/baseline.json
+moon run harness:eval -- --model YOUR_EXACT_MODEL_ID --only repository-literal,repository-known-path --runs 3 --report harness/evals/evidence/candidate.json
 moon run harness:compare -- harness/evals/evidence/baseline.json harness/evals/evidence/candidate.json
 ```
 
@@ -145,7 +146,7 @@ measurement paths remain separate from success.
 
 ## Discovery sources
 
-- Accepted ADR-038, ADR-039, and ADR-041 govern placement, retrieval, and implementation language.
+- Accepted ADR-038 and ADR-041 govern placement and implementation language.
 - [Moon task options](https://moonrepo.dev/docs/config/project),
   [task types](https://moonrepo.dev/docs/concepts/task), and
   [native check](https://moonrepo.dev/docs/commands/check), consulted 2026-09-05 for pinned Moon 2.5.3.

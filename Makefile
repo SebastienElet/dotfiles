@@ -229,9 +229,6 @@ $(HOME)/.agents/skills/%: FORCE
 $(HOME)/.cursor/skills/%: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) harness:cursor-skills
 
-${LOCAL_BIN}/colgrep-search: FORCE
-	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) tooling:colgrep-search-install
-
 ${LOCAL_BIN}/arnes: FORCE
 	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) arnes:binary
 

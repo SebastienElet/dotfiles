@@ -1,5 +1,5 @@
 {
-  "id": "code-search-v1",
+  "id": "repository-lookup-v1",
   "files": {
     "package.json": "{\"name\":\"synthetic-monorepo\",\"private\":true,\"workspaces\":[\"packages/*\"]}\n",
     "packages/app/package.json": "{\"name\":\"app\",\"dependencies\":{\"auth\":\"workspace:*\"}}\n",

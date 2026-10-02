@@ -99,7 +99,6 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
     "harness:codex-instructions",
     "harness:codex-agents",
     "harness:codex-skills",
-    "tooling:colgrep-search-install",
     "arnes:binary",
     "agent-memory:binary",
     "agent-handoff:binary",

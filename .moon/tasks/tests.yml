@@ -7,7 +7,7 @@ fileGroups:
     - oxfmt.config.ts
     - tooling/**/*.json
     - tooling/**/*.md
-    - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,code-search-*,colgrep-search*}.ts"
+    - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     - tooling/deploy-link.ts
     - tooling/scrapling-mcp
     - tooling/install-homebrew
@@ -41,7 +41,7 @@ fileGroups:
     - bun.lock
 tasks:
   typescript-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,code-search-*,colgrep-search*}.ts"
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     deps:
       - agent-memory:build
       - fish-setup

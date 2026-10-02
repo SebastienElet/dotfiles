@@ -39,7 +39,7 @@ fn run(
             "--model",
             "synthetic",
             "--only",
-            "code-search-literal",
+            "repository-literal",
             "--runs",
             "1",
             "--report",

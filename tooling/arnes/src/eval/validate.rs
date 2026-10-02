@@ -5,7 +5,7 @@ use super::{
 use std::{fs, path::Path, process::Command};
 
 /// # Errors
-/// Returns errors loading cases, enumerating tracked contracts with Git, or validating required activation contracts.
+/// Returns errors loading cases, enumerating tracked contracts with Git, or validating activation contracts.
 pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
     let cases = load_cases(repository)?;
     let result = Command::new("git")
@@ -27,9 +27,6 @@ pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
         .split('\0')
         .filter(|p| !p.is_empty())
         .collect::<Vec<_>>();
-    if !paths.contains(&"harness/skills/code-search/evals/trigger-queries.json") {
-        return Err("Missing code-search activation contract".into());
-    }
     for path in &paths {
         load_trigger(repository, path)
             .map_err(|e| format!("Invalid activation contract: {path}: {e}"))?;

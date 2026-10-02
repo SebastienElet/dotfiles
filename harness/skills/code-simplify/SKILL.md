@@ -29,7 +29,7 @@ or a repository-wide cleanup. It does not activate merely because code was modif
 ## Steps
 
 1. Read applicable instructions, canonical user preferences, and project conventions. Use
-   `code-search` for locating the relevant code and consumers. If the requested artifact is a skill,
+   bounded source searches to locate the relevant code and consumers. If the requested artifact is a skill,
    issue, or harness workflow, use its maintenance procedure instead.
 2. Bound the surface before editing. Honor the supplied files, symbols, or diff. Without an explicit
    scope, inspect Git status and both staged and unstaged diffs; announce the selected changed code

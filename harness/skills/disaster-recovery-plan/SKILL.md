@@ -39,7 +39,7 @@ An explicit user path overrides these defaults. Collection does not require gene
 2. Read the existing register. If absent, copy `assets/context.example.yaml` to the default path
    outside the repository. Preserve existing answers. Each new fact needs the
    fields described in `references/register.md`. Seed declarations only from sources actually read.
-3. Use `code-search` to locate relevant repository evidence, then read bounded source windows.
+3. Locate relevant repository evidence with bounded source searches, then read bounded source windows.
    Consult applicable ADRs before describing architectural intent. Record commit and file/line
    references. Configuration in Git is evidence of declared configuration, not live production.
    Use the repository's `deployment` skill, when available, if live deployment verification is requested. Do not deploy,

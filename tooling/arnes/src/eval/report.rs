@@ -67,7 +67,8 @@ pub struct Controls {
 pub struct Harness {
     pub git_revision: String,
     pub instruction_fingerprint: String,
-    pub skill_fingerprint: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skill_fingerprint: Option<String>,
     pub variant: String,
 }
 

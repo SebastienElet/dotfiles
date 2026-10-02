@@ -5,9 +5,9 @@ import {
   gateFixture,
   runGate,
 } from "./gate-test-support.ts";
+import { mkdirSync, rmSync } from "node:fs";
 import type { ProfileOperations } from "./smoke-minimal.ts";
 import { join } from "node:path";
-import { mkdirSync } from "node:fs";
 import { smokeMinimalProfile } from "./smoke-minimal.ts";
 
 afterEach(clearGateFixtures);
@@ -18,19 +18,12 @@ function fixture(): ReturnType<typeof gateFixture> {
   for (const location of [".local/bin", ".volta/bin"]) {
     mkdirSync(join(result.home, location), { recursive: true });
   }
-  for (const command of [
-    "agent-handoff",
-    "agent-memory",
-    "arnes",
-    "claude",
-    "colgrep-search",
-  ]) {
+  for (const command of ["agent-handoff", "agent-memory", "arnes", "claude"]) {
     executable(join(result.home, ".local/bin"), command, "true");
   }
   for (const command of ["codex", "node", "pnpm"]) {
     executable(join(result.home, ".volta/bin"), command, "true");
   }
-  executable(result.bin, "colgrep", "true");
   executable(
     result.bin,
     "brew",
@@ -103,11 +96,7 @@ test("refuses a changed artifact snapshot", () => {
 
 test("refuses a missing installed executable", () => {
   const context = fixture();
-  executable(
-    context.bin,
-    "brew",
-    'if [ "$1" = --prefix ]; then echo /missing; fi',
-  );
+  rmSync(join(context.home, ".local/bin/arnes"));
   expect(runGate("smoke-minimal.ts", context).exitCode).not.toBe(0);
 });
 

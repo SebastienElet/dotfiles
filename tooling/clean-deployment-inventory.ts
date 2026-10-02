@@ -79,7 +79,6 @@ const links = [
     "tooling/agent-handoff/target/release/agent-handoff",
     ".local/bin/agent-handoff",
   ],
-  ["tooling/colgrep-search-cli.ts", ".local/bin/colgrep-search"],
   ["tooling/scrapling-mcp", ".local/bin/scrapling_mcp"],
 ] as const;
 const regularFiles = [

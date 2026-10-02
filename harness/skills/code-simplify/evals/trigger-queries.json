@@ -38,7 +38,7 @@
       "reason": "Merge review belongs to the review procedure."
     },
     {
-      "query": "Simplifiez le skill code-search.",
+      "query": "Simplifiez le skill prose-edit.",
       "should_activate": false,
       "reason": "Skill maintenance belongs to skill-manager."
     },

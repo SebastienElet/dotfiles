@@ -151,18 +151,17 @@ fn prepare(
         )?
         .to_owned(),
     };
-    let skill = read_source(repository, "harness/skills/code-search/SKILL.md")?;
     let harness = Harness {
         git_revision: git.to_owned(),
         instruction_fingerprint: fingerprint(&instructions),
-        skill_fingerprint: fingerprint(&skill),
+        skill_fingerprint: None,
         variant: options
             .variant
             .clone()
             .unwrap_or_else(|| "Context Management".to_owned()),
     };
     Ok((
-        Fixture::prepare(&entry.fixture.files, &instructions, &skill, executable)?,
+        Fixture::prepare(&entry.fixture.files, &instructions, executable)?,
         harness,
     ))
 }
@@ -184,14 +183,14 @@ fn report(
         },
         controls: Controls {
             sandbox: "workspace-write".to_owned(), network: false,
-            tools: "shell-with-synthetic-cat-rg-fd-colgrep-v1".to_owned(),
+            tools: "shell-with-synthetic-cat-rg-fd-v1".to_owned(),
             timeout_seconds: options.timeout_seconds, reasoning_effort: options.reasoning_effort.clone(), token_budget: (),
         },
         run_count: usize::try_from(options.runs).map_err(|error| error.to_string())?, cases,
         limitations: [
-            "Only Context Management and code-search are installed; this is not the full deployed harness.",
-            "PATH shims observe supported commands, not internal skill loading or uninstrumented reads; bypasses can cause false negatives.",
-            "Synthetic shims are not ColGrep quality or security tests; observations are not tamper-proof.",
+            "Only Context Management is installed; this is not the full deployed harness.",
+            "PATH shims observe supported commands, not uninstrumented reads; bypasses can cause false negatives.",
+            "Synthetic shims do not measure native tool quality; observations are not tamper-proof.",
             "Git revision plus content fingerprints identify the tested bytes, including uncommitted changes.",
             "Model is the requested ID; aliases may resolve differently. No statistical or causal uplift claim.",
             "No token ceiling is available; the wall-clock timeout bounds each run. Raw transcripts are discarded.",

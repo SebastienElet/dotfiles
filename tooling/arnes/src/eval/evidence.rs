@@ -35,8 +35,10 @@ pub fn validate_report(report: &Report) -> Result<(), String> {
     for value in [
         &report.runner_revision,
         &report.harness.instruction_fingerprint,
-        &report.harness.skill_fingerprint,
     ] {
+        hash(value, 64)?;
+    }
+    if let Some(value) = &report.harness.skill_fingerprint {
         hash(value, 64)?;
     }
     validate_date(&report.date)?;
@@ -58,7 +60,13 @@ pub fn validate_report(report: &Report) -> Result<(), String> {
     let controls = &report.controls;
     if controls.sandbox != "workspace-write"
         || controls.network
-        || controls.tools != "shell-with-synthetic-cat-rg-fd-colgrep-v1"
+        || ![
+            "shell-with-synthetic-cat-rg-fd-colgrep-v1",
+            "shell-with-synthetic-cat-rg-fd-v1",
+        ]
+        .contains(&controls.tools.as_str())
+        || (controls.tools == "shell-with-synthetic-cat-rg-fd-colgrep-v1"
+            && report.harness.skill_fingerprint.is_none())
         || !(1..=600).contains(&controls.timeout_seconds)
         || !["low", "medium", "high"].contains(&controls.reasoning_effort.as_str())
     {
