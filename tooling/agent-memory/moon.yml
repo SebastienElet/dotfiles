@@ -73,6 +73,8 @@ tasks:
       mutex: agent-memory-cargo-target
   deployment-test:
     command: bun --config=/dev/null --no-env-file test tooling/deployment-agent-memory.test.ts
+    deps:
+      - repository:rust
     inputs:
       - "@group(deployment)"
     toolchains: bun

@@ -63,6 +63,8 @@ tasks:
       mutex: agent-handoff-cargo-target
   deployment-test:
     command: bun --config=/dev/null --no-env-file test tooling/deployment-agent-handoff.test.ts
+    deps:
+      - repository:rust
     inputs:
       - "@group(deployment)"
     toolchains: bun

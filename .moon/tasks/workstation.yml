@@ -84,6 +84,15 @@ tasks:
       brew install --cask silverstein/tap/minutes
   rust:
     description: Install the repository Rust toolchain with rustup
+    checks:
+      - check: condition
+        script: |-
+          export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+          export RUSTUP_AUTO_INSTALL=0
+          rustup show active-toolchain &&
+            rustc --version &&
+            cargo fmt --version &&
+            cargo clippy --version
     inputs:
       - rust-toolchain.toml
     toolchains: system
