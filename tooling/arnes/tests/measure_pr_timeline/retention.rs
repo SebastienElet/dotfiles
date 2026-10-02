@@ -12,7 +12,7 @@ fn expires_the_whole_pr_timeline_at_90_days() -> Result<(), Box<dyn std::error::
         let timeline = harness.timeline()?;
         age_events(&harness, age)?;
         force_sweep(&harness)?;
-        assert!(trigger_hook(&harness)?.stderr.is_empty());
+        assert_eq!(trigger_hook(&harness)?.stderr, [] as [u8; 0]);
         assert_eq!(
             timeline
                 .parent()
@@ -58,11 +58,11 @@ fn sweeps_prs_at_most_once_per_day() -> Result<(), Box<dyn std::error::Error + S
     let harness = Harness::new()?;
     assert_status(&harness.record(&[])?, "recorded");
     age_events(&harness, 91)?;
-    assert!(trigger_hook(&harness)?.stderr.is_empty());
+    assert_eq!(trigger_hook(&harness)?.stderr, [] as [u8; 0]);
     assert_eq!(harness.events()?.len(), 1);
     force_sweep(&harness)?;
     let path = harness.timeline()?;
-    assert!(trigger_hook(&harness)?.stderr.is_empty());
+    assert_eq!(trigger_hook(&harness)?.stderr, [] as [u8; 0]);
     assert!(!path.exists());
     Ok(())
 }
@@ -195,7 +195,7 @@ fn reads_the_existing_retention_state_before_upgrading_it()
     assert_status(&harness.record(&[])?, "recorded");
     let path = harness.measure_root().join("retention.json");
     fs :: write (& path , json ! ({ "schema_version" : 1 , "status" : "complete" , "swept_at_ms" : 1 , "next_sweep_at_ms" : 2 , "candidate_runs" : 0 , "removed_runs" : 0 }) . to_string ()) ? ;
-    assert!(trigger_hook(&harness)?.stderr.is_empty());
+    assert_eq!(trigger_hook(&harness)?.stderr, [] as [u8; 0]);
     assert_eq!(
         *(retention_state(&harness)?)
             .get("schema_version")

@@ -21,7 +21,7 @@ tasks:
   build:
     deps:
       - repository:rust
-    toolchains: system
+    toolchains: rust
     options:
       cache: false
       mutex: arnes-cargo-target
@@ -60,7 +60,7 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo check --workspace --all-targets --all-features --locked
   test:
-    toolchains: bun
+    toolchains: [rust, bun]
     options:
       mutex: arnes-cargo-target
     inputs:

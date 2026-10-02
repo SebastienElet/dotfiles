@@ -20,7 +20,6 @@ cloakbrowser
 cloakhq
 cloakserve
 codepoint
-colgrep
 coredata
 crédit
 cstring

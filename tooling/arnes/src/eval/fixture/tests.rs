@@ -6,21 +6,14 @@ fn installs_inputs_and_discards_fixture_home_with_its_lifetime()
     let fixture = Fixture::prepare(
         &BTreeMap::from([("src/auth/session.ts".into(), "session".into())]),
         "instructions",
-        "skill",
         Path::new("/tmp/arnes"),
     )?;
     assert_eq!(
         std::fs::read_to_string(fixture.workspace.join("AGENTS.md"))?,
         "instructions"
     );
-    assert_eq!(
-        std::fs::read_to_string(
-            fixture
-                .workspace
-                .join(".agents/skills/code-search/SKILL.md")
-        )?,
-        "skill"
-    );
+    assert!(!fixture.workspace.join(".agents").exists());
+    assert!(!fixture.workspace.join(".eval-bin/colgrep-search").exists());
     assert_eq!(
         fixture.env.get("HOME").ok_or("missing fixture value")?,
         fixture.home.to_str().ok_or("missing fixture value")?
@@ -50,7 +43,6 @@ fn instruction_sources_override_fixture_entries() -> Result<(), Box<dyn std::err
     let fixture = Fixture::prepare(
         &BTreeMap::from([("AGENTS.md".into(), "fixture".into())]),
         "instructions",
-        "skill",
         Path::new("/tmp/arnes"),
     )?;
     assert_eq!(
@@ -67,7 +59,6 @@ fn refuses_escaping_fixture_paths() {
             Fixture::prepare(
                 &BTreeMap::from([(path.into(), String::new())]),
                 "instructions",
-                "skill",
                 Path::new("/tmp/arnes")
             )
             .is_err()

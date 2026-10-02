@@ -35,22 +35,17 @@ Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and
 
 ## Context Management
 
-- **Locate with `code-search`, in the main thread.** Any exploratory or structural search —
-  architecture, call paths, dependencies, cross-package behavior, change impact, first contact with
-  an unfamiliar repository — goes through the `code-search` skill, invoked here rather than handed
-  to a subagent. Locating is cheap: `rg`, `fd` and `colgrep-search` return bounded output. A one-off
-  lookup of a literal you already know stays a plain `rg`.
+- **Locate in the main thread.** Use bounded `rg` and `fd` searches to locate relevant code and
+  consumers before delegating bulk reading. Verify consequential findings in source.
 - **Delegate reading, not locating.** A subagent carries the bulk reading and the synthesis that
   follow a search, never the search itself. Test before delegating: can you state everything you
   need back in one line — a path, a count, a verdict? Then delegate. Otherwise it stays here.
-- A subagent does not inherit skill routing. When one must search on its own, its prompt names
-  `code-search` explicitly.
 - Keep the main thread for orchestration and decisions.
 
 ## Semctx
 
 A repository whose Git root contains `.semctx/` is semctx-enabled. There, semctx carries the proof
-of a change; `code-search` still locates code, semctx never does.
+of a change; source searches still locate code, semctx never does.
 
 - **Load the tools first.** They are deferred MCP tools: discover them before concluding that
   the server is unavailable, then pass the absolute Git root as `repositoryRoot` on every call.

@@ -57,6 +57,7 @@ tasks:
     options:
       mutex: agent-memory-cargo-target
   build:
+    toolchains: rust
     script: |
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
@@ -72,6 +73,8 @@ tasks:
       mutex: agent-memory-cargo-target
   deployment-test:
     command: bun --config=/dev/null --no-env-file test tooling/deployment-agent-memory.test.ts
+    deps:
+      - repository:rust
     inputs:
       - "@group(deployment)"
     toolchains: bun

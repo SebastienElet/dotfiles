@@ -9,7 +9,7 @@ fn collection_failure_after_an_existing_run_is_advisory_and_journaled()
     let payload = br#"{"session_id":"new","event":"SessionStart"}"#;
     let output = harness.run("claude-code", payload)?;
     assert_advisory_failure(&output);
-    assert!(!output.stderr.is_empty());
+    assert_ne!(output.stderr, [] as [u8; 0]);
     let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"))?;
     assert_eq!(invalid.len(), 1);
     assert_eq!(

@@ -71,7 +71,7 @@ fn bounds_stdin_writes_when_child_does_not_read() {
 fn rejects_non_utf8_provider_output() {
     let result = shell("printf '\\377'", "", Duration::from_secs(2));
     assert_eq!(result.error, Some(ExecutionError::ProtocolInvalid));
-    assert!(result.output.is_empty());
+    assert_eq!(result.output, "");
 }
 
 #[test]

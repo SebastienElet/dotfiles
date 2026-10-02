@@ -47,6 +47,7 @@ tasks:
     options:
       mutex: agent-handoff-cargo-target
   build:
+    toolchains: rust
     script: |
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
@@ -62,6 +63,8 @@ tasks:
       mutex: agent-handoff-cargo-target
   deployment-test:
     command: bun --config=/dev/null --no-env-file test tooling/deployment-agent-handoff.test.ts
+    deps:
+      - repository:rust
     inputs:
       - "@group(deployment)"
     toolchains: bun

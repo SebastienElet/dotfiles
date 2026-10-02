@@ -35,7 +35,7 @@ authority.
 2. List what the diff touches: paths, tools, package managers, deployment mechanisms, languages,
    agent instructions and skills.
 3. Find candidates by index title and by exact terms from the diff with `rg -n <term> docs/adr/`.
-   For a concept without a literal term, use the `code-search` skill and keep only hits under
+   For a concept without a literal term, search related vocabulary and keep only hits under
    `docs/adr/`. Invoke no other skill and spawn no agent.
 4. Read each candidate completely, including its exceptions, transition clauses and rejected
    alternatives. An ADR concerns the change only when a sentence of its decision or consequences

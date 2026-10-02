@@ -35,7 +35,7 @@ fn report() -> Result<Report, Box<dyn std::error::Error>> {
         harness: Harness {
             git_revision: "a".repeat(40),
             instruction_fingerprint: "a".repeat(64),
-            skill_fingerprint: "a".repeat(64),
+            skill_fingerprint: Some("a".repeat(64)),
             variant: "baseline".into(),
         },
         runner_revision: "a".repeat(64),
@@ -170,6 +170,71 @@ fn strict_reports_require_nullable_fields_and_valid_dates() -> Result<(), Box<dy
 }
 
 #[test]
+fn accepts_retired_skill_absence_only_with_current_controls()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut value = serde_json::to_value(report()?)?;
+    value
+        .get_mut("harness")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or("missing harness")?
+        .remove("skillFingerprint");
+    *value
+        .pointer_mut("/controls/tools")
+        .ok_or("missing tools")? = "shell-with-synthetic-cat-rg-fd-v1".into();
+    let current: Report = serde_json::from_value(value.clone())?;
+    validate_report(&current)?;
+    assert!(
+        serde_json::to_value(current)?
+            .pointer("/harness/skillFingerprint")
+            .is_none()
+    );
+    *value
+        .pointer_mut("/controls/tools")
+        .ok_or("missing tools")? = "shell-with-synthetic-cat-rg-fd-colgrep-v1".into();
+    assert!(validate_report(&serde_json::from_value(value)?).is_err());
+    Ok(())
+}
+
+#[test]
+fn retired_structural_snapshots_validate_without_the_installed_skill()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut historical = report()?;
+    let case = historical.cases.first_mut().ok_or("missing case")?;
+    case.definition.id = "code-search-structural".into();
+    case.definition.fixture = "code-search-v1".into();
+    case.definition.oracle = Oracle::StructuralV1;
+    let run = case.runs.first_mut().ok_or("missing run")?;
+    run.status = Status::Pass;
+    run.observations = vec![
+        Observation {
+            tool: Tool::Cat,
+            args: vec![".agents/skills/code-search/SKILL.md".into()],
+            exit_code: 0,
+        },
+        Observation {
+            tool: Tool::ColgrepSearch,
+            args: vec!["<other>".into()],
+            exit_code: 0,
+        },
+    ];
+    let directory = tempfile::tempdir()?;
+    let path = directory.path().join("historical.json");
+    publish_report(&path, &historical)?;
+    assert_eq!(read_report(&path)?, historical);
+    historical
+        .cases
+        .first_mut()
+        .ok_or("missing case")?
+        .runs
+        .first_mut()
+        .ok_or("missing run")?
+        .observations
+        .reverse();
+    assert!(validate_report(&historical).is_err());
+    Ok(())
+}
+
+#[test]
 fn oracle_requires_successful_tools_and_expected_order() {
     let read = Observation {
         tool: Tool::Cat,
@@ -226,7 +291,7 @@ fn invalid_runs_stay_in_denominator_and_null_measurements_propagate()
     let mut baseline = report()?;
     baseline
         .cases
-        .get_mut(2)
+        .get_mut(1)
         .ok_or("missing case")?
         .runs
         .first_mut()
@@ -234,7 +299,7 @@ fn invalid_runs_stay_in_denominator_and_null_measurements_propagate()
         .status = Status::Pass;
     baseline
         .cases
-        .get_mut(2)
+        .get_mut(1)
         .ok_or("missing case")?
         .runs
         .first_mut()
@@ -247,7 +312,7 @@ fn invalid_runs_stay_in_denominator_and_null_measurements_propagate()
     let mut candidate = baseline.clone();
     candidate
         .cases
-        .get_mut(2)
+        .get_mut(1)
         .ok_or("missing case")?
         .runs
         .first_mut()
@@ -255,14 +320,14 @@ fn invalid_runs_stay_in_denominator_and_null_measurements_propagate()
         .status = Status::Invalid;
     candidate
         .cases
-        .get_mut(2)
+        .get_mut(1)
         .ok_or("missing case")?
         .runs
         .first_mut()
         .ok_or("missing run")?
         .error = Some(crate::eval::report::RunError::Timeout);
     let result = compare(&baseline, &candidate)?;
-    assert!((result.baseline.pass_rate - 1.0 / 3.0).abs() < f64::EPSILON);
+    assert!((result.baseline.pass_rate - 1.0 / 2.0).abs() < f64::EPSILON);
     assert!(result.candidate.pass_rate.abs() < f64::EPSILON);
     assert_eq!(result.candidate.invalid, 1);
     assert_eq!(
@@ -271,7 +336,7 @@ fn invalid_runs_stay_in_denominator_and_null_measurements_propagate()
             .first()
             .ok_or("missing regression")?
             .case_id,
-        "code-search-known-path"
+        "repository-known-path"
     );
     assert_eq!(
         result.regressions.first().ok_or("missing regression")?.run,

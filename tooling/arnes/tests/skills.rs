@@ -19,7 +19,7 @@ fn user_scope_is_default_for_declared_skills()
     for expected in ["CLAUDE", "CURSOR", "CODEX"] {
         assert!(stdout.contains(expected), "missing {expected}: {stdout}");
     }
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -268,6 +268,6 @@ fn doctor_without_resource_stops_after_an_invalid_manifest()
         stdout,
         "Manifest\n✓ 0 healthy\n\nerror manifest: version: unsupported version 2; expected 1\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

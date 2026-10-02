@@ -98,6 +98,6 @@ fn manifest_failures_are_rule_errors() -> Result<(), Box<dyn std::error::Error +
     let (code, stdout, stderr) = run(&fixture, &["doctor", "rules"])?;
     assert_eq!(code, 2);
     assert!(stdout.contains("error rules: manifest: .arnes.yaml was not found"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

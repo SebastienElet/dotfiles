@@ -98,29 +98,6 @@ test("preserves a divergent Starship symlink", () => {
   expect(linkTarget(destination)).toBe(unexpected);
 });
 
-test("deploys the guarded ColGrep entry point and replays idempotently", () => {
-  const fixture = createDeploymentFixture("colgrep-search");
-  const destination = join(fixture.home, ".local", "bin", "colgrep-search");
-
-  expectSuccess(runDeploymentMoon(fixture, ["tooling:colgrep-search-install"]));
-  expect(linkTarget(destination)).toBe(
-    join(project, "tooling", "colgrep-search-cli.ts"),
-  );
-  expectSuccess(runDeploymentMoon(fixture, ["tooling:colgrep-search-install"]));
-});
-
-test("preserves an occupied ColGrep entry point", () => {
-  const fixture = createDeploymentFixture("colgrep-search-collision");
-  const destination = join(fixture.home, ".local", "bin", "colgrep-search");
-  mkdirSync(join(fixture.home, ".local", "bin"), { recursive: true });
-  writeFileSync(destination, "keep\n");
-  const divergent = runDeploymentMoon(fixture, [
-    "tooling:colgrep-search-install",
-  ]);
-  expect(divergent.exitCode).not.toBe(0);
-  expect(readFileSync(destination, "utf8")).toBe("keep\n");
-});
-
 test("deploys shared instructions and skills and replays idempotently", () => {
   const fixture = createDeploymentFixture("agent-instructions");
   const claudeRule = join(

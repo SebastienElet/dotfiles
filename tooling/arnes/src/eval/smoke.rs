@@ -6,10 +6,7 @@ use std::process::{Command, Stdio};
 
 pub fn execute(fixture: &Fixture, entry: &LoadedCase) -> Result<Execution, String> {
     let commands: &[&[&str]] = match entry.definition.oracle {
-        Oracle::StructuralV1 => &[
-            &["cat", ".agents/skills/code-search/SKILL.md"],
-            &["colgrep-search", "dependencies"],
-        ],
+        Oracle::StructuralV1 => return Err("Structural oracle is historical only".into()),
         Oracle::LiteralV1 => &[&["rg", "FEATURE_FLAG_DISABLED"]],
         Oracle::KnownPathV1 => &[&["cat", "src/auth/session.ts"]],
     };

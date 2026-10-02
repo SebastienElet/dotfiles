@@ -48,11 +48,11 @@ decides when the change lands.
    the case is borderline, ask the user one question before going further.
 
 3. **Map related ADRs.** Search `docs/adr/` for the decision's subject: exact terms with `rg`, the
-   subject as a concept through the `code-search` skill. Classify each related ADR as:
+   related vocabulary with bounded source searches. Classify each related ADR as:
    - _replaced_: same subject, its decision no longer in force as a whole;
    - _amended_: part of its decision no longer in force;
    - _completed_: still in force as written; the new ADR states that it completes it without
-     replacing it, as ADR-039 does;
+     replacing it;
    - _unrelated_.
 
    Before writing, tell the user about every replaced or amended ADR and quote the contradicted

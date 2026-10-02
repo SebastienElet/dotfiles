@@ -25,7 +25,6 @@ const snapshotPaths = [
   ".local/bin/agent-memory",
   ".local/bin/arnes",
   ".local/bin/claude",
-  ".local/bin/colgrep-search",
   ".tmux/plugins/tpm",
   ".volta/bin/codex",
   ".volta/bin/node",
@@ -51,18 +50,10 @@ function verifyInstallation(home: string, root: string): void {
     "--file",
     join(root, "Brewfile"),
   ]);
-  const prefix = pathSchema.parse(
-    checkCommand(["brew", "--prefix"]).stdout.toString().trim(),
-  );
   const executables = [
-    join(prefix, "bin/colgrep"),
-    ...[
-      "agent-handoff",
-      "agent-memory",
-      "arnes",
-      "claude",
-      "colgrep-search",
-    ].map((command) => join(home, ".local/bin", command)),
+    ...["agent-handoff", "agent-memory", "arnes", "claude"].map((command) =>
+      join(home, ".local/bin", command),
+    ),
     ...["codex", "node", "pnpm"].map((command) =>
       join(home, ".volta/bin", command),
     ),

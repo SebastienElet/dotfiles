@@ -196,6 +196,6 @@ fn manifest_failures_fail_closed_as_instruction_errors()
         stdout,
         "Instructions · user scope\n✓ 0 healthy\n\nerror instructions: manifest: .arnes.yaml was not found\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

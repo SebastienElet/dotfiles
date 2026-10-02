@@ -21,7 +21,6 @@ impl Fixture {
     pub fn prepare(
         files: &BTreeMap<String, String>,
         instructions: &str,
-        skill: &str,
         executable: &Path,
     ) -> Result<Self, String> {
         let directory = tempfile::Builder::new()
@@ -35,7 +34,6 @@ impl Fixture {
         fs::create_dir_all(home.join(".codex")).map_err(|error| error.to_string())?;
         let mut installed = files.clone();
         installed.insert("AGENTS.md".into(), instructions.into());
-        installed.insert(".agents/skills/code-search/SKILL.md".into(), skill.into());
         install_files(&workspace, &installed)?;
         let bin = install_shims(&workspace, executable)?;
         let observations = workspace.join(".observations.jsonl");
@@ -78,7 +76,7 @@ fn install_shims(workspace: &Path, executable: &Path) -> Result<PathBuf, String>
     fs::create_dir(&bin).map_err(|error| error.to_string())?;
     let executable = path_text(executable)?;
     let executable = format!("'{}'", executable.replace('\'', "'\\''"));
-    for tool in ["cat", "rg", "fd", "colgrep-search"] {
+    for tool in ["cat", "rg", "fd"] {
         write_new(
             &bin.join(tool),
             &format!("#!/usr/bin/env bash\nexec {executable} eval shim {tool} -- \"$@\"\n"),

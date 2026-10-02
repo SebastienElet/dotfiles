@@ -78,7 +78,7 @@ fn parallel_invalid_hooks_append_complete_safe_records()
             assert_advisory_failure(&child.wait_with_output()?);
         }
     }
-    assert!(harness.runs()?.is_empty());
+    assert_eq!(harness.runs()?, [] as [std::path::PathBuf; 0]);
     let invalid = read_jsonl(harness.measure_root().join("invalid.jsonl"))?;
     assert_eq!(invalid.len(), 48);
     Ok(())

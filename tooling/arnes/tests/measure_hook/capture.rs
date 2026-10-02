@@ -115,7 +115,7 @@ fn rejects_every_other_agent_name() -> Result<(), Box<dyn std::error::Error + Se
     let _: () = for agent in ["claude", "Claude-Code", "cursor-agent", "codex "] {
         let output = harness.run(agent, br#"{"session_id":"session"}"#)?;
         assert_eq!(output.status.code(), Some(2));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(output.stderr)?;
         assert!(stderr.contains("invalid value"), "{stderr}");
     };
@@ -183,7 +183,7 @@ fn large_payload_is_capturable_without_persisting_its_size()
     assert!(fs::metadata(run.join("events.jsonl"))?.len() < 256);
     let listed = harness.list()?;
     assert_eq!(listed.status.code(), Some(0));
-    assert!(listed.stderr.is_empty());
+    assert_eq!(listed.stderr, [] as [u8; 0]);
     let listed: Value = serde_json::from_slice(&listed.stdout)?;
     assert_eq!(listed.as_array().ok_or("expected JSON array")?.len(), 1);
     Ok(())

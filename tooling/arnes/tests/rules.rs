@@ -17,7 +17,7 @@ fn claude_user_rule_symlinks_are_healthy() -> Result<(), Box<dyn std::error::Err
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy rules: claude user rule agent-instructions"));
     assert!(stdout.contains("destination ~/.claude/rules/agent-instructions.md is current"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -49,7 +49,7 @@ fn cursor_user_rule_symlinks_are_healthy() -> Result<(), Box<dyn std::error::Err
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy rules: cursor user rule memory-governance-cursor"));
     assert!(stdout.contains("destination ~/.cursor/rules/memory-governance-cursor.mdc is current"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -88,7 +88,7 @@ fn undeclared_filters_are_explicitly_unsupported()
     let (code, stdout, stderr) = run(&fixture, &["doctor", "rules", "--agent", "codex"])?;
     assert_eq!(code, 0);
     assert!(stdout.contains("unsupported rules: codex user rule projection"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

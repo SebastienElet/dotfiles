@@ -1,19 +1,22 @@
 use super::*;
-use std::{collections::BTreeMap, fs, os::unix::fs::PermissionsExt, path::Path};
+use std::{
+    collections::BTreeMap,
+    fs,
+    os::unix::fs::{PermissionsExt, symlink},
+    path::Path,
+};
 
 fn provider(
     script: &str,
     authentication: Authentication,
 ) -> Result<(tempfile::TempDir, Codex), std::io::Error> {
     let directory = tempfile::tempdir()?;
-    let command = directory.path().join("provider");
-    fs::write(
+    fs::write(directory.path().join("provider"), script)?;
+    let command = directory.path().join("codex");
+    symlink(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("src/eval/live/provider-fixture"),
         &command,
-        format!(
-            "#!/bin/sh\nif [ \"$1\" = --version ]; then printf synthetic; exit 0; fi\n{script}\n"
-        ),
     )?;
-    fs::set_permissions(&command, fs::Permissions::from_mode(0o755))?;
     Ok((
         directory,
         Codex {
@@ -83,12 +86,7 @@ fn live_protocol_runs_with_exact_stdin_fresh_home_and_explicit_controls()
         "/bin/cat > request.txt\nprintf '%s\\n' \"$HOME\" > home.txt\nprintf '%s\\n' \"$@\" > arguments.txt\nprintf '%s' \"${PRIVATE_SENTINEL-unset}\" > sentinel.txt\nprintf '%s\\n' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":4,\"cached_input_tokens\":0,\"output_tokens\":2}}'",
         Authentication::default(),
     )?;
-    let fixture = Fixture::prepare(
-        &BTreeMap::new(),
-        "instructions",
-        "skill",
-        Path::new("/tmp/arnes"),
-    )?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
     let result = codex.execute(&fixture, " é\n\n", &options())?;
     assert_eq!(result.error, None);
     assert_eq!(
@@ -127,17 +125,28 @@ fn live_protocol_runs_with_exact_stdin_fresh_home_and_explicit_controls()
 }
 
 #[test]
+fn provider_runs_while_its_script_has_an_open_writer() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, codex) = provider(
+        "printf '%s\\n' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":0,\"cached_input_tokens\":0,\"output_tokens\":0}}'",
+        Authentication::default(),
+    )?;
+    let writer = fs::OpenOptions::new()
+        .write(true)
+        .open(directory.path().join("provider"))?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
+    let result = codex.execute(&fixture, "", &options())?;
+    assert_eq!(result.error, None);
+    drop(writer);
+    Ok(())
+}
+
+#[test]
 fn malformed_provider_output_is_protocol_invalid() -> Result<(), Box<dyn std::error::Error>> {
     let (_directory, codex) = provider(
         "/bin/cat > /dev/null\nprintf not-json",
         Authentication::default(),
     )?;
-    let fixture = Fixture::prepare(
-        &BTreeMap::new(),
-        "instructions",
-        "skill",
-        Path::new("/tmp/arnes"),
-    )?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
     let prompt = "synthetic".repeat(131_072);
     let result = codex.execute(&fixture, &prompt, &options())?;
     assert_eq!(result.error, Some(ExecutionError::ProtocolInvalid));
@@ -158,12 +167,7 @@ fn installs_saved_authentication_in_fixture_and_surfaces_missing_auth_file()
             api_key: None,
         },
     )?;
-    let fixture = Fixture::prepare(
-        &BTreeMap::new(),
-        "instructions",
-        "skill",
-        Path::new("/tmp/arnes"),
-    )?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
     codex.execute(&fixture, "", &options())?;
     assert_eq!(
         fs::read_to_string(fixture.workspace.join("auth.txt"))?,
@@ -184,12 +188,7 @@ fn api_key_authentication_only_reaches_explicit_provider_environment()
             file: None,
         },
     )?;
-    let fixture = Fixture::prepare(
-        &BTreeMap::new(),
-        "instructions",
-        "skill",
-        Path::new("/tmp/arnes"),
-    )?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
     codex.execute(&fixture, "", &options())?;
     assert_eq!(
         fs::read_to_string(fixture.workspace.join("key.txt"))?,
@@ -203,12 +202,7 @@ fn api_key_authentication_only_reaches_explicit_provider_environment()
 fn changed_version_prevents_prompt_execution() -> Result<(), Box<dyn std::error::Error>> {
     let (_directory, mut codex) = provider("/bin/cat > request.txt", Authentication::default())?;
     codex.version = "previous-version".into();
-    let fixture = Fixture::prepare(
-        &BTreeMap::new(),
-        "instructions",
-        "skill",
-        Path::new("/tmp/arnes"),
-    )?;
+    let fixture = Fixture::prepare(&BTreeMap::new(), "instructions", Path::new("/tmp/arnes"))?;
     assert!(
         codex
             .execute(&fixture, "private prompt", &options())

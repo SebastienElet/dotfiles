@@ -70,6 +70,15 @@ and pass the URL-policy and timestamp/cache tests with the strict Clippy checks.
 
 ## Commands
 
+Run `moon run repository:rust` to prepare the toolchain. On macOS this task installs rustup
+from its official installer when absent; Linux requires rustup on the runner. The root
+`rust-toolchain.toml` selects the exact Rust version, Clippy, and rustfmt for both platforms.
+Updates change that file once; Moon does not rewrite it or package MSRV constraints.
+
+Direct commands must use rustup proxies from `${CARGO_HOME:-$HOME/.cargo}/bin`, before any
+Homebrew compiler on `PATH`. The existing Fish configuration puts `~/.cargo/bin` first.
+Bootstrap leaves existing Homebrew packages in place and sets no global default toolchain.
+
 Run in each package directory:
 
 ```sh
@@ -95,8 +104,8 @@ running Cargo directly.
 Moon exposes `<package>:fmt`, `:check`, `:clippy`, `:test`, and `:doc`. In a
 worktree whose runtimes and package dependencies are already installed, use
 `moon exec --upstream none --no-actions` to run these checks without workstation
-installation dependencies. Root Clippy/rustfmt configuration changes are inputs
-to all Rust verification tasks and their affected CI selection.
+installation dependencies after preparing rustup. Root Rust version and Clippy/rustfmt
+configuration changes are inputs to all Rust verification tasks and their affected CI selection.
 
 Agent Memory, Agent Handoff, and Bitbucket Linear CI target macOS and Ubuntu; Arnes CI targets
 Ubuntu. Local evidence applies only to the platform exercised. Remote CI must

@@ -46,7 +46,7 @@ fn deterministic_operations_do_not_invoke_agents_and_smoke_observes_all_cases()
     let cases = (*(report).get("cases").ok_or("missing fixture index cases")?)
         .as_array()
         .ok_or("expected JSON array")?;
-    assert_eq!(cases.len(), 3);
+    assert_eq!(cases.len(), 2);
     for case in cases {
         assert_eq!(
             *(*(*(case).get("runs").ok_or("missing fixture index runs")?)
@@ -58,33 +58,14 @@ fn deterministic_operations_do_not_invoke_agents_and_smoke_observes_all_cases()
         );
     }
     assert_eq!(
-        *(*(*(*(*(*(cases).first().ok_or("missing fixture index 0")?)
-            .get("runs")
-            .ok_or("missing fixture index runs")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?)
-        .get("observations")
-        .ok_or("missing fixture index observations")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?)
-        .get("tool")
-        .ok_or("missing fixture index tool")?,
-        "cat"
+        report.pointer("/cases/0/runs/0/observations/0/tool"),
+        Some(&Value::from("rg"))
     );
     assert_eq!(
-        *(*(*(*(*(*(cases).first().ok_or("missing fixture index 0")?)
-            .get("runs")
-            .ok_or("missing fixture index runs")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?)
-        .get("observations")
-        .ok_or("missing fixture index observations")?)
-        .get(1)
-        .ok_or("missing fixture index 1")?)
-        .get("tool")
-        .ok_or("missing fixture index tool")?,
-        "colgrep-search"
+        report.pointer("/cases/1/runs/0/observations/0/tool"),
+        Some(&Value::from("cat"))
     );
+    assert!(report.pointer("/harness/skillFingerprint").is_none());
     let path = home.path().join("smoke.json");
     fs::write(&path, &smoke.stdout)?;
     success(&invoke(
@@ -137,7 +118,7 @@ fn run_refuses_existing_report_and_invalid_options_before_starting_agent()
             "--model",
             "explicit",
             "--only",
-            "code-search-literal",
+            "repository-literal",
             "--report",
             report.to_str().ok_or("required test value is missing")?,
         ];
@@ -153,7 +134,7 @@ fn run_refuses_existing_report_and_invalid_options_before_starting_agent()
             "--model",
             "explicit",
             "--only",
-            "code-search-literal",
+            "repository-literal",
             "--report",
             missing.to_str().ok_or("required test value is missing")?,
         ],
@@ -190,7 +171,7 @@ fn manual_run_publishes_replicates_and_preserves_existing_history()
         "--model",
         "explicit",
         "--only",
-        "code-search-literal",
+        "repository-literal",
         "--runs",
         "2",
         "--report",
@@ -260,7 +241,7 @@ fn invalid_agent_output_publishes_invalid_run_and_returns_failure()
             "--model",
             "explicit",
             "--only",
-            "code-search-literal",
+            "repository-literal",
             "--report",
             path.to_str().ok_or("required test value is missing")?,
         ],
@@ -312,7 +293,7 @@ fn malformed_observation_is_retained_as_invalid_instead_of_aborting_report()
             "--model",
             "explicit",
             "--only",
-            "code-search-literal",
+            "repository-literal",
             "--report",
             path.to_str().ok_or("required test value is missing")?,
         ],

@@ -37,13 +37,8 @@ fn public_arguments(tool: &str, args: &[String], workspace: &Path, cwd: &Path) -
             } else {
                 argument.clone()
             };
-            if [
-                ".agents/skills/code-search/SKILL.md",
-                "src/auth/session.ts",
-                "FEATURE_FLAG_DISABLED",
-                "--files",
-            ]
-            .contains(&normalized.as_str())
+            if ["src/auth/session.ts", "FEATURE_FLAG_DISABLED", "--files"]
+                .contains(&normalized.as_str())
             {
                 normalized
             } else {
@@ -96,13 +91,6 @@ fn invoke(tool: &str, args: &[String], cwd: &Path) -> (String, i32) {
     }
     if tool == "fd" || (tool == "rg" && args.iter().any(|argument| argument == "--files")) {
         return ("packages/app/package.json\npackages/auth/package.json\nsrc/auth/session.ts\nsrc/flags.ts\n".into(), 0);
-    }
-    if tool == "colgrep-search" && args.iter().any(|argument| !argument.starts_with('-')) {
-        let output = json!({ "results": [
-            { "path": "packages/app/package.json", "content": "{\"name\":\"app\",\"dependencies\":{\"auth\":\"workspace:*\"}}" },
-            { "path": "packages/auth/package.json", "content": "{\"name\":\"auth\"}" }
-        ] });
-        return (format!("{output}\n"), 0);
     }
     ("Unsupported synthetic tool invocation\n".into(), 64)
 }

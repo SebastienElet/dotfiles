@@ -401,7 +401,7 @@ fn concurrent_memory_installations_leave_one_owned_hook_and_visible_failures()
     for output in outputs {
         if output.status.code() != Some(0) {
             assert_eq!(output.status.code(), Some(2));
-            assert!(!output.stderr.is_empty());
+            assert_ne!(output.stderr, [] as [u8; 0]);
         }
     }
     let concurrent = fs::read(harness.config("codex")?)?;

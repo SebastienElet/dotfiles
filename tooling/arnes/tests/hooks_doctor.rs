@@ -27,7 +27,7 @@ fn setup_makes_the_declared_hooks_healthy() -> Result<(), Box<dyn std::error::Er
         stdout.contains("healthy hooks: claude user handoff hook is installed on Stop"),
         "{stdout}"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -45,7 +45,7 @@ fn setup_makes_the_declared_memory_hook_healthy()
         stdout.contains("healthy hooks: claude user memory hook is installed on UserPromptSubmit"),
         "{stdout}"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

@@ -53,7 +53,7 @@ fn user_scope_is_default_and_accepts_unknown_keys()
     let (code, stdout, stderr) = run(&fixture, &["doctor", "config", "-v"])?;
     assert_eq!(code, 0);
     assert_eq!(stdout.matches("healthy config:").count(), 3);
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     let _: () = for expected in [
         "healthy config: claude user",
         "healthy config: cursor user",
@@ -87,7 +87,7 @@ fn agent_and_scope_filters_isolate_selected_configurations()
         assert_eq!(stdout.matches("healthy config:").count(), expected_lines);
         assert!(stdout.contains(expected), "{stdout}");
         assert!(!stdout.contains("cursor"), "{stdout}");
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     }
     let (code, stdout, _) = run(&fixture, &["doctor", "config", "--scope", "project", "-v"])?;
     assert_eq!(code, 2);
@@ -179,7 +179,7 @@ fn malformed_formats_and_wrong_json_roots_are_errors()
         )?;
         assert_eq!(code, 2);
         assert!(stdout.contains(expected), "{stdout}");
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -215,7 +215,7 @@ fn undeclared_filtered_combinations_are_unsupported()
         stdout,
         "Config · project scope · codex agent\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported config: codex project configuration is not declared in the manifest\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -233,7 +233,7 @@ fn empty_manifests_are_explicitly_unsupported()
             stdout,
             "Config · user scope\n✓ 0 healthy\n! 1 unsupported (non-blocking)\n\nunsupported config: user configuration scope is not declared in the manifest\n"
         );
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -247,7 +247,7 @@ fn manifest_failures_fail_closed_as_config_errors()
         stdout,
         "Config · user scope\n✓ 0 healthy\n\nerror config: manifest: .arnes.yaml was not found\n"
     );
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

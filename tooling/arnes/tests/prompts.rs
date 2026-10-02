@@ -19,7 +19,7 @@ fn direct_project_files_are_healthy_for_claude_and_cursor()
         assert_eq!(code, 0, "{stdout}");
         assert!(stdout.contains(&format!("{agent} project prompts")));
         assert!(stdout.contains("healthy     deploy · current"));
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -39,7 +39,7 @@ fn prompt_content_does_not_validate_command_names_or_metadata()
     )?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy     not a slash command · current"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -54,7 +54,7 @@ fn rendered_user_file_resolves_nested_includes_and_declared_variables()
     )?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("healthy     deploy · current"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]
@@ -74,7 +74,7 @@ fn unsupported_agent_scope_combinations_do_not_inspect_prompts()
         assert_eq!(code, 0, "{stdout}");
         assert!(stdout.contains("capability · unsupported"));
         assert!(!stdout.contains("source"));
-        assert!(stderr.is_empty());
+        assert_eq!(stderr, "");
     };
     Ok(())
 }
@@ -91,7 +91,7 @@ fn supported_combinations_without_managed_projections_are_explicitly_unsupported
     )?;
     assert_eq!(code, 0, "{stdout}");
     assert!(stdout.contains("capability · unsupported"));
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 #[test]

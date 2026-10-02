@@ -29,7 +29,7 @@ fn normalizes_actual_cat_targets_and_redacts_arbitrary_arguments()
         ["<other>"]
     );
     assert_eq!(
-        public_arguments("colgrep-search", &["secret".into()], root, root),
+        public_arguments("rg", &["secret".into()], root, root),
         ["<other>"]
     );
     Ok(())
@@ -58,10 +58,6 @@ fn synthetic_tools_preserve_outputs_and_failure_statuses() -> Result<(), Box<dyn
     assert_eq!(invoke("rg", &["--files".into()], root.path()).1, 0);
     assert_eq!(
         invoke("colgrep-search", &["question".into()], root.path()).1,
-        0
-    );
-    assert_eq!(
-        invoke("colgrep-search", &["--help".into()], root.path()).1,
         64
     );
     Ok(())

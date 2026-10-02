@@ -75,11 +75,12 @@ fn records_an_oracle_backed_outcome_and_replay_is_a_no_op()
     let pending = harness.run(&["measure", "list", "--without-result", "--format", "json"])?;
     assert_success(&pending);
     let pending: serde_json::Value = serde_json::from_slice(&pending.stdout)?;
-    assert!(
+    assert_eq!(
         (*(pending).get("runs").ok_or("missing fixture index runs")?)
             .as_array()
             .ok_or("expected JSON array")?
-            .is_empty()
+            .as_slice(),
+        [] as [serde_json::Value; 0]
     );
     Ok(())
 }

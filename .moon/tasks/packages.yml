@@ -59,27 +59,6 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install fzf
-  colgrep-setup:
-    deps:
-      - homebrew
-    checks:
-      - check: condition
-        script: |-
-          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          brew list --formula --versions lightonai/tap/colgrep
-    env:
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-      os: macos
-      runInCI: true
-    script: |-
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      set -e
-      brew trust --formula lightonai/tap/colgrep
-      brew install lightonai/tap/colgrep
   fish-setup:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"

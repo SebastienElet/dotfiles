@@ -97,7 +97,7 @@ fn skills_doctor_attaches_agent_sections_without_reading_real_home()
     );
     assert!(!normal.contains("HEALTHY"));
     assert!(verbose.contains("HEALTHY"));
-    assert!(stderr.is_empty());
-    assert!(verbose_stderr.is_empty());
+    assert_eq!(stderr, "");
+    assert_eq!(verbose_stderr, "");
     Ok(())
 }

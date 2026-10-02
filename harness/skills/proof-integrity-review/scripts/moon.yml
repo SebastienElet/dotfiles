@@ -17,7 +17,7 @@ tasks:
       - "@group(rust)"
     outputs:
       - target/release/proof-integrity
-    toolchains: system
+    toolchains: rust
     options:
       runInCI: false
 tags:

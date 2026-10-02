@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if [ "${1-}" = --version ]; then
+  printf '%s\n' synthetic
+  exit 0
+fi
+exec bash "${0%/*}/provider" "$@"

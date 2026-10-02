@@ -162,7 +162,7 @@ impl BehavioralCase {
                 }
             }
         }
-        if self.fixture != "code-search-v1" {
+        if !["repository-lookup-v1", "code-search-v1"].contains(&self.fixture.as_str()) {
             return Err("Unknown fixture".into());
         }
         Ok(())
@@ -180,7 +180,9 @@ impl Fixture {
     /// # Errors
     /// Rejects unknown or empty fixtures, invalid relative paths, or empty file contents.
     pub fn validate(&self) -> Result<(), String> {
-        if self.id != "code-search-v1" || self.files.is_empty() {
+        if !["repository-lookup-v1", "code-search-v1"].contains(&self.id.as_str())
+            || self.files.is_empty()
+        {
             return Err("Invalid fixture".into());
         }
         for (path, text) in &self.files {

@@ -191,7 +191,7 @@ fn assert_collision(
     let (code, stdout, stderr) = run(fixture, CLAUDE_USER)?;
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }
 fn assert_shared_root_collision(
@@ -209,6 +209,6 @@ fn assert_shared_root_collision(
     let (code, stdout, stderr) = output_tuple(output)?;
     assert_eq!(code, 2, "{stdout}");
     assert!(stdout.contains(expected), "missing {expected}: {stdout}");
-    assert!(stderr.is_empty());
+    assert_eq!(stderr, "");
     Ok(())
 }

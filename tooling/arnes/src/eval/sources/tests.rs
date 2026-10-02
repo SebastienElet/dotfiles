@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn loads_original_three_cases_and_activation_prompt() -> Result<(), Box<dyn std::error::Error>> {
+fn loads_native_lookup_cases_without_a_skill_source() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let cases = load_cases(&root)?;
     assert_eq!(
@@ -9,15 +9,11 @@ fn loads_original_three_cases_and_activation_prompt() -> Result<(), Box<dyn std:
             .iter()
             .map(|case| case.definition.id.as_str())
             .collect::<Vec<_>>(),
-        [
-            "code-search-structural",
-            "code-search-literal",
-            "code-search-known-path"
-        ]
+        ["repository-literal", "repository-known-path"]
     );
     assert_eq!(
         cases.first().ok_or("missing case")?.prompt,
-        "Je découvre ce monorepo, aide-moi à le cartographier"
+        "Trouve exactement FEATURE_FLAG_DISABLED."
     );
     assert!(cases.iter().all(|case| !case.prompt.is_empty()));
     Ok(())
@@ -73,8 +69,8 @@ fn rejects_missing_trigger_index_and_invalid_fixture() -> Result<(), Box<dyn std
     };
     fs::write(
         root.path()
-            .join("harness/evals/fixtures/code-search-v1.json"),
-        r#"{"id":"code-search-v1","files":{}}"#,
+            .join("harness/evals/fixtures/repository-lookup-v1.json"),
+        r#"{"id":"repository-lookup-v1","files":{}}"#,
     )?;
     assert!(resolve_case(root.path(), definition).is_err());
     Ok(())

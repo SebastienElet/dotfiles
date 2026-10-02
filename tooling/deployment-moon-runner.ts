@@ -32,6 +32,10 @@ function runDeploymentMoon(
           process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
         PROTO_HOME:
           process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+        CARGO_HOME:
+          process.env.CARGO_HOME ?? join(process.env.HOME ?? "", ".cargo"),
+        RUSTUP_HOME:
+          process.env.RUSTUP_HOME ?? join(process.env.HOME ?? "", ".rustup"),
         ...environment,
         PROTO_OFFLINE: "true",
       },

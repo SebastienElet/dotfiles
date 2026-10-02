@@ -83,33 +83,40 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask silverstein/tap/minutes
   rust:
-    description: Install Rust and Cargo with Homebrew
-    deps:
-      - homebrew
+    description: Install the repository Rust toolchain with rustup
     checks:
       - check: condition
         script: |-
-          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          case "$(uname -s)" in
-            Darwin) brew list --formula --versions rust ;;
-            Linux) rustc --version && cargo --version ;;
-            *) exit 1 ;;
-          esac
-    env:
-      HOMEBREW_NO_ASK: "1"
+          export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+          export RUSTUP_AUTO_INSTALL=0
+          rustup show active-toolchain &&
+            rustc --version &&
+            cargo fmt --version &&
+            cargo clippy --version
+    inputs:
+      - rust-toolchain.toml
     toolchains: system
     options:
       cache: false
-      mutex: homebrew
+      mutex: rustup
       runInCI: true
     script: |-
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      set -e
+      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+      set -euo pipefail
       case "$(uname -s)" in
-        Darwin) brew install rust ;;
-        Linux) rustc --version; cargo --version ;;
+        Darwin)
+          if ! command -v rustup >/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+              RUSTUP_INIT_SKIP_PATH_CHECK=yes sh -s -- -y --no-modify-path --default-toolchain none
+          fi
+          ;;
+        Linux) command -v rustup ;;
         *) exit 1 ;;
       esac
+      rustup toolchain install --no-self-update
+      rustup show active-toolchain
+      rustc --version
+      cargo --version
   volta:
     description: Install Volta with Homebrew
     script: |-

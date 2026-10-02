@@ -1,6 +1,10 @@
 javascript:
   packageManager: bun
 
+rust:
+  addMsrvConstraint: false
+  syncToolchainConfig: false
+
 bun:
   version: "1.4.0"
   installArgs:

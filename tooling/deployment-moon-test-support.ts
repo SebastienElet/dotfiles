@@ -62,6 +62,14 @@ function copyMoonProjectFixture({
     join(project, ".moon/tasks/rust.yml"),
     join(repository, ".moon/tasks/rust.yml"),
   );
+  cpSync(
+    join(project, ".moon/toolchains.yml"),
+    join(repository, ".moon/toolchains.yml"),
+  );
+  cpSync(
+    join(project, "rust-toolchain.toml"),
+    join(repository, "rust-toolchain.toml"),
+  );
   mkdirSync(join(repository, ".github", "workflows"), { recursive: true });
   mkdirSync(home);
   cpSync(source, destination, {
@@ -149,7 +157,8 @@ function runMoon(
         ...withoutMoonTaskContext(process.env),
         CARGO_HOME: process.env.CARGO_HOME ?? join(homedir(), ".cargo"),
         HOME: fixture.home,
-        MOON_HOME: join(fixture.root, "moon-home"),
+        MOON_HOME: process.env.MOON_HOME ?? join(homedir(), ".moon"),
+        PROTO_HOME: process.env.PROTO_HOME ?? join(homedir(), ".proto"),
         RUSTUP_HOME: process.env.RUSTUP_HOME ?? join(homedir(), ".rustup"),
         ...options.environment,
         PROTO_OFFLINE: "true",

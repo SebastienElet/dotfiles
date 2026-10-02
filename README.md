@@ -59,17 +59,13 @@ Checks include TypeScript, Prettier, Lua, Fish, shell scripts, workflows, CSpell
 Their tools are prerequisites in the Moon graph. Run Lua lint independently with
 `moon run neovim-lint` or `moon run wezterm-lint`.
 The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
-Code Search and Docker integrations remain explicit tasks with their own prerequisites.
-`tooling:code-search-test` runs the local Code Search tests on macOS and Linux without
-ColGrep. `tooling:code-search-integration-test` exercises the deployed entry point on
-macOS with the reported ColGrep binary and no result cache. See
-[Code Search checks](docs/code-search.md) for selection and cache verification.
+Docker integrations remain explicit tasks with their own prerequisites.
 
 Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
 `agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
 Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
 on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
-these families and Code Search; `moon run test` still includes their local tests.
+these families; `moon run test` still includes their local tests.
 Typechecking stays shared in Static gates.
 
 ## Architecture decisions
