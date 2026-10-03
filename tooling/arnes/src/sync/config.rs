@@ -47,6 +47,9 @@ pub(super) fn synchronize(
                 if let Some(window) = config.auto_compact_window {
                     json::set(document, "autoCompactWindow", &window)?;
                 }
+                if let Some(enabled) = config.sync_claude_ai_skills {
+                    json::set(document, "syncClaudeAiSkills", &enabled)?;
+                }
                 Ok(())
             })
         }

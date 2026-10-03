@@ -16,6 +16,11 @@ pub(super) fn mismatches(agent: Agent, config: &UserConfig, actual: &Value) -> V
                 "autoCompactWindow",
                 config.auto_compact_window,
             );
+            push(
+                &mut expected,
+                "syncClaudeAiSkills",
+                config.sync_claude_ai_skills,
+            );
         }
         Agent::Cursor => {
             push(&mut expected, "maxMode", config.max_mode);

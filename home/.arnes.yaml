@@ -6,6 +6,7 @@ agents:
       model: opus[1m]
       effort: high
       auto_compact_window: 600000
+      sync_claude_ai_skills: false
   - id: cursor
     scopes: [user, project]
     user_config:
@@ -200,10 +201,6 @@ external:
         plugin: sites@openai-bundled,
         slug: sites-hosting,
       }
-    - agent: claude
-      scope: user
-      origin: managed
-      slug: synced
     - {
         agent: claude,
         scope: user,

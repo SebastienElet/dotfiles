@@ -32,6 +32,14 @@ fn agent_capabilities_are_validated() -> Result<(), Box<dyn std::error::Error + 
             "  - id: codex\n    scopes: [user]\n    user_config:\n      model: gpt-5.6-sol\n      max_mode: true\n",
             "agents[0].user_config.max_mode: codex does not expose max mode",
         ),
+        (
+            "  - id: cursor\n    scopes: [user]\n    user_config:\n      model: auto\n      sync_claude_ai_skills: false\n",
+            "agents[0].user_config.sync_claude_ai_skills: cursor does not expose this persistent setting",
+        ),
+        (
+            "  - id: codex\n    scopes: [user]\n    user_config:\n      model: gpt-5.6-sol\n      sync_claude_ai_skills: false\n",
+            "agents[0].user_config.sync_claude_ai_skills: codex does not expose this persistent setting",
+        ),
     ] {
         assert_eq!(error(agent)?, expected);
     };

@@ -67,7 +67,9 @@ fn an_unavailable_unselected_mcp_command_does_not_block_user_config() -> TestRes
 
 fn manifest(agent: &str) -> String {
     let values = match agent {
-        "claude" => "model: native-model, effort: high, auto_compact_window: 300000",
+        "claude" => {
+            "model: native-model, effort: high, auto_compact_window: 300000, sync_claude_ai_skills: false"
+        }
         "cursor" => "model: native-model, max_mode: false",
         "codex" => {
             "model: native-model, effort: high, context_window: 512000, auto_compact_window: 300000"
@@ -131,6 +133,11 @@ fn synchronizes_json_defaults_without_changing_unknown_numbers_or_sections() -> 
             original
         );
         if agent == "claude" {
+            let settings: serde_json::Value = serde_json::from_str(&actual)?;
+            assert_eq!(
+                settings.get("syncClaudeAiSkills"),
+                Some(&serde_json::Value::Bool(false))
+            );
             for unchanged in ["private-hook", "private-mcp", "private-status"] {
                 assert!(actual.contains(unchanged));
             }
