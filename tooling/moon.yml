@@ -14,7 +14,6 @@ fileGroups:
     - /home/**/*
     - /harness/**/*
     - /.agents/**/*
-    - /Makefile
     - /.gitignore
   bunTestSupport:
     - moon.yml
@@ -57,7 +56,6 @@ fileGroups:
     - /.moon/tasks/harness-codex.yml
     - /.moon/tasks/harness-cursor.yml
     - /.moon/tasks/docker.yml
-    - /Makefile
 tasks:
   scrapling-mcp:
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-scrapling-launcher.ts"

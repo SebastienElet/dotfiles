@@ -10,7 +10,6 @@ fileGroups:
     - /.moon/tasks/rust.yml
     - /.github/workflows/test-agent-handoff.yml
     - /.prototools
-    - /Makefile
     - /moon.yml
     - /tooling/clean-deployment*.ts
     - /tooling/clean-deployment-worker-inspect.js
