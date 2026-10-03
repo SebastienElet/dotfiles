@@ -3,7 +3,7 @@ agents:
   - id: claude
     scopes: [user, project]
     user_config:
-      model: opus[1m]
+      model: sonnet
       effort: high
       auto_compact_window: 600000
       sync_claude_ai_skills: false
