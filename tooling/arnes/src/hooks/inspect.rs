@@ -10,6 +10,7 @@ use std::io::ErrorKind;
 mod comparison;
 mod expectation;
 mod presence;
+mod unmanaged;
 
 const KINDS: [HookKind; 5] = [
     HookKind::Measurement,
@@ -96,7 +97,21 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
                 )
             }),
     );
+    diagnostics.extend(unmanaged::diagnose(
+        &config,
+        policy.nested,
+        &known_commands(roots, &policy, agent),
+        &subject,
+    ));
     diagnostics
+}
+
+fn known_commands(roots: &Roots, policy: &Policy, agent: Agent) -> Vec<String> {
+    KINDS
+        .into_iter()
+        .filter_map(|kind| expectation::expectation(roots, policy, agent, kind).ok())
+        .flat_map(|expectation| std::iter::once(expectation.command).chain(expectation.superseded))
+        .collect()
 }
 
 fn load(roots: &Roots, policy: &Policy, agent: Agent) -> Result<Option<Value>, String> {

@@ -319,6 +319,37 @@ fn a_superseded_handoff_command_is_drift() -> Result<(), Box<dyn std::error::Err
     );
     Ok(())
 }
+#[test]
+fn a_command_outside_every_hook_kind_is_drift()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = installed_fixture()?;
+    let mut config = settings(&fixture)?;
+    let hooks = config
+        .get_mut("hooks")
+        .ok_or("missing fixture index hooks")?
+        .as_object_mut()
+        .ok_or("expected JSON object for fixture update")?;
+    hooks.insert(
+        "Notification".to_owned(),
+        json!([{ "hooks": [{ "type": "command", "command": "/opt/legacy-hook" }] }]),
+    );
+    hooks
+        .get_mut("Stop")
+        .ok_or("missing fixture index Stop")?
+        .as_array_mut()
+        .ok_or("required test value is missing")?
+        .push(json!({ "hooks": [{ "type": "command", "command": "/opt/legacy-hook" }] }));
+    write_settings(&fixture, &config)?;
+    let (code, stdout, _) = doctor(&fixture)?;
+    assert_eq!(code, 1, "{stdout}");
+    assert!(
+        stdout.contains(
+            "claude user hook command /opt/legacy-hook is installed on Notification, Stop but not declared"
+        ),
+        "{stdout}"
+    );
+    Ok(())
+}
 fn measurement_command(config: &Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(
         (*(*(*(*(*(*(config).get("hooks").ok_or("missing fixture index hooks")?)
