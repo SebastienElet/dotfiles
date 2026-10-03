@@ -81,7 +81,7 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      brew install --cask silverstein/tap/minutes
+      brew install --cask silverstein/tap/minutes </dev/null
   herdr:
     description: Install the optional Herdr agent multiplexer
     deps:
