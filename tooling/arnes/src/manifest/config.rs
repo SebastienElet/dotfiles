@@ -9,6 +9,7 @@ pub struct UserConfig {
     pub context_window: Option<u64>,
     pub auto_compact_window: Option<u64>,
     pub max_mode: Option<bool>,
+    pub sync_claude_ai_skills: Option<bool>,
 }
 
 pub(super) fn validate(
@@ -92,6 +93,12 @@ fn validate_capabilities(
         return Err(ManifestError::new(
             field("auto_compact_window"),
             "must be smaller than context_window",
+        ));
+    }
+    if agent != Agent::Claude && config.sync_claude_ai_skills.is_some() {
+        return Err(ManifestError::new(
+            field("sync_claude_ai_skills"),
+            format!("{agent} does not expose this persistent setting"),
         ));
     }
     match agent {

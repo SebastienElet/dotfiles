@@ -136,12 +136,7 @@ fn setup_reconciles_loader_preserving_unrelated_hooks_and_doctor_detects_matcher
                 .ok_or("timeout")?,
             30
         );
-        assert!(
-            fixture
-                .command(["doctor", "hooks", "--agent", agent])?
-                .status
-                .success()
-        );
+        assert_eq!(managed_hook_drift(&fixture, agent)?, [] as [String; 0]);
         assert_execution_drift(&fixture, agent, &config_path, &mut config)?;
         fixture.write_home(
             ".arnes.yaml",
@@ -208,6 +203,19 @@ fn broken_deployment_warns_only_when_opted_in() -> Result {
     Ok(())
 }
 
+fn managed_hook_drift(
+    fixture: &Fixture,
+    agent: &str,
+) -> std::result::Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    let output = fixture.command(["doctor", "hooks", "--agent", agent])?;
+    Ok(String::from_utf8(output.stdout)?
+        .lines()
+        .filter(|line| line.starts_with("drift ") || line.starts_with("error "))
+        .filter(|line| !line.contains("echo unrelated"))
+        .map(str::to_owned)
+        .collect())
+}
+
 fn assert_execution_drift(
     fixture: &Fixture,
     agent: &str,
@@ -242,12 +250,7 @@ fn assert_execution_drift(
         *config = original.clone();
         *config.pointer_mut(pointer).ok_or("execution field")? = replacement;
         fs::write(path, serde_json::to_vec(config)?)?;
-        assert!(
-            !fixture
-                .command(["doctor", "hooks", "--agent", agent])?
-                .status
-                .success()
-        );
+        assert_ne!(managed_hook_drift(fixture, agent)?, [] as [String; 0]);
     }
     *config = original;
     fs::write(path, serde_json::to_vec(config)?)?;

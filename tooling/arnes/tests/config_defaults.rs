@@ -9,6 +9,7 @@ agents:
       model: opus[1m]
       effort: high
       auto_compact_window: 600000
+      sync_claude_ai_skills: false
   - id: cursor
     scopes: [user, project]
     user_config:
@@ -31,6 +32,7 @@ fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sy
             "model": "opus[1m]",
             "effortLevel": "high",
             "autoCompactWindow": 600000,
+            "syncClaudeAiSkills": false,
             "unknown": true
         }"#,
     )?;
@@ -88,6 +90,19 @@ fn missing_and_different_defaults_are_drift() -> Result<(), Box<dyn std::error::
     assert!(stdout.contains(r#"model is "sonnet" (expected "opus[1m]")"#));
     assert!(stdout.contains(r#"effortLevel is "xhigh" (expected "high")"#));
     assert!(stdout.contains("autoCompactWindow is missing (expected 600000)"));
+    assert!(stdout.contains("syncClaudeAiSkills is missing (expected false)"));
+    Ok(())
+}
+#[test]
+fn enabled_claude_ai_skill_sync_is_drift() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    fixture.write_home(
+        ".claude/settings.json",
+        r#"{"model":"opus[1m]","effortLevel":"high","autoCompactWindow":600000,"syncClaudeAiSkills":true}"#,
+    )?;
+    let (code, stdout) = run(&fixture, &["doctor", "config", "--agent", "claude", "-v"])?;
+    assert_eq!(code, 1);
+    assert!(stdout.contains("syncClaudeAiSkills is true (expected false)"));
     Ok(())
 }
 #[test]
