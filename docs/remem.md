@@ -10,6 +10,12 @@ worker et skill `remem-memory` sont retirés. La procédure de
 [nettoyage explicite](deployment-clean.md) reconnaît les anciens déploiements après suppression
 de leurs déclarations du manifeste.
 
+`arnes setup hooks --agent codex` et `arnes setup hooks --agent claude`, appelés par les
+profils Moon, retirent aussi les anciennes commandes de hooks `remem` et `remem-hook`.
+La reconnaissance exige la commande historique exacte sous `~/.local/bin/`, le host de
+l’agent et des `args` absents ou vides. Les autres commandes et handlers sont conservés ;
+cette réconciliation ne retire ni MCP, ni worker, ni fichiers remem.
+
 Les bases, clés, logs et historiques sous `~/.remem/`, les sauvegardes et les paquets tiers
 restent conservés. Les réglages `autoMemoryEnabled` et `features.memories` ne sont pas restaurés.
 `agent-handoff` et la mémoire historique de Cursor restent indépendants et inchangés.

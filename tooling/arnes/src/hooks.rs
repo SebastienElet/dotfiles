@@ -13,6 +13,7 @@ pub(crate) mod io;
 mod json_value;
 mod ownership;
 mod reconcile;
+mod retired_remem;
 mod validate;
 
 const OUTPUT_DISCIPLINE: MatchedHandler = MatchedHandler {
@@ -76,6 +77,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
         .transpose()?
         .unwrap_or_else(|| json!({}));
     validate::configuration(&config, args.agent)?;
+    retired_remem::remove(&mut config, args.agent, roots.home())?;
     ownership::remove_everywhere(&mut config, args.agent, &measurement)?;
     if let Some(command) = &memory {
         ownership::remove_everywhere(&mut config, args.agent, command)?;
