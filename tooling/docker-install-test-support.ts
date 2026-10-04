@@ -49,12 +49,7 @@ function runDockerInstallTarget(
   scenario: DockerInstallScenario,
   options: DockerInstallOptions = {},
 ): DockerInstallResult {
-  const {
-    action = "install",
-    dockerProviderAvailable = true,
-    imageOverride,
-    policy,
-  } = options;
+  const { dockerProviderAvailable = true, imageOverride, policy } = options;
   const fixture = createDockerInstallFixture(dockerProviderAvailable);
   const result = Bun.spawnSync({
     cmd: [
@@ -64,7 +59,7 @@ function runDockerInstallTarget(
       "--ignore-ci-checks",
       "--no-actions",
       ...(options.upstreamNone === true ? ["--upstream", "none"] : []),
-      `repository:${action === "verify" ? `verify-${target}-docker` : target}`,
+      `repository:${options.action === "verify" ? `verify-${target}-docker` : target}`,
     ],
     cwd: repositoryRoot,
     env: {
