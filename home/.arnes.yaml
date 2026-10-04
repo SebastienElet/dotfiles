@@ -19,6 +19,16 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: wayfinder
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: improve-codebase-architecture
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: grill-me
     installations:
       - { agent: claude, scope: user }

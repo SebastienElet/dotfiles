@@ -1,6 +1,6 @@
 {
   "skill": "grilling",
-  "version": "1.0",
+  "version": "1.2",
   "queries": [
     {
       "query": "$grilling Stress-test this retention decision",
@@ -16,6 +16,21 @@
       "query": "grill-me delegates its explicitly requested invoice export interview to grilling",
       "should_activate": true,
       "reason": "Authorized composition from the interview entry point."
+    },
+    {
+      "query": "The user invoked wayfinder and it delegates the storage migration destination interview to grilling",
+      "should_activate": true,
+      "reason": "Authorized composition from a requested decision-mapping workflow."
+    },
+    {
+      "query": "The user invoked improve-codebase-architecture, selected the invoice import candidate, and the workflow delegates its design interview to grilling",
+      "should_activate": true,
+      "reason": "Authorized composition after the user selects a survey candidate."
+    },
+    {
+      "query": "improve-codebase-architecture wants to interview the user before a survey candidate has been selected",
+      "should_activate": false,
+      "reason": "The caller's selection prerequisite is not satisfied."
     },
     {
       "query": "Fix this bug using the established requirements",
