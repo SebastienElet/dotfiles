@@ -35,8 +35,8 @@ First launch downloads a local speech model;
 transcription does not require an API key. Summarization is optional and configured
 separately. The Minutes CLI is not installed by this task.
 
-[Grok Bot](https://x.ai/bot) belongs to the optional profile. Install the desktop app
-independently with `moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon
+[Grok Bot](https://x.ai/bot) can be installed with
+`moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon
 or Intel), using the official Homebrew `grok-bot` cask.
 
 Moon installs the complete minimal profile. With Moon available:
