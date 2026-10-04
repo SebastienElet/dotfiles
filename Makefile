@@ -51,7 +51,7 @@ bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
 
 .PHONY: optional-artifacts
-optional-artifacts: cspell cursor cloakbrowser scrapling postgresql daisydisk things-3 lumen
+optional-artifacts: cursor cloakbrowser scrapling postgresql daisydisk things-3 lumen
 
 .PHONY: lumen
 lumen:
@@ -113,11 +113,6 @@ things-3:
 things3-cli-wrapper: ${VOLTA_BIN}/thangs
 ${VOLTA_BIN}/thangs: ${VOLTA_BIN}/node
 	${VOLTA_BIN}/npm install -g @dougskinner/thangs
-
-.PHONY: cspell
-cspell: ${VOLTA_BIN}/cspell
-${VOLTA_BIN}/cspell: ${VOLTA_BIN}/node
-	${VOLTA_BIN}/npm install -g cspell
 
 .PHONY: daisydisk
 daisydisk:
