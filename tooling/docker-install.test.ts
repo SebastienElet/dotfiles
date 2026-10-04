@@ -161,3 +161,31 @@ test.each(targets)("%s rejects an empty image before Docker runs", (target) => {
   expect(result.trace).toBe("");
   expect(result.stdout).not.toContain(resultMarker(target, "verified"));
 });
+
+test.each(["require-docker", "allow-skip"])(
+  "scrapling refuses missing Docker before linking with upstream none and %s",
+  (policy) => {
+    const result = runDockerInstallTarget("scrapling", "artifact-present", {
+      dockerProviderAvailable: false,
+      policy,
+      upstreamNone: true,
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Docker CLI unavailable");
+    expect(result.scraplingLinkExists).toBe(false);
+    expect(result.trace).toBe("");
+    expect(result.stdout).not.toContain(resultMarker("scrapling", "skipped"));
+  },
+);
+
+test("scrapling deploys its launcher with upstream prerequisites bypassed", () => {
+  const result = runDockerInstallTarget("scrapling", "artifact-present", {
+    upstreamNone: true,
+  });
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout).toContain(resultMarker("scrapling", "verified"));
+  expect(result.scraplingLinkExists).toBe(true);
+  expect(result.trace).toContain("image inspect");
+});

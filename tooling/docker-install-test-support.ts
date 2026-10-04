@@ -28,6 +28,7 @@ type DockerInstallOptions = Readonly<{
   dockerProviderAvailable?: boolean;
   imageOverride?: string;
   policy?: string;
+  upstreamNone?: boolean;
 }>;
 type DockerInstallFixture = Readonly<{
   home: string;
@@ -57,14 +58,7 @@ function runDockerInstallTarget(
   const result = Bun.spawnSync({
     cmd:
       target === "scrapling"
-        ? [
-            process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
-            "exec",
-            "--quiet",
-            "--ignore-ci-checks",
-            "--no-actions",
-            "repository:scrapling",
-          ]
+        ? moonScraplingArguments(options.upstreamNone === true)
         : makeArguments(target, fixture, {
             imageOverride,
             policy: policy ?? "require-docker",
@@ -96,6 +90,18 @@ function runDockerInstallTarget(
       join(fixture.home, ".local/bin/scrapling_mcp"),
     ),
   };
+}
+
+function moonScraplingArguments(upstreamNone: boolean): string[] {
+  return [
+    process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
+    "exec",
+    "--quiet",
+    "--ignore-ci-checks",
+    "--no-actions",
+    ...(upstreamNone ? ["--upstream", "none"] : []),
+    "repository:scrapling",
+  ];
 }
 
 function createDockerInstallFixture(

@@ -9,6 +9,8 @@ fileGroups:
     - tooling/**/*.md
     - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     - tooling/deploy-link.ts
+    - tooling/deploy-scrapling-launcher.ts
+    - .moon/tasks/docker.yml
     - tooling/scrapling-mcp
     - tooling/check-docker-cli
     - tooling/install-moon

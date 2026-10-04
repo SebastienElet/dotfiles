@@ -70,17 +70,20 @@ function scraplingFixture(): Readonly<{
   return { destination, fixture, trace };
 }
 
-test("Moon links Scrapling and preserves it silently on replay", () => {
+test("Moon links Scrapling without Docker and preserves it silently on replay", () => {
   const { destination, fixture, trace } = scraplingFixture();
   const source = join(project, "tooling", "scrapling-mcp");
+  const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
 
-  expect(runDeploymentMoon(fixture, ["tooling:scrapling-mcp"]).exitCode).toBe(
-    0,
-  );
+  expect(
+    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment).exitCode,
+  ).toBe(0);
   expect(readlinkSync(destination)).toBe(source);
   const inode = lstatSync(destination).ino;
 
-  expect(runDeploymentMoon(fixture, ["tooling:scrapling-mcp"])).toEqual({
+  expect(
+    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment),
+  ).toEqual({
     exitCode: 0,
     stdout: "",
     stderr: "",
@@ -100,6 +103,8 @@ test("Moon Scrapling refuses an occupied link before Docker API commands", () =>
       "--quiet",
       "--ignore-ci-checks",
       "--no-actions",
+      "--upstream",
+      "none",
       "repository:scrapling",
     ],
     {
