@@ -1,0 +1,26 @@
+{
+  "skill": "grill-me",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$grill-me Challenge my invoice export proposal",
+      "should_activate": true,
+      "reason": "Explicit Codex invocation of the design interview."
+    },
+    {
+      "query": "/grill-me Help me resolve this product decision",
+      "should_activate": true,
+      "reason": "Explicit slash-command invocation of the design interview."
+    },
+    {
+      "query": "Implement the agreed invoice export feature",
+      "should_activate": false,
+      "reason": "An implementation request does not authorize a design workshop."
+    },
+    {
+      "query": "Clarify the missing retention policy before fixing this bug",
+      "should_activate": false,
+      "reason": "Material implementation clarification belongs to requirements-clarification."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "skill": "grilling",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$grilling Stress-test this retention decision",
+      "should_activate": true,
+      "reason": "Direct invocation of the interview procedure."
+    },
+    {
+      "query": "/grilling Explore the decisions behind this design",
+      "should_activate": true,
+      "reason": "Direct slash-command invocation of the procedure."
+    },
+    {
+      "query": "grill-me delegates its explicitly requested invoice export interview to grilling",
+      "should_activate": true,
+      "reason": "Authorized composition from the interview entry point."
+    },
+    {
+      "query": "Fix this bug using the established requirements",
+      "should_activate": false,
+      "reason": "Ordinary implementation does not authorize a workshop."
+    },
+    {
+      "query": "Clarify this plan before implementing it",
+      "should_activate": false,
+      "reason": "Standalone natural language is not one of the allowed entry points."
+    },
+    {
+      "query": "to-spec wants to call grilling before drafting the agreed specification",
+      "should_activate": false,
+      "reason": "to-spec is not an authorized caller and must synthesize the existing conversation."
+    }
+  ]
+}

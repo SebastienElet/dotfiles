@@ -19,6 +19,21 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: grill-me
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: grilling
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: to-spec
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: tdd
     installations:
       - { agent: claude, scope: user }

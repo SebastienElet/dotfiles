@@ -37,8 +37,11 @@ This directory is the canonical source for user-scoped agent skills.
 
 | Skill               | Description                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------ |
+| `grill-me`          | Challenge an idea through a requested design interview.                              |
+| `grilling`          | Run a design interview by dependent decisions.                                       |
 | `issue-simplify`    | Simplify GitHub or Linear issues and drafts.                                         |
 | `linear-issue-spec` | Prepare implementation-ready Linear development issues as functional specifications. |
+| `to-spec`           | Synthesize the current conversation into a functional specification.                 |
 
 ## Ops
 
