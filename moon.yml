@@ -33,6 +33,8 @@ tasks:
     description: Install the optional workstation artifacts
     command: noop
     deps:
+      - repository:dependencies
+      - repository:node
       - harness:cursor
       - repository:cloakbrowser
       - repository:scrapling
