@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+test -x "$(builtin type -P docker)" || { echo "Error: Docker CLI unavailable" >&2; exit 1; }
