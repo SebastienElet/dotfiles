@@ -231,7 +231,6 @@ test("preserves a destination appearing during extraction", async () => {
         );
       },
     }),
-    /appeared/u,
   );
   expect(
     await readFile(join(directory, applicationName, "existing"), "utf8"),
