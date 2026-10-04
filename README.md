@@ -38,6 +38,10 @@ separately. The Minutes CLI is not installed by this task.
 [Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
 with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
 
+[Grok Bot](https://x.ai/bot) can be installed with
+`moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon
+or Intel), using the official Homebrew `grok-bot` cask.
+
 Moon installs the complete minimal profile. With Moon available:
 
 ```bash
