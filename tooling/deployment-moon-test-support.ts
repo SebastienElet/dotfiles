@@ -161,6 +161,8 @@ function runMoon(
         PROTO_HOME: process.env.PROTO_HOME ?? join(homedir(), ".proto"),
         RUSTUP_HOME: process.env.RUSTUP_HOME ?? join(homedir(), ".rustup"),
         ...options.environment,
+        MOON_BASE: "main",
+        MOON_HEAD: "HEAD",
         PROTO_OFFLINE: "true",
       },
     },
