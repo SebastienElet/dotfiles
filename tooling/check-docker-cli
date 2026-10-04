@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-test -x "$(builtin type -P docker)" || { echo "Error: Docker CLI unavailable" >&2; exit 1; }
+/bin/test -x "$(/usr/bin/which docker)" || { /bin/echo "Error: Docker CLI unavailable" >&2; exit 1; }

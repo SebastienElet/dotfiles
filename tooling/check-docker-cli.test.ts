@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import {
   chmodSync,
+  mkdirSync,
   mkdtempSync,
   rmSync,
   symlinkSync,
@@ -31,16 +32,10 @@ function fixture(withInterpreter = true): string {
 
 function run(
   directory: string,
-  exportedFunction = false,
+  shellSetup = "",
 ): Bun.SyncSubprocess<"pipe", "pipe"> {
-  const command = exportedFunction
-    ? [
-        "/bin/bash",
-        "-c",
-        'docker() { :; }; export -f docker; exec "$1"',
-        "fixture",
-        checker,
-      ]
+  const command = shellSetup
+    ? ["/bin/bash", "-c", `${shellSetup}; exec "$1"`, "fixture", checker]
     : [checker];
   return Bun.spawnSync(command, {
     env: { PATH: directory },
@@ -64,7 +59,7 @@ test("refuses a non-executable Docker file", () => {
 });
 
 test("refuses an exported shell function without an external Docker executable", () => {
-  const result = run(fixture(), true);
+  const result = run(fixture(), "docker() { :; }; export -f docker");
   expect(result.exitCode).toBe(1);
   expect(result.stderr.toString()).toBe(unavailableMessage);
 });
@@ -84,4 +79,54 @@ test("fails when the required Bash interpreter is absent", () => {
   const result = run(fixture(false));
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr.toString()).toContain("bash");
+});
+
+test("refuses an exported test function that reports false success", () => {
+  const result = run(fixture(), "test() { return 0; }; export -f test");
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toBe(unavailableMessage);
+});
+
+test("refuses an exported builtin function that spoofs the lookup", () => {
+  const result = run(
+    fixture(),
+    "builtin() { printf /bin/bash; }; export -f builtin",
+  );
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toBe(unavailableMessage);
+});
+
+test("refuses exported lookup and diagnostic functions", () => {
+  const result = run(
+    fixture(),
+    "which() { printf /bin/bash; }; echo() { :; }; export -f which echo",
+  );
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toBe(unavailableMessage);
+});
+
+test("refuses a shell alias without an external Docker executable", () => {
+  const result = run(fixture(), "alias docker=/bin/bash");
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toBe(unavailableMessage);
+});
+
+test("refuses an executable directory named Docker", () => {
+  const directory = fixture();
+  mkdirSync(join(directory, "docker"));
+  const result = run(directory);
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toBe(unavailableMessage);
+});
+
+test("finds a later executable after unusable PATH entries", () => {
+  const directory = fixture();
+  mkdirSync(join(directory, "docker"));
+  const nonExecutable = fixture();
+  writeFileSync(join(nonExecutable, "docker"), "unusable");
+  const valid = fixture();
+  symlinkSync("/bin/bash", join(valid, "docker"));
+  const result = run(`${directory}:${nonExecutable}:${valid}`);
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr.toString()).toBe("");
 });
