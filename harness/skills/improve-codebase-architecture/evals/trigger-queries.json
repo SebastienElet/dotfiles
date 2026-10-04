@@ -1,0 +1,26 @@
+{
+  "skill": "improve-codebase-architecture",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$improve-codebase-architecture Survey architectural friction in invoice import",
+      "should_activate": true,
+      "reason": "Explicit invocation of the architectural survey."
+    },
+    {
+      "query": "/improve-codebase-architecture Find improvement candidates in this repository",
+      "should_activate": true,
+      "reason": "Explicit slash-command invocation of the survey."
+    },
+    {
+      "query": "Simplify this invoice calculation without changing its behavior",
+      "should_activate": false,
+      "reason": "An authorized bounded cleanup belongs to code-simplify."
+    },
+    {
+      "query": "Review the current staged changes",
+      "should_activate": false,
+      "reason": "Local review belongs to code-review and does not start an architectural survey."
+    }
+  ]
+}
