@@ -35,6 +35,9 @@ First launch downloads a local speech model;
 transcription does not require an API key. Summarization is optional and configured
 separately. The Minutes CLI is not installed by this task.
 
+[Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
+with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
+
 Moon installs the complete minimal profile. With Moon available:
 
 ```bash
