@@ -33,8 +33,8 @@ dans les tâches Moon. La configuration Fish existante privilégie `~/.cargo/bin
 interactives. La migration n'installe pas de toolchain par défaut hors du dépôt.
 
 Une source non prise en charge par Bundle est exécutée directement par Moon une fois migrée :
-Volta/npm, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink. Les opérations
-optionnelles non migrées restent transitoirement dans Make. Ces exceptions sont décrites dans
+Volta/npm, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink.
+Ces exceptions sont décrites dans
 [`docs/software-source-exceptions.md`](../software-source-exceptions.md) sans gate miroir.
 
 Les contrôles Rust sous Linux nécessitent le rustup du runner et installent la même toolchain depuis

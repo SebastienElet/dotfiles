@@ -14,7 +14,7 @@ travaillent sur plusieurs fichiers.
 ## Décision
 
 Retirer Copilot, de Neovim comme du shell, et travailler avec Claude Code,
-Codex et Cursor, installés et mis à jour par le `Makefile`, avec leurs alias
+Codex et Cursor, installés par Moon et mis à jour via `tooling/upgrade`, avec leurs alias
 Fish (`c`, `co`).
 
 ## Conséquences

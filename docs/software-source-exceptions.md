@@ -19,7 +19,7 @@ référencé par [ADR-002](adr/002-homebrew-source-unique.md).
 
 Lumen est installé par `moon run repository:lumen`, via `tooling/install-lumen.ts`, vers
 `/Applications`. La tâche prépare les dépendances Bun sans installer le profil Homebrew optionnel.
-Les points d’entrée `make optional` et `make lumen` restent disponibles pendant la transition.
+Le profil optionnel inclut cette tâche via `moon run repository:optional`.
 Le DMG publié pour cette version contient uniquement un exécutable Apple Silicon, malgré la
 compatibilité Intel annoncée dans le README amont ; l'installation refuse donc Intel.
 Le cask Homebrew `lumen` concerne un autre logiciel (luminosité automatique), et le tap Sonpiaz
@@ -27,4 +27,4 @@ ne propose pas encore ce moniteur système.
 Une installation existante valide est conservée : modifier le pin ne la met pas à jour ;
 son remplacement nécessite une réinstallation explicite.
 
-Les sources internes à un outil local appelé par Moon ou le `Makefile` relèvent des tests de cet outil.
+Les sources internes à un outil local appelé par Moon relèvent des tests de cet outil.

@@ -22,7 +22,7 @@ Séparer les sources par portée :
 
 - `harness/skills/` contient les skills personnelles installées au niveau user ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
-- le `Makefile` déploie chaque skill user par un lien feuille vers sa source sous
+- les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers sa source sous
   `harness/skills/` ;
 - `skill-manager` vit dans `harness/skills/`, est installé au niveau user et gère
   les deux collections sans autoriser un même slug dans les deux ;
@@ -33,8 +33,8 @@ Séparer les sources par portée :
 
 - Une skill user n'est plus exposée une seconde fois par le checkout dotfiles.
 - Les deux collections ont chacune leur index dérivé et leur source canonique.
-- Ajouter une skill user exige de déclarer ses agents cibles et ses liens dans
-  le `Makefile` ; une skill projet n'est jamais installée globalement.
+- Ajouter une skill user exige de déclarer ses installations par agent dans le manifeste Arnes ;
+  les tâches Moon déploient les liens correspondants. Une skill projet n'est jamais installée globalement.
 - Le déplacement d'une skill entre portées migre simultanément sa source, ses
   projections et ses liens déjà installés.
 

@@ -46,10 +46,10 @@ versionnement dans Git sont des décisions distinctes de son emplacement.
 
 Les chemins imposés par un outil (`.agents/`, `.claude/`, `.codex/`,
 `.cursor/`, `.github/`) et les points d'entrée du dépôt (`AGENTS.md`,
-`CLAUDE.md`, `Makefile`, `README.md`, `install.sh`) restent à la racine.
+`CLAUDE.md`, `moon.yml`, `README.md`, `install.sh`) restent à la racine.
 
 Conformément à l'[ADR-003](003-deploiement-par-symlinks.md), le déploiement par
-Moon ou, pendant la transition, par Make crée une destination absente, conserve
+Moon crée une destination absente, conserve
 le lien attendu et refuse une destination divergente. Les configurations
 spécifiques conservent les comportements explicités par l’ADR-003. Aucun lien
 de compatibilité n’est ajouté aux chemins sources.

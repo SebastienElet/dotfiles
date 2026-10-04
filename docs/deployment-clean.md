@@ -2,7 +2,7 @@
 
 La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152) porte sur les artefacts
 des profils minimal et optionnel. Le nettoyage et l’installation restent deux opérations séparées.
-`make clean` délègue à Moon ; les suppressions globales des données et caches Neovim ont été retirées.
+`repository:clean` porte le nettoyage ; les suppressions globales des données et caches Neovim ont été retirées.
 
 ## Inspection et application
 
@@ -20,8 +20,8 @@ moon run repository:clean
 ```
 
 Cette commande ne relance pas l’installation. Après un nettoyage réussi, le profil minimal
-est réinstallé séparément avec `moon run repository:install`. Le profil optionnel conserve son
-entrée transitoire `make optional`. La reconstruction complète du poste est limitée à macOS.
+est réinstallé séparément avec `moon run repository:install`. Le profil optionnel est réinstallé
+avec `moon run repository:optional`. La reconstruction complète du poste est limitée à macOS.
 
 ## Périmètre possédé
 

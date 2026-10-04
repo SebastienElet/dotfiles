@@ -13,7 +13,7 @@ plutôt que supprimer les protections exercées par les tests.
 
 ## Décision
 
-Moon porte les déploiements migrés ; Make reste transitoire pour les opérations restantes.
+Moon porte les déploiements des profils minimal et optionnel.
 Pour un lien géré, une destination absente est créée, un lien vers la source attendue reste
 inchangé et silencieux, et une autre destination est conservée avec un échec explicite.
 Ce contrôle compare le lien attendu ; il ne certifie pas le contenu de toute sa cible.
@@ -32,7 +32,7 @@ Les comportements de configuration spécifiques restent locaux à leurs utilitai
 
 Les destinations et les sources restent celles de l'ADR-038. Une suppression ou reconstruction
 plus large est une action explicite. La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152)
-étend `make clean`, délégué à `repository:clean`, aux artefacts déployés possédés des profils
+étend `repository:clean` aux artefacts déployés possédés des profils
 minimal et optionnel, en conservant sources, données personnelles et paquets tiers.
 Le [retrait de remem](../remem.md), autorisé le 2026-10-01, arrête uniquement le worker reconnu
 avant de retirer ses artefacts possédés, en conservant ses données. Une identité native inconnue
