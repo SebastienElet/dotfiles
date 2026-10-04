@@ -1,0 +1,31 @@
+{
+  "skill": "to-spec",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$to-spec Draft the specification from our invoice export decisions",
+      "should_activate": true,
+      "reason": "Explicit invocation to synthesize the existing conversation."
+    },
+    {
+      "query": "/to-spec Save the agreed specification to docs/invoice-export.md",
+      "should_activate": true,
+      "reason": "Explicit invocation with a requested local destination."
+    },
+    {
+      "query": "Implement the invoice export specification",
+      "should_activate": false,
+      "reason": "Implementation is not specification synthesis."
+    },
+    {
+      "query": "Create a GitHub issue for the validated invoice export draft",
+      "should_activate": false,
+      "reason": "Issue publication uses issue-creation and does not invoke this manual command."
+    },
+    {
+      "query": "grill-me has completed its interview and wants to invoke to-spec automatically",
+      "should_activate": false,
+      "reason": "The interview does not implicitly invoke a manual specification command."
+    }
+  ]
+}

@@ -82,6 +82,46 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask silverstein/tap/minutes
+  herdr:
+    description: Install the optional Herdr agent multiplexer
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions herdr
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install herdr
+  grokbot:
+    description: Install the optional Grok Bot desktop app
+    deps:
+      - homebrew
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --cask --versions grok-bot
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install --cask grok-bot
   lumen:
     description: Install the optional Lumen system monitor
     command: bun --config=/dev/null --no-env-file --no-install tooling/install-lumen.ts /Applications
