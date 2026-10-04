@@ -40,5 +40,4 @@ tasks:
     toolchains: bun
     options:
       cache: false
-      runDepsInParallel: false
       runInCI: false
