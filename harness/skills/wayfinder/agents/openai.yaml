@@ -1,0 +1,5 @@
+interface:
+  display_name: "Wayfinder"
+  short_description: "Map a large effort as dependent decisions"
+policy:
+  allow_implicit_invocation: false

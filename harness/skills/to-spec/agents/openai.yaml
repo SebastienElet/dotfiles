@@ -1,0 +1,5 @@
+interface:
+  display_name: "To Spec"
+  short_description: "Synthesize a conversation into a functional spec"
+policy:
+  allow_implicit_invocation: false
