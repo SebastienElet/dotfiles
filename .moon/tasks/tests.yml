@@ -10,6 +10,7 @@ fileGroups:
     - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     - tooling/deploy-link.ts
     - tooling/scrapling-mcp
+    - tooling/check-docker-cli
     - tooling/install-homebrew
     - tooling/git-main-branch
     - tooling/format-edited-file

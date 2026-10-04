@@ -1,0 +1,12 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  docker:
+    description: Verify that the Docker CLI is available
+    command: tooling/check-docker-cli
+    inputs:
+      - /tooling/check-docker-cli
+    toolchains: system
+    options:
+      cache: false
