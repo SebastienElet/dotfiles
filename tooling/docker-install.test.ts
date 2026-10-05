@@ -66,6 +66,7 @@ test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+    expect(result.trace).toBe("");
   },
 );
 
@@ -108,6 +109,7 @@ test.each(targets)("%s refuses an unknown skip policy", (target) => {
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).not.toContain(resultMarker(target, "skipped"));
+  expect(result.trace).toBe("");
 });
 
 test.each(targets)("%s requires Docker by default", (target) => {
@@ -128,16 +130,19 @@ function oracleCommand(_target: DockerInstallTarget): string {
   return "image inspect";
 }
 
-test("scrapling forwards an overridden image through installation and verification", () => {
-  const image = "registry.example/scrapling:custom";
-  const result = runDockerInstallTarget("scrapling", "artifact-present", {
-    imageOverride: image,
-  });
+test.each(targets)(
+  "%s forwards an overridden image through installation and verification",
+  (target) => {
+    const image = `registry.example/${target}:custom`;
+    const result = runDockerInstallTarget(target, "artifact-present", {
+      imageOverride: image,
+    });
 
-  expect(result.exitCode).toBe(0);
-  expect(result.trace).toContain(`reference=${image}`);
-  expect(result.trace).toContain(`image inspect -- ${image}\n`);
-});
+    expect(result.exitCode).toBe(0);
+    expect(result.trace).toContain(`reference=${image}`);
+    expect(result.trace).toContain(`image inspect -- ${image}\n`);
+  },
+);
 
 test.each(targets)(
   "%s rejects an empty Docker policy before Docker runs",

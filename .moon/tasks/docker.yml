@@ -30,3 +30,14 @@ tasks:
     options:
       cache: false
       runInCI: false
+  cloakbrowser:
+    description: Install the CloakBrowser Docker image
+    script: |-
+      "$workspaceRoot/tooling/install-docker-artifact" install cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${CLOAKBROWSER_IMAGE-cloakhq/cloakbrowser:0.5.3}"
+    deps:
+      - docker
+      - dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
