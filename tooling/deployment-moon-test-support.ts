@@ -1,6 +1,7 @@
 import {
   type CommandResult,
   expectSuccess,
+  prepareMoonCompilationCache,
   project,
   requireCommand,
 } from "./deployment-test-support.ts";
@@ -72,6 +73,7 @@ function copyMoonProjectFixture({
   );
   mkdirSync(join(repository, ".github", "workflows"), { recursive: true });
   mkdirSync(home);
+  prepareMoonCompilationCache(home);
   cpSync(source, destination, {
     filter: (path) => !path.includes(`${join(source, "target")}/`),
     recursive: true,

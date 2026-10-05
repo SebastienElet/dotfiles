@@ -8,8 +8,8 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { homedir, tmpdir } from "node:os";
 
 type DeploymentFixture = Readonly<{
   root: string;
@@ -40,9 +40,34 @@ function createDeploymentFixture(name: string): DeploymentFixture {
   };
   fixtures.push(root);
   mkdirSync(fixture.home, { recursive: true });
+  prepareMoonCompilationCache(fixture.home);
   mkdirSync(fixture.repository, { recursive: true });
   mkdirSync(fixture.bin, { recursive: true });
   return fixture;
+}
+
+function prepareMoonCompilationCache(home: string): void {
+  if (process.platform !== "darwin") {
+    return;
+  }
+  const configuration = join(
+    home,
+    "Library",
+    "Application Support",
+    "BytecodeAlliance.wasmtime",
+    "config.toml",
+  );
+  const cache = join(
+    homedir(),
+    "Library",
+    "Caches",
+    "BytecodeAlliance.wasmtime",
+  );
+  mkdirSync(dirname(configuration), { recursive: true });
+  writeFileSync(
+    configuration,
+    `[cache]\ndirectory = ${JSON.stringify(cache)}\n`,
+  );
 }
 
 function cleanupDeploymentFixtures(): void {
@@ -189,6 +214,7 @@ export {
   installProvider,
   linkTarget,
   pathExists,
+  prepareMoonCompilationCache,
   project,
   requireCommand,
   runMake,
