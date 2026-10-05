@@ -21,6 +21,11 @@ const OUTPUT_DISCIPLINE: MatchedHandler = MatchedHandler {
     matcher: "startup|resume|clear|compact",
     timeout_seconds: 30,
 };
+const SEMCTX_NUDGE: MatchedHandler = MatchedHandler {
+    event: "SessionStart",
+    matcher: "startup|resume|clear|compact",
+    timeout_seconds: 5,
+};
 const FORMAT_EDITED_FILE_EVENT: &str = "PostToolUse";
 const FORMAT_EDITED_FILE_TIMEOUT_SECONDS: u64 = 30;
 const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
@@ -113,6 +118,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
         )?;
     }
     reconcile_format_edited_file(&mut config, &roots, args.agent, &desired)?;
+    reconcile_semctx_nudge(&mut config, &roots, args.agent, &desired)?;
     if desired.contains(&HookKind::Handoff) {
         validate_command(&handoff_path)?;
         reconcile::handoff(
@@ -146,6 +152,56 @@ fn reconcile_format_edited_file(
     reconcile::matched_handler(config, &settings, &command)
 }
 
+fn reconcile_semctx_nudge(
+    config: &mut serde_json::Value,
+    roots: &Roots,
+    agent: Agent,
+    desired: &[HookKind],
+) -> Result<(), HooksError> {
+    if agent == Agent::Cursor {
+        return Ok(());
+    }
+    let path = semctx_nudge_path(roots.deployment_repository());
+    let command = semctx_nudge_command(&path, agent)?;
+    ownership::remove_everywhere(config, agent, &unquoted_semctx_nudge_command(&path, agent)?)?;
+    ownership::remove_everywhere(config, agent, &command)?;
+    if !desired.contains(&HookKind::SemctxNudge) {
+        return Ok(());
+    }
+    validate_command(&path)?;
+    reconcile::matched_handler(config, &SEMCTX_NUDGE, &command)
+}
+
+fn semctx_nudge_path(repository: &Path) -> PathBuf {
+    repository.join("tooling/semctx-nudge")
+}
+
+fn semctx_nudge_host(agent: Agent) -> Result<&'static str, HooksError> {
+    match agent {
+        Agent::Claude => Ok("claude"),
+        Agent::Codex => Ok("codex"),
+        Agent::Cursor => Err(HooksError::new(
+            "Cursor does not support the semctx-nudge hook",
+        )),
+    }
+}
+
+fn semctx_nudge_command(path: &Path, agent: Agent) -> Result<String, HooksError> {
+    Ok(format!(
+        "{} --host {}",
+        quoted_command(path)?,
+        semctx_nudge_host(agent)?
+    ))
+}
+
+fn unquoted_semctx_nudge_command(path: &Path, agent: Agent) -> Result<String, HooksError> {
+    Ok(format!(
+        "{} --host {}",
+        path_string(path)?,
+        semctx_nudge_host(agent)?
+    ))
+}
+
 fn format_edited_file_path(repository: &Path) -> PathBuf {
     repository.join("tooling/format-edited-file")
 }
@@ -159,6 +215,7 @@ pub(crate) fn source_paths(roots: &Roots, manifest: &manifest::Manifest) -> Vec<
             HookKind::Memory => memory_path(roots.home()),
             HookKind::Handoff => handoff_path(roots.home()),
             HookKind::FormatEditedFile => format_edited_file_path(roots.deployment_repository()),
+            HookKind::SemctxNudge => semctx_nudge_path(roots.deployment_repository()),
         })
         .collect()
 }
