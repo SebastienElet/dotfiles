@@ -208,6 +208,10 @@ hooks:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
+  - id: semctx-nudge
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
 external:
   roots:
     - agent: codex

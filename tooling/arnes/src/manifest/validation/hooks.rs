@@ -38,7 +38,10 @@ pub(super) fn validate(
             }
             if matches!(
                 hook.id,
-                HookKind::Handoff | HookKind::OutputDiscipline | HookKind::FormatEditedFile
+                HookKind::Handoff
+                    | HookKind::OutputDiscipline
+                    | HookKind::FormatEditedFile
+                    | HookKind::SemctxNudge
             ) && installation.agent == Agent::Cursor
             {
                 return Err(ManifestError::new(
