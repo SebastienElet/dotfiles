@@ -19,7 +19,7 @@ natif](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Le
 
 ## Décision
 
-- Moon devient l'orchestrateur unique selon l'ADR-001 ; les parcours Make non migrés sont transitoires.
+- Moon est l'orchestrateur unique selon l'ADR-001.
 - Bash se limite à l'amorçage, à l'environnement et à une courte séquence linéaire de commandes.
 - Moon porte les tâches d'installation et de développement, leur graphe de dépendances
   et leur sélection affectée. La racine expose les agrégats et hérite des regroupements ciblés
@@ -42,8 +42,7 @@ natif](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Le
 - Bun et `tsc` constituent deux oracles distincts : tests d'exécution et vérification statique.
 - Une migration de Bash reste locale au comportement modifié ; les scripts historiques ne sont pas
   réécrits sans besoin.
-- La migration vers Moon est progressive : les commandes non migrées conservent leur point d’entrée
-  actuel.
+- Les profils minimal et optionnel et le nettoyage utilisent leurs points d'entrée Moon.
 - La frontière Rust repose sur les garanties requises, pas sur un seuil arbitraire de lignes.
 
 ## Alternatives écartées

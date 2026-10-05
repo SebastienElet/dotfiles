@@ -2,7 +2,6 @@ fileGroups:
   rust:
     - /.github/workflows/test-arnes.yml
   repositoryTests:
-    - /Makefile
     - /home/.arnes.yaml
     - /harness/**/*
 env:

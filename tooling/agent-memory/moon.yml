@@ -10,7 +10,10 @@ fileGroups:
     - /.moon/tasks/rust.yml
     - /.github/workflows/test-agent-memory.yml
     - /.prototools
-    - /Makefile
+    - /moon.yml
+    - /tooling/clean-deployment*.ts
+    - /tooling/clean-deployment-worker-inspect.js
+    - /home/.arnes.yaml
     - /tooling/deployment-agent-memory.test.ts
     - /tooling/deployment-moon-runner.ts
     - /tooling/deployment-moon-test-support.ts

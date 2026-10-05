@@ -2,7 +2,7 @@
 
 La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152) porte sur les artefacts
 des profils minimal et optionnel. Le nettoyage et l’installation restent deux opérations séparées.
-`make clean` délègue à Moon ; les suppressions globales des données et caches Neovim ont été retirées.
+`repository:clean` porte le nettoyage ; les suppressions globales des données et caches Neovim ont été retirées.
 
 ## Inspection et application
 
@@ -20,8 +20,8 @@ moon run repository:clean
 ```
 
 Cette commande ne relance pas l’installation. Après un nettoyage réussi, le profil minimal
-est réinstallé séparément avec `moon run repository:install`. Le profil optionnel conserve son
-entrée transitoire `make optional`. La reconstruction complète du poste est limitée à macOS.
+est réinstallé séparément avec `moon run repository:install`. Le profil optionnel est réinstallé
+avec `moon run repository:optional`. La reconstruction complète du poste est limitée à macOS.
 
 ## Périmètre possédé
 
@@ -112,7 +112,7 @@ transpiler Bun est isolé dans un dossier frère du home via
 [`BUN_RUNTIME_TRANSPILER_CACHE_PATH`](https://bun.sh/docs/runtime/environment-variables#runtime-transpiler-caching) :
 ses écritures `.pile` ne sont pas attribuées au nettoyage. Les assertions de conservation du cache
 étranger restent inchangées. Les tests `deployment-agent-memory.test.ts`
-et `deployment-agent-handoff.test.ts` invoquent `make clean` dans un home temporaire : le lien vers
+et `deployment-agent-handoff.test.ts` invoquent `repository:clean` dans un home temporaire : le lien vers
 le binaire attendu disparaît, les fichiers, répertoires et liens étrangers sont conservés.
 
 Ces observations portables ne remplacent pas la reconstruction complète du profil minimal sur

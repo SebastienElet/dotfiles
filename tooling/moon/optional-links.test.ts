@@ -8,7 +8,6 @@ import {
   createDeploymentFixture,
   project,
   requireCommand,
-  runMake,
 } from "../deployment-test-support.ts";
 import { dirname, join } from "node:path";
 import {
@@ -156,27 +155,47 @@ function cursorFixture(): Readonly<{
   return { fixture, trace };
 }
 
-function makeCursor(fixture: DeploymentFixture, trace: string): CommandResult {
+function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
   const moon = process.env.DEPLOYMENT_MOON ?? requireCommand("moon");
-  return runMake(fixture, ["cursor"], {
-    repository: project,
-    variables: {
-      MOON_EXEC: `${moon} exec --quiet --ignore-ci-checks --no-actions --upstream direct`,
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const result = Bun.spawnSync(
+    [
+      moon,
+      "exec",
+      "--quiet",
+      "--ignore-ci-checks",
+      "--no-actions",
+      "--upstream",
+      "direct",
+      "harness:cursor",
+    ],
+    {
+      cwd: project,
+      env: {
+        ...process.env,
+        HOME: fixture.home,
+        FAKE_FAIL_ON: "doctor hooks",
+        FAKE_TRACE: trace,
+        MOON_HOME:
+          process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
+        PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+        PROTO_HOME:
+          process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+        PROTO_OFFLINE: "true",
+      },
+      stderr: "pipe",
+      stdout: "pipe",
     },
-    environment: {
-      FAKE_FAIL_ON: "doctor hooks",
-      FAKE_TRACE: trace,
-      MOON_HOME: process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
-      PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
-      PROTO_HOME:
-        process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
-      PROTO_OFFLINE: "true",
-    },
-  });
+  );
+  return {
+    exitCode: result.exitCode,
+    stderr: decoder.decode(result.stderr),
+    stdout: decoder.decode(result.stdout),
+  };
 }
 
 test(
-  "make cursor deploys the rule and skills without global dependencies",
+  "Moon deploys the Cursor rule and skills without global dependencies",
   () => {
     const { fixture, trace } = cursorFixture();
     const rule = join(
@@ -187,7 +206,7 @@ test(
     );
     const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
 
-    expect(makeCursor(fixture, trace).exitCode).toBe(0);
+    expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(readlinkSync(rule)).toBe(
       join(project, "harness", "rules", "memory-governance-cursor.mdc"),
     );
@@ -199,13 +218,13 @@ test(
     );
     const ruleInode = lstatSync(rule).ino;
 
-    expect(makeCursor(fixture, trace).exitCode).toBe(0);
+    expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(lstatSync(rule).ino).toBe(ruleInode);
   },
   cursorDeploymentAndReplayTimeout,
 );
 
-test("make cursor preserves a divergent rule and returns failure", () => {
+test("Moon preserves a divergent Cursor rule and returns failure", () => {
   const { fixture, trace } = cursorFixture();
   const rule = join(
     fixture.home,
@@ -216,7 +235,7 @@ test("make cursor preserves a divergent rule and returns failure", () => {
   mkdirSync(dirname(rule), { recursive: true });
   writeFileSync(rule, "personal\n");
 
-  const result = makeCursor(fixture, trace);
+  const result = runCursor(fixture, trace);
 
   expect(result.exitCode).not.toBe(0);
   expect(readFileSync(rule, "utf8")).toBe("personal\n");

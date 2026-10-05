@@ -23,7 +23,7 @@ cd && \
   "$HOME/.moon/bin/moon" exec --quiet install
 ```
 
-Install the separately maintained optional profile with `make optional`.
+Install the separately maintained optional profile with `moon exec repository:optional`.
 
 Anarlog belongs to the optional profile, alongside Handy. Install it independently
 with `moon exec repository:anarlog` (macOS 15 or newer).
@@ -56,7 +56,6 @@ moon action-graph repository:install
 
 Install the Node development toolchain independently with `moon exec repository:pnpm`;
 its dependencies install Homebrew, Volta, and the exact Node version from `package.json`.
-The `make volta`, `make node`, and `make pnpm` entry points delegate to Moon.
 
 ## Checks
 

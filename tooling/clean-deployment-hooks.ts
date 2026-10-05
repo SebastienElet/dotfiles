@@ -44,9 +44,12 @@ function commands(
     return common;
   }
   const host = agent === "claude" ? "claude-code" : "codex-cli";
+  const semctxNudge = join(repository, "tooling/semctx-nudge");
   return [
     ...common,
     `${arnes} output-discipline`,
+    `${quoted(semctxNudge)} --host ${agent}`,
+    `${semctxNudge} --host ${agent}`,
     `${quoted(join(home, ".local/bin/agent-memory"))} hook --agent ${agent}`,
     join(home, ".local/bin/agent-handoff"),
     join(repository, "tooling/agent-handoff"),

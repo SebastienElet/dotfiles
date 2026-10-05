@@ -14,7 +14,7 @@ certains thèmes référencés n'existaient plus en amont.
 ## Décision
 
 Retenir Catppuccin comme palette unique, déclinée sur WezTerm, bat, git-delta
-et Neovim, avec installation automatique des thèmes bat par le `Makefile`. La
+et Neovim, avec installation automatique des thèmes bat par `home:bat`. La
 bascule suit le mode système via `auto-dark-mode`, l'intervalle de scrutation
 étant réduit à cinq secondes.
 

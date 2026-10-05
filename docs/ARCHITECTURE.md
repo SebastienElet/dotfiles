@@ -19,8 +19,8 @@ l'[ADR-038](adr/038-frontieres-home-harness-tooling.md).
 
 Les points d'entrée restent à la racine :
 
-- `moon.yml` expose `install`, `check` et `test`, avec des définitions héritées de `.moon/tasks/` ;
-  le `Makefile` conserve les optionnels, le nettoyage et des points d'entrée de compatibilité ;
+- `moon.yml` expose `install`, `optional`, `clean`, `check` et `test`, avec des définitions
+  héritées de `.moon/tasks/` ;
 - `Brewfile` et `Brewfile.optional` sont les inventaires canoniques des paquets de leurs profils ;
 - `install.sh` amorce Moon après le clonage puis lance le profil minimal Moon ;
 - `AGENTS.md` porte les instructions de contribution communes, avec
@@ -43,8 +43,8 @@ Les points d'entrée restent à la racine :
 | `home/.config/wezterm/wezterm.lua` | `~/.config/wezterm/wezterm.lua` |
 | `home/cspell.json`                 | `~/cspell.json`                 |
 
-Moon déploie les capacités migrées, tandis que le `Makefile` conserve les artefacts encore en
-transition. Le déploiement crée les liens absents, conserve les liens attendus et refuse les
+Moon porte les déploiements des profils minimal et optionnel.
+Le déploiement crée les liens absents, conserve les liens attendus et refuse les
 destinations divergentes selon l'ADR-003 ; le smoke vérifie le rejeu du profil minimal.
 
 ## Intégrations d'agents
@@ -76,15 +76,14 @@ deux occurrences.
   `upgrade`, `agent-handoff` et `git-main-branch` ;
 - les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
-Les exécutables destinés au `PATH` sont liés par leur projet Moon ou, pour les composants encore en
-transition, par le `Makefile`, généralement sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
+Les exécutables destinés au `PATH` sont liés par leur projet Moon,
+généralement sous `~/.local/bin`. `tooling/upgrade` met à jour le dépôt puis relance
 le profil minimal Moon, ce qui déploie les nouveaux chemins du socle.
 
 ## Flux de changement
 
 1. Placer la source dans la zone qui porte sa responsabilité.
-2. Mettre à jour le projet Moon propriétaire lorsqu'un artefact est installé ou déployé, puis le
-   point d'entrée Make de compatibilité tant que la transition l'exige.
+2. Mettre à jour le projet Moon propriétaire lorsqu'un artefact est installé ou déployé.
 3. Mettre à jour tous les consommateurs du chemin source dans le même changement.
 4. Ajouter ou adapter la barrière CI qui couvre le type de fichier concerné.
 5. Enregistrer une ADR seulement si le changement introduit ou remplace une

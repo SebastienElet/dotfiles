@@ -2,7 +2,7 @@
 name: dotfiles
 description: >
   Apply this repository's conventions for configuration, symlinks, platform differences, and tool
-  installation. Use when editing the Makefile or any file managed from here. Make sure to use it
+  installation. Use when editing Moon tasks or any file managed from here. Make sure to use it
   whenever a change lands in this repository, even if the request names a single application.
 metadata:
   category: ops
@@ -13,8 +13,8 @@ metadata:
 ## Overview
 
 Apply this repository's conventions when changing managed configuration, symlinks, or tool
-installation. Moon owns migrated installation and development tasks; Make remains only for
-optional operations, existing cleanup and compatibility entry points during the transition.
+installation. Moon owns installation, development tasks and cleanup for the minimal and
+optional profiles.
 
 ## Usage
 
@@ -23,7 +23,7 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
 
 ## Steps
 
-1. Inspect the relevant ADRs, Moon task and dependencies, remaining Make consumer, and both the
+1. Inspect the relevant ADRs, Moon task and dependencies, and both the
    source and destination of every affected deployment.
 2. Put a migrated installation directly in Moon, with its actual prerequisites. Use the existing
    task group or owning project; never call Make from a migrated Moon task.
@@ -40,8 +40,7 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
    because one CI runner currently provides it.
 7. In a worktree, inspect the task and its action graph before execution. Execute only deployment
    tasks proven to mutate fixture-local links or configuration, without their global installation
-   dependencies; the macOS CI smoke exercises the full installation graph. For remaining Make
-   installations, use their dry-run for inspection.
+   dependencies; the macOS CI smoke exercises the full minimal installation graph.
 8. Validate declarative changes with Moon's native configuration and action graph, then run the
    relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
 
@@ -56,8 +55,8 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
   installation declarations; remove the migrated entry and preserve the native package probe.
 - **Linking inside an existing directory** — changes an unexpected destination; use the deployment
   helper's collision refusal and inspect any divergent state before a separate reconstruction.
-- **Restoring a Make prerequisite on a migrated path** — recreates the second graph; update the
-  Moon dependency and let any remaining Make adapter delegate to it.
+- **Restoring a Make prerequisite** — recreates the second graph; update the
+  Moon dependency directly.
 
 ## Constraints
 

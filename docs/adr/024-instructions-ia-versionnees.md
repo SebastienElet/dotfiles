@@ -21,7 +21,7 @@ pas les imports ([ADR-003](003-deploiement-par-symlinks.md)).
 
 - Les instructions sont versionnées, relues et révocables comme du code.
 - Une modification profite à tous les agents simultanément.
-- Chaque nouvel agent ajoute une cible de distribution au `Makefile`.
+- Chaque nouvel agent ajoute une tâche de distribution au projet Moon `harness`.
 
 ## Alternatives écartées
 

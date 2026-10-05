@@ -13,10 +13,10 @@ certains outils et exécutaient leurs contrôles directement.
 
 ## Décision
 
-Moon est l'orchestrateur cible unique pour l'installation et les tâches de développement.
+Moon est l'orchestrateur unique pour l'installation et les tâches de développement.
 Le point d'entrée `moon exec --quiet install` porte le profil minimal complet ; `check`
 et `test` agrègent les contrôles statiques et comportementaux.
-Une tâche migrée appelle directement sa commande, jamais une cible Make.
+Une tâche appelle directement sa commande, jamais une cible Make.
 
 Le fichier racine porte les agrégats publics. Les définitions sont regroupées dans
 `.moon/tasks/` avec un héritage ciblé ; `home`, `harness` et `tooling` portent les
@@ -33,11 +33,11 @@ les tâches d'un autre projet qui consomment le paquet racine en dépendent expl
 migrée vers une tâche autonome quitte son Brewfile selon l'ADR-002. Installer un paquet
 n'implique pas déployer sa configuration.
 
-## Transition
+## Points d'entrée
 
-Make conserve provisoirement les opérations optionnelles et le nettoyage existants, ainsi
-que les adaptateurs qui délèguent aux tâches migrées. Le profil optionnel converge d'abord
-le minimal Moon ; il ne réimplémente pas son installation.
+Le `Makefile` est retiré. `moon exec repository:optional` porte le profil optionnel, qui
+converge d'abord le minimal Moon ; il ne réimplémente pas son installation.
+`moon exec repository:clean` porte le nettoyage existant.
 
 `install.sh` vérifie les prérequis macOS et amorce Moon avant le profil minimal.
 L'installation de Moon lui-même reste hors de son graphe. `tooling/upgrade` appelle
@@ -50,7 +50,7 @@ ne suffit pas à intégrer automatiquement ses plugins et leurs prérequis hôte
 
 - Le minimal possède un point d'entrée Moon, partagé avec le smoke macOS de l'ADR-023.
 - Les contrôles de développement déclarent leurs prérequis sans installer tout le poste.
-- Les opérations optionnelles restent une étape distincte de la suppression finale de Make.
+- Le profil optionnel et le nettoyage possèdent leurs points d'entrée Moon.
 - L'état observé et le silence au rejeu sont évalués par les oracles exécutés, pas par la seule
   présence des tâches ou des dépendances dans le graphe.
 

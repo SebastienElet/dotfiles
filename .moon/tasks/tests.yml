@@ -35,7 +35,6 @@ fileGroups:
     - .oxlintrc.json
     - .prototools
     - .github/dependabot.yml
-    - Makefile
     - install.sh
     - harness/USER.md
     - harness/skills/obsidian-retrieval/SKILL.md

@@ -6,7 +6,6 @@ import {
   linkTarget,
   pathExists,
   project,
-  runMake,
 } from "./deployment-test-support.ts";
 import {
   cleanupMoonDeploymentFixtures,
@@ -145,22 +144,7 @@ test.each([
     const { fixture, destination, source, sourceBefore, neighbor, external } =
       cleanupFixture(destinationType);
 
-    expectSuccess(
-      runMake(fixture, ["clean"], {
-        repository: project,
-        environment: {
-          MOON_HOME:
-            process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
-          PROTO_HOME:
-            process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
-          PROTO_OFFLINE: "true",
-        },
-        variables: {
-          MOON_EXEC:
-            "moon exec --quiet --ignore-ci-checks --no-actions --upstream none",
-        },
-      }),
-    );
+    expectSuccess(runDeploymentMoon(fixture, ["repository:clean"]));
     expect(pathExists(destination)).toBe(!removed);
     expect(readFileSync(neighbor, "utf8")).toBe("keep\n");
     expect(readFileSync(external, "utf8")).toBe("external\n");
