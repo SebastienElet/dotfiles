@@ -1,0 +1,32 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  bundle-optional:
+    description: Install the optional packages and Brewfile
+    deps:
+      - repository:homebrew
+      - repository:uv-setup
+      - repository:gh-setup
+      - repository:google-chrome
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          export HOMEBREW_DOTFILES_SKIP_PAID_APPS="${SKIP_PAID_APPS:-0}"
+          brew bundle check --quiet --no-upgrade --file Brewfile.optional
+    env:
+      HOMEBREW_NO_ASK: "1"
+      HOMEBREW_BUNDLE_MAS_SKIP: ""
+    inputs:
+      - Brewfile.optional
+    toolchains: system
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      export HOMEBREW_DOTFILES_SKIP_PAID_APPS="${SKIP_PAID_APPS:-0}"
+      brew bundle install --no-upgrade --file Brewfile.optional </dev/null
