@@ -134,6 +134,19 @@ tasks:
       cache: false
       os: macos
       runInCI: false
+  apple-notes-exporter:
+    description: Install Apple Notes Exporter from the pinned vendor release
+    command: bun --config=/dev/null --no-env-file --no-install tooling/install-apple-notes-exporter.ts /Applications
+    deps:
+      - dependencies
+    inputs:
+      - tooling/install-apple-notes-exporter.ts
+    toolchains: bun
+    options:
+      cache: false
+      mutex: apple-notes-exporter
+      os: macos
+      runInCI: false
   rust:
     description: Install the repository Rust toolchain with rustup
     checks:
