@@ -12,6 +12,8 @@ pub enum HookKind {
     OutputDiscipline,
     #[serde(rename = "format-edited-file")]
     FormatEditedFile,
+    #[serde(rename = "semctx-nudge")]
+    SemctxNudge,
 }
 
 impl Display for HookKind {
@@ -22,6 +24,7 @@ impl Display for HookKind {
             Self::Memory => "memory",
             Self::OutputDiscipline => "output-discipline",
             Self::FormatEditedFile => "format-edited-file",
+            Self::SemctxNudge => "semctx-nudge",
         })
     }
 }

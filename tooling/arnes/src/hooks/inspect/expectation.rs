@@ -1,8 +1,9 @@
 use super::super::adapters::Policy;
 use super::super::{
-    HooksError, MatchedHandler, OUTPUT_DISCIPLINE, format_edited_file_handler,
+    HooksError, MatchedHandler, OUTPUT_DISCIPLINE, SEMCTX_NUDGE, format_edited_file_handler,
     format_edited_file_path, handoff_aliases, handoff_path, measurement_command, measurement_path,
-    memory_command, memory_path, output_discipline_command, quoted_command,
+    memory_command, memory_path, output_discipline_command, quoted_command, semctx_nudge_command,
+    semctx_nudge_path, unquoted_semctx_nudge_command,
 };
 use super::{drift, error};
 use crate::Roots;
@@ -99,6 +100,18 @@ pub fn expectation(
                 settings: Some(format_edited_file_handler(agent)?),
                 path,
                 label: "tooling/format-edited-file",
+            })
+        }
+        HookKind::SemctxNudge => {
+            let path = semctx_nudge_path(roots.deployment_repository());
+            Ok(Expectation {
+                events: vec![SEMCTX_NUDGE.event],
+                nested: policy.nested,
+                command: semctx_nudge_command(&path, agent)?,
+                superseded: vec![unquoted_semctx_nudge_command(&path, agent)?],
+                settings: Some(SEMCTX_NUDGE),
+                path,
+                label: "tooling/semctx-nudge",
             })
         }
     }
