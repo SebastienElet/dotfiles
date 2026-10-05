@@ -114,9 +114,7 @@ daisydisk:
 
 .PHONY: moon
 moon:
-	@set -e; \
-	moon_installer=$$(curl -fsSL --connect-timeout 10 --max-time 60 https://moonrepo.dev/install/moon.sh); \
-	/bin/bash -c "$$moon_installer"
+	@"${DOTFILES_PATH}/tooling/install-moon"
 
 .PHONY: clean
 clean:

@@ -32,5 +32,5 @@ set -e
 cd "$HOME"
 git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles
 cd .dotfiles
-make moon
+./tooling/install-moon
 "$HOME/.moon/bin/moon" exec --quiet repository:install

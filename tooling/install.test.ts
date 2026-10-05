@@ -55,10 +55,12 @@ function createFixture(gitState: GitState): Fixture {
     "xcode-select",
     `printf 'xcode-select %s\n' "$*" >> "$INSTALL_TEST_TRACE"${gitState === "system-shim" || gitState === "working-without-clt" ? "\nexit 1" : ""}`,
   );
+  const bootstrapDirectory = join(home, ".dotfiles", "tooling");
+  mkdirSync(bootstrapDirectory, { recursive: true });
   installCommand(
-    bin,
-    "make",
-    'printf "make %s\\n" "$*" >> "$INSTALL_TEST_TRACE"\nif [ "$1" = moon ]; then exit "$INSTALL_TEST_MOON_STATUS"; fi',
+    bootstrapDirectory,
+    "install-moon",
+    'printf "bootstrap moon\\n" >> "$INSTALL_TEST_TRACE"\nexit "$INSTALL_TEST_MOON_STATUS"',
   );
   installMoon(home);
   if (gitState !== "missing") {
@@ -191,7 +193,7 @@ test("bootstraps Moon before installing the workstation", async () => {
 
   expect(result).toEqual({ exitCode: 0, stderr: "", stdout: "" });
   expect(readTrace(fixture)).toBe(
-    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nmake moon\nmoon exec --quiet repository:install\n",
+    "xcode-select --print-path\ngit --version\ngit clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\nbootstrap moon\nmoon exec --quiet repository:install\n",
   );
 });
 
@@ -207,7 +209,7 @@ test("stops before workstation installation when Moon bootstrap fails", async ()
   });
 
   expect(result.exitCode).toBe(bootstrapFailureExitCode);
-  expect(readTrace(fixture)).toEndWith("make moon\n");
+  expect(readTrace(fixture)).toEndWith("bootstrap moon\n");
   expect(readTrace(fixture)).not.toContain("moon exec");
 });
 
@@ -222,7 +224,7 @@ test("stops before Moon bootstrap when cloning fails", async () => {
   const result = await runInstaller(fixture);
 
   expect(result.exitCode).not.toBe(0);
-  expect(readTrace(fixture)).not.toContain("make ");
+  expect(readTrace(fixture)).not.toContain("bootstrap moon");
 });
 
 test("preserves stdin for the Homebrew bootstrap delegated through Moon", async () => {
