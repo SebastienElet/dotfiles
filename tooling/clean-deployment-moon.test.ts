@@ -120,7 +120,7 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   expect(identities(files)).toEqual(before);
 });
 
-test("cleans and reinstalls optional Cursor, PostgreSQL and Scrapling links separately", () => {
+test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling links separately", () => {
   const fixture = createDeploymentFixture("clean-moon-optional");
   const environment = {
     BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
@@ -128,7 +128,7 @@ test("cleans and reinstalls optional Cursor, PostgreSQL and Scrapling links sepa
       "runtime-transpiler-cache",
     ),
   };
-  const tasks = ["harness:cursor-rules", "harness:cursor-skills"];
+  const tasks = ["harness:cursor-rules", "harness:cursor-skills", "home:herdr"];
   const postgresql = (): ReturnType<typeof runDeploymentMoon> =>
     runDeploymentMoon(fixture, ["home:postgresql"], environment);
   const scrapling = (): ReturnType<typeof runDeploymentMoon> =>

@@ -83,6 +83,17 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask silverstein/tap/minutes </dev/null
   herdr:
+    description: Install the optional Herdr agent multiplexer and configuration
+    command: noop
+    deps:
+      - herdr-setup
+      - home:herdr
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+  herdr-setup:
     description: Install the optional Herdr agent multiplexer
     deps:
       - homebrew
