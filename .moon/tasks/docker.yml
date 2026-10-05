@@ -10,3 +10,34 @@ tasks:
     toolchains: system
     options:
       cache: false
+  scrapling:
+    description: Install the Scrapling MCP launcher and Docker image
+    script: |-
+      "$workspaceRoot/tooling/check-docker-cli" &&
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-scrapling-launcher.ts" &&
+      "$workspaceRoot/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${SCRAPLING_IMAGE-pyd4vinci/scrapling}"
+    deps:
+      - docker
+      - dependencies
+    inputs:
+      - /tooling/check-docker-cli
+      - /tooling/deploy-scrapling-launcher.ts
+      - /tooling/deploy-link.ts
+      - /tooling/scrapling-mcp
+      - /tooling/install-docker-artifact
+      - /tooling/install-docker-artifact.ts
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
+  cloakbrowser:
+    description: Install the CloakBrowser Docker image
+    script: |-
+      "$workspaceRoot/tooling/install-docker-artifact" install cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${CLOAKBROWSER_IMAGE-cloakhq/cloakbrowser:0.5.3}"
+    deps:
+      - docker
+      - dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false

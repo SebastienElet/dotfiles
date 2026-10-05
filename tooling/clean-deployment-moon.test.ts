@@ -131,19 +131,8 @@ test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling lin
   const tasks = ["harness:cursor-rules", "harness:cursor-skills", "home:herdr"];
   const postgresql = (): ReturnType<typeof runDeploymentMoon> =>
     runDeploymentMoon(fixture, ["home:postgresql"], environment);
-  const scrapling = (): ReturnType<typeof runDeploymentHelper> =>
-    runDeploymentHelper(
-      fixture,
-      {
-        helper: "deploy-link.ts",
-        arguments: [
-          join(project, "tooling/scrapling-mcp"),
-          join(fixture.home, ".local/bin/scrapling_mcp"),
-        ],
-      },
-      environment,
-    );
-  mkdirSync(join(fixture.home, ".local/bin"), { recursive: true });
+  const scrapling = (): ReturnType<typeof runDeploymentMoon> =>
+    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
   expectSuccess(scrapling());

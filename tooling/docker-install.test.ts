@@ -12,7 +12,9 @@ afterAll(cleanupDockerInstallFixtures);
 
 describe.each(targets)("%s Docker installation target", (target) => {
   test("reports an allowed unavailable daemon as skipped", () => {
-    const result = runDockerInstallTarget(target, "daemon-unavailable");
+    const result = runDockerInstallTarget(target, "daemon-unavailable", {
+      policy: "allow-skip",
+    });
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain(resultMarker(target, "skipped"));
@@ -64,6 +66,7 @@ test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+    expect(result.trace).toBe("");
   },
 );
 
@@ -86,11 +89,16 @@ test.each(targets)(
   (target) => {
     const result = runDockerInstallTarget(target, "artifact-present", {
       dockerProviderAvailable: false,
+      policy: "allow-skip",
     });
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("Docker CLI unavailable");
     expect(result.stdout).not.toContain(resultMarker(target, "skipped"));
+    if (target === "scrapling") {
+      expect(result.scraplingLinkExists).toBe(false);
+      expect(result.trace).toBe("");
+    }
   },
 );
 
@@ -101,19 +109,15 @@ test.each(targets)("%s refuses an unknown skip policy", (target) => {
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).not.toContain(resultMarker(target, "skipped"));
+  expect(result.trace).toBe("");
 });
 
-test.each(targets)(
-  "%s fails closed when daemon skips are forbidden",
-  (target) => {
-    const result = runDockerInstallTarget(target, "daemon-unavailable", {
-      policy: "require-docker",
-    });
+test.each(targets)("%s requires Docker by default", (target) => {
+  const result = runDockerInstallTarget(target, "daemon-unavailable");
 
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stdout).not.toContain(resultMarker(target, "skipped"));
-  },
-);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stdout).not.toContain(resultMarker(target, "skipped"));
+});
 
 function resultMarker(
   target: DockerInstallTarget,
@@ -125,3 +129,68 @@ function resultMarker(
 function oracleCommand(_target: DockerInstallTarget): string {
   return "image inspect";
 }
+
+test.each(targets)(
+  "%s forwards an overridden image through installation and verification",
+  (target) => {
+    const image = `registry.example/${target}:custom`;
+    const result = runDockerInstallTarget(target, "artifact-present", {
+      imageOverride: image,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.trace).toContain(`reference=${image}`);
+    expect(result.trace).toContain(`image inspect -- ${image}\n`);
+  },
+);
+
+test.each(targets)(
+  "%s rejects an empty Docker policy before Docker runs",
+  (target) => {
+    const result = runDockerInstallTarget(target, "artifact-present", {
+      policy: "",
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.trace).toBe("");
+    expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+  },
+);
+
+test.each(targets)("%s rejects an empty image before Docker runs", (target) => {
+  const result = runDockerInstallTarget(target, "artifact-present", {
+    imageOverride: "",
+  });
+
+  expect(result.exitCode).not.toBe(0);
+  expect(result.trace).toBe("");
+  expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+});
+
+test.each(["require-docker", "allow-skip"])(
+  "scrapling refuses missing Docker before linking with upstream none and %s",
+  (policy) => {
+    const result = runDockerInstallTarget("scrapling", "artifact-present", {
+      dockerProviderAvailable: false,
+      policy,
+      upstreamNone: true,
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Docker CLI unavailable");
+    expect(result.scraplingLinkExists).toBe(false);
+    expect(result.trace).toBe("");
+    expect(result.stdout).not.toContain(resultMarker("scrapling", "skipped"));
+  },
+);
+
+test("scrapling deploys its launcher with upstream prerequisites bypassed", () => {
+  const result = runDockerInstallTarget("scrapling", "artifact-present", {
+    upstreamNone: true,
+  });
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout).toContain(resultMarker("scrapling", "verified"));
+  expect(result.scraplingLinkExists).toBe(true);
+  expect(result.trace).toContain("image inspect");
+});
