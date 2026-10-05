@@ -29,6 +29,21 @@ tasks:
       cache: false
       os: macos
       runInCI: false
+  optional:
+    description: Install the optional workstation profile
+    command: noop
+    deps:
+      - repository:install
+      - repository:bundle-optional
+      - repository:anarlog
+      - repository:minutes
+      - repository:optional-artifacts
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runDepsInParallel: false
+      runInCI: false
   optional-artifacts:
     description: Install the optional workstation artifacts
     command: noop
