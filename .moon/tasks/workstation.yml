@@ -111,6 +111,7 @@ tasks:
     command: noop
     deps:
       - herdr-setup
+      - herdr-plugin
       - home:herdr
     toolchains: system
     options:
@@ -137,6 +138,18 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install herdr
+  herdr-plugin:
+    description: Link the Herdr worktree cleanup plugin
+    deps:
+      - herdr-setup
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
   grokbot:
     description: Install the optional Grok Bot desktop app
     deps:
