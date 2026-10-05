@@ -224,6 +224,22 @@ tasks:
       cache: false
       mutex: volta
       runInCI: false
+  things3-cli-wrapper:
+    description: Install the Things 3 CLI wrapper with npm
+    script: |-
+      "$HOME/.volta/bin/npm" install -g @dougskinner/thangs
+    deps:
+      - node
+    checks:
+      - check: condition
+        script: |-
+          test -x "$HOME/.volta/bin/thangs"
+    toolchains: system
+    options:
+      cache: false
+      mutex: volta
+      os: macos
+      runInCI: false
   bootstrap:
     description: Verify macOS installation prerequisites
     command: noop
