@@ -69,6 +69,14 @@ tasks:
     options:
       cache: false
       runInCI: false
+  herdr:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
   git-delta:
     script: |
       set -e
