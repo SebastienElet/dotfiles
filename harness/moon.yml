@@ -25,6 +25,93 @@ taskOptions:
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
+  agent-reach:
+    description: Install the complete Agent-Reach plugin and macOS backends
+    command: noop
+    deps: [agent-reach-check]
+    toolchains: system
+    options: { os: macos }
+  agent-reach-runtime:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts runtime "$workspaceRoot" "$HOME"
+    deps: [repository:dependencies, repository:uv-setup]
+    toolchains: bun
+    options: { os: macos, mutex: agent-reach-uv }
+  agent-reach-python:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts python "$workspaceRoot" "$HOME"
+    deps: [repository:dependencies, repository:uv-setup]
+    toolchains: bun
+    options: { os: macos, mutex: agent-reach-uv }
+  agent-reach-node:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts node "$workspaceRoot" "$HOME"
+    deps: [repository:dependencies, repository:node]
+    toolchains: bun
+    options: { os: macos, mutex: volta }
+  agent-reach-backends:
+    command: docker compose --file "$HOME/.config/agent-reach/compose.yaml" pull linkedin
+    deps:
+      [
+        agent-reach-python,
+        agent-reach-node,
+        repository:gh-setup,
+        repository:google-chrome,
+        repository:agent-reach-media,
+        home:agent-reach,
+      ]
+    toolchains: system
+    options: { os: macos, mutex: agent-reach-docker }
+  agent-reach-package:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts package "$workspaceRoot" "$HOME"
+    deps: [repository:dependencies]
+    inputs:
+      [
+        plugins/agent-reach/source.json,
+        /tooling/agent-reach-package.ts,
+        /tooling/agent-reach-source.ts,
+        /tooling/agent-reach.ts,
+      ]
+    toolchains: bun
+    options: { mutex: harness-mutation }
+  agent-reach-claude:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts claude "$workspaceRoot" "$HOME"
+    deps: [agent-reach-package, claude-binary]
+    toolchains: bun
+    options: { os: macos, mutex: harness-mutation }
+  agent-reach-codex:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts codex "$workspaceRoot" "$HOME"
+    deps: [agent-reach-package, codex-binary]
+    toolchains: bun
+    options: { os: macos, mutex: harness-mutation }
+  agent-reach-check:
+    script: |-
+      set -e
+      arnes doctor skills --agent claude --scope user
+      arnes doctor skills --agent codex --scope user
+      agent-reach --version
+      mcporter --config "$HOME/.config/agent-reach/mcporter.json" config list --json
+    deps:
+      [
+        agent-reach-runtime,
+        agent-reach-backends,
+        agent-reach-claude,
+        agent-reach-codex,
+        arnes:install,
+        home:arnes-config,
+      ]
+    toolchains: system
+    options: { os: macos }
+  agent-reach-linkedin-start:
+    command: docker compose --file "$HOME/.config/agent-reach/compose.yaml" up --detach linkedin
+    deps: [home:agent-reach]
+    toolchains: system
+    options: { os: macos, mutex: agent-reach-docker }
+  agent-reach-linkedin-login:
+    script: |-
+      set -e
+      docker compose --file "$HOME/.config/agent-reach/compose.yaml" stop linkedin
+      docker compose --file "$HOME/.config/agent-reach/compose.yaml" run --rm --name agent-reach-linkedin-login --service-ports linkedin --login --login-viewer
+    deps: [home:agent-reach]
+    toolchains: system
+    options: { os: macos, mutex: agent-reach-docker, interactive: true }
   check:
     description: Validate the harness deterministically without an agent or LLM
     command: noop

@@ -3,9 +3,12 @@ inheritedBy:
     - repository
 tasks:
   bundle-optional:
-    description: Install the optional Brewfile
+    description: Install the optional packages and Brewfile
     deps:
       - repository:homebrew
+      - repository:uv-setup
+      - repository:gh-setup
+      - repository:google-chrome
     checks:
       - check: condition
         script: |-
