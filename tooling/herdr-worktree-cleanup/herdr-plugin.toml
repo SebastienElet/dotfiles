@@ -1,0 +1,10 @@
+id = "dotfiles.worktree-cleanup"
+name = "Worktree Cleanup"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Remove the checkout of a linked worktree when its workspace closes"
+platforms = ["macos"]
+
+[[events]]
+on = "workspace.closed"
+command = ["bun", "--config=/dev/null", "--no-env-file", "remove-closed-worktree.ts"]
