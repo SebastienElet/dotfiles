@@ -36,6 +36,9 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
+    - deploy-scrapling-launcher*.ts
+    - check-docker-cli
+    - /.moon/tasks/docker.yml
     - assemble-agent-instructions*.ts
     - install-agent-skills*.ts
     - /home/moon.yml
@@ -55,6 +58,18 @@ fileGroups:
     - /.moon/tasks/harness-cursor.yml
     - /Makefile
 tasks:
+  scrapling-mcp:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-scrapling-launcher.ts"
+    inputs:
+      - deploy-scrapling-launcher.ts
+      - deploy-link.ts
+      - scrapling-mcp
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
   test:
     command: noop
     deps:
@@ -71,7 +86,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deployment-moon.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/clean-deployment-worker-marker.test.ts tooling/clean-deployment-worker-owner.test.ts tooling/clean-deployment-worker-inspect.test.ts tooling/clean-deployment-remem.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deployment-moon.test.ts tooling/deploy-link.test.ts tooling/deploy-scrapling-launcher.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/clean-deployment-worker-marker.test.ts tooling/clean-deployment-worker-owner.test.ts tooling/clean-deployment-worker-inspect.test.ts tooling/clean-deployment-remem.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
     deps:
       - repository:dependencies
     options:

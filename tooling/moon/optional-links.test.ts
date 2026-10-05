@@ -70,49 +70,67 @@ function scraplingFixture(): Readonly<{
   return { destination, fixture, trace };
 }
 
-function makeScrapling(
-  fixture: DeploymentFixture,
-  trace: string,
-): CommandResult {
-  return runMake(fixture, ["scrapling"], {
-    repository: project,
-    variables: {
-      LOCAL_BIN: join(fixture.home, ".local", "bin"),
-      DOCKER_UNAVAILABLE_POLICY: "allow-skip",
-    },
-    environment: {
-      DOCKER_INSTALL_TEST_SCENARIO: "daemon-unavailable",
-      DOCKER_INSTALL_TEST_STATE: trace,
-      DOCKER_INSTALL_TEST_TARGET: "scrapling",
-      PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
-    },
-  });
-}
-
-test("make scrapling creates its link and preserves it on replay", () => {
+test("Moon links Scrapling without Docker and preserves it silently on replay", () => {
   const { destination, fixture, trace } = scraplingFixture();
   const source = join(project, "tooling", "scrapling-mcp");
+  const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
 
-  const firstRun = makeScrapling(fixture, trace);
-  expect(firstRun.exitCode).toBe(0);
-  expect(firstRun.stdout).toContain(
-    "docker-install target=scrapling result=skipped",
-  );
-  expect(readFileSync(trace, "utf8")).toContain("info\n");
+  expect(
+    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment).exitCode,
+  ).toBe(0);
   expect(readlinkSync(destination)).toBe(source);
   const inode = lstatSync(destination).ino;
 
-  expect(makeScrapling(fixture, trace).exitCode).toBe(0);
+  expect(
+    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment),
+  ).toEqual({
+    exitCode: 0,
+    stdout: "",
+    stderr: "",
+  });
   expect(lstatSync(destination).ino).toBe(inode);
+  expect(readFileSync(trace, "utf8")).toBe("");
 });
 
-test("make scrapling refuses an occupied link destination", () => {
+test("Moon Scrapling refuses an occupied link before Docker API commands", () => {
   const { destination, fixture, trace } = scraplingFixture();
   writeFileSync(destination, "personal\n");
 
-  const result = makeScrapling(fixture, trace);
+  const result = Bun.spawnSync(
+    [
+      process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
+      "exec",
+      "--quiet",
+      "--ignore-ci-checks",
+      "--no-actions",
+      "--upstream",
+      "none",
+      "repository:scrapling",
+    ],
+    {
+      cwd: project,
+      env: {
+        ...process.env,
+        HOME: fixture.home,
+        MOON_HOME:
+          process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
+        PROTO_HOME:
+          process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
+        PROTO_OFFLINE: "true",
+        DOCKER_INSTALL_TEST_SCENARIO: "artifact-present",
+        DOCKER_INSTALL_TEST_STATE: trace,
+        DOCKER_INSTALL_TEST_TARGET: "scrapling",
+        PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
 
   expect(result.exitCode).not.toBe(0);
+  expect(result.stderr.toString()).toContain(
+    `${destination} exists and is not the expected symbolic link`,
+  );
   expect(readFileSync(destination, "utf8")).toBe("personal\n");
   expect(readFileSync(trace, "utf8")).toBe("");
 });
