@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "exa": { "baseUrl": "https://mcp.exa.ai/mcp" },
+    "linkedin": { "baseUrl": "http://127.0.0.1:18061/mcp" }
+  },
+  "imports": []
+}

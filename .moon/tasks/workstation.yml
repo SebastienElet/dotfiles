@@ -2,6 +2,30 @@ inheritedBy:
   tags:
     - repository
 tasks:
+  google-chrome:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install --cask google-chrome
+    deps: [homebrew]
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --cask --versions google-chrome
+    toolchains: system
+    options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
+  agent-reach-media:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install yt-dlp ffmpeg
+    deps: [homebrew]
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions yt-dlp ffmpeg
+    toolchains: system
+    options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
   homebrew:
     description: Install Homebrew
     script: |-

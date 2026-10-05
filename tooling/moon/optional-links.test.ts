@@ -70,7 +70,7 @@ function scraplingFixture(): Readonly<{
   return { destination, fixture, trace };
 }
 
-test("Moon links Scrapling without Docker and preserves it silently on replay", () => {
+test("Moon links Scrapling without Docker", () => {
   const { destination, fixture, trace } = scraplingFixture();
   const source = join(project, "tooling", "scrapling-mcp");
   const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
@@ -79,6 +79,14 @@ test("Moon links Scrapling without Docker and preserves it silently on replay", 
     runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment).exitCode,
   ).toBe(0);
   expect(readlinkSync(destination)).toBe(source);
+  expect(readFileSync(trace, "utf8")).toBe("");
+});
+
+test("Moon preserves an existing Scrapling launcher silently without Docker", () => {
+  const { destination, fixture, trace } = scraplingFixture();
+  const source = join(project, "tooling", "scrapling-mcp");
+  const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
+  symlinkSync(source, destination);
   const inode = lstatSync(destination).ino;
 
   expect(
