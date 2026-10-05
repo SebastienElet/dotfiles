@@ -1,4 +1,12 @@
 tasks:
+  agent-reach:
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/agent-reach.ts" configuration "$workspaceRoot" "$HOME"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.config/agent-reach/compose.yaml" "$HOME/.config/agent-reach/compose.yaml"
+    deps: [repository:dependencies]
+    toolchains: bun
+    options: { cache: false, runInCI: false, mutex: harness-mutation }
   install:
     command: noop
     deps:

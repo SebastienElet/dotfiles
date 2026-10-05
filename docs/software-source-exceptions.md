@@ -28,3 +28,9 @@ Une installation existante valide est conservée : modifier le pin ne la met pas
 son remplacement nécessite une réinstallation explicite.
 
 Les sources internes à un outil local appelé par Moon ou le `Makefile` relèvent des tests de cet outil.
+
+Agent-Reach est installé optionnellement par `moon run harness:agent-reach`. Son commit et les
+coordonnées directes des outils Python/Node sont déclarés dans
+`harness/plugins/agent-reach/source.json` ; uv et Volta assurent leurs installations. Les
+dépendances transitives ne sont pas verrouillées. Le plugin est assemblé depuis ce même commit
+et livré par une marketplace locale aux deux agents. Voir [le parcours Agent-Reach](agent-reach.md).

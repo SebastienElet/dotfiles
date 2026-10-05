@@ -1,0 +1,24 @@
+name: agent-reach
+services:
+  linkedin:
+    image: stickerdaniel/linkedin-mcp-server:4.26.2@sha256:c7aa139cfaaecc8ae9f5e810d6517e5e36b5a1a52cadcb4eef6f0832810b4da6
+    container_name: agent-reach-linkedin
+    command:
+      - --transport
+      - streamable-http
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --path
+      - /mcp
+      - --browser-idle-timeout
+      - "300"
+    ports:
+      - "127.0.0.1:18061:8080"
+      - "127.0.0.1:6080:6080"
+    volumes:
+      - linkedin-profile:/home/pwuser/.linkedin-mcp
+volumes:
+  linkedin-profile:
+    name: agent-reach-linkedin-profile
