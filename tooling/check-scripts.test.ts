@@ -64,6 +64,16 @@ test("accepts tracked scripts when their checker succeeds", () => {
   expect(run(fixture()).exitCode).toBe(0);
 });
 
+test("checks extensionless Bash resources shipped inside harness plugins", () => {
+  const root = fixture();
+  const directory = join(root, "harness/plugins/example");
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, "broken-resource"), "#!/bin/bash\ntrue\n");
+  index(root);
+  const result = run(root);
+  expect(result.exitCode).toBe(failureStatus);
+});
+
 test.each([
   { arguments: [] },
   { arguments: ["tooling/check-scripts.ts", "--", "../outside.sh"] },

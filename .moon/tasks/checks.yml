@@ -3,6 +3,7 @@ inheritedBy:
     - repository
 fileGroups:
   shellSources:
+    - harness/plugins/agent-reach/agent-reach-python
     - tooling/**/*
     - install.sh
     - "**/*.sh"

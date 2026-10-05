@@ -6,7 +6,6 @@ tap "schpet/tap"
 
 brew "awscli"
 brew "avivsinai/tap/bitbucket-cli", trusted: true
-brew "gh"
 brew "gnupg"
 brew "jesseduffield/lazydocker/lazydocker", trusted: true
 brew "k9s"
@@ -15,7 +14,6 @@ brew "mas"
 brew "mosh"
 brew "postgresql@16"
 brew "schpet/tap/linear", trusted: true
-brew "uv"
 brew "vale"
 cask "calibre"
 cask "chatgpt"
@@ -24,7 +22,6 @@ cask "codexbar"
 cask "cursor-cli"
 cask "discord"
 cask "dopplerhq/cli/doppler", trusted: true
-cask "google-chrome"
 cask "handy"
 cask "languagetool-desktop"
 cask "obsidian"
