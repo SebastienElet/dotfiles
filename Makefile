@@ -49,6 +49,7 @@ bundle-minimal:
 .PHONY: bundle-optional
 bundle-optional:
 	@skip_mas=; if [ "$(SKIP_PAID_APPS)" = "1" ]; then skip_mas="411643860 904280696"; fi; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle check --quiet --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" || { echo "brew bundle --no-upgrade --file ${DOTFILES_PATH}/Brewfile.optional"; HOMEBREW_BUNDLE_MAS_SKIP="$$skip_mas" brew bundle --no-upgrade --file "${DOTFILES_PATH}/Brewfile.optional" </dev/null; }
+	@cd "${DOTFILES_PATH}" && $(MOON_EXEC) repository:uv-setup repository:gh-setup repository:google-chrome
 
 .PHONY: optional-artifacts
 optional-artifacts: cursor cloakbrowser scrapling postgresql daisydisk things-3 lumen

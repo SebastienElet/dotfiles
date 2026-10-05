@@ -45,6 +45,7 @@ function discoverShell(): readonly string[] {
     "^#!.*(bash|sh)",
     "--",
     "tooling",
+    "harness/plugins",
     "install.sh",
   ];
   const candidates = [

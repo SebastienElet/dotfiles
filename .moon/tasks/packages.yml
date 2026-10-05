@@ -2,6 +2,30 @@ inheritedBy:
   tags:
     - repository
 tasks:
+  uv-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install uv
+    deps: [homebrew]
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions uv
+    toolchains: system
+    options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
+  gh-setup:
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install gh
+    deps: [homebrew]
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --formula --versions gh
+    toolchains: system
+    options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
   bat-setup:
     deps:
       - homebrew

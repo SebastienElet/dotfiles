@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "revision": "a19a171fa980a0785849596492e0af4db800c82f",
+  "python": [
+    "twitter-cli==0.8.5",
+    "bilibili-cli==0.6.2",
+    "boss-agent-cli @ git+https://github.com/can4hou6joeng4/boss-agent-cli.git@4c991b77086a203173bf08a4cb64a23af6514fe6"
+  ],
+  "node": ["mcporter@0.14.2", "@jackwener/opencli@1.8.8"]
+}

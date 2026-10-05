@@ -215,6 +215,8 @@ external:
       origin: system
       location: { root: home, path: .codex/skills/.system }
   plugins:
+    - { agent: claude, scope: user, id: agent-reach@dotfiles-agent-reach }
+    - { agent: codex, scope: user, id: agent-reach@dotfiles-agent-reach }
     - { agent: claude, scope: user, id: semctx@semctx-stable }
     - { agent: codex, scope: user, id: chrome@openai-bundled }
     - { agent: codex, scope: user, id: code-review@openai-bundled }
@@ -225,6 +227,20 @@ external:
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: agent-reach@dotfiles-agent-reach,
+        slug: agent-reach,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: plugin,
+        plugin: agent-reach@dotfiles-agent-reach,
+        slug: agent-reach,
+      }
     - agent: codex
       scope: user
       origin: system
