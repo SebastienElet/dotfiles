@@ -39,6 +39,9 @@ separately. The Minutes CLI is not installed by this task.
 with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
+It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
+checkout when its workspace closes; Git refuses a checkout with modified or untracked
+files, which therefore stays in place.
 
 [Grok Bot](https://x.ai/bot) can be installed with
 `moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon
