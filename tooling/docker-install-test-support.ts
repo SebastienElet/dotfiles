@@ -25,6 +25,7 @@ type DockerInstallScenario =
   | "invalid-evidence";
 type DockerInstallTarget = "cloakbrowser" | "scrapling";
 type DockerInstallOptions = Readonly<{
+  action?: "install" | "verify";
   dockerProviderAvailable?: boolean;
   imageOverride?: string;
   policy?: string;
@@ -58,7 +59,7 @@ function runDockerInstallTarget(
       "--ignore-ci-checks",
       "--no-actions",
       ...(options.upstreamNone === true ? ["--upstream", "none"] : []),
-      `repository:${target}`,
+      `repository:${options.action === "verify" ? `verify-${target}-docker` : target}`,
     ],
     cwd: repositoryRoot,
     env: {
