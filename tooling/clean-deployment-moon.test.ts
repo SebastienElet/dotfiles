@@ -51,6 +51,16 @@ function identities(paths: readonly string[]): readonly Readonly<{
   }));
 }
 
+function deploymentSnapshot(
+  deployed: readonly string[],
+  existing: readonly string[],
+): Readonly<{
+  deployed: ReturnType<typeof identities>;
+  existing: ReturnType<typeof identities>;
+}> {
+  return { deployed: identities(deployed), existing: identities(existing) };
+}
+
 function deployedArtifacts(home: string): readonly string[] {
   const runtimeCaches = [
     join(home, "Library/Caches"),
@@ -78,6 +88,7 @@ function cacheFixture(home: string): Readonly<{
 
 test("cleans and reinstalls portable minimal Moon deployments without global dependencies", () => {
   const fixture = createDeploymentFixture("clean-moon-minimal");
+  const existingFiles = deployedArtifacts(fixture.home);
   const environment = {
     BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
       fixture.root,
@@ -105,23 +116,27 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
-    (path) => path !== join(fixture.home, ".gitconfig"),
+    (path) =>
+      !existingFiles.includes(path) &&
+      path !== join(fixture.home, ".gitconfig"),
   );
   expect(files.length).toBeGreaterThan(0);
-  const before = identities(files);
+  const before = deploymentSnapshot(files, existingFiles);
   const source = readFileSync(join(project, "harness/AGENTS.md"), "utf8");
   expectSuccess(clean(fixture.home, environment));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
+  expect(identities(existingFiles)).toEqual(before.existing);
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expect(readFileSync(join(project, "harness/AGENTS.md"), "utf8")).toBe(source);
   expectSuccess(clean(fixture.home, environment));
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
-  expect(identities(files)).toEqual(before);
+  expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 
 test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling links separately", () => {
   const fixture = createDeploymentFixture("clean-moon-optional");
+  const existingFiles = deployedArtifacts(fixture.home);
   const environment = {
     BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
       fixture.root,
@@ -137,15 +152,18 @@ test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling lin
   expectSuccess(postgresql());
   expectSuccess(scrapling());
   const cache = cacheFixture(fixture.home);
-  const files = deployedArtifacts(fixture.home);
-  const before = identities(files);
+  const files = deployedArtifacts(fixture.home).filter(
+    (path) => !existingFiles.includes(path),
+  );
+  const before = deploymentSnapshot(files, existingFiles);
   expectSuccess(clean(fixture.home, environment));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
+  expect(identities(existingFiles)).toEqual(before.existing);
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
   expectSuccess(scrapling());
-  expect(identities(files)).toEqual(before);
+  expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 
 test("cleanup preserves a deployed Fish source and its installed plugin files", () => {
