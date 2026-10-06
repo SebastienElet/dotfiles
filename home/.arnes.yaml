@@ -19,6 +19,11 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: visual-explanation
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: wayfinder
     installations:
       - { agent: claude, scope: user }
@@ -339,6 +344,12 @@ resources:
     scope: user
     source: { root: repository, path: harness/USER.md }
     destination: { root: home, path: .claude/USER.md }
+  - id: claude-user-visual-presentation
+    kind: instructions
+    agent: claude
+    scope: user
+    source: { root: repository, path: harness/visual-presentation.md }
+    destination: { root: home, path: .claude/visual-presentation.md }
   - id: claude-user-agent-instructions
     kind: rules
     agent: claude
@@ -357,6 +368,12 @@ resources:
       { root: repository, path: harness/rules/memory-governance-cursor.mdc }
     destination:
       { root: home, path: .cursor/rules/memory-governance-cursor.mdc }
+  - id: cursor-user-visual-presentation
+    kind: rules
+    agent: cursor
+    scope: user
+    source: { root: repository, path: harness/visual-presentation.md }
+    destination: { root: home, path: .cursor/rules/visual-presentation.mdc }
   - id: claude-project-instructions
     kind: instructions
     agent: claude

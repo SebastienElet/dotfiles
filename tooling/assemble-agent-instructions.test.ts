@@ -31,9 +31,13 @@ function fixture(): Readonly<{
   const source = join(root, "harness");
   const destination = join(root, ".codex/AGENTS.md");
   mkdirSync(source);
-  writeFileSync(join(source, "AGENTS.md"), "@SOUL.md\n@USER.md\nRules\n");
+  writeFileSync(
+    join(source, "AGENTS.md"),
+    "@SOUL.md\n@USER.md\n@visual-presentation.md\nRules\n",
+  );
   writeFileSync(join(source, "SOUL.md"), "Soul\n");
   writeFileSync(join(source, "USER.md"), "User\n");
+  writeFileSync(join(source, "visual-presentation.md"), "Visual\n");
   return { source, destination, root };
 }
 
@@ -49,7 +53,9 @@ function run(
 test("assembles imports and stays silent without rewriting on replay", () => {
   const paths = fixture();
   expect(run(paths).exitCode).toBe(0);
-  expect(readFileSync(paths.destination, "utf8")).toBe("Rules\nSoul\nUser\n");
+  expect(readFileSync(paths.destination, "utf8")).toBe(
+    "Rules\nSoul\nUser\nVisual\n",
+  );
   utimesSync(paths.destination, new Date(0), new Date(0));
   const before = statSync(paths.destination);
   const replay = run(paths);
@@ -63,7 +69,9 @@ test("assembles imports and stays silent without rewriting on replay", () => {
     mode: before.mode,
     size: before.size,
   });
-  expect(readFileSync(paths.destination, "utf8")).toBe("Rules\nSoul\nUser\n");
+  expect(readFileSync(paths.destination, "utf8")).toBe(
+    "Rules\nSoul\nUser\nVisual\n",
+  );
 });
 
 test("replaces the output atomically without writing through a symlink", () => {
@@ -74,7 +82,9 @@ test("replaces the output atomically without writing through a symlink", () => {
   symlinkSync(external, paths.destination);
   expect(run(paths).exitCode).toBe(0);
   expect(readFileSync(external, "utf8")).toBe("preserve\n");
-  expect(readFileSync(paths.destination, "utf8")).toBe("Rules\nSoul\nUser\n");
+  expect(readFileSync(paths.destination, "utf8")).toBe(
+    "Rules\nSoul\nUser\nVisual\n",
+  );
 });
 
 test("preserves the output when a source cannot be read", () => {
@@ -82,6 +92,15 @@ test("preserves the output when a source cannot be read", () => {
   mkdirSync(join(paths.root, ".codex"));
   writeFileSync(paths.destination, "keep\n");
   rmSync(join(paths.source, "USER.md"));
+  expect(run(paths).exitCode).not.toBe(0);
+  expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
+});
+
+test("preserves the output when visual preferences cannot be read", () => {
+  const paths = fixture();
+  mkdirSync(join(paths.root, ".codex"));
+  writeFileSync(paths.destination, "keep\n");
+  rmSync(join(paths.source, "visual-presentation.md"));
   expect(run(paths).exitCode).not.toBe(0);
   expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
 });
