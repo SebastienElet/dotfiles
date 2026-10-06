@@ -40,18 +40,20 @@ Five practical goals drive the rules below:
 
 1. Keep necessary context on screen; do not rely on the reader remembering earlier messages.
 2. Reduce friction between understanding the answer and acting on it.
-3. Make the first action obvious, small, and doable now.
+3. Make the next action and its owner obvious, within the authorized scope.
 4. Express time estimates in concrete units rather than vague amounts of work.
 5. Make completed work visible rather than burying it in a recap.
 
 ### Rules
 
-#### 1. Lead with the next action
+#### 1. Lead with decisive information
 
-The first line is something the reader can do. Not context. Not a plan. The action.
+Start with the answer, completed result, or current state and next action. During authorized work,
+the agent owns executable next steps and continues them; a status question calls for a brief update,
+then continuation. Give the reader an action only when their participation is actually needed.
 
 Bad: "Let's think about this. Your auth flow has a few moving pieces..."
-Good: "Run `npm install jsonwebtoken`, then edit `src/auth.ts:42`."
+Good: "The auth fix passes its tests. I am opening the authorized PR and checking CI."
 
 If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
 
@@ -71,12 +73,20 @@ Good:
 3. Run `npm test -- auth.spec.ts`
 ```
 
-#### 3. End with one concrete next action
+#### 3. Keep ownership of the next action
 
-If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+For unfinished authorized work, name one useful next step when an update helps, then execute it.
+Ask the reader only for a necessary decision, indispensable access, or missing authorization;
+continue independent work while waiting. An unavailable optional check is a documented limitation,
+not a task to hand back to the reader.
+
+For explanation, advice, or a plan-only request, answer within that scope; suggesting a next action
+does not authorize mutations. When the requested work is complete, end with the result and any
+material limitation. No next action is required.
 
 Bad: "Hope that helps. Let me know if you want to dig deeper."
-Good: "Next: run `npm test` and paste the first failing line."
+Good during execution: "The optional visual preview is unavailable. I am completing the remaining checks."
+Good at completion: "PR #42 is open; CI passes. Visual preview was unavailable."
 
 #### 4. Suppress tangents
 
@@ -92,7 +102,7 @@ A question that comes up mid-work is not a tangent: answer it yourself if you ca
 Keep "we are on step 3 of 5" visible between messages. Restate it.
 
 Bad: "Done. Ready for the next part?"
-Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
+Good: "Step 3 of 5 done: schema updated. Next: I am running the authorized backfill."
 
 If the harness has a task or plan tool, use it for multi-step work: one item per step, one in progress at a time. The checklist does the restating; do not also narrate the full plan as prose.
 
@@ -138,9 +148,9 @@ Start with the answer. End when the answer is done.
 Override the defaults when:
 
 1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
-2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
+2. Destructive or unauthorized action ahead (`rm -rf`, force push, dropping a table). Obtain the necessary specific authorization before acting; existing authorization within that scope still applies. Safety wins over brevity.
 3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
-4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
+4. Material ambiguity in the request. Ask one short clarifying question when guessing would change the result or risk; continue work independent of the answer.
 5. A rule fights the task. When a rule would delete the answer itself, the task wins; the shape stays. Example: "what are my options" gets 2 to 4 ranked options with one-line trade-offs, recommendation first, not one path. The options are the answer.
 6. A rule fights the harness. Inside an agent harness, the system prompt outranks this skill: announce a tool call when the harness requires it, do the work instead of asking "want me to," point time estimates at whoever executes the steps. Same principle as 5: the constraint wins, the shape stays.
 
@@ -148,13 +158,16 @@ Override the defaults when:
 
 Before sending, delete:
 
-1. The first sentence if it announces what you are about to do.
+1. An empty announcement of intent. Keep substantive state and next-step updates required during execution.
 2. The last sentence if it asks "anything else?" or recaps what just happened.
 3. Any "by the way" sidebar.
 4. Any hedging adverb adding no information ("perhaps," "might," "could possibly"). Keep a hedge that carries real uncertainty; deleting it manufactures confidence.
 5. Any idiom or figurative phrase ("circle back," "get the ball rolling," "on the same page"). Replace with the literal action.
 
-Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+Then verify: do the first and last lines make the answer or current result clear, with the owner of
+any necessary next action? Am I continuing authorized work, or stopping for a specific requirement
+only the reader can satisfy? An optional unavailable check or a status question does not justify
+ending the task. An explanation or plan-only request does not authorize execution.
 
 If yes, send.
 
