@@ -27,6 +27,10 @@ declares, but does not verify the underlying configuration or recovery outcome: 
 Source entries record `id`, `path` or `url`, `document_kind`, `scope`, `version`, `document_date`,
 `approval_date`, `sha256`, `applicability` and `last_checked_on`. Source applicability starts as
 `to_confirm` except for the supplied template's role as output structure.
+For supplied text, retain a local copy and record its path and identifiable source details.
+An absent URL is not missing evidence when the supplied content establishes the identity,
+relevant version and applicability needed for the claim. Leave unavailable source metadata
+unknown; request a reference only if that uncertainty materially affects the document.
 
 For a conflicting fact, `value` is an object with `claims`: a list of objects containing `value`,
 `sources` and `observed_on`. Keep the fact's `sources` as the union of those references. Do not
@@ -46,7 +50,9 @@ and records the decision source; the previous conflicting fact remains in `histo
 3. If sources conflict, retain both claim values and their sources, set `status: conflicting`, and
    create an `open_points` entry. A newer file date alone does not establish authority.
 4. Keep each open point's `id`, `section`, `question`, `owner`, `evidence_needed`, `blocks`,
-   `status` and `resolution`. Close it only when the requested evidence or decision arrives.
+   `status` and `resolution`. Before asking, check acquired answers and active facts for its scope.
+   Close it when available evidence or a decision resolves it, recording the resolution source;
+   do not re-ask a resolved question or restore a historical value as a current fact.
 5. Save to a temporary sibling, parse it, and replace the register only after successful parsing.
    Report the absolute register path and which facts changed. User answers are operational data:
    updating them does not require rewriting the skill.
@@ -58,5 +64,16 @@ store its location in the register. Never retain passwords, tokens, private keys
 
 For a generated PRA, produce one Markdown companion with document status and scope, a table
 mapping template sections to fact IDs and sources, conflicts/open points with owners, and the
-generation checks including environment and unavailable visual verification. Keep unknowns visible
-in the DOCX too. Separate agreed RTO/RPO, estimated procedure durations and measured test results.
+generation checks including environment and unavailable visual verification. Keep collection
+questions, unknown metadata and detailed provenance here and in the register. In the client-facing
+DOCX, express material uncertainty as a factual limitation rather than a placeholder or a request
+to the reader. Do not turn missing evidence into a negative fact or omit a real limitation.
+Separate agreed RTO/RPO, declared capabilities, estimated procedure durations, measured test
+results and approval status.
+
+For example, a fictional plan with a 6 h recovery objective, a declared procedure, no supplied
+exercise report and no approval can state, translated into French for the client: “The recovery
+objective is 6 h. No exercise result has been supplied to substantiate the described procedure;
+the effective recovery time remains unestablished. This document is an unapproved draft.” The
+companion records the missing report, provenance and responsible role without presenting the
+objective as achieved performance.
