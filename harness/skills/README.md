@@ -32,6 +32,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `pr-feedback`                   | Collect evidence-backed review feedback and reviewer-authored fixes from merged pull requests.       |
 | `pr-fix`                        | Repair an open pull request after an independent merge review.                                       |
 | `pr-verdict`                    | Deliver a PR verdict on an open pull request, yours or another author's.                             |
+| `prepare-next`                  | Select and prepare the next available project ticket before development.                             |
 | `proof-integrity-review`        | Review changes to verification mechanisms.                                                           |
 | `requirements-clarification`    | Clarify requirements before implementation.                                                          |
 | `tdd`                           | Develop owned behavior with test-driven development.                                                 |

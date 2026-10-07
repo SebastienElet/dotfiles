@@ -24,6 +24,11 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: prepare-next
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: herdr-issue-worktree
     installations:
       - { agent: claude, scope: user }

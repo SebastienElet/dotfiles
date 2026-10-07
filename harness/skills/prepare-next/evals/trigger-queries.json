@@ -1,0 +1,51 @@
+{
+  "skill": "prepare-next",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$prepare-next invoice-project",
+      "should_activate": true,
+      "reason": "Explicit request to select and prepare the project's next available ticket."
+    },
+    {
+      "query": "/prepare-next invoice-project ENG-482 ENG-483",
+      "should_activate": true,
+      "reason": "Explicit invocation with a bounded candidate list."
+    },
+    {
+      "query": "Choisis le ticket disponible le plus urgent de ce projet et pose-moi les questions nécessaires avant de coder.",
+      "should_activate": true,
+      "reason": "Next-work selection includes preparation and an upstream decision interview."
+    },
+    {
+      "query": "Prepare ENG-482 for autonomous development, settling the important functional and technical choices first.",
+      "should_activate": true,
+      "reason": "An explicit ticket bounds preparation without authorizing implementation."
+    },
+    {
+      "query": "Liste les tickets bloqués du projet et leurs dépendances.",
+      "should_activate": false,
+      "reason": "A backlog report does not request next-ticket preparation."
+    },
+    {
+      "query": "Start implementing ENG-482 using its established requirements.",
+      "should_activate": false,
+      "reason": "The implementation start workflow owns an already specified ticket."
+    },
+    {
+      "query": "Quel est le statut de ENG-482 ?",
+      "should_activate": false,
+      "reason": "Status lookup does not select or prepare development work."
+    },
+    {
+      "query": "$grill-me Challenge this product idea before we create tickets.",
+      "should_activate": false,
+      "reason": "An explicitly requested idea interview belongs to grill-me."
+    },
+    {
+      "query": "Use Herdr to launch Codex on the prepared ENG-482 ticket.",
+      "should_activate": false,
+      "reason": "Native issue-worktree launch is separate from preparation."
+    }
+  ]
+}

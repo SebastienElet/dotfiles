@@ -2,7 +2,7 @@
 name: grilling
 description: >
   Run a design interview by dependent decisions. Use only on explicit `$grilling` or `/grilling`
-  invocation, or an authorized interview from `grill-me`, `wayfinder` or
+  invocation, or an authorized interview from `grill-me`, `wayfinder`, `prepare-next` or
   `improve-codebase-architecture`. Never select it for ordinary implementation clarification or
   an unrelated workflow.
 license: MIT
@@ -25,8 +25,9 @@ The upstream license is preserved in [LICENSE](LICENSE).
 ## Usage
 
 Invoke `$grilling <decision>` or `/grilling <decision>`, or use it when a user-invoked `grill-me` or
-`wayfinder` delegates an interview. A user-invoked `improve-codebase-architecture` may also compose
-it after the user selects a candidate. These compositions permit interviewing and source research only;
+`wayfinder` delegates an interview. A user-requested `prepare-next` may compose it for material
+decisions on its selected ticket before development. A user-invoked `improve-codebase-architecture`
+may also compose it after the user selects a candidate. These compositions permit interviewing and source research only;
 it does not authorize implementation, persistent documentation or issue publication. The caller
 restriction is instruction-level; model invocation remains available for the authorized composition.
 
