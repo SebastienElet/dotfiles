@@ -4,21 +4,30 @@ These dotfiles support macOS only. Linux, containers, and GitHub Codespaces are 
 
 ## Install
 
-```bash
-curl -fsSL \
-  https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash
-```
-
-If Git is unavailable, the installer exits without starting the Command Line
-Tools installation. Run `xcode-select --install`, complete the macOS system
-dialog, then rerun the command above after the installation finishes.
-
-## Manual install
+The recommended path is to clone the repository, bootstrap Moon, and install
+the minimal profile with Moon. Apple's Command Line Tools and working Git are
+required. If `xcode-select --print-path` or `git --version` fails, run
+`xcode-select --install`, complete the macOS system dialog, and wait for the
+installation to finish before continuing.
 
 ```bash
 cd && \
   git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles && \
   cd .dotfiles && \
+  ./tooling/install-moon && \
+  "$HOME/.moon/bin/moon" exec --quiet install
+```
+
+Cloning fails if `~/.dotfiles` already exists and is not empty. For an existing
+checkout, use the manual install below.
+
+## Manual install
+
+From an existing checkout, bootstrap Moon if needed, then install the minimal
+profile:
+
+```bash
+cd ~/.dotfiles && \
   ./tooling/install-moon && \
   "$HOME/.moon/bin/moon" exec --quiet install
 ```

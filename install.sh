@@ -11,8 +11,8 @@ then
   echo "Apple Command Line Tools are required." >&2
   echo "Install them and complete the system dialog:" >&2
   echo "xcode-select --install" >&2
-  echo "After installation finishes, rerun:" >&2
-  echo "curl -fsSL https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash" >&2
+  echo "After installation finishes, follow the clone-first installation instructions:" >&2
+  echo "https://github.com/SebastienElet/dotfiles#install" >&2
   exit 1
 fi
 
@@ -22,8 +22,8 @@ then
   echo "Git is required but unavailable." >&2
   echo "Install Apple's Command Line Tools and complete the system dialog:" >&2
   echo "xcode-select --install" >&2
-  echo "After installation finishes, rerun:" >&2
-  echo "curl -fsSL https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash" >&2
+  echo "After installation finishes, follow the clone-first installation instructions:" >&2
+  echo "https://github.com/SebastienElet/dotfiles#install" >&2
   exit 1
 fi
 
