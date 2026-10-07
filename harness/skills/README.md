@@ -33,6 +33,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `proof-integrity-review`        | Review changes to verification mechanisms.                                                           |
 | `requirements-clarification`    | Clarify requirements before implementation.                                                          |
 | `tdd`                           | Develop owned behavior with test-driven development.                                                 |
+| `visual-explanation`            | Explain relationships, diagnostics and changes visually.                                             |
 
 ## Product
 

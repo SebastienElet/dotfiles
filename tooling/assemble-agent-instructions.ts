@@ -34,7 +34,8 @@ function assembleInstructions(source: string, destination: string): void {
       "",
     ) +
     readFileSync(join(source, "SOUL.md"), "utf8") +
-    readFileSync(join(source, "USER.md"), "utf8");
+    readFileSync(join(source, "USER.md"), "utf8") +
+    readFileSync(join(source, "visual-presentation.md"), "utf8");
   if (isCurrent(destination, expected)) {
     return;
   }

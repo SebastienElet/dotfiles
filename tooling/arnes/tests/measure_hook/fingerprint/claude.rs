@@ -1,5 +1,26 @@
 use super::super::support::*;
 #[test]
+fn claude_fingerprint_changes_when_the_linked_visual_preference_changes()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let harness = Harness::new()?;
+    let source = harness.repository.join("visual-presentation.md");
+    fs::create_dir_all(harness.home.join(".claude"))?;
+    fs::write(&source, "Prefer compact CLI diagrams.")?;
+    symlink(&source, harness.home.join(".claude/visual-presentation.md"))?;
+    let first = capture_run(&harness, "claude-code", "session_id", "one")?;
+    fs::write(&source, "Prefer local HTML explanations.")?;
+    let second = capture_run(&harness, "claude-code", "session_id", "two")?;
+    assert_ne!(
+        first
+            .get("harness_fingerprint")
+            .ok_or("missing harness fingerprint")?,
+        second
+            .get("harness_fingerprint")
+            .ok_or("missing harness fingerprint")?
+    );
+    Ok(())
+}
+#[test]
 fn claude_fingerprint_hashes_only_enabled_registered_plugins()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let harness = Harness::new()?;

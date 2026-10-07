@@ -67,6 +67,7 @@ const fn home_roots(agent: HookAgent) -> &'static [&'static str] {
             ".claude/CLAUDE.md",
             ".claude/SOUL.md",
             ".claude/USER.md",
+            ".claude/visual-presentation.md",
             ".claude/hooks",
             ".claude/rules",
             ".claude/skills",

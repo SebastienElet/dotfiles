@@ -2,6 +2,7 @@
 
 @SOUL.md
 @USER.md
+@visual-presentation.md
 
 ## Critical Analysis (ALWAYS)
 

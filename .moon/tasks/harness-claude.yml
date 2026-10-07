@@ -33,6 +33,7 @@ tasks:
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/AGENTS.md" "$HOME/.claude/CLAUDE.md"
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/SOUL.md" "$HOME/.claude/SOUL.md"
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/USER.md" "$HOME/.claude/USER.md"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/visual-presentation.md" "$HOME/.claude/visual-presentation.md"
     deps:
       - repository:dependencies
     toolchains: bun

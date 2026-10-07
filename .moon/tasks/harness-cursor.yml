@@ -18,6 +18,7 @@ tasks:
     script: |-
       set -e
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/memory-governance-cursor.mdc" "$HOME/.cursor/rules/memory-governance-cursor.mdc"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/visual-presentation.md" "$HOME/.cursor/rules/visual-presentation.mdc"
     deps:
       - repository:dependencies
     toolchains: bun

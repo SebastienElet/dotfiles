@@ -1,0 +1,41 @@
+{
+  "skill": "visual-explanation",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$visual-explanation Explain the harness deployment flow.",
+      "should_activate": true,
+      "reason": "Explicit Codex invocation."
+    },
+    {
+      "query": "/visual-explanation Compare the previous and proposed deployment.",
+      "should_activate": true,
+      "reason": "Explicit Claude or Cursor invocation."
+    },
+    {
+      "query": "Help me understand the request path, including validation failures and retries, with a diagram.",
+      "should_activate": true,
+      "reason": "An explanatory flow benefits from visual relationships."
+    },
+    {
+      "query": "This explanation is too dense. Make a local interactive HTML view of the alternatives.",
+      "should_activate": true,
+      "reason": "Dense explanation explicitly requests an artifact."
+    },
+    {
+      "query": "What command lists the current Git branch?",
+      "should_activate": false,
+      "reason": "A short command needs no visual."
+    },
+    {
+      "query": "Review this one-line version bump for mistakes.",
+      "should_activate": false,
+      "reason": "A routine review does not imply visual generation."
+    },
+    {
+      "query": "Build and publish a portfolio website.",
+      "should_activate": false,
+      "reason": "Website creation belongs to its own workflow."
+    }
+  ]
+}

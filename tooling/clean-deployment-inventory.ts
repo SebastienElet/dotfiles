@@ -63,6 +63,8 @@ const links = [
   ["harness/AGENTS.md", ".claude/CLAUDE.md"],
   ["harness/SOUL.md", ".claude/SOUL.md"],
   ["harness/USER.md", ".claude/USER.md"],
+  ["harness/visual-presentation.md", ".claude/visual-presentation.md"],
+  ["harness/visual-presentation.md", ".cursor/rules/visual-presentation.mdc"],
   [
     "harness/rules/agent-instructions.md",
     ".claude/rules/agent-instructions.md",

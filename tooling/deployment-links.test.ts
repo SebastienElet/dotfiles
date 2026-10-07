@@ -164,6 +164,7 @@ function expectedCodexInstructions(): string {
       "",
     ) +
     readFileSync(join(project, "harness", "SOUL.md"), "utf8") +
-    readFileSync(join(project, "harness", "USER.md"), "utf8")
+    readFileSync(join(project, "harness", "USER.md"), "utf8") +
+    readFileSync(join(project, "harness", "visual-presentation.md"), "utf8")
   );
 }
