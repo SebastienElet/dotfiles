@@ -146,8 +146,9 @@ function expectActionableGitFailure(result: InstallResult): void {
     "xcode-select --install",
   );
   expect(`${result.stdout}${result.stderr}`).toContain(
-    "curl -fsSL https://raw.githubusercontent.com/SebastienElet/dotfiles/main/install.sh | bash",
+    "https://github.com/SebastienElet/dotfiles#install",
   );
+  expect(`${result.stdout}${result.stderr}`).not.toContain("curl ");
 }
 
 test.each([
