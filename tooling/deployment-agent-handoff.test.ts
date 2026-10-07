@@ -10,6 +10,7 @@ import {
 import {
   cleanupMoonDeploymentFixtures,
   createMoonDeploymentFixture,
+  foreignGitHubEnvironment,
   runMoon,
 } from "./deployment-moon-test-support.ts";
 import {
@@ -30,9 +31,15 @@ afterEach(() => {
 const deploymentTimeoutMilliseconds = 120_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
 
-test("installs an executable handoff runtime through Moon", () => {
+test("installs an executable handoff runtime through Moon with foreign CI references", () => {
   const fixture = createMoonDeploymentFixture("agent-handoff");
-  const result = runMoon(fixture, "agent-handoff:install");
+  const result = runMoon(fixture, "agent-handoff:install", {
+    environment: {
+      ...foreignGitHubEnvironment,
+      MOON_BASE: "foreign-base",
+      MOON_HEAD: "foreign-head",
+    },
+  });
   const destination = join(fixture.home, ".local/bin/agent-handoff");
 
   expectSuccess(result);
