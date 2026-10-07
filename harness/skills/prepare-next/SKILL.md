@@ -41,7 +41,8 @@ launch agents, change tracker fields or apply a readiness label.
    blocking relations, hierarchy, priority, deadlines and existing work links as supported by the
    tracker. Exhaust the relevant pages before claiming a project-wide selection. Retain open,
    unblocked, available tickets consistent with the project's assignment and start policy. Exclude
-   completed, canceled or already active work and parents with open executable children. For
+   completed, canceled or already active work and parents with any open sub-issue, including blocked
+   children. For
    Linear/Bitbucket, compose `linear-workflow` for shared policy and its read-only transports; only
    issues assigned to the current user are eligible. Use structured fields for eligibility. A missing
    field is not evidence that a blocker or owner is absent. Dependencies that are themselves eligible
