@@ -1,6 +1,6 @@
 {
   "skill": "proof-integrity-review",
-  "version": "1.0",
+  "version": "1.1",
   "queries": [
     {
       "query": "An authorized pr-verdict review found that the PR changes CI test selection. Run its conditional proof-integrity audit on the anchored base and head.",
@@ -56,6 +56,26 @@
       "query": "Audit whether a domain specification grants the right persona authority",
       "should_activate": false,
       "reason": "Domain authority belongs to design-claim-audit"
+    },
+    {
+      "query": "Add a Moon condition to skip reinstalling an already present CLI. Test selection, verification commands and acceptance policy remain unchanged.",
+      "should_activate": false,
+      "reason": "Operational installation readiness alone does not change verification"
+    },
+    {
+      "query": "Audit the changed CI test-discovery command using its observed fault rejection and restored run. The receipt CLI is not installed and no structured receipt was requested.",
+      "should_activate": true,
+      "reason": "The default evidence audit does not depend on the optional receipt CLI"
+    },
+    {
+      "query": "Audit the changed verification gate and provide a structured proof receipt explicitly required by the user.",
+      "should_activate": true,
+      "reason": "Explicit structured delivery retains the optional CLI contract"
+    },
+    {
+      "query": "Qualify this committed regression test against the supplied buggy revision with AssertLedger; no verification mechanism is being changed.",
+      "should_activate": false,
+      "reason": "Regression qualification belongs to assertledger, not an audit of changed verification mechanisms"
     }
   ]
 }

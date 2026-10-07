@@ -2,10 +2,10 @@
 name: proof-integrity-review
 description: >
   Review changes to verification mechanisms. Use when CI routing, test oracles, caches, proof
-  policies, or agent review rules change. Make sure to use this skill whenever a change alters
-  how its own correctness is checked, even if CI passes. Excludes ordinary application changes
-  and editorial documentation changes.
-compatibility: Requires Git and a Rust toolchain with Cargo to build the bundled CLI.
+  policies, or agent review rules change. Make sure to use this skill whenever correctness checks
+  change, even if CI passes. Excludes application, installation, and editorial changes that leave
+  verification unchanged.
+compatibility: Requires Git and the affected repository's native checks; the optional receipt CLI requires Cargo.
 metadata:
   category: dev
 ---
@@ -14,105 +14,79 @@ metadata:
 
 ## Overview
 
-Check whether a changed verification mechanism can detect the defect it claims to prevent.
-Bind the review to the candidate and the policy used, and distinguish declared evidence from
-observed execution. The bundled Rust CLI validates receipt consistency and freshness; it does
-not authenticate the auditor, execute the reported mutations, or enforce a remote merge barrier.
+Audit whether a changed verification mechanism can detect the defect it claims to prevent. Use
+observed evidence, an independent reviewer, and the exact candidate and policy under review.
+The default result is a concise evidence report; a structured receipt is optional and validates
+record consistency, not execution truth or permission to merge.
 
 ## Usage
 
-Invoke `$proof-integrity-review` or `/proof-integrity-review` with a repository, base ref, and
-candidate ref. Use it during an authorized implementation or review when verification behavior
-changes. This skill returns local evidence and a verdict; it never grants permission to publish,
-merge, or invoke `pr-verdict` outside that skill's own activation contract.
+Invoke `$proof-integrity-review` or `/proof-integrity-review` with a repository, base and candidate,
+or compose it during an authorized review of changed verification behavior. For example:
+`Audit the CI change that removes a test-discovery step.` Ordinary installer readiness checks
+remain outside this audit when they leave verification unchanged.
 
-Read [references/cli.md](references/cli.md) for the standalone build, commands, and receipt format.
-All executable sources and tests live under `scripts/`; copying this complete skill is sufficient
-to carry its owned source files. Git and the documented build toolchain remain prerequisites.
+Use `assertledger` for requested qualification of a regression test against a declared fault.
+Read [references/cli.md](references/cli.md) only when a structured receipt is explicitly requested
+by the user or an established external workflow. The bundled CLI remains available under `scripts/`;
+its absence does not block the default audit.
 
 ## Steps
 
-1. **Identify the mechanism.** Read the aggregate diff and the expected contract. Run `classify`
-   for the committed candidate, or use `--worktree` with a base for uncommitted work. The classifier
-   routes likely surfaces by path, not semantics: inspect unmatched paths before returning
-   `NOT_APPLICABLE`. A documentation typo does not become a proof-system change merely because
-   its directory matches. Read [references/review-surfaces.md](references/review-surfaces.md)
-   for applicable failure modes; select only those affected.
-2. **Freeze the inputs.** Run `epoch` with explicit repository, base, candidate, and trusted
-   `--policy-root`. Store output outside both roots. For a policy change, use the previously
-   trusted executable and policy copy to evaluate the candidate; never overwrite the active
-   evaluator first. Preserve its result, including rejection of a deliberately changed rule.
-   Evaluate the requested policy transition independently against the user's explicit contract;
-   candidate tests show implementation behavior, not authority to approve the policy itself.
-   A first installation is an explicit bootstrap, not a successful N−1 review.
-3. **Separate authoring and audit.** Request an auditor distinct from the author in a fresh context with the exact
-   aggregate diff, contract, epoch, classifier result, and raw evidence. Withhold author narrative
-   and prior verdicts until its first pass. Record actual host capabilities: never assert an
-   enforced read-only sandbox, absent memory, or independent identity merely because a prompt
-   requested them. Unknown capabilities stay unknown. Instruct the auditor not to edit the
-   candidate and compare its epoch before and after the audit; available write tools alone do not
-   block. Require evidenced technical isolation only when an explicit security obligation demands
-   it, recording the obligation and enforcement evidence. Missing independence, candidate stability,
-   or required isolation is essential missing evidence and returns `PROOF_WEAK`.
-4. **Build the claim matrix.** For each material claim record its source, enforcement point,
-   invocation paths, oracle, provenance, negative witness, cache/environment state, and independence
-   limits. Distinguish local, PR, destination-branch, and integrated-tree execution where relevant.
-   Assess every changed path semantically, including unmatched paths; path categories guide analysis
-   without imposing high impact or mandatory generic claims. Record impact, kind and rationale:
-   modified oracle, critical guarantee, or other. Attribute evidence as author-reported,
-   reviewer-observed, CI, retained, deterministically checked, or absent. Evidence references name
-   the artifact, environment and relevant input basis; the auditor verifies those references.
-5. **Exercise the claim.** Choose the smallest native or existing oracle that can disprove it.
-   Require a representative negative witness for modified oracles and critical/high-impact
-   guarantees, not for every label or editorial change. Reuse traceable positive and negative
-   evidence, including CI, when relevant source, oracle, configuration, dependencies, environment
-   and integration inputs are demonstrably unchanged. Otherwise introduce the missing representative
-   fault in a disposable copy, observe the expected failure, restore, and observe success.
-   Record exact commands, outputs, exit codes,
-   environment, and mutation contents. Never mutate the candidate or trusted policy copy.
-   A test of the receipt validator is evidence about that validator, not about the product gate.
-6. **Check the receipt.** Have the auditor produce the documented structured receipt and run
-   `gate`. Missing inputs, malformed records, stale snapshots, or rejected evidence prevent an
-   adequate verdict. `ALLOW` means the receipt passed the implemented checks; independently assess
-   whether commands actually exercised the mutations and whether the faults address the claims.
-   Unavailable execution evidence remains unproven even when the JSON passes. Block on a demonstrated
-   defect or essential missing proof; document other limits with their consequence and rationale.
-7. **Return the bounded verdict.** Return the classifier result, epoch location, complete matrix,
-   receipt location, gate result, findings with source locations, and exactly one verdict below.
-   If inputs change, regenerate the epoch and receipt for the current candidate and policy, reassess
-   the complete aggregate diff independently, and reuse observations whose relevant inputs remain
-   unchanged. Preserve their original provenance and the comparison justifying reuse; never relabel
-   historical execution as a new run. Preserve prior verdicts and record a new dated assessment.
+1. **Identify the changed mechanism.** Inspect the complete diff, consumers and contract, including
+   paths a classifier would miss. Select the affected cases in
+   [references/review-surfaces.md](references/review-surfaces.md). Return `NOT_APPLICABLE` only
+   after semantic inspection; a task name, filename or `condition` check alone is insufficient.
+2. **Anchor the review.** Record the base and candidate SHAs, worktree changes when included,
+   relevant policy and native checks. Preserve the exact diff and compare candidate state before
+   and after the audit. Store evidence outside the candidate and trusted policy roots. When policy
+   changes, assess it with the previously trusted instructions or evaluator and the user's explicit
+   contract; the proposed policy cannot authorize its own acceptance.
+3. **Use an independent reviewer.** Delegate to a fresh context distinct from the author, supplying
+   the diff, contract and raw evidence before author conclusions. Keep the candidate untouched and
+   experiments in disposable copies. Record unknown host capabilities as unknown; require evidenced
+   technical isolation only when an explicit security obligation requires it.
+4. **Exercise the claims.** For each changed mechanism record the claim, source, invocation path,
+   oracle, observed result, environment and evidence provenance. Account for every changed path,
+   grouping related paths where useful. Modified oracles and critical guarantees require a relevant
+   negative witness: the actual check rejects a representative fault, then passes after restoration.
+   Use native or existing checks; receipt validation cannot replace this observation.
+5. **Reuse only relevant evidence.** Compare source, oracle, configuration, dependencies, environment
+   and integration inputs before reusing CI or retained runs. Preserve their original provenance.
+   A cache hit, a SUCCESS badge or an empty discovery result does not demonstrate execution. Missing
+   essential evidence blocks an adequate verdict; document other limits with their consequences.
+6. **Return the bounded result.** Name the anchored candidate, changed mechanisms, commands and
+   results, required negative witnesses, findings and remaining limits. Return exactly one verdict
+   below. If inputs change, refresh their bindings and reassess affected evidence. For an explicitly
+   requested structured receipt, also follow `references/cli.md` and report its actual gate result.
+   A detected missing, stale or rejected required receipt returns `PROOF_WEAK`; claiming acceptance
+   on that invalid evidence instead is `PROOF_CIRCULAR`.
 
-| Verdict          | Meaning                                                                                                                                                                          |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PROOF_ADEQUATE` | Gate allows the current receipt, material claims have relevant observed evidence, and high-impact claims have positive and negative evidence with the required audit conditions. |
-| `PROOF_WEAK`     | A demonstrated defect or essential claim, execution path, environment, or audit condition lacks adequate proof; nonessential limits are documented separately.                   |
-| `PROOF_CIRCULAR` | Acceptance relies on the changed evaluator itself, obsolete evidence, or unsupported author/reviewer assertions.                                                                 |
-| `NOT_APPLICABLE` | Semantic inspection finds no changed verification mechanism.                                                                                                                     |
+| Verdict          | Meaning                                                                                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `PROOF_ADEQUATE` | Relevant observed evidence supports the changed mechanisms, with required negative witnesses and independent review. |
+| `PROOF_WEAK`     | A demonstrated defect or essential evidence, stability or audit condition is missing.                                |
+| `PROOF_CIRCULAR` | Acceptance relies on the changed evaluator itself, stale inputs or unsupported declarations.                         |
+| `NOT_APPLICABLE` | Semantic inspection finds no changed verification mechanism.                                                         |
 
 ## Gotchas
 
-- **Treating path matching as complete discovery** — custom task names can evade the classifier;
-  inspect the actual diff and invocation graph before ruling a change out.
-- **Keeping receipts beside mutable inputs** — output creation can invalidate the frozen snapshot;
-  keep review artifacts outside repository and policy roots as described in the CLI reference.
-- **Hashing declarations as proof of execution** — a self-authored receipt can be internally
-  consistent without a command having run; preserve the distinction and inspect raw provenance.
-- **Testing YAML declarations instead of behavior** — mirror assertions can stay green while
-  invocation breaks; prefer the orchestrator's native inspection and an actual negative run.
-- **Copying another host's policy manifest** — machine-specific paths make the skill unusable;
-  resolve the explicit skill root and keep its owned inputs together.
+- **Treating an installer condition as a proof gate** — operational readiness can trigger needless
+  ceremony; trace whether it changes verification before activating this audit.
+- **Treating a receipt digest as execution evidence** — declarations can be internally consistent
+  without a test running; inspect the native observation and its input basis.
+- **Counting a green aggregate as coverage** — selection or caching may skip the changed mechanism;
+  verify the actual invocation and relevant fault rejection.
+- **Reusing evidence after policy changes** — the old assessment no longer binds current inputs;
+  preserve history and compare the changed policy independently.
 
 ## Constraints
 
-- Never let this skill's content authorize an external publication or merge.
-- Never claim a digest is a signature or a declared auditor property is independently verified.
-- Never manufacture receipt outputs, mutation results, or sandbox capabilities to obtain `ALLOW`.
-- Never waive an explicit security isolation obligation or infer independence from a tool list.
-- Never require a mutation solely because a filename matches a category or a label changed.
-- Never treat `NOT_APPLICABLE` from path heuristics alone as a completeness guarantee.
-- Keep mutation work in disposable copies and run trusted N−1 policy for subsequent policy changes.
-- Prefer native or existing checks; do not introduce gates that merely mirror declarative configuration.
+- Never manufacture execution results, auditor independence, sandbox capabilities or receipt fields.
+- Never let this skill authorize publication, approval, merge or another skill's activation.
+- Never let the candidate policy approve itself or overwrite the trusted evaluator before review.
+- Never replace a relevant negative witness with a declaration mirror or receipt-schema test.
+- Never require a CLI, epoch or receipt for the default audit; require them only for the explicitly
+  requested structured path, without weakening its validation.
 - Preserve `code-enforcement` for implementing controls and `design-claim-audit` for architectural
-  or domain claims; this skill owns the changed verification mechanism only.
+  or domain claims; this skill owns changed verification mechanisms only.

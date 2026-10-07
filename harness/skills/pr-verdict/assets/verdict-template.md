@@ -25,9 +25,10 @@ rationale for other witnesses. A demonstrated defect or essential missing proof 
 document other limits without automatically blocking.>
 
 <When verification mechanisms changed, include the proof-integrity result on this exact base/head,
-its gate result, and the locations of its complete claim matrix, epoch and receipt with the
-relevant ledger rows or evidence gaps. Missing, stale, weak or circular proof prevents approval;
-an adequate proof result does not replace the rest of the review.>
+its anchored evidence report with the relevant ledger rows or evidence gaps. Missing, stale, weak
+or circular proof prevents approval; an adequate proof result does not replace the rest of the
+review. Include epoch, receipt and gate results only when a structured receipt was explicitly
+required; its absence alone cannot block the default audit.>
 
 <Blocking paragraph — one clause per blocker: the mechanism, then the invariant it breaks. Close
 with one sentence stating what must become true to lift them. Omit this paragraph entirely when

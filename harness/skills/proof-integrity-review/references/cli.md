@@ -1,5 +1,11 @@
 # Standalone CLI
 
+Use this optional path only when the user or an established external workflow explicitly requests
+a structured receipt. The default audit in `SKILL.md` needs no CLI, epoch or receipt. Choosing this
+path retains the full contract below: a missing, stale or rejected required receipt blocks an
+adequate result. `classify` may also assist discovery when available; it never replaces semantic
+inspection or makes the default audit depend on a binary.
+
 The skill contains its Rust package in `scripts/`. Git and a Rust toolchain supporting the
 package's edition are required. No Python, Arnes, Moon, or dotfiles checkout is required by the
 CLI itself. Moon is only this repository's build and CI integration.
