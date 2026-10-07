@@ -24,6 +24,11 @@ inputs. Required negative witnesses identify observed test-first RED or a contro
 rationale for other witnesses. A demonstrated defect or essential missing proof prevents approval;
 document other limits without automatically blocking.>
 
+<For normalization or redaction changes, map the hostile-input table and complete display-output
+inventory to the relevant ledger rows (classes 11 and 12). For an unchanged public schema, MCP or
+CLI contract claim, cite the byte comparison of the actual base/head exports or label the claim
+`unproven` with its evidence gap (class 13).>
+
 <When verification mechanisms changed, include the proof-integrity result on this exact base/head,
 its anchored evidence report with the relevant ledger rows or evidence gaps. Missing, stale, weak
 or circular proof prevents approval; an adequate proof result does not replace the rest of the
