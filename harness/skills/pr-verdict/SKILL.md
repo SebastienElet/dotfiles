@@ -85,6 +85,16 @@ says to post directly.
    green aggregate count proves no individual row by itself; map its actual tests to the behavior.
    Record required missing evidence as `absent`, and justified unnecessary witnesses as `not required`.
 
+   Ground each changed user action's entry point in the PR contract or added/moved control.
+   Ground role/stage eligibility and intentional prerequisites in an independent product,
+   authorization or PR contract, never the control's own guards; investigate unclear intent.
+   A read-only diagnosis alone does not promise an editor there. Derive valid starting states,
+   including empty unrelated data. Trace parent rendering, routing and enablement guards to the
+   usable control. API tests and tests mounting the control alone do not prove that path. Respect
+   declared prerequisites and verify reachability once they hold. A guard making that promised
+   workflow impossible is a blocker: name its location, failure sequence and a lift criterion
+   exercising the enclosing screen in that state.
+
    When the aggregate PR diff changes a verification mechanism (CI routing, test oracles, caches,
    proof policy, or agent review rules), activate `proof-integrity-review` on the same base and
    exact head. This also applies when `pr-fix` composes the review. Select by the semantic change,
@@ -235,7 +245,7 @@ says to post directly.
   questions to put to the diff. Read in phase 3.
 - [assets/verdict-template.md](assets/verdict-template.md) — the verdict skeleton with its required
   slots. Filled in phase 6.
-- [references/cases.md](references/cases.md) — three behavioral cases with their expected verdicts,
+- [references/cases.md](references/cases.md) — behavioral cases with their expected verdicts,
   forge coverage, and the record of what they have never validated.
 - [references/measurement.md](references/measurement.md) — structured local emission at the end of
   phase 5, including duplicate and storage-failure handling.

@@ -1,6 +1,6 @@
 # Verdict cases
 
-Three behavioral scenarios, followed by a separately qualified execution record. Expected verdicts
+Behavioral scenarios, followed by a separately qualified execution record. Expected verdicts
 and pass criteria describe what a case should demonstrate; they are not execution evidence.
 
 Cases A and B target Bitbucket and GitHub respectively. Only an observed forge operation can support
@@ -103,6 +103,29 @@ read-only enforcement, demand a local rerun, or mutate every label. If relevant 
 reuse requires a new applicability assessment; missing essential proof blocks. If an explicit
 security obligation requires isolation and enforcement is unknown, approval is blocked. An older
 same-head rejection remains historical; record a new assessment instead of changing its verdict.
+
+## Case E — action reachability and deliberate prerequisites
+
+A PR adds an organization declaration to an existing details screen. Its use case allows a record
+with no personal contacts, but the parent returns an empty-state message when the contact list is
+empty, before mounting the declaration control. API tests and isolated-control tests pass; an older
+parent test still expects only the empty message.
+
+Expected: _changes required_, naming the parent guard and the missing control in that valid starting
+state. Lift: the enclosing screen makes the declaration usable in that state, with relevant evidence.
+Green child/API tests and the inherited empty-state expectation do not establish the new workflow.
+
+Variation: an existing authorization contract allows editors to declare organizations, but a
+copied administrator-only guard hides the added control from editors. The PR is silent about roles.
+Expected: a blocker at the guard; its presence in the control does not declare a legitimate
+prerequisite. Ground eligibility in the independent authorization contract.
+
+Counterexample: a PR deliberately limits a new contact-editing action to an editor at the editing
+stage, with an existing contact. The action is usable from the screen when these stated prerequisites
+hold. Expected: no reachability blocker for its absence with no contact, another role or another stage.
+A read-only notice of missing data does not itself promise another editor on the details screen.
+A declared gate is not an exemption when it still prevents the promised action after its prerequisites
+hold. These scenarios specify decision criteria, not recorded executions.
 
 ## Execution record
 
