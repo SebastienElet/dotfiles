@@ -31,6 +31,15 @@ type MoonProjectFixturePaths = Readonly<{
 
 const fixtures: string[] = [];
 
+const foreignGitHubEnvironment = {
+  CI: "true",
+  GITHUB_ACTIONS: "true",
+  GITHUB_BASE_REF: "codex/moon-retire-obsidian-test",
+  GITHUB_HEAD_REF: "codex/moon-retire-global-cspell",
+  GITHUB_REF: "refs/pull/379/merge",
+  GITHUB_SHA: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+};
+
 function createMoonDeploymentFixture(
   projectId: "agent-memory" | "agent-handoff",
 ): MoonDeploymentFixture {
@@ -202,5 +211,10 @@ function spawn(
   };
 }
 
-export { cleanupMoonDeploymentFixtures, createMoonDeploymentFixture, runMoon };
+export {
+  cleanupMoonDeploymentFixtures,
+  createMoonDeploymentFixture,
+  foreignGitHubEnvironment,
+  runMoon,
+};
 export type { MoonDeploymentFixture };

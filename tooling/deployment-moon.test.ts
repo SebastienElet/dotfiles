@@ -2,27 +2,19 @@ import { afterEach, test } from "bun:test";
 import {
   cleanupMoonDeploymentFixtures,
   createMoonDeploymentFixture,
+  foreignGitHubEnvironment,
   runMoon,
 } from "./deployment-moon-test-support.ts";
 import { expectSuccess } from "./deployment-test-support.ts";
 
 afterEach(cleanupMoonDeploymentFixtures);
 
-const githubEnvironment = {
-  CI: "true",
-  GITHUB_ACTIONS: "true",
-  GITHUB_BASE_REF: "codex/moon-retire-obsidian-test",
-  GITHUB_HEAD_REF: "codex/moon-retire-global-cspell",
-  GITHUB_REF: "refs/pull/379/merge",
-  GITHUB_SHA: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-};
-
 test.each([
-  { source: "GitHub", environment: githubEnvironment },
+  { source: "GitHub", environment: foreignGitHubEnvironment },
   {
     source: "caller",
     environment: {
-      ...githubEnvironment,
+      ...foreignGitHubEnvironment,
       MOON_BASE: "foreign-base",
       MOON_HEAD: "foreign-head",
     },
