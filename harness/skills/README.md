@@ -22,6 +22,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `design-claim-audit`            | Audit architectural and domain guarantees.                                                           |
 | `diagnosing-bugs`               | Diagnose bugs and performance regressions.                                                           |
 | `harness-reflection`            | Turn repeated agent failures into evidence-backed harness improvements.                              |
+| `herdr-issue-worktree`          | Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude.             |
 | `improve-codebase-architecture` | Survey architectural friction and present improvement candidates.                                    |
 | `issue-creation`                | Draft, validate, review, and publish tracker issues across forges.                                   |
 | `linear-start`                  | Start or resume implementation of an assigned Linear issue in a Bitbucket repository.                |

@@ -1,0 +1,56 @@
+{
+  "skill": "herdr-issue-worktree",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "$herdr-issue-worktree TST-482 Codex in the disposable fixture repository",
+      "should_activate": true,
+      "reason": "Explicit invocation with an issue and a selected provider."
+    },
+    {
+      "query": "/herdr-issue-worktree TST-482 Claude in the disposable fixture repository",
+      "should_activate": true,
+      "reason": "Explicit invocation selects a native Claude launch."
+    },
+    {
+      "query": "Use Herdr to start TST-482 with Codex in the fixture repository.",
+      "should_activate": true,
+      "reason": "Explicit Herdr issue-work request requires a visible labeled worktree."
+    },
+    {
+      "query": "Resume TST-482 using Claude in Herdr; reuse its existing worktree without moving focus.",
+      "should_activate": true,
+      "reason": "Explicit resume must reuse the existing workspace and honor the provider choice."
+    },
+    {
+      "query": "Use Herdr to work on TST-482 in the fixture repository.",
+      "should_activate": true,
+      "reason": "The workflow activates but must ask whether to launch Codex or Claude."
+    },
+    {
+      "query": "Look up TST-482 and show its title.",
+      "should_activate": false,
+      "reason": "Issue consultation authorizes neither Herdr control nor checkout creation."
+    },
+    {
+      "query": "In Herdr, look up the status of TST-482 without starting work.",
+      "should_activate": false,
+      "reason": "Mentioning Herdr during read-only issue consultation is insufficient."
+    },
+    {
+      "query": "Start implementing TST-482 with Codex.",
+      "should_activate": false,
+      "reason": "Generic issue implementation does not explicitly request Herdr."
+    },
+    {
+      "query": "In Herdr, name this pane tst-482.",
+      "should_activate": false,
+      "reason": "Pane naming is ordinary Herdr control, not issue worktree provisioning."
+    },
+    {
+      "query": "Prepare a manual Claude handoff prompt for TST-482.",
+      "should_activate": false,
+      "reason": "Manual handoff belongs to claude-developer and does not authorize Herdr launch."
+    }
+  ]
+}
