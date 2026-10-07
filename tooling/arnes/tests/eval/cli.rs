@@ -1,6 +1,6 @@
 use serde_json::Value;
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 fn repository() -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
@@ -149,12 +149,14 @@ fn fake_codex(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     fs::create_dir(home.join(".codex"))?;
     fs::write(home.join(".codex/auth.json"), "synthetic auth")?;
-    let command = home.join("codex");
     let script = format!(
-        "#!/bin/sh\nif [ \"$1\" = --version ]; then printf 'synthetic-codex-1\\n'; exit 0; fi\n/bin/cat >/dev/null\nrg FEATURE_FLAG_DISABLED >/dev/null\nprintf '%s\\n' '{terminal_event}'\n"
+        "/bin/cat >/dev/null\nrg FEATURE_FLAG_DISABLED >/dev/null\nprintf '%s\\n' '{terminal_event}'\n"
     );
-    fs::write(&command, script)?;
-    fs::set_permissions(command, fs::Permissions::from_mode(0o755))?;
+    fs::write(home.join("provider"), script)?;
+    symlink(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("src/eval/live/provider-fixture"),
+        home.join("codex"),
+    )?;
     Ok(())
 }
 #[test]
@@ -282,9 +284,13 @@ fn malformed_observation_is_retained_as_invalid_instead_of_aborting_report()
         home.path(),
         r#"{"type":"turn.completed","usage":{"input_tokens":12,"cached_input_tokens":2,"output_tokens":3}}"#,
     )?;
-    let command = home.path().join("codex");
-    let script = fs :: read_to_string (& command) ? . replace ("rg FEATURE_FLAG_DISABLED >/dev/null" , "printf '%s\\n' '{\"tool\":\"rg\",\"args\":[],\"exitCode\":9007199254740992}' > \"$HARNESS_EVAL_OBSERVATIONS\"" ,) ;
-    fs::write(command, script)?;
+    let provider_script = home.path().join("provider");
+    let script = fs::read_to_string(&provider_script)?.replace(
+        "rg FEATURE_FLAG_DISABLED >/dev/null",
+        "printf '%s\\n' '{\"tool\":\"rg\",\"args\":[],\"exitCode\":9007199254740992}' > \"$HARNESS_EVAL_OBSERVATIONS\"",
+    );
+    fs::write(&provider_script, script)?;
+    let writer = fs::OpenOptions::new().write(true).open(provider_script)?;
     let path = home.path().join("invalid-observation.json");
     let output = invoke(
         home.path(),
@@ -299,6 +305,12 @@ fn malformed_observation_is_retained_as_invalid_instead_of_aborting_report()
         ],
     )?;
     assert_eq!(output.status.code(), Some(1));
+    assert!(
+        path.is_file(),
+        "Missing invalid-observation report: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    drop(writer);
     let report: Value = serde_json::from_slice(&fs::read(path)?)?;
     assert_eq!(
         *(*(*(*(*(report).get("cases").ok_or("missing fixture index cases")?)
