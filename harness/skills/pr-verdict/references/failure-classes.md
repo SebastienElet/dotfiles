@@ -139,7 +139,10 @@ boundary: when broken, they block. Classes 6, 8 and 10 are usually reservations 
 when a concrete consumer's retry path depends on the changed code, class 8 when the degraded value
 reaches a person or a legal act, and class 10 when the claim is legal, evidentiary or contractual.
 
-Findings outside these ten classes are legitimate but non-blocking by default: report at most three
+The default below does not downgrade phase-2 defects: a demonstrated guard that prevents a promised
+user action blocks, even outside these ten classes.
+
+Other findings outside these ten classes are legitimate but non-blocking by default: report at most three
 of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
 turning into a second review that competes with the verdict — rank them by whether they would change
 a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is
