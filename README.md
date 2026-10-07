@@ -52,7 +52,7 @@ It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked wor
 checkout when its workspace closes; Git refuses a checkout with modified or untracked
 files, which therefore stays in place.
 
-[Grok Bot](https://x.ai/bot) can be installed with
+[Grok Bot](https://x.ai/bot) belongs to the minimal profile. Install it independently with
 `moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon
 or Intel), using the official Homebrew `grok-bot` cask.
 

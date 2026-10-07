@@ -151,7 +151,7 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
   grokbot:
-    description: Install the optional Grok Bot desktop app
+    description: Install the Grok Bot desktop app
     deps:
       - homebrew
     checks:
