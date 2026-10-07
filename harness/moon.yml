@@ -185,7 +185,17 @@ tasks:
       - arnes:install
       - agent-handoff:install
       - agent-memory:install
+      - assertledger
     toolchains: system
+  assertledger:
+    description: Install the pinned AssertLedger CLI with the Volta-managed npm
+    script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/npm" install --global assertledger@1.4.0
+    deps:
+      - repository:node
+    toolchains: system
+    options:
+      os: macos
+      mutex: volta
   semctx:
     description: Install or update Semctx plugins for detected agent hosts
     command: bun run semctx install --host auto --skip-setup --json

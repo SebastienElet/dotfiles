@@ -14,6 +14,7 @@ This directory is the canonical source for user-scoped agent skills.
 | Skill                           | Description                                                                                          |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `agent-instructions`            | Maintain coding-agent instructions and their discovery paths.                                        |
+| `assertledger`                  | Qualify regression tests with AssertLedger.                                                          |
 | `claude-developer`              | Prepare manual implementation and correction prompts for Claude Code without invoking it.            |
 | `code-enforcement`              | Write code whose purpose is to refuse: hook, guard, validator, permission check, lint rule, CI gate. |
 | `code-review`                   | Review a local diff for standards and requirement compliance.                                        |

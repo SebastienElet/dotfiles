@@ -26,8 +26,10 @@ Ask one question at a time when an unknown answer changes behavior. Do not inven
 6. Add optional frontmatter fields only when they have a real valid value.
 7. Put executable shell with positional argument placeholders in `scripts/`, never in `SKILL.md`.
 8. Route scoped sibling references from `## Steps` when behavior differs by scope.
-9. For a user skill, add its requested agent installations to `home/.arnes.yaml` and the matching
-   `Makefile` leaf targets.
+9. For a user skill, add its requested agent installations to `home/.arnes.yaml`. The existing
+   `harness:claude-skills`, `harness:codex-skills`, and `harness:cursor-skills` Moon tasks deploy
+   those manifest entries through `tooling/install-agent-skills.ts`; do not add per-skill targets.
+   Add a CLI dependency to the owning Moon project only when the skill requires a new tool.
 10. Validate standard rules with `skills-ref` when available, then run local doctor.
 11. Validate any eval JSON, run its scenarios when required, and run `sync-index` twice.
 

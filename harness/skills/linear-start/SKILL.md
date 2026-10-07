@@ -38,8 +38,8 @@ planning without an actual request to begin implementation.
    structured fields with conclusions drawn from the description.
 
 3. **Keep shaping separate.** If the issue appears too broad or not implementation-ready, stop and
-   route it to the future `issue-shaping` skill. Do not run product analysis or `linear-issue-spec`
-   merely to start work or maintain Linear.
+   propose a separate shaping request handled by `linear-issue-spec`. Invoke it only when shaping
+   is explicitly requested; do not run product analysis merely to start work or maintain Linear.
 
 4. **Resolve the Bitbucket repository.** Inspect Git remotes and match the working repository to an
    explicit Bitbucket workspace and repository slug. Verify that identity with `bkt`; never inherit
