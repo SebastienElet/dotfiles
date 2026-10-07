@@ -189,7 +189,18 @@ tasks:
     toolchains: system
   assertledger:
     description: Install the pinned AssertLedger CLI with the Volta-managed npm
-    script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/npm" install --global assertledger@1.4.0
+    script: |-
+      set -e
+      . ./harness/skills/assertledger/version.env
+      VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/npm" install --global "assertledger@$ASSERTLEDGER_VERSION"
+    checks:
+      - check: condition
+        script: |-
+          set -e
+          . ./harness/skills/assertledger/version.env
+          test -x "$HOME/.volta/bin/assertledger" &&
+            installed_assertledger_version=$(VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/assertledger" --version) &&
+            test "$installed_assertledger_version" = "assertledger $ASSERTLEDGER_VERSION"
     deps:
       - repository:node
     toolchains: system
