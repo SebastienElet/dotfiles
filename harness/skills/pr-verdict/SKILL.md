@@ -85,13 +85,15 @@ says to post directly.
    green aggregate count proves no individual row by itself; map its actual tests to the behavior.
    Record required missing evidence as `absent`, and justified unnecessary witnesses as `not required`.
 
-   Ground each changed user action's entry point and role/stage in the PR contract or added/moved
-   control; a read-only diagnosis alone does not promise an editor there. Derive valid starting
-   states for that entry point, including empty unrelated data. Trace through parent rendering,
-   routing and enablement guards to the usable control. API tests and tests mounting the control
-   alone do not prove that path. Respect declared prerequisites and verify reachability once they
-   hold. A guard making that promised workflow impossible is a blocker: name its location, failure
-   sequence and a lift criterion exercising the enclosing screen in that state.
+   Ground each changed user action's entry point in the PR contract or added/moved control.
+   Ground role/stage eligibility and intentional prerequisites in an independent product,
+   authorization or PR contract, never the control's own guards; investigate unclear intent.
+   A read-only diagnosis alone does not promise an editor there. Derive valid starting states,
+   including empty unrelated data. Trace parent rendering, routing and enablement guards to the
+   usable control. API tests and tests mounting the control alone do not prove that path. Respect
+   declared prerequisites and verify reachability once they hold. A guard making that promised
+   workflow impossible is a blocker: name its location, failure sequence and a lift criterion
+   exercising the enclosing screen in that state.
 
    When the aggregate PR diff changes a verification mechanism (CI routing, test oracles, caches,
    proof policy, or agent review rules), activate `proof-integrity-review` on the same base and

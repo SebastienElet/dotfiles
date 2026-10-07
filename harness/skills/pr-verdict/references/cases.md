@@ -115,6 +115,11 @@ Expected: _changes required_, naming the parent guard and the missing control in
 state. Lift: the enclosing screen makes the declaration usable in that state, with relevant evidence.
 Green child/API tests and the inherited empty-state expectation do not establish the new workflow.
 
+Variation: an existing authorization contract allows editors to declare organizations, but a
+copied administrator-only guard hides the added control from editors. The PR is silent about roles.
+Expected: a blocker at the guard; its presence in the control does not declare a legitimate
+prerequisite. Ground eligibility in the independent authorization contract.
+
 Counterexample: a PR deliberately limits a new contact-editing action to an editor at the editing
 stage, with an existing contact. The action is usable from the screen when these stated prerequisites
 hold. Expected: no reachability blocker for its absence with no contact, another role or another stage.
