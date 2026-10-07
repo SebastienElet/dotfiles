@@ -118,9 +118,10 @@ invokes it.
    once, and scope the second delegation to the new delta and its barrier tier instead of repeating
    the whole sweep. Exception: if the aggregate PR diff changes a verification mechanism, require
    `pr-verdict` to renew its `proof-integrity-review` audit over the complete aggregate diff at the
-   new head, even when the latest correction is editorial. A receipt from the previous head cannot
-   satisfy that requirement; regenerate current bindings while reusing traceable observations,
-   including CI, when their relevant inputs are unchanged. Keep ordinary review work scoped to the
+   new head, even when the latest correction is editorial. An audit of the previous head cannot
+   satisfy that requirement; refresh the report's candidate and policy bindings while reusing
+   traceable observations, including CI, when their relevant inputs are unchanged. Regenerate
+   receipts only when the structured path was explicitly required. Keep ordinary review work scoped to the
    correction where appropriate. Negative witnesses are required for modified oracles and critical
    guarantees; other missing evidence blocks only when essential to the decision.
    Record the verdict, SHA, policy and evidence basis as a new dated journal entry. Preserve older

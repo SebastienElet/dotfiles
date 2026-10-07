@@ -66,6 +66,23 @@ moon action-graph repository:install
 Install the Node development toolchain independently with `moon exec repository:pnpm`;
 its dependencies install Homebrew, Volta, and the exact Node version from `package.json`.
 
+## AssertLedger
+
+[AssertLedger](https://github.com/hoklims/assertledger) qualifies regression tests against a
+declared fault and neutral control. The minimal profile installs its pinned CLI through
+`harness:assertledger`, using npm with the Volta-managed Node runtime. Install it independently
+with `moon exec harness:assertledger` on macOS.
+
+The locally maintained [skill](harness/skills/assertledger/SKILL.md) is deployed to Claude Code
+and Codex with the minimal profile, and to Cursor with the optional profile. Start with
+`assertledger --version` and `assertledger doctor /path/to/repository --json`.
+The Git `check` workflow accepts committed dependency-free JavaScript `node:test` regressions;
+it does not qualify this repository's TypeScript/Bun or Rust suites. Repository symlinks can
+also cause the static diagnostic to refuse a checkout. Execution requires an explicitly chosen
+backend; installation does not initialize projects or register an MCP server.
+
+See the [skills audit](docs/skills-audit-412.md) for the obsolete instructions corrected in #412.
+
 ## Checks
 
 With Moon available, run the shared checks and behavior tests:

@@ -19,6 +19,11 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: assertledger
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: herdr-issue-worktree
     installations:
       - { agent: claude, scope: user }

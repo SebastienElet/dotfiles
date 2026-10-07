@@ -99,9 +99,10 @@ says to post directly.
    proof policy, or agent review rules), activate `proof-integrity-review` on the same base and
    exact head. This also applies when `pr-fix` composes the review. Select by the semantic change,
    not filenames alone; ordinary application changes and editorial-only changes do not require
-   this audit. Complete it before phase 5, retaining its matrix and artifacts with the review's
-   evidence. Reuse relevant observed commands on the same inputs instead of running a duplicate
-   barrier; preserve the proof auditor's fresh context and independent first pass.
+   this audit. Complete it before phase 5, retaining its anchored evidence report with the review's
+   evidence. Structured receipts are optional unless explicitly requested by the user or an
+   established external workflow. Reuse relevant observed commands on the same inputs instead of
+   running a duplicate barrier; preserve the proof auditor's fresh context and independent first pass.
 
 3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
@@ -149,11 +150,13 @@ says to post directly.
    lose or corrupt data blocks even when the author disagrees. A style, naming or structure
    preference never blocks: label it non-blocking, or drop it.
 
-   For an applicable proof-integrity audit, `PROOF_WEAK`, `PROOF_CIRCULAR`, a rejected gate, or
-   an absent or stale audit requires _changes required_; name the missing evidence or failing
+   For an applicable proof-integrity audit, `PROOF_WEAK`, `PROOF_CIRCULAR`, or an absent or stale
+   audit requires _changes required_; name the missing evidence or failing
    mechanism and its lift criterion. `PROOF_ADEQUATE` satisfies this additional requirement only,
-   not the rest of the PR review. Include the proof result and artifact locations in the existing
-   evidence gaps and behavior ledger, retaining the full claim matrix as a linked review artifact.
+   not the rest of the PR review. Include the proof result and observed evidence in the existing
+   evidence gaps and behavior ledger, retaining its report as a linked review artifact. If a
+   structured receipt was explicitly required, its missing, stale or rejected gate also blocks;
+   absence of an optional receipt alone does not.
    Do not publish a separate proof verdict or interpret a path-only `NOT_APPLICABLE` as an exemption.
 
    Complete the structured review summary from the phase-1 anchor, findings, changed-behavior
