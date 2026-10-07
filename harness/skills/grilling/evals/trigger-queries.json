@@ -1,6 +1,6 @@
 {
   "skill": "grilling",
-  "version": "1.2",
+  "version": "1.3",
   "queries": [
     {
       "query": "$grilling Stress-test this retention decision",
@@ -26,6 +26,16 @@
       "query": "The user invoked improve-codebase-architecture, selected the invoice import candidate, and the workflow delegates its design interview to grilling",
       "should_activate": true,
       "reason": "Authorized composition after the user selects a survey candidate."
+    },
+    {
+      "query": "The user requested prepare-next for the invoice project; it selected ENG-482 and delegates its material export-permission decision interview to grilling",
+      "should_activate": true,
+      "reason": "Authorized composition for material decisions on the selected ticket before development."
+    },
+    {
+      "query": "prepare-next wants to run a design interview while selecting among tickets, before it has selected a ticket",
+      "should_activate": false,
+      "reason": "The authorized preparation interview concerns material decisions on a selected ticket."
     },
     {
       "query": "improve-codebase-architecture wants to interview the user before a survey candidate has been selected",
