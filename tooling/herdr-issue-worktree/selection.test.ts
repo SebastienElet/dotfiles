@@ -1,0 +1,169 @@
+import { afterEach, expect, test } from "bun:test";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
+import type { IssueClick } from "./click.ts";
+import { join } from "node:path";
+import { parseIssueClick } from "./click.ts";
+import { selectIssueWork } from "./selection.ts";
+import { tmpdir } from "node:os";
+
+const temporaryRoots: string[] = [];
+
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+
+function repository(remote = "git@github.com:fixture/project.git"): string {
+  const root = mkdtempSync(join(tmpdir(), "herdr-issue-selection-"));
+  temporaryRoots.push(root);
+  for (const gitArguments of [
+    ["init", "-q", "-b", "main"],
+    [
+      "-c",
+      "user.email=test@example.com",
+      "-c",
+      "user.name=Test",
+      "commit",
+      "-q",
+      "--allow-empty",
+      "-m",
+      "initial",
+    ],
+    ["remote", "add", "origin", remote],
+  ]) {
+    const result = Bun.spawnSync(["git", "-C", root, ...gitArguments], {
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+    expect(result.exitCode).toBe(0);
+  }
+  return realpathSync(root);
+}
+
+function click(
+  directory: string,
+  url = "https://github.com/fixture/project/issues/17",
+): IssueClick {
+  return parseIssueClick(
+    JSON.stringify({
+      clicked_url: url,
+      invocation_source: "link_click",
+      workspace_cwd: directory,
+    }),
+  );
+}
+
+function answers(
+  ...values: readonly (string | null)[]
+): (question: string) => Promise<string | null> {
+  const remaining = [...values];
+  return (_question: string): Promise<string | null> =>
+    Promise.resolve(remaining.shift() ?? null);
+}
+
+test("cancelling the agent choice does not require or inspect a repository", async () => {
+  const issueClick = parseIssueClick(
+    JSON.stringify({
+      clicked_url: "https://github.com/fixture/project/issues/17",
+      invocation_source: "link_click",
+      workspace_cwd: "/does/not/exist",
+    }),
+  );
+
+  expect(await selectIssueWork(issueClick, answers(null))).toBeNull();
+});
+
+test("confirms a matching current repository before selecting Codex", async () => {
+  const root = repository();
+  const selection = await selectIssueWork(click(root), answers("2", ""));
+
+  expect(selection).toMatchObject({
+    agent: "codex",
+    repository: { branch: "main", commonDirectory: join(root, ".git"), root },
+  });
+});
+
+test("asks for a repository when the current remote belongs to another project", async () => {
+  const root = repository("git@github.com:fixture/another-project.git");
+
+  expect(await selectIssueWork(click(root), answers("1", ""))).toBeNull();
+});
+
+test("refuses an explicitly chosen repository that does not match the issue URL", () => {
+  const root = repository("git@github.com:fixture/another-project.git");
+
+  expect(selectIssueWork(click(root), answers("1", root))).rejects.toThrow(
+    "Selected repository does not match the clicked issue",
+  );
+});
+
+test("requires an explicit repository for Linear before selecting Claude", async () => {
+  const root = repository();
+  const linear = click(
+    root,
+    "https://linear.app/fixture/issue/TST-482/current-title",
+  );
+
+  expect(await selectIssueWork(linear, answers("1", ""))).toBeNull();
+  expect(await selectIssueWork(linear, answers("1", root))).toMatchObject({
+    agent: "claude",
+    click: { issue: { identity: "https://linear.app/fixture/issue/TST-482" } },
+    repository: { root },
+  });
+});
+
+test("cancels after agent selection without creating a checkout", async () => {
+  const root = repository();
+
+  expect(await selectIssueWork(click(root), answers("2", null))).toBeNull();
+  const worktrees = Bun.spawnSync([
+    "git",
+    "-C",
+    root,
+    "worktree",
+    "list",
+    "--porcelain",
+  ]);
+  expect(worktrees.exitCode).toBe(0);
+  expect(worktrees.stdout.toString().match(/^worktree /gmu)).toHaveLength(1);
+});
+
+test("rejects an unknown agent choice before inspecting an unavailable repository", () => {
+  expect(
+    selectIssueWork(click("/does/not/exist"), answers("other")),
+  ).rejects.toThrow("Select Claude or Codex");
+});
+
+test("allows explicit selection when the current workspace path is unavailable", async () => {
+  const root = repository();
+
+  expect(
+    await selectIssueWork(click("/does/not/exist"), answers("2", root)),
+  ).toMatchObject({
+    agent: "codex",
+    repository: { root },
+  });
+});
+
+test.each([
+  "file://git@github.com:fixture/project.git",
+  "https://user@github.com:fixture/project.git",
+])(
+  "never offers an implicit current repository for a misleading remote: %s",
+  async (remote) => {
+    const root = repository(remote);
+
+    expect(await selectIssueWork(click(root), answers("2", ""))).toBeNull();
+  },
+);
+
+test("never confirms a repository on another hosting endpoint", async () => {
+  const root = repository("https://gitlab.example.test:8443/team/project.git");
+  const issueClick = click(
+    root,
+    "https://gitlab.example.test/team/project/-/issues/17",
+  );
+
+  expect(await selectIssueWork(issueClick, answers("2", ""))).toBeNull();
+});
