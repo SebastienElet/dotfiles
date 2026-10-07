@@ -75,10 +75,11 @@ launch agents, change tracker fields or apply a readiness label.
 
 6. **Consolidate the result.** Preserve the intended outcome and propose only the ticket amendments
    needed to record settled decisions, constraints and observable acceptance criteria. For a Linear
-   product ticket requiring functional shaping, compose `linear-issue-spec` for the substantive draft;
-   `issue-creation` owns any requested issue publication or editing authority. Do not invoke `to-spec`
-   or `grill-me` implicitly; their direct invocation contracts remain separate. Keep implementation
-   architecture, files, libraries and detailed test plans out of a proposed product specification.
+   product ticket requiring functional shaping, compose `linear-issue-spec` for the substantive draft.
+   Keep amendments to existing tickets in the conversation. Tracker updates require a separately
+   authorized workflow that supports editing. Do not invoke `to-spec` or `grill-me` implicitly; their
+   direct invocation contracts remain separate. Keep implementation architecture, files, libraries
+   and detailed test plans out of a proposed product specification.
    Scale the handoff to the ticket instead of expanding every preparation into a full specification.
 
 7. **Recheck and hand off.** Read the selected ticket's eligibility and work links again before
