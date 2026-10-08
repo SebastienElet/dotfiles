@@ -1,4 +1,3 @@
-throw new Error("CI #420 intentional deployment failure");
 import {
   lstatSync,
   mkdirSync,
@@ -45,3 +44,4 @@ if (import.meta.main) {
 }
 
 export { deployLink };
+
