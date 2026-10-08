@@ -1,6 +1,6 @@
 import {
-  type Configuration,
   LifecycleError,
+  type PreparedConfiguration,
   prepareScraplingContainer,
 } from "./scrapling-container.ts";
 
@@ -17,13 +17,13 @@ async function runScraplingMcp(
   }
 }
 
-async function runMcp(configuration: Configuration): Promise<number> {
+async function runMcp(configuration: PreparedConfiguration): Promise<number> {
   const child = Bun.spawn(
     [
       "docker",
       "exec",
       "--interactive",
-      configuration.container,
+      configuration.containerId,
       "uv",
       "run",
       "scrapling",

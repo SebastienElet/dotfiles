@@ -1,3 +1,9 @@
+import {
+  dockerImages,
+  imageReferenceSchema,
+  parseImageIdentity,
+  repositoryDigest,
+} from "./docker-image.ts";
 import { z } from "zod";
 
 const successExitCode = 0;
@@ -7,17 +13,16 @@ const dockerCommandTimeoutMilliseconds = 600_000;
 const policySchema = z.enum(["allow-skip", "require-docker"]);
 const targetSchema = z.enum(["cloakbrowser", "scrapling"]);
 const actionSchema = z.enum(["install", "verify"]);
-const imageReferenceSchema = z
-  .string()
-  .min(1)
-  .regex(/^(?!-)(?!.*@)\S+$/u, "unsupported Docker image reference");
 const invocationSchema = z.tuple([
   actionSchema,
   targetSchema,
   policySchema,
-  imageReferenceSchema,
+  imageReferenceSchema.optional(),
 ]);
-const imageIdentifierSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/u);
+const localImageSchema = z.object({
+  Repository: z.string(),
+  Digest: z.string(),
+});
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 type DockerCommandResult = Readonly<{
@@ -29,11 +34,25 @@ type DockerCommandResult = Readonly<{
 type DockerInstallResult =
   | Readonly<{ result: "skipped"; target: z.infer<typeof targetSchema> }>
   | Readonly<{ result: "verified"; target: z.infer<typeof targetSchema> }>;
-type Invocation = z.infer<typeof invocationSchema>;
+type Invocation = readonly [
+  z.infer<typeof actionSchema>,
+  z.infer<typeof targetSchema>,
+  z.infer<typeof policySchema>,
+  string,
+];
 
 function runDockerArtifactInstallation(arguments_: readonly string[]): number {
   try {
-    const invocation = invocationSchema.parse(arguments_);
+    const [action, target, policy, override] =
+      invocationSchema.parse(arguments_);
+    const image = imageReferenceSchema.parse(
+      override ??
+        process.env[
+          target === "scrapling" ? "SCRAPLING_IMAGE" : "CLOAKBROWSER_IMAGE"
+        ] ??
+        dockerImages[target],
+    );
+    const invocation = [action, target, policy, image] as const;
     const result = installOrVerifyDockerArtifact(invocation);
     process.stdout.write(
       `docker-install target=${result.target} result=${result.result}${result.result === "skipped" ? " policy=allow-skip" : ""}\n`,
@@ -81,31 +100,33 @@ function installDockerArtifact(invocation: Readonly<Invocation>): void {
 }
 
 function localImageExists(image: string): boolean {
-  const command = [
-    "image",
-    "ls",
-    "--quiet",
-    "--no-trunc",
-    "--filter",
-    `reference=${image}`,
-  ];
+  const command = ["image", "ls", "--digests", "--format", "{{json .}}"];
   const result = runDocker(command);
   requireSuccessfulCommand(result, command);
-  const identifiers = result.stdout
+  const images = result.stdout
     .split("\n")
-    .map((identifier) => identifier.trim())
-    .filter((identifier) => identifier.length > 0);
-  return z.array(imageIdentifierSchema).parse(identifiers).length > 0;
+    .filter(Boolean)
+    .map((line) => localImageSchema.parse(JSON.parse(line)));
+  return images.some(
+    (local) =>
+      repositoryDigest(`${local.Repository}@${local.Digest}`) ===
+      repositoryDigest(image),
+  );
 }
 
 function verifyDockerArtifact(invocation: Readonly<Invocation>): void {
   const [_action, _target, _policy, artifact] = invocation;
-  requireSuccessfulCommand(runDocker(["image", "inspect", "--", artifact]), [
+  const command = [
     "image",
     "inspect",
+    "--format",
+    "{{json .}}",
     "--",
     artifact,
-  ]);
+  ];
+  const result = runDocker(command);
+  requireSuccessfulCommand(result, command);
+  parseImageIdentity(result.stdout, artifact);
 }
 
 function runDocker(

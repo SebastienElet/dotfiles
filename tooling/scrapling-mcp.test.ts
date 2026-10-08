@@ -6,6 +6,7 @@ import {
   result,
   run,
 } from "./scrapling-mcp-test-support.ts";
+import { dockerImages } from "./docker-image.ts";
 
 type Fixture = ReturnType<typeof createFixture>;
 type Scenario = Parameters<typeof createFixture>[0];
@@ -37,7 +38,10 @@ function createDockerSmokeFixture(docker: string): DockerSmokeFixture {
     {
       SCRAPLING_CONTAINER: container,
       SCRAPLING_DOCKER_TIMEOUT_MS: "60000",
-      SCRAPLING_IMAGE: "alpine:3.22",
+      SCRAPLING_IMAGE:
+        process.env.SCRAPLING_DOCKER_CANONICAL_SMOKE === "1"
+          ? dockerImages.scrapling
+          : "alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8",
       SCRAPLING_REAL_DOCKER_BIN: docker,
       SCRAPLING_REAL_OWNER: volumeOwner,
       SCRAPLING_REAL_OWNER_LABEL: volumeLabel,
@@ -147,6 +151,7 @@ test("reuses a compatible running container and preserves MCP output", () => {
     "info",
     "container",
     "container",
+    "image",
     "exec",
   ]);
 });
@@ -159,6 +164,7 @@ test("starts a compatible stopped container", () => {
     "info",
     "container",
     "container",
+    "image",
     "start",
     "exec",
   ]);
@@ -178,7 +184,7 @@ test("creates the established container when absent", () => {
     "scrapling-profiles:/profiles",
     "--entrypoint",
     "sleep",
-    "pyd4vinci/scrapling",
+    dockerImages.scrapling,
     "infinity",
   ]);
 });

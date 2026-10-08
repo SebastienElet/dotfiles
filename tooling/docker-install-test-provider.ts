@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { appendFileSync } from "node:fs";
+import { dockerImages } from "./docker-image.ts";
 import { z } from "zod";
 
 const environmentSchema = z.object({
@@ -10,6 +11,7 @@ const environmentSchema = z.object({
     "command-failure",
     "daemon-unavailable",
     "invalid-evidence",
+    "different-identity",
   ]),
   DOCKER_INSTALL_TEST_STATE: z.string().min(1),
   DOCKER_INSTALL_TEST_TARGET: z.enum(["cloakbrowser", "scrapling"]),
@@ -17,6 +19,14 @@ const environmentSchema = z.object({
 const environment = environmentSchema.parse(process.env);
 const cliArgumentStart = 2;
 const sha256HexadecimalLength = 64;
+const image =
+  process.env[
+    environment.DOCKER_INSTALL_TEST_TARGET === "scrapling"
+      ? "SCRAPLING_IMAGE"
+      : "CLOAKBROWSER_IMAGE"
+  ] ?? dockerImages[environment.DOCKER_INSTALL_TEST_TARGET];
+const repository = image.split("@")[0]?.replace(/:[^/:]+$/u, "");
+const [, digest] = image.split("@");
 const usageExitCode = 64;
 const command = process.argv.slice(cliArgumentStart);
 const renderedCommand = command.join(" ");
@@ -36,14 +46,14 @@ if (renderedCommand === "info") {
 }
 
 if (command[0] === "image" && command[1] === "ls") {
-  const identifier = `sha256:${"a".repeat(sha256HexadecimalLength)}`;
   if (environment.DOCKER_INSTALL_TEST_SCENARIO === "invalid-evidence") {
-    finish(0, "invalid image identifier\n");
+    finish(0, "invalid image evidence\n");
   }
-  const output =
-    environment.DOCKER_INSTALL_TEST_SCENARIO === "artifact-present"
-      ? `${identifier}\n`
-      : "";
+  const output = ["artifact-present", "different-identity"].includes(
+    environment.DOCKER_INSTALL_TEST_SCENARIO,
+  )
+    ? `${JSON.stringify({ Repository: repository, Digest: digest })}\n`
+    : "";
   finish(0, output);
 }
 
@@ -52,8 +62,23 @@ if (command.includes("--help")) {
 }
 
 if (command[0] === "image" && command[1] === "inspect") {
+  if (
+    !["artifact-present", "different-identity"].includes(
+      environment.DOCKER_INSTALL_TEST_SCENARIO,
+    )
+  ) {
+    finish(1, "", "No such image\n");
+  }
+  const actualDigest =
+    environment.DOCKER_INSTALL_TEST_SCENARIO === "different-identity"
+      ? `sha256:${"b".repeat(sha256HexadecimalLength)}`
+      : digest;
   finish(
-    environment.DOCKER_INSTALL_TEST_SCENARIO === "artifact-present" ? 0 : 1,
+    0,
+    JSON.stringify({
+      Id: `sha256:${"a".repeat(sha256HexadecimalLength)}`,
+      RepoDigests: [`${repository}@${actualDigest}`],
+    }),
   );
 }
 
