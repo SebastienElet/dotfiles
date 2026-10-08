@@ -59,3 +59,4 @@ path = "tests/integration.rs"
 [[example]]
 name = "provider"
 path = "tests/support/provider.rs"
+
