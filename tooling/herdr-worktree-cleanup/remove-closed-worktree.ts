@@ -79,6 +79,8 @@ function removeClosedWorktree(eventJson: string): RemovalOutcome {
     return skipped("checkout HEAD is detached and its commits would be lost");
   }
   const removal = runGit(worktree.repo_root, [
+    "-c",
+    "status.showUntrackedFiles=all",
     "worktree",
     "remove",
     checkoutPath,

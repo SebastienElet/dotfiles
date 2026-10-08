@@ -49,8 +49,25 @@ with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
 It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
-checkout when its workspace closes; Git refuses a checkout with modified or untracked
-files, which therefore stays in place.
+checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
+for Git's removal check, including when `status.showUntrackedFiles=no` is configured.
+Git refuses modified tracked files, non-ignored untracked files, and locked worktrees;
+the plugin also skips detached HEADs. Removal failures are reported with a nonzero exit,
+and a removed checkout's branch is retained. No removal uses `--force`.
+Ignored files do not prevent removal and are deleted with an otherwise clean checkout.
+Keep valuable ignored artifacts elsewhere or explicitly lock the worktree; any additional
+ignored-file protection requires a separate decision.
+
+Persistent deployments must use the canonical checkout at `~/.dotfiles` as their source.
+For exceptional validation from a worktree, use isolated destinations and invoke only
+fixture-safe Moon tasks after inspecting their dependencies; an isolated `HOME` alone
+does not sandbox global installers. If a user link must temporarily target the worktree,
+record its destination and intended canonical source, then run
+`git worktree lock --reason 'temporary deployment source' /absolute/worktree/path`
+before deploying. Keep the lock until the change is integrated into the canonical checkout,
+the affected links are explicitly repointed there, and their resolved targets are verified.
+Only then run `git worktree unlock /absolute/worktree/path` and allow cleanup.
+The plugin does not detect deployed links or copy, repoint, or repair them automatically.
 
 [Grok Bot](https://x.ai/bot) belongs to the minimal profile. Install it independently with
 `moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon

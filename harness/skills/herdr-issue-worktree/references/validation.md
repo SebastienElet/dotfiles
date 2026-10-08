@@ -86,4 +86,36 @@ canonical `harness/skills/herdr-issue-worktree` source. Existing user links were
 The new Arnes installation declarations are in this worktree's `home/.arnes.yaml`; the live home
 manifest still points to the primary checkout until the change is integrated and deployed there.
 Whole-collection redeployment from this worktree was avoided because existing links target that
-primary checkout. The new links consequently depend on this worktree remaining available.
+primary checkout. The new links consequently depended on this worktree remaining available at
+validation time. This observation does not establish their current destinations or a completed
+repatriation.
+
+## Deployment source lifecycle
+
+Persistent user deployments use the canonical checkout at `~/.dotfiles`. An exceptional validation
+from a worktree must plan its exit before creating links:
+
+1. Prefer disposable, isolated destinations. Inspect the Moon task and action graph, exclude global
+   installation dependencies, and run only fixture-safe deployment leaves; isolated `HOME` alone
+   does not sandbox Homebrew or application installers.
+2. If a real user destination must temporarily point into a worktree, record the affected link and
+   its intended canonical replacement source. Before deploying, run
+   `git worktree lock --reason 'temporary deployment source' /absolute/worktree/path` and verify
+   the lock with `git worktree list --porcelain`. Keep it locked while any deployed source depends
+   on that checkout.
+3. Once the validated change is integrated into the canonical checkout, verify the replacement
+   source exists there. Inspect each recorded destination; explicitly redirect only links still
+   targeting the validation worktree, then verify their resolved targets and source accessibility.
+   An unexpected destination requires inspection rather than overwrite. The deployment helper
+   refuses divergent links, so rerunning installation alone does not repatriate them.
+4. After verifying that no recorded deployment still depends on the worktree, run
+   `git worktree unlock /absolute/worktree/path`. Dispose of isolated destinations before removing
+   their source checkout. Only then allow worktree cleanup; retain the lock if repatriation fails.
+
+Herdr's cleanup plugin reports Git removal failures, preserves locked worktrees and skips detached
+HEADs; it does not discover user links or repair them. Non-ignored untracked files prevent removal
+even with `status.showUntrackedFiles=no`, but ignored files are deleted with an otherwise clean
+checkout. Valuable ignored artifacts need separate storage or an explicit lock, not an assumption
+of universal preservation. Additional ignored-file protection is a separate decision.
+
+This lifecycle is a procedure, not evidence that the historical user links above were redirected.
