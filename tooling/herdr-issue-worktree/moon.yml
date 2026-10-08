@@ -1,0 +1,26 @@
+fileGroups:
+  rust:
+    - /.github/workflows/test-herdr-issue.yml
+tasks:
+  build:
+    command: cargo build --quiet --release --locked
+    toolchains: rust
+    deps:
+      - repository:rust
+    inputs:
+      - "@group(rust)"
+    outputs:
+      - target/release/herdr-issue-state
+    options:
+      mutex: herdr-issue-cargo-target
+  test:
+    options:
+      mutex: herdr-issue-cargo-target
+  check:
+    options:
+      mutex: herdr-issue-cargo-target
+  clippy:
+    options:
+      mutex: herdr-issue-cargo-target
+tags:
+  - rust-cli

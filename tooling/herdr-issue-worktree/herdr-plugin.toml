@@ -1,0 +1,38 @@
+id = "dotfiles.issue-worktree"
+name = "Issue Worktree"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Start or resume issue work through the existing agent workflows"
+platforms = ["macos"]
+
+[[actions]]
+id = "issue"
+title = "Work on issue with Claude or Codex"
+contexts = ["workspace"]
+command = ["bun", "--config=/dev/null", "--no-env-file", "action.ts"]
+
+[[panes]]
+id = "picker"
+title = "Issue worktree"
+placement = "popup"
+width = "80%"
+height = 20
+command = ["bun", "--config=/dev/null", "--no-env-file", "picker.ts"]
+
+[[link_handlers]]
+id = "github"
+title = "Work on GitHub issue"
+pattern = '^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*/?([?#].*)?$'
+action = "issue"
+
+[[link_handlers]]
+id = "gitlab"
+title = "Work on GitLab issue"
+pattern = '^https://[^/]+/[^/]+(/[^/]+)+/-/issues/[1-9][0-9]*/?([?#].*)?$'
+action = "issue"
+
+[[link_handlers]]
+id = "linear"
+title = "Work on Linear issue"
+pattern = '^https://linear\.app/[^/]+/issue/[A-Z][A-Z0-9]*-[1-9][0-9]*(/[^/?#]+)?/?([?#].*)?$'
+action = "issue"

@@ -156,9 +156,14 @@ fn nested_git_repository_is_observed_while_both_repository_boundaries_are_protec
             .get("harness_fingerprint")
             .ok_or("missing fixture index harness_fingerprint")?
     );
+    let payload = json!({"session_id": "blocked", "prompt": "x".repeat(131_072)}).to_string();
     let _: () = for state in [inner.join("state"), harness.repository.join("state")] {
-        let output = run_at(&harness, &inner, &state, br#"{"session_id":"blocked"}"#)?;
+        let output = run_at(&harness, &inner, &state, payload.as_bytes())?;
         assert_advisory_failure(&output);
+        assert!(
+            String::from_utf8(output.stderr)?
+                .contains("state root cannot resolve inside the repository")
+        );
         assert!(!state.exists());
     };
     Ok(())

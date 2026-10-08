@@ -24,6 +24,10 @@ fileGroups:
     - tooling/agent-memory/moon.yml
     - tooling/agent-memory/build*.rs
     - tooling/agent-memory/src/**/*
+    - tooling/herdr-issue-worktree/Cargo.toml
+    - tooling/herdr-issue-worktree/Cargo.lock
+    - tooling/herdr-issue-worktree/moon.yml
+    - tooling/herdr-issue-worktree/src/**/*
     - .cargo/**/*
     - rust-toolchain.toml
     - .moon/toolchains.yml
@@ -51,6 +55,7 @@ tasks:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     deps:
       - agent-memory:build
+      - herdr-issue:build
       - fish-setup
       - rust
     inputs:

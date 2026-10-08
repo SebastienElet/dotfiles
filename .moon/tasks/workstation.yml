@@ -139,9 +139,11 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install herdr
   herdr-plugin:
-    description: Link the Herdr worktree cleanup plugin
+    description: Link the Herdr worktree cleanup and issue plugins
     deps:
+      - dependencies
       - herdr-setup
+      - herdr-issue:build
     toolchains: system
     options:
       cache: false
@@ -150,6 +152,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
+      herdr plugin link "$workspaceRoot/tooling/herdr-issue-worktree"
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
