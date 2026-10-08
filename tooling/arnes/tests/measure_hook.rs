@@ -11,6 +11,8 @@ mod fingerprint;
 mod invalid_input;
 #[path = "measure_hook/metadata.rs"]
 mod metadata;
+#[path = "measure_hook/pipe.rs"]
+mod pipe;
 #[path = "measure_hook/repository.rs"]
 mod repository;
 #[path = "measure_hook/storage.rs"]
