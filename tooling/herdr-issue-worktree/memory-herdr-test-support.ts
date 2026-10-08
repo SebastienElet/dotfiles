@@ -5,6 +5,12 @@ import type { IssueSelection } from "./selection.ts";
 import type { NativeSnapshot } from "./native-state.ts";
 
 class MemoryHerdr implements HerdrPort {
+  public readonly bindingDirectory = "/fixture-state";
+  public readonly nativeEnvironment = {
+    HERDR_BIN_PATH: "/fixture/herdr",
+    HERDR_ENV: "1",
+    HERDR_SOCKET_PATH: "/fixture/herdr.sock",
+  } as const;
   public state: NativeSnapshot;
   public readonly initialPrompts: string[] = [];
   public startupBlocked = false;
@@ -94,6 +100,10 @@ class MemoryHerdr implements HerdrPort {
     }
     this.state = {
       ...this.state,
+      bindings: {
+        ...this.state.bindings,
+        [paneId]: { ...this.state.bindings?.[paneId], ...tokens },
+      },
       panes: this.state.panes.map((pane) =>
         pane.pane_id === paneId
           ? { ...pane, tokens: { ...pane.tokens, ...tokens } }

@@ -142,6 +142,7 @@ tasks:
     description: Link the Herdr worktree cleanup and issue plugins
     deps:
       - herdr-setup
+      - herdr-issue:build
     toolchains: system
     options:
       cache: false

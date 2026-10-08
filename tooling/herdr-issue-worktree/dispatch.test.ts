@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import type { IssueFixture } from "./dispatch-test-support.ts";
 import { MemoryHerdr } from "./memory-herdr-test-support.ts";
+import type { NativePane } from "./native-state.ts";
 import { dispatchIssue } from "./dispatch.ts";
 import { issueFixture } from "./dispatch-test-support.ts";
 import { workingIssueState } from "./session-test-support.ts";
@@ -27,6 +28,26 @@ test("does not send a prompt to an issue agent already working", async () => {
   });
   expect(herdr.initialPrompts).toEqual([]);
 });
+
+test("reuses verified work after native metadata is lost on restart", async () => {
+  const fixture = issueFixture();
+  fixtures.push(fixture);
+  const state = workingIssueState(fixture);
+  const herdr = new MemoryHerdr(fixture, {
+    ...state,
+    panes: state.panes.map(withoutNativeMetadata),
+  });
+  expect(await dispatchIssue(fixture.selection, herdr)).toMatchObject({
+    kind: "reused",
+    paneId: "w2:p1",
+  });
+  expect(herdr.initialPrompts).toEqual([]);
+  expect(herdr.state.panes).toHaveLength(1);
+});
+
+function withoutNativeMetadata(pane: NativePane): NativePane {
+  return { ...pane, tokens: {} };
+}
 
 test("retains an idle existing issue agent without a non-atomic resubmission", async () => {
   const fixture = issueFixture();

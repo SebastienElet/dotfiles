@@ -1,10 +1,32 @@
 import { afterEach, expect, test } from "bun:test";
+import type { HerdrCommand } from "./native-herdr.ts";
 import type { IssueFixture } from "./dispatch-test-support.ts";
-import { createNativeHerdr } from "./native-herdr.ts";
+import { createNativeHerdr as createNativeAdapter } from "./native-herdr.ts";
 import { inspectRepository } from "./repository.ts";
 import { issueFixture } from "./dispatch-test-support.ts";
 
 const fixtures: IssueFixture[] = [];
+function createNativeHerdr(
+  run: HerdrCommand,
+): ReturnType<typeof createNativeAdapter> {
+  let tokens: Readonly<Record<string, Readonly<Record<string, string>>>> = {};
+  return createNativeAdapter(
+    run,
+    {
+      directory: "/fixture-state",
+      read: () => Promise.resolve(tokens),
+      patch: (paneId, values) => {
+        tokens = { ...tokens, [paneId]: { ...tokens[paneId], ...values } };
+        return Promise.resolve();
+      },
+    },
+    {
+      HERDR_ENV: "1",
+      HERDR_BIN_PATH: "/fixture/herdr",
+      HERDR_SOCKET_PATH: "/fixture/herdr.sock",
+    },
+  );
+}
 afterEach(() => {
   for (const fixture of fixtures.splice(0)) {
     fixture.dispose();

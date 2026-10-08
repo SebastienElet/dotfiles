@@ -1,10 +1,11 @@
+import type { DispatchOutcome, HerdrPort } from "./dispatch.ts";
+import { createHerdrCommand, environmentSchema } from "./herdr-command.ts";
+import { dispatchIssue, inspectExistingIssue } from "./dispatch.ts";
 import { isAbsolute, join } from "node:path";
-import type { DispatchOutcome } from "./dispatch.ts";
 import type { IssueSelection } from "./selection.ts";
+import { createBindingStore } from "./binding-store.ts";
 import { createHash } from "node:crypto";
-import { createHerdrCommand } from "./herdr-command.ts";
 import { createNativeHerdr } from "./native-herdr.ts";
-import { dispatchIssue } from "./dispatch.ts";
 import { issueNames } from "./prompts.ts";
 import { withDispatchLock } from "./dispatch-lock.ts";
 import { z } from "zod";
@@ -12,7 +13,6 @@ import { z } from "zod";
 function dispatchSelectedIssue(
   selection: IssueSelection,
 ): Promise<DispatchOutcome> {
-  const herdr = createNativeHerdr(createHerdrCommand(process.env));
   const environment = z
     .object({
       HERDR_PLUGIN_STATE_DIR: z.string().refine(isAbsolute),
@@ -28,6 +28,23 @@ function dispatchSelectedIssue(
     "dispatch",
     sessionKey,
   );
+  const herdr = createNativeHerdr(
+    createHerdrCommand(process.env),
+    createBindingStore(directory),
+    environmentSchema.parse(process.env),
+  );
+  return dispatchWithReservation(selection, herdr, directory);
+}
+
+async function dispatchWithReservation(
+  selection: IssueSelection,
+  herdr: HerdrPort,
+  directory: string,
+): Promise<DispatchOutcome> {
+  const existing = await inspectExistingIssue(selection, herdr);
+  if (existing !== undefined) {
+    return existing;
+  }
   return withDispatchLock(
     directory,
     issueNames(selection).preparation,
@@ -41,4 +58,4 @@ function dispatchSelectedIssue(
   );
 }
 
-export { dispatchSelectedIssue };
+export { dispatchSelectedIssue, dispatchWithReservation };

@@ -1,16 +1,18 @@
 import type { IssueFixture } from "./dispatch-test-support.ts";
 import type { NativeSnapshot } from "./native-state.ts";
+import { issueNames } from "./prompts.ts";
 
 function workingIssueState(fixture: IssueFixture): NativeSnapshot {
   const { selection, checkout } = fixture;
   return {
+    bindings: { "w2:p1": fixtureBinding(fixture) },
     agents: [
       {
         agent: "codex",
         agent_status: "working",
         foreground_cwd: checkout,
         agent_session: { value: "session-17" },
-        name: "worker",
+        name: issueNames(selection).worker,
         pane_id: "w2:p1",
         interactive_ready: true,
       },
@@ -21,18 +23,7 @@ function workingIssueState(fixture: IssueFixture): NativeSnapshot {
         cwd: checkout,
         pane_id: "w2:p1",
         workspace_id: "w2",
-        tokens: {
-          issue_url: selection.click.issue.identity,
-          issue_repo: selection.repository.commonDirectory,
-          issue_role: "work",
-          issue_name: "worker",
-          issue_agent: "codex",
-          issue_session: "session-17",
-          issue_phase: "sent",
-          issue_branch: "issue-work",
-          issue_id: "GH-17",
-          issue_title: "Fixture issue",
-        },
+        tokens: {},
       },
     ],
     tabs: [],
@@ -51,6 +42,26 @@ function workingIssueState(fixture: IssueFixture): NativeSnapshot {
   };
 }
 
+function fixtureBinding({
+  selection,
+  checkout,
+}: IssueFixture): Readonly<Record<string, string>> {
+  return {
+    issue_url: selection.click.issue.identity,
+    issue_repo: selection.repository.commonDirectory,
+    issue_checkout: checkout,
+    issue_workspace: "w2",
+    issue_role: "work",
+    issue_name: issueNames(selection).worker,
+    issue_agent: "codex",
+    issue_session: "session-17",
+    issue_phase: "sent",
+    issue_branch: "issue-work",
+    issue_id: "GH-17",
+    issue_title: "Fixture issue",
+  };
+}
+
 function mainCheckoutState(fixture: IssueFixture): NativeSnapshot {
   const state = workingIssueState(fixture);
   const [agent] = state.agents;
@@ -62,6 +73,13 @@ function mainCheckoutState(fixture: IssueFixture): NativeSnapshot {
   const { root } = fixture.selection.repository;
   return {
     ...state,
+    bindings: {
+      "w2:p1": {
+        ...state.bindings?.["w2:p1"],
+        issue_checkout: root,
+        issue_branch: "main",
+      },
+    },
     agents: [{ ...agent, foreground_cwd: root }],
     panes: [
       { ...pane, cwd: root, tokens: { ...pane.tokens, issue_branch: "main" } },

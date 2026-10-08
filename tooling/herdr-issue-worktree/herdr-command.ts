@@ -13,6 +13,7 @@ const errorSchema = z.object({
 });
 const responseSchema = z.object({ result: z.unknown() });
 const defaultTimeoutMilliseconds = 35_000;
+type NativeEnvironment = z.infer<typeof environmentSchema>;
 
 class HerdrFailureError extends Error {
   public readonly code: string;
@@ -73,4 +74,5 @@ function parseResponse(value: string): unknown {
   }
 }
 
-export { HerdrFailureError, createHerdrCommand };
+export { HerdrFailureError, createHerdrCommand, environmentSchema };
+export type { NativeEnvironment };

@@ -2,10 +2,13 @@ import { findIssuePane, verifyIssueSession } from "./sessions.ts";
 import { issueNames, preparationPrompt } from "./prompts.ts";
 import type { IssueSelection } from "./selection.ts";
 import type { IssueSession } from "./sessions.ts";
+import type { NativeEnvironment } from "./herdr-command.ts";
 import type { NativeSnapshot } from "./native-state.ts";
 import { inspectRepository } from "./repository.ts";
 
 type HerdrPort = Readonly<{
+  bindingDirectory: string;
+  nativeEnvironment: NativeEnvironment;
   createPreparation: (
     selection: IssueSelection,
     label: string,
@@ -81,6 +84,17 @@ function observeExisting(session: IssueSession): DispatchOutcome {
   };
 }
 
+async function inspectExistingIssue(
+  selection: IssueSelection,
+  herdr: HerdrPort,
+): Promise<DispatchOutcome | undefined> {
+  const state = await herdr.snapshot();
+  const pane = findIssuePane(selection, state);
+  return pane === undefined
+    ? undefined
+    : observeExisting(verifyIssueSession(selection, pane, state));
+}
+
 async function createPreparation(
   selection: IssueSelection,
   herdr: HerdrPort,
@@ -108,11 +122,14 @@ async function createPreparation(
   assertAvailablePreparation(selection, after, paneId);
   await herdr.mark(paneId, {
     issue_agent: selection.agent,
+    issue_checkout: selection.repository.root,
     issue_name: names.preparation,
     issue_phase: "starting",
     issue_repo: selection.repository.commonDirectory,
     issue_role: "preparation",
     issue_url: selection.click.issue.identity,
+    issue_workspace:
+      after.panes.find(({ pane_id }) => pane_id === paneId)?.workspace_id ?? "",
   });
   return startPreparation(selection, herdr, paneId);
 }
@@ -129,7 +146,7 @@ async function startPreparation(
       paneId,
       name,
       kind: selection.agent,
-      prompt: preparationPrompt(selection),
+      prompt: preparationPrompt(selection, herdr),
     });
   } catch (error) {
     startupFailure = error;
@@ -241,5 +258,5 @@ function errorMessage(error: unknown): string {
     : "Native startup activity is not confirmed";
 }
 
-export { dispatchIssue };
+export { dispatchIssue, inspectExistingIssue };
 export type { AgentLaunch, DispatchOutcome, HerdrPort };

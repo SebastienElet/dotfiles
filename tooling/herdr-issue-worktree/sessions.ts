@@ -12,9 +12,10 @@ import { realpathSync } from "node:fs";
 import { z } from "zod";
 
 const sessionTokensSchema = z
-  .object({
+  .strictObject({
     issue_agent: z.enum(["claude", "codex"]),
     issue_branch: z.string().min(1).optional(),
+    issue_checkout: z.string().refine(isAbsolute),
     issue_id: z.string().min(1).optional(),
     issue_name: z.string().min(1),
     issue_phase: z.enum(["pending", "starting", "submitting", "sent"]),
@@ -23,6 +24,7 @@ const sessionTokensSchema = z
     issue_session: z.string().min(1).optional(),
     issue_title: z.string().min(1).optional(),
     issue_url: z.url(),
+    issue_workspace: z.string().min(1),
   })
   .readonly();
 
@@ -37,19 +39,33 @@ function findIssuePane(
   selection: IssueSelection,
   state: NativeSnapshot,
 ): NativePane | undefined {
-  const matches = state.panes.filter(
-    ({ tokens }) =>
-      tokens?.issue_url === selection.click.issue.identity &&
+  const matches = Object.entries(state.bindings ?? {}).filter(
+    ([, tokens]: readonly [string, Readonly<Record<string, string>>]) =>
+      tokens.issue_url === selection.click.issue.identity &&
       tokens.issue_repo === selection.repository.commonDirectory,
   );
-  const work = matches.filter(({ tokens }) => tokens?.issue_role === "work");
+  const work = matches.filter(
+    ([, tokens]: readonly [string, Readonly<Record<string, string>>]) =>
+      tokens.issue_role === "work",
+  );
   const candidates = work.length === 0 ? matches : work;
   if (candidates.length > 1) {
     throw new Error(
       "Several panes claim this issue; inspect the collision before resuming",
     );
   }
-  return candidates[0];
+  const [candidate] = candidates;
+  if (candidate === undefined) {
+    return undefined;
+  }
+  const [paneId, tokens] = candidate;
+  const pane = state.panes.find(({ pane_id }) => pane_id === paneId);
+  if (pane === undefined || pane.workspace_id !== tokens.issue_workspace) {
+    throw new Error(
+      "Retained issue binding has missing or changed native resources; inspect before retrying",
+    );
+  }
+  return pane;
 }
 
 function verifyIssueSession(
@@ -57,7 +73,16 @@ function verifyIssueSession(
   pane: NativePane,
   state: NativeSnapshot,
 ): IssueSession {
-  const tokens = sessionTokensSchema.parse(pane.tokens);
+  const tokens = sessionTokensSchema.parse(state.bindings?.[pane.pane_id]);
+  if (
+    tokens.issue_workspace !== pane.workspace_id ||
+    tokens.issue_url !== selection.click.issue.identity ||
+    tokens.issue_repo !== selection.repository.commonDirectory
+  ) {
+    throw new Error(
+      "Retained issue binding does not match the selected issue and pane",
+    );
+  }
   if (tokens.issue_agent !== selection.agent) {
     throw new Error(
       "Existing issue session uses another provider; it will not be replaced",
@@ -101,8 +126,10 @@ function verifyAgent(
   if (
     tokens.issue_session === undefined &&
     tokens.issue_phase === "starting" &&
-    tokens.issue_role === "preparation" &&
-    agent.name === issueNames(selection).preparation
+    agent.name ===
+      (tokens.issue_role === "preparation"
+        ? issueNames(selection).preparation
+        : issueNames(selection).worker)
   ) {
     return;
   }
@@ -124,13 +151,13 @@ function verifyCheckout(
 ): RepositoryContext {
   const { pane, tokens } = candidate;
   const checkout = inspectRepository(pane.cwd ?? "");
+  if (checkout.root !== realpathSync(tokens.issue_checkout)) {
+    throw new Error("Issue pane moved outside its recorded checkout");
+  }
   if (checkout.commonDirectory !== selection.repository.commonDirectory) {
     throw new Error("Issue pane belongs to another Git repository");
   }
   if (tokens.issue_role === "preparation") {
-    if (checkout.root !== selection.repository.root) {
-      throw new Error("Preparation pane moved outside the selected checkout");
-    }
     return checkout;
   }
   if (checkout.gitDirectory === checkout.commonDirectory) {
@@ -160,5 +187,5 @@ function verifyCheckout(
   return checkout;
 }
 
-export { findIssuePane, verifyIssueSession };
+export { findIssuePane, sessionTokensSchema, verifyIssueSession };
 export type { IssueSession };

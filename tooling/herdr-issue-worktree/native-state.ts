@@ -40,6 +40,7 @@ const workspaceSchema = z
   .readonly();
 const snapshotSchema = z
   .object({
+    bindings: z.record(z.string(), tokensSchema).readonly().optional(),
     agents: z.array(agentSchema).readonly(),
     focused_pane_id: z.string().nullish(),
     focused_tab_id: z.string().nullish(),
