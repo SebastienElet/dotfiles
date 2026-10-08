@@ -67,6 +67,8 @@ installation targets alone do not establish actual host availability; K supplies
 | P    | No skill reference extracted, despite inventory name collision.                     | None.                                                                              | None; an inventory match does not turn a JSON field into a skill reference.                                         |
 | Q    | Unverified Reference, INFO; skill-reference context missing.                        | No dependency diagnostic.                                                          | Clarify the candidate's role; never infer a missing skill from slug shape or prescribe creation.                    |
 
-The real `workflow-automation` constraint mentions the applicable `scripts` boundary. Resolve that
-slug to `.agents/skills/scripts`, then assess its availability condition separately. Finding a
-portability weakness must never become a prescription to create a missing user copy of `scripts`.
+The real `workflow-automation` constraint names the applicable `scripts` responsibility boundary.
+If its context does not establish a skill reference, report that uncertainty without declaring a
+missing skill. Once the reference is confirmed, its canonical source is `.agents/skills/scripts`;
+assess availability and dependency conditions separately. Neither uncertainty nor a portability
+weakness justifies prescribing a user copy of `scripts`.

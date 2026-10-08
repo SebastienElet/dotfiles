@@ -384,7 +384,7 @@ Date: <date>
 | 8 | D5 Slug Ambiguity | 🔵 | slug-A, slug-B | Rename slug-B |
 | 9 | D3 Unconditional Project Dependency | 🟡 | user-skill, project-skill | Make availability and project applicability conditional |
 | 10 | D3 Cross-Scope / Checkout-Only Reference | 🔵 | skill-A, slug | Record scope and current availability; never duplicate |
-| 11 | D3 Unverified Reference | 🔵 | skill-A, slug | Verify unavailable inventory before declaring absence |
+| 11 | D3 Unverified Reference | 🔵 | skill-A, slug | Verify reference context and source inventory before declaring absence |
 | 12 | D3 Unavailable Skill Dependency | 🟡 | skill-A, slug | Satisfy the prerequisite in its proper scope; never bypass mandatory validation |
 
 **No files were modified.**
