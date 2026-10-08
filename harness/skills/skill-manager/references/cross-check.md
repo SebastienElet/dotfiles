@@ -136,7 +136,12 @@ the project where a user skill is being used.
   explicit availability statement. A project skill in dotfiles is not implicitly installed for a
   user skill used elsewhere. When it exists only in that checkout, report **Checkout-Only
   Reference** (INFO); if current availability is unknown, say so rather than assuming it.
-- For a user skill referencing a project skill, verify an explicit condition covering both the
+- Before diagnosing a dependency, verify that the referring instruction actually invokes,
+  delegates to, or requires following the referenced skill. A comparison, ownership note, or
+  illustrative mention still resolves by slug, but is not a dependency and needs no availability
+  guard or dependency warning. If actual use is unclear, report that uncertainty rather than
+  infer a dependency from the extracted name alone.
+- For a user skill that depends on a project skill, verify an explicit condition covering both the
   referenced skill's availability and its applicability under the current project's conventions.
   Without that condition, add **Unconditional Project Dependency** (WARN), even while auditing
   from dotfiles where the referenced skill is available. Recommend making the dependency
@@ -152,12 +157,12 @@ the project where a user skill is being used.
 
 [D3] Cross-Scope Reference: <skill-A> mentions "<slug>" — found in <scope>: <source>
   Availability: available in the current project | checkout-only | unknown
-  Dependency: conditional | unconditional project dependency (WARN)
+  Dependency: none | unknown | conditional | unconditional project dependency (WARN)
   Recommendation: <conditional dependency correction, if needed; otherwise none>
 
 [D3] Checkout-Only Reference: <skill-A> mentions "<slug>" — exists in dotfiles project scope only
   Current project: <project where the user skill is used>; skill unavailable here
-  Dependency: conditional with project-convention fallback | unconditional project dependency (WARN)
+  Dependency: none | unknown | conditional with project-convention fallback | unconditional project dependency (WARN)
   Recommendation: <conditional dependency correction, if needed; otherwise none>
 
 [D3] Unverified Reference: <skill-A> mentions "<slug>" — lookup unavailable for <collection>
