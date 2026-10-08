@@ -91,3 +91,16 @@ test.each([
 ])("refuses malformed or non-click context", (contextJson) => {
   expect(() => parseIssueClick(contextJson)).toThrow();
 });
+
+test("uses one GitHub issue identity across casing aliases while retaining each original URL", () => {
+  const mixed = "https://github.com/Fixture/Project/issues/17?full=1#comment";
+  const lower = "https://github.com/fixture/project/issues/17";
+  const parse = (clicked_url: string): ReturnType<typeof parseIssueClick> =>
+    parseIssueClick(
+      JSON.stringify({ clicked_url, invocation_source: "link_click" }),
+    );
+  expect(parse(mixed).issue.identity).toBe(parse(lower).issue.identity);
+  expect(parse(mixed).issue.repository).toEqual(parse(lower).issue.repository);
+  expect(parse(mixed).context.clicked_url).toBe(mixed);
+  expect(parse(mixed).issue.url).toBe(mixed);
+});

@@ -48,9 +48,10 @@ function recognizeIssue(
     clickedUrl.hostname === "github.com" &&
     github?.groups?.repository !== undefined
   ) {
+    const repositoryPath = github.groups.repository.toLowerCase();
     return {
-      identity: `${clickedUrl.origin}${clickedUrl.pathname.replace(/\/$/u, "")}`,
-      repository: { host: clickedUrl.hostname, path: github.groups.repository },
+      identity: `${clickedUrl.origin}${clickedUrl.pathname.replace(/\/$/u, "").toLowerCase()}`,
+      repository: { host: clickedUrl.hostname, path: repositoryPath },
       tracker: "github",
       url,
     };

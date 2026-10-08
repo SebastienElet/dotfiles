@@ -167,3 +167,29 @@ test("never confirms a repository on another hosting endpoint", async () => {
 
   expect(await selectIssueWork(issueClick, answers("2", ""))).toBeNull();
 });
+
+test("confirms GitHub repository paths despite owner and project casing differences", async () => {
+  const root = repository("git@github.com:Fixture/Project.git");
+  const issueClick = click(
+    root,
+    "https://github.com/fIXTURE/pROJECT/issues/17",
+  );
+  expect(await selectIssueWork(issueClick, answers("2", ""))).toMatchObject({
+    repository: { root },
+    click: { context: issueClick.context },
+  });
+});
+
+test("does not case-fold a GitLab repository path", async () => {
+  const root = repository("git@gitlab.example.test:Fixture/Project.git");
+  const issueClick = click(
+    root,
+    "https://gitlab.example.test/fixture/project/-/issues/17",
+  );
+  const result = await selectIssueWork(issueClick, answers("2", root)).catch(
+    (error: unknown) => error,
+  );
+  expect(result).toMatchObject({
+    message: "Selected repository does not match the clicked issue",
+  });
+});

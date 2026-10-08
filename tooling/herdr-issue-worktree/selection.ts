@@ -79,7 +79,10 @@ function matchesIssueRepository(
     expected !== null &&
     repository.remotes.some(
       ({ identity }) =>
-        identity?.host === expected.host && identity.path === expected.path,
+        identity?.host === expected.host &&
+        (click.issue.tracker === "github"
+          ? identity.path.toLowerCase() === expected.path.toLowerCase()
+          : identity.path === expected.path),
     )
   );
 }
