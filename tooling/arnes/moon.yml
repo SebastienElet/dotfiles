@@ -13,6 +13,7 @@ fileGroups:
     - /tooling/deploy-link.ts
     - /package.json
     - /bun.lock
+    - /tsconfig.json
 env:
   RUSTFLAGS: -Funsafe-code
 tasks:
