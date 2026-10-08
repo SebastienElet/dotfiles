@@ -146,7 +146,8 @@ the project where a user skill is being used.
   infer a dependency from the extracted name alone.
 - For an actual dependency known to be unavailable to the current agent or project, report
   **Unavailable Skill Dependency** (WARN) unless the instruction explicitly handles that
-  unavailability. This applies in either scope direction, including project-to-user references.
+  unavailability. This applies to matches in the selected collection as well as either cross-scope
+  direction, including project-to-user references.
   Recommend satisfying the declared prerequisite in its proper scope, or an authorized condition
   and fallback. Never copy the skill into another collection or make mandatory validation optional;
   a workflow with an unmet mandatory prerequisite must stop. Unknown availability alone is INFO,
