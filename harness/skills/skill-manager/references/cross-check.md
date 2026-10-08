@@ -118,7 +118,7 @@ the project where a user skill is being used.
 
 **Method**:
 
-- In each SKILL.md, search for short slug-style patterns only: `skill-<slug>`, `[<text>](<slug>)`
+- In each SKILL.md, collect short slug-style candidates only: `skill-<slug>`, `[<text>](<slug>)`
   where `<slug>` contains no `/`, `See <slug>` where slug contains no `/`, slugs in backticks
   without a `/`
 - Include `## Constraints` references in the structured inventory used by D3; do not discard them
@@ -127,6 +127,17 @@ the project where a user skill is being used.
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
   `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
   identifiers containing a namespace separator such as `superpowers:requesting-code-review`
+- Classify each candidate in its sentence and section before any lookup. Require positive context
+  that names a skill, such as an explicit `<slug> skill` reference or a clear skill invocation or
+  delegation. Backticks, slug shape, and a match in an inventory do not establish that role alone.
+- Ignore ordinary commands or subcommands, flags, statuses, field names, variables, filenames,
+  directory names, and project names, even when their text matches a canonical skill slug. Do not
+  use a name-based blacklist: classify each occurrence, preserving genuine references to a skill
+  with the same name. Comparisons that explicitly name a skill remain references, even though
+  they are not dependencies.
+- If the candidate's role is unclear, report **Unverified Reference** (INFO), naming the missing
+  context; do not declare it dead or recommend creating a skill. Only confirmed skill references
+  proceed to source resolution and availability checks below.
 - Resolve each extracted slug against the selected inventory, then the other collection's slugs.
   A slug present in both collections belongs to D5; never choose or merge duplicate copies.
 - Report **Dead Reference** (CRITICAL) only when the slug is absent from both verified inventories.
@@ -177,8 +188,9 @@ the project where a user skill is being used.
   Dependency: none | unknown | conditional with project-convention fallback | unconditional project dependency (WARN)
   Recommendation: <conditional dependency correction, if needed; otherwise none>
 
-[D3] Unverified Reference: <skill-A> mentions "<slug>" — lookup unavailable for <collection>
-  Recommendation: verify that inventory before concluding the skill is missing
+[D3] Unverified Reference: <skill-A> mentions "<slug>" — reference context or source lookup unverified
+  Missing evidence: <context identifying a skill, or unavailable collection lookup>
+  Recommendation: verify reference kind and source before concluding the skill is missing
 
 [D3] Unavailable Skill Dependency: <skill-A> requires "<slug>" — source exists in <scope>
   Availability: known unavailable to <current agent or project>
