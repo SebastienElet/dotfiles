@@ -3,6 +3,8 @@
 Ctrl-click a GitHub, GitLab or Linear issue URL in Herdr to choose Claude or Codex.
 Escape or an empty provider answer cancels. Confirm a matching repository suggestion, or enter an
 absolute repository path; cancellation before confirmation starts no agent and creates no checkout.
+GitHub repository names and issue keys compare without owner/project casing differences;
+the clicked URL and context retain their original text. Other hosting paths keep their exact comparison.
 Linear always requires an explicit repository, followed by the composed workflow's read-only preflight.
 
 The plugin retains the complete clicked URL and workspace context as JSON data. Git inspection uses
@@ -24,7 +26,10 @@ directory. Native metadata carries only bounded display hints: Herdr 0.9.3 norma
 80 characters and discards these tokens on restart. Registration preserves canonical issue identity,
 Git paths, title and native handles. Unknown versions, duplicate keys, corrupt state and state
 symlinks are refused without replacing the original data. Writes compare the complete prior map
-under an exclusive file lock; another pane cannot register the same issue and role.
+under an exclusive file lock; another pane cannot register the same issue and role. Definite busy/stale
+writes retry at most three times after rereading and rechecking ownership, while requiring the target
+pane binding to remain unchanged. Unknown write outcomes, changed occupants/owners and exhausted
+contention retain state for inspection.
 
 Repeated clicks inspect durable bindings and native state and check Git common directory, linked checkout,
 workspace label, branch, provider, pane occupant, cwd and stored session reference. Working agents

@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createBindingStore } from "./binding-store.ts";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -116,4 +117,29 @@ test("refuses a dangling state symlink without replacing it", async () => {
     ),
   ).toBe(true);
   expect(lstatSync(path).isSymbolicLink()).toBe(true);
+});
+
+test("classifies a stale native write as definitely unapplied without changing bindings", async () => {
+  const directory = storeDirectory();
+  await createBindingStore(directory).patch("w2:p1", identity);
+  const binary = fileURLToPath(
+    new URL("target/release/herdr-issue-state", import.meta.url),
+  );
+  const child = Bun.spawnSync([binary, directory], {
+    stdin: Buffer.from(
+      JSON.stringify({
+        operation: "replace",
+        pane_id: "w2:p2",
+        expected: {},
+        tokens: identity,
+      }),
+    ),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const unappliedConflictExitCode = 2;
+  expect(child.exitCode).toBe(unappliedConflictExitCode);
+  expect(await createBindingStore(directory).read()).toEqual({
+    "w2:p1": identity,
+  });
 });

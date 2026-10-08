@@ -1,3 +1,5 @@
+import { BindingConflictError, patchBinding } from "./binding-patch.ts";
+import type { BindingRequest } from "./binding-patch.ts";
 import { fileURLToPath } from "node:url";
 import { isAbsolute } from "node:path";
 import { sessionTokensSchema } from "./sessions.ts";
@@ -19,10 +21,11 @@ const binary = fileURLToPath(
   new URL("target/release/herdr-issue-state", import.meta.url),
 );
 const storageTimeoutMilliseconds = 5000;
+const unappliedConflictExitCode = 2;
 
 function createBindingStore(directory: string): BindingStore {
   z.string().refine(isAbsolute).parse(directory);
-  const request = async (data: unknown): Promise<Bindings> => {
+  const request = async (data: BindingRequest): Promise<Bindings> => {
     const child = Bun.spawn([binary, directory], {
       stdin: new Blob([JSON.stringify(data)]),
       stdout: "pipe",
@@ -35,9 +38,10 @@ function createBindingStore(directory: string): BindingStore {
       child.exited,
     ]);
     if (status !== 0) {
-      throw new Error(
-        `Issue binding storage failed: ${errors.trim() === "" ? (child.signalCode ?? status) : errors.trim()}`,
-      );
+      const message = `Issue binding storage failed: ${errors.trim() === "" ? (child.signalCode ?? status) : errors.trim()}`;
+      throw status === unappliedConflictExitCode
+        ? new BindingConflictError(message)
+        : new Error(message);
     }
     const bindings = bindingsSchema.parse(JSON.parse(output));
     for (const tokens of Object.values(bindings)) {
@@ -48,42 +52,8 @@ function createBindingStore(directory: string): BindingStore {
   return {
     directory,
     read: () => request({ operation: "read" }),
-    patch: async (paneId, tokens) => {
-      const bindings = await request({ operation: "read" });
-      const updated = { ...bindings[paneId], ...tokens };
-      assertSingleOwner(paneId, updated, bindings);
-      await request({
-        operation: "replace",
-        pane_id: paneId,
-        expected: bindings,
-        tokens: updated,
-      });
-    },
+    patch: (paneId, tokens) => patchBinding(paneId, tokens, request),
   };
-}
-
-function assertSingleOwner(
-  paneId: string,
-  tokens: Readonly<Record<string, string>>,
-  bindings: Bindings,
-): void {
-  const identity = sessionTokensSchema.parse(tokens);
-  if (
-    Object.entries(bindings).some(
-      ([candidate, binding]: readonly [
-        string,
-        Readonly<Record<string, string>>,
-      ]) =>
-        candidate !== paneId &&
-        binding.issue_url === identity.issue_url &&
-        binding.issue_repo === identity.issue_repo &&
-        binding.issue_role === identity.issue_role,
-    )
-  ) {
-    throw new Error(
-      "Another pane already owns this issue role; existing bindings retained",
-    );
-  }
 }
 
 export { createBindingStore };

@@ -1,12 +1,24 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fmt;
 use std::fs::{self, File};
 use std::io::{self, BufReader};
 use std::path::Path;
 
 type Tokens = BTreeMap<String, String>;
 type Bindings = BTreeMap<String, Tokens>;
+
+#[derive(Debug)]
+pub struct Conflict(&'static str);
+
+impl fmt::Display for Conflict {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.0)
+    }
+}
+
+impl Error for Conflict {}
 
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
@@ -44,11 +56,19 @@ pub fn dispatch(directory: &Path, request: Request) -> Result<Bindings, Box<dyn 
                 .create(true)
                 .truncate(false)
                 .open(directory.join("bindings.lock"))?;
-            lock.try_lock()
-                .map_err(|error| format!("Binding writer unavailable: {error}"))?;
+            lock.try_lock().map_err(|error| -> Box<dyn Error> {
+                match error {
+                    fs::TryLockError::WouldBlock => {
+                        Box::new(Conflict("Binding writer unavailable"))
+                    }
+                    fs::TryLockError::Error(error) => Box::new(error),
+                }
+            })?;
             let mut state = read_state(directory)?;
             if state.bindings != expected {
-                return Err("Binding changed concurrently; reread before updating".into());
+                return Err(Box::new(Conflict(
+                    "Binding changed concurrently; reread before updating",
+                )));
             }
             state.bindings.insert(pane_id, tokens);
             write_state(directory, &state)?;
