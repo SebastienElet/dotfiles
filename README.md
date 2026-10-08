@@ -102,18 +102,87 @@ See the [skills audit](docs/skills-audit-412.md) for the obsolete instructions c
 
 ## Checks
 
-With Moon available, run the shared checks and behavior tests:
+### Contributing from a worktree
+
+Use the Moon version pinned in `.prototools` and start with the smallest relevant
+task below. Workstation installation is macOS-only; portable checks also run on
+Ubuntu. Inspect the task definition and its native action graph before running
+it, especially before either repository aggregate:
 
 ```bash
-moon run check
-moon run test
+moon action-graph repository:prettier-check --dot
+moon action-graph repository:check --dot
+moon action-graph repository:test --dot
 ```
 
-Checks include TypeScript, Prettier, Lua, Fish, shell scripts, workflows, CSpell and Rust.
-Their tools are prerequisites in the Moon graph. Run Lua lint independently with
-`moon run neovim-lint` or `moon run wezterm-lint`.
-The full workstation smoke is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
-Docker integrations remain explicit tasks with their own prerequisites.
+The graph identifies setup actions and dependency tasks; read their commands to
+distinguish these effects:
+
+- Moon caches, checkout `node_modules`, Cargo `target` directories and downloaded
+  crates are development state. Bun/proto setup may also populate their user caches.
+- Deployment tests use temporary fixture destinations and installer substitutes;
+  invoking a workstation deployment task directly writes to its configured destination.
+- `repository:homebrew`, `fish-setup`, `luacheck-setup`, `shellcheck-setup`,
+  `actionlint-setup` and `rust` can install tools outside the checkout. An isolated
+  `HOME` does not sandbox Homebrew, `sudo apt-get`, Go or rustup.
+
+Do not run global installation dependencies from a worktree. Prepare the toolchain
+from the canonical checkout or use a dedicated runner. If a selected graph still
+contains such tasks, use a dedicated runner, or select a leaf check whose only
+task dependencies are preparation. After verifying its tools and versions, a
+prepared environment can run, for example:
+
+```bash
+moon run repository:shell-lint --upstream none --no-actions
+```
+
+These flags skip dependency tasks and toolchain setup. Never apply this shortcut
+to an aggregate such as `harness:check`, `repository:check` or `repository:test`:
+it would omit their checks. Also preserve required build/test dependencies; if
+they cannot safely run in the worktree, use the runner. This checks existing tools,
+not installation.
+
+Before format, lint or typecheck, stage every new file in the intended change with
+explicit pathspecs (`git add -- path/to/new-file` after replacing the example path).
+Stop if staging fails. TypeScript lint/format select indexed paths via
+[`tracked-typescript-paths.ts`](tooling/tracked-typescript-paths.ts); Prettier and
+CSpell include indexed skill Markdown via
+[`skill-markdown-paths.ts`](tooling/skill-markdown-paths.ts). Untracked files may
+therefore be absent from these checks; the commands inspect working-tree contents,
+so refresh the index after subsequent edits before committing.
+
+All task names below are existing Moon targets, invoked with `moon run TARGET`.
+Prerequisites include the pinned Bun toolchain and root package dependencies where
+the task uses Bun. Effects include Moon's caches in addition to those listed.
+
+| Changed zone                      | Existing Moon target(s)                                                                                   | Additional prerequisites                                    | Platforms                 | Effects / worktree constraint                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
+| Markdown, JSON, YAML              | `repository:prettier-check`                                                                               | Root package dependencies                                   | macOS, Ubuntu             | Reads files; no workstation deployment                                                   |
+| Skills and spelling configuration | `repository:cspell-check`                                                                                 | Root package CSpell                                         | macOS, Ubuntu             | Reads indexed inputs; deploys temporary configuration/dictionary links, then cleans them |
+| TypeScript                        | `repository:typescript-lint`, `repository:typescript-typecheck`, `repository:typescript-format-check`     | Root package dependencies                                   | macOS, Ubuntu             | Reads sources; lint/format require new files in the index                                |
+| Harness deterministic validation  | `harness:check`                                                                                           | Pinned Rust, rustfmt, Clippy; root package dependencies     | macOS, Ubuntu             | Cargo builds and temporary test fixtures; global Rust preparation requires a runner      |
+| Rust CLI                          | `arnes:fmt`, `arnes:clippy`, `arnes:check`, `arnes:test` (or the same targets in the owning Rust project) | Pinned Rust, rustfmt, Clippy; Bun for suites using fixtures | macOS, Ubuntu             | Cargo builds/downloads and test fixtures; inspect `repository:rust`                      |
+| Neovim / WezTerm Lua              | `repository:neovim-lint`, `repository:wezterm-lint`                                                       | Luacheck                                                    | macOS, Ubuntu             | Reads configuration; `luacheck-setup` can install globally                               |
+| Fish                              | `repository:fish-syntax`, `repository:fish-format`, `repository:fish-test`                                | Fish                                                        | macOS, Ubuntu             | Syntax/format checks and behavior fixtures; `fish-setup` can install globally            |
+| Shell helpers                     | `repository:shell-lint`                                                                                   | Shellcheck                                                  | macOS, Ubuntu             | Reads scripts; `shellcheck-setup` can install globally                                   |
+| GitHub workflows                  | `repository:workflows-lint`                                                                               | Actionlint, Shellcheck                                      | macOS, Ubuntu             | Reads workflows; both setup tasks can install globally                                   |
+| Deployment helpers                | `tooling:deployment-test`                                                                                 | Root package dependencies                                   | macOS, Ubuntu             | Temporary fixture links/configuration and installer substitutes                          |
+| Hunspell installer                | `tooling:hunspell-test`                                                                                   | Root package dependencies                                   | macOS, Ubuntu             | Temporary fixture dictionaries and simulated downloads                                   |
+| Docker integration                | `tooling:docker-smoke`                                                                                    | Running Docker daemon and image/network access              | macOS, Ubuntu with Docker | Runs containers, creates volumes and downloads images; explicit opt-in                   |
+| Full minimal installation         | `tooling:smoke-minimal`                                                                                   | Dedicated macOS runner, installer/network access            | macOS                     | Global packages and deployed user artifacts; never run from a worktree                   |
+
+For a README-only change, inspect and run `repository:prettier-check`. For other
+zones, choose the relevant row and inspect its graph first. `moon run harness:check`
+is the explicit deterministic aggregate. **Do not substitute `moon check harness`**:
+Moon selects build/test tasks inferred across the project, including operational
+tasks such as `semctx` that install plugins. See the
+[Harness evaluation limits](harness/evals/README.md#deterministic-testing-and-limits).
+
+On a prepared environment, the broad local aggregates remain `moon run check` and
+`moon run test`; they are not the default worktree path. The full workstation smoke
+is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
+The CI routing matrix is owned by [#407](https://github.com/SebastienElet/dotfiles/issues/407)
+and its sub-issues; this local task guide does not duplicate its path-to-workflow policy.
 
 Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
 `agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
