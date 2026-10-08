@@ -39,8 +39,17 @@ async function dispatchIssue(
   selection: IssueSelection,
   herdr: HerdrPort,
 ): Promise<DispatchOutcome> {
+  const [initial] = await Promise.allSettled([
+    Promise.resolve().then(() => herdr.snapshot()),
+  ]);
+  if (initial?.status !== "fulfilled") {
+    return {
+      kind: "rejected",
+      reason: `Native inspection failed before creation; nothing launched. ${initial?.status === "rejected" ? errorMessage(initial.reason) : "Snapshot unavailable"}`,
+    };
+  }
+  const state = initial.value;
   try {
-    const state = await herdr.snapshot();
     const pane = findIssuePane(selection, state);
     return pane === undefined
       ? await createPreparation(selection, herdr, state)

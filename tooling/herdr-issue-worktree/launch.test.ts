@@ -102,3 +102,57 @@ for (const gitArguments of [
     expect(herdr.initialPrompts).toHaveLength(1);
   });
 }
+
+test("releases an unused reservation when the initial dispatch snapshot fails", async () => {
+  const fixture = issueFixture();
+  fixtures.push(fixture);
+  const directory = mkdtempSync(join(tmpdir(), "herdr-snapshot-preflight-"));
+  directories.push(directory);
+  const herdr = new MemoryHerdr(fixture);
+  let reads = 0;
+  const dispatchSnapshotRead = 2;
+  const port = {
+    bindingDirectory: herdr.bindingDirectory,
+    nativeEnvironment: herdr.nativeEnvironment,
+    snapshot: (): ReturnType<MemoryHerdr["snapshot"]> => {
+      reads += 1;
+      return reads === dispatchSnapshotRead
+        ? Promise.reject(new Error("Initial snapshot unavailable"))
+        : herdr.snapshot();
+    },
+    createPreparation: herdr.createPreparation.bind(herdr),
+    mark: herdr.mark.bind(herdr),
+    start: herdr.start.bind(herdr),
+  };
+  const outcome = await dispatchWithReservation(
+    fixture.selection,
+    port,
+    directory,
+  ).catch((error: unknown) => error);
+  expect(outcome).toMatchObject({ kind: "rejected" });
+  expect(readdirSync(directory)).toEqual([]);
+  expect(herdr.state.panes).toHaveLength(1);
+  expect(herdr.initialPrompts).toHaveLength(0);
+  expect(
+    await dispatchWithReservation(fixture.selection, port, directory),
+  ).toMatchObject({ kind: "started" });
+  expect(herdr.initialPrompts).toHaveLength(1);
+});
+
+test("retains a reservation when native inspection fails after creation", async () => {
+  const fixture = issueFixture();
+  fixtures.push(fixture);
+  const directory = mkdtempSync(join(tmpdir(), "herdr-snapshot-after-create-"));
+  directories.push(directory);
+  const herdr = new MemoryHerdr(fixture);
+  herdr.failure = "snapshot-after-creation";
+  const outcome = await dispatchWithReservation(
+    fixture.selection,
+    herdr,
+    directory,
+  ).catch((error: unknown) => error);
+  expect(outcome).toBeInstanceOf(Error);
+  expect(readdirSync(directory)).toHaveLength(1);
+  expect(herdr.state.panes).toHaveLength(sourceAndPreparationPaneCount);
+  expect(herdr.initialPrompts).toHaveLength(0);
+});
