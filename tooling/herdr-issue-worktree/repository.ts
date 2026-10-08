@@ -99,7 +99,9 @@ function runGit(directory: string, arguments_: readonly string[]): string {
 function remoteIdentity(
   value: string,
 ): z.infer<typeof repositoryIdentitySchema> | null {
-  const scp = /^[^@:/\s]+@(?<host>[^:/\s]+):(?<path>.+)$/u.exec(value);
+  const scp = /^[^:]+:\/\//u.test(value)
+    ? null
+    : /^(?:[^@:/\s]+@)?(?<host>[^@:/\s]+):(?<path>.+)$/u.exec(value);
   if (scp?.groups?.host !== undefined && scp.groups.path !== undefined) {
     return repositoryIdentitySchema.parse({
       host: scp.groups.host.toLowerCase(),

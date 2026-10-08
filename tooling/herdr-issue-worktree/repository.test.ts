@@ -111,6 +111,22 @@ test("reads nested GitLab and SSH remotes without retaining embedded credentials
   ]);
 });
 
+test.each([
+  ["github.com:fixture/project.git", "github.com", "fixture/project"],
+  [
+    "GitLab.Example.Test:team/group/project.git",
+    "gitlab.example.test",
+    "team/group/project",
+  ],
+])("reads username-less SCP remote %s", (remote, host, path) => {
+  const root = repository();
+  git(root, "remote", "add", "origin", remote);
+
+  expect(inspectRepository(root).remotes).toEqual([
+    { identity: { host, path }, name: "origin" },
+  ]);
+});
+
 test("keeps unknown local remotes unresolved", () => {
   const root = repository();
   git(root, "remote", "add", "origin", "/fixture/another-repository");
@@ -123,6 +139,8 @@ test("keeps unknown local remotes unresolved", () => {
 test.each([
   "file://git@github.com:fixture/project.git",
   "https://user@github.com:fixture/project.git",
+  "file://github.com/fixture/project.git",
+  "./local:repository.git",
 ])("keeps misleading URI-like remotes unresolved: %s", (remote) => {
   const root = repository();
   git(root, "remote", "add", "origin", remote);
