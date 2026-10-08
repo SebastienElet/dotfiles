@@ -59,8 +59,10 @@ This directory is the canonical source for user-scoped agent skills.
 | `memory-governance`       | Govern durable local agent memory.                                                                        |
 | `obsidian-retrieval`      | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                              |
 | `output-discipline`       | Shape responses so decisive information and next actions are easy to find.                                |
+| `para-organizer`          | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents.                     |
 | `prose-edit`              | Revise existing prose while preserving the writer's voice and meaning.                                    |
 | `security-assurance-plan` | Fill security assurance plans (PAS) from a DOCX template and traceable evidence.                          |
 | `skill-manager`           | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes.          |
 | `skill-simplify`          | Simplify an identified skill's content.                                                                   |
+| `things-tasks`            | Manage Things 3 tasks, projects, and areas through the thangs CLI.                                        |
 | `workflow-automation`     | Turn evidenced repeated human or agent workflows into supported automation.                               |
