@@ -29,6 +29,8 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: >-
+          moon action-graph --json agent-memory:fmt agent-memory:clippy agent-memory:check agent-memory:test agent-memory:doc agent-memory:deployment-test > /dev/null
       - id: query
         run: |
           {

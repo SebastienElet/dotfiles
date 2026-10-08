@@ -15,12 +15,13 @@ Les ADR acceptées [001](adr/001-makefile-installateur.md),
 indépendamment de la sélection spécialisée.
 
 Chaque workflow Rust commence par `select` sur Ubuntu : checkout complet et
-blobless, puis `moonrepo/setup-toolchain` et
-`moon query tasks --affected remote --upstream none --downstream none`, filtré
+blobless, puis `moonrepo/setup-toolchain`, la validation native des cibles avec
+`moon action-graph --json` (sans exécution), et `moon query tasks --affected remote --upstream none --downstream none`, filtré
 sur son projet et ses tâches. Les expressions natives Actions lisent la sortie
 JSON de Moon. Un projet absent du résultat valide évite l'allocation de sa suite ;
 une commande en échec ou une sortie JSON invalide fait échouer la sélection.
-Aucun filtre de chemins parallèle ne décide à la place de Moon.
+Une cible ou un projet absent échoue lors de la construction du graphe avant
+l'interrogation affectée. Aucun filtre de chemins parallèle ne décide à la place de Moon.
 
 `MOON_BASE` est le SHA de base de la PR, ou `before` pour un push `main` ;
 `MOON_HEAD` est le SHA checkout (`github.sha`, merge synthétique pour une PR).
@@ -31,10 +32,11 @@ ses commits, pas uniquement le dernier. Une révision introuvable reste un éche
 
 Les entrées communes sont les manifests/lockfiles Cargo, `build*.rs`,
 `src/**/*`, `tests/**/*` (fixtures incluses), examples et benches, `moon.yml` et
-`.cargo/**/*` du projet ; à la racine : `.cargo/**/*`, `clippy.toml`,
+`.cargo/**/*`, `clippy.toml` et `.clippy.toml` du projet ; à la racine : `.cargo/**/*`, `clippy.toml`,
 `rustfmt.toml`, `rust-toolchain.toml`, `.prototools`, `moon.yml`, `LICENSE` et
 `tooling/RUST.md`. Moon prend aussi en compte sa configuration workspace,
-toolchains et héritage Rust. Chaque famille déclare son propre workflow.
+toolchains et héritage Rust. `.moon/tasks/workstation.yml` est une entrée explicite
+car il déclare le prérequis `repository:rust`. Chaque famille déclare son propre workflow.
 
 | Workflow               | Projet / tâches sélectionnées                               | Entrées transversales supplémentaires                                                                                                                                                                                                                                   | Runners spécialisés / statuts             |
 | ---------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
