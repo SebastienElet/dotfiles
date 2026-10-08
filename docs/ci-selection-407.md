@@ -45,7 +45,8 @@ toolchains et héritage Rust. Chaque famille déclare son propre workflow.
 | Proof Integrity tests  | `proof-integrity:{fmt,clippy,check,test,doc}`               | Skill `proof-integrity-review/SKILL.md`, ses `references/**/*` et `scripts/policy-sources.json`                                                                                                                                                                         | macOS et Ubuntu / `proof-integrity (os)`  |
 
 Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
-`moon ci --downstream none`. Les cinq contrôles Rust restent disponibles, avec
+`moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque
+plateforme lorsqu'une autre échoue. Les cinq contrôles Rust restent disponibles, avec
 les flags et mutex existants ; Handoff et Memory conservent leurs tests de
 déploiement. La politique de cache reste inchangée. `select` ne prépare ni Cargo
 ni Bun par exécution de tâche ; le setup installe Moon/proto et conserve son
