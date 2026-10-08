@@ -32,7 +32,8 @@ to the user, and stops. No fix is applied without explicit user instruction.
    - Trigger keywords (extracted from description: phrases after "Use when", "Make sure to use this
      skill whenever", "Make sure to use whenever", "even if")
    - `## Constraints` section (list of rules)
-   - Cross-references (mentions of other skills in `## Steps`, `## References`, or `## Overview`)
+   - Cross-references (mentions of other skills in `## Steps`, `## References`, `## Overview`, or
+     `## Constraints`)
    - Inferred functional domain (git, PR, tests, infra, support, etc.)
    - `references/` directory listing — for each file, parse its name as `<topic>-<scope>.md` if it
      matches that pattern; **do not read the content yet** (lazy load: content is only read during
@@ -120,6 +121,8 @@ the project where a user skill is being used.
 - In each SKILL.md, search for short slug-style patterns only: `skill-<slug>`, `[<text>](<slug>)`
   where `<slug>` contains no `/`, `See <slug>` where slug contains no `/`, slugs in backticks
   without a `/`
+- Include `## Constraints` references in the structured inventory used by D3; do not discard them
+  after extraction or depend on a later scan of the complete file to recover them.
 - **Exclude from checking**: `/skill-manager <cmd>` patterns (these are subcommand invocations, not
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
   `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
@@ -141,6 +144,14 @@ the project where a user skill is being used.
   illustrative mention still resolves by slug, but is not a dependency and needs no availability
   guard or dependency warning. If actual use is unclear, report that uncertainty rather than
   infer a dependency from the extracted name alone.
+- For an actual dependency known to be unavailable to the current agent or project, report
+  **Unavailable Skill Dependency** (WARN) unless the instruction explicitly handles that
+  unavailability. This applies in either scope direction, including project-to-user references.
+  Recommend satisfying the declared prerequisite in its proper scope, or an authorized condition
+  and fallback. Never copy the skill into another collection or make mandatory validation optional;
+  a workflow with an unmet mandatory prerequisite must stop. Unknown availability alone is INFO,
+  not evidence of unavailability; the user-to-project conditionality check below still applies.
+  Combine this with an unconditional-project-dependency warning in one finding when both apply.
 - For a user skill that depends on a project skill, verify an explicit condition covering both the
   referenced skill's availability and its applicability under the current project's conventions.
   Without that condition, add **Unconditional Project Dependency** (WARN), even while auditing
@@ -167,6 +178,11 @@ the project where a user skill is being used.
 
 [D3] Unverified Reference: <skill-A> mentions "<slug>" — lookup unavailable for <collection>
   Recommendation: verify that inventory before concluding the skill is missing
+
+[D3] Unavailable Skill Dependency: <skill-A> requires "<slug>" — source exists in <scope>
+  Availability: known unavailable to <current agent or project>
+  Severity: WARN; combine with unconditional project dependency if applicable
+  Recommendation: satisfy the prerequisite in its proper scope; preserve mandatory validation
 ```
 
 Run the targeted examples in [d3-scenarios.md](d3-scenarios.md) when changing D3. They exercise
@@ -320,6 +336,9 @@ Date: <date>
 ### [D3] Unconditional Project Dependency — <skill-A> → <project-skill>
 ...
 
+### [D3] Unavailable Skill Dependency — <skill-A> → <slug>
+...
+
 ### [D6] Scoped Reference Conflict — <skill>
 ...
 
@@ -353,6 +372,7 @@ Date: <date>
 | 9 | D3 Unconditional Project Dependency | 🟡 | user-skill, project-skill | Make availability and project applicability conditional |
 | 10 | D3 Cross-Scope / Checkout-Only Reference | 🔵 | skill-A, slug | Record scope and current availability; never duplicate |
 | 11 | D3 Unverified Reference | 🔵 | skill-A, slug | Verify unavailable inventory before declaring absence |
+| 12 | D3 Unavailable Skill Dependency | 🟡 | skill-A, slug | Satisfy the prerequisite in its proper scope; never bypass mandatory validation |
 
 **No files were modified.**
 Please indicate which inconsistencies you want to fix and how to proceed.
