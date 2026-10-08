@@ -97,6 +97,7 @@ tasks:
     inputs:
       - "@group(bunTestSupport)"
       - "@group(linkDeployment)"
+      - /.moon/tasks/tests.yml
       - clean-deployment*.ts
       - clean-deployment-worker-inspect.js
       - deployment-fish.test.ts
