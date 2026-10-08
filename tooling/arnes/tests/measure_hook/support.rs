@@ -38,15 +38,7 @@ impl Harness {
         agent: &str,
         payload: &[u8],
     ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
-        let mut child = self.command(agent).spawn()?;
-        let mut stdin = child.stdin.take().ok_or("required test value is missing")?;
-        match stdin.write_all(payload) {
-            Ok(()) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => {}
-            Err(error) => return Err(format!("writing the hook payload failed: {error}").into()),
-        }
-        drop(stdin);
-        Ok(child.wait_with_output()?)
+        collect_hook_output(self.command(agent).spawn()?, payload)
     }
     pub(super) fn command(&self, agent: &str) -> std::process::Command {
         let mut command = Command::new(env!("CARGO_BIN_EXE_arnes"));
@@ -91,6 +83,26 @@ impl Harness {
         assert_eq!(runs.len(), 1, "expected one run, found {runs:?}");
         Ok((*(runs).first().ok_or("missing fixture index 0")?).clone())
     }
+}
+pub fn collect_hook_output(
+    mut child: Child,
+    payload: &[u8],
+) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
+    let mut stdin = child.stdin.take().ok_or("required test value is missing")?;
+    let written = stdin.write_all(payload);
+    drop(stdin);
+    let output = child.wait_with_output()?;
+    if let Err(error) = written
+        && error.kind() != std::io::ErrorKind::BrokenPipe
+    {
+        return Err(format!(
+            "writing the hook payload failed: {error}; child status: {}; stderr: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+    Ok(output)
 }
 pub fn assert_success(output: &Output) {
     assert_eq!(
