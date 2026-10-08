@@ -5,9 +5,16 @@ import {
   project,
   requireCommand,
 } from "./deployment-test-support.ts";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
 
 type MoonDeploymentFixture = Readonly<{
   home: string;
@@ -19,17 +26,36 @@ type RunMoonOptions = Readonly<{
   cache?: "off" | "read-write";
   environment?: Readonly<NodeJS.ProcessEnv>;
   force?: boolean;
+  upstream?: "none";
 }>;
 
 type MoonProjectFixturePaths = Readonly<{
   destination: string;
   home: string;
-  projectId: "agent-memory" | "agent-handoff";
+  projectId: "agent-memory" | "agent-handoff" | "arnes";
   repository: string;
   source: string;
 }>;
 
 const fixtures: string[] = [];
+
+function prepareMoonWorkspaceFixture(repository: string): void {
+  cpSync(project, repository, {
+    filter: (path) =>
+      ![".git", "node_modules", "target"].includes(basename(path)) &&
+      path !== join(project, ".moon/cache"),
+    recursive: true,
+  });
+  symlinkSync(join(project, "node_modules"), join(repository, "node_modules"));
+  for (const projectId of ["agent-memory", "agent-handoff", "arnes"]) {
+    const release = join(repository, "tooling", projectId, "target/release");
+    mkdirSync(release, { recursive: true });
+    writeFileSync(join(release, projectId), "fixture binary\n", {
+      mode: 0o755,
+    });
+  }
+  initializeGitRepository(repository);
+}
 
 const foreignGitHubEnvironment = {
   CI: "true",
@@ -41,7 +67,7 @@ const foreignGitHubEnvironment = {
 };
 
 function createMoonDeploymentFixture(
-  projectId: "agent-memory" | "agent-handoff",
+  projectId: "agent-memory" | "agent-handoff" | "arnes",
 ): MoonDeploymentFixture {
   const root = mkdtempSync(join(tmpdir(), `moon-${projectId}-deployment-`));
   const repository = join(root, "repository");
@@ -88,14 +114,27 @@ function copyMoonProjectFixture({
     recursive: true,
   });
   cpSync(
+    join(project, "tooling/deploy-link.ts"),
+    join(repository, "tooling/deploy-link.ts"),
+  );
+  symlinkSync(join(project, "node_modules"), join(repository, "node_modules"));
+  cpSync(
     join(project, ".github", "workflows", `test-${projectId}.yml`),
     join(repository, ".github", "workflows", `test-${projectId}.yml`),
   );
+  writeMoonFixtureConfiguration(repository, projectId);
+}
+
+function writeMoonFixtureConfiguration(
+  repository: string,
+  projectId: MoonProjectFixturePaths["projectId"],
+): void {
   writeFileSync(
     join(repository, ".moon", "workspace.yml"),
     `projects:
   repository: .
   ${projectId}: tooling/${projectId}
+  home: home
 
 defaultProject: repository
 
@@ -103,9 +142,14 @@ vcs:
   defaultBranch: main
 `,
   );
+  mkdirSync(join(repository, "home"));
+  writeFileSync(
+    join(repository, "home/moon.yml"),
+    "tasks:\n  arnes-config:\n    command: noop\n    toolchains: system\n",
+  );
   writeFileSync(
     join(repository, "moon.yml"),
-    "tasks:\n  rust:\n    command: noop\n    toolchains: system\n    options:\n      cache: false\n      runInCI: skip\n",
+    "tasks:\n  rust:\n    command: noop\n    toolchains: system\n    options:\n      cache: false\n      runInCI: skip\n  dependencies:\n    command: noop\n    toolchains: system\n",
   );
 }
 
@@ -160,6 +204,9 @@ function runMoon(
       "--cache",
       options.cache ?? "read-write",
       ...(options.force === true ? ["--force"] : []),
+      ...(options.upstream === undefined
+        ? []
+        : ["--upstream", options.upstream]),
       target,
     ],
     {
@@ -215,6 +262,8 @@ export {
   cleanupMoonDeploymentFixtures,
   createMoonDeploymentFixture,
   foreignGitHubEnvironment,
+  prepareMoonWorkspaceFixture,
   runMoon,
+  withoutMoonTaskContext,
 };
 export type { MoonDeploymentFixture };

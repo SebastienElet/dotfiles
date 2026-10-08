@@ -35,6 +35,9 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
+    - /tooling/agent-memory/moon.yml
+    - /tooling/agent-handoff/moon.yml
+    - /tooling/arnes/moon.yml
     - deploy-scrapling-launcher*.ts
     - check-docker-cli
     - /.moon/tasks/docker.yml

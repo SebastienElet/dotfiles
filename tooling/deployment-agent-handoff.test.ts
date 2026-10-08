@@ -99,7 +99,8 @@ test("propagates a handoff deployment failure", () => {
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr).toContain(".local");
-  expect(result.stderr).toContain("Not a directory");
+  expect(result.stderr).toContain("ENOTDIR");
+  expect(readFileSync(join(fixture.home, ".local"), "utf8")).toBe("occupied\n");
 });
 
 type CleanupDestination = "owned-link" | "file" | "directory" | "foreign-link";
