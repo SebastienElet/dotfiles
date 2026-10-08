@@ -13,9 +13,10 @@ focus. Preparation reads the authenticated tracker and composes the installed
 and exact title, checkout policy and implementation handoff. Repository instructions and composed
 workflows retain branch, eligibility, pull-request and lifecycle decisions.
 
-New agents receive their initial prompt through native `agent start --` arguments. Single-line JSON
-encoding preserves quotes, shell syntax, newlines and control characters as data. A timeout can occur
-after execution has begun; startup errors trigger inspection, never another launch or prompt.
+New agents receive their initial prompt through native `agent start --` arguments. The initial request
+is JSON-stringified and its UTF-8 bytes are base64-encoded as ASCII data, preserving nested JSON,
+quotes, shell syntax, newlines and control characters through the native shell launch. A timeout can
+occur after execution has begun; startup errors trigger inspection, never another launch or prompt.
 No trust dialog is answered. The picker reports preparation state, not verified implementation success.
 
 Complete identities live in the Rust companion's `bindings.json`, under the per-socket dispatch
@@ -77,6 +78,13 @@ the requested fixture file. Independent rereads confirmed the exact file bytes, 
 common directory, unchanged source HEAD and focus. A second dispatch issued only snapshot reads and
 retained the same pane. After restarting the owned test server, native tokens were empty and the
 complete binding still identified the same linked checkout without creation or input.
+
+A subsequent audit reproduced nested JSON escape loss through Herdr 0.9.3's
+[POSIX quoting path](https://github.com/herdrdev/herdr/blob/v0.9.3/src/platform/macos.rs#L208) under Fish.
+The base64 transport was then exercised through a new native Codex launch in a ready Fish pane:
+its incoming request matched all 1,018 original bytes, and the final 409-byte fixture matched exactly,
+including nested JSON, quotes, backslashes, control escapes and Unicode. Source HEAD and focus stayed
+unchanged; data containing shell syntax created no side effect.
 
 The installed runtime did not expose `agent_session` in these Codex observations. The plugin retained
 an explicit pending state instead of claiming verified working-session reuse. Verified working reuse

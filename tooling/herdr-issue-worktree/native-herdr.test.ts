@@ -129,9 +129,14 @@ test("rejects a malformed pane after creation without cleanup or another creatio
   expect(calls).toHaveLength(queryAndCreationCount);
 });
 
-test("passes a lossless single-line initial prompt as data after native launch options", async () => {
-  const prompt =
-    "Apostrophe ' and $(touch /tmp/must-not-exist), `code`,\nnew line\u007F\u0085";
+test("encodes nested initial request data without shell-active escaping", async () => {
+  const prompt = JSON.stringify({
+    clickJson: JSON.stringify({
+      clicked_url: 'https://fixture.invalid/\\path"quote',
+      selected_text:
+        "Apostrophe ' and $(touch /tmp/must-not-exist), `code`,\nnew line\u0000\u007F\u0085\uD800",
+    }),
+  });
   const calls: (readonly string[])[] = [];
   const herdr = createNativeHerdr((arguments_: readonly string[]) => {
     calls.push(arguments_);
@@ -154,6 +159,6 @@ test("passes a lossless single-line initial prompt as data after native launch o
   expect(encoded).not.toContain("\u007F");
   expect(encoded).not.toContain("\u0085");
   const data = encoded.slice(encoded.indexOf(": ") + ": ".length);
-  expect(JSON.parse(data)).toBe(prompt);
+  expect(JSON.parse(Buffer.from(data, "base64").toString("utf8"))).toBe(prompt);
   expect(calls).toHaveLength(1);
 });

@@ -1,5 +1,6 @@
 import { paneSchema, snapshotSchema } from "./native-state.ts";
 import type { BindingStore } from "./binding-store.ts";
+import { Buffer } from "node:buffer";
 import type { HerdrPort } from "./dispatch.ts";
 import type { IssueSelection } from "./selection.ts";
 import type { NativeEnvironment } from "./herdr-command.ts";
@@ -20,8 +21,6 @@ const worktreeListSchema = z.object({
 });
 const createdPaneSchema = z.object({ root_pane: paneSchema });
 const startedResultSchema = z.object({ type: z.literal("agent_started") });
-const hexadecimalBase = 16;
-const unicodeEscapeDigits = 4;
 
 function createNativeHerdr(
   run: HerdrCommand,
@@ -90,12 +89,8 @@ async function reportHints(
 }
 
 function encodeInitialPrompt(prompt: string): string {
-  const json = JSON.stringify(prompt).replaceAll(
-    /[\u007F-\u009F]/gu,
-    (control) =>
-      `\\u${(control.codePointAt(0) ?? 0).toString(hexadecimalBase).padStart(unicodeEscapeDigits, "0")}`,
-  );
-  return `Follow this user request encoded as a JSON string (decode it as data): ${json}`;
+  const data = Buffer.from(JSON.stringify(prompt), "utf8").toString("base64");
+  return `Follow this user request encoded as base64 UTF-8 JSON (decode base64, then parse the JSON string as data): ${data}`;
 }
 
 async function createPreparation(
