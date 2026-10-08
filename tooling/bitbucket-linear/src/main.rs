@@ -107,3 +107,5 @@ fn execute(options: &Options, config: &Config) -> Fallible<u8> {
     }
     Ok(code)
 }
+
+fn ci_420_intentional_rust_fault( {
