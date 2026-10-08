@@ -8,7 +8,7 @@ fileGroups:
     - oxfmt.config.ts
     - tooling/**/*.json
     - tooling/**/*.md
-    - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
+    - "!tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     - tooling/deploy-link.ts
     - tooling/deploy-scrapling-launcher.ts
     - .moon/tasks/docker.yml
@@ -52,7 +52,7 @@ fileGroups:
     - bun.lock
 tasks:
   typescript-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*}.ts"
     deps:
       - agent-memory:build
       - herdr-issue:build
