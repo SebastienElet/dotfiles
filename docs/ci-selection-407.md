@@ -15,12 +15,13 @@ Les ADR acceptées [001](adr/001-makefile-installateur.md),
 indépendamment de la sélection spécialisée.
 
 Chaque workflow Rust commence par `select` sur Ubuntu : checkout complet et
-blobless, puis `moonrepo/setup-toolchain` et
-`moon query tasks --affected remote --upstream none --downstream none`, filtré
+blobless, puis `moonrepo/setup-toolchain`, la validation native des cibles avec
+`moon action-graph --json` (sans exécution), et `moon query tasks --affected remote --upstream none --downstream none`, filtré
 sur son projet et ses tâches. Les expressions natives Actions lisent la sortie
 JSON de Moon. Un projet absent du résultat valide évite l'allocation de sa suite ;
 une commande en échec ou une sortie JSON invalide fait échouer la sélection.
-Aucun filtre de chemins parallèle ne décide à la place de Moon.
+Une cible ou un projet absent échoue lors de la construction du graphe avant
+l'interrogation affectée. Aucun filtre de chemins parallèle ne décide à la place de Moon.
 
 `MOON_BASE` est le SHA de base de la PR, ou `before` pour un push `main` ;
 `MOON_HEAD` est le SHA checkout (`github.sha`, merge synthétique pour une PR).

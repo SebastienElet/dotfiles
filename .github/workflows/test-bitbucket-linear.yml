@@ -27,6 +27,8 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: >-
+          moon action-graph --json bitbucket-linear-sync:fmt bitbucket-linear-sync:clippy bitbucket-linear-sync:check bitbucket-linear-sync:test bitbucket-linear-sync:doc > /dev/null
       - id: query
         run: |
           {
