@@ -5,6 +5,8 @@ fileGroups:
   rust:
     - Cargo.toml
     - Cargo.lock
+    - moon.yml
+    - .cargo/**/*
     - build*.rs
     - src/**/*
     - tests/**/*
@@ -15,6 +17,8 @@ fileGroups:
     - /rustfmt.toml
     - /rust-toolchain.toml
     - /.moon/toolchains.yml
+    - /.prototools
+    - /moon.yml
     - /LICENSE
     - /tooling/RUST.md
 tasks:
