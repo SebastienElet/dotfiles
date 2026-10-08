@@ -20,6 +20,11 @@ to the user, and stops. No fix is applied without explicit user instruction.
 
    Exclude `README.md`. For each skill directory found, read its `SKILL.md`.
 
+   Also list the immediate skill directory slugs in the other canonical collection, counting only
+   directories containing `SKILL.md`. Reuse this slug-only inventory for D3 and D5; do not read
+   those skills' contents or merge the collections. If the other source is unavailable, record
+   that limitation instead of treating an unverified slug as absent.
+
 2. **Extract structured data** from each skill:
 
    - `name` (from frontmatter)
@@ -104,10 +109,11 @@ causes divergence over time.
 
 ---
 
-### D3 — Dead Reference
+### D3 — Reference Resolution
 
-**Goal**: Detect a skill that mentions another skill (by slug) that does not exist in the selected
-`<skills-root>/`.
+**Goal**: Distinguish a missing skill from a reference to the other canonical collection and from
+a skill available only in the dotfiles checkout. Source existence does not prove availability in
+the project where a user skill is being used.
 
 **Method**:
 
@@ -118,15 +124,48 @@ causes divergence over time.
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
   `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
   identifiers containing a namespace separator such as `superpowers:requesting-code-review`
-- Verify each extracted slug has a matching directory under `<skills-root>/`
+- Resolve each extracted slug against the selected inventory, then the other collection's slugs.
+  A slug present in both collections belongs to D5; never choose or merge duplicate copies.
+- Report **Dead Reference** (CRITICAL) only when the slug is absent from both verified inventories.
+  If no match is found and an inventory cannot be checked, report **Unverified Reference** (INFO)
+  and name the missing lookup; do not recommend creating a skill on that evidence. A known match
+  remains resolved even when the other inventory is unavailable.
+- A slug found only in the other collection is **Cross-Scope Reference** (INFO), not dead. Name
+  its canonical scope and source. Never recommend copying it into the selected collection.
+- Assess availability separately using the current project's discovered skill inventory or an
+  explicit availability statement. A project skill in dotfiles is not implicitly installed for a
+  user skill used elsewhere. When it exists only in that checkout, report **Checkout-Only
+  Reference** (INFO); if current availability is unknown, say so rather than assuming it.
+- For a user skill referencing a project skill, verify an explicit condition covering both the
+  referenced skill's availability and its applicability under the current project's conventions.
+  Without that condition, add **Unconditional Project Dependency** (WARN), even while auditing
+  from dotfiles where the referenced skill is available. Recommend making the dependency
+  conditional and following the current project's conventions when it is unavailable or
+  inapplicable. An explicit condition and fallback need no dependency warning outside dotfiles.
 
 **Output format**:
 
 ```text
-[D3] Dead Reference: <skill-A> mentions "<slug>" — no skill found with this name
+[D3] Dead Reference: <skill-A> mentions "<slug>" — absent from both canonical collections
   Line: <number or excerpt>
-  Recommendation: fix the name or create the missing skill
+  Recommendation: fix the name or, if required, create the skill in its appropriate scope
+
+[D3] Cross-Scope Reference: <skill-A> mentions "<slug>" — found in <scope>: <source>
+  Availability: available in the current project | checkout-only | unknown
+  Dependency: conditional | unconditional project dependency (WARN)
+  Recommendation: <conditional dependency correction, if needed; otherwise none>
+
+[D3] Checkout-Only Reference: <skill-A> mentions "<slug>" — exists in dotfiles project scope only
+  Current project: <project where the user skill is used>; skill unavailable here
+  Dependency: conditional with project-convention fallback | unconditional project dependency (WARN)
+  Recommendation: <conditional dependency correction, if needed; otherwise none>
+
+[D3] Unverified Reference: <skill-A> mentions "<slug>" — lookup unavailable for <collection>
+  Recommendation: verify that inventory before concluding the skill is missing
 ```
+
+Run the targeted examples in [d3-scenarios.md](d3-scenarios.md) when changing D3. They exercise
+reference resolution only, not the complete six-detector audit or host activation.
 
 ---
 
@@ -161,7 +200,7 @@ to cause confusion (typo, plural, name variation).
 
 **Method**:
 
-- Compare all selected slugs pairwise and list the other canonical collection's slugs
+- Compare all selected slugs pairwise and reuse the other canonical collection's slug inventory
 - Flag an exact slug in both collections as CRITICAL because hosts can discover both copies
 - Flag if: same root with different suffix (`git-commit` / `git-commits`), or Levenshtein distance ≤
   2, or same domain + similar verb (`pr-create` / `pr-open`)
@@ -273,6 +312,9 @@ Date: <date>
 ### [D4] Rule Contradiction — <skill-A> vs <skill-B>
 ...
 
+### [D3] Unconditional Project Dependency — <skill-A> → <project-skill>
+...
+
 ### [D6] Scoped Reference Conflict — <skill>
 ...
 
@@ -282,6 +324,9 @@ Date: <date>
 ---
 
 ## 🔵 Info (non-blocking)
+
+### [D3] Cross-Scope / Checkout-Only / Unverified Reference — <skill-A> → <slug>
+...
 
 ### [D5] Slug Ambiguity — <slug-A> ↔ <slug-B>
 ...
@@ -300,6 +345,9 @@ Date: <date>
 | 6 | D6 Missing Routing | 🔴 | skill-A | Add conditional routing in ## Steps for `<topic>-<scope>.md` files |
 | 7 | D6 Scoped Duplication | 🟡 | skill-A, skill-B | Extract to shared reference |
 | 8 | D5 Slug Ambiguity | 🔵 | slug-A, slug-B | Rename slug-B |
+| 9 | D3 Unconditional Project Dependency | 🟡 | user-skill, project-skill | Make availability and project applicability conditional |
+| 10 | D3 Cross-Scope / Checkout-Only Reference | 🔵 | skill-A, slug | Record scope and current availability; never duplicate |
+| 11 | D3 Unverified Reference | 🔵 | skill-A, slug | Verify unavailable inventory before declaring absence |
 
 **No files were modified.**
 Please indicate which inconsistencies you want to fix and how to proceed.
@@ -319,8 +367,9 @@ Please indicate which inconsistencies you want to fix and how to proceed.
 
 ## Constraints
 
-- **Strict scope**: never read skill content outside `<skills-root>/`; listing slugs in the other
-  canonical collection is allowed only for D5.
+- **Strict scope**: never read skill content outside `<skills-root>/`; reuse the other canonical
+  collection's slug-only inventory for D3 and D5. Availability checks use discovery metadata, not
+  additional skill bodies. An unavailable inventory is a limitation, not proof of absence.
 - If an out-of-scope check seems necessary, **complete the full analysis first**, then ask the user
   for confirmation at the end of the report, explaining why the extra read would be needed.
 - **This operation is read-only** — if the user asks you to apply a fix inline during the
