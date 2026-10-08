@@ -102,7 +102,7 @@ function remoteIdentity(
   const scp = /^[^@:/\s]+@(?<host>[^:/\s]+):(?<path>.+)$/u.exec(value);
   if (scp?.groups?.host !== undefined && scp.groups.path !== undefined) {
     return repositoryIdentitySchema.parse({
-      host: scp.groups.host,
+      host: scp.groups.host.toLowerCase(),
       path: scp.groups.path.replaceAll(/^\/+|\.git$/gu, ""),
     });
   }

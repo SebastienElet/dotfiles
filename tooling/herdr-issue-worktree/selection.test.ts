@@ -193,3 +193,19 @@ test("does not case-fold a GitLab repository path", async () => {
     message: "Selected repository does not match the clicked issue",
   });
 });
+
+test.each([
+  [
+    "git@GitHub.COM:Fixture/Project.git",
+    "https://github.com/fixture/project/issues/17",
+  ],
+  [
+    "git@GitLab.EXAMPLE.test:team/project.git",
+    "https://gitlab.example.test/team/project/-/issues/17",
+  ],
+])("confirms a valid mixed-case SCP hostname: %s", async (remote, url) => {
+  const root = repository(remote);
+  expect(
+    await selectIssueWork(click(root, url), answers("2", "")),
+  ).toMatchObject({ repository: { root } });
+});
