@@ -236,3 +236,5 @@ The export contains every non-ignored source under `harness/`, except the genera
 operating-system metadata, plus the canonical hook declarations in `home/.arnes.yaml`. Source
 categories are defined once in `tooling/arnes/src/export/sources.rs`; extend that selector
 and its tests to add a category, then regenerate the snapshot.
+
+CI selection measurement for #420.
