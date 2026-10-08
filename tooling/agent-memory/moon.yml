@@ -33,16 +33,11 @@ tasks:
       cache: false
       runInCI: false
   binary:
-    script: |
-      set -e
-      mkdir -p "$HOME/.local/bin"
-      ln -s "$projectRoot/target/release/agent-memory" "$HOME/.local/bin/agent-memory"
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/target/release/agent-memory" "$HOME/.local/bin/agent-memory"
     deps:
       - build
-    checks:
-      - check: condition
-        script: test -e "$HOME/.local/bin/agent-memory" || test -L "$HOME/.local/bin/agent-memory"
-    toolchains: system
+      - repository:dependencies
+    toolchains: bun
     options:
       cache: false
       runInCI: false

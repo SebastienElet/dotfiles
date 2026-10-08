@@ -17,11 +17,30 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { prepareMoonWorkspaceFixture } from "./deployment-moon-test-support.ts";
 import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
 afterEach(cleanupDeploymentFixtures);
 const deploymentTimeoutMilliseconds = 30_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
+const portableMinimalTasks = [
+  "home:nvim",
+  "home:wezterm",
+  "home:git-delta",
+  "home:starship",
+  "home:tmux",
+  "home:cspell-config",
+  "home:arnes-config",
+  "harness:claude-instructions",
+  "harness:claude-rules",
+  "harness:claude-skills",
+  "harness:codex-instructions",
+  "harness:codex-agents",
+  "harness:codex-skills",
+  "arnes:binary",
+  "agent-memory:binary",
+  "agent-handoff:binary",
+];
 
 function deployedFiles(directory: string): readonly string[] {
   return readdirSync(directory).flatMap((name) => {
@@ -33,8 +52,13 @@ function deployedFiles(directory: string): readonly string[] {
 function clean(
   home: string,
   environment: Readonly<NodeJS.ProcessEnv>,
+  repositoryRoot: string = project,
 ): ReturnType<typeof runDeploymentMoon> {
-  return runDeploymentMoon({ home }, ["repository:clean"], environment);
+  return runDeploymentMoon(
+    { home, repositoryRoot },
+    ["repository:clean"],
+    environment,
+  );
 }
 
 function identities(paths: readonly string[]): readonly Readonly<{
@@ -88,32 +112,20 @@ function cacheFixture(home: string): Readonly<{
 
 test("cleans and reinstalls portable minimal Moon deployments without global dependencies", () => {
   const fixture = createDeploymentFixture("clean-moon-minimal");
+  prepareMoonWorkspaceFixture(fixture.repository);
+  const deployment = { home: fixture.home, repositoryRoot: fixture.repository };
   const existingFiles = deployedArtifacts(fixture.home);
   const environment = {
+    MOON_BASE: "main",
+    MOON_HEAD: "HEAD",
     BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(
       fixture.root,
       "runtime-transpiler-cache",
     ),
   };
-  const tasks = [
-    "home:nvim",
-    "home:wezterm",
-    "home:git-delta",
-    "home:starship",
-    "home:tmux",
-    "home:cspell-config",
-    "home:arnes-config",
-    "harness:claude-instructions",
-    "harness:claude-rules",
-    "harness:claude-skills",
-    "harness:codex-instructions",
-    "harness:codex-agents",
-    "harness:codex-skills",
-    "arnes:binary",
-    "agent-memory:binary",
-    "agent-handoff:binary",
-  ];
-  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
+  expectSuccess(
+    runDeploymentMoon(deployment, portableMinimalTasks, environment),
+  );
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
     (path) =>
@@ -122,15 +134,22 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   );
   expect(files.length).toBeGreaterThan(0);
   const before = deploymentSnapshot(files, existingFiles);
-  const source = readFileSync(join(project, "harness/AGENTS.md"), "utf8");
-  expectSuccess(clean(fixture.home, environment));
+  const source = readFileSync(
+    join(fixture.repository, "harness/AGENTS.md"),
+    "utf8",
+  );
+  expectSuccess(clean(fixture.home, environment, fixture.repository));
   expect(files.filter((path) => pathExists(path))).toEqual([]);
   expect(identities(existingFiles)).toEqual(before.existing);
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
-  expect(readFileSync(join(project, "harness/AGENTS.md"), "utf8")).toBe(source);
-  expectSuccess(clean(fixture.home, environment));
+  expect(
+    readFileSync(join(fixture.repository, "harness/AGENTS.md"), "utf8"),
+  ).toBe(source);
+  expectSuccess(clean(fixture.home, environment, fixture.repository));
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
-  expectSuccess(runDeploymentMoon(fixture, tasks, environment));
+  expectSuccess(
+    runDeploymentMoon(deployment, portableMinimalTasks, environment),
+  );
   expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 

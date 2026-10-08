@@ -18,6 +18,7 @@ fileGroups:
     - /tooling/deployment-moon-runner.ts
     - /tooling/deployment-moon-test-support.ts
     - /tooling/deployment-test-support.ts
+    - /tooling/deploy-link.ts
 env:
   RUSTFLAGS: -Funsafe-code
 tasks:
@@ -31,16 +32,11 @@ tasks:
       cache: false
       runInCI: false
   binary:
-    script: |
-      set -e
-      mkdir -p "$HOME/.local/bin"
-      ln -s "$projectRoot/target/release/agent-handoff" "$HOME/.local/bin/agent-handoff"
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/target/release/agent-handoff" "$HOME/.local/bin/agent-handoff"
     deps:
       - build
-    checks:
-      - check: condition
-        script: test -e "$HOME/.local/bin/agent-handoff" || test -L "$HOME/.local/bin/agent-handoff"
-    toolchains: system
+      - repository:dependencies
+    toolchains: bun
     options:
       cache: false
       runInCI: false

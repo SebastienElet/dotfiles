@@ -89,7 +89,8 @@ test("propagates a memory deployment failure", () => {
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr).toContain(".local");
-  expect(result.stderr).toContain("Not a directory");
+  expect(result.stderr).toContain("ENOTDIR");
+  expect(readFileSync(join(fixture.home, ".local"), "utf8")).toBe("occupied\n");
 });
 
 test("deploys the Cursor memory rule from its canonical source", () => {

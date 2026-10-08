@@ -29,16 +29,11 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       cargo build --quiet --release --locked
   binary:
-    script: |
-      set -e
-      mkdir -p "$HOME/.local/bin"
-      ln -s "$projectRoot/target/release/arnes" "$HOME/.local/bin/arnes"
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/target/release/arnes" "$HOME/.local/bin/arnes"
     deps:
       - build
-    checks:
-      - check: condition
-        script: test -e "$HOME/.local/bin/arnes" || test -L "$HOME/.local/bin/arnes"
-    toolchains: system
+      - repository:dependencies
+    toolchains: bun
     options:
       cache: false
       runInCI: false
