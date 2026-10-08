@@ -7,6 +7,7 @@ bootstrap_directory="$(mktemp -d)"
 trap 'rm -r "$bootstrap_directory"' EXIT
 export PROTO_HOME="$bootstrap_directory/proto"
 export PROTO_CLI_UNMANAGED_INSTALL="$PROTO_HOME/bin"
+export PROTO_OFFLINE=false
 export PROTO_AUTO_INSTALL=true
 export PROTO_DETECT_STRATEGY=only-prototools
 unset PROTO_MOON_VERSION PROTO_ENV

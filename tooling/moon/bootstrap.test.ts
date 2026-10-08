@@ -20,6 +20,7 @@ function writeProtoFixture(directory: string): void {
     `#!/bin/sh
 [ "$PROTO_MOON_VERSION" = '' ] || exit 89
 [ "$PROTO_ENV" = '' ] || exit 89
+[ "$PROTO_OFFLINE" = false ] || exit 89
 [ "$PROTO_DETECT_STRATEGY" = only-prototools ] || exit 89
 [ -f .prototools ] || exit 89
 case "$*" in
@@ -71,6 +72,7 @@ function bootstrapMoon(
         PATH: `${directory}:/usr/bin:/bin`,
         PROTO_MOON_VERSION: "latest",
         PROTO_ENV: "foreign",
+        PROTO_OFFLINE: "true",
         MOON_TEST_INSTALLER: downloadedInstaller,
         MOON_TEST_DOWNLOAD_STATUS: String(downloadStatus),
         MOON_TEST_PROTO: join(directory, "proto"),

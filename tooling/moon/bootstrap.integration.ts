@@ -78,6 +78,7 @@ function bootstrap(pinContent: string | undefined, existing = false): void {
         PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
         PROTO_MOON_VERSION: "latest",
         PROTO_ENV: "foreign",
+        PROTO_OFFLINE: "true",
       },
     });
     if (pinContent === pin) {
