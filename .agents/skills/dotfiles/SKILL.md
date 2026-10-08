@@ -41,6 +41,13 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
 7. In a worktree, inspect the task and its action graph before execution. Execute only deployment
    tasks proven to mutate fixture-local links or configuration, without their global installation
    dependencies; the macOS CI smoke exercises the full minimal installation graph.
+   Persistent deployments use the canonical checkout at `~/.dotfiles`. For exceptional validation,
+   prefer isolated destinations. If a user link must temporarily use the worktree, record its
+   destination and canonical replacement source, and lock the worktree with
+   `git worktree lock --reason 'temporary deployment source' /absolute/worktree/path` before
+   deploying. Keep it locked until the change is integrated into the canonical checkout, explicitly
+   redirect the affected links there, verify their resolved targets, then unlock it. Herdr cleanup
+   does not discover or repair deployed links; ignored files do not prevent removal.
 8. Validate declarative changes with Moon's native configuration and action graph, then run the
    relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
 
