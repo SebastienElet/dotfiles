@@ -1,9 +1,9 @@
 import { paneSchema, snapshotSchema } from "./native-state.ts";
 import type { BindingStore } from "./binding-store.ts";
-import { Buffer } from "node:buffer";
 import type { HerdrPort } from "./dispatch.ts";
 import type { IssueSelection } from "./selection.ts";
 import type { NativeEnvironment } from "./herdr-command.ts";
+import { initialPrompt } from "./initial-prompt.ts";
 import { realpathSync } from "node:fs";
 import { z } from "zod";
 
@@ -50,7 +50,7 @@ function createNativeHerdr(
           "--pane",
           paneId,
           "--",
-          encodeInitialPrompt(prompt),
+          initialPrompt(bindings.directory, prompt),
         ]),
       );
     },
@@ -99,11 +99,6 @@ async function reportHints(
     ],
     { output: "silent" },
   );
-}
-
-function encodeInitialPrompt(prompt: string): string {
-  const data = Buffer.from(JSON.stringify(prompt), "utf8").toString("base64");
-  return `Follow this user request encoded as base64 UTF-8 JSON (decode base64, then parse the JSON string as data): ${data}`;
 }
 
 async function createPreparation(

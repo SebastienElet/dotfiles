@@ -1,19 +1,28 @@
 import { afterEach, expect, test } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import type { HerdrCommand } from "./native-herdr.ts";
 import type { IssueFixture } from "./dispatch-test-support.ts";
 import { createNativeHerdr as createNativeAdapter } from "./native-herdr.ts";
 import { inspectRepository } from "./repository.ts";
 import { issueFixture } from "./dispatch-test-support.ts";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const fixtures: IssueFixture[] = [];
+const directories: string[] = [];
+const longRequestRepeats = 1000;
+const nativeCanonicalInputLimit = 1023;
+const dataSeparatorLength = 2;
 function createNativeHerdr(
   run: HerdrCommand,
 ): ReturnType<typeof createNativeAdapter> {
   let tokens: Readonly<Record<string, Readonly<Record<string, string>>>> = {};
+  const directory = mkdtempSync(join(tmpdir(), "herdr-native-launch-"));
+  directories.push(directory);
   return createNativeAdapter(
     run,
     {
-      directory: "/fixture-state",
+      directory,
       read: () => Promise.resolve(tokens),
       patch: (paneId, values) => {
         tokens = { ...tokens, [paneId]: { ...tokens[paneId], ...values } };
@@ -30,6 +39,9 @@ function createNativeHerdr(
 afterEach(() => {
   for (const fixture of fixtures.splice(0)) {
     fixture.dispose();
+  }
+  for (const directory of directories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true });
   }
 });
 
@@ -159,6 +171,70 @@ test("encodes nested initial request data without shell-active escaping", async 
   expect(encoded).not.toContain("\u007F");
   expect(encoded).not.toContain("\u0085");
   const data = encoded.slice(encoded.indexOf(": ") + ": ".length);
-  expect(JSON.parse(Buffer.from(data, "base64").toString("utf8"))).toBe(prompt);
+  const path: unknown = JSON.parse(
+    Buffer.from(data, "base64").toString("utf8"),
+  );
+  if (typeof path !== "string") {
+    throw new TypeError("Initial prompt path missing");
+  }
+  expect(JSON.parse(readFileSync(path, "utf8"))).toBe(prompt);
   expect(calls).toHaveLength(1);
 });
+
+test("keeps a complete long request out of a new shell command", async () => {
+  const calls: (readonly string[])[] = [];
+  const herdr = createNativeHerdr((args) => {
+    calls.push(args);
+    return Promise.resolve({ type: "agent_started" });
+  });
+  await herdr.start({
+    paneId: "new:p1",
+    name: "fixture",
+    kind: "codex",
+    prompt: "complete request ".repeat(longRequestRepeats),
+  });
+  const argument = calls[0]?.at(-1);
+  expect(argument).toBeDefined();
+  expect(Buffer.byteLength(argument ?? "", "utf8")).toBeLessThan(
+    nativeCanonicalInputLimit,
+  );
+});
+
+test.each(["file unavailable", "native outcome unknown"])(
+  "retains launch safety when %s",
+  async (failure) => {
+    const calls: (readonly string[])[] = [];
+    const herdr = createNativeHerdr((args) => {
+      calls.push(args);
+      return Promise.reject(new Error("Native outcome unknown"));
+    });
+    if (failure === "file unavailable") {
+      rmSync(herdr.bindingDirectory, { recursive: true });
+    }
+    const outcome = await herdr
+      .start({
+        paneId: "new:p1",
+        name: "fixture",
+        kind: "codex",
+        prompt: "complete request",
+      })
+      .catch((error: unknown) => error);
+    expect(outcome).toBeInstanceOf(Error);
+    if (failure === "file unavailable") {
+      expect(calls).toHaveLength(0);
+      return;
+    }
+    expect(calls).toHaveLength(1);
+    const argument = calls[0]?.at(-1) ?? "";
+    const path: unknown = JSON.parse(
+      Buffer.from(
+        argument.slice(argument.lastIndexOf(": ") + dataSeparatorLength),
+        "base64",
+      ).toString("utf8"),
+    );
+    if (typeof path !== "string") {
+      throw new TypeError("Initial request path missing");
+    }
+    expect(JSON.parse(readFileSync(path, "utf8"))).toBe("complete request");
+  },
+);

@@ -15,10 +15,14 @@ focus. Preparation reads the authenticated tracker and composes the installed
 and exact title, checkout policy and implementation handoff. Repository instructions and composed
 workflows retain branch, eligibility, pull-request and lifecycle decisions.
 
-New agents receive their initial prompt through native `agent start --` arguments. The initial request
-is JSON-stringified and its UTF-8 bytes are base64-encoded as ASCII data, preserving nested JSON,
-quotes, shell syntax, newlines and control characters through the native shell launch. A timeout can
-occur after execution has begun; startup errors trigger inspection, never another launch or prompt.
+New agents receive a short private-file reference through native `agent start --` arguments. The
+complete request is a JSON string in a mode-0600 file inside a mode-0700 per-launch directory under
+the binding directory. Only the base64-encoded JSON path travels through the shell; the agent reads
+and parses the full request. References exceeding 768 UTF-8 bytes are refused before launch. This
+avoids the long-input truncation reported while Herdr 0.9.3 shells start
+([upstream #4950](https://github.com/herdrdev/herdr/issues/4950)). Files remain available for manual
+inspection; do not remove a request while its agent may still need it. A timeout can occur after
+execution has begun; startup errors trigger inspection, never another launch or prompt.
 No trust dialog is answered. The picker reports preparation state, not verified implementation success.
 
 Complete identities live in the Rust companion's `bindings.json`, under the per-socket dispatch
