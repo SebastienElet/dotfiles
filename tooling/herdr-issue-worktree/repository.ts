@@ -117,7 +117,8 @@ function remoteIdentity(
     return null;
   }
   return repositoryIdentitySchema.parse({
-    host: url.host,
+    host:
+      url.protocol === "ssh:" && url.port === "22" ? url.hostname : url.host,
     path: url.pathname.replaceAll(/^\/+|\.git$/gu, ""),
   });
 }

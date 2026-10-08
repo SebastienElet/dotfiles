@@ -150,6 +150,16 @@ test.each([
   ]);
 });
 
+test.each([
+  ["ssh://git@github.com:22/fixture/project.git", "github.com"],
+  ["ssh://git@gitlab.example.test:22/team/project.git", "gitlab.example.test"],
+  ["ssh://git@github.com:2222/fixture/project.git", "github.com:2222"],
+])("preserves SSH endpoint identity for %s", (remote, host) => {
+  const root = repository();
+  git(root, "remote", "add", "origin", remote);
+  expect(inspectRepository(root).remotes[0]?.identity?.host).toBe(host);
+});
+
 test("retains a remote port rather than equating a different hosting endpoint", () => {
   const root = repository();
   git(
