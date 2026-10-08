@@ -209,3 +209,74 @@ test.each([
     await selectIssueWork(click(root, url), answers("2", "")),
   ).toMatchObject({ repository: { root } });
 });
+
+test("confirms a GitLab repository at the exact custom HTTPS endpoint", async () => {
+  const root = repository("https://gitlab.example.test:8443/team/project.git");
+  const selected = await selectIssueWork(
+    click(root, "https://gitlab.example.test:8443/team/project/-/issues/17"),
+    answers("2", ""),
+  );
+  expect(selected).toMatchObject({ agent: "codex", repository: { root } });
+});
+
+test("refuses a GitLab repository at a different HTTPS port", async () => {
+  const root = repository("https://gitlab.example.test:9443/team/project.git");
+  const selected = click(
+    root,
+    "https://gitlab.example.test:8443/team/project/-/issues/17",
+  );
+  const failure = await selectIssueWork(selected, answers("2", root)).catch(
+    (error: unknown) => error,
+  );
+  expect(failure).toMatchObject({
+    message: "Selected repository does not match the clicked issue",
+  });
+});
+
+test.each([
+  "git@evil.invalid:fixture/project.git\ngit@github.com:fixture/project.git",
+  "https://evil.invalid/fixture/project.git\nhttps://github.com/fixture/project.git",
+  "https://git\t@github.com/fixture/project.git",
+])("refuses a control-bearing configured remote URL: %s", async (remote) => {
+  const root = repository(remote);
+  const failure = await selectIssueWork(click(root), answers("2", root)).catch(
+    (error: unknown) => error,
+  );
+  if (!(failure instanceof Error)) {
+    throw new TypeError("Expected repository inspection to fail");
+  }
+  expect(failure.message).toContain("control characters");
+});
+
+test("supports genuinely separate configured remote URL entries", async () => {
+  const root = repository("git@mirror.invalid:fixture/project.git");
+  const configured = Bun.spawnSync([
+    "git",
+    "-C",
+    root,
+    "config",
+    "--add",
+    "remote.origin.url",
+    "git@github.com:fixture/project.git",
+  ]);
+  expect(configured.exitCode).toBe(0);
+  expect(await selectIssueWork(click(root), answers("2", ""))).toMatchObject({
+    repository: { root },
+  });
+});
+
+test("preserves Git insteadOf expansion when inspecting a remote", async () => {
+  const root = repository("herdr-fixture-alias:project.git");
+  const configured = Bun.spawnSync([
+    "git",
+    "-C",
+    root,
+    "config",
+    "url.git@github.com:fixture/.insteadOf",
+    "herdr-fixture-alias:",
+  ]);
+  expect(configured.exitCode).toBe(0);
+  expect(await selectIssueWork(click(root), answers("2", ""))).toMatchObject({
+    repository: { root },
+  });
+});

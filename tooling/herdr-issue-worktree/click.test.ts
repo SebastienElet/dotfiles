@@ -63,6 +63,8 @@ test("keeps Linear workspace identity while the local repository remains unresol
 test.each([
   "http://github.com/fixture/project/issues/17",
   "https://someone@github.com/fixture/project/issues/17",
+  "https://someone@gitlab.example.test:8443/team/project/-/issues/17",
+  "https://linear.app:8443/fixture/issue/TST-17/title",
   "https://github.com:9443/fixture/project/issues/17",
   "https://github.com/fixture/project/pull/17",
   "https://github.com.evil.test/fixture/project/issues/17",
@@ -104,3 +106,19 @@ test("uses one GitHub issue identity across casing aliases while retaining each 
   expect(parse(mixed).context.clicked_url).toBe(mixed);
   expect(parse(mixed).issue.url).toBe(mixed);
 });
+
+test.each(["8443", "9443"])(
+  "retains a self-hosted GitLab authority with port %s",
+  (port) => {
+    const url = `https://gitlab.example.test:${port}/team/project/-/issues/17?full=1#comment`;
+    const { issue } = parseIssueClick(
+      JSON.stringify({ clicked_url: url, invocation_source: "link_click" }),
+    );
+    expect(issue).toEqual({
+      identity: `https://gitlab.example.test:${port}/team/project/-/issues/17`,
+      repository: { host: `gitlab.example.test:${port}`, path: "team/project" },
+      tracker: "gitlab",
+      url,
+    });
+  },
+);

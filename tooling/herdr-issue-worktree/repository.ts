@@ -57,9 +57,10 @@ function inspectRepository(directory: string): RepositoryContext {
     names === ""
       ? []
       : names.split("\n").flatMap((name) =>
-          runGit(root, ["remote", "get-url", "--all", "--", name])
-            .split("\n")
-            .map((url) => ({ identity: remoteIdentity(url), name })),
+          remoteUrls(root, name).map((url) => ({
+            identity: remoteIdentity(url),
+            name,
+          })),
         );
   return repositoryContextSchema.parse({
     branch,
@@ -93,7 +94,39 @@ function runGit(directory: string, arguments_: readonly string[]): string {
       `Git inspection failed: ${detail === "" ? (result.signalCode ?? result.exitCode) : detail}`,
     );
   }
-  return result.stdout.toString().replace(/\r?\n$/u, "");
+  return result.stdout.toString().replace(/\n$/u, "");
+}
+
+function remoteUrls(directory: string, name: string): readonly string[] {
+  const configured = runGit(directory, [
+    "config",
+    "--null",
+    "--get-all",
+    `remote.${name}.url`,
+  ]);
+  if (!configured.endsWith("\0")) {
+    throw new Error("Git remote URL configuration has invalid record framing");
+  }
+  const entries = configured.slice(0, -1).split("\0");
+  if (entries.some((url) => /\p{Cc}/u.test(url))) {
+    throw new Error("Git remote URL contains control characters");
+  }
+  const resolved = runGit(directory, [
+    "remote",
+    "get-url",
+    "--all",
+    "--",
+    name,
+  ]).split("\n");
+  if (
+    resolved.length !== entries.length ||
+    resolved.some((url) => /\p{Cc}/u.test(url))
+  ) {
+    throw new Error(
+      "Resolved Git remote URL has ambiguous framing or control characters",
+    );
+  }
+  return resolved;
 }
 
 function remoteIdentity(

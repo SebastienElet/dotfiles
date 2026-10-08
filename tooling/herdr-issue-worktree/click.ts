@@ -29,8 +29,7 @@ function parseIssueClick(contextJson: string): IssueClick {
   if (
     clickedUrl.protocol !== "https:" ||
     clickedUrl.username !== "" ||
-    clickedUrl.password !== "" ||
-    clickedUrl.port !== ""
+    clickedUrl.password !== ""
   ) {
     throw new Error("Unsupported issue URL");
   }
@@ -39,19 +38,19 @@ function parseIssueClick(contextJson: string): IssueClick {
 
 function recognizeIssue(
   url: string,
-  clickedUrl: Readonly<Pick<URL, "hostname" | "origin" | "pathname">>,
+  clickedUrl: Readonly<Pick<URL, "host" | "origin" | "pathname">>,
 ): IssueReference {
   const github = /^\/(?<repository>[^/]+\/[^/]+)\/issues\/[1-9]\d*\/?$/u.exec(
     clickedUrl.pathname,
   );
   if (
-    clickedUrl.hostname === "github.com" &&
+    clickedUrl.host === "github.com" &&
     github?.groups?.repository !== undefined
   ) {
     const repositoryPath = github.groups.repository.toLowerCase();
     return {
       identity: `${clickedUrl.origin}${clickedUrl.pathname.replace(/\/$/u, "").toLowerCase()}`,
-      repository: { host: clickedUrl.hostname, path: repositoryPath },
+      repository: { host: clickedUrl.host, path: repositoryPath },
       tracker: "github",
       url,
     };
@@ -63,7 +62,7 @@ function recognizeIssue(
   if (gitlab?.groups?.repository !== undefined) {
     return {
       identity: `${clickedUrl.origin}${clickedUrl.pathname.replace(/\/$/u, "")}`,
-      repository: { host: clickedUrl.hostname, path: gitlab.groups.repository },
+      repository: { host: clickedUrl.host, path: gitlab.groups.repository },
       tracker: "gitlab",
       url,
     };
@@ -73,7 +72,7 @@ function recognizeIssue(
       clickedUrl.pathname,
     );
   if (
-    clickedUrl.hostname === "linear.app" &&
+    clickedUrl.host === "linear.app" &&
     linear?.groups?.workspace !== undefined &&
     linear.groups.identifier !== undefined
   ) {
