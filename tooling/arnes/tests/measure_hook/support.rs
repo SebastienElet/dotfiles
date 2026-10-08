@@ -117,22 +117,19 @@ pub fn run_at(
     state: &Path,
     payload: &[u8],
 ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_arnes"))
+    let mut input = tempfile::tempfile()?;
+    input.write_all(payload)?;
+    input.rewind()?;
+    Ok(Command::new(env!("CARGO_BIN_EXE_arnes"))
         .args(["measure", "hook", "--agent", "codex"])
         .current_dir(current)
         .env_clear()
         .env("HOME", &harness.home)
         .env("XDG_STATE_HOME", state)
-        .stdin(Stdio::piped())
+        .stdin(Stdio::from(input))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()?;
-    child
-        .stdin
-        .take()
-        .ok_or("required test value is missing")?
-        .write_all(payload)?;
-    Ok(child.wait_with_output()?)
+        .output()?)
 }
 pub fn run_record(
     harness: &Harness,
