@@ -31,7 +31,9 @@ This file is the single source of truth for all coding agents working in this re
 ## Architecture Decisions
 
 - `docs/adr/` records the structural decisions of this repository, indexed in `docs/adr/README.md`. Only decisions still in force are recorded.
-- Never contradict an ADR silently. Either follow it, or state the conflict, then deliver what was asked along with the ADR that would need superseding.
+- If a request appears to contradict an ADR in force, investigate any plausible exception or
+  migration first. If a certain contradiction remains, report it and stop implementation of the
+  affected path. Continue independent work.
 - Routine changes — adding a tool target, updating a lockfile, editing a skill — need no ADR.
 
 ## Shared Skills
