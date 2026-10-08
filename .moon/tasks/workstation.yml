@@ -141,6 +141,7 @@ tasks:
   herdr-plugin:
     description: Link the Herdr worktree cleanup and issue plugins
     deps:
+      - dependencies
       - herdr-setup
       - herdr-issue:build
     toolchains: system
