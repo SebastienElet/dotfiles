@@ -56,8 +56,11 @@ que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
 
 La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
 issues de la même source canonique sous `harness/skills/`.
-Les [User Rules de Cursor](https://docs.cursor.com/context/rules) sont distribuées sous
-`~/.cursor/rules` depuis leurs sources canoniques dans `harness/rules/`.
+Cursor dispose d'une projection commune assemblée en règle `alwaysApply` dans le plugin local
+`~/.cursor/plugins/local/dotfiles-harness`. Son activation et sa réception doivent être vérifiées
+dans Cursor ; les anciens liens sous `~/.cursor/rules` ne prouvent pas un chargement global.
+La [matrice de couverture et la procédure Cursor](cursor-harness.md) distinguent les projections,
+les mécanismes documentés et les preuves de réception disponibles.
 
 Les skills user vivent dans `harness/skills/` et sont déployées individuellement
 vers les répertoires utilisateur de Claude, Cursor et Codex. Le déploiement Moon

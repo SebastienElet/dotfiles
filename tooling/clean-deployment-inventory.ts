@@ -66,6 +66,10 @@ const links = [
   ["harness/visual-presentation.md", ".claude/visual-presentation.md"],
   ["harness/visual-presentation.md", ".cursor/rules/visual-presentation.mdc"],
   [
+    "home/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
+    ".cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
+  ],
+  [
     "harness/rules/agent-instructions.md",
     ".claude/rules/agent-instructions.md",
   ],
@@ -86,6 +90,7 @@ const links = [
 ] as const;
 const regularFiles = [
   ".codex/AGENTS.md",
+  ".cursor/plugins/local/dotfiles-harness/rules/common-instructions.mdc",
   ".codex/agents/design-claim-auditor.toml",
   ".config/bat/themes/Catppuccin Latte.tmTheme",
   ".config/bat/themes/Catppuccin Mocha.tmTheme",
