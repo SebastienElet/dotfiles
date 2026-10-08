@@ -7,8 +7,7 @@ fileGroups:
     - Cargo.lock
     - moon.yml
     - .cargo/**/*
-    - clippy.toml
-    - .clippy.toml
+    - "{clippy,.clippy}.toml"
     - build*.rs
     - src/**/*
     - tests/**/*
