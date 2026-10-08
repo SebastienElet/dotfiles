@@ -52,8 +52,16 @@ of a change; source searches still locate code, semctx never does.
   the server is unavailable, then pass the absolute Git root as `repositoryRoot` on every call.
 - **Before a non-trivial edit**, follow the `semctx-control` skill: open or reuse a change
   contract and pull the semantic slice of its invariants.
+- **Authorized task worktrees:** initialization of that worktree and change-contract writes
+  are authorized in advance. Never initialize the main checkout. The task's written plan and the
+  agent's plan satisfy `reviewed_plan` without additional human approval; control reports
+  describe obligations, not execution permission (`executionAuthority: none`).
+- **After every Semctx write**, inspect the tracked `.gitignore`: the external tool may
+  add `.semctx/` exceptions even when global Git ignores already cover it. Revert only
+  tool-added changes outside the authorized scope, preserving existing edits.
 - **Before a commit or push**, run `semctx_verify_change` then `semctx_change_verify`, and run
-  the tests they recommend. Never conclude on a BLOCK.
+  the tests they recommend. Never conclude on BLOCK or present PARTIAL or STALE as verified.
+  Never reindex or reseal merely to obtain a green result.
 - **Read-only work** — audit, diagnosis, explanation — uses only read-only semctx surfaces and
   writes no semantic file or handoff.
 
