@@ -32,10 +32,7 @@ function createNativeHerdr(
     nativeEnvironment,
     createPreparation: (selection, label) =>
       createPreparation(run, selection, label),
-    mark: async (paneId, tokens) => {
-      await bindings.patch(paneId, tokens);
-      await reportHints(run, paneId, tokens);
-    },
+    mark: createBindingMarker(run, bindings),
     snapshot: async () => {
       const result = z
         .object({ snapshot: snapshotSchema })
@@ -57,6 +54,22 @@ function createNativeHerdr(
         ]),
       );
     },
+  };
+}
+
+function createBindingMarker(
+  run: HerdrCommand,
+  bindings: BindingStore,
+): BindingStore["patch"] {
+  return async (paneId, tokens) => {
+    await bindings.patch(paneId, tokens);
+    try {
+      await reportHints(run, paneId, tokens);
+    } catch (error) {
+      process.stderr.write(
+        `${JSON.stringify({ level: "warn", event: "issue-hints-unavailable", paneId, reason: error instanceof Error ? error.message : String(error) })}\n`,
+      );
+    }
   };
 }
 

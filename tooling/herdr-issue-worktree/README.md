@@ -23,7 +23,8 @@ No trust dialog is answered. The picker reports preparation state, not verified 
 
 Complete identities live in the Rust companion's `bindings.json`, under the per-socket dispatch
 directory. Native metadata carries only bounded display hints: Herdr 0.9.3 normalizes values to
-80 characters and discards these tokens on restart. Registration preserves canonical issue identity,
+80 characters and discards these tokens on restart. Display-hint failures emit a structured warning
+after durable persistence and do not abort startup; persistence failures still stop it. Registration preserves canonical issue identity,
 Git paths, title and native handles. Unknown versions, duplicate keys, corrupt state and state
 symlinks are refused without replacing the original data. Writes compare the complete prior map
 under an exclusive file lock; another pane cannot register the same issue and role. Definite busy/stale
@@ -50,6 +51,10 @@ A source-only preflight rejection creates no pane or agent and releases its unus
 refresh the selection before another click. Once a native creation or startup may have occurred,
 uncertainty retains the reservation and resources. SCP hostnames use the same lowercase identity
 as URL hostnames; repository paths retain their provider-specific comparison.
+Closed native panes/workspaces retain their bindings and block another launch for manual inspection.
+This conservative policy was explicitly retained: Herdr 0.9.3 can finish a
+[queued worktree creation](https://github.com/herdrdev/herdr/blob/v0.9.3/src/app/api/worktrees/deferred.rs#L372)
+after its source workspace closes. Missing resources alone do not prove that all work stopped.
 Collisions, incompatible repositories, changed occupants and unavailable identity stop the launch.
 
 ## Installation and validation
