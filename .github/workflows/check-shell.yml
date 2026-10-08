@@ -4,13 +4,17 @@ on:
     branches:
       - main
   pull_request:
+permissions:
+  contents: read
+
 jobs:
   shellcheck:
     name: Shell scripts
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          persist-credentials: false
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095

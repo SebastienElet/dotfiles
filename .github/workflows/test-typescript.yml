@@ -4,17 +4,21 @@ on:
     branches:
       - main
   pull_request:
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Bun tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          persist-credentials: false
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - uses: volta-cli/action@v4
+      - uses: volta-cli/action@5c175f92dea6f48441c436471e6479dbc192e194
       - run: moon ci --downstream none repository:node-runtime-check repository:typescript-test
         env:
           SCRAPLING_DOCKER_SMOKE: "1"
