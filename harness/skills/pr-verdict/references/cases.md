@@ -127,6 +127,47 @@ A read-only notice of missing data does not itself promise another editor on the
 A declared gate is not an exemption when it still prevents the promised action after its prerequisites
 hold. These scenarios specify decision criteria, not recorded executions.
 
+## Case F — hostile URL inputs and display-output omissions
+
+A PR shares a URL normalizer between installation and status. Its credential redactor uses
+`[^/@]*@`, and tests cover one credential pair and the main error. Installation compares the
+redacted string to a trusted marketplace URL. Host metadata also reaches report fields `version`,
+`steps.*` and `deferrals` without presentation cleanup.
+
+Expected: _changes required_, with two distinct findings. Class 11 traces a multiple-`@` input
+leaving a credential suffix visible, and `https://evil.invalid?@github.com/...` becoming a trusted
+identity after regex replacement. Class 12 traces hostile metadata through an uncovered textual
+field into the displayed report. Require the hostile-input table and an inventory covering stdout,
+stderr and every textual report field; cleaned error examples alone lift neither finding.
+
+Counterexample: authority-aware parsing rejects foreign or malformed identities, and executed cases
+cover multiple `@`, query/fragment `@`, backslashes, controls, newlines, bidirectional controls,
+encoded delimiters and repeated/adjacent occurrences. Every reachable display output is exercised
+with hostile values while raw metadata still drives internal decisions. Expected: no class 11 or
+12 finding when these traces and observations establish the claimed boundary.
+
+## Case G — unchanged public export claimed from shared source
+
+A PR replaces a hand-written MCP schema with `mcpSchema(HandoffCapsuleSchema)` and claims
+"unchanged public CLI/MCP contracts". Accepted-value fixtures and type checks pass. No byte
+comparison of the actual base/head exports is supplied; the adapter can drop the published
+`version` description even when the source schema retains it.
+
+Expected: class 13 records the sweep outcome `unproven`, names the missing exported comparison and
+never records `holds` from shared types or passing fixtures. If unchanged public compatibility is
+essential to approval, the missing proof requires _changes required_, with its essentiality and lift
+condition stated in the blocking paragraph. Otherwise retain the bounded reservation under phase 5.
+Neither case records `broken by` or asserts that exported bytes differ without evidence.
+
+Counterexample: the actual public exports from the named base and head, produced with the public
+export command, each revision's pinned dependencies and a recorded environment, compare byte-for-byte
+equal including descriptions.
+Expected: class 13 holds on that observed comparison. A variant deleting only the exported
+`version` description must fail equality even when accepted-value fixtures still pass; record
+`broken by` with the observed metadata change contradicting the unchanged-contract promise. Restore
+the metadata or declare and assess the contract change. These cases specify expected decisions,
+not recorded executions or a complete six-phase workflow.
+
 ## Execution record
 
 Reconciled on 2026-09-19 against accessible sources. **Reported** means a historical account was

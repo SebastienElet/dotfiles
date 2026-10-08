@@ -1,15 +1,21 @@
 # Failure classes
 
-Ten questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
-answer is a sentence about _this_ diff. Record one of three outcomes per class.
+Thirteen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
+answer is a sentence about _this_ diff. Record one of four outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
 - **holds because `<evidence>`** — name the constraint, the transaction, the schema, the test.
+- **unproven** — the concern applies, but sufficient relevant evidence is missing; name the gap.
 - **broken by `<mechanism>`** — an ordered sequence of steps that ends with a violated invariant.
 
-Only the third outcome can become a blocking finding, and only when the mechanism is written out.
+`broken by` becomes a blocking defect only when its mechanism is written out.
 "This looks racy" is not a mechanism; "request A snapshots at T1, request B writes at T2, A commits
 at T3 and B's row is absent from the successor" is.
+
+`unproven` becomes an evidence blocker only when the missing proof is essential to approval under
+phase 5: explain why it is essential and what would lift the gap. Otherwise retain a bounded
+reservation with its lift condition. Missing proof never establishes a violated invariant; do not
+invent a failure mechanism or record `holds` to fit the verdict.
 
 The same questions apply to a design document: the mechanism under review is what the document
 authorizes someone to build. A document that leaves a class open produces the defect during
@@ -132,17 +138,68 @@ an assurance that no mechanism delivers.
 **Lift:** the claim uses the weaker term the mechanism supports when no external obligation requires
 more; otherwise the missing mechanism, evidence or authority makes the stronger guarantee true.
 
+## 11. Hostile input in normalization and redaction
+
+**Ask:** does every normalization or redaction of an untrusted URL or path use a real parser or
+explicit grammar-aware analysis of its authority and boundaries, with a table of hostile inputs?
+
+**Broken when:** an ad hoc regex decides identity or removes credentials without respecting those
+boundaries. For example, `[^/@]*@` stops at the first `@`, leaving credentials after a second one,
+and turns `https://evil.invalid?@github.com/...` into an apparently trusted GitHub URL. A query or
+fragment becomes authority, or a secret survives into displayed output.
+
+**Lift:** a real parser or explicit authority/boundary analysis replaces the ad hoc regex. An
+executed hostile-input table covers multiple `@`, `@` in query or fragment, backslashes, control
+characters, newlines, bidirectional controls, encoded delimiters, and repeated or adjacent
+occurrences. Assert the expected identity or rejection and safe displayed output for each relevant
+case, including malformed inputs; normalization must not turn a rejected authority into a trusted one.
+
+## 12. Complete display-output coverage
+
+**Ask:** are all display outputs inventoried and covered by the presentation cleanup, including
+stdout, stderr and every textual report field such as `version`, `steps.*` and `deferrals`?
+
+**Broken when:** only the main error message or one output stream is cleaned. Untrusted host
+metadata or a rejected path reaches another textual report field, which is serialized or rendered
+unchanged; credentials or terminal controls still leak through that output despite the cleaned error.
+
+**Lift:** trace every display output and textual report field to the presentation boundary, and
+exercise hostile values through each reachable output in success and failure paths, including
+stdout and stderr. Keep raw values available for internal decisions and execution; displayed
+cleanup must not change trust or error classification. Name excluded internal-only fields and why
+they cannot reach display instead of treating a cleaned sample report as complete coverage.
+
+## 13. Unchanged public contract without exported comparison
+
+**Ask:** does a claim that a public schema, MCP or CLI contract is unchanged have a byte-for-byte
+comparison of the projection actually exported on the base and head?
+
+**Broken when:** source types, shared schemas, passing validation fixtures or adapter reuse stand
+in for exported equality. For example, `mcpSchema(HandoffCapsuleSchema)` can preserve accepted values
+while dropping the published `version` description. Without the exported comparison, the
+unchanged-contract claim is `unproven`; source similarity does not establish compatibility.
+
+**Lift:** capture the actual public export on the named base and head with the public export command,
+each revision's pinned dependencies and a recorded environment, then compare its bytes, including
+descriptions and other metadata. Do not strip metadata or normalize away differences. If bytes differ, restore equality
+or declare and assess the contract change; if the comparison cannot run, retain `unproven` and
+state the precise evidence gap.
+
 ## Reporting
 
-Classes 1, 2, 3, 4, 5, 7 and 9 name mechanisms that lose data, corrupt state or cross a security
-boundary: when broken, they block. Classes 6, 8 and 10 are usually reservations — promote class 6
+Classes 1, 2, 3, 4, 5, 7, 9, 11 and 12 name mechanisms that lose data, corrupt state or cross a security
+boundary: when broken, they block. Classes 6, 8, 10 and 13 are usually reservations — promote class 6
 when a concrete consumer's retry path depends on the changed code, class 8 when the degraded value
 reaches a person or a legal act, and class 10 when the claim is legal, evidentiary or contractual.
+For class 13, label the unchanged-contract claim `unproven` until the exported bytes are compared;
+block when the comparison exposes a promised compatibility break or when compatibility proof is
+essential to approval. Missing hostile-input or output coverage in classes 11 and 12 is an evidence
+gap, not an invented leak: apply phase 5's essential-evidence rule and name the missing proof.
 
 The default below does not downgrade phase-2 defects: a demonstrated guard that prevents a promised
-user action blocks, even outside these ten classes.
+user action blocks, even outside these thirteen classes.
 
-Other findings outside these ten classes are legitimate but non-blocking by default: report at most three
+Other findings outside these thirteen classes are legitimate but non-blocking by default: report at most three
 of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
 turning into a second review that competes with the verdict — rank them by whether they would change
 a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is

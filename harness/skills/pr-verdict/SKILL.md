@@ -17,8 +17,8 @@ metadata:
 ## Overview
 
 The output is a verdict that commits to a merge decision, not a list of remarks. Three properties
-separate it from a default agent review: every blocking finding names a failure mechanism that
-breaks an invariant the code claims to hold, every changed observable behavior has explicit
+separate it from a default agent review: every blocking finding names either a failure mechanism
+that breaks a claimed invariant or missing proof essential to approval, every changed observable behavior has explicit
 behavior-level evidence, and the limits of that evidence are declared inside the verdict. A green
 barrier whose gaps stay implicit is the failure this skill exists to prevent — a verdict is only as
 strong as what it admits it did not test.
@@ -70,9 +70,9 @@ says to post directly.
    whole diff. The attachments are part of the description: a screenshot or an uploaded log is
    evidence the author supplied, and the forge returns it as raw markup that a text pass slides
    over — download every one and look at it, in the comments too (`references/forges.md`).
-   Restate the invariant the code claims to hold, in one sentence. Producing a blocking
-   finding before the flow is traced end to end is forbidden: the mechanism is what makes a finding
-   blocking, and you cannot name a mechanism you have not followed.
+   Restate the invariant the code claims to hold, in one sentence. Producing a blocking defect
+   before the flow is traced end to end is forbidden: its mechanism must demonstrate the violated
+   invariant, and you cannot name a mechanism you have not followed.
 
    Inventory every externally observable behavior added, removed or changed by the diff. Start a
    changed-behavior ledger with one row per behavior: the behavior, positive evidence on the exact
@@ -104,9 +104,12 @@ says to post directly.
    established external workflow. Reuse relevant observed commands on the same inputs instead of
    running a duplicate barrier; preserve the proof auditor's fresh context and independent first pass.
 
-3. **Sweep the failure classes.** Put all ten questions in `references/failure-classes.md` to the
-   diff. Record, per class, one of: not applicable, holds because `<evidence>`, or broken by
-   `<mechanism>`. Only the third form can become a blocker. When the head under review was written
+3. **Sweep the failure classes.** Put all thirteen questions in `references/failure-classes.md` to the
+   diff. Record, per class, one of: not applicable, holds because `<evidence>`, unproven, or broken by
+   `<mechanism>`. For unproven, name the missing evidence: block only when that proof is essential
+   to approval under phase 5, explaining why and what would lift the gap; otherwise retain a bounded
+   reservation. A demonstrated defect needs its named mechanism; missing proof does not establish
+   one. When the head under review was written
    in this session, delegate the review to a distinct auditor in a fresh context with no inherited
    conversation history, scoped to the diff. Every review requires an auditor distinct from the author
    in a fresh context with no inherited conversation history and an independent first analysis:
@@ -224,7 +227,9 @@ says to post directly.
 - Never approve without sufficient traceable barrier evidence applicable to the reviewed candidate.
 - Never write "everything is green": report counts, or report that nothing ran.
 - Never report a count from a command the pipeline does not run; name the gate you executed.
-- Never publish a blocking finding without a named failure mechanism and a lift criterion.
+- Never publish a blocking defect without a named failure mechanism and a lift criterion.
+- Never publish an essential-evidence blocker without the missing proof, why approval needs it,
+  and a lift criterion.
 - Never block on style, naming or structure preference; label it non-blocking.
 - Never open a review that is not anchored on a head SHA.
 - Never approve with a demonstrated defect or essential proof missing. Require negative witnesses
@@ -244,7 +249,7 @@ says to post directly.
 
 - [references/forges.md](references/forges.md) — forge detection and the GitHub/Bitbucket command
   parity table. Read in phase 1, before the first CLI call.
-- [references/failure-classes.md](references/failure-classes.md) — the ten failure classes as
+- [references/failure-classes.md](references/failure-classes.md) — the thirteen failure classes as
   questions to put to the diff. Read in phase 3.
 - [assets/verdict-template.md](assets/verdict-template.md) — the verdict skeleton with its required
   slots. Filled in phase 6.
