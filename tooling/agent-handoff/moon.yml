@@ -21,6 +21,7 @@ fileGroups:
     - /tooling/deployment-test-command.ts
     - /package.json
     - /bun.lock
+    - /tsconfig.json
     - /.moon/tasks/javascript.yml
     - /tooling/deploy-link.ts
 env:
