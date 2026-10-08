@@ -21,46 +21,50 @@ afterEach(() => {
   }
 });
 
-test("the registration entry point uses the passed connection despite a different caller environment", async () => {
-  const fixture = issueFixture();
-  fixtures.push(fixture);
-  const directory = mkdtempSync(join(tmpdir(), "herdr-register-entry-"));
-  directories.push(directory);
-  const binary = join(directory, "herdr-fixture.ts");
-  writeNativeFixture(binary, fixture);
-  const child = Bun.spawn(
-    [
-      process.execPath,
-      "--config=/dev/null",
-      "--no-env-file",
-      fileURLToPath(new URL("register-work.ts", import.meta.url)),
-      directory,
-      "/verified/session.sock",
-      binary,
-    ],
-    {
-      env: {
-        ...process.env,
-        HERDR_ENV: "1",
-        HERDR_BIN_PATH: "/unavailable/ambient-herdr",
-        HERDR_SOCKET_PATH: "/different/caller.sock",
+test.each(["1", "0", undefined])(
+  "the registration entry point uses captured context despite ambient marker %s",
+  async (ambientMarker) => {
+    const fixture = issueFixture();
+    fixtures.push(fixture);
+    const directory = mkdtempSync(join(tmpdir(), "herdr-register-entry-"));
+    directories.push(directory);
+    const binary = join(directory, "herdr-fixture.ts");
+    writeNativeFixture(binary, fixture);
+    const child = Bun.spawn(
+      [
+        process.execPath,
+        "--config=/dev/null",
+        "--no-env-file",
+        fileURLToPath(new URL("register-work.ts", import.meta.url)),
+        directory,
+        "/verified/session.sock",
+        binary,
+        "1",
+      ],
+      {
+        env: {
+          ...process.env,
+          HERDR_ENV: ambientMarker,
+          HERDR_BIN_PATH: "/unavailable/ambient-herdr",
+          HERDR_SOCKET_PATH: "/different/caller.sock",
+        },
+        stdin: new Blob([registrationInput(fixture)]),
+        stdout: "pipe",
+        stderr: "pipe",
       },
-      stdin: new Blob([registrationInput(fixture)]),
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
-  const [status, errors] = await Promise.all([
-    child.exited,
-    new Response(child.stderr).text(),
-  ]);
-  expect({ status, errors }).toEqual({ status: 0, errors: "" });
-  const bindings = await createBindingStore(directory).read();
-  expect(bindings["w2:p1"]?.issue_role).toBe("work");
-  expect(bindings["w2:p1"]?.issue_repo).toBe(
-    fixture.selection.repository.commonDirectory,
-  );
-});
+    );
+    const [status, errors] = await Promise.all([
+      child.exited,
+      new Response(child.stderr).text(),
+    ]);
+    expect({ status, errors }).toEqual({ status: 0, errors: "" });
+    const bindings = await createBindingStore(directory).read();
+    expect(bindings["w2:p1"]?.issue_role).toBe("work");
+    expect(bindings["w2:p1"]?.issue_repo).toBe(
+      fixture.selection.repository.commonDirectory,
+    );
+  },
+);
 
 function writeNativeFixture(binary: string, fixture: IssueFixture): void {
   const snapshot = workingIssueState(fixture);
@@ -71,7 +75,7 @@ function writeNativeFixture(binary: string, fixture: IssueFixture): void {
   };
   writeFileSync(
     binary,
-    `#!${process.execPath}\nif (process.env.HERDR_SOCKET_PATH !== "/verified/session.sock") { process.stderr.write(JSON.stringify({error:{code:"wrong_session",message:"Another native session"}})); process.exitCode=1; } else if(process.argv.includes("snapshot")) { process.stdout.write(JSON.stringify({result:{snapshot:${JSON.stringify(available)}}})); }`,
+    `#!${process.execPath}\nif (process.env.HERDR_ENV !== "1" || process.env.HERDR_SOCKET_PATH !== "/verified/session.sock") { process.stderr.write(JSON.stringify({error:{code:"wrong_session",message:"Another native session"}})); process.exitCode=1; } else if(process.argv.includes("snapshot")) { process.stdout.write(JSON.stringify({result:{snapshot:${JSON.stringify(available)}}})); }`,
   );
   chmodSync(binary, executableMode);
 }
@@ -92,3 +96,39 @@ function registrationInput(fixture: IssueFixture): string {
     branch: "issue-work",
   });
 }
+
+test("refuses an invalid captured native marker despite a valid ambient marker", async () => {
+  const fixture = issueFixture();
+  fixtures.push(fixture);
+  const directory = mkdtempSync(
+    join(tmpdir(), "herdr-register-invalid-marker-"),
+  );
+  directories.push(directory);
+  const binary = join(directory, "herdr-fixture.ts");
+  writeNativeFixture(binary, fixture);
+  const child = Bun.spawn(
+    [
+      process.execPath,
+      "--config=/dev/null",
+      "--no-env-file",
+      fileURLToPath(new URL("register-work.ts", import.meta.url)),
+      directory,
+      "/verified/session.sock",
+      binary,
+      "0",
+    ],
+    {
+      env: { ...process.env, HERDR_ENV: "1" },
+      stdin: new Blob([registrationInput(fixture)]),
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  const [status, errors] = await Promise.all([
+    child.exited,
+    new Response(child.stderr).text(),
+  ]);
+  expect(status).toBe(1);
+  expect(errors).toContain("HERDR_ENV");
+  expect(await createBindingStore(directory).read()).toEqual({});
+});

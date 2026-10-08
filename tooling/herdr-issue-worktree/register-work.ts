@@ -10,6 +10,7 @@ if (import.meta.main) {
   try {
     const nativeEnvironment = environmentSchema.parse({
       ...process.env,
+      HERDR_ENV: process.argv[5],
       HERDR_SOCKET_PATH: process.argv[3],
       HERDR_BIN_PATH: process.argv[4],
     });

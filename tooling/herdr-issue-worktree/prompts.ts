@@ -38,6 +38,7 @@ function preparationPrompt(
       context.bindingDirectory,
       context.nativeEnvironment.HERDR_SOCKET_PATH,
       context.nativeEnvironment.HERDR_BIN_PATH,
+      context.nativeEnvironment.HERDR_ENV,
     ],
     input: {
       provider: selection.agent,
