@@ -74,8 +74,7 @@ Escalate only when the previous tier fails; never start above the first tier:
 3. CloakBrowser, when `stealthy_fetch` is still blocked. Reuse the `cloak` container instead of
    starting a new one, so a forgotten `docker stop` costs at most one container:
    ```sh
-   docker start cloak 2>/dev/null ||
-     docker run -d --name cloak -p 127.0.0.1:9222:9222 cloakhq/cloakbrowser:0.5.3 cloakserve --idle-timeout=300
+   "$HOME/.dotfiles/tooling/cloakbrowser"
    ```
    Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
    runs inside Docker, so `localhost` would resolve to its own container. Stop the container

@@ -3,6 +3,7 @@ import {
   cleanupDockerInstallFixtures,
   runDockerInstallTarget,
 } from "./docker-install-test-support.ts";
+import { dockerImages } from "./docker-image.ts";
 
 afterAll(cleanupDockerInstallFixtures);
 
@@ -17,7 +18,9 @@ test("Scrapling verification inspects the default image without pulling or deplo
 
   expect(result.exitCode).toBe(0);
   expect(result.stdout).toContain(verified);
-  expect(result.trace).toBe("info\nimage inspect -- pyd4vinci/scrapling\n");
+  expect(result.trace).toBe(
+    `info\nimage inspect --format {{json .}} -- ${dockerImages.scrapling}\n`,
+  );
   expect(result.scraplingLinkExists).toBe(false);
 });
 
@@ -28,20 +31,22 @@ test("Scrapling verification fails on an absent image without pulling or deployi
 
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).not.toContain(verified);
-  expect(result.trace).toBe("info\nimage inspect -- pyd4vinci/scrapling\n");
+  expect(result.trace).toBe(
+    `info\nimage inspect --format {{json .}} -- ${dockerImages.scrapling}\n`,
+  );
   expect(result.scraplingLinkExists).toBe(false);
 });
 
 test("Scrapling verification honors an explicit image", () => {
   const result = runDockerInstallTarget("scrapling", "artifact-present", {
     action: "verify",
-    imageOverride: "registry.example/scrapling:custom",
+    imageOverride: `registry.example/scrapling:custom@sha256:${"a".repeat(sha256HexadecimalLength)}`,
   });
 
   expect(result.exitCode).toBe(0);
   expect(result.stdout).toContain(verified);
   expect(result.trace).toBe(
-    "info\nimage inspect -- registry.example/scrapling:custom\n",
+    `info\nimage inspect --format {{json .}} -- registry.example/scrapling:custom@sha256:${"a".repeat(sha256HexadecimalLength)}\n`,
   );
   expect(result.scraplingLinkExists).toBe(false);
 });
@@ -95,7 +100,7 @@ test.each([
   "",
   "--help",
   "image with spaces",
-  `image@sha256:${"a".repeat(sha256HexadecimalLength)}`,
+  `image@sha256:${"a".repeat(sha256HexadecimalLength - 1)}`,
 ])(
   "Scrapling verification rejects image %s before the Docker API",
   (imageOverride) => {
@@ -123,7 +128,7 @@ test("CloakBrowser verification inspects the default image without pulling or de
   expect(result.exitCode).toBe(0);
   expect(result.stdout).toContain(cloakbrowserVerified);
   expect(result.trace).toBe(
-    "info\nimage inspect -- cloakhq/cloakbrowser:0.5.3\n",
+    `info\nimage inspect --format {{json .}} -- ${dockerImages.cloakbrowser}\n`,
   );
   expect(result.scraplingLinkExists).toBe(false);
 });
@@ -136,7 +141,7 @@ test("CloakBrowser verification fails on an absent image without pulling or depl
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout).not.toContain(cloakbrowserVerified);
   expect(result.trace).toBe(
-    "info\nimage inspect -- cloakhq/cloakbrowser:0.5.3\n",
+    `info\nimage inspect --format {{json .}} -- ${dockerImages.cloakbrowser}\n`,
   );
   expect(result.scraplingLinkExists).toBe(false);
 });
@@ -144,13 +149,13 @@ test("CloakBrowser verification fails on an absent image without pulling or depl
 test("CloakBrowser verification honors an explicit image", () => {
   const result = runDockerInstallTarget("cloakbrowser", "artifact-present", {
     action: "verify",
-    imageOverride: "registry.example/cloakbrowser:custom",
+    imageOverride: `registry.example/cloakbrowser:custom@sha256:${"a".repeat(sha256HexadecimalLength)}`,
   });
 
   expect(result.exitCode).toBe(0);
   expect(result.stdout).toContain(cloakbrowserVerified);
   expect(result.trace).toBe(
-    "info\nimage inspect -- registry.example/cloakbrowser:custom\n",
+    `info\nimage inspect --format {{json .}} -- registry.example/cloakbrowser:custom@sha256:${"a".repeat(sha256HexadecimalLength)}\n`,
   );
   expect(result.scraplingLinkExists).toBe(false);
 });
@@ -211,7 +216,7 @@ test.each([
   "",
   "--help",
   "image with spaces",
-  `image@sha256:${"a".repeat(sha256HexadecimalLength)}`,
+  `image@sha256:${"a".repeat(sha256HexadecimalLength - 1)}`,
 ])(
   "CloakBrowser verification rejects image %s before the Docker API",
   (imageOverride) => {

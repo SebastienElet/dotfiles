@@ -23,6 +23,13 @@ type Scenario = Readonly<{
   infoFailure?: boolean;
   listFailure?: boolean;
   inspectFailure?: boolean;
+  imageMismatch?: boolean;
+  malformedDigest?: boolean;
+  replaceAfterInspection?: boolean;
+  imageInspectFailure?: boolean;
+  invalidImageInspect?: boolean;
+  differentDigest?: boolean;
+  delayedOutput?: boolean;
   startFailure?: boolean;
   runFailure?: boolean;
   concurrent?: boolean;
@@ -86,8 +93,8 @@ function createFixture(
   return fixture;
 }
 
-function run(fixture: Fixture): RunResult {
-  const commandResult = Bun.spawnSync([fixture.entryPoint], {
+function run(fixture: Fixture, executable = fixture.entryPoint): RunResult {
+  const commandResult = Bun.spawnSync([executable], {
     env: fixture.environment,
     stderr: "pipe",
     stdin: "ignore",

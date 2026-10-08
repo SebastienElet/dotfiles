@@ -15,7 +15,7 @@ tasks:
     script: |-
       "$workspaceRoot/tooling/check-docker-cli" &&
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-scrapling-launcher.ts" &&
-      "$workspaceRoot/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${SCRAPLING_IMAGE-pyd4vinci/scrapling}"
+      "$workspaceRoot/tooling/install-docker-artifact" install scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}"
     deps:
       - docker
       - dependencies
@@ -26,6 +26,7 @@ tasks:
       - /tooling/scrapling-mcp
       - /tooling/install-docker-artifact
       - /tooling/install-docker-artifact.ts
+      - /tooling/docker-image.ts
     toolchains: bun
     options:
       cache: false
@@ -33,7 +34,7 @@ tasks:
   cloakbrowser:
     description: Install the CloakBrowser Docker image
     script: |-
-      "$workspaceRoot/tooling/install-docker-artifact" install cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${CLOAKBROWSER_IMAGE-cloakhq/cloakbrowser:0.5.3}"
+      "$workspaceRoot/tooling/install-docker-artifact" install cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}"
     deps:
       - docker
       - dependencies
@@ -44,7 +45,7 @@ tasks:
   verify-scrapling-docker:
     description: Verify the local Scrapling Docker image without installing it
     script: |-
-      "$workspaceRoot/tooling/install-docker-artifact" verify scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${SCRAPLING_IMAGE-pyd4vinci/scrapling}"
+      "$workspaceRoot/tooling/install-docker-artifact" verify scrapling "${DOCKER_UNAVAILABLE_POLICY-require-docker}"
     deps:
       - docker
       - dependencies
@@ -56,7 +57,7 @@ tasks:
   verify-cloakbrowser-docker:
     description: Verify the local CloakBrowser Docker image without installing it
     script: |-
-      "$workspaceRoot/tooling/install-docker-artifact" verify cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}" "${CLOAKBROWSER_IMAGE-cloakhq/cloakbrowser:0.5.3}"
+      "$workspaceRoot/tooling/install-docker-artifact" verify cloakbrowser "${DOCKER_UNAVAILABLE_POLICY-require-docker}"
     deps:
       - docker
       - dependencies

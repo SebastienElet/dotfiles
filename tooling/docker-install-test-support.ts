@@ -22,7 +22,8 @@ type DockerInstallScenario =
   | "artifact-present"
   | "command-failure"
   | "daemon-unavailable"
-  | "invalid-evidence";
+  | "invalid-evidence"
+  | "different-identity";
 type DockerInstallTarget = "cloakbrowser" | "scrapling";
 type DockerInstallOptions = Readonly<{
   action?: "install" | "verify";

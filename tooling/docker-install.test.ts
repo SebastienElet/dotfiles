@@ -71,16 +71,15 @@ test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
 );
 
 test.each(["scrapling", "cloakbrowser"] as DockerInstallTarget[])(
-  "%s rejects an unsupported image digest before Docker runs",
+  "%s accepts an immutable tagged image",
   (target) => {
-    const digest = `registry.example/image@sha256:${"a".repeat(sha256HexadecimalLength)}`;
+    const digest = `registry.example/image:custom@sha256:${"a".repeat(sha256HexadecimalLength)}`;
     const result = runDockerInstallTarget(target, "artifact-present", {
       imageOverride: digest,
     });
 
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stdout).not.toContain(resultMarker(target, "verified"));
-    expect(result.trace).toBe("");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain(resultMarker(target, "verified"));
   },
 );
 
@@ -133,14 +132,16 @@ function oracleCommand(_target: DockerInstallTarget): string {
 test.each(targets)(
   "%s forwards an overridden image through installation and verification",
   (target) => {
-    const image = `registry.example/${target}:custom`;
+    const image = `registry.example/${target}:custom@sha256:${"a".repeat(sha256HexadecimalLength)}`;
     const result = runDockerInstallTarget(target, "artifact-present", {
       imageOverride: image,
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.trace).toContain(`reference=${image}`);
-    expect(result.trace).toContain(`image inspect -- ${image}\n`);
+    expect(result.trace).toContain("image ls --digests");
+    expect(result.trace).toContain(
+      `image inspect --format {{json .}} -- ${image}\n`,
+    );
   },
 );
 
@@ -193,4 +194,26 @@ test("scrapling deploys its launcher with upstream prerequisites bypassed", () =
   expect(result.stdout).toContain(resultMarker("scrapling", "verified"));
   expect(result.scraplingLinkExists).toBe(true);
   expect(result.trace).toContain("image inspect");
+});
+
+test.each(targets)("%s refuses a different inspected digest", (target) => {
+  const result = runDockerInstallTarget(target, "different-identity");
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain("identity differs");
+  expect(result.stdout).not.toContain(resultMarker(target, "verified"));
+});
+
+test.each([
+  "image:tag",
+  "image:tag@sha256:abc",
+  `image:tag@sha512:${"a".repeat(sha256HexadecimalLength)}`,
+  `image:tag@sha256:${"A".repeat(sha256HexadecimalLength)}`,
+  `image:tag@sha256:${"a".repeat(sha256HexadecimalLength)}@extra`,
+  `https://example.com/image:tag@sha256:${"a".repeat(sha256HexadecimalLength)}`,
+])("refuses malformed immutable reference %s", (imageOverride) => {
+  const result = runDockerInstallTarget("cloakbrowser", "artifact-present", {
+    imageOverride,
+  });
+  expect(result.exitCode).not.toBe(0);
+  expect(result.trace).toBe("");
 });
