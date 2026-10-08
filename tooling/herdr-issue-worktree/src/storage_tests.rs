@@ -34,7 +34,8 @@ fn stale_update_cannot_overwrite_another_writer() -> Result<(), Box<dyn Error>> 
                 tokens: BTreeMap::new()
             }
         )
-        .expect_err("contended mutation must be unapplied")
+        .err()
+        .ok_or("contended mutation must be unapplied")?
         .is::<super::storage::Conflict>()
     );
     assert_eq!(fs::read(directory.path().join("bindings.json"))?, bytes);
@@ -59,7 +60,8 @@ fn live_writer_lock_refuses_another_mutation() -> Result<(), Box<dyn Error>> {
                 tokens: BTreeMap::new()
             }
         )
-        .expect_err("contended mutation must be unapplied")
+        .err()
+        .ok_or("contended mutation must be unapplied")?
         .is::<super::storage::Conflict>()
     );
     assert!(!directory.path().join("bindings.json").exists());
