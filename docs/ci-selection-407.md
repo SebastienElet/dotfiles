@@ -32,8 +32,9 @@ ses commits, pas uniquement le dernier. Une révision introuvable reste un éche
 
 Les entrées communes sont les manifests/lockfiles Cargo, `build*.rs`,
 `src/**/*`, `tests/**/*` (fixtures incluses), examples et benches, `moon.yml` et
-`.cargo/**/*`, `clippy.toml` et `.clippy.toml` du projet ; à la racine : `.cargo/**/*`, `clippy.toml`,
-`rustfmt.toml`, `rust-toolchain.toml`, `.prototools`, `moon.yml`, `LICENSE` et
+`.cargo/**/*`, les noms `clippy.toml`/`.clippy.toml`,
+`rustfmt.toml`/`.rustfmt.toml` et `rust-toolchain`/`rust-toolchain.toml` du projet ; à la racine : `.cargo/**/*`, `clippy.toml`, `.clippy.toml`,
+`rustfmt.toml`/`.rustfmt.toml`, `rust-toolchain`/`rust-toolchain.toml`, `.prototools`, `moon.yml`, `LICENSE` et
 `tooling/RUST.md`. Moon prend aussi en compte sa configuration workspace,
 toolchains et héritage Rust. `.moon/tasks/workstation.yml` est une entrée explicite
 car il déclare le prérequis `repository:rust`. Chaque famille déclare son propre workflow.
