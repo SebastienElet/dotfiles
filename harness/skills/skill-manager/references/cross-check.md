@@ -32,8 +32,9 @@ to the user, and stops. No fix is applied without explicit user instruction.
    - Trigger keywords (extracted from description: phrases after "Use when", "Make sure to use this
      skill whenever", "Make sure to use whenever", "even if")
    - `## Constraints` section (list of rules)
-   - Cross-references (mentions of other skills in `## Steps`, `## References`, `## Overview`, or
-     `## Constraints`)
+   - Cross-references (context-confirmed mentions of other skills throughout the already-read
+     `SKILL.md`, including `Usage`, `Steps` or `Workflow`, `Constraints`, and `Gotchas`; do not
+     restrict extraction to a section allowlist)
    - Inferred functional domain (git, PR, tests, infra, support, etc.)
    - `references/` directory listing — for each file, parse its name as `<topic>-<scope>.md` if it
      matches that pattern; **do not read the content yet** (lazy load: content is only read during
@@ -121,8 +122,10 @@ the project where a user skill is being used.
 - In each SKILL.md, collect short slug-style candidates only: `skill-<slug>`, `[<text>](<slug>)`
   where `<slug>` contains no `/`, `See <slug>` where slug contains no `/`, slugs in backticks
   without a `/`
-- Include `## Constraints` references in the structured inventory used by D3; do not discard them
-  after extraction or depend on a later scan of the complete file to recover them.
+- Preserve references from every section of the already-read `SKILL.md` in the structured
+  inventory used by D3, including `Usage` and `Constraints`. Do not discard them after extraction
+  or depend on a later scan of the complete file to recover them. This changes selection coverage,
+  not the selected collection's body-reading scope.
 - **Exclude from checking**: `/skill-manager <cmd>` patterns (these are subcommand invocations, not
   skill references), any path containing `/` (absolute or relative paths like `.cursor/rules/...`,
   `services/api/...`, `AGENTS.md`), any URL starting with `http`, and externally qualified
