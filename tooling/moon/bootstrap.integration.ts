@@ -79,6 +79,8 @@ function bootstrap(pinContent: string | undefined, existing = false): void {
         PROTO_MOON_VERSION: "latest",
         PROTO_ENV: "foreign",
         PROTO_OFFLINE: "true",
+        PROTO_CLI_INSTALL_DIR: join(directory, "foreign-proto"),
+        CARGO_DIST_FORCE_INSTALL_DIR: join(directory, "foreign-cargo"),
       },
     });
     if (pinContent === pin) {
@@ -92,6 +94,8 @@ function bootstrap(pinContent: string | undefined, existing = false): void {
     }
     expect(readdirSync(temporary)).toEqual([]);
     expect(existsSync(join(home, ".proto"))).toBeFalse();
+    expect(existsSync(join(directory, "foreign-proto"))).toBeFalse();
+    expect(existsSync(join(directory, "foreign-cargo"))).toBeFalse();
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

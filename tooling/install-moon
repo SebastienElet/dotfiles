@@ -3,7 +3,7 @@
 set -e
 
 cd "$(dirname "$0")/.."
-bootstrap_directory="$(mktemp -d)"
+bootstrap_directory="$(mktemp -d "${TMPDIR:-/tmp}/moon-bootstrap.XXXXXX")"
 trap 'rm -r "$bootstrap_directory"' EXIT
 export PROTO_HOME="$bootstrap_directory/proto"
 export PROTO_CLI_UNMANAGED_INSTALL="$PROTO_HOME/bin"
@@ -11,6 +11,7 @@ export PROTO_OFFLINE=false
 export PROTO_AUTO_INSTALL=true
 export PROTO_DETECT_STRATEGY=only-prototools
 unset PROTO_MOON_VERSION PROTO_ENV
+unset PROTO_CLI_INSTALL_DIR CARGO_DIST_FORCE_INSTALL_DIR
 
 proto_installer="$(curl -fsSL --connect-timeout 10 --max-time 60 https://github.com/moonrepo/proto/releases/latest/download/proto_cli-installer.sh)"
 /bin/sh -c "$proto_installer"
