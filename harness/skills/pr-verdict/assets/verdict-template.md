@@ -35,9 +35,10 @@ or circular proof prevents approval; an adequate proof result does not replace t
 review. Include epoch, receipt and gate results only when a structured receipt was explicitly
 required; its absence alone cannot block the default audit.>
 
-<Blocking paragraph — one clause per blocker: the mechanism, then the invariant it breaks. Close
-with one sentence stating what must become true to lift them. Omit this paragraph entirely when
-the verdict is "approved".>
+<Blocking paragraph — one clause per blocker: for a demonstrated defect, the mechanism and the
+invariant it breaks; for an `unproven` essential guarantee, the missing proof and why approval needs
+it. Do not invent an invariant violation from missing evidence. Close with one sentence stating
+what must become true to lift the blockers. Omit this paragraph entirely when the verdict is "approved".>
 
 <Barrier paragraph — REQUIRED. Name the execution origin and relevant candidate inputs
 and give counts, never adjectives. Then, in the same paragraph, REQUIRED: what this evidence does
@@ -103,7 +104,8 @@ Do not approve or merge this head.
 - The marker is the first line, and its SHA is the head you actually checked out.
 - Every changed observable behavior has one ledger row with applicable positive evidence and a
   required negative witness or reasoned exemption; map actual tests rather than aggregate counts.
-- Every clause in the blocking paragraph names a sequence of steps, not a quality judgement.
+- Every demonstrated defect names a failure sequence; every essential-evidence blocker names the
+  missing proof and why approval needs it. Each blocker has a lift criterion, not a quality judgement.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
 - The barrier paragraph names the command it ran, and that command is the one CI runs.

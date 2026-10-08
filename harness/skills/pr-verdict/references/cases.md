@@ -153,16 +153,18 @@ A PR replaces a hand-written MCP schema with `mcpSchema(HandoffCapsuleSchema)` a
 comparison of the actual base/head exports is supplied; the adapter can drop the published
 `version` description even when the source schema retains it.
 
-Expected: class 13 labels the unchanged-contract claim `unproven`, names the missing exported
-comparison and never records `holds` from shared types or passing fixtures. If unchanged public
-compatibility is essential to approval, the missing proof requires _changes required_; otherwise
-retain the bounded reservation. Do not assert that exported bytes differ without evidence.
+Expected: class 13 records the sweep outcome `unproven`, names the missing exported comparison and
+never records `holds` from shared types or passing fixtures. If unchanged public compatibility is
+essential to approval, the missing proof requires _changes required_, with its essentiality and lift
+condition stated in the blocking paragraph. Otherwise retain the bounded reservation under phase 5.
+Neither case records `broken by` or asserts that exported bytes differ without evidence.
 
 Counterexample: the actual public exports from the named base and head, produced with the public
 export command, each revision's pinned dependencies and a recorded environment, compare byte-for-byte
 equal including descriptions.
 Expected: class 13 holds on that observed comparison. A variant deleting only the exported
-`version` description must fail equality even when accepted-value fixtures still pass; restore
+`version` description must fail equality even when accepted-value fixtures still pass; record
+`broken by` with the observed metadata change contradicting the unchanged-contract promise. Restore
 the metadata or declare and assess the contract change. These cases specify expected decisions,
 not recorded executions or a complete six-phase workflow.
 

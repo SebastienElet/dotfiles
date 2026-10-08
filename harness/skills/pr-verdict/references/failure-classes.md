@@ -1,15 +1,21 @@
 # Failure classes
 
 Thirteen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
-answer is a sentence about _this_ diff. Record one of three outcomes per class.
+answer is a sentence about _this_ diff. Record one of four outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
 - **holds because `<evidence>`** — name the constraint, the transaction, the schema, the test.
+- **unproven** — the concern applies, but sufficient relevant evidence is missing; name the gap.
 - **broken by `<mechanism>`** — an ordered sequence of steps that ends with a violated invariant.
 
-Only the third outcome can become a blocking finding, and only when the mechanism is written out.
+`broken by` becomes a blocking defect only when its mechanism is written out.
 "This looks racy" is not a mechanism; "request A snapshots at T1, request B writes at T2, A commits
 at T3 and B's row is absent from the successor" is.
+
+`unproven` becomes an evidence blocker only when the missing proof is essential to approval under
+phase 5: explain why it is essential and what would lift the gap. Otherwise retain a bounded
+reservation with its lift condition. Missing proof never establishes a violated invariant; do not
+invent a failure mechanism or record `holds` to fit the verdict.
 
 The same questions apply to a design document: the mechanism under review is what the document
 authorizes someone to build. A document that leaves a class open produces the defect during
