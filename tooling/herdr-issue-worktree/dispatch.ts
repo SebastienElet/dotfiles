@@ -29,7 +29,7 @@ type AgentLaunch = Readonly<{
 }>;
 
 type DispatchOutcome = Readonly<{
-  kind: "reused" | "started" | "blocked" | "uncertain" | "pending";
+  kind: "reused" | "started" | "blocked" | "uncertain" | "pending" | "rejected";
   paneId?: string;
   reason?: string;
   status?: string;
@@ -108,7 +108,10 @@ async function createPreparation(
         "Existing preparation or agent has incomplete metadata; inspect before creating anything",
     };
   }
-  assertUnchangedSource(selection);
+  const failure = sourcePreflightFailure(selection);
+  if (failure !== undefined) {
+    return { kind: "rejected", reason: failure };
+  }
   const paneId = await herdr.createPreparation(selection, names.label);
   const after = await herdr.snapshot();
   if (focusKey(before) !== focusKey(after)) {
@@ -217,15 +220,20 @@ function preparationExists(
   );
 }
 
-function assertUnchangedSource(selection: IssueSelection): void {
-  const source = inspectRepository(selection.repository.root);
-  if (
-    source.commonDirectory !== selection.repository.commonDirectory ||
-    source.branch !== selection.repository.branch ||
-    source.head !== selection.repository.head
-  ) {
-    throw new Error("Selected Git context changed before preparation");
+function sourcePreflightFailure(selection: IssueSelection): string | undefined {
+  try {
+    const source = inspectRepository(selection.repository.root);
+    if (
+      source.commonDirectory !== selection.repository.commonDirectory ||
+      source.branch !== selection.repository.branch ||
+      source.head !== selection.repository.head
+    ) {
+      return "Selected Git context changed before preparation";
+    }
+  } catch (error) {
+    return errorMessage(error);
   }
+  return undefined;
 }
 
 function assertAvailablePreparation(

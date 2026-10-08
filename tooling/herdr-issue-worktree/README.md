@@ -46,6 +46,10 @@ before manually removing an abandoned reservation; elapsed time does not prove a
 Read-only reuse runs before acquiring a creation reservation, so a retained reservation does not
 prevent inspection of the existing work. Preparation and registration use the captured native socket
 explicitly; an agent tool's ambient environment can belong to another session.
+A source-only preflight rejection creates no pane or agent and releases its unused reservation;
+refresh the selection before another click. Once a native creation or startup may have occurred,
+uncertainty retains the reservation and resources. SCP hostnames use the same lowercase identity
+as URL hostnames; repository paths retain their provider-specific comparison.
 Collisions, incompatible repositories, changed occupants and unavailable identity stop the launch.
 
 ## Installation and validation

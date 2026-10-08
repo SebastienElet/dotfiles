@@ -1,3 +1,4 @@
+import type { DispatchOutcome } from "./dispatch.ts";
 import { dispatchSelectedIssue } from "./launch.ts";
 import { openPopupQuestions } from "./popup-questions.ts";
 import { parseIssueClick } from "./click.ts";
@@ -18,7 +19,7 @@ async function pickIssueWork(): Promise<void> {
     }
     const outcome = await dispatchSelectedIssue(selection);
     await questions.ask(
-      `${JSON.stringify(outcome)}\n${outcome.kind === "started" ? "Preparation is running; the final issue worktree is not yet verified." : "Inspect the retained pane to continue; no existing agent received additional input."}\nEnter or Escape closes this picker.`,
+      `${JSON.stringify(outcome)}\n${outcomeGuidance(outcome)}\nEnter or Escape closes this picker.`,
     );
   } catch (error) {
     await questions.ask(
@@ -28,6 +29,16 @@ async function pickIssueWork(): Promise<void> {
   } finally {
     questions.close();
   }
+}
+
+function outcomeGuidance(outcome: DispatchOutcome): string {
+  if (outcome.kind === "rejected") {
+    return "Nothing was launched. Refresh the repository selection before retrying.";
+  }
+  if (outcome.kind === "started") {
+    return "Preparation is running; the final issue worktree is not yet verified.";
+  }
+  return "Inspect the retained pane to continue; no existing agent received additional input.";
 }
 
 if (import.meta.main) {
