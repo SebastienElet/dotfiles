@@ -7,6 +7,8 @@ fileGroups:
     - Cargo.lock
     - moon.yml
     - .cargo/**/*
+    - clippy.toml
+    - .clippy.toml
     - build*.rs
     - src/**/*
     - tests/**/*
@@ -17,6 +19,7 @@ fileGroups:
     - /rustfmt.toml
     - /rust-toolchain.toml
     - /.moon/toolchains.yml
+    - /.moon/tasks/workstation.yml
     - /.prototools
     - /moon.yml
     - /LICENSE
