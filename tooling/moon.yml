@@ -172,7 +172,7 @@ tasks:
       - /home/.config/nvim/upgrade.lua
       - /home/.config/nvim/lazy-lock.json
   installer-test:
-    command: bun --config=/dev/null --no-env-file test tooling/install.test.ts
+    command: bun --config=/dev/null --no-env-file test tooling/install.test.ts tooling/moon/bootstrap.test.ts
     deps:
       - repository:dependencies
     options:
@@ -180,6 +180,7 @@ tasks:
       cache: false
     inputs:
       - install.test.ts
+      - moon/bootstrap.test.ts
       - install-moon
       - /install.sh
       - /package.json
@@ -188,6 +189,18 @@ tasks:
       - /.moon/toolchains.yml
       - /.moon/workspace.yml
       - /.github/workflows/check-shell.yml
+  moon-bootstrap-smoke:
+    command: bun --config=/dev/null --no-env-file test --timeout 120000 ./tooling/moon/bootstrap.integration.ts
+    deps:
+      - repository:dependencies
+    options:
+      runFromWorkspaceRoot: true
+      os: macos
+      cache: false
+    inputs:
+      - moon/bootstrap.integration.ts
+      - install-moon
+      - "@group(bunTestSupport)"
   docker-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/docker-install.test.ts tooling/docker-verify.test.ts tooling/scrapling-mcp.test.ts tooling/scrapling-image.test.ts tooling/cloakbrowser.test.ts
     deps:
