@@ -27,6 +27,16 @@ tasks:
     toolchains: system
     options:
       os: macos
+  claude-codex-companion:
+    description: Install the optional official Codex companion for Claude Code
+    command: claude plugin install codex --marketplace openai/codex-plugin-cc --scope user
+    deps:
+      - claude-binary
+      - codex-binary
+    toolchains: system
+    options:
+      os: macos
+      mutex: harness-mutation
   claude-instructions:
     script: |-
       set -e

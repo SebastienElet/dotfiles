@@ -1,0 +1,46 @@
+{
+  "skill": "review-fix",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "/review-fix review and correct the current local changes before opening a PR",
+      "should_activate": true,
+      "reason": "Direct local repair invocation authorizes corrections and independent final review"
+    },
+    {
+      "query": "$review-fix correct these findings in my local branch; do not commit or push",
+      "should_activate": true,
+      "reason": "Codex invocation requests local corrections with explicit permission limits"
+    },
+    {
+      "query": "Have Codex review and fix my uncommitted changes before creating a pull request",
+      "should_activate": true,
+      "reason": "Local review and repair are both authorized"
+    },
+    {
+      "query": "Review my staged and unstaged changes, but do not modify files",
+      "should_activate": false,
+      "reason": "Review-only work belongs to code-review and does not authorize repair"
+    },
+    {
+      "query": "Fix the blocking review findings on open PR 1042",
+      "should_activate": false,
+      "reason": "Repairs on an open PR belong to pr-fix"
+    },
+    {
+      "query": "Prepare a manual prompt for Claude to implement this feature",
+      "should_activate": false,
+      "reason": "Codex-to-Claude handoff belongs to claude-developer"
+    },
+    {
+      "query": "Install the official Codex companion plugin for Claude Code",
+      "should_activate": false,
+      "reason": "Runtime installation alone requests no local review or repair"
+    },
+    {
+      "query": "The second correction pass still leaves a confirmed local defect; continue this review-fix",
+      "should_activate": true,
+      "reason": "Continuation retains the pass count and must report unresolved findings after the limit"
+    }
+  ]
+}

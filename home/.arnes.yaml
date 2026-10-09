@@ -89,6 +89,10 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: review-fix
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: codex, scope: user }
   - slug: codebase-design
     installations:
       - { agent: claude, scope: user }
@@ -249,6 +253,7 @@ external:
       origin: system
       location: { root: home, path: .codex/skills/.system }
   plugins:
+    - { agent: claude, scope: user, id: codex@openai-codex }
     - { agent: claude, scope: user, id: agent-reach@dotfiles-agent-reach }
     - { agent: codex, scope: user, id: agent-reach@dotfiles-agent-reach }
     - { agent: claude, scope: user, id: semctx@semctx-stable }
@@ -261,6 +266,27 @@ external:
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: codex@openai-codex,
+        slug: codex-cli-runtime,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: codex@openai-codex,
+        slug: codex-result-handling,
+      }
+    - {
+        agent: claude,
+        scope: user,
+        origin: plugin,
+        plugin: codex@openai-codex,
+        slug: gpt-5-4-prompting,
+      }
     - {
         agent: claude,
         scope: user,

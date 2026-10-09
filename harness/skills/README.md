@@ -35,6 +35,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `prepare-next`                  | Select and prepare the next available project ticket before development.                             |
 | `proof-integrity-review`        | Review changes to verification mechanisms.                                                           |
 | `requirements-clarification`    | Clarify requirements before implementation.                                                          |
+| `review-fix`                    | Repair local code-review findings with Codex before a PR.                                            |
 | `tdd`                           | Develop owned behavior with test-driven development.                                                 |
 | `visual-explanation`            | Explain relationships, diagnostics and changes visually.                                             |
 
