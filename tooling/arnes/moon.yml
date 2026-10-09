@@ -4,6 +4,16 @@ fileGroups:
   repositoryTests:
     - /home/.arnes.yaml
     - /harness/**/*
+    - /home/moon.yml
+    - /.moon/tasks/harness-codex.yml
+    - /.moon/tasks/harness-claude.yml
+    - /.moon/tasks/javascript.yml
+    - /tooling/assemble-agent-instructions.ts
+    - /tooling/install-agent-skills.ts
+    - /tooling/deploy-link.ts
+    - /package.json
+    - /bun.lock
+    - /tsconfig.json
 env:
   RUSTFLAGS: -Funsafe-code
 tasks:

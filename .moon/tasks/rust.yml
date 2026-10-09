@@ -5,16 +5,24 @@ fileGroups:
   rust:
     - Cargo.toml
     - Cargo.lock
+    - moon.yml
+    - .cargo/**/*
+    - "{clippy,.clippy}.toml"
+    - "{rustfmt,.rustfmt}.toml"
+    - "{rust-toolchain,rust-toolchain.toml}"
     - build*.rs
     - src/**/*
     - tests/**/*
     - examples/**/*
     - benches/**/*
     - /.cargo/**/*
-    - /clippy.toml
-    - /rustfmt.toml
-    - /rust-toolchain.toml
+    - "/{clippy,.clippy}.toml"
+    - "/{rustfmt,.rustfmt}.toml"
+    - "/{rust-toolchain,rust-toolchain.toml}"
     - /.moon/toolchains.yml
+    - /.moon/tasks/workstation.yml
+    - /.prototools
+    - /moon.yml
     - /LICENSE
     - /tooling/RUST.md
 tasks:
