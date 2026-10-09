@@ -14,8 +14,8 @@ metadata:
 ## Overview
 
 Prepare a launch command and one self-contained prompt for a manual Claude Code handoff. The user
-runs the command, pastes the prompt, and returns with the result when ready. Local implementation
-and correction handoffs before a PR finish with `review-fix` before Claude reports completion.
+runs the command, pastes the prompt, and returns with the result when ready. Implementation and
+correction prompts compose `development`, which owns the final Codex review stage.
 
 ## Usage
 
@@ -35,16 +35,13 @@ Direct implementation requests without Claude stay with the current agent.
    report. Tell Claude to inspect before editing, preserve unrelated changes, and surface conflicts.
    Include the user's authorization limits; reserve consequential actions for the user unless
    explicitly authorized.
-4. For an implementation or correction handoff on local work before a PR, include this final
-   stage in the prompt: after implementation and the repository checks pass, activate `review-fix`
-   on the complete task delta, authorize Codex to correct demonstrated defects within the original
-   task scope, and wait for the fresh final review before delivery. Require the final report to
-   include its candidate identity, finding dispositions, checks, environment and remaining limits.
-   Preserve stricter user limits: a review-only request authorizes no repair, and a missing runtime,
-   failed check or incomplete final review must be reported as incomplete rather than skipped.
-   Do not add this stage to planning-only handoffs or repeat it inside a `review-fix` correction.
-   For work on an already open PR, retain the authorized PR workflow and its `pr-fix` review;
-   do not substitute local `review-fix`, create a second review loop, or infer repair authority.
+4. For an implementation or correction handoff, explicitly require Claude to activate
+   `development` on the authorized task. It owns implementation, checks and the final independent
+   Codex review before delivery. Forward the original scope and bounded local correction authority,
+   preserve stricter user limits, and require the report's candidate, dispositions, evidence and
+   incomplete outcomes. Do not duplicate that finishing procedure in the prompt. Planning-only
+   and review-only handoffs do not authorize development. Do not restart it inside a `review-fix`
+   correction or infer open-PR repair or publication authority from this handoff.
 5. Return two fenced blocks in order: a `sh` block with the copyable one-line command
    `cd <shell-quoted absolute worktree path> && claude`, then a `text` block with the prompt to paste
    into that session. Substitute the verified path, quoting shell metacharacters safely. Repeat both
@@ -61,8 +58,8 @@ Direct implementation requests without Claude stay with the current agent.
   user's control; supply the two blocks and wait.
 - **Trusting a returned summary** — it may omit defects or failed checks; inspect the available diff
   and evidence before making a verification claim.
-- **Ending the prompt at green checks** — Claude can deliver without independent review; include
-  the final `review-fix` stage once for local implementation and preserve incomplete outcomes.
+- **Ending the prompt at green checks** — Claude can deliver without independent review; compose
+  `development` once and preserve its final-review and incomplete-outcome requirements.
 
 ## Constraints
 

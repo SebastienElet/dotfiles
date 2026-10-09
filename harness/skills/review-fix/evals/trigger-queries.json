@@ -45,7 +45,7 @@
     {
       "query": "This local implementation was started from a claude-developer handoff. Implementation and required checks have passed; its final stage explicitly authorizes Codex to correct demonstrated defects within the original scope and requires an independent review before delivery.",
       "should_activate": true,
-      "reason": "The authorized handoff composes review-fix at its local final-review stage"
+      "reason": "The handoff's development workflow composes review-fix at its local final-review stage"
     },
     {
       "query": "The claude-developer handoff asks only for an implementation plan. No code changes or corrections are authorized; return the plan.",
@@ -56,6 +56,16 @@
       "query": "Continue a correction delegated by review-fix; the parent already owns validation and the final independent review. Correct only the confirmed defect and return the raw test evidence.",
       "should_activate": false,
       "reason": "A delegated correction must not recursively start another review-fix loop"
+    },
+    {
+      "query": "The development workflow has finished this plain Claude implementation and its checks. Run its final independent review and bounded local corrections before delivery.",
+      "should_activate": true,
+      "reason": "Plain development reaches the same final stage without a manual handoff"
+    },
+    {
+      "query": "The development workflow has added a local feature on a branch with an existing PR. Review only the new task delta before delivery; no PR publication, push or merge is authorized.",
+      "should_activate": true,
+      "reason": "Ordinary local implementation differs from repairing existing PR review findings"
     }
   ]
 }

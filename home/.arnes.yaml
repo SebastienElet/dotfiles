@@ -93,6 +93,9 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
+  - slug: development
+    installations:
+      - { agent: claude, scope: user }
   - slug: codebase-design
     installations:
       - { agent: claude, scope: user }

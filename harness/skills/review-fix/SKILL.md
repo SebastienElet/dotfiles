@@ -1,8 +1,8 @@
 ---
 name: review-fix
 description: >
-  Repair local code-review findings with Codex before a PR. Use when local review corrections are
-  requested, or a claude-developer handoff reaches its final review stage. Make sure to use this
+  Repair local code-review findings with Codex before delivery. Use when local review corrections are
+  requested, or the development workflow reaches its final review stage. Make sure to use this
   skill for authorized local corrections even if unnamed. Excludes review-only requests and
   open-PR repairs, which belong to pr-fix.
 compatibility: Requires Git, code-review, the repository checks, and fresh Codex reviewers. Claude Code additionally requires the official codex@openai-codex plugin.
@@ -25,14 +25,15 @@ in Codex. Example: `Review and fix the current local changes before opening a PR
 
 A direct invocation or an explicit request to repair authorizes local edits and relevant checks.
 A request only to review authorizes no correction. Commits, pushes and PR publication require
-authorization from the surrounding task; this skill never approves or merges. An open PR routes
-to `pr-fix`. Do not compose `pr-verdict` for local work.
+authorization from the surrounding task; this skill never approves or merges. Repairing existing
+open-PR findings routes to `pr-fix`. Ordinary local implementation on an existing PR branch can
+compose this local review without extending its authority to the PR. Do not compose `pr-verdict`.
 
-An implementation or correction prompt prepared by `claude-developer` composes this workflow
-after the task's implementation and checks pass. The forwarded prompt must explicitly authorize
+The Claude `development` workflow composes this final stage after implementation and checks pass,
+whether started directly, through a manual handoff or another implementation skill. It must authorize
 bounded local review corrections and preserve the user's stricter limits. Apply the complete
 procedure once before delivery; do not restart it inside a delegated correction. Planning-only
-handoffs and already open PRs do not use this composition. This routing is instruction-level,
+tasks and repairs owned by `pr-fix` do not use this composition. This routing is instruction-level,
 not host-enforced.
 
 ## Steps

@@ -6,16 +6,17 @@ independent review. The plugin provides the transport; its review commands alone
 
 ## Installation ownership
 
-From the canonical dotfiles checkout, the explicit optional task is:
+The standard Claude installation includes the companion through `harness:claude`. From the
+canonical dotfiles checkout, its installation task can also be run directly:
 
 ```sh
 moon run harness:claude-codex-companion
 ```
 
 Moon installs the plugin through Claude Code's native CLI, with Claude, Codex and Node dependencies.
-It is deliberately absent from the default `harness:claude` aggregate. Arnes permits the plugin
+The `development` workflow uses it for the final review of Claude implementation. Arnes permits the plugin
 and its three bundled skills in `home/.arnes.yaml`; permission neither installs it nor makes it
-mandatory. The three skills observed in upstream version 1.0.6 are `codex-cli-runtime`,
+mandatory by itself. The three skills observed in upstream version 1.0.6 are `codex-cli-runtime`,
 `codex-result-handling` and `gpt-5-4-prompting`. Added upstream skills require a separate policy
 decision. Do not copy or edit the plugin's instructions locally.
 
