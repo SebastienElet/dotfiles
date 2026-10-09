@@ -41,6 +41,21 @@
       "query": "The second correction pass still leaves a confirmed local defect; continue this review-fix",
       "should_activate": true,
       "reason": "Continuation retains the pass count and must report unresolved findings after the limit"
+    },
+    {
+      "query": "This local implementation was started from a claude-developer handoff. Implementation and required checks have passed; its final stage explicitly authorizes Codex to correct demonstrated defects within the original scope and requires an independent review before delivery.",
+      "should_activate": true,
+      "reason": "The authorized handoff composes review-fix at its local final-review stage"
+    },
+    {
+      "query": "The claude-developer handoff asks only for an implementation plan. No code changes or corrections are authorized; return the plan.",
+      "should_activate": false,
+      "reason": "A planning-only handoff does not reach the implementation review stage"
+    },
+    {
+      "query": "Continue a correction delegated by review-fix; the parent already owns validation and the final independent review. Correct only the confirmed defect and return the raw test evidence.",
+      "should_activate": false,
+      "reason": "A delegated correction must not recursively start another review-fix loop"
     }
   ]
 }

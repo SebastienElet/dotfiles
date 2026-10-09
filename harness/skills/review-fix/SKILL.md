@@ -1,10 +1,10 @@
 ---
 name: review-fix
 description: >
-  Repair local code-review findings with Codex before a PR. Use when the user asks to review and
-  fix local changes or correct local findings. Make sure to use this skill whenever local review
-  corrections are authorized, even if unnamed. Excludes review-only requests and open PRs,
-  whose repairs belong to pr-fix.
+  Repair local code-review findings with Codex before a PR. Use when local review corrections are
+  requested, or a claude-developer handoff reaches its final review stage. Make sure to use this
+  skill for authorized local corrections even if unnamed. Excludes review-only requests and
+  open-PR repairs, which belong to pr-fix.
 compatibility: Requires Git, code-review, the repository checks, and fresh Codex reviewers. Claude Code additionally requires the official codex@openai-codex plugin.
 metadata:
   category: dev
@@ -27,6 +27,13 @@ A direct invocation or an explicit request to repair authorizes local edits and 
 A request only to review authorizes no correction. Commits, pushes and PR publication require
 authorization from the surrounding task; this skill never approves or merges. An open PR routes
 to `pr-fix`. Do not compose `pr-verdict` for local work.
+
+An implementation or correction prompt prepared by `claude-developer` composes this workflow
+after the task's implementation and checks pass. The forwarded prompt must explicitly authorize
+bounded local review corrections and preserve the user's stricter limits. Apply the complete
+procedure once before delivery; do not restart it inside a delegated correction. Planning-only
+handoffs and already open PRs do not use this composition. This routing is instruction-level,
+not host-enforced.
 
 ## Steps
 
