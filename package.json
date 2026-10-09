@@ -24,6 +24,6 @@
     "prettier": "3.9.6",
     "semctx": "0.4.1",
     "typescript": "7.0.2",
-    "cspell": "10.2.2"
+    "cspell": "10.3.6"
   }
 }
