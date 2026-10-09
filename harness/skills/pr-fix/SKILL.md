@@ -1,10 +1,10 @@
 ---
 name: pr-fix
 description: >
-  Repair an open pull request after an independent merge review. Use when asked to find and directly
-  correct blocking or objective non-blocking defects on a PR. Make sure to use this skill whenever
-  edits, commits, or a push to a PR branch are authorized, even if the user only says to fix the
-  review findings.
+  Repair an open pull request after an independent merge review. Use when asked to correct
+  demonstrated defects on a PR. Make sure to use this skill whenever PR review repairs are
+  authorized, even if unnamed. Ordinary local implementation on a PR branch belongs to its
+  development workflow and grants no PR repair or publication authority.
 compatibility: >
   Requires the `pr-verdict` skill, authenticated `gh` or `bkt`, write access to the PR source branch,
   reviewer permission to approve it, and the repository's validation toolchain.
@@ -38,6 +38,10 @@ Typical cases: "fix the blockers on PR 1042", "review this PR and correct the is
 "we can push small review fixes to the contributor's branch". A request only to judge, approve or
 re-review a PR must not mutate the branch; activate `pr-verdict` only if the user explicitly
 invokes it.
+
+An existing PR alone does not select this repair workflow for an ordinary local feature request.
+The development workflow owns that task and its local final review; PR repair requires the
+explicit correction request above. This distinction does not change any push or approval gate.
 
 ## Steps
 
