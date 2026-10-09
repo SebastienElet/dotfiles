@@ -1,5 +1,30 @@
 # Plan d’implémentation de la mémoire durable locale
 
+## Statut : historique — plan non maintenu
+
+Ce plan conserve le raisonnement de la livraison initiale ; il ne décrit plus le
+parcours opérationnel courant et ne fait pas autorité. Les instructions impératives,
+commandes Make, références à ADR-042 et sous-skills `superpowers:*` ci-dessous sont
+historiques, pas des obligations actuelles. Les cases non cochées sont conservées
+comme état du plan d’origine, sans indiquer du travail restant à réaliser.
+
+Les crates `agent-memory` et `agent-handoff` ont été intégrés dans
+[#249, commit `8c606d1b`](https://github.com/SebastienElet/dotfiles/commit/8c606d1b35eaa8f021600fdab9fce50fd95006d8).
+Leurs sources existent toujours dans [`tooling/agent-memory/`](../../../tooling/agent-memory/)
+et [`tooling/agent-handoff/`](../../../tooling/agent-handoff/). Ce constat ne certifie
+ni chaque étape du plan ni leur comportement actuel sur chaque agent et plateforme.
+ADR-042 a été retirée dans [#365](https://github.com/SebastienElet/dotfiles/pull/365) ;
+elle ne figure plus dans l’index des décisions en vigueur.
+
+Références actuelles :
+
+- [Index des ADR en vigueur](../../adr/README.md), dont [ADR-001 — Moon](../../adr/001-makefile-installateur.md), [ADR-038 — frontières du dépôt](../../adr/038-frontieres-home-harness-tooling.md) et [ADR-041 — automatisation](../../adr/041-frontiere-automatisation-typescript-rust.md).
+- [Skill Memory Governance](../../../harness/skills/memory-governance/SKILL.md) et [contrat des entrées et commandes](../../../harness/skills/memory-governance/references/entry-contract.md).
+- [Tâches Moon d’Agent Memory](../../../tooling/agent-memory/moon.yml) et [parcours de vérification en worktree](../../../README.md#contributing-from-a-worktree).
+- [Validation mémoire datée](../../memory-governance-validation.md) : résultats et limites propres aux agents et à l’environnement observés, sans garantie sur l’état courant.
+
+## Plan d’origine (historique)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Livrer une mémoire locale durable, partagée et observable pour Codex, Claude Code et Cursor sans confier son domaine ni son état à Arnes.
