@@ -168,6 +168,65 @@ Expected: class 13 holds on that observed comparison. A variant deleting only th
 the metadata or declare and assess the contract change. These cases specify expected decisions,
 not recorded executions or a complete six-phase workflow.
 
+## Case H — Git remote identity across supported forms
+
+A repository picker requires `user@` in SCP remotes, compares DNS hosts literally, compares GitHub
+paths case-sensitively and preserves `:22` in SSH identity. It rejects a checkout for a clicked issue
+even though the remote identifies that repository. Tests cover only lowercase `git@github.com`
+without an explicit port. These are the pre-fix mechanisms from dotfiles#417, following #415.
+
+Expected: class 11 findings for username-less SCP, host casing, GitHub path casing and explicit
+default SSH port 22, with the affected input and rejection traced. Require the expanded executed
+hostile-input table, including final `.git` and trailing slash. Missing cases alone are `unproven`.
+Keep Case F's authority-confusion and display-output findings from semctx#306.
+
+Counterexample: protocol-aware parsing accepts equivalent SCP and SSH forms, applies the provider's
+path case rules and preserves distinctions required by the supported identity contract, including
+#417's exact GitLab path matching, foreign hosts and non-default ports. Executed
+cases cover the table and diagnostics for malformed or unsupported inputs. Expected: no identity
+finding; never require every provider's path to be lowercased or distinct endpoints to be merged.
+
+## Case I — lost selection, wrong eligibility and routing
+
+A selector returns an empty success after filtering out an expected project that no longer exists.
+Changes to an execution prerequisite omit all Rust suites because `--upstream none` removes that
+relation. A reference extractor drops ambiguous candidates before classification; unavailable
+dependencies are silent and Case C expects only one of two required warnings. A ticket picker
+retains a parent whose open child is blocked, then routes existing-ticket edits to a creation-only
+skill. These packages represent the affected pre-fix paths of dotfiles#466, #463 and #414.
+
+Expected: class 14 findings for each demonstrated omission, wrong eligibility and unsupported route.
+Counting outputs alone does not establish complete or correct selection. Missing accounting without
+a witnessed loss is `unproven`; no invented dropped element. Require input identities and
+`input = retained + diagnosed rejections`, eligibility and routing checked against the independent
+contract, and validation of expected targets before affected filtering.
+
+Counterexample: expected targets exist, relevant prerequisites select their suites, all candidates
+remain traceable through retained outputs or diagnosed rejections, ambiguity and unavailability are
+visible, parents with any open child are excluded and amendments use an authorized editing path.
+An empty selection is allowed when every exclusion is justified. Expected: no class 14 finding;
+native graph inspection and existing diagnostics suffice without a new declaration mirror gate.
+
+## Case J — unmeasured rewrite and inconclusive performance
+
+A rewritten agent instruction is installed after source and projection checks, without observing
+the base and head wording on the same scenarios. A separate PR passes correctness tests but its
+paired performance comparison is inconclusive because noise exceeds the required budget.
+These packages represent dotfiles#443's unmeasured wording and semctx#308's unqualified #273 budget.
+
+Expected: class 15 records both claims as `unproven`. Missing behavioral comparison prevents adoption
+of the rewrite; the required performance qualification blocks merge despite green correctness tests.
+Do not reinterpret #443's disputed historical ADR scope as a settled review outcome, or call #308's
+inconclusive measurements a statistically demonstrated regression or gain. Case G's class 13
+byte-comparison requirement remains separate.
+
+Counterexample: named base/head measurements bind the exact wording or executable, pinned inputs,
+same scenarios/workload and environment, a criterion declared before measuring, raw observations and comparison.
+Fresh-context instruction runs include a violating case and a safe counterexample; performance
+results preserve the same facts and meet the declared budget with noise accounted for. Expected:
+class 15 holds within that measured scope. A removed optional speed claim needs no invented benchmark,
+but removing wording cannot waive a required performance budget or the rewrite-adoption criterion.
+
 ## Execution record
 
 Reconciled on 2026-09-19 against accessible sources. **Reported** means a historical account was

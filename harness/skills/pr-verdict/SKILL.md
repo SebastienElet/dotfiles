@@ -104,12 +104,14 @@ says to post directly.
    established external workflow. Reuse relevant observed commands on the same inputs instead of
    running a duplicate barrier; preserve the proof auditor's fresh context and independent first pass.
 
-3. **Sweep the failure classes.** Put all thirteen questions in `references/failure-classes.md` to the
+3. **Sweep the failure classes.** Put all fifteen questions in `references/failure-classes.md` to the
    diff. Record, per class, one of: not applicable, holds because `<evidence>`, unproven, or broken by
    `<mechanism>`. For unproven, name the missing evidence: block only when that proof is essential
    to approval under phase 5, explaining why and what would lift the gap; otherwise retain a bounded
    reservation. A demonstrated defect needs its named mechanism; missing proof does not establish
-   one. When the head under review was written
+   one. Require the Git-remote hostile-input cases, per-element selection accounting and base/head
+   performance or rewritten-instruction measurements when applicable (classes 11, 14 and 15).
+   When the head under review was written
    in this session, delegate the review to a distinct auditor in a fresh context with no inherited
    conversation history, scoped to the diff. Every review requires an auditor distinct from the author
    in a fresh context with no inherited conversation history and an independent first analysis:
@@ -249,7 +251,7 @@ says to post directly.
 
 - [references/forges.md](references/forges.md) — forge detection and the GitHub/Bitbucket command
   parity table. Read in phase 1, before the first CLI call.
-- [references/failure-classes.md](references/failure-classes.md) — the thirteen failure classes as
+- [references/failure-classes.md](references/failure-classes.md) — the fifteen failure classes as
   questions to put to the diff. Read in phase 3.
 - [assets/verdict-template.md](assets/verdict-template.md) — the verdict skeleton with its required
   slots. Filled in phase 6.
