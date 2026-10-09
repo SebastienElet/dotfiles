@@ -214,7 +214,7 @@ state the precise evidence gap.
 **Origin:** [dotfiles PR #466](https://github.com/SebastienElet/dotfiles/pull/466)
 (Rust prerequisites skipped with `--upstream none`, missing expected project treated as unaffected),
 [#463](https://github.com/SebastienElet/dotfiles/pull/463) (ambiguous candidates discarded,
-unavailable dependencies and Case C's combined diagnostic omitted), and
+unavailable dependencies and [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md)'s combined diagnostic omitted), and
 [#414](https://github.com/SebastienElet/dotfiles/pull/414) (parents with open children retained,
 existing-ticket amendments routed to creation).
 
@@ -238,7 +238,7 @@ do not demand a new mirror gate or validator.
 
 **Acceptance:** on the affected pre-fix heads of #466, report the omitted Rust prerequisite suites
 and the missing-project/unchanged conflation. On #463, report lost ambiguous candidates, silent
-unavailable dependencies and the missing combined Case C warning. On #414, report the wrongly
+unavailable dependencies and the missing combined [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md) warning. On #414, report the wrongly
 eligible parent with an open blocked child and the unsupported amendment-to-creation route.
 Missing accounting is `unproven`; demonstrated loss or wrong routing is `broken by` its traced mechanism.
 

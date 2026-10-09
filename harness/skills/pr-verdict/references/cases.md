@@ -191,7 +191,7 @@ finding; never require every provider's path to be lowercased or distinct endpoi
 A selector returns an empty success after filtering out an expected project that no longer exists.
 Changes to an execution prerequisite omit all Rust suites because `--upstream none` removes that
 relation. A reference extractor drops ambiguous candidates before classification; unavailable
-dependencies are silent and Case C expects only one of two required warnings. A ticket picker
+dependencies are silent and [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md) expects only one of two required warnings. A ticket picker
 retains a parent whose open child is blocked, then routes existing-ticket edits to a creation-only
 skill. These packages represent the affected pre-fix paths of dotfiles#466, #463 and #414.
 
