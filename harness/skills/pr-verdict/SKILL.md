@@ -109,10 +109,9 @@ says to post directly.
    `<mechanism>`. For unproven, name the missing evidence: block only when that proof is essential
    to approval under phase 5, explaining why and what would lift the gap; otherwise retain a bounded
    reservation. A demonstrated defect needs its named mechanism; missing proof does not establish
-   one. Require the Git-remote hostile-input cases, per-element selection accounting and base/head
-   performance or rewritten-instruction measurements when applicable (classes 11, 14 and 15).
-   When the head under review was written
-   in this session, delegate the review to a distinct auditor in a fresh context with no inherited
+   one. When applicable, classes 11, 14 and 15 require Git-remote identity and hostile-input
+   evidence, accounting for every selection input, and base/head measurements of performance or
+   rewritten instructions. When the head under review was written in this session, delegate the review to a distinct auditor in a fresh context with no inherited
    conversation history, scoped to the diff. Every review requires an auditor distinct from the author
    in a fresh context with no inherited conversation history and an independent first analysis:
    withhold prior verdicts and author conclusions until

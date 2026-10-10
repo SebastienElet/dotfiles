@@ -168,64 +168,140 @@ Expected: class 13 holds on that observed comparison. A variant deleting only th
 the metadata or declare and assess the contract change. These cases specify expected decisions,
 not recorded executions or a complete six-phase workflow.
 
-## Case H — Git remote identity across supported forms
+## Case H — Git remote identity (class 11)
 
-A repository picker requires `user@` in SCP remotes, compares DNS hosts literally, compares GitHub
-paths case-sensitively and preserves `:22` in SSH identity. It rejects a checkout for a clicked issue
-even though the remote identifies that repository. Tests cover only lowercase `git@github.com`
-without an explicit port. These are the pre-fix mechanisms from dotfiles#417, following #415.
+### H1 — optional SCP user
 
-Expected: class 11 findings for username-less SCP, host casing, GitHub path casing and explicit
-default SSH port 22, with the affected input and rejection traced. Require the expanded executed
-hostile-input table, including final `.git` and trailing slash. Missing cases alone are `unproven`.
-Keep Case F's authority-confusion and display-output findings from semctx#306.
+**Defect:** requiring `user@` rejects `github.com:Owner/Repo.git` while accepting
+`git@github.com:Owner/Repo.git` for the same repository. Report the traced rejection.
 
-Counterexample: protocol-aware parsing accepts equivalent SCP and SSH forms, applies the provider's
-path case rules and preserves distinctions required by the supported identity contract, including
-#417's exact GitLab path matching, foreign hosts and non-default ports. Executed
-cases cover the table and diagnostics for malformed or unsupported inputs. Expected: no identity
-finding; never require every provider's path to be lowercased or distinct endpoints to be merged.
+**Counterexample:** executed cases parse `[user@]host:path` and select the same repository with or
+without the user. No finding on this identity rule.
 
-## Case I — lost selection, wrong eligibility and routing
+### H2 — DNS host casing
 
-A selector returns an empty success after filtering out an expected project that no longer exists.
-Changes to an execution prerequisite omit all Rust suites because `--upstream none` removes that
-relation. A reference extractor drops ambiguous candidates before classification; unavailable
-dependencies are silent and [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md) expects only one of two required warnings. A ticket picker
-retains a parent whose open child is blocked, then routes existing-ticket edits to a creation-only
-skill. These packages represent the affected pre-fix paths of dotfiles#466, #463 and #414.
+**Defect:** literal host comparison rejects `git@GitHub.COM:Owner/Repo.git` as a different host.
+Report the incorrect identity decision.
 
-Expected: class 14 findings for each demonstrated omission, wrong eligibility and unsupported route.
-Counting outputs alone does not establish complete or correct selection. Missing accounting without
-a witnessed loss is `unproven`; no invented dropped element. Require input identities and
-`input = retained + diagnosed rejections`, eligibility and routing checked against the independent
-contract, and validation of expected targets before affected filtering.
+**Counterexample:** executed SCP and SSH cases establish host case equivalence. No host-casing finding.
 
-Counterexample: expected targets exist, relevant prerequisites select their suites, all candidates
-remain traceable through retained outputs or diagnosed rejections, ambiguity and unavailability are
-visible, parents with any open child are excluded and amendments use an authorized editing path.
-An empty selection is allowed when every exclusion is justified. Expected: no class 14 finding;
-native graph inspection and existing diagnostics suffice without a new declaration mirror gate.
+### H3 — provider path casing
 
-## Case J — unmeasured rewrite and inconclusive performance
+**Defect:** case-sensitive path comparison rejects GitHub `Owner/Repo` for `owner/repo`.
+Report the valid alias rejected by the picker.
 
-A rewritten agent instruction is installed after source and projection checks, without observing
-the base and head wording on the same scenarios. A separate PR passes correctness tests but its
-paired performance comparison is inconclusive because noise exceeds the required budget.
-These packages represent dotfiles#443's unmeasured wording and semctx#308's unqualified #273 budget.
+**Counterexample:** executed cases accept GitHub aliases and retain case distinctions for a separate
+GitLab fixture whose local contract requires exact matching. No finding; do not impose one path
+case rule on every provider.
 
-Expected: class 15 records both claims as `unproven`. Missing behavioral comparison prevents adoption
-of the rewrite; the required performance qualification blocks merge despite green correctness tests.
-Do not reinterpret #443's disputed historical ADR scope as a settled review outcome, or call #308's
-inconclusive measurements a statistically demonstrated regression or gain. Case G's class 13
-byte-comparison requirement remains separate.
+### H4 — default SSH port
 
-Counterexample: named base/head measurements bind the exact wording or executable, pinned inputs,
-same scenarios/workload and environment, a criterion declared before measuring, raw observations and comparison.
-Fresh-context instruction runs include a violating case and a safe counterexample; performance
-results preserve the same facts and meet the declared budget with noise accounted for. Expected:
-class 15 holds within that measured scope. A removed optional speed claim needs no invented benchmark,
-but removing wording cannot waive a required performance budget or the rewrite-adoption criterion.
+**Defect:** preserving `:22` as a different identity rejects
+`ssh://git@github.com:22/Owner/Repo.git` for a repository accepted without the port.
+Report the traced rejection.
+
+**Counterexample:** executed cases equate omitted and explicit port 22 while preserving or rejecting
+non-default endpoints with diagnostics. No port-identity finding.
+
+### H5 — final suffix and slash
+
+**Defect:** the declared identity contract equates `Repo`, `Repo.git`, `Repo/` and `Repo.git/`,
+but the picker rejects `Repo.git/`. Report that observed mismatch.
+
+**Counterexample:** executed cases accept all four final forms and preserve interior path segments.
+No suffix-normalization finding.
+
+### H6 — distinct or unsupported endpoint
+
+**Defect:** a normalizer replaces a foreign host with `github.com` and selects a trusted repository.
+Report the trust-boundary violation.
+
+**Counterexample:** executed cases keep foreign and non-default endpoints distinct or reject them
+with diagnostics, and diagnose malformed SCP and unsupported local paths. No endpoint-confusion finding.
+
+An absent executed identity or hostile-input case is `unproven`, not a demonstrated rejection or leak.
+
+## Case I — selection accounting (class 14)
+
+### I1 — missing expected target
+
+**Defect:** an expected project is missing; filtering returns empty success and skips its required
+suite. Report the missing-project/unchanged conflation and omitted check.
+
+**Counterexample:** native inspection validates expected targets before filtering and fails explicitly
+on this missing project. A successful empty selection diagnoses every exclusion. No target-loss finding.
+
+### I2 — required prerequisite
+
+**Defect:** selection follows only source changes; an execution-prerequisite change skips the suite
+that depends on it. Report the omitted required suite.
+
+**Counterexample:** native graph observations select that suite for the prerequisite change and
+reject a variant that omits it. No prerequisite-selection finding; no new mirror gate is required.
+
+### I3 — ambiguous candidate
+
+**Defect:** extraction finds two candidates, then discards the ambiguous one before classification.
+Report its traced disappearance, even if the filtered input and output counts agree.
+
+**Counterexample:** both occurrences remain identifiable as retained or diagnosed rejections;
+ambiguity stays visible until resolution or rejection, and an unclassifiable input fails explicitly.
+No candidate-loss finding.
+
+### I4 — incomplete rejection diagnostic
+
+**Defect:** the contract requires both an unavailable-dependency reason and a forbidden-dependency
+reason, but the rejection reports only the latter. Report the missing required reason as a bounded
+reservation unless that proof is essential to approval.
+
+**Counterexample:** one diagnostic includes both required reasons and identifies the rejected input.
+No diagnostic finding; complete reasons do not require separate warning counts.
+
+### I5 — wrong eligibility
+
+**Defect:** the independent contract excludes parents with unfinished children, but the selector
+retains a parent with a blocked child. Report the violated eligibility rule.
+
+**Counterexample:** the observed partition rejects that parent with its reason and retains eligible
+parents exactly once. No eligibility finding; derive the expected set from the contract.
+
+### I6 — unsupported destination
+
+**Defect:** an update of an existing record is routed to a creation-only handler, preventing the
+promised update. Report the unsupported route.
+
+**Counterexample:** observed routing sends the update to an authorized editor. No routing finding;
+correct accounting alone would not establish this result.
+
+Missing accounting without an observed loss or wrong decision is `unproven`; never invent a dropped input.
+
+## Case J — comparison evidence (class 15)
+
+### J1 — rewritten instruction
+
+**Defect:** a rewritten mandatory instruction is installed after source/projection checks alone.
+Its behavior has no base/head comparison. Record `unproven` and block adoption pending that proof.
+
+**Counterexample:** exact base/head texts are exercised in fresh contexts on identical violating and
+safe scenarios, with recorded inputs/environment, observations and a criterion fixed beforehand and
+met. Class 15 holds within that measured scope; no effectiveness gain follows from decision equality.
+
+### J2 — inconclusive required budget
+
+**Defect:** correctness tests pass, but benchmark noise leaves a required performance budget
+unqualified. Record `unproven` and block merge; infer neither a regression nor a gain.
+
+**Counterexample:** named base/head executables, pinned inputs and the same workload/environment
+meet the previously declared budget with noise and order effects accounted for. Class 15 holds for
+that budget.
+
+### J3 — unsupported optional speed claim
+
+**Defect:** a PR claims faster startup without comparative observations, and no performance budget
+is required. Record the optional claim as `unproven`; require its removal, qualification or measurement.
+
+**Counterexample:** the optional claim is removed. No benchmark is required for it; any independent
+instruction-adoption criterion or required budget still applies.
 
 ## Execution record
 
