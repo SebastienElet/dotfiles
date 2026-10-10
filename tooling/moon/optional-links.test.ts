@@ -195,7 +195,7 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
 }
 
 test(
-  "Moon deploys the Cursor rule and skills without global dependencies",
+  "Moon deploys the Cursor rules and skills without global dependencies",
   () => {
     const { fixture, trace } = cursorFixture();
     const rule = join(
@@ -205,6 +205,8 @@ test(
       "memory-governance-cursor.mdc",
     );
     const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
+    const plugin = join(fixture.home, ".cursor/plugins/local/dotfiles-harness");
+    const commonRule = join(plugin, "rules/common-instructions.mdc");
 
     expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(readlinkSync(rule)).toBe(
@@ -213,16 +215,72 @@ test(
     expect(readlinkSync(skill)).toBe(
       join(project, "harness", "skills", "skill-manager"),
     );
+    expect(lstatSync(plugin).isDirectory()).toBeTrue();
+    expect(readlinkSync(join(plugin, ".cursor-plugin/plugin.json"))).toBe(
+      join(
+        project,
+        "home/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
+      ),
+    );
+    expect(readFileSync(commonRule, "utf8")).toContain(
+      "alwaysApply: true\n---\n# Global AI Instructions",
+    );
     expect(readFileSync(trace, "utf8")).toContain(
       '"arguments":["setup","hooks","--agent","cursor"]',
     );
     const ruleInode = lstatSync(rule).ino;
+    const commonRuleInode = lstatSync(commonRule).ino;
 
     expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(lstatSync(rule).ino).toBe(ruleInode);
+    expect(lstatSync(commonRule).ino).toBe(commonRuleInode);
   },
   cursorDeploymentAndReplayTimeout,
 );
+
+test.each(["existing", "dangling"])(
+  "Moon refuses a %s symbolic Cursor plugin directory before mutation",
+  (kind) => {
+    const fixture = createDeploymentFixture("cursor-symbolic-plugin");
+    const plugin = join(fixture.home, ".cursor/plugins/local/dotfiles-harness");
+    const foreign = join(fixture.root, "foreign-plugin");
+    mkdirSync(dirname(plugin), { recursive: true });
+    if (kind === "existing") {
+      mkdirSync(foreign);
+    }
+    symlinkSync(foreign, plugin);
+    const result = runDeploymentMoon(fixture, ["harness:cursor-instructions"]);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain(
+      "Refusing symbolic Cursor plugin directory",
+    );
+    expect(readlinkSync(plugin)).toBe(foreign);
+    expect(
+      lstatSync(join(foreign, ".cursor-plugin"), { throwIfNoEntry: false }),
+    ).toBeUndefined();
+    expect(
+      lstatSync(join(foreign, "rules"), { throwIfNoEntry: false }),
+    ).toBeUndefined();
+  },
+);
+
+test("Moon refuses an occupied Cursor plugin manifest before changing its rule", () => {
+  const fixture = createDeploymentFixture("cursor-instructions-collision");
+  const plugin = join(fixture.home, ".cursor/plugins/local/dotfiles-harness");
+  const manifest = join(plugin, ".cursor-plugin/plugin.json");
+  const rule = join(plugin, "rules/common-instructions.mdc");
+  for (const path of [manifest, rule]) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, "personal\n");
+  }
+  const result = runDeploymentMoon(fixture, ["harness:cursor-instructions"]);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    "exists and is not the expected symbolic link",
+  );
+  expect(readFileSync(manifest, "utf8")).toBe("personal\n");
+  expect(readFileSync(rule, "utf8")).toBe("personal\n");
+});
 
 test("Moon preserves a divergent Cursor rule and returns failure", () => {
   const { fixture, trace } = cursorFixture();
