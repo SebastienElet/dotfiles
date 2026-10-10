@@ -1,0 +1,185 @@
+{
+  "date": "2026-10-10",
+  "source_commit": "66e204a507b29fe8b3f7944c3d461d27df66ae5c",
+  "environment": "Darwin 27 arm64",
+  "cursor_cli": "2026.10.01-14929f9",
+  "scope": "Fixtures CLI isolées et déploiement temporaire du plugin global pour Desktop Ask sur This Mac",
+  "source_sha256": {
+    "harness/AGENTS.md": "fb13abf0211b80fa95f70d2f7f60d85e8c10c287638a22c31733790806573d6b",
+    "harness/SOUL.md": "4a94270116070a72d50286f713de0f76b36f800cb1b3455cd2872e765959ae61",
+    "harness/USER.md": "e9146bc21cedd4a0e1f3afa5a3ab72e1f85c7d06d8f1f5c07ad3a362fe3afdd7",
+    "harness/visual-presentation.md": "a728d68a9cb53174092ecc47ed1132bd7d704cbf130173fc8ac9e73cd09de8fa",
+    "AGENTS.md": "e3856f7e7c0ab5be5902355b050018f27f3cf45e516259433310e69e9f7708cc",
+    "assembled_rule": "3965e5904e2e230e87ac122e36344d97ba054e0d44f92a8697753e1771f5a61a"
+  },
+  "probes": [
+    {
+      "probe": "live-2026-10-10",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "1277bfbb-c2da-4084-8ce0-a48c443087d3",
+      "reported_model": "Auto",
+      "prompt": "Indiquez la langue et la forme d’adresse prescrites, la conduite à tenir face à une contradiction certaine avec une ADR, et la préférence concernant les nouvelles gates de validation du déclaratif. Citez aussi une consigne propre au projet courant. Répondez uniquement à partir des instructions déjà reçues, sans utiliser d’outil.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 37316,
+        "response": "**Langue et forme d’adresse.** Aucune consigne reçue ne prescrit une langue ni une forme d’adresse (vouvoiement, tutoiement, etc.).\n\n**Contradiction certaine avec une ADR.** D’après `AGENTS.md` : d’abord chercher une exception ou une migration plausible ; si la contradiction demeure certaine, la signaler, arrêter l’implémentation sur le chemin concerné, et poursuivre le travail indépendant.\n\n**Nouvelles gates de validation du déclaratif.** Aucune préférence à ce sujet n’apparaît dans les instructions déjà reçues.\n\n**Consigne propre au projet courant.** Exemple tiré de `AGENTS.md` : en cas de désaccord avec un adaptateur propre à un agent, `AGENTS.md` l’emporte ; autre consigne locale : préférer de petites itérations, des changements minimaux, et éviter les refactors larges hors demande."
+      }
+    },
+    {
+      "probe": "live-regular-2026-10-10",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "2a3bdf13-8018-4457-864b-a6301b886cd8",
+      "reported_model": "Auto",
+      "prompt": "Indiquez la langue et la forme d’adresse prescrites, la conduite à tenir face à une contradiction certaine avec une ADR, et la préférence concernant les nouvelles gates de validation du déclaratif. Citez aussi une consigne propre au projet courant. Répondez uniquement à partir des instructions déjà reçues, sans utiliser d’outil.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 25511,
+        "response": "Mémoire durable indisponible (consigne « sans outil »).\n\nVoici ce qui figure déjà dans les instructions reçues :\n\n**Contradiction certaine avec une ADR**  \nEnquêter d’abord toute exception ou migration plausible. Si la contradiction demeure certaine : la signaler, arrêter l’implémentation sur le chemin concerné, et poursuivre le travail indépendant. (`AGENTS.md`)\n\n**Gates de validation du déclaratif**  \nPour les changements déclaratifs sans comportement détenu, la consigne TDD exclut le TDD classique et prescrit d’utiliser la validation native ou déjà existante — pas d’ajouter de nouvelles gates pour cela.\n\n**Langue et forme d’adresse**  \nAucune prescription explicite de langue ni de vouvoiement/tutoiement n’apparaît dans les instructions déjà fournies dans ce fil.\n\n**Consigne propre au projet courant**  \nEn cas de conflit entre un adaptateur agent-spécifique et `AGENTS.md`, c’est `AGENTS.md` qui l’emporte ; les répertoires agent-spécifiques ne doivent pas dupliquer les règles ni le contenu des skills du dépôt."
+      }
+    },
+    {
+      "probe": "live-language-2026-10-10",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "8e050ae8-5309-44f9-854a-6e0ba2f6e1ce",
+      "reported_model": "Auto",
+      "prompt": "Sans outil et sans lecture de fichiers : une consigne déjà reçue prescrit-elle la langue française et le vouvoiement ? Recopiez uniquement cette consigne si elle existe, sinon répondez ABSENTE.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 7624,
+        "response": "ABSENTE"
+      }
+    },
+    {
+      "probe": "tiny-plugin",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "b072e3f9-4bec-4c7c-8f63-ddd5e4219f08",
+      "reported_model": "Composer 2.5",
+      "prompt": "List the verification codes in the instructions you have already received. Do not use any tools or read any files.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 5592,
+        "response": "Verification codes from the instructions already in this session:\n\n1. **CURSOR437_PROJECT_93A7** — from the workspace rule in `AGENTS.md`: project verification code; include it when asked for verification codes you’ve already received.\n\nNo other verification codes appear in the system prompt, user rules, or workspace rules provided at the start of this chat."
+      }
+    },
+    {
+      "probe": "tiny-native",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "757d2b54-aa68-4505-b56a-b7d0ce9ab700",
+      "reported_model": "Composer 2.5",
+      "prompt": "List the verification codes in the instructions you have already received. Do not use any tools or read any files.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 5248,
+        "response": "Verification codes from the instructions already in this session:\n\n1. **Plugin (`.cursor/rules/canary.mdc`):** `CURSOR437_PLUGIN_6B41`\n2. **Project (`AGENTS.md`):** `CURSOR437_PROJECT_93A7`"
+      }
+    },
+    {
+      "probe": "tiny-plugin-agent",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "fc6656c3-64a0-44d5-a8a7-19588cbccef5",
+      "reported_model": "Composer 2.5",
+      "prompt": "List the verification codes in the instructions you have already received. Do not use any tools or read any files.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 4163,
+        "response": "Verification codes already present in your instructions:\n\n1. **CURSOR437_PROJECT_93A7** — from the project workspace rule (`AGENTS.md`): “Your project verification code is CURSOR437_PROJECT_93A7.”\n\nNo other verification codes appear in the system message, user rules, or other context for this session."
+      }
+    },
+    {
+      "probe": "native-full",
+      "tool_calls": 0,
+      "non_text_content": [],
+      "stderr": "",
+      "session_id": "ab52f07b-817d-412e-81bd-69349cd5e8b4",
+      "reported_model": "Composer 2.5",
+      "prompt": "Indiquez la langue et la forme d’adresse prescrites, la conduite à tenir face à une contradiction certaine avec une ADR, et la préférence concernant les nouvelles gates de validation du déclaratif. Citez aussi une consigne propre au projet courant. Répondez uniquement à partir des instructions déjà reçues, sans utiliser d’outil.",
+      "api_result": {
+        "status": "success",
+        "is_error": false,
+        "duration_ms": 8495,
+        "response": "**Langue et forme d’adresse** (`SOUL.md`)  \n- Langue par défaut : **français**.  \n- **Vouvoiement**. Le vocabulaire technique (commandes, API, fichiers) reste tel quel. Bascule si vous employez une autre langue.\n\n**Contradiction certaine avec une ADR** (analyse critique + `AGENTS.md`)  \n- Une ADR **en vigueur** fait foi pour l’intention architecturale ; le code est la réalité implémentée.  \n- Une **contradiction certaine** qui **impacte la tâche en cours** **bloque l’implémentation** sur le chemin concerné.  \n- D’abord chercher une exception ou migration plausible ; en cas d’incertitude matérielle, **s’arrêter** et proposer une expérience ciblée ou une issue minimale de blocage.  \n- Si l’ADR elle-même semble fausse : **ne pas la corriger opportunistément** ; ouvrir une issue minimale (ADR, contradiction prouvée, impact).  \n- Dans ce dépôt : si la contradiction certaine subsiste après investigation, **la signaler et arrêter** l’implémentation du chemin affecté ; le travail indépendant peut continuer.\n\n**Nouvelles gates de validation du déclaratif** (`USER.md`)  \n- Avant tout nouvel oracle, privilégier la validation **native ou déjà existante** (parser, schéma, typecheck, dry-run, inspection, exécution publique, smoke, CI).  \n- **Ne pas créer spontanément** de script, validateur, règle de lint, gate CI ou harness dédié pour « renforcer » le déclaratif.  \n- Si un manque significatif semble justifier cette infrastructure : **suspendre sa création** et **demander votre avis** (invariant possédé, source canonique, oracles envisagés, preuve manquante, criticité, contrôle proposé).  \n- Une gate **demandée explicitement par vous** ou une **autorité externe** reste à implémenter ; un plan, une spec, une ADR ou une revue d’agent **ne vaut pas** cette demande.\n\n**Consigne propre au projet courant** (`AGENTS.md` — dotfiles)  \n- **Règle de conflit** : si un adaptateur spécifique à un agent contredit ce document, **`AGENTS.md` l’emporte**."
+      }
+    }
+  ],
+  "conclusions": {
+    "explicit_plugin": "non reçu dans le CLI",
+    "native_project_rule": "instructions communes, persona, préférences et consigne projet reçues",
+    "manifest_symlink": "ne distingue pas les résultats",
+    "ask_vs_agent": "ne distingue pas les résultats",
+    "internal_plugin_filter": "non confirmé",
+    "desktop_activation": "observée et signaux communs reçus dans Desktop Ask",
+    "model_effort": "Effort CLI non rapporté ; label UI High seulement pour Desktop",
+    "limits": "Les signaux choisis établissent la réception dans cette session Desktop, sans prouver couverture complète ni respect dans toutes les tâches. Observations CUA consignées par l’auteur, sans télémétrie backend indépendante."
+  },
+  "desktop": {
+    "date": "2026-10-10",
+    "surface": "Cursor Desktop",
+    "version": "3.23.23",
+    "environment": "Darwin 27 arm64",
+    "reported_model": "Grok 4.7 High",
+    "mode": "Ask",
+    "execution_environment": "This Mac",
+    "request_id": "aebbcd86-d266-4bf7-a036-d25370908dd6",
+    "chat_title": "Project instructions and guidelines",
+    "ui_reported_work": "19s",
+    "prompt": "Indiquez la langue et la forme d’adresse prescrites, la conduite à tenir face à une contradiction certaine avec une ADR, et la préférence concernant les nouvelles gates de validation du déclaratif. Citez aussi une consigne propre au projet courant. Répondez uniquement à partir des instructions déjà reçues, sans utiliser d’outil.",
+    "workspace": "Fixture isolée contenant seulement le AGENTS.md racine",
+    "workspace_contents": ["AGENTS.md"],
+    "context_attachment": "Aucun fichier joint au prompt ; panneau Changes sélectionné ; éditeur de la règle fermé avant ouverture du workspace",
+    "activation_observed": [
+      "Customize : Installed 1, Dotfiles Harness, Local",
+      "Rules : User 2, common-instructions",
+      "Éditeur de règle : alwaysApply true et corps canonique"
+    ],
+    "tool_calls_observed": 0,
+    "observation_method": "Transcript natif CUA d’accessibilité, réponse terminée ; aucun événement d’outil affiché",
+    "response": "Langue et adresse. Français par défaut, vouvoiement. Le vocabulaire technique (commandes, API, fichiers) reste inchangé. Si vous employez une autre langue, la réponse bascule vers celle-ci.\n\nContradiction certaine avec une ADR en vigueur. Chercher d’abord toute exception ou migration plausible. Si la contradiction demeure certaine, la signaler et arrêter l’implémentation du chemin concerné ; le travail indépendant continue. Ne pas créer d’exception locale pour contourner l’architecture. Si l’ADR elle-même paraît erronée, ne pas la corriger dans la session : proposer une issue minimale qui nomme l’ADR, la contradiction établie et son impact, et laisser l’enquête à une session fraîche.\n\nNouvelles gates pour le déclaratif. Ne pas en créer spontanément (script, validateur, règle de lint, gate CI, harness). S’appuyer d’abord sur la validation native ou déjà présente (syntaxe, schéma, dry-run, exécution publique). Si un manque significatif semble justifier une nouvelle infrastructure, en suspendre seule la création et demander votre avis, en indiquant l’invariant possédé, la source canonique, les oracles considérés, la preuve manquante, la criticité du risque résiduel et le contrôle envisagé.\n\nConsigne du projet courant (AGENTS.md). Préférer les petites itérations : ne faire que ce qui a été demandé, sans étendre le changement à tous les cas semblables.",
+    "deployment": {
+      "task": "moon exec --upstream none --no-actions --ignore-ci-checks harness:cursor-instructions",
+      "moon": "2.5.3",
+      "bun": "1.4.0",
+      "destinations": [
+        "~/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
+        "~/.cursor/plugins/local/dotfiles-harness/rules/common-instructions.mdc"
+      ],
+      "previous_state": "Destinations possédées absentes",
+      "manifest": "Lien symbolique vers le worktree source verrouillé",
+      "rule_sha256": "3965e5904e2e230e87ac122e36344d97ba054e0d44f92a8697753e1771f5a61a",
+      "cleanup": "Destinations possédées retirées ; worktree déverrouillé ; Cursor rechargé"
+    },
+    "effort": "Label UI High ; paramètres effectifs de raisonnement non exposés",
+    "source_commit": "66e204a507b29fe8b3f7944c3d461d27df66ae5c",
+    "negative_control": {
+      "request_id": "146c77fe-0bbd-458a-a8d3-103d4d6b493e",
+      "mode": "Ask",
+      "reported_model": "Grok 4.7 High",
+      "execution_environment": "This Mac",
+      "workspace": "Fixture isolée contenant seulement le AGENTS.md racine",
+      "prompt": "Indiquez la langue et la forme d’adresse prescrites, la conduite à tenir face à une contradiction certaine avec une ADR, et la préférence concernant les nouvelles gates de validation du déclaratif. Citez aussi une consigne propre au projet courant. Répondez uniquement à partir des instructions déjà reçues, sans utiliser d’outil.",
+      "setup": "Plugin global possédé retiré, Reload Window, nouvelle session ; aucun fichier joint",
+      "tool_calls_observed": 0,
+      "ui_reported_work": "30s",
+      "response": "Langue et forme d’adresse. Les instructions reçues n’en prescrivent aucune : ni langue de réponse, ni tutoiement, ni vouvoiement. Elles demandent une prose directe, concise et affirmative.\n\nContradiction certaine avec une ADR. D’après AGENTS.md : examiner d’abord toute exception ou migration plausible. Si la contradiction demeure, la signaler, arrêter l’implémentation du chemin concerné, et poursuivre le travail indépendant.\n\nNouvelles gates de validation du déclaratif. Aucune préférence sur ce point ne figure dans les instructions déjà reçues.\n\nConsigne propre au projet. AGENTS.md est la source unique pour les agents de ce dépôt : si un adaptateur propre à un agent la contredit, AGENTS.md l’emporte.",
+      "redactions": ["Phrase d’identité professionnelle omise"]
+    },
+    "workspace_sha256": "e3856f7e7c0ab5be5902355b050018f27f3cf45e516259433310e69e9f7708cc"
+  }
+}
