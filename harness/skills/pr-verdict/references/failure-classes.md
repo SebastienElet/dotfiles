@@ -1,6 +1,6 @@
 # Failure classes
 
-Thirteen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
+Fifteen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
 answer is a sentence about _this_ diff. Record one of four outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
@@ -146,13 +146,31 @@ explicit grammar-aware analysis of its authority and boundaries, with a table of
 **Broken when:** an ad hoc regex decides identity or removes credentials without respecting those
 boundaries. For example, `[^/@]*@` stops at the first `@`, leaving credentials after a second one,
 and turns `https://evil.invalid?@github.com/...` into an apparently trusted GitHub URL. A query or
-fragment becomes authority, or a secret survives into displayed output.
+fragment becomes authority, or a secret survives into displayed output. A repository picker rejects
+equivalent Git remotes because it requires an SCP user, compares DNS hosts literally, or preserves
+the default SSH port as a distinct identity.
 
 **Lift:** a real parser or explicit authority/boundary analysis replaces the ad hoc regex. An
 executed hostile-input table covers multiple `@`, `@` in query or fragment, backslashes, control
 characters, newlines, bidirectional controls, encoded delimiters, and repeated or adjacent
 occurrences. Assert the expected identity or rejection and safe displayed output for each relevant
 case, including malformed inputs; normalization must not turn a rejected authority into a trusted one.
+
+For Git remotes, require protocol-aware parsing, including the SCP grammar `[user@]host:path`.
+Extend the hostile-input table with these identity and rejection cases; provider rules must come
+from the supported provider's contract, not a blanket lowercasing of paths.
+
+| Input family                                                                              | Required observation                                                                                                                             |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `github.com:Owner/Repo.git`, `git@github.com:Owner/Repo.git`                              | Optional SCP user does not change repository identity.                                                                                           |
+| `ssh://git@github.com/Owner/Repo.git`, `ssh://git@github.com:22/Owner/Repo.git`           | Omitted and explicit default SSH port 22 identify the same repository.                                                                           |
+| `git@GitHub.COM:Owner/Repo.git`, `ssh://git@GITHUB.COM/Owner/Repo.git`                    | DNS host casing does not change identity in either syntax.                                                                                       |
+| GitHub `Owner/Repo` versus `owner/repo`; GitLab `Team/Project` versus `team/project`      | GitHub case aliases match. For other providers, follow the supported identity contract; exact GitLab path matching may be a declared local rule. |
+| `Repo`, `Repo.git`, `Repo/`, `Repo.git/` in supported remote forms                        | Final `.git` and trailing slash normalize according to the repository identity contract; interior path segments remain intact.                   |
+| `ssh://git@github.com:2222/Owner/Repo.git`, a foreign host, malformed SCP and local paths | Preserve distinct endpoints or reject with a diagnostic; never alias them to a trusted default endpoint.                                         |
+
+Missing executed cases are `unproven`; a traced rejection or trust-boundary violation is
+`broken by` its mechanism. Class 12 separately checks every display output.
 
 ## 12. Complete display-output coverage
 
@@ -185,21 +203,70 @@ descriptions and other metadata. Do not strip metadata or normalize away differe
 or declare and assess the contract change; if the comparison cannot run, retain `unproven` and
 state the precise evidence gap.
 
+## 14. Selection without complete accounting
+
+**Ask:** can every input occurrence be traced to a retained element or a diagnosed rejection?
+Do eligibility and destination follow an independently established contract?
+
+**Broken when:** a candidate disappears before classification, an unavailable dependency is silent,
+or a missing expected project becomes a successful empty selection. Filtering before counting hides
+loss; equal counts still hide wrong eligibility or routing. For example, a selector keeps a parent
+with an unfinished child despite a rule excluding it, or sends an update to a creation-only handler.
+
+**Lift:** observe `input = retained + diagnosed rejections` by identity and occurrence, with no loss
+or double-counting and all required diagnostic reasons. Keep ambiguity visible until resolution or
+rejection; an unclassifiable input fails explicitly. Validate expected projects and targets before
+filtering. Derive eligibility, required prerequisites and authorized destinations from the independent
+contract, then exercise valid, empty, ambiguous, unavailable and wrongly routed cases. A successful
+empty result accounts for every exclusion. Native inspection, task graphs and existing diagnostics
+suffice when they expose this proof; do not require a new mirror gate or validator.
+
+Missing accounting is `unproven`; observed loss, wrong eligibility or routing is `broken by` its
+traced mechanism. The Reporting section determines whether its consequence blocks.
+
+## 15. Performance or rewritten instructions without comparison
+
+**Ask:** before installation or merge, is the claimed performance or rewritten instruction's behavior
+compared on base and head against a criterion fixed before measuring?
+
+**Broken when:** shorter wording, source similarity, projection checks or green correctness tests
+substitute for that comparison. For example, a rewritten instruction is installed without observing
+its decisions, or an inconclusive benchmark is presented as satisfying a required performance budget.
+Missing or inconclusive measurements leave the claim `unproven`; they demonstrate neither a
+regression nor a gain.
+
+**Lift:** bind observations to named base/head revisions, exact text or executable inputs, pinned
+dependencies, recorded host/model/runtime and environment, identical scenarios or workload, metric
+and a criterion declared before measuring. For instructions, execute violating and safe cases in
+fresh contexts with each wording. For performance, preserve equivalent facts and workload, account
+for noise and order effects, and keep inconclusive results `unproven`. Reuse traceable relevant
+measurements under phase 4; a single favorable sample proves no uplift.
+
+Compare before adopting a rewritten instruction. Before merge, remove or bound an unsupported
+optional performance claim; a required budget or adoption criterion still blocks until qualified.
+Class 13 separately requires byte-for-byte comparison of public exports.
+
 ## Reporting
 
 Classes 1, 2, 3, 4, 5, 7, 9, 11 and 12 name mechanisms that lose data, corrupt state or cross a security
-boundary: when broken, they block. Classes 6, 8, 10 and 13 are usually reservations — promote class 6
+boundary: when broken, they block. Class 14 blocks when its demonstrated loss, wrong eligibility or
+routing removes required checks or prevents a promised workflow; other diagnostic omissions are
+bounded reservations unless their evidence is essential under phase 5.
+Classes 6, 8, 10 and 13 are usually reservations — promote class 6
 when a concrete consumer's retry path depends on the changed code, class 8 when the degraded value
 reaches a person or a legal act, and class 10 when the claim is legal, evidentiary or contractual.
 For class 13, label the unchanged-contract claim `unproven` until the exported bytes are compared;
 block when the comparison exposes a promised compatibility break or when compatibility proof is
 essential to approval. Missing hostile-input or output coverage in classes 11 and 12 is an evidence
 gap, not an invented leak: apply phase 5's essential-evidence rule and name the missing proof.
+For class 15, retain `unproven` until a relevant base/head comparison satisfies the declared criterion;
+block installation or merge when rule adoption or a required performance budget depends on it.
+An optional unsupported claim can instead be removed or bounded; do not invent a measured defect.
 
 The default below does not downgrade phase-2 defects: a demonstrated guard that prevents a promised
-user action blocks, even outside these thirteen classes.
+user action blocks, even outside these fifteen classes.
 
-Other findings outside these thirteen classes are legitimate but non-blocking by default: report at most three
+Other findings outside these fifteen classes are legitimate but non-blocking by default: report at most three
 of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
 turning into a second review that competes with the verdict — rank them by whether they would change
 a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is
