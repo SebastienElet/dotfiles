@@ -258,6 +258,7 @@ external:
     - { agent: codex, scope: user, id: computer-use@openai-bundled }
     - { agent: codex, scope: user, id: github@openai-curated }
     - { agent: codex, scope: user, id: semctx-control@semctx-stable }
+    - { agent: codex, scope: user, id: tracing@langsmith-codex-plugins }
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
