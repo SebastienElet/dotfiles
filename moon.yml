@@ -24,6 +24,7 @@ tasks:
       - pnpm
       - home:install
       - harness:install
+      - harness:prime-agent
       - jq-setup
       - secret-prepare
     toolchains: system
@@ -53,7 +54,6 @@ tasks:
       - repository:dependencies
       - repository:node
       - harness:cursor
-      - harness:prime-agent
       - repository:cloakbrowser
       - repository:scrapling
       - home:postgresql
