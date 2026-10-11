@@ -1,0 +1,37 @@
+title = "Dotfiles secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "aws-access-token"
+[[rules.allowlists]]
+description = "Alphabet-only fictitious AWS ID used by redaction tests, including their retired predecessor"
+condition = "AND"
+paths = ['''^tooling/(?:comment-rule-ablation/normalize\.test\.ts|arnes/tests/measure_hook/collection_boundaries/redaction\.rs)$''']
+regexes = ['''^AKIAABCDEFGHIJKLMNOP$''']
+
+[[rules]]
+id = "private-key"
+[[rules.allowlists]]
+description = "Header-only Rust rejection fixtures contain no key material"
+condition = "AND"
+paths = ['''^tooling/(?:agent-memory|arnes)/tests/memory_validation\.rs$''']
+regexTarget = "line"
+regexes = ['''^\s*\("pem-pkcs8", "-----BEGIN PRIVATE KEY-----"\),\s*\("pem-rsa-case", "-----begin rsa private key-----"\),\s*\("pem-openssh", "-----BEGIN OPENSSH PRIVATE KEY-----"\),?\s*$''']
+
+[[rules]]
+id = "bitbucket-client-secret"
+[[rules.allowlists]]
+description = "SHA-256 source-file digests in the three audited evaluation manifests"
+condition = "AND"
+paths = ['''^(?:docs/evidence/issue-160-(?:calibration|ablation)-2026-09-21/input-hashes\.json|harness/skills/linear-workflow/evals/2026-09-16/environment\.json)$''']
+regexTarget = "line"
+regexes = ['''^\s*"(?:harness/)?skills/linear-workflow/references/bitbucket\.md": "[a-f0-9]{64}",?\s*$''']
+
+[[rules]]
+id = "private-file"
+description = "Private environment and credential paths"
+path = '''(?i)(?:(?:^|/)(?:\.env(?:\..*)?|id_(?:rsa|ed25519|ecdsa|dsa)|[^/]+\.(?:p12|pfx))|^home/(?:\.aws/credentials|\.config/gcloud/application_default_credentials\.json))$'''
+[[rules.allowlists]]
+paths = ['''^\.env\.(?:example|sample|template)$''']

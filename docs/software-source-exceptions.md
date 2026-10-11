@@ -16,6 +16,7 @@ référencé par [ADR-002](adr/002-homebrew-source-unique.md).
 | Thèmes Bat               | Branche Catppuccin par défaut      | HTTPS GitHub                                 | Changement explicite de source             | Fichier de thème existant                                 |
 | Dictionnaires Hunspell   | Commit LibreOffice déclaré         | SHA-256 déclaré                              | Changement du commit et du checksum        | Destination identique conservée, divergence refusée       |
 | Lumen (Sonpiaz)          | DMG officiel `0.1.0`               | SHA-256 et signature du bundle vérifiés      | Changement explicite de version et SHA-256 | Application signée existante conservée, collision refusée |
+| Gitleaks Ubuntu x64      | Pin `.moon/tasks/secrets.yml`      | SHA-256 de la release officielle             | Changement explicite du pin                | Chaque préparation Linux                                  |
 
 Lumen est installé par `moon run repository:lumen`, via `tooling/install-lumen.ts`, vers
 `/Applications`. La tâche prépare les dépendances Bun sans installer le profil Homebrew optionnel.

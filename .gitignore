@@ -32,3 +32,17 @@ node_modules/
 .semctx/*
 !.semctx/semantic/
 !.semctx/config.json
+
+.[eE][nN][vV]
+.[eE][nN][vV].*
+!/.env.example
+!/.env.sample
+!/.env.template
+[iI][dD]_[rR][sS][aA]
+[iI][dD]_[eE][dD]25519
+[iI][dD]_[eE][cC][dD][sS][aA]
+[iI][dD]_[dD][sS][aA]
+*.[pP]12
+*.[pP][fF][xX]
+[hH][oO][mM][eE]/.[aA][wW][sS]/[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL][sS]
+[hH][oO][mM][eE]/.[cC][oO][nN][fF][iI][gG]/[gG][cC][lL][oO][uU][dD]/[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]_[dD][eE][fF][aA][uU][lL][tT]_[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL][sS].[jJ][sS][oO][nN]
