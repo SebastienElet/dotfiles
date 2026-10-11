@@ -28,3 +28,10 @@ condition = "AND"
 paths = ['''^(?:docs/evidence/issue-160-(?:calibration|ablation)-2026-09-21/input-hashes\.json|harness/skills/linear-workflow/evals/2026-09-16/environment\.json)$''']
 regexTarget = "line"
 regexes = ['''^\s*"(?:harness/)?skills/linear-workflow/references/bitbucket\.md": "[a-f0-9]{64}",?\s*$''']
+
+[[rules]]
+id = "private-file"
+description = "Private environment and credential paths"
+path = '''(?i)(?:(?:^|/)(?:\.env(?:\..*)?|id_(?:rsa|ed25519|ecdsa|dsa)|[^/]+\.(?:p12|pfx))|^home/(?:\.aws/credentials|\.config/gcloud/application_default_credentials\.json))$'''
+[[rules.allowlists]]
+paths = ['''^\.env\.(?:example|sample|template)$''']

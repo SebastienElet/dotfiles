@@ -80,7 +80,7 @@ tasks:
       - wezterm-lint
       - fish-syntax
       - fish-format
-      - secret-current
+      - secret-scan
       - arnes:fmt
       - arnes:clippy
       - arnes:check
