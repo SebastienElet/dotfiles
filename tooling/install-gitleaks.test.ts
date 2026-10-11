@@ -1,4 +1,11 @@
-import { copyFile, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  readdir,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { expect, test } from "bun:test";
 import { installRelease, installedVersion } from "./install-gitleaks.ts";
 import { createHash } from "node:crypto";
@@ -96,4 +103,52 @@ test("invalid archives and unexpected binary versions fail without publishing a 
     ),
   ).rejects.toThrow("version mismatch");
   expect(await readdir(directory)).toEqual([]);
+});
+
+test.each(["non-executable", "truncated", "unusable executable"])(
+  "preparation replaces a %s cached scanner after verification",
+  async (kind) => {
+    const root = await repository();
+    const bytes = await archive(root);
+    const version = installedVersion(Bun.which("gitleaks") ?? "gitleaks");
+    const directory = join(root, "installed");
+    await mkdir(directory);
+    const binary = join(directory, "gitleaks");
+    await writeFile(
+      binary,
+      kind === "truncated" ? "" : "#!/bin/sh\nexit 126\n",
+      { mode: 0o755 },
+    );
+    if (kind === "non-executable") {
+      const nonExecutableMode = 0o644;
+      await chmod(binary, nonExecutableMode);
+    }
+    const expected = {
+      version,
+      linuxX64Sha256: createHash("sha256").update(bytes).digest("hex"),
+    };
+    await installRelease(directory, expected, () => Promise.resolve(bytes));
+    expect(installedVersion(binary)).toBe(version);
+    expect(await readdir(directory)).toEqual(["gitleaks"]);
+  },
+);
+
+test("failed verification preserves an unusable cache instead of publishing unverified bytes", async () => {
+  const root = await repository();
+  const directory = join(root, "installed");
+  await mkdir(directory);
+  const binary = join(directory, "gitleaks");
+  const unusable = "Fictitious unusable cache fixture\n";
+  await writeFile(binary, unusable, { mode: 0o755 });
+  const expected = {
+    version: "0.0.0",
+    linuxX64Sha256: "0".repeat(sha256Length),
+  };
+  expect(
+    installRelease(directory, expected, () =>
+      Promise.resolve(new Uint8Array()),
+    ),
+  ).rejects.toThrow("integrity failed");
+  expect(await Bun.file(binary).text()).toBe(unusable);
+  expect(await readdir(directory)).toEqual(["gitleaks"]);
 });

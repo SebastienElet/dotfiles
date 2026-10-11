@@ -23,6 +23,17 @@ function installedVersion(binary: string): string {
   return result.stdout.toString().trim();
 }
 
+function cachedVersionMatches(binary: string, version: string): boolean {
+  try {
+    return installedVersion(binary) === version;
+  } catch {
+    process.stderr.write(
+      "Cached Gitleaks is unusable; preparing a verified replacement.\n",
+    );
+    return false;
+  }
+}
+
 async function extractRelease(
   temporary: string,
   version: string,
@@ -55,7 +66,7 @@ async function installRelease(
   const binary = join(directory, "gitleaks");
   if (
     (await Bun.file(binary).exists()) &&
-    installedVersion(binary) === expected.version
+    cachedVersionMatches(binary, expected.version)
   ) {
     return;
   }
