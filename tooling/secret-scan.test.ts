@@ -1,6 +1,13 @@
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { expect, test } from "bun:test";
-import { git, repository, scan, token } from "./secret-scan-test-support.ts";
-import { mkdir, writeFile } from "node:fs/promises";
+import {
+  git,
+  gitEnvironment,
+  repository,
+  scan,
+  sourceRoot,
+  token,
+} from "./secret-scan-test-support.ts";
 import { join } from "node:path";
 
 test("rejects an empty forced .env and accepts the exact clean template", async () => {
@@ -113,3 +120,22 @@ test("fails closed for an absent scanner and invalid indexed configuration", asy
   git(root, "add", ".gitleaks.toml");
   expect(scan(root).exitCode).not.toBe(0);
 });
+
+test.each([".ENV", ".EnV.production", "ID_RSA", "backup.P12", "backup.PFX"])(
+  "private path %s is ignored and refused regardless of case",
+  async (name) => {
+    const root = await repository();
+    await copyFile(join(sourceRoot, ".gitignore"), join(root, ".gitignore"));
+    git(root, "config", "core.ignorecase", "false");
+    const ignored = Bun.spawnSync(
+      ["git", "-C", root, "check-ignore", "--no-index", name],
+      { env: gitEnvironment },
+    );
+    expect(ignored.exitCode).toBe(0);
+    await writeFile(join(root, name), "");
+    git(root, "add", "-f", name);
+    expect(scan(root).exitCode).not.toBe(0);
+    git(root, "commit", "-qm", "empty private path fixture");
+    expect(scan(root, "current").exitCode).not.toBe(0);
+  },
+);

@@ -30,14 +30,15 @@ function gitPaths(root: string, args: readonly string[]): string[] {
 function rejectPrivatePaths(paths: readonly string[]): void {
   const templates = new Set([".env.example", ".env.sample", ".env.template"]);
   const forbidden = paths.filter((path) => {
-    const name = path.split("/").at(-1) ?? "";
+    const name = (path.split("/").at(-1) ?? "").toLowerCase();
+    const privatePath = path.toLowerCase();
     return (
       ((name === ".env" || name.startsWith(".env.")) && !templates.has(path)) ||
       ["id_rsa", "id_ed25519", "id_ecdsa", "id_dsa"].includes(name) ||
       name.endsWith(".p12") ||
       name.endsWith(".pfx") ||
-      path === "home/.aws/credentials" ||
-      path === "home/.config/gcloud/application_default_credentials.json"
+      privatePath === "home/.aws/credentials" ||
+      privatePath === "home/.config/gcloud/application_default_credentials.json"
     );
   });
   if (forbidden.length > 0) {

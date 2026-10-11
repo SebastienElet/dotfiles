@@ -72,7 +72,7 @@ le contrôle.
 ## Refus, templates et exceptions
 
 Les `.env` et `.env.*` sont ignorés et refusés par leur chemin, même vides ou ajoutés
-avec `git add -f`. Seuls les fichiers exacts `.env.example`, `.env.sample` et
+avec `git add -f`, quelle que soit la casse du nom privé. Seuls les fichiers exacts `.env.example`, `.env.sample` et
 `.env.template` à la racine sont autorisés ; leur contenu reste scanné. `version.env`
 et les clés publiques sont autorisés. Les noms de clés privées SSH usuels, `.p12`,
 `.pfx`, `home/.aws/credentials` et les credentials applicatifs gcloud sont privés.
