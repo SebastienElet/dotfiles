@@ -53,6 +53,7 @@ tasks:
       - repository:dependencies
       - repository:node
       - harness:cursor
+      - harness:prime-agent
       - repository:cloakbrowser
       - repository:scrapling
       - home:postgresql
