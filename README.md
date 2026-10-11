@@ -157,6 +157,12 @@ CSpell include indexed skill Markdown via
 therefore be absent from these checks; the commands inspect working-tree contents,
 so refresh the index after subsequent edits before committing.
 
+Prepare this repository's secret-scanning hook with
+`moon run repository:secret-prepare` (also included in the minimal installation).
+Use `repository:secret-staged` before committing and `repository:secret-history`
+for an explicit history audit. See [secret scanning](docs/secret-scanning.md) for
+worktrees, third-party hooks, offline use, exceptions and incident handling.
+
 All task names below are existing Moon targets, invoked with `moon run TARGET`.
 Prerequisites include the pinned Bun toolchain and root package dependencies where
 the task uses Bun. Effects include Moon's caches in addition to those listed.

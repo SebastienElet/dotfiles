@@ -25,6 +25,7 @@ tasks:
       - home:install
       - harness:install
       - jq-setup
+      - secret-prepare
     toolchains: system
     options:
       cache: false
@@ -79,6 +80,7 @@ tasks:
       - wezterm-lint
       - fish-syntax
       - fish-format
+      - secret-current
       - arnes:fmt
       - arnes:clippy
       - arnes:check
@@ -99,6 +101,7 @@ tasks:
     deps:
       - fish-test
       - tooling:test
+      - secret-test
       - arnes:test
       - bitbucket-linear-sync:test
       - agent-memory:test
