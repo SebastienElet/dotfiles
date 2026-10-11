@@ -10,6 +10,9 @@ const token = `ghp_${"fictitious".repeat(tokenWordRepetitions)}`;
 const environment = {
   ...process.env,
   CI: "true",
+  GITHUB_ACTIONS: "true",
+  GITHUB_REF: "refs/pull/1/merge",
+  GITHUB_BASE_REF: "unrelated-parent",
   GIT_CONFIG_GLOBAL: "/dev/null",
   GIT_CONFIG_NOSYSTEM: "1",
 };
@@ -36,6 +39,8 @@ function moon(root: string, task: string): Bun.SyncSubprocess<"pipe", "pipe"> {
     "--upstream",
     "none",
     "--no-actions",
+    "--base=HEAD",
+    "--head=HEAD",
   ]);
 }
 
@@ -66,7 +71,9 @@ async function repository(): Promise<string> {
   git(root, "config", "user.name", "Fictitious fixture");
   git(root, "add", ".");
   git(root, "commit", "-qm", "clean fixture");
-  expect(moon(root, "secret-prepare").exitCode).toBe(0);
+  const prepared = moon(root, "secret-prepare");
+  if (prepared.exitCode !== 0) process.stderr.write(prepared.stderr);
+  expect(prepared.exitCode).toBe(0);
   return root;
 }
 
