@@ -9,6 +9,7 @@ const tokenWordRepetitions = 4;
 const token = `ghp_${"fictitious".repeat(tokenWordRepetitions)}`;
 const environment = {
   ...process.env,
+  CI: "true",
   GIT_CONFIG_GLOBAL: "/dev/null",
   GIT_CONFIG_NOSYSTEM: "1",
 };
