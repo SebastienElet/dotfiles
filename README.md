@@ -157,10 +157,6 @@ CSpell include indexed skill Markdown via
 therefore be absent from these checks; the commands inspect working-tree contents,
 so refresh the index after subsequent edits before committing.
 
-Prepare Gitleaks and the repository hook with `moon run repository:secret-prepare`
-(included in the minimal installation). `moon run repository:secret-scan` scans the
-complete Git history; hooks remain bypassable and existing third-party hooks are preserved.
-
 All task names below are existing Moon targets, invoked with `moon run TARGET`.
 Prerequisites include the pinned Bun toolchain and root package dependencies where
 the task uses Bun. Effects include Moon's caches in addition to those listed.
