@@ -44,8 +44,8 @@ async function installHook(root: string): Promise<void> {
         "Secret hook: a third-party pre-commit exists; preserve it and integrate the staged command manually.",
       );
     }
-    const executableMask = 0o111;
-    if ((existing.mode & executableMask) === 0) {
+    const ownerExecuteMask = 0o100;
+    if ((existing.mode & ownerExecuteMask) === 0) {
       await chmod(path, executableMode);
     }
     return;

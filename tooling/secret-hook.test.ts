@@ -1,4 +1,12 @@
 import {
+  chmod,
+  copyFile,
+  readFile,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import {
   commit,
   git,
   gitEnvironment,
@@ -6,7 +14,6 @@ import {
   sourceRoot,
   token,
 } from "./secret-scan-test-support.ts";
-import { copyFile, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 
@@ -81,4 +88,18 @@ test("a clone can prepare its own hook", async () => {
   expect(prepare(clone).exitCode).toBe(0);
   const hook = await stat(join(clone, ".git/hooks/pre-commit"));
   expect(hook.isFile()).toBe(true);
+});
+
+test("preparation restores owner execution when only a group execute bit remains", async () => {
+  const root = await repository();
+  expect(prepare(root).exitCode).toBe(0);
+  const hook = join(root, ".git/hooks/pre-commit");
+  const content = await readFile(hook, "utf8");
+  const groupOnlyExecuteMode = 0o610;
+  await chmod(hook, groupOnlyExecuteMode);
+  expect(prepare(root).exitCode).toBe(0);
+  expect(await readFile(hook, "utf8")).toBe(content);
+  await writeFile(join(root, "file.txt"), `TOKEN=${token}\n`);
+  git(root, "add", "file.txt");
+  expect(commit(root).exitCode).not.toBe(0);
 });
