@@ -72,7 +72,9 @@ async function repository(): Promise<string> {
   git(root, "add", ".");
   git(root, "commit", "-qm", "clean fixture");
   const prepared = moon(root, "secret-prepare");
-  if (prepared.exitCode !== 0) process.stderr.write(prepared.stderr);
+  if (prepared.exitCode !== 0) {
+    process.stderr.write(prepared.stderr);
+  }
   expect(prepared.exitCode).toBe(0);
   return root;
 }
