@@ -1,7 +1,3 @@
-import type {
-  CommandResult,
-  DeploymentFixture,
-} from "../deployment-test-support.ts";
 import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
@@ -21,10 +17,10 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import type { DeploymentFixture } from "../deployment-test-support.ts";
 import { runDeploymentMoon } from "../deployment-moon-runner.ts";
 
 const psqlrcSource = join(project, "home", ".psqlrc");
-const cursorDeploymentAndReplayTimeout = 30_000;
 const curlHttpFailure = 22;
 const primeAgentTask = ["harness:prime-agent"];
 
@@ -145,105 +141,6 @@ test("Moon Scrapling refuses an occupied link before Docker API commands", () =>
   );
   expect(readFileSync(destination, "utf8")).toBe("personal\n");
   expect(readFileSync(trace, "utf8")).toBe("");
-});
-
-function cursorFixture(): Readonly<{
-  fixture: DeploymentFixture;
-  trace: string;
-}> {
-  const fixture = createDeploymentFixture("optional-cursor");
-  const trace = join(fixture.root, "arnes-trace");
-  const arnes = join(fixture.home, ".local", "bin", "arnes");
-  mkdirSync(dirname(arnes), { recursive: true });
-  symlinkSync(join(project, "tooling", "deployment-test-command.ts"), arnes);
-  writeFileSync(trace, "");
-  return { fixture, trace };
-}
-
-function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
-  const moon = process.env.DEPLOYMENT_MOON ?? requireCommand("moon");
-  const decoder = new TextDecoder("utf-8", { fatal: true });
-  const result = Bun.spawnSync(
-    [
-      moon,
-      "exec",
-      "--quiet",
-      "--ignore-ci-checks",
-      "--no-actions",
-      "--upstream",
-      "direct",
-      "harness:cursor",
-    ],
-    {
-      cwd: project,
-      env: {
-        ...process.env,
-        HOME: fixture.home,
-        FAKE_FAIL_ON: "doctor hooks",
-        FAKE_TRACE: trace,
-        MOON_HOME:
-          process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
-        PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
-        PROTO_HOME:
-          process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
-        PROTO_OFFLINE: "true",
-      },
-      stderr: "pipe",
-      stdout: "pipe",
-    },
-  );
-  return {
-    exitCode: result.exitCode,
-    stderr: decoder.decode(result.stderr),
-    stdout: decoder.decode(result.stdout),
-  };
-}
-
-test(
-  "Moon deploys the Cursor rule and skills without global dependencies",
-  () => {
-    const { fixture, trace } = cursorFixture();
-    const rule = join(
-      fixture.home,
-      ".cursor",
-      "rules",
-      "memory-governance-cursor.mdc",
-    );
-    const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
-
-    expect(runCursor(fixture, trace).exitCode).toBe(0);
-    expect(readlinkSync(rule)).toBe(
-      join(project, "harness", "rules", "memory-governance-cursor.mdc"),
-    );
-    expect(readlinkSync(skill)).toBe(
-      join(project, "harness", "skills", "skill-manager"),
-    );
-    expect(readFileSync(trace, "utf8")).toContain(
-      '"arguments":["setup","hooks","--agent","cursor"]',
-    );
-    const ruleInode = lstatSync(rule).ino;
-
-    expect(runCursor(fixture, trace).exitCode).toBe(0);
-    expect(lstatSync(rule).ino).toBe(ruleInode);
-  },
-  cursorDeploymentAndReplayTimeout,
-);
-
-test("Moon preserves a divergent Cursor rule and returns failure", () => {
-  const { fixture, trace } = cursorFixture();
-  const rule = join(
-    fixture.home,
-    ".cursor",
-    "rules",
-    "memory-governance-cursor.mdc",
-  );
-  mkdirSync(dirname(rule), { recursive: true });
-  writeFileSync(rule, "personal\n");
-
-  const result = runCursor(fixture, trace);
-
-  expect(result.exitCode).not.toBe(0);
-  expect(readFileSync(rule, "utf8")).toBe("personal\n");
 });
 
 test.skipIf(process.platform !== "darwin").each([

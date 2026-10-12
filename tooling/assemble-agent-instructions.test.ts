@@ -43,12 +43,40 @@ function fixture(): Readonly<{
 
 function run(
   paths: ReturnType<typeof fixture>,
+  format?: string,
 ): Bun.SyncSubprocess<"pipe", "pipe"> {
   return Bun.spawnSync(
-    [process.execPath, command, paths.source, paths.destination],
+    [
+      process.execPath,
+      command,
+      paths.source,
+      paths.destination,
+      ...(format === undefined ? [] : [format]),
+    ],
     { stdout: "pipe", stderr: "pipe" },
   );
 }
+
+test("assembles an always-applied Cursor rule from the common sources", () => {
+  const paths = fixture();
+  const result = run(paths, "cursor-rule");
+  expect(result.exitCode).toBe(0);
+  expect(readFileSync(paths.destination, "utf8")).toBe(
+    "---\ndescription: Common agent instructions, persona and preferences\nalwaysApply: true\n---\nRules\nSoul\nUser\nVisual\n",
+  );
+  utimesSync(paths.destination, new Date(0), new Date(0));
+  const before = statSync(paths.destination);
+  expect(run(paths, "cursor-rule").exitCode).toBe(0);
+  expect(statSync(paths.destination).mtimeMs).toBe(before.mtimeMs);
+});
+
+test("rejects an unknown output format without changing the destination", () => {
+  const paths = fixture();
+  mkdirSync(join(paths.root, ".codex"));
+  writeFileSync(paths.destination, "keep\n");
+  expect(run(paths, "unknown").exitCode).not.toBe(0);
+  expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
+});
 
 test("assembles imports and stays silent without rewriting on replay", () => {
   const paths = fixture();
@@ -74,33 +102,44 @@ test("assembles imports and stays silent without rewriting on replay", () => {
   );
 });
 
-test("replaces the output atomically without writing through a symlink", () => {
-  const paths = fixture();
-  const external = join(paths.root, "external");
-  writeFileSync(external, "preserve\n");
-  mkdirSync(join(paths.root, ".codex"));
-  symlinkSync(external, paths.destination);
-  expect(run(paths).exitCode).toBe(0);
-  expect(readFileSync(external, "utf8")).toBe("preserve\n");
-  expect(readFileSync(paths.destination, "utf8")).toBe(
-    "Rules\nSoul\nUser\nVisual\n",
-  );
-});
+test.each(["markdown", "cursor-rule"])(
+  "replaces %s output without writing through a symlink",
+  (format) => {
+    const paths = fixture();
+    const external = join(paths.root, "external");
+    writeFileSync(external, "preserve\n");
+    mkdirSync(join(paths.root, ".codex"));
+    symlinkSync(external, paths.destination);
+    expect(run(paths, format).exitCode).toBe(0);
+    expect(readFileSync(external, "utf8")).toBe("preserve\n");
+    expect(
+      readFileSync(paths.destination, "utf8").endsWith(
+        "Rules\nSoul\nUser\nVisual\n",
+      ),
+    ).toBeTrue();
+  },
+);
 
-test("preserves the output when a source cannot be read", () => {
-  const paths = fixture();
-  mkdirSync(join(paths.root, ".codex"));
-  writeFileSync(paths.destination, "keep\n");
-  rmSync(join(paths.source, "USER.md"));
-  expect(run(paths).exitCode).not.toBe(0);
-  expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
-});
+test.each(["markdown", "cursor-rule"])(
+  "preserves %s output when a source cannot be read",
+  (format) => {
+    const paths = fixture();
+    mkdirSync(join(paths.root, ".codex"));
+    writeFileSync(paths.destination, "keep\n");
+    rmSync(join(paths.source, "USER.md"));
+    expect(run(paths, format).exitCode).not.toBe(0);
+    expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
+  },
+);
 
-test("preserves the output when visual preferences cannot be read", () => {
-  const paths = fixture();
-  mkdirSync(join(paths.root, ".codex"));
-  writeFileSync(paths.destination, "keep\n");
-  rmSync(join(paths.source, "visual-presentation.md"));
-  expect(run(paths).exitCode).not.toBe(0);
-  expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
-});
+test.each(["markdown", "cursor-rule"])(
+  "preserves %s output when visual preferences cannot be read",
+  (format) => {
+    const paths = fixture();
+    mkdirSync(join(paths.root, ".codex"));
+    writeFileSync(paths.destination, "keep\n");
+    rmSync(join(paths.source, "visual-presentation.md"));
+    expect(run(paths, format).exitCode).not.toBe(0);
+    expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
+  },
+);

@@ -1,0 +1,5 @@
+{
+  "name": "dotfiles-harness",
+  "description": "Common instructions projected from the dotfiles harness",
+  "rules": "./rules/"
+}

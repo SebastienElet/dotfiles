@@ -213,3 +213,27 @@ test("cleanup preserves a deployed Fish source and its installed plugin files", 
     "owned source plus installed plugin\n",
   );
 });
+
+test("cleans the Cursor harness projection while preserving other local plugins", () => {
+  const fixture = createDeploymentFixture("cursor-clean");
+  const plugin = join(fixture.home, ".cursor/plugins/local/dotfiles-harness");
+  const commonRule = join(plugin, "rules/common-instructions.mdc");
+  expect(
+    runDeploymentMoon(fixture, ["harness:cursor-instructions"]).exitCode,
+  ).toBe(0);
+  const foreign = join(
+    fixture.home,
+    ".cursor/plugins/local/third-party/plugin.json",
+  );
+  mkdirSync(dirname(foreign), { recursive: true });
+  writeFileSync(foreign, "keep\n");
+  expect(
+    runDeploymentHelper(fixture, {
+      helper: "clean-deployment.ts",
+      arguments: [project, fixture.home, "--apply"],
+    }).exitCode,
+  ).toBe(0);
+  expect(pathExists(join(plugin, ".cursor-plugin/plugin.json"))).toBeFalse();
+  expect(pathExists(commonRule)).toBeFalse();
+  expect(readFileSync(foreign, "utf8")).toBe("keep\n");
+});

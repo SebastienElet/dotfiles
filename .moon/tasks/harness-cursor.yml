@@ -10,10 +10,24 @@ tasks:
     description: Deploy the optional Cursor harness configuration
     command: noop
     deps:
+      - cursor-instructions
       - cursor-rules
       - cursor-skills
       - cursor-hooks
     toolchains: system
+  cursor-instructions:
+    description: Assemble common instructions as an always-applied local Cursor plugin rule
+    script: |-
+      set -e
+      if test -L "$HOME/.cursor/plugins/local/dotfiles-harness"; then
+        printf '%s\n' "Refusing symbolic Cursor plugin directory: $HOME/.cursor/plugins/local/dotfiles-harness" >&2
+        exit 1
+      fi
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/home/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json" "$HOME/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/assemble-agent-instructions.ts" "$workspaceRoot/harness" "$HOME/.cursor/plugins/local/dotfiles-harness/rules/common-instructions.mdc" cursor-rule
+    deps:
+      - repository:dependencies
+    toolchains: bun
   cursor-rules:
     script: |-
       set -e

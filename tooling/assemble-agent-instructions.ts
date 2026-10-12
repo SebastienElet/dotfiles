@@ -9,7 +9,11 @@ import {
 } from "node:fs";
 import { z } from "zod";
 
-const argumentsSchema = z.tuple([z.string().min(1), z.string().min(1)]);
+const argumentsSchema = z.tuple([
+  z.string().min(1),
+  z.string().min(1),
+  z.enum(["markdown", "cursor-rule"]).default("markdown"),
+]);
 const argumentOffset = 2;
 const failure = 1;
 
@@ -27,8 +31,17 @@ function isCurrent(destination: string, expected: string): boolean {
   }
 }
 
-function assembleInstructions(source: string, destination: string): void {
+function assembleInstructions(
+  source: string,
+  destination: string,
+  format: "markdown" | "cursor-rule",
+): void {
+  const frontmatter =
+    format === "cursor-rule"
+      ? "---\ndescription: Common agent instructions, persona and preferences\nalwaysApply: true\n---\n"
+      : "";
   const expected =
+    frontmatter +
     readFileSync(join(source, "AGENTS.md"), "utf8").replaceAll(
       /^@.*\n/gmu,
       "",
@@ -51,10 +64,10 @@ function assembleInstructions(source: string, destination: string): void {
 
 if (import.meta.main) {
   try {
-    const [source, destination] = argumentsSchema.parse(
+    const [source, destination, format] = argumentsSchema.parse(
       process.argv.slice(argumentOffset),
     );
-    assembleInstructions(source, destination);
+    assembleInstructions(source, destination, format);
   } catch (error) {
     process.stderr.write(
       `${error instanceof Error ? error.message : String(error)}\n`,
