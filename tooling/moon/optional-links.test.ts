@@ -1,4 +1,3 @@
-import type { DeploymentFixture } from "../deployment-test-support.ts";
 import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
@@ -15,6 +14,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import type { DeploymentFixture } from "../deployment-test-support.ts";
 import { runDeploymentMoon } from "../deployment-moon-runner.ts";
 
 const psqlrcSource = join(project, "home", ".psqlrc");
