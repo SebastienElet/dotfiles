@@ -30,3 +30,14 @@ jobs:
       - run: moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
       - if: runner.os == 'macOS'
         run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
+
+  required:
+    name: Deployment required
+    needs: deployment
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.deployment.result == 'success' }}

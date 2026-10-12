@@ -58,3 +58,17 @@ jobs:
       - run: >-
           moon ci --downstream none agent-memory:fmt agent-memory:clippy agent-memory:check agent-memory:test agent-memory:doc
       - run: moon ci --downstream none agent-memory:deployment-test
+
+  required:
+    name: Agent Memory required
+    needs: [select, agent-memory]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.agent-memory.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.agent-memory.result == 'skipped')) }}

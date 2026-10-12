@@ -27,3 +27,14 @@ jobs:
       - run: >-
           moon ci --downstream none herdr-issue:fmt herdr-issue:clippy
           herdr-issue:check herdr-issue:test herdr-issue:doc
+
+  required:
+    name: Herdr required
+    needs: bindings
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.bindings.result == 'success' }}

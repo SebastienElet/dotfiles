@@ -24,3 +24,14 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run: moon ci --downstream none harness:validate-evals harness:validate-evidence
+
+  required:
+    name: Harness required
+    needs: harness
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.harness.result == 'success' }}

@@ -56,3 +56,17 @@ jobs:
       - run: >-
           moon ci --downstream none bitbucket-linear-sync:fmt bitbucket-linear-sync:clippy
           bitbucket-linear-sync:check bitbucket-linear-sync:test bitbucket-linear-sync:doc
+
+  required:
+    name: Bitbucket Linear required
+    needs: [select, bitbucket-linear]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.bitbucket-linear.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.bitbucket-linear.result == 'skipped')) }}

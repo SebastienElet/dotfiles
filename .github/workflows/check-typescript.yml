@@ -25,3 +25,14 @@ jobs:
       - run:
           moon ci --downstream none repository:typescript-lint repository:typescript-typecheck
           repository:typescript-format-check
+
+  required:
+    name: Static required
+    needs: static
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.static.result == 'success' }}

@@ -57,3 +57,17 @@ jobs:
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run: >-
           moon ci --downstream none agent-handoff:fmt agent-handoff:clippy agent-handoff:check agent-handoff:test agent-handoff:doc agent-handoff:deployment-test
+
+  required:
+    name: Agent Handoff required
+    needs: [select, agent-handoff]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.agent-handoff.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.agent-handoff.result == 'skipped')) }}

@@ -26,3 +26,14 @@ jobs:
       - run: moon ci --downstream none repository:node-runtime-check repository:typescript-test
         env:
           SCRAPLING_DOCKER_SMOKE: "1"
+
+  required:
+    name: TypeScript required
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.test.result == 'success' }}
