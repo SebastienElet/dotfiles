@@ -67,38 +67,41 @@ A merge proves the code landed. It proves nothing about a line the merge did not
    ambiguous, list it and ask rather than deciding the lifecycle on a guess; in a queue that leaves
    this one issue untouched and does not stop the others.
 2. Every verification box checked completes the issue: the merge is then the last missing fact.
-3. At least one unchecked box sends the issue to its team's review state instead of `Done`, with the
-   unchecked lines named. The work is not undone; it is unverified.
+3. At least one unchecked box sends the issue to `In Progress` instead of `Done`, with the unchecked
+   lines named. The work is not undone; it is unverified. Never send it to the review state: that
+   state means the pull request is open and code review is in progress.
 4. A section carrying acceptance criteria, completion evidence, or validation scenarios gates the
    transition whatever its syntax. Written as plain bullets it holds no state, so no line in it is
-   proven: route the issue to the review state and report that the section tracks nothing. Only an
+   proven: route the issue to `In Progress` and report that the section tracks nothing. Only an
    issue with no such section at all leaves the merge as the completion oracle. The skills in this
    harness draft acceptance criteria as prose, so the bulleted case is the common one — never the
    permissive branch.
-5. Resolve the review state by enumerating the issue's own team's workflow states and matching the
-   one reserved for review by name, observed as `In Review` across this workspace's teams. Never
-   pass a state _type_: several states share `started`, so the type lands the issue in an arbitrary
-   one — typically `In Progress` — while the post-write read still reports a successful transition.
-   Never carry one team's name over to another. When the transport cannot enumerate a team's states,
-   or that team exposes no review state, stop and report it: the routing rule is not executable
-   there.
+5. Resolve `In Progress`, and the review state an open pull request calls for, by enumerating the
+   issue's own team's workflow states and matching by name; the review state is observed as
+   `In Review` across this workspace's teams. Never pass a state _type_: several states share
+   `started`, so the type lands the issue in an arbitrary one of them while the post-write read
+   still reports a successful transition. Never carry one team's name over to another. When the
+   transport cannot enumerate a team's states, or that team exposes no state of the required name,
+   stop and report it: the routing rule is not executable there.
 
-## Verifying issues that wait in the review state
+## Verifying merged issues that wait in `In Progress`
 
 This is the pass that turns unverified merged work into a defensible `Done`, and it is the only one
 allowed to produce the missing evidence.
 
 Enter it only on an explicit request to verify. A workflow reconciling lifecycle state never enters
-it: routing an issue into the review state ends that workflow's authority, and the boxes wait for a
+it: routing merged work into `In Progress` ends that workflow's authority, and the boxes wait for a
 later pass. Establish the current Linear identity first and mutate only issues assigned to it.
 
-1. Select the assigned issues in the review state whose pull request is merged. That set is the
-   queue. An issue whose pull request is still open belongs to code review, not here.
+1. Select the assigned issues in `In Progress` whose pull request is merged and that still carry
+   unproven verification evidence: unchecked verification boxes or an evidence section that holds
+   no state. That set is the queue. An issue whose pull request is still open belongs to code review
+   in the review state, not here.
 2. For each issue, take its verification boxes one by one and produce the missing oracle: run the
    check, point at the CI run that actually covers the line, take the measurement.
 3. Check only what the run you just named proves, in one anchored edit per issue.
 4. Move an issue to `Done` once every verification box holds.
-5. Leave an issue in the review state when a box stays unproven, and report what is missing: the
+5. Leave an issue in `In Progress` when a box stays unproven, and report what is missing: the
    oracle nobody has run, and what running it would take. Do not check it, and do not close around
    it without an explicit decision.
 6. Report the queue as a whole — issues completed, issues still waiting, and the unproven line
