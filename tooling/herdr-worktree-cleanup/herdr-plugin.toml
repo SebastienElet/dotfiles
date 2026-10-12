@@ -2,7 +2,11 @@ id = "dotfiles.worktree-cleanup"
 name = "Worktree Cleanup"
 version = "0.1.0"
 min_herdr_version = "0.9.3"
-description = "Remove the checkout of a linked worktree when its workspace closes"
+description = """Remove linked worktrees. HERDR_WORKTREE_DOCKER_CLEANUP: off (default), stop, or remove.
+Local containers are attributed by com.docker.compose.project.working_dir inside the worktree,
+or dotfiles.worktree.path equal to the worktree plus an internal bind mount.
+Other worktrees, unresolved or conflicting paths, external/shared mounts, and
+dotfiles.worktree.shared values other than false are skipped. Removal preserves volumes and networks."""
 platforms = ["macos"]
 
 [[events]]
