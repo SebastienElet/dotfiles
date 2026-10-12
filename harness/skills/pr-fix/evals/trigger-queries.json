@@ -46,6 +46,11 @@
       "query": "Approve PR 1042 and add it to the merge queue",
       "should_activate": false,
       "reason": "A standalone approval or queue request authorizes no repair; pr-fix approves only a head its own repair qualified"
+    },
+    {
+      "query": "Add a new feature locally on this branch, which already has a PR. I am not asking to repair PR review findings; do not commit, push or publish.",
+      "should_activate": false,
+      "reason": "An existing PR does not turn ordinary local development into a PR repair request"
     }
   ]
 }

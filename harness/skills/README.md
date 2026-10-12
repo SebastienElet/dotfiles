@@ -21,6 +21,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `code-simplify`                 | Simplify code to reduce understanding and maintenance costs.                                         |
 | `codebase-design`               | Design cohesive modules with simple public interfaces.                                               |
 | `design-claim-audit`            | Audit architectural and domain guarantees.                                                           |
+| `development`                   | Run Claude Code development through implementation, checks and independent Codex review.             |
 | `diagnosing-bugs`               | Diagnose bugs and performance regressions.                                                           |
 | `harness-reflection`            | Turn repeated agent failures into evidence-backed harness improvements.                              |
 | `herdr-issue-worktree`          | Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude.             |
@@ -35,6 +36,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `prepare-next`                  | Select and prepare the next available project ticket before development.                             |
 | `proof-integrity-review`        | Review changes to verification mechanisms.                                                           |
 | `requirements-clarification`    | Clarify requirements before implementation.                                                          |
+| `review-fix`                    | Repair local code-review findings with Codex before delivery.                                        |
 | `tdd`                           | Develop owned behavior with test-driven development.                                                 |
 | `visual-explanation`            | Explain relationships, diagnostics and changes visually.                                             |
 

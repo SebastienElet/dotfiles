@@ -1,0 +1,51 @@
+{
+  "skill": "development",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Implement this feature in Claude and deliver the result after verification.",
+      "should_activate": true,
+      "reason": "Plain implementation requests use the complete development sequence"
+    },
+    {
+      "query": "Fix this bug in my code; no ticket or implementation skill is involved.",
+      "should_activate": true,
+      "reason": "Development does not depend on a specialized entry point"
+    },
+    {
+      "query": "Update this declarative configuration option and validate the change.",
+      "should_activate": true,
+      "reason": "Declarative development retains final review despite the TDD exception"
+    },
+    {
+      "query": "Start implementing my assigned Linear ticket in Claude.",
+      "should_activate": true,
+      "reason": "Development composes with Linear's lifecycle owner"
+    },
+    {
+      "query": "Repair the confirmed defects on this open PR with the authorized pr-fix workflow.",
+      "should_activate": true,
+      "reason": "The outer development workflow retains pr-fix's repair and final-review ownership"
+    },
+    {
+      "query": "Propose an implementation plan, but do not change files or run checks.",
+      "should_activate": false,
+      "reason": "Planning alone does not authorize development"
+    },
+    {
+      "query": "Review this diff without making changes.",
+      "should_activate": false,
+      "reason": "Review alone does not authorize development or repair"
+    },
+    {
+      "query": "Explain how this existing function works.",
+      "should_activate": false,
+      "reason": "Explanation requests do not start development"
+    },
+    {
+      "query": "You are a Codex correction delegated by review-fix. Fix only this confirmed defect and return raw evidence; the parent owns final review.",
+      "should_activate": false,
+      "reason": "The delegated Codex writer must not restart Claude's outer development sequence"
+    }
+  ]
+}
