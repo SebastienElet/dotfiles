@@ -94,8 +94,9 @@ it: routing merged work into `In Progress` ends that workflow's authority, and t
 later pass. Establish the current Linear identity first and mutate only issues assigned to it.
 
 1. Select the assigned issues in `In Progress` whose pull request is merged and that still carry
-   unchecked verification boxes. That set is the queue. An issue whose pull request is still open
-   belongs to code review in the review state, not here.
+   unproven verification evidence: unchecked verification boxes or an evidence section that holds
+   no state. That set is the queue. An issue whose pull request is still open belongs to code review
+   in the review state, not here.
 2. For each issue, take its verification boxes one by one and produce the missing oracle: run the
    check, point at the CI run that actually covers the line, take the measurement.
 3. Check only what the run you just named proves, in one anchored edit per issue.
