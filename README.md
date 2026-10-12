@@ -18,13 +18,19 @@ cd && \
   "$HOME/.moon/bin/moon" exec --quiet install
 ```
 
+The bootstrap uses proto's native local `.prototools` resolution in a temporary
+store, copies the selected binary to `~/.moon/bin/moon`, and prints its executed
+version. The temporary proto store is removed; no global pin or shell profile is
+written. Missing or invalid Moon configuration and download/installation failures
+stop before workstation installation. Network access is required on every bootstrap.
+
 Cloning fails if `~/.dotfiles` already exists and is not empty. For an existing
 checkout, use the manual install below.
 
 ## Manual install
 
-From an existing checkout, bootstrap Moon if needed, then install the minimal
-profile:
+From an existing checkout, rerun the bootstrap to align Moon with the checkout,
+then install the minimal profile:
 
 ```bash
 cd ~/.dotfiles && \

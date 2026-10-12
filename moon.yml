@@ -24,7 +24,9 @@ tasks:
       - pnpm
       - home:install
       - harness:install
+      - harness:prime-agent
       - jq-setup
+      - secret-prepare
     toolchains: system
     options:
       cache: false
@@ -79,6 +81,7 @@ tasks:
       - wezterm-lint
       - fish-syntax
       - fish-format
+      - secret-scan
       - arnes:fmt
       - arnes:clippy
       - arnes:check
@@ -99,6 +102,7 @@ tasks:
     deps:
       - fish-test
       - tooling:test
+      - secret-test
       - arnes:test
       - bitbucket-linear-sync:test
       - agent-memory:test

@@ -1,5 +1,6 @@
 fileGroups:
   rust:
+    - policy-sources.json
     - /harness/skills/proof-integrity-review/SKILL.md
     - /harness/skills/proof-integrity-review/references/**/*
     - /.github/workflows/test-proof-integrity.yml

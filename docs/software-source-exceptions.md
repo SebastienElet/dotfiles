@@ -11,11 +11,13 @@ référencé par [ADR-002](adr/002-homebrew-source-unique.md).
 | Paquets via Volta ou npm | Coordonnée de la cible             | Vérification du registre par le gestionnaire | `tooling/upgrade`                          | Sentinelle du shim ou du binaire                          |
 | Plugins Fisher et TPM    | Révision distante à l'installation | Objets GitHub en HTTPS                       | Commande explicite du gestionnaire         | Configuration Fisher ou checkout TPM                      |
 | Claude Code              | Canal éditeur `latest`             | HTTPS éditeur                                | `claude update`                            | Sentinelle du binaire                                     |
+| Prime Agent              | Canal éditeur `stable`             | HTTPS éditeur, SHA-256 éditeur               | `prime-agent update`                       | Launcher exécutable, `--version` réussi                   |
 | Moon                     | Canal éditeur `latest`             | HTTPS éditeur                                | `tooling/upgrade` → `moon upgrade`         | Sentinelle du binaire                                     |
 | Images Docker des MCP    | Image et tag déclarés              | Manifeste et couches du registre             | `docker pull` ou `docker compose pull`     | Image locale réutilisée                                   |
 | Thèmes Bat               | Branche Catppuccin par défaut      | HTTPS GitHub                                 | Changement explicite de source             | Fichier de thème existant                                 |
 | Dictionnaires Hunspell   | Commit LibreOffice déclaré         | SHA-256 déclaré                              | Changement du commit et du checksum        | Destination identique conservée, divergence refusée       |
 | Lumen (Sonpiaz)          | DMG officiel `0.1.0`               | SHA-256 et signature du bundle vérifiés      | Changement explicite de version et SHA-256 | Application signée existante conservée, collision refusée |
+| Gitleaks Ubuntu x64      | Pin `.moon/tasks/secrets.yml`      | SHA-256 de la release officielle             | Changement explicite du pin                | Chaque préparation Linux                                  |
 
 Lumen est installé par `moon run repository:lumen`, via `tooling/install-lumen.ts`, vers
 `/Applications`. La tâche prépare les dépendances Bun sans installer le profil Homebrew optionnel.

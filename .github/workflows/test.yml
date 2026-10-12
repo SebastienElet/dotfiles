@@ -21,6 +21,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - run: moon run tooling:moon-bootstrap-smoke
+      - name: Bootstrap the repository Moon pin
+        run: ./tooling/install-moon
       - name: Install, clean and reinstall the minimal profile
-        run: moon run tooling:smoke-minimal
+        run: |
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon run tooling:smoke-minimal
       - run: moon run tooling:upgrade-neovim-test

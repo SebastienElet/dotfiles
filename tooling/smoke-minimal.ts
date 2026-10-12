@@ -83,9 +83,18 @@ function verifyInstallation(home: string, root: string): void {
 }
 
 function snapshot(home: string): string {
-  const result = checkCommand(["tar", "-cf", "-", ...snapshotPaths], {
-    cwd: home,
-  });
+  const result = checkCommand(
+    [
+      "tar",
+      "--exclude=.claude/plugins/cache/*/*/*/.in_use",
+      "-cf",
+      "-",
+      ...snapshotPaths,
+    ],
+    {
+      cwd: home,
+    },
+  );
   return createHash("sha256").update(result.stdout).digest("hex");
 }
 

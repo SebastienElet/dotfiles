@@ -35,8 +35,8 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
    from merged work, read [completion evidence](references/completion-evidence.md). Reading it is
    mandatory for every workflow; running its verification pass is not.
 5. On an explicit request to verify merged work, run that reference's verification pass over the
-   issues waiting in the review state, and report the queue it defines. This is the one procedure to
-   execute here rather than hand back.
+   merged issues waiting in `In Progress`, and report the queue it defines. This is the one
+   procedure to execute here rather than hand back.
 6. Apply every constraint below, then return control to the composing workflow when there is one.
 
 ## Gotchas
@@ -51,9 +51,9 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
   run produced, and the missing check disappears with the closed issue; leave it unchecked and
   record the residue.
 - **Completing merged work over an unchecked verification box** — the check nobody ran is buried
-  under `Done` and never resurfaces; send the issue to its team's review state and name the line.
-- **Carrying one team's review state name to another** — the transition targets a state the team
-  does not expose; resolve the review state inside the issue's own team.
+  under `Done` and never resurfaces; send the issue to `In Progress` and name the line.
+- **Carrying one team's state names to another** — the transition targets a state the team does not
+  expose; resolve the review state and `In Progress` inside the issue's own team.
 - **Retyping a description to change one marker** — serialized issue mentions such as
   `<issue id="…" href="…">ENG-482</issue>` are mangled; apply an anchored partial edit instead.
 
@@ -70,11 +70,15 @@ evidence, one issue or a whole queue, is the single procedure it carries directl
 - Treat a checked box as an assertion of proof, not a progress marker: check a line only from a run,
   CI result, or observation you can name, never from a merge, a closure, or a tidier list.
 - Never derive box state from workflow state: no merge, closure, or transition ever checks a box.
+- The team's review state means the issue's pull request is open and code review is in progress;
+  an open pull request puts the issue there, and a merged one takes it out.
 - A merge completes an issue only when every verification box holds, or when the issue carries no
-  acceptance or evidence section at all; a section that holds no state proves nothing, so the issue
-  goes to its team's review state with the unproven lines named, and `Done` stays an explicit human
-  decision.
-- Without a verified conditional state-write mechanism, leave state untouched; the required
-  transport contract and live observations are defined in completion evidence.
-- Resolve the review state by enumerating the issue's own team's states and matching by name, never
-  by state type; stop when the transport cannot enumerate them or the team exposes none.
+  acceptance or evidence section at all; otherwise, including a section that holds no state, the
+  issue goes to `In Progress`, never the review state, with the unproven lines named, and `Done`
+  stays an explicit human decision.
+- Without a verified conditional state-write mechanism, leave untouched any state decided from
+  checkboxes; the required transport contract and live observations are defined in completion
+  evidence.
+- Resolve the review state and `In Progress` by enumerating the issue's own team's states and
+  matching by name, never by state type; stop when the transport cannot enumerate them or the team
+  exposes no state of that name.
