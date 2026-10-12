@@ -72,8 +72,8 @@ gives numbers, then immediately spends a sentence dismantling its own green.
 <!-- pr-verdict:1042:a1b2c3d4e5f6 -->
 ## Independent verdict — changes required
 
-Review of PR #1042 on a1b2c3d4e5f6, stacked base feat/ledger-read-side@9f8e7d6c5b4a.
-Pipeline #318 green, no task and no conflict observed.
+Review of PR <number> on <head-sha>, stacked base <parent-branch>@<parent-sha>.
+Pipeline <run-id> green, no task and no conflict observed.
 
 | Observable behavior | Positive evidence on the exact head | Negative witness | Result |
 | --- | --- | --- | --- |

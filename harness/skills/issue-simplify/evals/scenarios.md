@@ -53,7 +53,7 @@ C1 to a decision. Removing restore is a separately explained scope reduction. No
 
 ## 4. Identity and source completeness
 
-Prompt: "Declutter issue #42."
+Prompt: "Declutter issue <number>."
 
 Fixture: two repositories are possible; no selected repository or issue body is supplied.
 

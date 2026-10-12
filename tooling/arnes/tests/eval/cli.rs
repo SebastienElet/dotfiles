@@ -26,6 +26,128 @@ fn success(output: &Output) {
     );
 }
 #[test]
+fn evaluation_validation_rejects_numbered_skill_references()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let root = tempfile::tempdir()?;
+    success(
+        &Command::new("git")
+            .args(["init", "--quiet"])
+            .arg(root.path())
+            .output()?,
+    );
+    for path in [
+        "harness/AGENTS.md",
+        "harness/evals/cases.json",
+        "harness/evals/fixtures/repository-lookup-v1.json",
+    ] {
+        let target = root.path().join(path);
+        fs::create_dir_all(target.parent().ok_or("missing fixture parent")?)?;
+        fs::copy(repository()?.join(path), target)?;
+    }
+    fs::create_dir_all(root.path().join("harness/skills/example/references"))?;
+    let path = "harness/skills/example/references/example.md";
+    fs::write(
+        root.path().join(path),
+        "PR #123 must not become reusable guidance.",
+    )?;
+    success(
+        &Command::new("git")
+            .arg("-C")
+            .arg(root.path())
+            .args(["add", "--", path])
+            .output()?,
+    );
+    let invoke = || {
+        Command::new(env!("CARGO_BIN_EXE_arnes"))
+            .args(["eval", "--repository"])
+            .arg(root.path())
+            .arg("validate-evals")
+            .output()
+    };
+    let rejected = invoke()?;
+    assert!(!rejected.status.success());
+    let error = String::from_utf8_lossy(&rejected.stderr);
+    assert!(error.contains(path), "{error}");
+    assert!(error.contains("numbered"), "{error}");
+    fs::write(
+        root.path().join(path),
+        "PR <number>; # Heading; use #N and #[derive] as generic syntax.",
+    )?;
+    success(&invoke()?);
+    fs::write(root.path().join(path), [0xff])?;
+    let unreadable = invoke()?;
+    assert!(!unreadable.status.success());
+    assert!(String::from_utf8_lossy(&unreadable.stderr).contains(path));
+    fs::remove_file(root.path().join(path))?;
+    let missing = invoke()?;
+    assert!(!missing.status.success());
+    assert!(String::from_utf8_lossy(&missing.stderr).contains(path));
+    success(
+        &Command::new("git")
+            .arg("-C")
+            .arg(root.path())
+            .args(["rm", "--cached", "--quiet", "--", path])
+            .output()?,
+    );
+    let empty = invoke()?;
+    assert!(!empty.status.success());
+    assert!(String::from_utf8_lossy(&empty.stderr).contains("Empty tracked skill selection"));
+    Ok(())
+}
+#[test]
+fn evaluation_validation_exempts_only_the_named_historical_record()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let root = tempfile::tempdir()?;
+    success(
+        &Command::new("git")
+            .args(["init", "--quiet"])
+            .arg(root.path())
+            .output()?,
+    );
+    for path in [
+        "harness/AGENTS.md",
+        "harness/evals/cases.json",
+        "harness/evals/fixtures/repository-lookup-v1.json",
+    ] {
+        let target = root.path().join(path);
+        fs::create_dir_all(target.parent().ok_or("missing fixture parent")?)?;
+        fs::copy(repository()?.join(path), target)?;
+    }
+    let path = "harness/skills/pr-verdict/references/execution-evidence.md";
+    fs::create_dir_all(root.path().join("harness/skills/pr-verdict/references"))?;
+    fs::write(
+        root.path().join(path),
+        "Historical observation for PR #123.",
+    )?;
+    success(
+        &Command::new("git")
+            .arg("-C")
+            .arg(root.path())
+            .args(["add", "--", path])
+            .output()?,
+    );
+    let invoke = || {
+        Command::new(env!("CARGO_BIN_EXE_arnes"))
+            .args(["eval", "--repository"])
+            .arg(root.path())
+            .arg("validate-evals")
+            .output()
+    };
+    success(&invoke()?);
+    let adjacent = "harness/skills/pr-verdict/references/new-execution-evidence.md";
+    success(
+        &Command::new("git")
+            .arg("-C")
+            .arg(root.path())
+            .args(["mv", "--", path, adjacent])
+            .output()?,
+    );
+    let rejected = invoke()?;
+    assert!(!rejected.status.success());
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains(adjacent));
+    Ok(())
+}
+#[test]
 fn deterministic_operations_do_not_invoke_agents_and_smoke_observes_all_cases()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let home = tempfile::tempdir()?;

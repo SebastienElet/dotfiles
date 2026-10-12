@@ -194,7 +194,7 @@ they cannot reach display instead of treating a cleaned sample report as complet
 comparison of the projection actually exported on the base and head?
 
 **Broken when:** source types, shared schemas, passing validation fixtures or adapter reuse stand
-in for exported equality. For example, `mcpSchema(HandoffCapsuleSchema)` can preserve accepted values
+in for exported equality. For example, `mcpSchema(PublicContractSchema)` can preserve accepted values
 while dropping the published `version` description. Without the exported comparison, the
 unchanged-contract claim is `unproven`; source similarity does not establish compatibility.
 
@@ -252,12 +252,11 @@ Class 13 separately requires byte-for-byte comparison of public exports.
 **Ask:** is the control's enforcing configuration established outside the proposed change, and is
 the authority for role or eligibility rules independent of the control under review?
 
-**Broken when:** a PR weakens its own evaluator and the weakened result is accepted as proof. In
-[dotfiles #477](https://github.com/SebastienElet/dotfiles/pull/477#discussion_r4241506515), a proposed
-`.gitleaks.toml` with only a never-matching rule lets the hook and content scan miss a credential.
+**Broken when:** a PR weakens its own evaluator and the weakened result is accepted as proof. A
+proposed scanner configuration with only a never-matching rule lets the scan miss a credential.
 Candidate tests can catch that config-only change, but cannot prove independence if the PR can also
-weaken them or the required workflow. In [#405](https://github.com/SebastienElet/dotfiles/pull/405),
-a copied role guard cannot establish that its own exclusion is an authorized prerequisite.
+weaken them or the required workflow. A copied role guard cannot establish that its own exclusion
+is an authorized prerequisite.
 
 **Lift:** run enforcement with configuration from a named trusted base or an independently managed
 source; assess proposed configuration separately. Derive role and eligibility expectations from an
@@ -270,13 +269,10 @@ change, review them against the prior trusted policy; their own green result pro
 **Ask:** before relying on an installed tool or skipping installation, does the actual executable
 run successfully on this host and report the required version, with its owner's execute permission?
 
-**Broken when:** path existence, matching bytes or any execute bit substitutes for usability. In
-[dotfiles #477](https://github.com/SebastienElet/dotfiles/pull/477#discussion_r4241442878),
-`installedVersion` throws on an unusable cached scanner before replacement can run. In
-[#478](https://github.com/SebastienElet/dotfiles/pull/478#discussion_r4241444482), a group/other execute
-bit hides the missing owner bit `0o100` on the hook. The reverse error in
-[#413](https://github.com/SebastienElet/dotfiles/pull/413#discussion_r4208093962) reruns npm despite an
-already usable pinned CLI, adding registry dependency and mutation to replay.
+**Broken when:** path existence, matching bytes or any execute bit substitutes for usability. A
+version probe throws on an unusable cached binary before replacement can run, or a group/other
+execute bit hides the missing owner bit `0o100` on a hook. The reverse error reruns installation
+despite an already usable pinned CLI, adding registry dependency and mutation to replay.
 
 **Lift:** probe the actual installed executable, not another binary on PATH; verify the owner bit
 where required and successful execution/version on the target architecture. Treat absent, truncated,

@@ -1,7 +1,7 @@
 # Verdict cases
 
-Behavioral scenarios, followed by a separately qualified execution record. Expected verdicts
-and pass criteria describe what a case should demonstrate; they are not execution evidence.
+Behavioral scenarios. Expected verdicts and pass criteria describe what a case should demonstrate;
+they are not execution evidence.
 
 Cases A and B target Bitbucket and GitHub respectively. Only an observed forge operation can support
 a claim about anchoring or publication. The revised Case B package and Case C isolate phase-5
@@ -148,7 +148,7 @@ with hostile values while raw metadata still drives internal decisions. Expected
 
 ## Case G — unchanged public export claimed from shared source
 
-A PR replaces a hand-written MCP schema with `mcpSchema(HandoffCapsuleSchema)` and claims
+A PR replaces a hand-written MCP schema with `mcpSchema(PublicContractSchema)` and claims
 "unchanged public CLI/MCP contracts". Accepted-value fixtures and type checks pass. No byte
 comparison of the actual base/head exports is supplied; the adapter can drop the published
 `version` description even when the source schema retains it.
@@ -257,10 +257,6 @@ reservation unless that proof is essential to approval.
 **Counterexample:** one diagnostic includes both required reasons and identifies the rejected input.
 No diagnostic finding; complete reasons do not require separate warning counts.
 
-The concrete [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md#expected-diagnostics)
-requires `Unavailable Skill Dependency` and `Unconditional Project Dependency` in one WARN;
-it is distinct from this register's Case C.
-
 ### I5 — wrong eligibility
 
 **Defect:** the independent contract excludes parents with unfinished children, but the selector
@@ -306,78 +302,3 @@ is required. Record the optional claim as `unproven`; require its removal, quali
 
 **Counterexample:** the optional claim is removed. No benchmark is required for it; any independent
 instruction-adoption criterion or required budget still applies.
-
-### J4 — stale text binding
-
-**Defect:** a comparison exercises text with hash A, then a rule or reference is edited and the
-installed text has hash B. Record adoption as `unproven`; the old comparison does not bind the final text.
-
-**Counterexample:** rerun the identical violating and safe scenarios on the exact final text in a
-fresh context, compare with the bound base observations, and record the final hashes. Class 15 holds
-within that observed scope; changing a hash alone is not execution evidence.
-
-## Case K — independent control configuration (class 16)
-
-**Defect:** a PR adds a credential and replaces the scanner config with a valid never-matching rule.
-The hook and content scan use that proposed config and pass. Report the security-control bypass;
-candidate tests catching only this config change do not establish independence if they can also change.
-
-**Counterexample:** enforcement uses the trusted base config and rejects the credential despite the
-proposed config; a safe change passes. Proposed config is assessed separately. No self-approval finding.
-A role guard likewise requires an independent authorization contract, as in Case E.
-
-## Case L — installed tool usability and replay (class 17)
-
-**Defect:** an existing scanner is truncated or has the wrong architecture; its version probe throws
-before replacement, preventing the required scan. Report the preparation failure. A byte-identical
-hook with only group/other execute permission also needs its owner bit checked. Re-running npm for
-an already usable pinned CLI is a separate replay defect with consequences assessed under Reporting.
-
-**Counterexample:** failed probes trigger preparation, owner permission is repaired, the actual binary
-executes and reports the pin, and a matching installation replays silently with the registry offline.
-Preparation failure propagates. No usability or redundant-installation finding on those observations.
-
-## Execution record
-
-Reconciled on 2026-09-19 against accessible sources. **Reported** means a historical account was
-read, but its primary execution trace was not verified here. **Verified observation** means the
-specific tool exchange was inspected; it does not certify the whole review or the current skill.
-The [source record](execution-evidence.md) gives provenance, retained observations and limitations.
-An inaccessible trace is unverified here, not nonexistent.
-
-| Record                                    | Decision evidence                                                                                                                                                                        | Forge publication                                                                                                                           | Status and source                                                                                                                                     |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Case A, 2026-08-11                        | Historical account reports _changes required_ on Bitbucket, and an earlier attempt that returned no verdict when dependencies could not be installed.                                    | Account says phases 1–5 only; publication deliberately not reached.                                                                         | Reported; primary trace unavailable in this audit. [E1](execution-evidence.md#e1--original-cases-a-and-b).                                            |
-| Original Case B, 2026-08-11               | Historical account reports _changes required_: the real target contained a blocking mechanism, so it did not match the intended reservations scenario.                                   | Account says phases 1–5 only, not an end-to-end publication run.                                                                            | Reported; primary trace unavailable in this audit. [E1](execution-evidence.md#e1--original-cases-a-and-b).                                            |
-| Third historical run, 2026-08-12          | Account reports _changes required_, a moved head detected, and refusal of GitHub's native blocking review on a self-authored PR.                                                         | Account reports a general GitHub comment and tickets, including a re-review ticket required by the procedure then.                          | Reported; neither the original tool responses nor the corresponding comment were verified here. [E2](execution-evidence.md#e2--third-historical-run). |
-| Revised Case B package, 2026-08-28        | Account reports 3/3 _approved with reservations_ decisions with the completed ledger retained, from supplied positive and negative evidence.                                             | Not part of the package evaluation.                                                                                                         | Documented decision-only result; individual outputs not recovered here. [E3](execution-evidence.md#e3--supplied-evidence-packages).                   |
-| Case C package, 2026-08-28                | Account reports candidate retention 3/3; first integrated wording blocks 3/3 but retains rows 0/3; revised wording retains all four rows and blocks 3/3, with witnesses marked `absent`. | Not part of the package evaluation.                                                                                                         | Documented decision-only results; individual outputs not recovered here. [E3](execution-evidence.md#e3--supplied-evidence-packages).                  |
-| Additional GitHub publication, 2026-08-23 | Published text says _approved with reservations_; this predates the behavior ledger and does not establish current approval criteria.                                                    | A `gh pr comment` request with a `pr-verdict` marker returned a comment URL and exit 0; the public comment was read back during this audit. | Verified publication observation. [E4](execution-evidence.md#e4--github-comment-publication).                                                         |
-| Bitbucket repair comment                  | A `pr-fix` repair record is not a `pr-verdict` decision.                                                                                                                                 | Comment presence was confirmed by read-back after the posting pipeline returned an error.                                                   | Verified adjacent operation, excluded from verdict-publication coverage. [E5](execution-evidence.md#e5--bitbucket-repair-comment).                    |
-
-The E3 counts remain attributed historical results, not newly reproduced measurements. The supplied
-barrier and negative witnesses test the decision made from that package, not whether the agent
-actually ran those commands. No previously documented experiment was repeated for this audit.
-
-## Current scope and remaining gaps
-
-These records predate the later measurement, composition and proof-integrity requirements; see the
-[revision boundary](execution-evidence.md#revision-boundary). They do not validate today's complete
-six-phase workflow, runtime skill selection, measurement emission, or an applicable proof audit.
-
-The retained sources do not establish:
-
-- Publication of a `pr-verdict` comment on Bitbucket. E5 establishes a repair comment only; other
-  historical publication traces mentioned in the issue remain unverified here.
-- Updating an existing verdict with the same marker, avoiding a duplicate on replay, or preserving
-  the old verdict when a new head receives a new comment. A search before a single post proves none
-  of these outcomes.
-- Successful GitHub native blocking review. E2 reports a refusal; E4 is a general comment.
-- An unconditional _approved_ decision supported by a complete behavior ledger, or a native forge
-  approval. E3 reports the reservations decision only.
-- Independent recovery of the E1–E3 execution outputs, including the claimed moved-head detection
-  and the E3 per-run ledger rows.
-
-These are limits of the retained evidence, not claims that the paths have never run. One successful
-comment or a reported 3/3 result is not a reliability guarantee. Keep any future evidence minimal
-and anonymized; do not retain private identities, repository coordinates, ticket IDs or full logs.

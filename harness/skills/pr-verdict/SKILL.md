@@ -42,8 +42,8 @@ Activation is instruction-scoped, not host-enforced: the description and this us
 selection. Keep model invocation available because a host-level manual-only flag also blocks the
 composed call; reading files manually after a rejected invocation is not the composition mechanism.
 
-After explicit invocation, typical cases are: "is #1042 safe to merge?" (phase 1 finds the branch
-stacked and the shown diff twice its real size), "review this PR before I approve it" (phase 3
+After explicit invocation, typical cases are: "is this PR safe to merge?" (phase 1 checks its
+actual base), "review this PR before I approve it" (phase 3
 turns a vague unease into a named mechanism, or drops it), "they pushed the fixes, re-review"
 (phase 6 finds the previous marker, sees a new SHA, and publishes a second verdict rather than
 editing the first).
@@ -192,8 +192,7 @@ says to post directly.
 
 - **The base the forge reports is not the base to review** — and it errs in both directions. A PR
   that targets its parent branch hides what the parent still owes; a PR that targets the integration
-  branch while sitting on an unmerged parent swells with the parent's work — measured on one stacked
-  PR, the reported diff was more than twice the PR's own. Recompute the base from the parent's head
+  branch while sitting on an unmerged parent includes the parent's work. Recompute the base from the parent's head
   and put retargeting in the lift criterion.
 - **The comment body passed inline** — apostrophes and backticks in a verdict break shell quoting
   and silently truncate the comment. Always pass the body through a file (see
