@@ -78,6 +78,33 @@ test("rejects an unknown output format without changing the destination", () => 
   expect(readFileSync(paths.destination, "utf8")).toBe("keep\n");
 });
 
+test.each(["markdown", "cursor-rule"])(
+  "rejects unknown imports without changing %s output",
+  (format) => {
+    for (const ending of ["\n", "\r\n", ""]) {
+      const paths = fixture();
+      expect(run(paths, format).exitCode).toBe(0);
+      const previous = readFileSync(paths.destination, "utf8");
+      const before = statSync(paths.destination);
+      writeFileSync(
+        join(paths.source, "AGENTS.md"),
+        `@SOUL.md\n@USER.md\n@visual-presentation.md\nRules\n@UNKNOWN.md${ending}`,
+      );
+      const result = run(paths, format);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr.toString()).toContain(
+        "Unknown instruction import: @UNKNOWN.md",
+      );
+      expect(readFileSync(paths.destination, "utf8")).toBe(previous);
+      expect(statSync(paths.destination)).toMatchObject({
+        ino: before.ino,
+        mtimeMs: before.mtimeMs,
+        ctimeMs: before.ctimeMs,
+      });
+    }
+  },
+);
+
 test("assembles imports and stays silent without rewriting on replay", () => {
   const paths = fixture();
   expect(run(paths).exitCode).toBe(0);

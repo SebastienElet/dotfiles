@@ -14,6 +14,11 @@ const argumentsSchema = z.tuple([
   z.string().min(1),
   z.enum(["markdown", "cursor-rule"]).default("markdown"),
 ]);
+const instructionImportSchema = z.enum([
+  "SOUL.md",
+  "USER.md",
+  "visual-presentation.md",
+]);
 const argumentOffset = 2;
 const failure = 1;
 
@@ -43,12 +48,17 @@ function assembleInstructions(
   const expected =
     frontmatter +
     readFileSync(join(source, "AGENTS.md"), "utf8").replaceAll(
-      /^@.*\n/gmu,
-      "",
+      /^@(?<importPath>[^\r\n]*)(?:\r?\n|$)/gmu,
+      (_match, importPath: string) => {
+        if (!instructionImportSchema.safeParse(importPath).success) {
+          throw new Error(`Unknown instruction import: @${importPath}`);
+        }
+        return "";
+      },
     ) +
-    readFileSync(join(source, "SOUL.md"), "utf8") +
-    readFileSync(join(source, "USER.md"), "utf8") +
-    readFileSync(join(source, "visual-presentation.md"), "utf8");
+    instructionImportSchema.options
+      .map((file) => readFileSync(join(source, file), "utf8"))
+      .join("");
   if (isCurrent(destination, expected)) {
     return;
   }
