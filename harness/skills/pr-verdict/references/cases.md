@@ -257,6 +257,10 @@ reservation unless that proof is essential to approval.
 **Counterexample:** one diagnostic includes both required reasons and identifies the rejected input.
 No diagnostic finding; complete reasons do not require separate warning counts.
 
+The concrete [skill-manager D3 Case C](../../skill-manager/references/d3-scenarios.md#expected-diagnostics)
+requires `Unavailable Skill Dependency` and `Unconditional Project Dependency` in one WARN;
+it is distinct from this register's Case C.
+
 ### I5 — wrong eligibility
 
 **Defect:** the independent contract excludes parents with unfinished children, but the selector
@@ -302,6 +306,36 @@ is required. Record the optional claim as `unproven`; require its removal, quali
 
 **Counterexample:** the optional claim is removed. No benchmark is required for it; any independent
 instruction-adoption criterion or required budget still applies.
+
+### J4 — stale text binding
+
+**Defect:** a comparison exercises text with hash A, then a rule or reference is edited and the
+installed text has hash B. Record adoption as `unproven`; the old comparison does not bind the final text.
+
+**Counterexample:** rerun the identical violating and safe scenarios on the exact final text in a
+fresh context, compare with the bound base observations, and record the final hashes. Class 15 holds
+within that observed scope; changing a hash alone is not execution evidence.
+
+## Case K — independent control configuration (class 16)
+
+**Defect:** a PR adds a credential and replaces the scanner config with a valid never-matching rule.
+The hook and content scan use that proposed config and pass. Report the security-control bypass;
+candidate tests catching only this config change do not establish independence if they can also change.
+
+**Counterexample:** enforcement uses the trusted base config and rejects the credential despite the
+proposed config; a safe change passes. Proposed config is assessed separately. No self-approval finding.
+A role guard likewise requires an independent authorization contract, as in Case E.
+
+## Case L — installed tool usability and replay (class 17)
+
+**Defect:** an existing scanner is truncated or has the wrong architecture; its version probe throws
+before replacement, preventing the required scan. Report the preparation failure. A byte-identical
+hook with only group/other execute permission also needs its owner bit checked. Re-running npm for
+an already usable pinned CLI is a separate replay defect with consequences assessed under Reporting.
+
+**Counterexample:** failed probes trigger preparation, owner permission is repaired, the actual binary
+executes and reports the pin, and a matching installation replays silently with the registry offline.
+Preparation failure propagates. No usability or redundant-installation finding on those observations.
 
 ## Execution record
 

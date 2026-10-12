@@ -1,6 +1,6 @@
 # Failure classes
 
-Fifteen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
+Seventeen questions to put to the diff in phase 3. Each is a question, not a checklist item to tick: the
 answer is a sentence about _this_ diff. Record one of four outcomes per class.
 
 - **not applicable** — the diff does not touch that concern; say why in one clause.
@@ -160,14 +160,15 @@ For Git remotes, require protocol-aware parsing, including the SCP grammar `[use
 Extend the hostile-input table with these identity and rejection cases; provider rules must come
 from the supported provider's contract, not a blanket lowercasing of paths.
 
-| Input family                                                                              | Required observation                                                                                                                             |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `github.com:Owner/Repo.git`, `git@github.com:Owner/Repo.git`                              | Optional SCP user does not change repository identity.                                                                                           |
-| `ssh://git@github.com/Owner/Repo.git`, `ssh://git@github.com:22/Owner/Repo.git`           | Omitted and explicit default SSH port 22 identify the same repository.                                                                           |
-| `git@GitHub.COM:Owner/Repo.git`, `ssh://git@GITHUB.COM/Owner/Repo.git`                    | DNS host casing does not change identity in either syntax.                                                                                       |
-| GitHub `Owner/Repo` versus `owner/repo`; GitLab `Team/Project` versus `team/project`      | GitHub case aliases match. For other providers, follow the supported identity contract; exact GitLab path matching may be a declared local rule. |
-| `Repo`, `Repo.git`, `Repo/`, `Repo.git/` in supported remote forms                        | Final `.git` and trailing slash normalize according to the repository identity contract; interior path segments remain intact.                   |
-| `ssh://git@github.com:2222/Owner/Repo.git`, a foreign host, malformed SCP and local paths | Preserve distinct endpoints or reject with a diagnostic; never alias them to a trusted default endpoint.                                         |
+| Input family                                                                              | Required observation                                                                                                                                              |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github.com:Owner/Repo.git`, `git@github.com:Owner/Repo.git`                              | Optional SCP user does not change repository identity.                                                                                                            |
+| `ssh://git@github.com/Owner/Repo.git`, `ssh://git@github.com:22/Owner/Repo.git`           | Omitted and explicit default SSH port 22 identify the same repository.                                                                                            |
+| `git@GitHub.COM:Owner/Repo.git`, `ssh://git@GITHUB.COM/Owner/Repo.git`                    | DNS host casing does not change identity in either syntax.                                                                                                        |
+| GitHub `Owner/Repo` versus `owner/repo`; GitLab `Team/Project` versus `team/project`      | GitHub case aliases match. For other providers, follow the supported identity contract; exact GitLab path matching may be a declared local rule.                  |
+| `Repo`, `Repo.git`, `Repo/`, `Repo.git/` in supported remote forms                        | Final `.git` and trailing slash normalize according to the repository identity contract; interior path segments remain intact.                                    |
+| `ssh://git@github.com:2222/Owner/Repo.git`, a foreign host, malformed SCP and local paths | Preserve distinct endpoints or reject with a diagnostic; never alias them to a trusted default endpoint.                                                          |
+| Private-file paths `.ENV`, `ID_RSA`, `backup.P12`                                         | Case variants cannot bypass the declared private-file policy; exercise case-sensitive Git paths, including empty or encrypted files when that policy covers them. |
 
 Missing executed cases are `unproven`; a traced rejection or trust-boundary violation is
 `broken by` its mechanism. Class 12 separately checks every display output.
@@ -246,6 +247,44 @@ Compare before adopting a rewritten instruction. Before merge, remove or bound a
 optional performance claim; a required budget or adoption criterion still blocks until qualified.
 Class 13 separately requires byte-for-byte comparison of public exports.
 
+## 16. A control trusts configuration from the PR it checks
+
+**Ask:** is the control's enforcing configuration established outside the proposed change, and is
+the authority for role or eligibility rules independent of the control under review?
+
+**Broken when:** a PR weakens its own evaluator and the weakened result is accepted as proof. In
+[dotfiles #477](https://github.com/SebastienElet/dotfiles/pull/477#discussion_r4241506515), a proposed
+`.gitleaks.toml` with only a never-matching rule lets the hook and content scan miss a credential.
+Candidate tests can catch that config-only change, but cannot prove independence if the PR can also
+weaken them or the required workflow. In [#405](https://github.com/SebastienElet/dotfiles/pull/405),
+a copied role guard cannot establish that its own exclusion is an authorized prerequisite.
+
+**Lift:** run enforcement with configuration from a named trusted base or an independently managed
+source; assess proposed configuration separately. Derive role and eligibility expectations from an
+independent product or authorization contract. Exercise a proposed weakening that still receives
+the trusted refusal, and a permitted change that passes. If the evaluator, tests or workflow also
+change, review them against the prior trusted policy; their own green result proves no independence.
+
+## 17. An installed tool is assumed usable
+
+**Ask:** before relying on an installed tool or skipping installation, does the actual executable
+run successfully on this host and report the required version, with its owner's execute permission?
+
+**Broken when:** path existence, matching bytes or any execute bit substitutes for usability. In
+[dotfiles #477](https://github.com/SebastienElet/dotfiles/pull/477#discussion_r4241442878),
+`installedVersion` throws on an unusable cached scanner before replacement can run. In
+[#478](https://github.com/SebastienElet/dotfiles/pull/478#discussion_r4241444482), a group/other execute
+bit hides the missing owner bit `0o100` on the hook. The reverse error in
+[#413](https://github.com/SebastienElet/dotfiles/pull/413#discussion_r4208093962) reruns npm despite an
+already usable pinned CLI, adding registry dependency and mutation to replay.
+
+**Lift:** probe the actual installed executable, not another binary on PATH; verify the owner bit
+where required and successful execution/version on the target architecture. Treat absent, truncated,
+wrong-architecture, non-executable and failed or empty version probes as needing preparation, without
+letting the same failed probe abort replacement. Skip installation silently for a usable matching
+version; propagate preparation failures. Exercise these failure paths, successful repair and an
+offline replay with the matching CLI through native or existing checks.
+
 ## Reporting
 
 Classes 1, 2, 3, 4, 5, 7, 9, 11 and 12 name mechanisms that lose data, corrupt state or cross a security
@@ -262,11 +301,15 @@ gap, not an invented leak: apply phase 5's essential-evidence rule and name the 
 For class 15, retain `unproven` until a relevant base/head comparison satisfies the declared criterion;
 block installation or merge when rule adoption or a required performance budget depends on it.
 An optional unsupported claim can instead be removed or bounded; do not invent a measured defect.
+Class 16 blocks when a proposed weakening defeats a required security or authorization control.
+Class 17 blocks when an unusable tool skips a required check or prevents a promised workflow;
+redundant installation with a bounded consequence is a reservation. Missing independence or usability
+evidence remains `unproven`; apply phase 5's essential-evidence rule rather than inventing a bypass.
 
 The default below does not downgrade phase-2 defects: a demonstrated guard that prevents a promised
-user action blocks, even outside these fifteen classes.
+user action blocks, even outside these seventeen classes.
 
-Other findings outside these fifteen classes are legitimate but non-blocking by default: report at most three
+Other findings outside these seventeen classes are legitimate but non-blocking by default: report at most three
 of them, one line each, labelled non-blocking, or drop them. The cap is what stops the sweep from
 turning into a second review that competes with the verdict — rank them by whether they would change
 a reviewer's decision and keep the top three. If the verdict runs past about thirty lines, that is
