@@ -54,3 +54,17 @@ jobs:
       - run: >-
           moon ci --downstream none arnes:fmt arnes:clippy
           arnes:check arnes:test arnes:doc
+
+  required:
+    name: Arnes required
+    needs: [select, arnes]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.arnes.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.arnes.result == 'skipped')) }}

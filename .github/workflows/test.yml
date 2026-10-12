@@ -29,3 +29,14 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon run tooling:smoke-minimal
       - run: moon run tooling:upgrade-neovim-test
+
+  required:
+    name: Smoke required
+    needs: minimal
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: ${{ needs.minimal.result == 'success' }}
