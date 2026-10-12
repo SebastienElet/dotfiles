@@ -62,31 +62,35 @@ were already synchronized.
    synchronization failure; preserve the Bitbucket state and retry only the idempotent Linear link
    operation.
 
-6. **Route assigned leaf issues by their verification boxes.** For each assigned leaf with a certain
-   linked Bitbucket pull request, read its state from Bitbucket. A merged state proves the code
-   landed, not that the issue's verification boxes hold. Read those boxes without ever writing one:
-   all checked, or no evidence section at all, moves the issue to `Done`; at least one unchecked
-   line, or an evidence section that holds no state, moves it to its team's review state instead,
-   with the unproven lines named as residue. Guard the state write with the classification it rests
-   on, following `linear-workflow`'s completion-evidence rule: text that moved must abort the save
-   before any state is written, because a post-write read confirms the state and never that the
-   boxes still say what they said. Where that guard is uncovered, write no state — report the
-   classification and the missing capability, and leave the transition to a human. Verify either
-   transition by an independent Linear read. Do not inspect the diff, rerun tests, invoke
-   `pr-verdict`, or perform a functional review; this workflow routes work by the evidence that
-   already exists and never produces any. Several assigned leaves may transition from the same
-   merged pull request only when each association is explicit and certain.
+6. **Route assigned leaf issues by pull-request state and verification boxes.** For each assigned
+   leaf with a certain linked Bitbucket pull request, read its state from Bitbucket. An open state
+   moves the issue to its team's review state, where code review happens. That transition rests on
+   Bitbucket state, not on boxes, so the checkbox guard below does not apply to it: write it
+   directly. A merge landing between the read and the write leaves the issue in the review state,
+   never in `Done`, and the next run reroutes it. A merged state proves the code landed, not that
+   the issue's verification boxes hold. Read those boxes without ever writing one: all checked, or
+   no evidence section at all, moves the issue to `Done`; at least one unchecked line, or an
+   evidence section that holds no state, moves it to `In Progress` instead, never to the review
+   state, with the unproven lines named as residue. Guard either merged transition with the
+   classification it rests on, following `linear-workflow`'s completion-evidence rule: text that
+   moved must abort the save before any state is written, because a post-write read confirms the
+   state and never that the boxes still say what they said. Where that guard is uncovered, write no
+   state — report the classification and the missing capability, and leave the transition to a
+   human. Verify every applied transition by an independent Linear read. Do not inspect the diff,
+   rerun tests, invoke `pr-verdict`, or perform a functional review; this workflow routes work by
+   the evidence that already exists and never produces any. Several assigned leaves may transition
+   from the same merged pull request only when each association is explicit and certain.
 
 7. **Evaluate assigned parents from child state.** After leaf transitions are verified, process
    assigned parents bottom-up and re-read each parent with every direct sub-issue. A parent whose
-   direct sub-issues are all `Done` is eligible for completion; a sub-issue waiting in the review
-   state is not `Done` and makes the parent ineligible. Transition it automatically only when the
-   selected Linear transport documents one atomic conditional mutation that writes `Done` if every
-   direct sub-issue remains `Done` at commit time. A separate read followed by an ordinary
-   state update does not qualify. The shared connector, CLI, and GraphQL adapters currently expose
-   no such guarantee, so report the eligible parent and leave it unchanged for human decision. Do
-   not infer completion from the parent description, pull-request title, or partial child set, and
-   do not review the work again.
+   direct sub-issues are all `Done` is eligible for completion; a sub-issue under review, or merged
+   and awaiting verification in `In Progress`, is not `Done` and makes the parent ineligible.
+   Transition it automatically only when the selected Linear transport documents one atomic
+   conditional mutation that writes `Done` if every direct sub-issue remains `Done` at commit time.
+   A separate read followed by an ordinary state update does not qualify. The shared connector,
+   CLI, and GraphQL adapters currently expose no such guarantee, so report the eligible parent and
+   leave it unchanged for human decision. Do not infer completion from the parent description,
+   pull-request title, or partial child set, and do not review the work again.
 
 8. **Surface inconsistent active work.** For an assigned `In Progress` issue explicitly associated
    with the resolved repository, search exact attachments, exact issue-prefixed pull-request source
@@ -124,7 +128,7 @@ were already synchronized.
 - **Aligning description checkboxes with the new state** — a merged pull request becomes false proof
   for a line no run covered; never write a box here, and report the unchecked lines instead.
 - **Closing a merged issue without reading its verification boxes** — the check nobody ran is buried
-  under `Done`; route the issue to its team's review state and leave it in the verification queue.
+  under `Done`; route the issue to `In Progress` and leave it in the verification queue.
 
 ## Constraints
 
@@ -132,8 +136,8 @@ were already synchronized.
 - Never inspect implementation, review a diff, rerun functional checks, or invoke a review skill.
 - Never check, uncheck, or reword a description checkbox from this workflow; it produces no
   evidence, so it reports unproven residue instead of resolving it.
-- Never move an issue to `Done` from a merge while one of its verification boxes is unchecked; its
-  team's review state is the destination and the unchecked lines are reported.
+- Never move an issue to `Done` from a merge while one of its verification boxes is unchecked;
+  `In Progress` is the destination, never the review state, and the unchecked lines are reported.
 - Never transition an issue from title similarity, prose, an ambiguous link, or an unverified
   repository context.
 - Never auto-transition a parent through a separate read followed by an unconditional state update.
