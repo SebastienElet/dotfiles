@@ -1,143 +1,66 @@
-import { afterEach, expect, test } from "bun:test";
-import { fixtureContainer, memoryDocker } from "./cleanup-test-support.ts";
-import { mkdtempSync, rmSync } from "node:fs";
+import { expect, test } from "bun:test";
 import type { DockerCommand } from "./cleanup-containers.ts";
 import { cleanupWorktreeContainers } from "./cleanup-containers.ts";
-import { tmpdir } from "node:os";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) {
-    rmSync(root, { recursive: true, force: true });
-  }
+const checkoutPath = "/worktrees/issue 492";
+const containerIds = ["aaaaaaaaaaaa", "bbbbbbbbbbbb"];
+
+test("stops only IDs returned by the exact Compose path filter", () => {
+  const commands: (readonly string[])[] = [];
+  const docker: DockerCommand = (arguments_) => {
+    commands.push(arguments_);
+    return { exitCode: 0, stdout: containerIds.join("\n"), stderr: "" };
+  };
+  cleanupWorktreeContainers(checkoutPath, "stop", docker);
+  expect(commands).toEqual([
+    [
+      "ps",
+      "-q",
+      "--filter",
+      `label=com.docker.compose.project.working_dir=${checkoutPath}`,
+    ],
+    ["stop", "--timeout", "10", ...containerIds],
+  ]);
 });
-function checkout(): string {
-  const root = mkdtempSync(`${tmpdir()}/docker-cleanup-`);
-  roots.push(root);
-  return root;
-}
 
-test.each(["stop", "remove"])(
-  "%s is limited to owned IDs and replay is harmless",
-  (mode) => {
-    const path = checkout();
-    const owned = fixtureContainer("a", path);
-    const other = fixtureContainer("b", tmpdir());
-    const docker = memoryDocker([owned, other]);
-    expect(
-      cleanupWorktreeContainers(path, mode, { runDocker: docker.runDocker })
-        .kind,
-    ).toBe("completed");
-    expect(docker.containers.get(owned.Id)?.State.Running ?? false).toBe(false);
-    expect(docker.containers.has(owned.Id)).toBe(mode === "stop");
-    expect(docker.containers.get(other.Id)?.State.Running).toBe(true);
-    expect(
-      cleanupWorktreeContainers(path, mode, { runDocker: docker.runDocker })
-        .kind,
-    ).toBe("completed");
-  },
-);
-
-test.each(["off", "invalid"])("%s never reaches Docker", (mode) => {
-  const outcome = cleanupWorktreeContainers(checkout(), mode, {
-    runDocker: () => {
-      throw new Error("Docker must not be reached");
-    },
+test("off never invokes Docker", () => {
+  const commands: (readonly string[])[] = [];
+  cleanupWorktreeContainers(checkoutPath, "off", (arguments_) => {
+    commands.push(arguments_);
+    return { exitCode: 0, stdout: "", stderr: "" };
   });
-  expect(outcome.kind).toBe(mode === "off" ? "skipped" : "failed");
-  expect(outcome.message).not.toContain("Docker must not be reached");
+  expect(commands).toEqual([]);
 });
 
-test.each(["tcp://localhost:2375", "ssh://server", "unix://relative"])(
-  "skips remote or ambiguous endpoint %s",
-  (host) => {
-    const path = checkout();
-    const container = fixtureContainer("a", path);
-    const docker = memoryDocker([container], { host });
-    expect(
-      cleanupWorktreeContainers(path, "remove", { runDocker: docker.runDocker })
-        .kind,
-    ).toBe("skipped");
-    expect(docker.containers.get(container.Id)?.State.Running).toBe(true);
-  },
-);
+test("an empty result never invokes stop", () => {
+  const commands: (readonly string[])[] = [];
+  cleanupWorktreeContainers(checkoutPath, "stop", (arguments_) => {
+    commands.push(arguments_);
+    return { exitCode: 0, stdout: "", stderr: "" };
+  });
+  expect(commands).toHaveLength(1);
+});
 
-test.each(["context", "info", "ls", "inspect", "stop", "rm"])(
-  "handles failure of %s without widening cleanup",
+test.each(["missing", "unavailable", "timeout", "invalid", "stop-failed"])(
+  "Docker %s cannot fail closure",
   (failure) => {
-    const path = checkout();
-    const container = fixtureContainer("a", path);
-    const docker = memoryDocker([container], { failure });
-    expect(
-      cleanupWorktreeContainers(path, "remove", { runDocker: docker.runDocker })
-        .kind,
-    ).toBe(failure === "info" ? "skipped" : "failed");
-    expect(docker.containers.has(container.Id)).toBe(true);
-    expect(docker.containers.get(container.Id)?.State.Running).toBe(
-      failure !== "rm",
-    );
-  },
-);
-
-test.each(["invalid-json", "wrong-id", "timeout"])(
-  "refuses %s before mutation",
-  (failure) => {
-    const path = checkout();
-    const container = fixtureContainer("a", path);
-    const docker = memoryDocker([container]);
-    const command: DockerCommand = (arguments_) => {
-      if (arguments_.includes("inspect") && !arguments_.includes("context")) {
-        if (failure === "timeout") {
-          throw new Error("Docker command timed out");
-        }
-        return {
-          exitCode: 0,
-          stderr: "",
-          stdout:
-            failure === "invalid-json"
-              ? "{}"
-              : JSON.stringify([fixtureContainer("b", path)]),
-        };
+    const commands: (readonly string[])[] = [];
+    const docker: DockerCommand = (arguments_) => {
+      commands.push(arguments_);
+      if (failure === "missing" || failure === "timeout") {
+        throw new Error(failure);
       }
-      return docker.runDocker(arguments_);
+      return {
+        exitCode: failure === "unavailable" || arguments_[0] === "stop" ? 1 : 0,
+        stdout: failure === "invalid" ? "invalid ID" : containerIds.join("\n"),
+        stderr: "",
+      };
     };
-    expect(
-      cleanupWorktreeContainers(path, "remove", { runDocker: command }).kind,
-    ).toBe("failed");
-    expect(docker.containers.get(container.Id)?.State.Running).toBe(true);
-  },
-);
-
-test("retains partial failure and can replay after the error is resolved", () => {
-  const path = checkout();
-  const first = fixtureContainer("a", path);
-  const second = fixtureContainer("b", path);
-  const docker = memoryDocker([first, second]);
-  const failing: DockerCommand = (arguments_) =>
-    arguments_.includes("stop") && arguments_.includes(second.Id)
-      ? { exitCode: 1, stdout: "", stderr: "fixture failure" }
-      : docker.runDocker(arguments_);
-  expect(
-    cleanupWorktreeContainers(path, "stop", { runDocker: failing }).kind,
-  ).toBe("failed");
-  expect(docker.containers.get(first.Id)?.State.Running).toBe(false);
-  expect(docker.containers.get(second.Id)?.State.Running).toBe(true);
-  expect(
-    cleanupWorktreeContainers(path, "stop", { runDocker: docker.runDocker })
-      .kind,
-  ).toBe("completed");
-  expect(docker.containers.get(second.Id)?.State.Running).toBe(false);
-});
-
-test.each(["stop", "rm"])(
-  "tolerates a container disappearing during %s",
-  (disappear) => {
-    const path = checkout();
-    const docker = memoryDocker([fixtureContainer("a", path)], { disappear });
-    expect(
-      cleanupWorktreeContainers(path, "remove", { runDocker: docker.runDocker })
-        .kind,
-    ).toBe("completed");
-    expect(docker.containers.size).toBe(0);
+    expect(() => {
+      cleanupWorktreeContainers(checkoutPath, "stop", docker);
+    }).not.toThrow();
+    expect(commands.map((arguments_) => arguments_[0])).toEqual(
+      failure === "stop-failed" ? ["ps", "stop"] : ["ps"],
+    );
   },
 );

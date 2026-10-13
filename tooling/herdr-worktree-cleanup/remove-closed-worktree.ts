@@ -1,11 +1,8 @@
-import type { DockerCommand } from "./cleanup-containers.ts";
-import { canonicalPath } from "./container-selection.ts";
 import { cleanupWorktreeContainers } from "./cleanup-containers.ts";
 import { existsSync } from "node:fs";
 import { z } from "zod";
 
 const workspaceClosedEventSchema = z.object({
-  event: z.literal("workspace_closed"),
   data: z.object({
     workspace: z
       .object({
@@ -22,21 +19,6 @@ const workspaceClosedEventSchema = z.object({
 });
 
 type WorkspaceClosedEvent = z.infer<typeof workspaceClosedEventSchema>;
-type CleanupOptions = Readonly<{
-  dockerMode?: string;
-  runDocker?: DockerCommand;
-  reportDocker?: (message: string) => void;
-}>;
-
-const worktreePathsSchema = z
-  .string()
-  .transform((output) =>
-    output
-      .split("\0")
-      .filter((field) => field.startsWith("worktree "))
-      .map((field) => field.slice("worktree ".length)),
-  )
-  .pipe(z.array(z.string().min(1)).min(1));
 
 type RemovalOutcome =
   | Readonly<{ kind: "removed"; checkoutPath: string }>
@@ -46,47 +28,12 @@ type RemovalOutcome =
 function runGit(
   directory: string,
   arguments_: readonly string[],
-): Readonly<{ exitCode: number; stderr: string; stdout: string }> {
+): Readonly<{ exitCode: number; stderr: string }> {
   const result = Bun.spawnSync(["git", "-C", directory, ...arguments_], {
     stderr: "pipe",
-    stdout: "pipe",
+    stdout: "ignore",
   });
-  return {
-    exitCode: result.exitCode,
-    stderr: result.stderr.toString().trim(),
-    stdout: result.stdout.toString(),
-  };
-}
-
-function registeredWorktrees(repositoryRoot: string): readonly string[] {
-  const result = runGit(repositoryRoot, [
-    "worktree",
-    "list",
-    "--porcelain",
-    "-z",
-  ]);
-  return result.exitCode === 0 ? worktreePathsSchema.parse(result.stdout) : [];
-}
-
-function removeCheckout(
-  checkoutPath: string,
-  repositoryRoot: string,
-): RemovalOutcome {
-  if (
-    runGit(checkoutPath, ["symbolic-ref", "--quiet", "HEAD"]).exitCode !== 0
-  ) {
-    return skipped("checkout HEAD is detached and its commits would be lost");
-  }
-  const removal = runGit(repositoryRoot, [
-    "-c",
-    "status.showUntrackedFiles=all",
-    "worktree",
-    "remove",
-    checkoutPath,
-  ]);
-  return removal.exitCode === 0
-    ? { kind: "removed", checkoutPath }
-    : { kind: "failed", reason: removal.stderr };
+  return { exitCode: result.exitCode, stderr: result.stderr.toString().trim() };
 }
 
 function skipped(reason: string): RemovalOutcome {
@@ -113,7 +60,7 @@ function parseWorkspaceClosedEvent(
 
 function removeClosedWorktree(
   eventJson: string,
-  options: CleanupOptions = {},
+  dockerMode: "off" | "stop" = "off",
 ): RemovalOutcome {
   const parsed = parseWorkspaceClosedEvent(eventJson);
   if (!parsed.ok) {
@@ -130,42 +77,28 @@ function removeClosedWorktree(
   if (!existsSync(checkoutPath)) {
     return skipped("checkout no longer exists");
   }
-  const checkouts = registeredWorktrees(worktree.repo_root);
-  const canonicalCheckout = canonicalPath(checkoutPath);
+  cleanupWorktreeContainers(checkoutPath, dockerMode);
   if (
-    canonicalCheckout === undefined ||
-    !checkouts
-      .slice(1)
-      .some((path) => canonicalPath(path) === canonicalCheckout)
+    runGit(checkoutPath, ["symbolic-ref", "--quiet", "HEAD"]).exitCode !== 0
   ) {
-    return skipped(
-      "checkout is not a registered linked worktree of the repository",
-    );
+    return skipped("checkout HEAD is detached and its commits would be lost");
   }
-  const docker = cleanupWorktreeContainers(
+  const removal = runGit(worktree.repo_root, [
+    "-c",
+    "status.showUntrackedFiles=all",
+    "worktree",
+    "remove",
     checkoutPath,
-    options.dockerMode ?? "off",
-    { ...options, protectedCheckouts: checkouts },
-  );
-  options.reportDocker?.(`Docker ${docker.kind}: ${docker.message}`);
-  if (docker.kind === "failed") {
-    return {
-      kind: "failed",
-      reason: `Docker cleanup failed; checkout preserved: ${docker.message}`,
-    };
-  }
-  return removeCheckout(checkoutPath, worktree.repo_root);
+  ]);
+  return removal.exitCode === 0
+    ? { kind: "removed", checkoutPath }
+    : { kind: "failed", reason: removal.stderr };
 }
 
 if (import.meta.main) {
   const outcome = removeClosedWorktree(
     process.env.HERDR_PLUGIN_EVENT_JSON ?? "",
-    {
-      dockerMode: process.env.HERDR_WORKTREE_DOCKER_CLEANUP ?? "off",
-      reportDocker: (message) => {
-        process.stderr.write(`${message}\n`);
-      },
-    },
+    Bun.argv.includes("--docker-cleanup=stop") ? "stop" : "off",
   );
   const message =
     outcome.kind === "removed"
