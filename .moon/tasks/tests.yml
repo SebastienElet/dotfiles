@@ -58,6 +58,7 @@ tasks:
       - herdr-issue:build
       - fish-setup
       - rust
+      - node-runtime-check
     inputs:
       - "@group(generalTypeScriptTests)"
       - "@group(typescriptToolchain)"
