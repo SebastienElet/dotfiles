@@ -86,7 +86,7 @@ material limitation. No next action is required.
 
 Bad: "Hope that helps. Let me know if you want to dig deeper."
 Good during execution: "The optional visual preview is unavailable. I am completing the remaining checks."
-Good at completion: "PR #42 is open; CI passes. Visual preview was unavailable."
+Good at completion: "The PR is open; CI passes. Visual preview was unavailable."
 
 #### 4. Suppress tangents
 

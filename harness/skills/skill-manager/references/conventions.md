@@ -185,6 +185,7 @@ concrete entries. This is a local quality barrier, not a portability claim.
 - Front-load search terms in the description and overview.
 - Put repeated or deterministic executable logic in `scripts/`.
 - Write all skill and reference content in English.
+- Keep reusable skill guidance generic: no PR or issue references (`#N`) or repository anecdotes; use abstract examples.
 
 ## 7. Positional shell placeholders
 

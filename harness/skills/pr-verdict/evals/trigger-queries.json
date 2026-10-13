@@ -28,7 +28,7 @@
       "reason": "An approval decision does not replace the required manual invocation"
     },
     {
-      "query": "Donne-moi un verdict sur la PR #17, elle touche la clôture comptable",
+      "query": "Donne-moi un verdict sur cette PR, elle touche la clôture comptable",
       "should_activate": false,
       "reason": "Naming the desired output in prose is not a manual skill invocation"
     },
