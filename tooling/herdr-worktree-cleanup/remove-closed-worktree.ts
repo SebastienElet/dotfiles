@@ -1,3 +1,4 @@
+import { cleanupWorktreeContainers } from "./cleanup-containers.ts";
 import { existsSync } from "node:fs";
 import { z } from "zod";
 
@@ -57,7 +58,10 @@ function parseWorkspaceClosedEvent(
   }
 }
 
-function removeClosedWorktree(eventJson: string): RemovalOutcome {
+function removeClosedWorktree(
+  eventJson: string,
+  dockerMode: "off" | "stop" = "off",
+): RemovalOutcome {
   const parsed = parseWorkspaceClosedEvent(eventJson);
   if (!parsed.ok) {
     return { kind: "failed", reason: parsed.reason };
@@ -73,6 +77,7 @@ function removeClosedWorktree(eventJson: string): RemovalOutcome {
   if (!existsSync(checkoutPath)) {
     return skipped("checkout no longer exists");
   }
+  cleanupWorktreeContainers(checkoutPath, dockerMode);
   if (
     runGit(checkoutPath, ["symbolic-ref", "--quiet", "HEAD"]).exitCode !== 0
   ) {
@@ -93,6 +98,7 @@ function removeClosedWorktree(eventJson: string): RemovalOutcome {
 if (import.meta.main) {
   const outcome = removeClosedWorktree(
     process.env.HERDR_PLUGIN_EVENT_JSON ?? "",
+    Bun.argv.includes("--docker-cleanup=stop") ? "stop" : "off",
   );
   const message =
     outcome.kind === "removed"
