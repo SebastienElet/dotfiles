@@ -155,6 +155,10 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 
 ## Mode de travail
 
+- **Organisation Herdr.** Pour chaque projet Git, un seul espace principal rattaché
+  au dépôt, nommé exactement comme lui et affichant sa branche native. Le coordinateur
+  est un onglet de cet espace, sans suffixe « coordinateur » dans le nom du projet.
+  Les tasks peuvent avoir leurs espaces de worktree ; aucun espace de coordinateur en doublon.
 - **Lecture autonome, écriture contrôlée.** Explorer, rechercher et vérifier librement.
   Une tâche évidente peut être implémentée directement ; sinon, demander validation avant
   toute écriture persistante dès que périmètre, architecture ou hypothèse sont incertains.
