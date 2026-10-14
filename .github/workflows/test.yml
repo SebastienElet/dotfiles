@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  MOON_HEAD: ${{ github.sha }}
+
 jobs:
   minimal:
     name: Minimal macOS profile
@@ -28,7 +32,17 @@ jobs:
         run: |
           export PATH="$HOME/.moon/bin:$PATH"
           moon run tooling:smoke-minimal
-      - run: moon run tooling:upgrade-neovim-test
+      - run: moon action-graph --json tooling:upgrade-neovim-test > /dev/null
+      - id: query
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^tooling$' --id '^upgrade-neovim-test$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
+      - if: fromJSON(steps.query.outputs.result).tasks.tooling['upgrade-neovim-test'] != null
+        run: moon run tooling:upgrade-neovim-test
 
   required:
     name: Smoke required

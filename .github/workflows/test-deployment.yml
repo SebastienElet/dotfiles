@@ -10,10 +10,40 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  MOON_HEAD: ${{ github.sha }}
+
 jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deployment: ${{ fromJSON(steps.query.outputs.result).tasks.tooling['deployment-test'] != null || fromJSON(steps.query.outputs.result).tasks.tooling['hunspell-test'] != null }}
+      worker: ${{ fromJSON(steps.query.outputs.result).tasks.tooling['worker-native-test'] != null }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: >-
+          moon action-graph --json tooling:deployment-test tooling:hunspell-test tooling:worker-native-test > /dev/null
+      - id: query
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^tooling$' --id '^(deployment-test|hunspell-test|worker-native-test)$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
   deployment:
     name: Deployment (${{ matrix.os }})
+    needs: select
+    if: needs.select.outputs.deployment == 'true'
     strategy:
+      fail-fast: false
       matrix:
         os:
           - macos-latest
@@ -28,16 +58,34 @@ jobs:
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
       - run: moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
-      - if: runner.os == 'macOS'
-        run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
+
+  worker-native:
+    name: Native worker (macOS)
+    needs: select
+    if: needs.select.outputs.worker == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
 
   required:
     name: Deployment required
-    needs: deployment
+    needs: [select, deployment, worker-native]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true
         env:
-          PASSED: ${{ needs.deployment.result == 'success' }}
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.deployment == 'true' && needs.deployment.result == 'success') ||
+            (needs.select.outputs.deployment == 'false' && needs.deployment.result == 'skipped')) &&
+            ((needs.select.outputs.worker == 'true' && needs.worker-native.result == 'success') ||
+            (needs.select.outputs.worker == 'false' && needs.worker-native.result == 'skipped')) }}
