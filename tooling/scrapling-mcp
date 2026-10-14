@@ -1,5 +1,0 @@
-#!/usr/bin/env bun
-
-import { runScraplingMcp } from "./scrapling-mcp.ts";
-
-process.exit(await runScraplingMcp(process.env));

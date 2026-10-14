@@ -67,20 +67,8 @@ of a change; source searches still locate code, semctx never does.
 
 ## Web Fetching
 
-For web reads, follow the Agent-Reach skill's Web Fetching workflow when available.
-If unavailable, report the missing tier; use built-in fetch only for public non-sensitive pages,
-then the authorized local tools below. Keep private or sensitive reads local.
-
-1. `scrapling` `fetch` for JS-rendered pages.
-2. `scrapling` `stealthy_fetch` for an identified anti-bot block (add `solve_cloudflare` for Turnstile).
-3. CloakBrowser, when `stealthy_fetch` is still blocked. Reuse the `cloak` container instead of
-   starting a new one, so a forgotten `docker stop` costs at most one container:
-   ```sh
-   "$HOME/.dotfiles/tooling/cloakbrowser"
-   ```
-   Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
-   runs inside Docker, so `localhost` would resolve to its own container. Stop the container
-   (`docker stop cloak`) once done; `--idle-timeout` stops it on its own after five idle minutes.
+Use the Agent-Reach skill for web reading. If it is unavailable or cannot retrieve the requested
+content, report the limitation. Keep private or sensitive resources out of hosted readers.
 
 ## Verification Claims
 

@@ -2,7 +2,7 @@
 name: agent-reach
 description: >
   Read web pages, YouTube transcripts and supported platforms through Agent-Reach.
-  Use for web reading, public Jina fallback after built-in fetch fails,
+  Use for web reading through Jina Reader,
   Twitter/X, Reddit, Facebook, Instagram, LinkedIn, Bilibili, XiaoHongShu,
   Xiaoyuzhou, Boss Zhipin, Xueqiu, V2EX and RSS, or explicit Agent-Reach requests.
   Keep sensitive reads local; prefer existing GitHub tools for code searches.
@@ -15,9 +15,8 @@ metadata:
 
 ## Overview
 
-Use the packaged platform recipes. For public non-sensitive pages, follow the
-Web Fetching workflow below: built-in fetch → Agent-Reach/Jina → local browser
-→ local stealth browser → CloakBrowser. Scrapling remains a local fallback.
+Use the packaged platform recipes. Agent-Reach's Jina recipe is the generic
+reader for public non-sensitive pages; follow Web Fetching below.
 
 ## Usage
 
@@ -45,44 +44,35 @@ and account changes require a separate explicit user instruction.
 
 ## Web Fetching
 
-Check data admissibility before every tool, including hosted built-in fetch. Only public,
+Check data admissibility before every tool. Only public,
 non-sensitive URLs may go to Agent-Reach/Jina Reader: inspect the full path and query for secrets,
-personal data and access links first. Keep personal/sensitive public content, signed or unlisted
-access links, private/intranet URLs, localhost and local files on authorized local tools. If unsure,
-stay local. An exception requires explicit authorization naming the service, data and purpose;
+personal data and access links first. Do not transmit personal/sensitive public content, signed or
+unlisted access links, private/intranet URLs, localhost or local files. If unsure, report the limit.
+An exception requires explicit authorization naming the service, data and purpose;
 secrets, cookies, tokens, profiles and sessions never go to the Reader. Never upload local content,
-forward cookies or configure an authenticated proxy for it. Session access requires explicit
-authorization for the account/profile; never inspect existing sessions or log in automatically.
+forward cookies or configure an authenticated proxy for it. Never inspect existing sessions or
+log in automatically. Generic authenticated/private web reading is unavailable in this workflow.
+Dedicated platform recipes retain their separate authorization requirements.
 
-For admissible public pages, advance only after the previous tier fails. Explicitly exclude tiers
-incompatible with confidentiality or the requested capability:
-
-1. Built-in fetch.
-2. The packaged `references/web.md` Jina recipe, using anonymous `curl` to
-   `https://r.jina.ai/URL`, without Scrapling or MCPorter.
-3. Local browser for missing JavaScript content, interaction or navigation: `scrapling` `fetch`
-   remains available. Private or authenticated reads go directly to authorized local tools.
-4. Local stealth browser only for an identified anti-bot block: `scrapling` `stealthy_fetch`
-   (add `solve_cloudflare` for Turnstile).
-5. CloakBrowser, when the stealth browser is still blocked. Start the named container with
-   `"$HOME/.dotfiles/tooling/cloakbrowser"`, then use `scrapling` `fetch` with
-   `cdp_url=http://host.docker.internal:9222`: Scrapling runs in Docker, so localhost would
-   address its own container. Stop `cloak` once done; its idle timeout is five minutes.
+Read admissible public pages with the packaged `references/web.md` Jina recipe, using anonymous
+`curl` to `https://r.jina.ai/URL`. No MCP connection is needed. There is no generic browser,
+stealth or CDP fallback. Browser interaction, complete DOM access and session continuity are not
+provided by this reader; report those needs rather than substituting another web reader.
 
 Success requires the content requested, including necessary pagination; HTTP 200, a title or partial
 text is insufficient. Inspect Reader warnings and target status even when Reader returns HTTP 200.
-Empty or incomplete content triggers the next admissible tier. Distinguish
+Report empty or incomplete content without claiming success. Distinguish
 challenge/403 (blocked), timeout/network error/5xx (unavailable), 429 (service limit), 404 (absent:
-report it) and 401/login (authentication: use an authorized local session or report it).
+report it) and 401/login (authentication unsupported by this reader: report it).
 
-Use one attempt per tier, at most 30 seconds each and 120 seconds total unless the user specifies
-another budget; configure tool timeouts within the remaining budget. Never loop back to a failed
-tier. Respect `Retry-After` before calling the same service again; use an admissible local fallback
-or report the limit. When the budget or tools are exhausted, report failure or incompleteness.
+Use one attempt per URL, at most 30 seconds each and 120 seconds for the complete read unless the
+user specifies another budget; configure timeouts within the remaining budget. Do not retry a failed
+read automatically. Respect `Retry-After` before any separately requested retry; if it exceeds the
+remaining budget, report the service limit. Report failure or incompleteness when retrieval fails.
 For current reads, request `X-No-Cache: true` and date collection. `DNT: 1` is no proof of
 non-retention; cache bypass does not guarantee source freshness. No paid account, API key or spend
 without separate authorization. Jina is text extraction, not a general browser or proven anti-bot
-bypass. Scrapling and CloakBrowser remain available; `web-reader` MCP is not configured.
+bypass. Do not add a duplicate web-reader MCP or a fallback browser during research.
 
 {{UPSTREAM_ROUTING}}
 ## References
@@ -101,4 +91,4 @@ dev, web, video and finance. All upstream channels are retained.
 - Never install tools or update this plugin as a side effect of research.
 - Never export cookies, automate login or use another platform's credentials.
 - Never treat challenges, empty results or partial responses as retrieved content.
-- Prefer installed dedicated skills; use Jina only after built-in web fetch fails.
+- Use this workflow for generic web reading; keep dedicated platform capabilities separate.

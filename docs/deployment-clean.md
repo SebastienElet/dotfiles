@@ -25,15 +25,15 @@ avec `moon run repository:optional`. La reconstruction complète du poste est li
 
 ## Périmètre possédé
 
-| Surface                                                                                          | Action                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Liens de configuration, instructions, règles, exécutables possédés, `.psqlrc`, wrapper Scrapling | Retirer uniquement le lien vers la source attendue ; conserver une destination divergente.                                                                           |
-| Skills user Claude, Codex et Cursor                                                              | Lire les installations du manifeste Arnes et reconnaître les anciens liens `remem-memory` Claude/Codex après retrait du manifeste. Les skills tiers restent intacts. |
-| Instructions Codex assemblées et définition d’agent copiée                                       | Supprimer le fichier régulier nommé, même édité localement.                                                                                                          |
-| Deux thèmes Catppuccin de Bat et quatre dictionnaires Hunspell déployés                          | Supprimer seulement les fichiers réguliers nommés.                                                                                                                   |
-| Hooks Arnes et remem                                                                             | Retirer les commandes et arguments identifiés, en conservant les groupes et handlers voisins.                                                                        |
-| MCP user actuel ou ancien déploiement remem                                                      | Retirer uniquement l’inscription dont la commande et les arguments correspondent ; retirer aussi son namespace de permissions Codex.                                 |
-| Include Git déployé                                                                              | Retirer seulement la valeur `~/.config/git/config.delta` avec le parser et l’écriture natifs de Git.                                                                 |
+| Surface                                                                       | Action                                                                                                                                                               |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Liens de configuration, instructions, règles, exécutables possédés, `.psqlrc` | Retirer uniquement le lien vers la source attendue ; conserver une destination divergente.                                                                           |
+| Skills user Claude, Codex et Cursor                                           | Lire les installations du manifeste Arnes et reconnaître les anciens liens `remem-memory` Claude/Codex après retrait du manifeste. Les skills tiers restent intacts. |
+| Instructions Codex assemblées et définition d’agent copiée                    | Supprimer le fichier régulier nommé, même édité localement.                                                                                                          |
+| Deux thèmes Catppuccin de Bat et quatre dictionnaires Hunspell déployés       | Supprimer seulement les fichiers réguliers nommés.                                                                                                                   |
+| Hooks Arnes et remem                                                          | Retirer les commandes et arguments identifiés, en conservant les groupes et handlers voisins.                                                                        |
+| MCP user actuel ou ancien déploiement remem                                   | Retirer uniquement l’inscription dont la commande et les arguments correspondent ; retirer aussi son namespace de permissions Codex.                                 |
+| Include Git déployé                                                           | Retirer seulement la valeur `~/.config/git/config.delta` avec le parser et l’écriture natifs de Git.                                                                 |
 
 Les sources versionnées, paquets et outils tiers, plugins Fisher/TPM, caches runtime, données
 d’applications, bases remem, historiques et identifiants sont conservés. Les politiques
@@ -103,7 +103,7 @@ preuve du service macOS.
 
 `clean-deployment-moon.test.ts` exerce la target publique de nettoyage et la réinstallation de
 déploiements Moon sélectionnés du profil minimal, sans leurs dépendances globales. Une preuve
-distincte couvre les liens Cursor, PostgreSQL et Scrapling du profil optionnel ; elle n’installe
+distincte couvre les liens Cursor et PostgreSQL du profil optionnel ; elle n’installe
 pas leurs applications ou conteneurs tiers. Les fichiers Fisher déjà présents dans les sources
 restent conservés après suppression du lien Fish. Le snapshot des artefacts exclut les caches
 runtime, dont `~/.bun/install/cache` ; les fichiers de ce cache sont comparés avant et après le
