@@ -62,76 +62,7 @@ function adaptedCommands(content: string): string {
     );
 }
 
-const skillHeader = `---
-name: agent-reach
-description: >
-  Read public non-sensitive pages via Jina after built-in fetch fails, plus
-  YouTube transcripts and supported platforms through Agent-Reach. Use for
-  Twitter/X, Reddit, Facebook, Instagram, LinkedIn, Bilibili, XiaoHongShu,
-  Xiaoyuzhou, Boss Zhipin, Xueqiu, V2EX and RSS, or explicit Agent-Reach requests.
-  Prefer existing GitHub tools for code searches.
-license: MIT
-metadata:
-  category: ops
----
-
-# Agent Reach
-
-## Overview
-
-Use the packaged platform recipes. For public non-sensitive pages, follow the
-global Web Fetching policy: built-in fetch → Agent-Reach/Jina → local browser
-→ local stealth browser → CloakBrowser. Scrapling remains a local fallback.
-
-## Usage
-
-Select the reference for the requested platform. Publishing, commenting, liking
-and account changes require a separate explicit user instruction.
-
-## Workflow
-
-1. For ordinary web pages, check confidentiality and follow the global Web Fetching
-   budgets and failure handling before reading \`references/web.md\`. Jina may
-   receive only admissible public non-sensitive URLs; never send secrets, cookies,
-   sessions or local content. Skip hosted readers for private or sensitive reads.
-   HTTP success alone is insufficient; verify the requested content and use the
-   next admissible local tier for missing data. \`web-reader\` MCP is unavailable.
-2. Read the matching reference below and verify actual content with the requested
-   platform's read command. Do not run the global \`agent-reach doctor\` unless
-   the user explicitly authorizes inspection of all configured browser sessions;
-   its Boss backend can read Chrome cookies through CDP.
-3. Install dependencies only through \`moon run harness:agent-reach\` in the
-   dotfiles checkout, explicitly requested by the user. These instructions
-   supersede setup commands in upstream references. Never install upstream skills,
-   fetch unpinned setup guides, or check for updates during research.
-4. Credentials are entered by the user directly into hidden tool prompts.
-   Never request credentials in chat or automatically read browser cookies.
-5. LinkedIn uses the named Docker service. Its explicit startup task is
-   \`harness:agent-reach-linkedin-start\`; its interactive login task is
-   \`harness:agent-reach-linkedin-login\`. Do not automate account login.
-
-`;
-const skillFooter = `
-## References
-
-Read the packaged platform files under \`references/\`: search, social, career,
-dev, web, video and finance. All upstream channels are retained.
-
-## Gotchas
-
-- Doctor availability does not establish a successful search or transcript.
-- OpenCLI requires its Chrome extension and an existing user-controlled session.
-- LinkedIn's container must be stopped before its interactive login.
-
-## Constraints
-
-- Never install tools or update this plugin as a side effect of research.
-- Never export cookies, automate login or use another platform's credentials.
-- Never treat challenges, empty results or partial responses as retrieved content.
-- Prefer installed dedicated skills; use Jina only after built-in web fetch fails.
-`;
-
-function adaptedSkill(content: string): string {
+function adaptedSkill(content: string, template: string): string {
   const routing = content.indexOf("## Routing table");
   const end = content.indexOf("## Environment check", routing);
   const fallback = content.indexOf("## Configure a channel", routing);
@@ -139,8 +70,26 @@ function adaptedSkill(content: string): string {
     throw new Error("Upstream skill routing sections changed");
   }
   return adaptedCommands(
-    `${skillHeader}${content.slice(routing, end === -1 ? fallback : end)}${skillFooter}`,
+    template.replace(
+      "{{UPSTREAM_ROUTING}}",
+      content.slice(routing, end === -1 ? fallback : end),
+    ),
   );
+}
+
+function adaptedWebReference(original: string): string {
+  const withoutWebReader = original.replace(
+    /^## Web Reader \(MCP\)\n[\s\S]*?(?=^## RSS \(feedparser\)\n)/mu,
+    "",
+  );
+  const content = withoutWebReader.replaceAll(/^.*web-reader MCP.*\n/gmu, "");
+  if (
+    withoutWebReader === original ||
+    /web-reader|Web Reader \(MCP\)/u.test(content)
+  ) {
+    throw new Error("Upstream web reference sections changed");
+  }
+  return content.replaceAll(/\bpython3(?=\s)/gu, pythonCommand);
 }
 
 async function bundle(
@@ -157,7 +106,13 @@ async function bundle(
   };
   files.set(
     `${skillDirectory}/SKILL.md`,
-    adaptedSkill(await regularText(source, "agent_reach/skill/SKILL_en.md")),
+    adaptedSkill(
+      await regularText(source, "agent_reach/skill/SKILL_en.md"),
+      await regularText(
+        resolve(import.meta.dir, "../harness/plugins/agent-reach"),
+        "SKILL.md",
+      ),
+    ),
   );
   const entries = await readdir(join(source, "agent_reach/skill/references"));
   const references = entries.filter((name) => name.endsWith(".md")).toSorted();
@@ -170,15 +125,7 @@ async function bundle(
       `agent_reach/skill/references/${name}`,
     );
     const content =
-      name === "web.md"
-        ? original
-            .replaceAll(/\bpython3(?=\s)/gu, pythonCommand)
-            .replace(
-              /## Web Reader \(MCP\)[\s\S]*?(?=## RSS \(feedparser\))/u,
-              "",
-            )
-            .replaceAll(/^.*web-reader MCP.*\n/gmu, "")
-        : original;
+      name === "web.md" ? adaptedWebReference(original) : original;
     files.set(`${skillDirectory}/references/${name}`, adaptedCommands(content));
   }
   files.set(`${pluginDirectory}/LICENSE`, await regularText(source, "LICENSE"));

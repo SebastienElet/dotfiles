@@ -43,7 +43,7 @@ async function fixture(): Promise<
   );
   await writeFile(
     join(source, "agent_reach/skill/references/web.md"),
-    'curl URL\nmcporter call exa.web_search_exa query="query"\nagent-reach doctor --json\n',
+    'curl URL\nmcporter call exa.web_search_exa query="query"\nagent-reach doctor --json\n## Web Reader (MCP)\nmcporter call web-reader.webReader\n## RSS (feedparser)\n',
   );
   await writeFile(
     join(source, "agent_reach/skill/references/video.md"),
@@ -109,7 +109,7 @@ test("routes RSS and podcast commands through the isolated Python environment", 
   const options = await fixture();
   await writeFile(
     join(options.source, "agent_reach/skill/references/web.md"),
-    'python3 -c "import feedparser"\n',
+    '## Web Reader (MCP)\nmcporter call web-reader.webReader\n## RSS (feedparser)\npython3 -c "import feedparser"\n',
   );
   const marketplace = await prepareAgentReachPlugin(options);
   const plugin = join(marketplace, "plugins/agent-reach");
@@ -168,6 +168,27 @@ test("packages bounded Jina reads without advertising the unconfigured Web Reade
   expect(skill).toContain("--max-time 30");
   expect(skill).not.toContain('curl -s "https://r.jina.ai/');
 });
+
+test.each([
+  "## Web Reader v2\nweb-reader.webReader\n## RSS (feedparser)\n",
+  "## Web Reader (MCP)\nweb-reader.webReader\n## Feeds\n",
+  "## RSS (feedparser)\n## Web Reader (MCP)\nweb-reader.webReader\n",
+  "## Web Reader (MCP)\nweb-reader.webReader\n## RSS (feedparser)\nweb-reader.webReader\n",
+])(
+  "rejects changed upstream web structure without publishing: %s",
+  async (web) => {
+    const options = await fixture();
+    await writeFile(
+      join(options.source, "agent_reach/skill/references/web.md"),
+      web,
+    );
+    await rejects(
+      prepareAgentReachPlugin(options),
+      /Upstream web reference sections changed/u,
+    );
+    expect(await readdir(options.home)).toEqual([]);
+  },
+);
 
 test("missing upstream resources do not publish a partial marketplace", async () => {
   const options = await fixture();

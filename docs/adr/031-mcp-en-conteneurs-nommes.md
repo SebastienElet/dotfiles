@@ -21,8 +21,9 @@ la demande puis lance le serveur stdio de chaque session à l'intérieur.
 CloakBrowser est démarré à la demande comme navigateur CDP. Pour les pages
 publiques non sensibles, le parcours devient : fetch intégré, puis recette
 Agent-Reach/Jina Reader, puis navigateur local, puis navigateur local furtif
-en cas de blocage anti-bot identifié, puis CloakBrowser. Les instructions
-globales fixent l'admissibilité des données, les budgets et les échecs.
+en cas de blocage anti-bot identifié, puis CloakBrowser. Le skill Agent-Reach
+fixe l'admissibilité des données, les budgets et les échecs ; les instructions
+globales y délèguent la procédure conditionnelle.
 Jina fournit du texte, sans équivalence générale avec un navigateur.
 
 Scrapling reste déployé pour les recours locaux (`fetch`, `stealthy_fetch` et

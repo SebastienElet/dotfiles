@@ -67,26 +67,13 @@ of a change; source searches still locate code, semctx never does.
 
 ## Web Fetching
 
-Check data admissibility before every tool, including hosted built-in fetch. Only public,
-non-sensitive URLs may go to Agent-Reach/Jina Reader: inspect the full path and query for secrets,
-personal data and access links first. Keep personal/sensitive public content, signed or unlisted
-access links, private/intranet URLs, localhost and local files on authorized local tools. If unsure,
-stay local. An exception requires explicit authorization naming the service, data and purpose;
-secrets, cookies, tokens, profiles and sessions never go to the Reader. Never upload local content,
-forward cookies or configure an authenticated proxy for it. Session access requires explicit
-authorization for the account/profile; never inspect existing sessions or log in automatically.
+For web reads, follow the Agent-Reach skill's Web Fetching workflow when available.
+If unavailable, report the missing tier; use built-in fetch only for public non-sensitive pages,
+then the authorized local tools below. Keep private or sensitive reads local.
 
-For admissible public pages, advance only after the previous tier fails. Explicitly exclude tiers
-incompatible with confidentiality or the requested capability:
-
-1. Built-in fetch.
-2. Agent-Reach's packaged `references/web.md` Jina recipe, using anonymous `curl` to
-   `https://r.jina.ai/URL`, without Scrapling or MCPorter. Read the Agent-Reach skill first.
-3. Local browser for missing JavaScript content, interaction or navigation: `scrapling` `fetch`
-   remains available. Private or authenticated reads go directly to authorized local tools.
-4. Local stealth browser only for an identified anti-bot block: `scrapling` `stealthy_fetch`
-   (add `solve_cloudflare` for Turnstile).
-5. CloakBrowser, when the stealth browser is still blocked. Reuse the `cloak` container instead of
+1. `scrapling` `fetch` for JS-rendered pages.
+2. `scrapling` `stealthy_fetch` for an identified anti-bot block (add `solve_cloudflare` for Turnstile).
+3. CloakBrowser, when `stealthy_fetch` is still blocked. Reuse the `cloak` container instead of
    starting a new one, so a forgotten `docker stop` costs at most one container:
    ```sh
    "$HOME/.dotfiles/tooling/cloakbrowser"
@@ -94,21 +81,6 @@ incompatible with confidentiality or the requested capability:
    Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
    runs inside Docker, so `localhost` would resolve to its own container. Stop the container
    (`docker stop cloak`) once done; `--idle-timeout` stops it on its own after five idle minutes.
-
-Success requires the content requested, including necessary pagination; HTTP 200, a title or partial
-text is insufficient. Inspect Reader warnings and target status even when Reader returns HTTP 200.
-Empty or incomplete content triggers the next admissible tier. Distinguish
-challenge/403 (blocked), timeout/network error/5xx (unavailable), 429 (service limit), 404 (absent:
-report it) and 401/login (authentication: use an authorized local session or report it).
-
-Use one attempt per tier, at most 30 seconds each and 120 seconds total unless the user specifies
-another budget; configure tool timeouts within the remaining budget. Never loop back to a failed
-tier. Respect `Retry-After` before calling the same service again; use an admissible local fallback
-or report the limit. When the budget or tools are exhausted, report failure or incompleteness.
-For current reads, request `X-No-Cache: true` and date collection. `DNT: 1` is no proof of
-non-retention; cache bypass does not guarantee source freshness. No paid account, API key or spend
-without separate authorization. Jina is text extraction, not a general browser or proven anti-bot
-bypass. Scrapling and CloakBrowser remain available; `web-reader` MCP is not configured.
 
 ## Verification Claims
 
