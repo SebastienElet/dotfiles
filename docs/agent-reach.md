@@ -28,8 +28,9 @@ packaging exige une reconstruction explicite de la marketplace générée ; l'in
 supprime pas automatiquement l'ancienne pour contourner ce refus. Les caches des agents restent
 gérés par leurs commandes natives.
 
-Le packaging adapte la description pour conserver la priorité des outils web/GitHub existants,
-remplace les installations automatiques par Moon et conserve la licence MIT amont. Les références
+Le packaging réserve Jina aux pages publiques non sensibles après échec du fetch intégré,
+conserve les recours locaux et la priorité des outils GitHub, remplace les installations
+automatiques par Moon et conserve la licence MIT amont. Les références
 amont détaillées restent majoritairement en chinois.
 
 ## Configuration des canaux

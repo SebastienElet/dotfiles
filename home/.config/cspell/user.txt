@@ -108,3 +108,4 @@ wasmtime
 Plannotator
 assertledger
 UNSANDBOXED
+Jina

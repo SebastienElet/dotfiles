@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "revision": "a19a171fa980a0785849596492e0af4db800c82f",
   "python": [
     "twitter-cli==0.8.5",

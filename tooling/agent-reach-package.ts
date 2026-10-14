@@ -36,6 +36,10 @@ function json(value: unknown): string {
 function adaptedCommands(content: string): string {
   return content
     .replaceAll(
+      'curl -s "https://r.jina.ai/',
+      'curl --silent --show-error --include --connect-timeout 10 --max-time 30 -H "X-No-Cache: true" -H "DNT: 1" "https://r.jina.ai/',
+    )
+    .replaceAll(
       /\bagent-reach doctor\b/gu,
       'MCPORTER_CONFIG="$HOME/.config/agent-reach/mcporter.json" agent-reach doctor',
     )
@@ -61,10 +65,11 @@ function adaptedCommands(content: string): string {
 const skillHeader = `---
 name: agent-reach
 description: >
-  Read YouTube transcripts and supported social platforms through Agent-Reach.
-  Use for Twitter/X, Reddit, Facebook, Instagram, LinkedIn, Bilibili, XiaoHongShu,
+  Read public non-sensitive pages via Jina after built-in fetch fails, plus
+  YouTube transcripts and supported platforms through Agent-Reach. Use for
+  Twitter/X, Reddit, Facebook, Instagram, LinkedIn, Bilibili, XiaoHongShu,
   Xiaoyuzhou, Boss Zhipin, Xueqiu, V2EX and RSS, or explicit Agent-Reach requests.
-  Prefer existing web and GitHub tools for ordinary URLs and code searches.
+  Prefer existing GitHub tools for code searches.
 license: MIT
 metadata:
   category: ops
@@ -74,8 +79,9 @@ metadata:
 
 ## Overview
 
-Use the packaged upstream platform recipes. Existing web fetching and the
-fetch → Scrapling → CloakBrowser escalation retain their priority.
+Use the packaged platform recipes. For public non-sensitive pages, follow the
+global Web Fetching policy: built-in fetch → Agent-Reach/Jina → local browser
+→ local stealth browser → CloakBrowser. Scrapling remains a local fallback.
 
 ## Usage
 
@@ -84,17 +90,23 @@ and account changes require a separate explicit user instruction.
 
 ## Workflow
 
-1. Read the matching reference below and verify actual content with the requested
+1. For ordinary web pages, check confidentiality and follow the global Web Fetching
+   budgets and failure handling before reading \`references/web.md\`. Jina may
+   receive only admissible public non-sensitive URLs; never send secrets, cookies,
+   sessions or local content. Skip hosted readers for private or sensitive reads.
+   HTTP success alone is insufficient; verify the requested content and use the
+   next admissible local tier for missing data. \`web-reader\` MCP is unavailable.
+2. Read the matching reference below and verify actual content with the requested
    platform's read command. Do not run the global \`agent-reach doctor\` unless
    the user explicitly authorizes inspection of all configured browser sessions;
    its Boss backend can read Chrome cookies through CDP.
-2. Install dependencies only through \`moon run harness:agent-reach\` in the
+3. Install dependencies only through \`moon run harness:agent-reach\` in the
    dotfiles checkout, explicitly requested by the user. These instructions
    supersede setup commands in upstream references. Never install upstream skills,
    fetch unpinned setup guides, or check for updates during research.
-3. Credentials are entered by the user directly into hidden tool prompts.
+4. Credentials are entered by the user directly into hidden tool prompts.
    Never request credentials in chat or automatically read browser cookies.
-4. LinkedIn uses the named Docker service. Its explicit startup task is
+5. LinkedIn uses the named Docker service. Its explicit startup task is
    \`harness:agent-reach-linkedin-start\`; its interactive login task is
    \`harness:agent-reach-linkedin-login\`. Do not automate account login.
 
@@ -116,7 +128,7 @@ dev, web, video and finance. All upstream channels are retained.
 - Never install tools or update this plugin as a side effect of research.
 - Never export cookies, automate login or use another platform's credentials.
 - Never treat challenges, empty results or partial responses as retrieved content.
-- Prefer installed dedicated skills and existing web and GitHub retrieval.
+- Prefer installed dedicated skills; use Jina only after built-in web fetch fails.
 `;
 
 function adaptedSkill(content: string): string {
@@ -159,7 +171,13 @@ async function bundle(
     );
     const content =
       name === "web.md"
-        ? original.replaceAll(/\bpython3(?=\s)/gu, pythonCommand)
+        ? original
+            .replaceAll(/\bpython3(?=\s)/gu, pythonCommand)
+            .replace(
+              /## Web Reader \(MCP\)[\s\S]*?(?=## RSS \(feedparser\))/u,
+              "",
+            )
+            .replaceAll(/^.*web-reader MCP.*\n/gmu, "")
         : original;
     files.set(`${skillDirectory}/references/${name}`, adaptedCommands(content));
   }
