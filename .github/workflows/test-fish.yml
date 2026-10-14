@@ -27,6 +27,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: >-
           moon action-graph --json repository:fish-syntax repository:fish-format repository:fish-test > /dev/null
       - id: query
@@ -51,11 +54,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon ci --downstream none 'repository:#fish'
 
   required:

@@ -28,6 +28,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon action-graph --json repository:neovim-lint repository:wezterm-lint > /dev/null
       - id: query
         run: |
@@ -55,6 +58,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon ci --downstream none repository:neovim-lint
 
   wezterm:
@@ -74,6 +80,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon ci --downstream none repository:wezterm-lint
 
   required:
