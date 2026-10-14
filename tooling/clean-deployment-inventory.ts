@@ -22,10 +22,19 @@ const manifestSchema = z.looseObject({
           name: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
           agent: agentSchema,
           scope: z.enum(["user", "project"]),
-          command: z.string().min(1),
+          command: z.string().min(1).optional(),
+          url: z.string().min(1).optional(),
           args: z.array(z.string()).default([]).readonly(),
         })
-        .readonly(),
+        .readonly()
+        .refine(
+          (registration) =>
+            (registration.command === undefined) !==
+              (registration.url === undefined) &&
+            (registration.url === undefined ||
+              (registration.agent === "codex" &&
+                registration.args.length === 0)),
+        ),
     )
     .default([])
     .readonly(),
@@ -35,7 +44,7 @@ type Artifact = Readonly<{ destination: string; source: string | undefined }>;
 type McpRegistration = Readonly<
   Pick<
     z.infer<typeof manifestSchema>["mcp"][number],
-    "name" | "agent" | "scope" | "command" | "args"
+    "name" | "agent" | "scope" | "command" | "url" | "args"
   >
 >;
 

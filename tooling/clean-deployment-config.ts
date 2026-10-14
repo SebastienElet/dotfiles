@@ -26,6 +26,7 @@ const objectSchema = z.record(z.string(), z.unknown());
 const serverSchema = z
   .looseObject({
     command: z.string().optional(),
+    url: z.string().optional(),
     args: z.array(z.string()).readonly().optional(),
   })
   .readonly();
@@ -39,7 +40,16 @@ const jsonIndentation = 2;
 
 function ownedServer(value: unknown, registration: McpRegistration): boolean {
   const server = serverSchema.parse(value);
+  if (registration.url !== undefined) {
+    return (
+      server.url === registration.url &&
+      !["command", "args", "env", "env_vars", "cwd"].some((field) =>
+        Object.hasOwn(server, field),
+      )
+    );
+  }
   return (
+    server.url === undefined &&
     server.command === registration.command &&
     isDeepStrictEqual(server.args ?? [], registration.args)
   );
