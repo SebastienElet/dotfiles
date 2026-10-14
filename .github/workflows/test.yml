@@ -28,6 +28,8 @@ jobs:
         with:
           auto-install: true
           proto-version: "0.63.1"
+        env:
+          PROTO_DETECT_STRATEGY: only-prototools
       - run: moon run tooling:moon-bootstrap-smoke
       - name: Bootstrap the repository Moon pin
         run: ./tooling/install-moon

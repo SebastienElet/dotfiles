@@ -31,6 +31,8 @@ jobs:
         with:
           auto-install: true
           proto-version: "0.63.1"
+        env:
+          PROTO_DETECT_STRATEGY: only-prototools
       - run: >-
           moon action-graph --json tooling:deployment-test tooling:hunspell-test tooling:worker-native-test > /dev/null
       - id: query
@@ -63,6 +65,8 @@ jobs:
         with:
           auto-install: true
           proto-version: "0.63.1"
+        env:
+          PROTO_DETECT_STRATEGY: only-prototools
       - run: moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
 
   worker-native:
@@ -81,6 +85,8 @@ jobs:
         with:
           auto-install: true
           proto-version: "0.63.1"
+        env:
+          PROTO_DETECT_STRATEGY: only-prototools
       - run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
 
   required:
