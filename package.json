@@ -22,7 +22,6 @@
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2004",
     "prettier": "3.9.10",
-    "semctx": "0.4.5",
     "typescript": "7.0.2",
     "cspell": "10.3.6"
   }

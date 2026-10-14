@@ -9,8 +9,6 @@ updates:
       timezone: Europe/Paris
     cooldown:
       default-days: 3
-      exclude:
-        - semctx
   - package-ecosystem: github-actions
     directory: /
     schedule:

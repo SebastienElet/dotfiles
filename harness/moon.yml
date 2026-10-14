@@ -222,29 +222,5 @@ tasks:
     options:
       os: macos
       mutex: volta
-  semctx:
-    description: Install or update Semctx plugins for detected agent hosts
-    command: bun run semctx install --host auto --skip-setup --json
-    options:
-      mutex: harness-mutation
-      outputStyle: stream
-    deps:
-      - repository:dependencies
-    toolchains: bun
-  semctx-setup:
-    description: Initialize Semctx in the current Git repository
-    command: bun run semctx setup --polyglot --json
-    options:
-      mutex: harness-mutation
-      outputStyle: stream
-    deps:
-      - repository:dependencies
-    toolchains: bun
-  semctx-status:
-    description: Inspect local Semctx plugin delivery without network attestation
-    command: bun run semctx plugin-status --host auto --json
-    deps:
-      - repository:dependencies
-    toolchains: bun
 tags:
   - harness
