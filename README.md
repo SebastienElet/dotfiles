@@ -63,8 +63,6 @@ Develop in the assigned thread with the repository instructions and applicable s
 The [issue launcher](tooling/herdr-issue-worktree/README.md) remains available for standalone
 Ctrl-click work on GitHub, GitLab or Linear issues; do not use it to launch a second agent
 for a task already assigned to a Projects thread.
-See the [capability and skills audit](docs/herdr-projects-audit-497.md) for the retained functions
-and the decision required before retiring the launcher.
 It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
 checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.
