@@ -22,7 +22,7 @@ fileGroups:
     - /bun.lock
     - /tsconfig.json
     - /.prototools
-    - /.moon/tasks/javascript.yml
+    - /.moon/**/*
   linkDeployment:
     - deployment-links.test.ts
     - moon/optional-links.test.ts
@@ -98,6 +98,7 @@ tasks:
     inputs:
       - "@group(bunTestSupport)"
       - "@group(linkDeployment)"
+      - "@group(deploymentSources)"
       - /.moon/tasks/tests.yml
       - clean-deployment*.ts
       - clean-deployment-worker-inspect.js
@@ -147,6 +148,7 @@ tasks:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
+      - "@group(bunTestSupport)"
       - upgrade
       - upgrade*.ts
       - node-version-*.ts
@@ -168,10 +170,13 @@ tasks:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
-      - /home/.config/nvim/upgrade.lua
-      - /home/.config/nvim/lazy-lock.json
+      - "@group(bunTestSupport)"
+      - upgrade
+      - upgrade*.ts
+      - node-version-*.ts
+      - git-main-branch*
+      - /home/.config/nvim/**/*
+      - /.github/workflows/test.yml
   installer-test:
     command: bun --config=/dev/null --no-env-file test tooling/install.test.ts tooling/moon/bootstrap.test.ts
     deps:
@@ -180,6 +185,7 @@ tasks:
       runFromWorkspaceRoot: true
       cache: false
     inputs:
+      - "@group(bunTestSupport)"
       - install.test.ts
       - moon/bootstrap.test.ts
       - install-moon
