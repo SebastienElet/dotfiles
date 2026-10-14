@@ -7,6 +7,7 @@ fileGroups:
     - .prototools
     - .moon/tasks/packages.yml
     - .moon/tasks/workstation.yml
+    - tooling/install-homebrew
     - .github/workflows/check-lua.yml
 tasks:
   neovim-lint:

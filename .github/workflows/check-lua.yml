@@ -10,32 +10,84 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  MOON_HEAD: ${{ github.sha }}
+
 jobs:
-  lint:
-    name: ${{ matrix.target }} (${{ matrix.os }})
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      neovim: ${{ fromJSON(steps.query.outputs.result).tasks.repository['neovim-lint'] != null }}
+      wezterm: ${{ fromJSON(steps.query.outputs.result).tasks.repository['wezterm-lint'] != null }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: moon action-graph --json repository:neovim-lint repository:wezterm-lint > /dev/null
+      - id: query
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^repository$' --id '^(neovim-lint|wezterm-lint)$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
+
+  neovim:
+    needs: select
+    if: needs.select.outputs.neovim == 'true'
+    name: neovim-lint (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
-        target: [neovim-lint, wezterm-lint]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
-      - run: moon ci --downstream none repository:${{ matrix.target }}
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: moon ci --downstream none repository:neovim-lint
+
+  wezterm:
+    needs: select
+    if: needs.select.outputs.wezterm == 'true'
+    name: wezterm-lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: moon ci --downstream none repository:wezterm-lint
 
   required:
     name: Lua required
-    needs: lint
+    needs: [select, neovim, wezterm]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true
         env:
-          PASSED: ${{ needs.lint.result == 'success' }}
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.neovim == 'true' && needs.neovim.result == 'success') ||
+            (needs.select.outputs.neovim == 'false' && needs.neovim.result == 'skipped')) &&
+            ((needs.select.outputs.wezterm == 'true' && needs.wezterm.result == 'success') ||
+            (needs.select.outputs.wezterm == 'false' && needs.wezterm.result == 'skipped')) }}
