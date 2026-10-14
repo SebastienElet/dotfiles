@@ -25,6 +25,9 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon run tooling:moon-bootstrap-smoke
       - name: Bootstrap the repository Moon pin
         run: ./tooling/install-moon

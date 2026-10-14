@@ -28,6 +28,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: >-
           moon action-graph --json tooling:deployment-test tooling:hunspell-test tooling:worker-native-test > /dev/null
       - id: query
@@ -57,6 +60,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
 
   worker-native:
@@ -72,6 +78,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+        with:
+          auto-install: true
+          proto-version: "0.63.1"
       - run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
 
   required:
