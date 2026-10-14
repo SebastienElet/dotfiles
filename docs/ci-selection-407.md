@@ -51,7 +51,12 @@ Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
 `moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque
 plateforme lorsqu'une autre échoue. Les cinq contrôles Rust restent disponibles, avec
 les flags et mutex existants ; Handoff et Memory conservent leurs tests de
-déploiement. La politique de cache reste inchangée. `select` ne prépare ni Cargo
+déploiement. Arnes seul conserve `tooling/arnes/target` avec `actions/cache`, sans
+compilation incrémentale en CI. Sa clé exacte isole OS, architecture, pins Rust,
+manifests/lockfile et configurations Cargo/Moon/workflow. Ce cache ne conserve
+aucun résultat de tâche Moon ; Cargo reste invoqué avec ou sans cache. Il ne couvre
+ni les intégrations externes ni le smoke minimal. Les autres suites gardent leur
+politique de cache. `select` ne prépare ni Cargo
 ni Bun par exécution de tâche ; le setup installe Moon/proto et conserve son
 cache toolchain existant.
 
