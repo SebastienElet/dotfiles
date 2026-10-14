@@ -48,8 +48,6 @@ fileGroups:
     - .gitignore
     - tooling/git-main-branch
     - tooling/git-main-branch-*.ts
-    - package.json
-    - bun.lock
 tasks:
   typescript-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"

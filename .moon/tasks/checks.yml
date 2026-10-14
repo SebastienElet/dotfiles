@@ -51,7 +51,15 @@ fileGroups:
   fishGate:
     - home/.config/fish/**/*.fish
     - moon.yml
+    - .prototools
     - .moon/workspace.yml
+    - .moon/tasks/checks.yml
+    - .moon/tasks/packages.yml
+    - .moon/tasks/workstation.yml
+    - .moon/tasks/javascript.yml
+    - tooling/install-homebrew
+    - package.json
+    - bun.lock
     - .github/workflows/test-fish.yml
 tasks:
   prettier-check:
