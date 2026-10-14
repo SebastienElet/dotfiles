@@ -54,6 +54,10 @@ separately. The Minutes CLI is not installed by this task.
 with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
+It installs [Herdr Projects](https://github.com/eliasstravik/herdr-projects), also
+available separately with `moon exec repository:herdr-projects`.
+Restart the Herdr server after first installation to run the plugin's startup hook,
+which creates its `~/.local/bin/herdr-projects` command link.
 It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
 checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.

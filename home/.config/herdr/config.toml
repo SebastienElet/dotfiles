@@ -7,7 +7,7 @@ dark_name = "catppuccin"
 light_name = "catppuccin-latte"
 
 [ui]
-tab_bar_right = [{ type = "command", command = "/Users/sebastien/.config/herdr/plugins/github/herdr-projects-b1278ffb803c/target/release/herdr-projects --root /Users/sebastien/.herdr-projects needs-you --line", interval_seconds = 15, timeout_seconds = 5 }]
+tab_bar_right = [{ type = "command", command = "\"$HOME/.local/bin/herdr-projects\" --root \"$HOME/.herdr-projects\" needs-you --line", interval_seconds = 15, timeout_seconds = 5 }]
 
 [ui.sound]
 enabled = false
