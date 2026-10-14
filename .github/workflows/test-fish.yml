@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  PROTO_DETECT_STRATEGY: only-prototools
   MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
   MOON_HEAD: ${{ github.sha }}
 
