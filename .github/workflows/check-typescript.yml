@@ -10,8 +10,36 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  MOON_HEAD: ${{ github.sha }}
+
 jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      affected: ${{ fromJSON(steps.query.outputs.result).tasks['repository'] != null }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
+      - run: >-
+          moon action-graph --json repository:typescript-lint repository:typescript-typecheck repository:typescript-format-check > /dev/null
+      - id: query
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^repository$' --id '^(typescript-lint|typescript-typecheck|typescript-format-check)$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
   static:
+    needs: select
+    if: needs.select.outputs.affected == 'true'
     name: Static gates
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -28,11 +56,14 @@ jobs:
 
   required:
     name: Static required
-    needs: static
+    needs: [select, static]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true
         env:
-          PASSED: ${{ needs.static.result == 'success' }}
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.static.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.static.result == 'skipped')) }}

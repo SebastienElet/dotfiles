@@ -70,6 +70,7 @@ tasks:
       - tooling/skill-markdown-paths.ts
       - tooling/check-command.ts
       - bun.lock
+      - .prototools
       - .gitignore
       - file: .prettierignore
         optional: true
@@ -125,6 +126,7 @@ tasks:
       - tooling/deploy-link.ts
       - package.json
       - bun.lock
+      - .prototools
       - .github/workflows/check-text.yml
   fish-syntax:
     deps:
