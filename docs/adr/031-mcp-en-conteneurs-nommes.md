@@ -2,7 +2,6 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-10-14, [décision de parcours](https://github.com/SebastienElet/dotfiles/issues/502#issuecomment-6168820713)
 - **Commits** : `425af01`, `a2c71cf`, `508feb4`, `0525f5a`
 
 ## Contexte
@@ -18,21 +17,10 @@ directe sur le poste. L'ancien lancement de Scrapling par
 Livrer ces capacités par images Docker et n'exécuter qu'un conteneur nommé par
 service. L'enveloppe `tooling/scrapling-mcp` démarre le conteneur Scrapling à
 la demande puis lance le serveur stdio de chaque session à l'intérieur.
-CloakBrowser est démarré à la demande comme navigateur CDP. Pour les pages
-publiques non sensibles, le parcours devient : fetch intégré, puis recette
-Agent-Reach/Jina Reader, puis navigateur local, puis navigateur local furtif
-en cas de blocage anti-bot identifié, puis CloakBrowser. Le skill Agent-Reach
-fixe l'admissibilité des données, les budgets et les échecs ; les instructions
-globales y délèguent la procédure conditionnelle.
-Jina fournit du texte, sans équivalence générale avec un navigateur.
-
-Scrapling reste déployé pour les recours locaux (`fetch`, `stealthy_fetch` et
-CDP vers CloakBrowser), avec `--idle-timeout` pour l'arrêt automatique. Les
-lectures privées ou authentifiées restent locales, sur autorisation explicite
-du compte/profil pour les sessions ; aucun secret ni session n'est transmis
-au Reader hébergé. Aucun abandon de capacité n'est accepté. Le retrait de
-Scrapling exige une preuve distincte de chaque besoin conservé sans Scrapling,
-y compris JavaScript, anti-bot, sessions, privé/local et CloakBrowser/CDP.
+CloakBrowser est démarré à la demande comme navigateur CDP. Une escalade par
+paliers est inscrite dans les instructions globales : fetch intégré, puis
+Scrapling `fetch`, puis `stealthy_fetch`, puis CloakBrowser, avec
+`--idle-timeout` pour l'arrêt automatique.
 
 ## Conséquences
 
