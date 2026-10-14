@@ -1,18 +1,21 @@
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::files::paths::canonical_within;
-use crate::manifest::{McpRegistration, Scope};
+use crate::manifest::{McpRegistration, McpTransport, Scope};
 use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 pub fn diagnose(roots: &Roots, registration: McpRegistration<'_>) -> Option<Diagnostic> {
+    let McpTransport::Stdio { command, .. } = registration.transport else {
+        return None;
+    };
     let identity = format!(
         "{} {} {}",
         registration.agent, registration.scope, registration.name
     );
-    let candidate = match candidate(roots, registration.scope, registration.command) {
+    let candidate = match candidate(roots, registration.scope, command) {
         Ok(Some(path)) => path,
         Ok(None) => {
             return Some(Diagnostic::new(
@@ -29,7 +32,7 @@ pub fn diagnose(roots: &Roots, registration: McpRegistration<'_>) -> Option<Diag
             ));
         }
     };
-    if escapes_scope(roots, registration.scope, registration.command, &candidate) {
+    if escapes_scope(roots, registration.scope, command, &candidate) {
         return Some(Diagnostic::new(
             "mcp",
             State::Error,

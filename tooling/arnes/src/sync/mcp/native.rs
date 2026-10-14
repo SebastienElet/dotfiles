@@ -1,5 +1,5 @@
 use super::read;
-use crate::manifest::{Agent, McpRegistration, Scope};
+use crate::manifest::{Agent, McpRegistration, McpTransport, Scope};
 use crate::sync::native_file::json::{self, Object};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -60,7 +60,7 @@ impl Native {
                     return Ok(None);
                 };
                 let entry = entry.as_table().ok_or("MCP entry must be a table")?;
-                if entry.contains_key("url") || entry.contains_key("type") {
+                if entry.contains_key("type") {
                     return Err("MCP entry has unsupported transport fields");
                 }
                 toml::to_string(entry)
@@ -100,14 +100,21 @@ fn validate_json(entry: &Object) -> Result<(), &'static str> {
 }
 
 fn patch_json(document: &mut Object, expected: McpRegistration<'_>) -> Result<(), &'static str> {
+    let McpTransport::Stdio {
+        command,
+        args,
+        environment,
+    } = expected.transport
+    else {
+        return Err("HTTP transport is supported only for codex");
+    };
     let mut servers = json::child(document, "mcpServers")?;
     let mut entry = json::get::<Object>(&servers, expected.name)?.unwrap_or_default();
     validate_json(&entry)?;
     json::put(&mut entry, "type", &"stdio")?;
-    json::put(&mut entry, "command", &expected.command)?;
-    json::put(&mut entry, "args", &expected.args)?;
-    let environment = expected
-        .environment
+    json::put(&mut entry, "command", &command)?;
+    json::put(&mut entry, "args", &args)?;
+    let environment = environment
         .iter()
         .map(|name| {
             let value = match expected.agent {
@@ -136,9 +143,24 @@ fn patch_toml(
         .or_insert_with(|| toml::Value::Table(toml::Table::new()))
         .as_table_mut()
         .ok_or("MCP entry must be a table")?;
-    entry.insert("command".to_owned(), expected.command.into());
-    entry.insert("args".to_owned(), strings(expected.args));
-    entry.insert("env_vars".to_owned(), strings(expected.environment));
+    match expected.transport {
+        McpTransport::Stdio {
+            command,
+            args,
+            environment,
+        } => {
+            entry.remove("url");
+            entry.insert("command".to_owned(), command.into());
+            entry.insert("args".to_owned(), strings(args));
+            entry.insert("env_vars".to_owned(), strings(environment));
+        }
+        McpTransport::Http { url } => {
+            for field in ["command", "args", "env", "env_vars", "cwd"] {
+                entry.remove(field);
+            }
+            entry.insert("url".to_owned(), url.into());
+        }
+    }
     if let Some(enabled) = expected.enabled {
         entry.insert("enabled".to_owned(), enabled.into());
     }

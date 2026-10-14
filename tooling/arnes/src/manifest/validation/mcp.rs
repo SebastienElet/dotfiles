@@ -35,18 +35,7 @@ fn validate_declaration(declaration: &McpDeclaration, index: usize) -> Result<()
             "must be lowercase ASCII kebab-case",
         ));
     }
-    if declaration.command.trim().is_empty() {
-        return Err(ManifestError::new(
-            field("command"),
-            "command cannot be blank",
-        ));
-    }
-    if !valid_command(&declaration.command) {
-        return Err(ManifestError::new(
-            field("command"),
-            "relative command must stay within its scope root",
-        ));
-    }
+    validate_transport(declaration, index)?;
     if declaration.agent == Agent::Cursor && declaration.enabled.is_some() {
         return Err(ManifestError::new(
             field("enabled"),
@@ -54,6 +43,50 @@ fn validate_declaration(declaration: &McpDeclaration, index: usize) -> Result<()
         ));
     }
     validate_environment(declaration, index)
+}
+
+fn validate_transport(declaration: &McpDeclaration, index: usize) -> Result<(), ManifestError> {
+    let field = |name: &str| format!("mcp[{index}].{name}");
+    match (declaration.command.as_deref(), declaration.url.as_deref()) {
+        (Some(command), None) => {
+            if command.trim().is_empty() {
+                return Err(ManifestError::new(
+                    field("command"),
+                    "command cannot be blank",
+                ));
+            }
+            if !valid_command(command) {
+                return Err(ManifestError::new(
+                    field("command"),
+                    "relative command must stay within its scope root",
+                ));
+            }
+        }
+        (None, Some(url)) => {
+            if declaration.agent != Agent::Codex {
+                return Err(ManifestError::new(
+                    field("url"),
+                    "HTTP transport is supported only for codex",
+                ));
+            }
+            if url.trim().is_empty() {
+                return Err(ManifestError::new(field("url"), "URL cannot be blank"));
+            }
+            if !declaration.args.is_empty() || !declaration.environment.is_empty() {
+                return Err(ManifestError::new(
+                    field("url"),
+                    "HTTP transport cannot declare stdio arguments or environment",
+                ));
+            }
+        }
+        _ => {
+            return Err(ManifestError::new(
+                field("command"),
+                "requires exactly one of command or url",
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn validate_environment(declaration: &McpDeclaration, index: usize) -> Result<(), ManifestError> {

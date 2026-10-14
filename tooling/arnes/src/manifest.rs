@@ -19,7 +19,7 @@ pub use config::UserConfig;
 pub use error::ManifestError;
 pub use external::{ExternalOrigin, ExternalRoot, ExternalSkill};
 pub use hooks::HookKind;
-pub use mcp::McpRegistration;
+pub use mcp::{McpRegistration, McpTransport};
 pub use parsing::{load, parse};
 pub use prompts::{Prompt, PromptProjection, PromptRepresentation};
 pub use rules::RuleResource;

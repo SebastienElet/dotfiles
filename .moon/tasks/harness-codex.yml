@@ -14,7 +14,6 @@ tasks:
       - codex-agents
       - codex-skills
       - codex-hooks
-      - codex-context7
     toolchains: system
   codex-binary:
     script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" volta install @openai/codex
@@ -27,13 +26,6 @@ tasks:
     options:
       os: macos
       mutex: volta
-  codex-context7:
-    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/context7-codex.ts" "$HOME"
-    deps:
-      - repository:dependencies
-    toolchains: bun
-    options:
-      mutex: harness-mutation
   codex-instructions:
     script: |-
       set -e

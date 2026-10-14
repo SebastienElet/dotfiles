@@ -46,6 +46,7 @@ fn registration(
     let args = string_array(entry.get("args"), name, "args")?;
     let environment = environment_map(entry.get("env"), name, claude)?;
     Ok(ObservedRegistration {
+        url: None,
         command,
         args,
         environment,
