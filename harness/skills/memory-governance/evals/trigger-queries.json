@@ -1,6 +1,6 @@
 {
   "skill": "memory-governance",
-  "version": "2.0",
+  "version": "2.1",
   "queries": [
     {
       "query": "Remember this accepted ADR invariant so future sessions stop rediscovering it.",
@@ -16,6 +16,11 @@
       "query": "This external API quirk affects one dependency version; retain it until the upgrade removes it.",
       "should_activate": true,
       "reason": "A version-scoped external compatibility constraint may enter future context."
+    },
+    {
+      "query": "This Herdr Projects thread found a costly source-backed lesson. Propose it under Remember in the report; do not edit project memory or admit it to personal memory.",
+      "should_activate": true,
+      "reason": "Durable knowledge still needs a sourced proposal, while the thread report leaves the project-memory decision to the coordinator."
     },
     {
       "query": "Search my Obsidian notes for the ADR that governs signed URLs.",

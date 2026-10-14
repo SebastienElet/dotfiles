@@ -1,6 +1,6 @@
 {
   "skill": "herdr-issue-worktree",
-  "version": "1.0",
+  "version": "1.1",
   "queries": [
     {
       "query": "$herdr-issue-worktree TST-482 Codex in the disposable fixture repository",
@@ -26,6 +26,11 @@
       "query": "Use Herdr to work on TST-482 in the fixture repository.",
       "should_activate": true,
       "reason": "The workflow activates but must ask whether to launch Codex or Claude."
+    },
+    {
+      "query": "Read this Herdr Projects thread brief and implement TST-482 in the already provisioned Codex worktree.",
+      "should_activate": false,
+      "reason": "Projects already owns this implementation thread; verify its checkout and work there without a second provisioning workflow."
     },
     {
       "query": "Look up TST-482 and show its title.",

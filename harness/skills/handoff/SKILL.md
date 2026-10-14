@@ -34,6 +34,10 @@ fenced block for the user to paste into a new session.
 1. Stop the current work — do not start a new edit, search, or tool loop.
 2. Finish making the work durable: save unsaved files and, if a change is complete and the user
    asked for it, commit it. A resume prompt pointing at lost edits is worthless.
+   In a Herdr Projects thread, first rewrite the report at the path supplied by its brief, retaining
+   the current PR URL, verified work, limitations and required `## Next` actions. Put the resume
+   state there and reference the brief and report in the pasteable prompt. Keep the existing
+   thread and checkout; leave restart or reassignment to the user or coordinator.
 3. Write the resume prompt as one fenced block, addressed to the next agent, in the language of the
    conversation, covering exactly:
    - **Goal** — the task in one or two sentences, including the user's own constraints.
@@ -66,6 +70,7 @@ fenced block for the user to paste into a new session.
 - Never keep working after emitting the handoff block — end the turn there.
 - Never invent progress: only claim what was actually run and verified in this session.
 - Keep the block self-contained — the next session sees no part of this conversation.
-- Do not write the handoff to a file unless the user asks; the deliverable is text to paste.
+- Outside a workflow that requires a report, do not write the handoff to a file unless the user
+  asks; the deliverable is text to paste. A Herdr Projects brief's report obligation still applies.
 - Do not attempt to disable or block compaction from the skill — that is the hook's job, via the
   threshold in `tooling/agent-handoff`.

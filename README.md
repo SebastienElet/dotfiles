@@ -58,6 +58,11 @@ It installs [Herdr Projects](https://github.com/eliasstravik/herdr-projects), al
 available separately with `moon exec repository:herdr-projects`.
 Restart the Herdr server after first installation to run the plugin's startup hook,
 which creates its `~/.local/bin/herdr-projects` command link.
+Use Projects for coordinated work: its threads supply the checkout, brief and report path.
+Develop in the assigned thread with the repository instructions and applicable skills.
+The [issue launcher](tooling/herdr-issue-worktree/README.md) remains available for standalone
+Ctrl-click work on GitHub, GitLab or Linear issues; do not use it to launch a second agent
+for a task already assigned to a Projects thread.
 It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
 checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.

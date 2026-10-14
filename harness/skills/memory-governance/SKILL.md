@@ -12,7 +12,7 @@ metadata:
 
 ## Overview
 
-Use `agent-memory` as the only memory runtime. Memory is a source-backed retrieval aid, never an
+Use `agent-memory` as the only personal memory runtime. Memory is a source-backed retrieval aid, never an
 authority: the current ADR, contract, configuration, user decision, or official dependency behavior
 remains primary. Read [references/entry-contract.md](references/entry-contract.md) before proposing,
 admitting, retrieving, or confirming memory.
@@ -23,6 +23,12 @@ Use this workflow for explicit remember/retain requests, acceptance of a prior p
 knowledge that may be costly to rediscover, consumption of prior memory, and every Cursor task
 start. Use `obsidian-retrieval` for read-only Markdown corpus retrieval and `agent-instructions`
 when the durable destination is agent behavior.
+
+Herdr Projects project memory is owned by its coordinator and is separate from `agent-memory`.
+When a thread's brief requests lessons, put source-backed candidates under `## Remember` in its
+report for the coordinator to decide. This reports a proposal; it neither admits an `agent-memory`
+entry nor authorizes editing the project's memory. Keep explicit personal-memory requests on the
+admission path below and do not copy project lessons there automatically.
 
 ## Workflow
 
