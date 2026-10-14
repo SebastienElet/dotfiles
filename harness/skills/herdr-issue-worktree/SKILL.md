@@ -3,7 +3,8 @@ name: herdr-issue-worktree
 description: >
   Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude.
   Use only when the user explicitly requests Herdr to work on an issue; never select it for
-  issue lookup, generic implementation, or an agent or pane name alone.
+  issue lookup, generic implementation, an agent or pane name alone, or implementation already
+  provisioned by Herdr Projects.
 compatibility: Requires HERDR_ENV=1, the native Herdr CLI, Git, and authenticated tracker access.
 metadata:
   category: dev
@@ -27,6 +28,12 @@ Natural-language requests must explicitly ask for Herdr and starting or resuming
 An explicit invocation authorizes this topology only when it supplies an issue to work on.
 Ask for the agent choice if absent; map Codex to `codex` and Claude to `claude`.
 Do not substitute a provider or infer the choice from the calling agent.
+
+When a Herdr Projects brief assigns implementation in the current thread, keep that thread's
+checkout and selected agent. Verify its directory, Git top-level and branch, then implement the
+assigned task there. Do not compose this provisioning workflow or launch a second implementation
+agent for the same assignment. Projects owns that thread's creation, restart and reporting;
+repository instructions and development skills still govern its work.
 
 This workflow owns checkout provisioning and native agent launch. Repository Git conventions own
 branch, base, and path policy. For Linear/Bitbucket implementation, `linear-start` and

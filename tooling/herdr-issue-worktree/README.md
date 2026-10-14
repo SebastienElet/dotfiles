@@ -1,6 +1,10 @@
 # Issue Worktree
 
 Ctrl-click a GitHub, GitLab or Linear issue URL in Herdr to choose Claude or Codex.
+This is the standalone issue entry point. For a task already assigned by Herdr Projects, continue
+in its thread with its brief and report rather than starting this preparation workflow.
+The two plugins have separate registries: the click launcher's bindings do not deduplicate Projects
+assignments. See the [comparison](../../docs/herdr-projects-audit-497.md) before retiring either path.
 Escape or an empty provider answer cancels. Confirm a matching repository suggestion, or enter an
 absolute repository path; cancellation before confirmation starts no agent and creates no checkout.
 GitHub repository names and issue keys compare without owner/project casing differences;
