@@ -245,10 +245,6 @@ hooks:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
-  - id: semctx-nudge
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
 external:
   roots:
     - agent: codex
@@ -259,13 +255,11 @@ external:
     - { agent: claude, scope: user, id: codex@openai-codex }
     - { agent: claude, scope: user, id: agent-reach@dotfiles-agent-reach }
     - { agent: codex, scope: user, id: agent-reach@dotfiles-agent-reach }
-    - { agent: claude, scope: user, id: semctx@semctx-stable }
     - { agent: codex, scope: user, id: chrome@openai-bundled }
     - { agent: codex, scope: user, id: code-review@openai-bundled }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
     - { agent: codex, scope: user, id: computer-use@openai-bundled }
     - { agent: codex, scope: user, id: github@openai-curated }
-    - { agent: codex, scope: user, id: semctx-control@semctx-stable }
     - { agent: codex, scope: user, id: tracing@langsmith-codex-plugins }
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
@@ -322,48 +316,6 @@ external:
         origin: plugin,
         plugin: sites@openai-bundled,
         slug: sites-hosting,
-      }
-    - {
-        agent: claude,
-        scope: user,
-        origin: plugin,
-        plugin: semctx@semctx-stable,
-        slug: index-control-plane,
-      }
-    - {
-        agent: claude,
-        scope: user,
-        origin: plugin,
-        plugin: semctx@semctx-stable,
-        slug: semctx-control,
-      }
-    - {
-        agent: claude,
-        scope: user,
-        origin: plugin,
-        plugin: semctx@semctx-stable,
-        slug: semctx-semantic,
-      }
-    - {
-        agent: claude,
-        scope: user,
-        origin: plugin,
-        plugin: semctx@semctx-stable,
-        slug: semctx-verify,
-      }
-    - {
-        agent: codex,
-        scope: user,
-        origin: plugin,
-        plugin: semctx-control@semctx-stable,
-        slug: index-control-plane,
-      }
-    - {
-        agent: codex,
-        scope: user,
-        origin: plugin,
-        plugin: semctx-control@semctx-stable,
-        slug: semctx-control,
       }
 statuslines:
   - agent: codex
