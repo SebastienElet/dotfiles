@@ -192,6 +192,10 @@ fn command_with_path(
 
 fn relative_path_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
     let fixture = fixture("claude", "project", "")?;
+    fs::copy(
+        fixture.home().join("bin/ps"),
+        fixture.repository().join("ps"),
+    )?;
     fixture.write_repository(
         "safe-mcp",
         "#!/bin/sh\nprintf executed > \"$HOME/should-not-execute\"\n",
@@ -431,10 +435,12 @@ fn creates_native_registrations_for_all_scopes_without_running_servers_and_repla
         let doctor = fixture.command(["doctor", "mcp", "--agent", agent, "--scope", scope])?;
         assert_eq!(
             doctor.status.code(),
-            Some(0),
+            Some(1),
             "{}",
             String::from_utf8_lossy(&doctor.stdout)
         );
+        assert!(String::from_utf8_lossy(&doctor.stdout).contains("foreign: undeclared MCP"));
+        assert!(!String::from_utf8_lossy(&doctor.stdout).contains("private-secret"));
     }
     Ok(())
 }

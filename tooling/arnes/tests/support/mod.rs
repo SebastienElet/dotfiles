@@ -26,6 +26,10 @@ impl Fixture {
         let home = root.path().join("home");
         fs::create_dir(&repository)?;
         fs::create_dir(&home)?;
+        fs::create_dir(home.join("bin"))?;
+        let ps = home.join("bin/ps");
+        fs::write(&ps, "#!/bin/sh\nprintf '1 0 0 00:01 /sbin/init\\n'\n")?;
+        fs::set_permissions(ps, fs::Permissions::from_mode(0o755))?;
         Ok(Self {
             _root: root,
             repository,

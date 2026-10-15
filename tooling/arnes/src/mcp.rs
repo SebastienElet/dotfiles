@@ -1,8 +1,10 @@
 pub(crate) mod command;
 pub(crate) mod comparison;
 pub(crate) mod configuration;
+mod inventory;
 pub(crate) mod json;
 pub(crate) mod observed;
+mod processes;
 
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
@@ -15,22 +17,28 @@ pub fn diagnose(
     agent: Option<Agent>,
     scope: Option<Scope>,
 ) -> Vec<Diagnostic> {
+    let (observed, mut diagnostics) = inventory::load(roots, agent, scope);
+    diagnostics.extend(inventory::diagnose(manifest, &observed));
+    diagnostics.extend(processes::diagnose(manifest, &observed, agent));
     let registrations = manifest
         .mcp_registrations()
         .filter(|registration| agent.is_none_or(|agent| registration.agent == agent))
         .filter(|registration| scope.is_none_or(|scope| registration.scope == scope))
         .collect::<Vec<_>>();
     if registrations.is_empty() && (agent.is_some() || scope.is_some()) {
-        return vec![Diagnostic::new(
+        diagnostics.push(Diagnostic::new(
             "mcp",
             State::Unsupported,
             unsupported(agent, scope),
-        )];
+        ));
+        return diagnostics;
     }
-    registrations
-        .into_iter()
-        .flat_map(|registration| diagnose_registration(roots, manifest, registration))
-        .collect()
+    diagnostics.extend(
+        registrations
+            .into_iter()
+            .flat_map(|registration| diagnose_registration(roots, manifest, registration)),
+    );
+    diagnostics
 }
 
 fn diagnose_registration(

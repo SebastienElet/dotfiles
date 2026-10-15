@@ -110,6 +110,10 @@ fn path_lookup_skips_an_earlier_non_executable_candidate()
     )?;
     fixture.write_home("first/managed-mcp", "not executable")?;
     fixture.write_home("second/managed-mcp", "#!/bin/sh\nexit 99\n")?;
+    fs::copy(
+        fixture.home().join("bin/ps"),
+        fixture.home().join("second/ps"),
+    )?;
     let executable = fixture.home().join("second/managed-mcp");
     let mut permissions = fs::metadata(&executable)?.permissions();
     permissions.set_mode(0o755);
