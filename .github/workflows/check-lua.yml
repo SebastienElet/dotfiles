@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  PROTO_DETECT_STRATEGY: only-prototools
   MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
   MOON_HEAD: ${{ github.sha }}
 
@@ -28,10 +27,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
-        with:
-          auto-install: true
-          proto-version: "0.63.1"
+      - uses: ./.github/actions/setup-moon
       - run: moon action-graph --json repository:neovim-lint repository:wezterm-lint > /dev/null
       - id: query
         run: |
@@ -58,10 +54,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
-        with:
-          auto-install: true
-          proto-version: "0.63.1"
+      - uses: ./.github/actions/setup-moon
       - run: moon ci --downstream none repository:neovim-lint
 
   wezterm:
@@ -80,10 +73,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
-        with:
-          auto-install: true
-          proto-version: "0.63.1"
+      - uses: ./.github/actions/setup-moon
       - run: moon ci --downstream none repository:wezterm-lint
 
   required:

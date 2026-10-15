@@ -1,0 +1,10 @@
+name: Setup Moon
+description: Install the locked Moon CLI and native binary from npm
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        npm ci --prefix "$GITHUB_ACTION_PATH" --ignore-scripts --no-audit --no-fund --fetch-retries=0
+        echo "$GITHUB_ACTION_PATH/node_modules/.bin" >> "$GITHUB_PATH"
+        "$GITHUB_ACTION_PATH/node_modules/.bin/moon" --version
