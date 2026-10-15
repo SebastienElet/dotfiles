@@ -69,7 +69,7 @@ fn claude_local_projects_and_project_file_are_inventoried() -> Result {
         ".mcp.json",
         r#"{"mcpServers":{"project-only":{"type":"http","url":"https://example.test"}}}"#,
     )?;
-    let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+    let output = fixture.command(["doctor", "mcp", "--scope", "project", "--format", "json"])?;
     let stdout = String::from_utf8(output.stdout)?;
     assert_eq!(output.status.code(), Some(1), "{stdout}");
     assert!(
@@ -97,7 +97,7 @@ fn malformed_inventory_fails_without_leaking_values() -> Result {
     ] {
         let fixture = fixture()?;
         fixture.write_home(".claude.json", contents)?;
-        let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+        let output = fixture.command(["doctor", "--format", "json"])?;
         let stdout = String::from_utf8(output.stdout)?;
         assert_eq!(output.status.code(), Some(2), "{stdout}");
         assert!(!stdout.contains("secret") && !stdout.contains("value"));
@@ -212,5 +212,49 @@ fn inherited_user_plugin_settings_do_not_create_project_installations() -> Resul
         stdout.contains("claude plugin uninstall demo@marketplace --scope project"),
         "{stdout}"
     );
+    Ok(())
+}
+
+#[test]
+fn direct_mcp_defaults_to_user_while_project_and_aggregate_inspect_project_configs() -> Result {
+    for contents in [
+        r#"{"mcpServers":{"manual":{"command":"never-executed"}}}"#,
+        r#"{"mcpServers":[]}"#,
+    ] {
+        let fixture = fixture()?;
+        fixture.write_repository(".mcp.json", contents)?;
+        fixture.write_home(
+            ".claude.json",
+            &json!({"projects": {
+                "/other project": serde_json::from_str::<serde_json::Value>(contents)?
+            }})
+            .to_string(),
+        )?;
+        let before = fixture.snapshot()?;
+        let user = fixture.command(["doctor", "mcp", "--format", "json"])?;
+        let stdout = String::from_utf8(user.stdout)?;
+        assert_eq!(user.status.code(), Some(0), "{stdout}");
+        assert!(
+            !stdout.contains("manual") && !stdout.contains(".mcp.json"),
+            "{stdout}"
+        );
+        for args in [
+            vec!["doctor", "mcp", "--scope", "project", "--format", "json"],
+            vec!["doctor", "--format", "json"],
+        ] {
+            let output = fixture.command(args)?;
+            let stdout = String::from_utf8(output.stdout)?;
+            assert!(!output.status.success(), "{stdout}");
+            let diagnostics: Vec<serde_json::Value> = serde_json::from_str(&stdout)?;
+            assert!(
+                diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic["resource"] == "mcp"
+                        && (diagnostic["state"] == "drift" || diagnostic["state"] == "error")),
+                "{stdout}"
+            );
+        }
+        assert_eq!(fixture.snapshot()?, before);
+    }
     Ok(())
 }

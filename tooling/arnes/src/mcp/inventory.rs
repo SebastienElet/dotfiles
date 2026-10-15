@@ -95,6 +95,7 @@ pub(super) fn load(
                         candidate,
                         candidate_scope,
                         &path,
+                        scope != Some(Scope::User),
                         &mut registrations,
                     )
                 }
@@ -161,6 +162,7 @@ fn json(
     agent: Agent,
     scope: Scope,
     path: &Path,
+    include_projects: bool,
     entries: &mut Vec<Registration>,
 ) -> Result<(), &'static str> {
     let value = super::json::parse(bytes).map_err(|_| "invalid MCP JSON")?;
@@ -168,7 +170,7 @@ fn json(
         return Err("MCP configuration must be an object");
     }
     servers(&value, agent, scope, path, None, entries)?;
-    if agent == Agent::Claude && scope == Scope::User {
+    if agent == Agent::Claude && scope == Scope::User && include_projects {
         local_projects(&value, path, entries)?;
     }
     Ok(())
