@@ -140,7 +140,20 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install herdr
   herdr-plugin:
-    description: Link the Herdr worktree cleanup and issue plugins
+    description: Link the Herdr worktree cleanup plugin
+    deps:
+      - dependencies
+      - herdr-setup
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
+  herdr-issue-plugin:
+    description: Link the optional standalone Herdr issue launcher
     deps:
       - dependencies
       - herdr-setup
@@ -152,7 +165,6 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
       herdr plugin link "$workspaceRoot/tooling/herdr-issue-worktree"
   herdr-projects:
     description: Install the optional Herdr Projects plugin
