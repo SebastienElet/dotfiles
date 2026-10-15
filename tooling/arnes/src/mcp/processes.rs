@@ -44,6 +44,13 @@ fn summarize(
     processes: &BTreeMap<u32, Process>,
     agent: Option<Agent>,
 ) -> Vec<Diagnostic> {
+    let launches = processes
+        .values()
+        .filter_map(|process| {
+            let (owner, _) = owner(process, processes)?;
+            identify(process, owner, manifest, registrations).map(|name| (process.pid, name))
+        })
+        .collect::<BTreeMap<_, _>>();
     let mut groups = BTreeMap::new();
     for process in processes.values() {
         let Some((owner, session)) = owner(process, processes) else {
@@ -52,15 +59,15 @@ fn summarize(
         if agent.is_some_and(|agent| agent != owner) {
             continue;
         }
-        let Some(name) = identify(process, owner, manifest, registrations) else {
+        let Some(name) = launch_name(process, processes, &launches, session) else {
             continue;
         };
         groups
-            .entry((owner.to_string(), session, name.clone()))
+            .entry((owner.to_string(), session, name.to_owned()))
             .or_insert_with(|| Group {
                 agent: owner,
                 session,
-                name,
+                name: name.to_owned(),
                 members: Vec::new(),
             })
             .members
@@ -70,6 +77,23 @@ fn summarize(
         .into_values()
         .map(|group| diagnose_group(manifest, registrations, &group))
         .collect()
+}
+
+fn launch_name<'a>(
+    process: &Process,
+    processes: &BTreeMap<u32, Process>,
+    launches: &'a BTreeMap<u32, String>,
+    session: u32,
+) -> Option<&'a str> {
+    let mut current = process;
+    let mut name = None;
+    while current.pid != session {
+        if let Some(launch) = launches.get(&current.pid) {
+            name = Some(launch.as_str());
+        }
+        current = processes.get(&current.parent)?;
+    }
+    name
 }
 
 fn diagnose_group(
@@ -215,43 +239,70 @@ fn signature(command: &str, name: &str, executable: Option<&str>, args: &[String
         let expected = program(executable);
         !runtime(expected) && expected == program(command)
     });
-    let observed = runtime_entrypoint(program(command), command.split_whitespace().skip(1));
-    if observed.is_some_and(|target| {
-        target
-            .split('/')
-            .any(|component| component.contains("mcp") && contains_name(component, name))
-    }) || (executable_matches
-        && command
-            .split_whitespace()
-            .any(|token| contains_name(token, name)))
+    let observed = package_target(program(command), command.split_whitespace().skip(1));
+    if observed.is_some_and(|target| target.contains("mcp") && contains_name(target, name))
+        || (executable_matches
+            && command
+                .split_whitespace()
+                .any(|token| contains_name(token, name)))
     {
         return 3;
     }
     let expected = executable.and_then(|executable| {
-        runtime_entrypoint(program(executable), args.iter().map(String::as_str))
+        package_target(program(executable), args.iter().map(String::as_str))
     });
-    if observed.zip(expected).is_some_and(|(observed, expected)| {
-        observed == expected || contains_name(observed, expected)
-    }) {
+    if observed
+        .zip(expected)
+        .is_some_and(|(observed, expected)| observed == expected)
+    {
         return 2;
     }
     u8::from(executable_matches)
 }
 
-fn runtime_entrypoint<'a>(
+fn package_target<'a>(
     executable: &str,
-    arguments: impl Iterator<Item = &'a str>,
+    mut arguments: impl Iterator<Item = &'a str>,
 ) -> Option<&'a str> {
-    if !runtime(executable) || executable == "docker" {
+    match executable {
+        "npm" if matches!(arguments.next(), Some("exec" | "x")) => {}
+        "npx" => {}
+        _ => return None,
+    }
+    let target = arguments.find(|argument| !matches!(*argument, "-y" | "--yes" | "--no" | "--"))?;
+    if target.starts_with('-') {
         return None;
     }
-    let mut arguments = arguments.filter(|argument| !argument.starts_with('-'));
-    let target = arguments.next()?;
-    match (executable, target) {
-        ("npm", "exec" | "x") | ("uv" | "bun", "run") => arguments.next(),
-        ("npm" | "uv", _) => None,
-        _ => Some(target),
+    let package = match target.rsplit_once('@').filter(|(name, _)| !name.is_empty()) {
+        Some((name, version)) => {
+            if version.is_empty()
+                || !version.bytes().all(|byte| {
+                    byte.is_ascii_alphanumeric()
+                        || matches!(byte, b'.' | b'-' | b'+' | b'^' | b'~' | b'*')
+                })
+            {
+                return None;
+            }
+            name
+        }
+        None => target,
+    };
+    let parts = package.strip_prefix('@').map_or_else(
+        || vec![package],
+        |scoped| scoped.split('/').collect::<Vec<_>>(),
+    );
+    if (package.starts_with('@') && parts.len() != 2)
+        || parts.iter().any(|part| {
+            part.is_empty()
+                || part.starts_with('.')
+                || !part
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
+        })
+    {
+        return None;
     }
+    Some(package)
 }
 
 fn runtime(program: &str) -> bool {

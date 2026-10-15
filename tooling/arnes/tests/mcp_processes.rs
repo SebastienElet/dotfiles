@@ -31,7 +31,7 @@ fn fixture(rows: &str) -> std::result::Result<Fixture, Box<dyn std::error::Error
 #[test]
 fn agent_mcp_trees_report_instances_memory_age_and_stale_commands_without_secrets() -> Result {
     let fixture = fixture(
-        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 npm exec @upstash/context7-mcp --api-key private-secret\n21 20 2048 00:59 node /cache/@upstash/context7-mcp/dist/index.js --api-key private-secret\n22 10 4096 00:30 node /cache/@upstash/context7-mcp/dist/index.js --api-key private-secret\n30 1 900 01:00 node /cache/@upstash/context7-mcp/dist/index.js --api-key unrelated-secret\n40 10 90 00:20 /bin/sh -c echo context7 private-secret",
+        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 npm exec @upstash/context7-mcp --api-key private-secret\n21 20 2048 00:59 node --require /work/ordinary/register.js /cache/@upstash/context7-mcp/dist/index.js --api-key private-secret\n22 10 4096 00:30 npx @upstash/context7-mcp --api-key private-secret\n30 1 900 01:00 node /cache/@upstash/context7-mcp/dist/index.js --api-key unrelated-secret\n40 10 90 00:20 /bin/sh -c echo context7 private-secret",
     )?;
     let before = fixture.snapshot()?;
     let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
@@ -194,7 +194,7 @@ fn ordinary_agent_children_with_mcp_named_arguments_are_not_servers() -> Result 
 #[test]
 fn runtime_children_do_not_become_servers_from_mcp_named_test_paths_or_operands() -> Result {
     let fixture = fixture(
-        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 node /work/context7/tests/run.js\n21 10 2048 00:30 python3 -m pytest tests/test_context7.py\n22 10 4096 00:20 node /work/ordinary/run.js /cache/context7-mcp/dist/index.js\n23 10 1024 00:10 python3 /work/ordinary/tool.py --input @upstash/context7-mcp\n24 10 1024 00:10 node /work/context7/tests/mcp_fixture.js",
+        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 node /work/context7/tests/run.js\n21 10 2048 00:30 python3 -m pytest tests/test_context7.py\n22 10 4096 00:20 node /work/ordinary/run.js /cache/context7-mcp/dist/index.js\n23 10 1024 00:10 python3 /work/ordinary/tool.py --input @upstash/context7-mcp\n24 10 1024 00:10 node /work/context7/tests/mcp_fixture.js\n25 10 1024 00:10 node /work/context7-mcp/tests/run.js\n26 10 1024 00:10 node --require /cache/context7-mcp/register.js /work/ordinary/run.js\n27 10 1024 00:10 npm exec --cache /cache/context7-mcp ordinary-package\n28 10 1024 00:10 npx @upstash/context7-mcp@file:/work/ordinary",
     )?;
     fixture.write_home(".arnes.yaml", "version: 1\nagents:\n  - { id: codex, scopes: [user, project] }\nmcp:\n  - { agent: codex, scope: user, name: context7, command: npx, args: [-y, '@upstash/context7-mcp'] }\nresources: []\n")?;
     fixture.write_home(
@@ -211,6 +211,33 @@ fn runtime_children_do_not_become_servers_from_mcp_named_test_paths_or_operands(
     let stdout = String::from_utf8(output.stdout)?;
     assert_eq!(output.status.code(), Some(0), "{stdout}");
     assert!(!stdout.contains("session=10"), "{stdout}");
+    assert_eq!(fixture.snapshot()?, before);
+    Ok(())
+}
+
+#[test]
+fn configured_node_preload_and_its_children_are_counted_without_path_guessing() -> Result {
+    let fixture = fixture(
+        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 node --require /ordinary/preload.js /service/index.js\n21 20 2048 00:30 /usr/bin/tail -f mcp.log",
+    )?;
+    fixture.write_home(".arnes.yaml", "version: 1\nagents:\n  - { id: codex, scopes: [user, project] }\nmcp:\n  - { agent: codex, scope: user, name: sample, command: node, args: [--require, /ordinary/preload.js, /service/index.js] }\nresources: []\n")?;
+    fixture.write_home(
+        ".codex/config.toml",
+        "[mcp_servers.sample]\ncommand = 'node'\nargs = ['--require', '/ordinary/preload.js', '/service/index.js']\n",
+    )?;
+    fixture.write_home("bin/node", "#!/bin/sh\nexit 99\n")?;
+    fs::set_permissions(
+        fixture.home().join("bin/node"),
+        fs::Permissions::from_mode(0o755),
+    )?;
+    let before = fixture.snapshot()?;
+    let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+    let stdout = String::from_utf8(output.stdout)?;
+    assert_eq!(output.status.code(), Some(0), "{stdout}");
+    assert!(
+        stdout.contains("MCP sample session=10: instances=1 processes=2 RAM=3072"),
+        "{stdout}"
+    );
     assert_eq!(fixture.snapshot()?, before);
     Ok(())
 }
