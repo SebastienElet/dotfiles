@@ -6,5 +6,6 @@ runs:
     - shell: bash
       run: |
         npm ci --prefix "$GITHUB_ACTION_PATH" --ignore-scripts --no-audit --no-fund --fetch-retries=0
-        echo "$GITHUB_ACTION_PATH/node_modules/.bin" >> "$GITHUB_PATH"
-        "$GITHUB_ACTION_PATH/node_modules/.bin/moon" --version
+        moon_binary="$(node -p 'require(process.env.GITHUB_ACTION_PATH + "/node_modules/@moonrepo/cli/utils").findMoonExe()')"
+        echo "$(dirname "$moon_binary")" >> "$GITHUB_PATH"
+        "$moon_binary" --version
