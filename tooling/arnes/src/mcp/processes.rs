@@ -215,28 +215,43 @@ fn signature(command: &str, name: &str, executable: Option<&str>, args: &[String
         let expected = program(executable);
         !runtime(expected) && expected == program(command)
     });
-    if !executable_matches && !runtime(program(command)) {
-        return 0;
-    }
-    if command
-        .split_whitespace()
-        .any(|token| contains_name(token, name))
+    let observed = runtime_entrypoint(program(command), command.split_whitespace().skip(1));
+    if observed.is_some_and(|target| {
+        target
+            .split('/')
+            .any(|component| component.contains("mcp") && contains_name(component, name))
+    }) || (executable_matches
+        && command
+            .split_whitespace()
+            .any(|token| contains_name(token, name)))
     {
         return 3;
     }
-    if args.iter().any(|arg| {
-        !arg.starts_with('-')
-            && (arg.contains("mcp")
-                || [".py", ".js", ".mjs", ".ts"]
-                    .iter()
-                    .any(|extension| arg.ends_with(extension)))
-            && command
-                .split_whitespace()
-                .any(|token| contains_name(token, arg))
+    let expected = executable.and_then(|executable| {
+        runtime_entrypoint(program(executable), args.iter().map(String::as_str))
+    });
+    if observed.zip(expected).is_some_and(|(observed, expected)| {
+        observed == expected || contains_name(observed, expected)
     }) {
         return 2;
     }
     u8::from(executable_matches)
+}
+
+fn runtime_entrypoint<'a>(
+    executable: &str,
+    arguments: impl Iterator<Item = &'a str>,
+) -> Option<&'a str> {
+    if !runtime(executable) || executable == "docker" {
+        return None;
+    }
+    let mut arguments = arguments.filter(|argument| !argument.starts_with('-'));
+    let target = arguments.next()?;
+    match (executable, target) {
+        ("npm", "exec" | "x") | ("uv" | "bun", "run") => arguments.next(),
+        ("npm" | "uv", _) => None,
+        _ => Some(target),
+    }
 }
 
 fn runtime(program: &str) -> bool {

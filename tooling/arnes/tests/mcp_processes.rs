@@ -190,3 +190,27 @@ fn ordinary_agent_children_with_mcp_named_arguments_are_not_servers() -> Result 
     }
     Ok(())
 }
+
+#[test]
+fn runtime_children_do_not_become_servers_from_mcp_named_test_paths_or_operands() -> Result {
+    let fixture = fixture(
+        "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 node /work/context7/tests/run.js\n21 10 2048 00:30 python3 -m pytest tests/test_context7.py\n22 10 4096 00:20 node /work/ordinary/run.js /cache/context7-mcp/dist/index.js\n23 10 1024 00:10 python3 /work/ordinary/tool.py --input @upstash/context7-mcp\n24 10 1024 00:10 node /work/context7/tests/mcp_fixture.js",
+    )?;
+    fixture.write_home(".arnes.yaml", "version: 1\nagents:\n  - { id: codex, scopes: [user, project] }\nmcp:\n  - { agent: codex, scope: user, name: context7, command: npx, args: [-y, '@upstash/context7-mcp'] }\nresources: []\n")?;
+    fixture.write_home(
+        ".codex/config.toml",
+        "[mcp_servers.context7]\ncommand = 'npx'\nargs = ['-y', '@upstash/context7-mcp']\n",
+    )?;
+    fixture.write_home("bin/npx", "#!/bin/sh\nexit 99\n")?;
+    fs::set_permissions(
+        fixture.home().join("bin/npx"),
+        fs::Permissions::from_mode(0o755),
+    )?;
+    let before = fixture.snapshot()?;
+    let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+    let stdout = String::from_utf8(output.stdout)?;
+    assert_eq!(output.status.code(), Some(0), "{stdout}");
+    assert!(!stdout.contains("session=10"), "{stdout}");
+    assert_eq!(fixture.snapshot()?, before);
+    Ok(())
+}
