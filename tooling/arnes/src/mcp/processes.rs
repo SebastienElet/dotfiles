@@ -204,16 +204,19 @@ fn identify(
             "unidentified-mcp".to_owned()
         });
     }
-    process
-        .command
-        .split_whitespace()
-        .any(|token| token.contains("mcp") || token.ends_with("/remem") || token == "remem")
-        .then(|| "unidentified-mcp".to_owned())
+    None
 }
 
 fn signature(command: &str, name: &str, executable: Option<&str>, args: &[String]) -> u8 {
     if executable.is_some_and(|executable| launch_matches(executable, args, command)) {
         return 4;
+    }
+    let executable_matches = executable.is_some_and(|executable| {
+        let expected = program(executable);
+        !runtime(expected) && expected == program(command)
+    });
+    if !executable_matches && !runtime(program(command)) {
+        return 0;
     }
     if command
         .split_whitespace()
@@ -233,14 +236,14 @@ fn signature(command: &str, name: &str, executable: Option<&str>, args: &[String
     }) {
         return 2;
     }
-    let executable_matches = executable.is_some_and(|executable| {
-        let expected = program(executable);
-        !matches!(
-            expected,
-            "node" | "npx" | "npm" | "uv" | "uvx" | "python" | "python3" | "bun" | "docker"
-        ) && expected == program(command)
-    });
     u8::from(executable_matches)
+}
+
+fn runtime(program: &str) -> bool {
+    matches!(
+        program,
+        "node" | "npx" | "npm" | "uv" | "uvx" | "python" | "python3" | "bun" | "docker"
+    )
 }
 
 fn contains_name(token: &str, name: &str) -> bool {

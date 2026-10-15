@@ -167,3 +167,26 @@ fn owner_configuration_takes_priority_over_another_agents_exact_launch() -> Resu
     assert!(!stdout.contains("MCP Context7 session="), "{stdout}");
     Ok(())
 }
+
+#[test]
+fn ordinary_agent_children_with_mcp_named_arguments_are_not_servers() -> Result {
+    for (config, exit_code) in [
+        ("", 0),
+        (
+            "[mcp_servers.context7]\nurl = 'https://example.test/mcp'\n",
+            1,
+        ),
+    ] {
+        let fixture = fixture(
+            "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 /usr/bin/tail -f mcp.log\n21 10 2048 00:30 /tools/cargo test /work/mcp/tests\n22 10 4096 00:20 /usr/bin/cat /cache/context7-mcp/dist/index.js\n23 10 1024 00:10 /usr/bin/tail -f context7.log",
+        )?;
+        fixture.write_home(".codex/config.toml", config)?;
+        let before = fixture.snapshot()?;
+        let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+        let stdout = String::from_utf8(output.stdout)?;
+        assert!(!stdout.contains("session=10"), "{stdout}");
+        assert_eq!(output.status.code(), Some(exit_code), "{stdout}");
+        assert_eq!(fixture.snapshot()?, before);
+    }
+    Ok(())
+}
