@@ -23,12 +23,12 @@ jobs:
     outputs:
       affected: ${{ fromJSON(steps.query.outputs.result).tasks['agent-handoff'] != null }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - uses: ./.github/actions/setup-moon
       - run: >-
           moon action-graph --json agent-handoff:fmt agent-handoff:clippy agent-handoff:check agent-handoff:test agent-handoff:doc agent-handoff:deployment-test > /dev/null
       - id: query
@@ -49,12 +49,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
           filter: blob:none
-      - uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095
+      - uses: ./.github/actions/setup-moon
       - run: >-
           moon ci --downstream none agent-handoff:fmt agent-handoff:clippy agent-handoff:check agent-handoff:test agent-handoff:doc agent-handoff:deployment-test
 

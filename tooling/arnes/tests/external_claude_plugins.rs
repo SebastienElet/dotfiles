@@ -130,7 +130,7 @@ fn plugin_allowlist_does_not_allow_new_skills_implicitly()
     Ok(())
 }
 #[test]
-fn disabled_plugin_is_visible_without_being_reported_as_active()
+fn disabled_undeclared_plugin_drifts_without_being_reported_as_active()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
     fixture.write_home(".arnes.yaml", &manifest(false, false))?;
@@ -146,7 +146,7 @@ fn disabled_plugin_is_visible_without_being_reported_as_active()
             "doctor", "skills", "--agent", "claude", "--scope", "user", "-v",
         ],
     )?;
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("· disabled · healthy · unexpected"));
     assert!(!stdout.contains("available-not-runtime-observed"));
     Ok(())

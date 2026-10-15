@@ -16,6 +16,7 @@ pub fn diagnose(
     agent: Option<Agent>,
     scope: Option<Scope>,
 ) -> Vec<Diagnostic> {
+    let undeclared_agents = external::outside_manifest(roots, manifest, agent, scope);
     let combinations = manifest
         .combinations()
         .filter(|(candidate, _)| agent.is_none_or(|agent| agent == *candidate))
@@ -23,10 +24,12 @@ pub fn diagnose(
         .collect::<Vec<_>>();
     if combinations.is_empty() {
         let diagnostic = unsupported(agent, scope);
-        return vec![match (agent, scope) {
+        return std::iter::once(match (agent, scope) {
             (Some(agent), Some(scope)) => diagnostic.with_human_section(section(agent, scope)),
             _ => diagnostic,
-        }];
+        })
+        .chain(undeclared_agents)
+        .collect();
     }
     combinations
         .into_iter()
@@ -35,6 +38,7 @@ pub fn diagnose(
                 .into_iter()
                 .map(move |diagnostic| diagnostic.with_human_section(section(agent, scope)))
         })
+        .chain(undeclared_agents)
         .collect()
 }
 

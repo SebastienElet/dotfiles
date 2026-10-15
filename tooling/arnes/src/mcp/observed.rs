@@ -8,6 +8,7 @@ pub enum EnvironmentValue {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ObservedRegistration {
+    pub url: Option<String>,
     pub command: String,
     pub args: Vec<String>,
     pub environment: BTreeMap<String, EnvironmentValue>,

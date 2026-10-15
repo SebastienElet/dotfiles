@@ -33,11 +33,41 @@ fn registration(
     let entry = value
         .as_table()
         .ok_or_else(|| ConfigurationError::new(format!("{name} must be a table")))?;
-    let command = entry
-        .get("command")
-        .and_then(toml::Value::as_str)
-        .ok_or_else(|| ConfigurationError::new(format!("{name}.command must be a string")))?
-        .to_owned();
+    let (command, url) = match (entry.get("command"), entry.get("url")) {
+        (Some(command), None) => (
+            command
+                .as_str()
+                .ok_or_else(|| ConfigurationError::new(format!("{name}.command must be a string")))?
+                .to_owned(),
+            None,
+        ),
+        (None, Some(url)) => {
+            if ["args", "env", "env_vars", "cwd"]
+                .iter()
+                .any(|field| entry.contains_key(*field))
+            {
+                return Err(ConfigurationError::new(format!(
+                    "{name} mixes HTTP and stdio fields"
+                )));
+            }
+            validate_http_authentication(entry, name)?;
+            (
+                String::new(),
+                Some(
+                    url.as_str()
+                        .ok_or_else(|| {
+                            ConfigurationError::new(format!("{name}.url must be a string"))
+                        })?
+                        .to_owned(),
+                ),
+            )
+        }
+        _ => {
+            return Err(ConfigurationError::new(format!(
+                "{name} requires exactly one of command or url"
+            )));
+        }
+    };
     let args = string_array(entry.get("args"), name, "args")?;
     let mut environment = environment(entry.get("env"), name)?;
     for reference in string_array(entry.get("env_vars"), name, "env_vars")? {
@@ -53,11 +83,34 @@ fn registration(
         .transpose()?
         .unwrap_or(true);
     Ok(ObservedRegistration {
+        url,
         command,
         args,
         environment,
         enabled: Some(enabled),
     })
+}
+
+fn validate_http_authentication(entry: &toml::Table, name: &str) -> Result<(), ConfigurationError> {
+    for field in ["http_headers", "env_http_headers"] {
+        if let Some(value) = entry.get(field)
+            && !value
+                .as_table()
+                .is_some_and(|headers| headers.values().all(toml::Value::is_str))
+        {
+            return Err(ConfigurationError::new(format!(
+                "{name}.{field} must be a string map"
+            )));
+        }
+    }
+    if let Some(value) = entry.get("bearer_token_env_var")
+        && !value.is_str()
+    {
+        return Err(ConfigurationError::new(format!(
+            "{name}.bearer_token_env_var must be a string"
+        )));
+    }
+    Ok(())
 }
 
 fn string_array(

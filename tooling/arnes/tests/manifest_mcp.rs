@@ -1,5 +1,5 @@
 #![cfg(test)]
-use arnes::manifest::{self, Agent, Scope};
+use arnes::manifest::{self, Agent, McpTransport, Scope};
 fn input(mcp: &str) -> String {
     format!(
         "version: 1\nagents:\n  - id: claude\n    scopes: [user, project]\n  - id: cursor\n    scopes: [project]\nmcp:{mcp}\nresources: []\n"
@@ -25,9 +25,17 @@ fn parses_one_explicit_mcp_projection() -> Result<(), Box<dyn std::error::Error 
         (registration.agent, registration.scope),
         (Agent::Claude, Scope::Project)
     );
-    assert_eq!(registration.command, "notes-mcp");
-    assert_eq!(registration.args, ["--stdio"]);
-    assert_eq!(registration.environment, ["NOTES_PROFILE"]);
+    let McpTransport::Stdio {
+        command,
+        args,
+        environment,
+    } = registration.transport
+    else {
+        return Err("expected stdio transport".into());
+    };
+    assert_eq!(command, "notes-mcp");
+    assert_eq!(args, ["--stdio"]);
+    assert_eq!(environment, ["NOTES_PROFILE"]);
     assert_eq!(registration.enabled, Some(true));
     Ok(())
 }

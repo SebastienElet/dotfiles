@@ -42,7 +42,7 @@ fn claude_registry_symlink_outside_temporary_home_is_not_read()
     Ok(())
 }
 #[test]
-fn claude_unknown_registry_scope_is_explicitly_unsupported()
+fn claude_unknown_registry_scope_still_reports_undeclared_plugin()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
     fixture.write_home(".arnes.yaml", &policy("", ""))?;
@@ -51,7 +51,7 @@ fn claude_unknown_registry_scope_is_explicitly_unsupported()
         &fixture,
         &["doctor", "skills", "--agent", "claude", "--scope", "user"],
     )?;
-    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(code, 1, "{stdout}");
     assert!(stdout.contains("plugin · unknown · unknown · unexpected"));
     assert!(stdout.contains("unsupported installation scopes future"));
     assert!(!stdout.contains("must/not/be/read"));

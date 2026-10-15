@@ -106,11 +106,23 @@ pub(super) fn plugin_diagnostics(
 }
 
 fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool) -> Diagnostic {
+    let removal = if allowed {
+        String::new()
+    } else {
+        format!(
+            "; proposed removal: {}",
+            super::cache_inventory::removal(agent, scope, &plugin.id)
+        )
+    };
     Diagnostic::new(
         "skills",
-        state(plugin.topology, plugin.exposure, allowed),
+        match state(plugin.topology, plugin.exposure, allowed) {
+            State::Error => State::Error,
+            _ if !allowed => State::Drift,
+            state @ (State::Healthy | State::Drift | State::Unsupported) => state,
+        },
         format!(
-            "external {agent} {scope} plugin {} origin=plugin ownership=external version={}{} exposure={} topology={} policy={} activation={} path={}{}",
+            "external {agent} {scope} plugin {} origin=plugin ownership=external version={}{} exposure={} topology={} policy={} activation={} path={}{}{removal}",
             plugin.id,
             plugin.version.as_deref().unwrap_or("unknown"),
             artifact(plugin.artifact.as_deref()),
@@ -127,7 +139,7 @@ fn plugin_diagnostic(agent: Agent, scope: Scope, plugin: &Plugin, allowed: bool)
     )
     .with_human(
         human::plugin_group(agent, scope, plugin),
-        human::plugin_summary(plugin, policy(allowed)),
+        format!("{}{removal}", human::plugin_summary(plugin, policy(allowed))),
     )
 }
 

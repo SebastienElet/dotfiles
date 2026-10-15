@@ -237,9 +237,9 @@ fn an_identifier_without_marketplace_cannot_be_located() -> TestResult {
     fixture.write_home(".arnes.yaml", &manifest(false, &[]))?;
     configure(&fixture, "demo", "enabled = false")?;
     let (code, diagnostics) = doctor(&fixture)?;
-    assert_eq!(code, 0);
+    assert_eq!(code, 1);
     let (state, message) = diagnostic(&diagnostics, "plugin demo ")?;
-    assert_eq!(state, "unsupported", "{message}");
+    assert_eq!(state, "drift", "{message}");
     assert!(message.contains("topology=unknown"), "{message}");
     Ok(())
 }
@@ -262,7 +262,7 @@ fn configuration_order_does_not_change_human_or_json_diagnostics() -> TestResult
         fixture.write_home(".codex/config.toml", &format!("{first}{second}"))?;
         let before = fixture.snapshot()?;
         let (second_code, second_output, _) = run(&fixture, &args)?;
-        assert_eq!(first_code, 0, "{first_output}");
+        assert_eq!(first_code, 1, "{first_output}");
         assert_eq!(second_code, first_code);
         assert_eq!(first_output, second_output);
         assert_eq!(fixture.snapshot()?, before);

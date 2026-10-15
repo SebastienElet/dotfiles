@@ -1,0 +1,7 @@
+{
+  "name": "ci-moon",
+  "private": true,
+  "dependencies": {
+    "@moonrepo/cli": "2.5.3"
+  }
+}

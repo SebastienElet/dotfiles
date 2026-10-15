@@ -5,6 +5,7 @@ pub mod eval;
 pub mod export;
 mod files;
 pub mod hooks;
+mod inspection;
 pub mod instructions;
 pub mod manifest;
 pub mod mcp;
