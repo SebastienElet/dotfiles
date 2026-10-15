@@ -1,6 +1,6 @@
 use super::inventory::Registration;
 use crate::diagnostic::{Diagnostic, State};
-use crate::manifest::{Agent, Manifest};
+use crate::manifest::{Agent, Manifest, McpTransport};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::process::Command;
@@ -116,9 +116,12 @@ fn diagnose_group(
         .filter(|process| !ids.contains(&process.parent))
         .collect::<Vec<_>>();
     let stale = instances.iter().any(|process| {
-        !expected
-            .iter()
-            .any(|expected| launch_matches(expected.command, expected.args, &process.command))
+        !expected.iter().any(|expected| match expected.transport {
+            McpTransport::Stdio { command, args, .. } => {
+                launch_matches(command, args, &process.command)
+            }
+            McpTransport::Http { .. } => false,
+        })
     });
     let ram = group.members.iter().map(|process| process.rss).sum::<u64>();
     let oldest = group
@@ -199,11 +202,13 @@ fn identify(
                 entry.args.as_slice(),
             )
         })
-        .chain(
-            manifest
-                .mcp_registrations()
-                .map(|entry| (entry.agent, entry.name, Some(entry.command), entry.args)),
-        );
+        .chain(manifest.mcp_registrations().map(|entry| {
+            let (command, args) = match entry.transport {
+                McpTransport::Stdio { command, args, .. } => (Some(command), args),
+                McpTransport::Http { .. } => (None, &[][..]),
+            };
+            (entry.agent, entry.name, command, args)
+        }));
     let ranked = candidates
         .map(|(agent, name, executable, args)| {
             (

@@ -74,6 +74,30 @@ fn declared_stdio_process_is_healthy_and_cycles_terminate() -> Result {
 }
 
 #[test]
+fn http_mcp_has_no_local_launch_and_reports_a_lingering_stdio_process() -> Result {
+    for (rows, exit_code) in [
+        ("10 1 100 02:00 /opt/codex app-server", 0),
+        (
+            "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 npx @upstash/context7-mcp",
+            1,
+        ),
+    ] {
+        let fixture = fixture(rows)?;
+        fixture.write_home(".arnes.yaml", "version: 1\nagents:\n  - { id: codex, scopes: [user, project] }\nmcp:\n  - { agent: codex, scope: user, name: context7, url: 'https://example.test/mcp' }\nresources: []\n")?;
+        let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+        let stdout = String::from_utf8(output.stdout)?;
+        assert_eq!(output.status.code(), Some(exit_code), "{stdout}");
+        if exit_code == 0 {
+            assert!(!stdout.contains("session=10"), "{stdout}");
+        } else {
+            assert!(stdout.contains("MCP context7 session=10"), "{stdout}");
+            assert!(stdout.contains("command differs"), "{stdout}");
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn failed_missing_or_malformed_ps_is_an_error_with_redacted_stderr() -> Result {
     for script in [
         "#!/bin/sh\nexit 1\n",
