@@ -327,6 +327,10 @@ statuslines:
       - context-used
       - context-window-size
 mcp:
+  - name: context7
+    agent: codex
+    scope: user
+    url: https://mcp.context7.com/mcp
   - name: apple-notes
     agent: claude
     scope: project

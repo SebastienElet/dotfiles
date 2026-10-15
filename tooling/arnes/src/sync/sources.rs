@@ -77,9 +77,11 @@ fn reservations(roots: &Roots, manifest: &Manifest) -> Result<Vec<PathBuf>, &'st
         }
     }
     for registration in manifest.mcp_registrations() {
-        let command =
-            crate::mcp::command::candidate(roots, registration.scope, registration.command)
-                .map_err(|_| "MCP command source cannot be safely resolved")?;
+        let crate::manifest::McpTransport::Stdio { command, .. } = registration.transport else {
+            continue;
+        };
+        let command = crate::mcp::command::candidate(roots, registration.scope, command)
+            .map_err(|_| "MCP command source cannot be safely resolved")?;
         if let Some(command) = command {
             reserved.push(planned_absolute(&command)?);
         }
