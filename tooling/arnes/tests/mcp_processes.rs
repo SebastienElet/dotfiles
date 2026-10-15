@@ -57,6 +57,35 @@ fn agent_mcp_trees_report_instances_memory_age_and_stale_commands_without_secret
 }
 
 #[test]
+fn declared_http_has_no_local_launch_and_flags_a_lingering_stdio_process() -> Result {
+    for (rows, exit_code, has_session) in [
+        ("10 1 100 02:00 /opt/codex app-server", 0, false),
+        (
+            "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 npx @upstash/context7-mcp",
+            1,
+            true,
+        ),
+    ] {
+        let fixture = fixture(rows)?;
+        fixture.write_home(".arnes.yaml", "version: 1\nagents:\n  - { id: codex, scopes: [user, project] }\nmcp:\n  - { agent: codex, scope: user, name: context7, url: 'https://example.test/mcp' }\nresources: []\n")?;
+        let before = fixture.snapshot()?;
+        let output = fixture.command(["doctor", "mcp", "--format", "json"])?;
+        let stdout = String::from_utf8(output.stdout)?;
+        assert_eq!(output.status.code(), Some(exit_code), "{stdout}");
+        assert_eq!(
+            stdout.contains("MCP context7 session=10"),
+            has_session,
+            "{stdout}"
+        );
+        if has_session {
+            assert!(stdout.contains("command differs"), "{stdout}");
+        }
+        assert_eq!(fixture.snapshot()?, before);
+    }
+    Ok(())
+}
+
+#[test]
 fn declared_stdio_process_is_healthy_and_cycles_terminate() -> Result {
     let fixture = fixture(
         "10 1 100 02:00 /opt/codex app-server\n20 10 1024 01:00 /bin/echo expected\n30 31 0 00:01 /opt/codex\n31 30 0 00:01 /bin/echo expected",
