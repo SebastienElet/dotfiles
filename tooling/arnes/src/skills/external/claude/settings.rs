@@ -8,31 +8,52 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-pub(super) fn load(
-    roots: &Roots,
-    scope: Scope,
-) -> (Result<BTreeMap<String, bool>, ()>, Vec<Diagnostic>) {
+pub(super) struct Settings {
+    pub effective: Result<BTreeMap<String, bool>, ()>,
+    pub configured: BTreeMap<String, bool>,
+}
+
+pub(super) fn load(roots: &Roots, scope: Scope) -> (Settings, Vec<Diagnostic>) {
     let mut merged = BTreeMap::new();
+    let mut configured = BTreeMap::new();
     let paths = match scope {
-        Scope::User => vec![(roots.home().join(".claude/settings.json"), roots.home())],
+        Scope::User => vec![(
+            roots.home().join(".claude/settings.json"),
+            roots.home(),
+            Scope::User,
+        )],
         Scope::Project => vec![
-            (roots.home().join(".claude/settings.json"), roots.home()),
+            (
+                roots.home().join(".claude/settings.json"),
+                roots.home(),
+                Scope::User,
+            ),
             (
                 roots.repository().join(".claude/settings.json"),
                 roots.repository(),
+                Scope::Project,
             ),
             (
                 roots.repository().join(".claude/settings.local.json"),
                 roots.repository(),
+                Scope::Project,
             ),
         ],
     };
-    for (path, base) in paths {
+    for (path, base, source_scope) in paths {
         match load_one(&path, base) {
-            Ok(values) => merged.extend(values),
+            Ok(values) => {
+                if source_scope == scope {
+                    configured.extend(values.clone());
+                }
+                merged.extend(values);
+            }
             Err(detail) => {
                 return (
-                    Err(()),
+                    Settings {
+                        effective: Err(()),
+                        configured: BTreeMap::new(),
+                    },
                     vec![Diagnostic::new(
                         "skills",
                         State::Error,
@@ -45,7 +66,13 @@ pub(super) fn load(
             }
         }
     }
-    (Ok(merged), Vec::new())
+    (
+        Settings {
+            effective: Ok(merged),
+            configured,
+        },
+        Vec::new(),
+    )
 }
 
 pub(super) fn exposure(settings: &Result<BTreeMap<String, bool>, ()>, id: &str) -> Exposure {

@@ -1,5 +1,5 @@
 use super::manifest;
-use super::model::{Plugin, plugin_diagnostics};
+use super::model::{Exposure, Plugin, Topology, plugin_diagnostics};
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, State};
 use crate::files::paths::canonical_within;
@@ -14,10 +14,40 @@ mod settings;
 
 pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Diagnostic> {
     let (settings, mut diagnostics) = settings::load(roots, scope);
-    let mut plugins = skills_directory_plugins(roots, policy, scope, &settings);
-    let (installed, registry_diagnostics) = registry::diagnose(roots, scope, &settings);
+    let mut plugins = skills_directory_plugins(roots, policy, scope, &settings.effective);
+    let (installed, registry_diagnostics) = registry::diagnose(roots, scope, &settings.effective);
     plugins.extend(installed);
     diagnostics.extend(registry_diagnostics);
+    for (id, enabled) in &settings.configured {
+        if !plugins.iter().any(|plugin| &plugin.id == id) {
+            plugins.push(Plugin {
+                id: id.clone(),
+                artifact: None,
+                version: None,
+                path: None,
+                exposure: if *enabled {
+                    Exposure::Enabled
+                } else {
+                    Exposure::Disabled
+                },
+                topology: Topology::Missing,
+                detail: Some("plugin is configured without a registry installation".to_owned()),
+                skills: Vec::new(),
+            });
+        }
+    }
+    if scope == Scope::User {
+        let known = plugins
+            .iter()
+            .map(|plugin| plugin.id.as_str())
+            .collect::<Vec<_>>();
+        diagnostics.extend(super::cache_inventory::diagnose(
+            roots,
+            policy,
+            Agent::Claude,
+            &known,
+        ));
+    }
     plugins.sort_by(|left, right| {
         left.id
             .cmp(&right.id)

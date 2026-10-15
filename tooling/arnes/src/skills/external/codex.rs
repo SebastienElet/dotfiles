@@ -29,8 +29,14 @@ pub(super) fn diagnose(roots: &Roots, policy: &Manifest, scope: Scope) -> Vec<Di
         .plugins
         .into_iter()
         .map(|(id, plugin)| cache::resolve(roots.home(), id, configured_exposure(plugin.enabled)))
-        .collect();
-    plugin_diagnostics(policy, Agent::Codex, scope, plugins)
+        .collect::<Vec<_>>();
+    let known = plugins
+        .iter()
+        .map(|plugin| plugin.id.as_str())
+        .collect::<Vec<_>>();
+    let mut diagnostics = super::cache_inventory::diagnose(roots, policy, Agent::Codex, &known);
+    diagnostics.extend(plugin_diagnostics(policy, Agent::Codex, scope, plugins));
+    diagnostics
 }
 
 const fn configured_exposure(enabled: Option<bool>) -> Exposure {

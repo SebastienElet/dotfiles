@@ -116,7 +116,7 @@ fn diagnose(
             Err(error) => vec![Diagnostic::new("hooks", State::Error, error.to_string())],
         },
         Some(Resource::Mcp) => match Roots::from_environment() {
-            Ok(roots) => diagnose_mcp(&roots, agent, scope.or(Some(Scope::User))),
+            Ok(roots) => diagnose_mcp(&roots, agent, scope),
             Err(error) => vec![Diagnostic::new("mcp", State::Error, error.to_string())],
         },
         Some(Resource::Statusline) => match Roots::from_environment() {
