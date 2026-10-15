@@ -53,8 +53,11 @@ not host-enforced.
    verdict and supplied findings until the reviewer records its first analysis, then reconcile
    them. For each finding, record the location, failure mechanism, violated requirement and relevant
    check in a scratchpad outside Git. Mark it `confirmed`, `refuted` with evidence, or
-   `decision-required`. Style preferences do not enter the repair slate. Missing requirements or
-   unresolved architecture, migration or product policy stop only the dependent correction.
+   `decision-required`. Style preferences do not enter the repair slate. Route unsettled policy
+   through `requirements-clarification` under the user's delegation. Review authorized isolated
+   proposals against their explicit assumptions; keep sensitive policy `decision-required` until
+   the user validates it on the prepared result. Missing authority, an ADR contradiction or essential
+   evidence stops only the dependent correction.
 4. **Correct one slate with Codex.** Present the confirmed scope, then proceed under the repair
    authorization. Give Codex the candidate identity, confirmed findings, requirements and allowed
    files; require it to verify the candidate before editing and preserve unrelated work. Use TDD
@@ -97,5 +100,6 @@ not host-enforced.
 - Never let the context that wrote a correction perform its final independent review.
 - Never exceed two correction passes or reset the count on continuation.
 - Never treat failed, missing, stale or empty reviewer output as acceptance.
+- Never treat a proposal's passing checks or review as human approval of its sensitive policy.
 - Never approve, merge, publish a verdict, or activate `pr-verdict` from this local workflow.
 - Never install missing runtimes during a repair or enable the companion's automatic Stop gate.
