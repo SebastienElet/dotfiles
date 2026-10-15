@@ -1,9 +1,16 @@
 # Sélection CI — #407
 
-Cette matrice reçoit les contributions des tranches de
-[#407](https://github.com/SebastienElet/dotfiles/issues/407). Les cinq familles Rust
-ci-dessous relèvent de [#420](https://github.com/SebastienElet/dotfiles/issues/420).
-Les autres familles restent à documenter par leurs tranches respectives ; le
+Cette matrice consolide les contributions de
+[#491](https://github.com/SebastienElet/dotfiles/pull/491),
+[#501](https://github.com/SebastienElet/dotfiles/pull/501),
+[#466](https://github.com/SebastienElet/dotfiles/pull/466),
+[#499](https://github.com/SebastienElet/dotfiles/pull/499),
+[#500](https://github.com/SebastienElet/dotfiles/pull/500) et
+[#505](https://github.com/SebastienElet/dotfiles/pull/505) pour
+[#407](https://github.com/SebastienElet/dotfiles/issues/407).
+Elle couvre les 16 workflows actuels, dont Herdr et Secret scanning ajoutés au
+périmètre historique des 14 familles. Les entrées Moon restent canoniques ; les
+tables en résument les frontières sans définir un second sélecteur. Le
 [relevé #272](moon-gates-272.md) est historique.
 
 ## Contrat commun
@@ -14,8 +21,8 @@ Les ADR acceptées [001](adr/001-makefile-installateur.md),
 `tooling:smoke-minimal` conserve son job macOS à chaque PR et push `main`,
 indépendamment de la sélection spécialisée.
 
-Chaque workflow Rust commence par `select` sur Ubuntu : checkout complet et
-blobless, puis `moonrepo/setup-toolchain`, la validation native des cibles avec
+Les workflows sélectionnés commencent par `select` sur Ubuntu : checkout complet et
+blobless, puis le [setup Moon local](../.github/actions/setup-moon/action.yml), la validation native des cibles avec
 `moon action-graph --json` (sans exécution), et `moon query tasks --affected remote --upstream none --downstream none`, filtré
 sur son projet et ses tâches. Les expressions natives Actions lisent la sortie
 JSON de Moon. Un projet absent du résultat valide évite l'allocation de sa suite ;
@@ -27,6 +34,39 @@ l'interrogation affectée. Aucun filtre de chemins parallèle ne décide à la p
 `MOON_HEAD` est le SHA checkout (`github.sha`, merge synthétique pour une PR).
 Sélection et exécution utilisent ces mêmes révisions. Le push couvre ainsi tous
 ses commits, pas uniquement le dernier. Une révision introuvable reste un échec.
+
+Les 15 agrégats `… required` s'exécutent avec `always()` sur Ubuntu. Une sélection
+doit réussir et déclarer explicitement chaque suite affectée réussie ou chaque
+suite non affectée skipped ; une sortie absente, un échec ou une annulation ne
+donne pas un agrégat vert. Herdr et le smoke exigent leur job amont réussi.
+`Secret scan` reste un contrôle continu distinct. Le blocage effectif de fusion
+nécessite les Settings manuels décrits dans #491 ; ces statuts seuls ne l'activent pas.
+
+## Matrice hors des cinq familles Rust
+
+Chaque suite sélectionnée inclut son workflow et ses dépendances Moon dans ses
+entrées de contrôle. Le setup actuel installe Moon 2.5.3 par `npm ci` avec son
+lockfile, depuis [#515](https://github.com/SebastienElet/dotfiles/pull/515) ; il
+remplace le cache toolchain des observations historiques. Les runtimes et paquets
+des suites restent préparés par leurs tâches Moon.
+
+| Famille / statut continu           | Tâches / plateformes spécialisées                                                                                                | Entrées directes ; transversales                                                                                                                                                                                                                                  | Préparation spécialisée                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Text / `Text required`             | `repository:{cspell-check,prettier-check}` / Ubuntu                                                                              | Texte/YAML/JSON et Markdown des skills indexés ; configuration/dictionnaire CSpell, helpers des gates, exclusions Prettier, package/lockfile et configuration Moon                                                                                                | Bun/CSpell dans la suite retenue ; README affecte Prettier                                    |
+| Static / `Static required`         | `repository:typescript-{lint,typecheck,format-check}` / Ubuntu                                                                   | TypeScript suivi, sources typées et `oxfmt.config.ts` ; configuration lint/TypeScript, package/lockfile et Moon                                                                                                                                                   | Bun dans la suite retenue                                                                     |
+| TypeScript / `TypeScript required` | `repository:{node-runtime-check,typescript-test}` / Ubuntu                                                                       | Entrées des tests généraux, données plugins/skills consommées, sources Rust Memory/Herdr ; installateurs et toolchain/configuration partagés                                                                                                                      | Volta/Node, Bun, Fish et builds Rust dans la suite retenue ; Docker smoke conserve son opt-in |
+| Harness / `Harness required`       | `harness:{validate-evals,validate-evidence}` / Ubuntu                                                                            | Skills/evals/evidence et instructions Harness, contrats locaux d'activation indexés ; sources/lockfile Cargo Arnes, package/lockfile et configuration Moon/Rust                                                                                                   | Rust dans la suite retenue                                                                    |
+| Lua / `Lua required`               | `repository:{neovim-lint,wezterm-lint}` / macOS et Ubuntu, sélection séparée                                                     | `home/.config/nvim/**/*.lua`, `home/.config/wezterm/wezterm.lua` ; `.luacheckrc` optionnel, `.prototools`, Moon Lua/workspace/toolchains/paquets/poste et bootstrap Homebrew                                                                                      | Luacheck par matrice retenue ; lockfile Neovim exclu                                          |
+| Fish / `Fish required`             | `repository:{fish-syntax,fish-format,fish-test}` / macOS et Ubuntu                                                               | `home/.config/fish/**/*.fish` ; package/lockfile, Moon et bootstrap Homebrew ; `tooling/check-scripts.ts` pour syntaxe/format, `.gitignore` et `tooling/git-main-branch*` pour les tests                                                                          | Fish et Bun dans la matrice retenue                                                           |
+| Shell / `Shell required`           | `repository:{shell-ci,workflows-lint}`, `tooling:{installer-test,upgrade-test}` / macOS                                          | Helpers sans extension de `tooling/` et `harness/plugins/`, `*.sh`, workflows, installateur/bootstrap et upgrade ; contrat Node, résolution de branche Git, package/lockfile et Moon                                                                              | ShellCheck, Actionlint et Bun dans la suite retenue                                           |
+| Deployment / `Deployment required` | `tooling:{deployment-test,hunspell-test}` / macOS et Ubuntu ; `tooling:worker-native-test` / macOS, sélection séparée            | Sources déployées `home/`, `harness/`, `.agents/` dont Markdown, helpers/fixtures de liens/skills/instructions/cleanup ; dictionnaires et `home/moon.yml` pour Hunspell ; worker/inspection/marker/chemins/support pour le worker ; configuration Moon/toolchains | Bun dans les suites retenues ; tests de déploiement/Hunspell/worker sans cache de résultat    |
+| Smoke / `Smoke required`           | `tooling:{moon-bootstrap-smoke,smoke-minimal}` / macOS, inconditionnels ; `tooling:upgrade-neovim-test` conditionnel après smoke | Installation publique, nettoyage et rejeu à chaque PR et push `main` ; upgrade/fixtures, dépendances Node/Git et toute configuration Neovim, lockfile inclus, pour l'intégration                                                                                  | Installation minimale complète ; smoke et intégration sans cache de résultat                  |
+| Herdr / `Herdr required`           | `herdr-issue:{fmt,clippy,check,test,doc}` / macOS et Ubuntu                                                                      | Sources/tests/configuration Cargo du projet et entrées Rust communes ci-dessous ; workflow Herdr                                                                                                                                                                  | Matrice allouée sans `select`, tâches affectées via `moon ci` ; préparation Rust              |
+| Secret scanning / `Secret scan`    | `repository:{secret-test,secret-scan}` / Ubuntu                                                                                  | Historique Git complet, configuration `.gitleaks.toml` et tests Gitleaks ; exécution inconditionnelle                                                                                                                                                             | Gitleaks et Bun ; aucun cache de résultat                                                     |
+
+Les preuves et mesures détaillées restent dans les PR contributrices : #501
+(Text/Static/TypeScript/Harness), #499 (Lua/Fish), #500 (Shell/Deployment/Smoke),
+#491 (statuts et Herdr/Secrets) et #505 (préparation/cache).
 
 ## Matrice Rust
 
@@ -51,12 +91,17 @@ Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
 `moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque
 plateforme lorsqu'une autre échoue. Les cinq contrôles Rust restent disponibles, avec
 les flags et mutex existants ; Handoff et Memory conservent leurs tests de
-déploiement. La politique de cache reste inchangée. `select` ne prépare ni Cargo
-ni Bun par exécution de tâche ; le setup installe Moon/proto et conserve son
-cache toolchain existant.
+déploiement. `select` ne prépare ni Cargo ni Bun par exécution de tâche.
+Depuis #505, seule Arnes restaure `tooling/arnes/target` : clé exacte OS/architecture,
+toolchain Rust, manifests/lockfile/configuration Cargo, YAML Moon, `.prototools`
+et workflow, sans préfixe de repli ; `CARGO_INCREMENTAL=0`. Cargo vérifie encore
+la fraîcheur et exécute les contrôles/tests après restauration ; un cache absent
+reprend le graphe normal. Aucun résultat de tâche Moon ni installation utilisateur
+n'est stocké. Les autres suites et fixtures gardent leur politique existante.
 
-Les statuts spécialisés peuvent être skipped. La protection de fusion et les
-statuts continus appartiennent à #418 ; cette tranche ne les établit pas.
+Les statuts spécialisés peuvent être skipped. Leurs agrégats continus sont
+`Arnes required`, `Bitbucket Linear required`, `Agent Handoff required`,
+`Agent Memory required` et `Proof Integrity required` (#491).
 
 ## Observations
 
@@ -66,7 +111,7 @@ Les mesures Actions doivent nommer SHA, événement, versions, plateformes, URLs
 attente avant démarrage et durée d'exécution. Les secondes runner observées ne
 constituent pas une mesure du coût facturé.
 
-### Validation locale — 8 octobre 2026
+### Validation locale historique — 8 octobre 2026
 
 Base `326f5389334097f5644d551ab4e17d20ff8390b0`, modifications de #420
 incluses dans le worktree `rust-ci-select-420`, macOS ARM64 ; Moon 2.5.3,
