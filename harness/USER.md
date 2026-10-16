@@ -180,8 +180,12 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   continuer le travail indépendant. Une autorisation absente, une contradiction avec un ADR ou
   une preuve indispensable manquante ne se résolvent pas par une hypothèse.
 - **Validation concise.** Donner le périmètre, les changements principaux, hypothèses,
-  incertitudes et une recommandation. Pour un changement complexe, préférer une vue du
-  diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
+  incertitudes et une recommandation. Exécuter les étapes déjà autorisées sans me demander de
+  relancer. Si une suite utile est identifiée mais nécessite mon intervention, terminer par une
+  question directe nommant l'action à autoriser ou la décision à prendre. « Il reste à… »,
+  « je peux… » et « en attente d'autorisation » ne remplacent pas cette question. Si la tâche est
+  achevée sans suite utile identifiée, ne pas en inventer. Pour un changement complexe, préférer
+  une vue du diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
 - **Affirmations alignées sur le résultat.** À la fin d'un changement, vérifier que les affirmations
   factuelles présentes dans la PR et dans la documentation touchée correspondent au code courant.
   Ne pas rendre la documentation exhaustive par principe : corriger ou retirer uniquement les

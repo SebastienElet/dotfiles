@@ -82,7 +82,9 @@ not a task to hand back to the reader.
 
 For explanation, advice, or a plan-only request, answer within that scope; suggesting a next action
 does not authorize mutations. When the requested work is complete, end with the result and any
-material limitation. No next action is required.
+material limitation. If an established next action needs the user's decision or authorization,
+end with the specific question that unlocks it. Do not merely state that authorization is missing.
+No next action is required when none is supported by the task or established workflow.
 
 Bad: "Hope that helps. Let me know if you want to dig deeper."
 Good during execution: "The optional visual preview is unavailable. I am completing the remaining checks."
