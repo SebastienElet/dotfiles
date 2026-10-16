@@ -112,7 +112,6 @@ tasks:
     deps:
       - herdr-setup
       - herdr-plugin
-      - herdr-projects
       - home:herdr
     toolchains: system
     options:
@@ -166,23 +165,6 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       herdr plugin link "$workspaceRoot/tooling/herdr-issue-worktree"
-  herdr-projects:
-    description: Install the optional Herdr Projects plugin
-    deps:
-      - herdr-setup
-      - rust
-    checks:
-      - check: condition
-        script: |-
-          "$HOME/.local/bin/herdr-projects" --version
-    toolchains: system
-    options:
-      cache: false
-      os: macos
-      runInCI: false
-    script: |-
-      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH:/opt/homebrew/bin:/usr/local/bin"
-      herdr plugin install --yes eliasstravik/herdr-projects
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
