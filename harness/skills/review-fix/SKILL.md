@@ -49,9 +49,12 @@ not host-enforced.
    plugin before delegating. In Codex, repair directly and use fresh Codex subagents for reviews.
    Do not invoke Claude from Codex. An unavailable runtime or independent reviewer leaves the
    workflow incomplete; preserve existing work and report the missing capability.
-3. **Review before accepting findings.** Obtain a fresh, read-only `code-review` of the anchored
-   candidate, with requirements, applicable ADRs and raw check evidence. Withhold the author's
-   verdict and supplied findings until the reviewer records its first analysis, then reconcile
+3. **Review before accepting findings.** Run the relevant repository checks on the anchored
+   candidate when raw evidence is missing or stale, even if the candidate has not changed. Record
+   their results; if a check changes the candidate, re-anchor and rerun affected checks. Unavailable
+   essential evidence leaves the workflow incomplete. Obtain a fresh, read-only `code-review` of
+   the anchored candidate, with requirements, applicable ADRs and raw check evidence. Withhold
+   the author's verdict and supplied findings until the reviewer records its first analysis, then reconcile
    them. For each finding, record the location, failure mechanism, violated requirement and relevant
    check in a scratchpad outside Git. Mark it `confirmed`, `refuted` with evidence, or
    `decision-required`. Style preferences do not enter the repair slate. Route unsettled policy
@@ -76,10 +79,12 @@ not host-enforced.
 5. **Validate and review the changed result.** After any candidate change, inspect its delta against
    the anchor and any correction slate, index only intended new files before checks, and rerun the
    repository barrier reached by that delta. Recheck the provenance and relevance of new evidence;
-   rerun checks whose inputs or validity changed. Once planned edits finish, obtain a read-only
-   review in a new Codex context that did not write the corrections. Also obtain a fresh review when new
-   evidence or discoveries invalidate the clean-path comparison in step 3, even without a candidate
-   change. Supply the final candidate, requirements and raw evidence before earlier conclusions;
+   rerun checks whose inputs or validity changed. Run any essential check found missing or stale by
+   the review even if the candidate is unchanged; re-anchor if it changes the candidate. Once planned
+   edits finish, obtain a read-only review in a new Codex context that did not write the corrections.
+   Also obtain a fresh review when new evidence or discoveries invalidate the clean-path comparison
+   in step 3, even without a candidate change. Supply the final candidate, requirements and raw
+   evidence before earlier conclusions;
    reconcile the finding ledger after its first analysis. Review the affected delta and consumers.
    Changed verification mechanisms require `proof-integrity-review` over the complete affected
    change. Compare candidate hashes before and after review; concurrent edits invalidate the
