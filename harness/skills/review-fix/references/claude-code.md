@@ -39,16 +39,19 @@ request with `--fresh --wait`. Do not invoke `Skill(codex:rescue)` or
 The rescue subagent is only a forwarder. Do not ask it to read files, review, monitor or interpret
 results itself: its task invocation sends the substantive request to Codex.
 
-For the initial and final reviewers, the forwarded request must explicitly say **read-only; do not
-edit, stage, commit or publish**, name the exact worktree and candidate identity, and require the
-`code-review` procedure with its independent axes. For correction, explicitly authorize edits only
+For the initial reviewer and any required later reviewer, the forwarded request must explicitly say
+**read-only; do not edit, stage, commit or publish**, name the exact worktree and candidate
+identity, and require the `code-review` procedure with its independent axes. For correction,
+explicitly authorize edits only
 to the confirmed slate and relevant tests. Include the user's actual requirements, checked source
 references, verification commands and permission limits in every request. Never inherit a rescue
 thread with `--resume`; a fresh invocation supplies a new Codex context.
 
 The correction request must require a candidate identity check before writing and test evidence
-afterwards. The final reviewer receives requirements, code and raw checks before the correction
-summary or previous findings. A model change is optional; a new context is required.
+afterwards. A later reviewer receives requirements, code and raw checks before the correction
+summary or previous findings. On the clean path, compare the complete candidate identity and
+evidence basis after the initial result; do not dispatch a second reviewer when both remain stable.
+A model change is optional; a new context is required for every later review.
 
 Leave model and reasoning effort unset unless the user explicitly selected them. Use foreground
 completion so a repair cannot end while a child still writes. Give each host invocation a

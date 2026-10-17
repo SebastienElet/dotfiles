@@ -56,8 +56,10 @@ requirements. Other skills own their specialized steps; this skill owns when dev
    `review-fix` on the complete local task delta with requirements, checked source references,
    candidate identity and raw verification evidence. Explicitly authorize Codex to correct
    demonstrated defects only within the task's original scope and relevant tests. Suspend Claude's
-   writes and wait for the workflow's fresh final review before delivering. It owns the two-pass
-   bound, dispositions and incomplete outcomes. Do not re-enter `development` or `review-fix`
+   writes and wait for its result before delivering. A clean initial independent review can serve
+   as the final review only under `review-fix`'s candidate and evidence stability checks; changed
+   inputs require a later review. It owns the two-pass bound, dispositions and incomplete outcomes.
+   Do not re-enter `development` or `review-fix`
    inside its delegated correction. If `pr-fix` already owns repair and final review, retain that
    sequence and report its actual result instead of starting this second loop.
 6. **Deliver the observed result.** Report the final candidate, changed behavior, finding
