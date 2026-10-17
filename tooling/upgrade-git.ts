@@ -75,6 +75,15 @@ async function upgradeRepository(
     runner.skip("Dotfiles redeployment", "repository update failed");
     return;
   }
+  const bootstrap = await runner.command(
+    "Moon bootstrap",
+    [join(repository, "tooling/install-moon")],
+    { cwd: repository, required: true },
+  );
+  if (bootstrap.state !== "succeeded") {
+    runner.skip("Dotfiles redeployment", "Moon bootstrap failed");
+    return;
+  }
   await runner.command(
     "Dotfiles redeployment",
     [moon, "exec", "--quiet", "repository:install"],

@@ -32,6 +32,7 @@ interface UpgradeFixture {
   readonly bin: string;
   readonly env: Environment;
   readonly git: FixtureGit;
+  readonly publishMoonPin: (version: string) => Promise<void>;
   readonly run: (
     overrides?: Readonly<Record<string, string>>,
   ) => Promise<UpgradeResult>;
@@ -56,6 +57,25 @@ async function commandResult(
   return { status, output: stdout + stderr, stdout };
 }
 
+async function publishMoonPin(
+  git: FixtureGit,
+  repository: string,
+  version: string,
+): Promise<void> {
+  await Bun.write(join(repository, ".prototools"), `moon = "${version}"\n`);
+  for (const args of [
+    ["add", ".prototools"],
+    ["commit", "-qm", "advance Moon pin"],
+    ["push", "-q", "origin", "HEAD"],
+    ["reset", "--hard", "HEAD~1"],
+  ]) {
+    const result = await git(...args);
+    if (result.status !== 0) {
+      throw new Error(result.output);
+    }
+  }
+}
+
 async function upgradeFixture(): Promise<UpgradeFixture> {
   const root = await mkdtemp(join(tmpdir(), "upgrade-"));
   temporaryRoots.push(root);
@@ -67,6 +87,8 @@ async function upgradeFixture(): Promise<UpgradeFixture> {
     HOME: home,
     PATH: bin,
     REAL_GIT: realGit,
+    REAL_INSTALL: Bun.which("install") ?? "install",
+    UPGRADE_PROTO_STUB: join(bin, "proto"),
     UPGRADE_LOG: join(root, "calls"),
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_CONFIG_GLOBAL: "/dev/null",
@@ -84,6 +106,7 @@ async function upgradeFixture(): Promise<UpgradeFixture> {
     bin,
     env,
     git,
+    publishMoonPin: (version) => publishMoonPin(git, repository, version),
     async run(
       overrides: Readonly<Record<string, string>> = {},
     ): Promise<UpgradeResult> {
@@ -112,6 +135,10 @@ async function prepareFixtureFiles(
     ].map((directory) => mkdir(directory, { recursive: true })),
   );
   await copyUpgradeFiles(repository);
+  await cp(
+    join(repositoryRoot, ".prototools"),
+    join(repository, ".prototools"),
+  );
   await Bun.write(
     join(repository, "package.json"),
     '{"volta":{"node":"24.18.1"}}',
@@ -134,7 +161,7 @@ async function prepareFixtureFiles(
 }
 
 async function installBoundaryCommands(bin: string): Promise<void> {
-  for (const command of ["bash", "dirname"]) {
+  for (const command of ["bash", "dirname", "mktemp", "rm", "mkdir", "cp"]) {
     const executable = Bun.which(command);
     if (executable === null) {
       throw new Error(`${command} missing from test environment`);
@@ -148,6 +175,7 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
   const files = names.filter(
     (name) =>
       name === "upgrade" ||
+      name === "install-moon" ||
       name === "git-main-branch" ||
       name === "node-version-contract.ts" ||
       ((name.startsWith("upgrade-") || name.startsWith("git-main-branch-")) &&
@@ -172,6 +200,9 @@ async function installFakeCommands(bin: string, home: string): Promise<void> {
     "codex",
     "nvim",
     "date",
+    "curl",
+    "proto",
+    "install",
   ]) {
     const target = join(bin, command);
     await Bun.write(target, `#!${process.execPath}\n${source}`);
