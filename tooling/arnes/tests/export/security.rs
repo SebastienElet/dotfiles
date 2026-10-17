@@ -1,4 +1,4 @@
-use super::{arnes, configured_fixture};
+use super::{arnes, configured_fixture, export_files, generate};
 use std::fs;
 use std::os::unix::fs::symlink;
 #[test]
@@ -68,6 +68,67 @@ fn external_symlinks_and_hardlinks_fail_closed()
         assert!(!output.status.success());
         assert!(String::from_utf8_lossy(&output.stderr).contains("refusing"));
     };
+    Ok(())
+}
+#[test]
+fn external_parent_links_cannot_publish_sources()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    for (parent, selected) in [
+        ("harness", "harness/AGENTS.md"),
+        ("harness/skills/alpha", "harness/skills/alpha/SKILL.md"),
+        ("home", "home/.arnes.yaml"),
+    ] {
+        let fixture = configured_fixture()?;
+        let existing = if parent == "harness" {
+            None
+        } else {
+            generate(&fixture)?;
+            Some(export_files(&fixture)?)
+        };
+        let outside = fixture.home().join("external-parent");
+        fs::rename(fixture.repository().join(parent), &outside)?;
+        fs::write(
+            outside.join(selected.rsplit('/').next().ok_or("missing name")?),
+            "outside-source-marker\n",
+        )?;
+        if parent == "harness/skills/alpha" {
+            symlink(
+                "../../../home/external-parent",
+                fixture.repository().join(parent),
+            )?;
+        } else {
+            symlink(&outside, fixture.repository().join(parent))?;
+        }
+
+        let output = arnes(&fixture, &["export"])?;
+        assert!(!output.status.success(), "{parent}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("refusing"),
+            "{parent}"
+        );
+        match existing {
+            Some(before) => assert_eq!(export_files(&fixture)?, before, "{parent}"),
+            None => assert!(!fixture.repository().join(".harness-export").exists()),
+        }
+    }
+    Ok(())
+}
+#[test]
+fn unreadable_source_parent_fails_before_snapshot_creation()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    let parent = fixture.repository().join("home");
+    fs::remove_dir_all(&parent)?;
+    symlink(fixture.home().join("missing-parent"), &parent)?;
+
+    let output = arnes(&fixture, &["export"])?;
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("parent is unreadable"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(!fixture.repository().join(".harness-export").exists());
     Ok(())
 }
 #[test]

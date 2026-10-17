@@ -27,18 +27,22 @@ pub(super) fn read_sources(repository: &Path) -> Result<Vec<Source>, ExportError
     reject_ignored_harness_paths(repository)?;
     let classified = classify_paths(git_paths(repository)?)?;
     let selected = classified.keys().cloned().collect::<BTreeSet<_>>();
+    let root = fs::canonicalize(repository)
+        .map_err(|error| ExportError::new(format!("repository is unreadable: {error}")))?;
     classified
         .into_iter()
-        .map(|(path, category)| read_source(repository, &selected, path, category))
+        .map(|(path, category)| read_source(repository, &root, &selected, path, category))
         .collect()
 }
 
 fn read_source(
     repository: &Path,
+    root: &Path,
     selected: &BTreeSet<String>,
     path: String,
     category: Category,
 ) -> Result<Source, ExportError> {
+    reject_external_source_parents(repository, root, &path)?;
     let absolute = repository.join(&path);
     let metadata = fs::symlink_metadata(&absolute).map_err(|error| {
         ExportError::new(format!(
@@ -68,6 +72,24 @@ fn read_source(
         kind,
         path,
     })
+}
+
+fn reject_external_source_parents(
+    repository: &Path,
+    root: &Path,
+    path: &str,
+) -> Result<(), ExportError> {
+    for parent in Path::new(path).ancestors().skip(1) {
+        let resolved = fs::canonicalize(repository.join(parent)).map_err(|error| {
+            ExportError::new(format!("source {path} parent is unreadable: {error}"))
+        })?;
+        if !resolved.starts_with(root) {
+            return Err(ExportError::new(format!(
+                "refusing source parent outside repository: {path}"
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn read_symlink_source(
