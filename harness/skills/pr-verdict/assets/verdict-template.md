@@ -15,6 +15,13 @@ the PR.
 naming the parent PR when the branch is stacked. Then the CI state, open tasks and conflicts,
 or "none observed".>
 
+<Merge enforcement — REQUIRED. Name the forge, repository and destination branch. For GitHub,
+name the review state and effective rules examined; state whether the verdict is advisory or cite
+the controlled refusal, including applicable rules and the account used. An unknown rule or bypass
+is advisory, not proof of a block. For your own GitHub PR, state that request-changes is unavailable.
+For Bitbucket, state that this skill has no verified `bkt` command for request changes and its
+comment-only verdict is advisory.>
+
 <Changed-behavior ledger — REQUIRED. One row per externally observable behavior added, removed or
 changed by the diff:
 | Observable behavior | Positive evidence and input basis | Negative witness or exemption | Result |
@@ -57,8 +64,8 @@ Initial review: <url>     REQUIRED when a previous verdict exists on this PR
   changes required          → "Do not approve or merge this head."
   approved with reservations → "Mergeable once <criterion>."
   approved                   → "Approved on this head."
-When the verdict blocks and the forge carries no native blocking state — Bitbucket, or your own
-PR on GitHub — the same line says that this comment is the only thing holding the merge.>
+When the verdict is advisory, say so in this line as well. A request-changes review recorded on
+GitHub is not proof that the merge button is blocked.>
 ```
 
 ## Filled example
@@ -74,6 +81,9 @@ gives numbers, then immediately spends a sentence dismantling its own green.
 
 Review of PR <number> on <head-sha>, stacked base <parent-branch>@<parent-sha>.
 Pipeline <run-id> green, no task and no conflict observed.
+
+Merge enforcement: Bitbucket example/workflows, destination main; this skill has no verified `bkt`
+command for request changes. The comment is advisory and does not block merging.
 
 | Observable behavior | Positive evidence on the exact head | Negative witness | Result |
 | --- | --- | --- | --- |
@@ -96,7 +106,7 @@ Non-blocking: the documented 409/412 codes no longer match the real behavior.
 Fix: https://tracker.example/ISSUE-158
 Initial review: https://forge.example/pull-requests/1042/comments/155
 
-Do not approve or merge this head.
+Do not approve or merge this head; this verdict is advisory.
 ```
 
 ## Self-check before publishing
@@ -108,6 +118,8 @@ Do not approve or merge this head.
   missing proof and why approval needs it. Each blocker has a lift criterion, not a quality judgement.
 - The barrier paragraph contains digits, and a sentence saying what those digits do not prove.
 - The closing sentence tells the reader what to do, not how the reviewer feels.
+- The enforcement statement separates recorded review state from a demonstrated merge block; an
+  advisory verdict says so in its closing sentence.
 - The barrier paragraph names the command it ran, and that command is the one CI runs.
 - Every attachment in the description and the comments was opened, and evidence the author supplied
   is attributed to them rather than reported missing.

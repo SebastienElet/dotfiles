@@ -25,8 +25,8 @@ strong as what it admits it did not test.
 
 Not for re-reading your own diff before committing: perform that review and verification directly.
 This skill judges an open pull request and engages a decision the team will act on. That the PR is
-your own changes nothing about the verdict, only about how it is enforced — see phase 6, since
-GitHub refuses a blocking review on your own PR.
+your own changes nothing about the verdict, only about how it is published — see phase 6, since
+GitHub refuses a request-changes review on your own PR.
 
 ## Usage
 
@@ -58,7 +58,9 @@ says to post directly.
 ## Steps
 
 1. **Anchor.** Resolve the PR number, head SHA, real destination branch and checks state with
-   `references/forges.md`, then check out that exact head. A repository that has its own forge skill
+   `references/forges.md`, then check out that exact head. For GitHub, inspect the target branch's
+   effective rules and relevant bypasses before describing any merge barrier; follow the enforcement
+   procedure in that reference. A repository that has its own forge skill
    wins over those raw commands. If the PR is stacked on another unmerged PR, say so and make
    retargeting after the parent merges part of the verdict: the diff you are reading is not the diff
    that will land on the integration branch. A review not anchored on a named SHA is invalid, and
@@ -124,9 +126,10 @@ says to post directly.
 
 4. **Establish the barrier, then declare its holes.** Run or reuse lint, typecheck and tests the way the project
    runs them — including inside a container when the project requires it, since numbers from the
-   wrong runner are not evidence for this head. Read the CI configuration to find the gate that
-   actually blocks the merge before running anything: it is often not the package script of the same
-   name. Report counts: builds, errors, warnings against the project's threshold, tests passed over
+   wrong runner are not evidence for this head. Read the CI configuration and effective target-branch
+   rules to identify any required merge gate; a successful CI check is advisory if no rule requires
+   it. The relevant command is often not the package script of the same name. Report counts: builds,
+   errors, warnings against the project's threshold, tests passed over
    tests run. Then enumerate what the barrier does not reach: sequential tests say nothing about a
    race, jsdom nothing about a browser, an in-memory database nothing about PostgreSQL, one platform
    nothing about the others. If nothing exercises the changed code, that absence is the review's
@@ -179,11 +182,13 @@ says to post directly.
    comments for that marker first: a verdict carrying the same `<pr>:<sha>` is updated in place,
    never duplicated. Re-read before publishing — past about thirty lines, non-blocking remarks are
    posing as blockers; never truncate the required behavior ledger to meet that heuristic. On
-   GitHub, _changes required_ is published with
-   `gh pr review --request-changes`, the native state, unless you authored the PR: GitHub refuses it
-   there, and Bitbucket has no reliable equivalent at all. Whenever that native state is
-   unavailable, the comment _is_ the verdict and its closing sentence carries the whole enforcement
-   — say so in the verdict, so the reader knows nothing mechanical is holding the merge button.
+   GitHub, _changes required_ is published with `gh pr review --request-changes`, the native review
+   state, unless you authored the PR: GitHub refuses it there, and this skill has no verified `bkt`
+   command for the analogous Bitbucket state. A recorded request for changes does not by itself
+   establish a mechanical merge block.
+   State the advisory scope in the verdict unless the GitHub procedure has demonstrated an actual
+   refusal for the applicable rules and account. For your own GitHub PR or Bitbucket, publish the
+   comment alone and state its advisory scope.
    A same-head reassessment under changed policy or new evidence is a new dated assessment with
    its policy and evidence references. Preserve the earlier verdict and append the reassessment
    inside the existing marked comment; never replace a historical rejection with an approval.
@@ -221,6 +226,9 @@ says to post directly.
   tree while the pipeline lints only the changed files. Its count then measures a backlog that
   predates the head under review, and reporting it as the barrier drowns the diff in noise. Take the
   command from the CI configuration, and name in the verdict which one you ran.
+- **A request-changes review mistaken for branch protection** — GitHub may record the review while
+  still allowing a merge. Inspect the target branch's effective rules and bypasses, and describe the
+  verdict as advisory without a controlled refusal.
 
 ## Constraints
 
@@ -244,6 +252,7 @@ says to post directly.
 - Never create a ticket solely to request, schedule or record a re-review.
 - Never create a ticket or publish a verdict when `pr-fix` composes phases 1 through 5.
 - Never publish without confirmation, unless the request explicitly says to post directly.
+- Never claim GitHub mechanically blocks merging solely because a request-changes review was recorded.
 
 ## References
 

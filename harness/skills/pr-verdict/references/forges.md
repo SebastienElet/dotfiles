@@ -17,17 +17,17 @@ about. Look for it before falling back here.
 
 ## Command parity
 
-| Step                | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Metadata            | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                                                       |
-| Head SHA            | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash` (12-character abbreviation), DC `.fromRef.latestCommit` — confirm the path against the actual payload |
-| Fetch the head      | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                                                          |
-| CI state            | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                                            |
-| Diff                | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                                              |
-| Existing comments   | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                                                   |
-| Publish             | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                                                |
-| Update              | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                                                        |
-| Enforceable verdict | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                                                         |
+| Step                     | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadata                 | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                                                       |
+| Head SHA                 | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash` (12-character abbreviation), DC `.fromRef.latestCommit` — confirm the path against the actual payload |
+| Fetch the head           | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                                                          |
+| CI state                 | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                                            |
+| Diff                     | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                                              |
+| Existing comments        | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                                                   |
+| Publish                  | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                                                |
+| Update                   | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                                                        |
+| Changes-requested review | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                                                         |
 
 `bkt` covers both Bitbucket Cloud and Data Center; the two differ on JSON shape and on some flags
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
@@ -143,27 +143,53 @@ empty result, which looks like a match.
 Same `<pr>:<sha>` → update that comment. Different SHA → publish a new verdict and leave the old one
 in place; it is the record of what was judged on the superseded head.
 
-## The two forges are not equivalent on enforcement
+## Review state and merge enforcement
 
-On GitHub, _changes required_ is a repository state: `gh pr review --request-changes` blocks the
-merge button until it is dismissed, so the comment text is documentation of a block that already
-exists.
+GitHub records `gh pr review --request-changes` as a review state. Its [review documentation](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/approving-a-pull-request-with-required-reviews)
+says this state is informational unless an applicable ruleset or classic branch protection requires
+pull requests; reviewer permissions and bypass rights also matter. Inspect the actual destination
+branch, not the local checkout or the repository default. Substitute the target repository and
+URL-encoded destination branch from the phase-1 anchor; `{branch}` in `gh api` would resolve to the
+current checkout branch:
 
-Bitbucket has no equivalent an agent can set reliably — `bkt pr approve` exists, its negation does
-not; declining a PR is a different act with a different meaning. There the comment **is** the
-verdict, which is why the closing sentence ("do not approve or merge this head") carries the whole
-enforcement and must never be softened or dropped.
+```sh
+gh api "repos/$target_repository/branches/$encoded_destination_branch" --jq '{name, protected}'
+gh api "repos/$target_repository/rules/branches/$encoded_destination_branch"
+gh api "repos/$target_repository/branches/$encoded_destination_branch/protection"
+```
 
-GitHub falls back to that same Bitbucket situation whenever the authenticated account authored the
+The branch rules endpoint reports [active rulesets applicable to that branch](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch),
+including rules from higher scopes. The protection endpoint covers classic protection and returns
+`Branch not protected` when none exists; that response alone says nothing about rulesets. Read the applicable
+pull-request requirement, reviewer's `write` or stronger permission, and relevant administrator or
+ruleset bypass for the account that would merge. Inspect the ruleset details when bypass actors
+matter; [GitHub may omit them without ruleset write access](https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset).
+Treat a failed or incomplete lookup as unknown, not as proof of no protection.
+
+If no active rule demonstrates a block, or a bypass or permission remains uncertain, label the
+verdict advisory even when GitHub records `CHANGES_REQUESTED`. Claim a mechanical block only after a
+controlled PR with the same repository, destination branch, applicable rules, reviewer permission
+and merge account actually refuses merging because of that review. Record the repository, branch,
+active rules, account and observed refusal in the verdict. A rule listing or disabled merge button
+caused by another condition is not that observation. Do not create or merge a controlled PR solely
+to support an ordinary verdict; use the advisory wording when the evidence is unavailable.
+
+Bitbucket [Cloud](https://developer.atlassian.com/cloud/bitbucket/announcement-new-request-changes-webhooks/)
+and [Data Center](https://confluence.atlassian.com/bitbucketserver/review-and-discuss-a-pull-request-808488540.html)
+have a Request changes reviewer status,
+but this skill has no verified `bkt` command to set it. `bkt pr approve` exists; declining a PR is a
+different act with a different meaning. Here the comment **is** the verdict, and the closing
+sentence ("do not approve or merge this head") remains an advisory request.
+
+GitHub falls back to a comment-only verdict whenever the authenticated account authored the
 PR: it rejects the call with `Can not request changes on your own pull request`, and there is no
 flag around it. `gh pr view --json` exposes no `viewerDidAuthor` field (checked on `gh` 2.97), so
 compare the author against the token yourself, in phase 1 —
 
 ```sh
 test "$(gh pr view 1042 --json author --jq .author.login)" = "$(gh api user --jq .login)" &&
-  echo "own PR: no native blocking state"
+  echo "own PR: request-changes review unavailable"
 ```
 
-When it is your own PR, publish the comment alone and state inside the verdict that nothing
-mechanical holds the merge button. A blocking verdict whose reader believes the forge is enforcing
-it, while the forge is not, is worse than no verdict: it buys a false sense of a gate.
+When it is your own PR, publish the comment alone and state its advisory scope. In every GitHub
+case, separate the recorded review state from demonstrated merge enforcement.

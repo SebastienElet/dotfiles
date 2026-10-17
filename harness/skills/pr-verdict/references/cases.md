@@ -25,9 +25,9 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
 - The barrier paragraph gives counts _and_ states that the passing tests are sequential and therefore
   say nothing about the concurrent interleaving that motivates the blockers.
 - A fix ticket is linked, and no ticket exists solely to request or record the re-review.
-- The closing sentence is "do not approve or merge this head" (in the PR's language). On Bitbucket
-  this sentence is the entire enforcement; its absence fails the case even if everything else is
-  right.
+- The closing sentence asks readers not to approve or merge this head (in the PR's language) and
+  states that the Bitbucket comment is advisory. Its absence fails the case even if everything else
+  is right.
 
 **Fail signals**
 
@@ -302,3 +302,22 @@ is required. Record the optional claim as `unproven`; require its removal, quali
 
 **Counterexample:** the optional claim is removed. No benchmark is required for it; any independent
 instruction-adoption criterion or required budget still applies.
+
+## Case K — GitHub review state versus merge enforcement
+
+**Unprotected target.** A reviewer with write access requests changes on another author's PR.
+The target branch has no classic protection and no active ruleset requiring pull requests. The
+review state may be `CHANGES_REQUESTED`, but the verdict names the repository and branch, calls its
+effect advisory, and never says GitHub refuses merging.
+
+**Unknown bypass.** The target has an active pull-request rule, but the reviewer cannot inspect
+the relevant bypass actors or prove the merge account's rights. The verdict records the rule and
+the unknown, then remains advisory. A rule listing alone does not satisfy a mechanical-block claim.
+
+**Proven refusal.** A controlled PR on the same repository and destination branch shows that a
+request-changes review from an eligible reviewer causes GitHub to reject a merge attempt by the
+named account under the recorded active rules. Only this observed refusal supports a mechanical
+block claim for that scope; the verdict cites the observation and its account.
+
+**Own PR.** The authenticated account authored the PR. The skill publishes a comment instead of
+attempting `gh pr review --request-changes`, and the verdict explicitly says it is advisory.
