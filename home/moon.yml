@@ -46,6 +46,7 @@ tasks:
     checks:
       - check: condition
         script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
           set -eo pipefail
           theme_dir="$HOME/.config/bat/themes"
           cache_dir="$(bat --cache-dir)"
