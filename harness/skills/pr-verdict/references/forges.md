@@ -17,17 +17,18 @@ about. Look for it before falling back here.
 
 ## Command parity
 
-| Step                     | GitHub (`gh`)                                                                                                                                                   | Bitbucket (`bkt`)                                                                                                                              |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Metadata                 | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body` | `bkt pr view <n> --json`                                                                                                                       |
-| Head SHA                 | `.headRefOid`                                                                                                                                                   | Cloud `.pull_request.source.commit.hash` (12-character abbreviation), DC `.fromRef.latestCommit` — confirm the path against the actual payload |
-| Fetch the head           | `gh pr checkout <n>`                                                                                                                                            | `bkt pr checkout <n>`                                                                                                                          |
-| CI state                 | `gh pr checks <n>`                                                                                                                                              | `bkt pr checks <n>`                                                                                                                            |
-| Diff                     | `gh pr diff <n>`                                                                                                                                                | `bkt pr diff <n>`                                                                                                                              |
-| Existing comments        | `gh pr view <n> --json comments`                                                                                                                                | `bkt pr comments <n> --json`                                                                                                                   |
-| Publish                  | `gh pr comment <n> --body-file verdict.md`                                                                                                                      | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                                                |
-| Update                   | `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`                                                                                | `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input -`                                                        |
-| Changes-requested review | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR                                                                            | no reliable equivalent                                                                                                                         |
+| Step                     | GitHub (`gh`)                                                                                                                                                                                     | Bitbucket (`bkt`)                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadata                 | `gh pr view <n> --json headRefOid,headRefName,headRepository,headRepositoryOwner,isCrossRepository,maintainerCanModify,baseRefName,mergeStateStatus,title,body`                                   | `bkt pr view <n> --json`                                                                                                                            |
+| Head SHA                 | `.headRefOid`                                                                                                                                                                                     | Cloud `.pull_request.source.commit.hash` (12-character abbreviation), DC `.fromRef.latestCommit` — confirm the path against the actual payload      |
+| Fetch the head           | `gh pr checkout <n>`                                                                                                                                                                              | `bkt pr checkout <n>`                                                                                                                               |
+| CI state                 | `gh pr checks <n>`                                                                                                                                                                                | `bkt pr checks <n>`                                                                                                                                 |
+| Diff                     | `gh pr diff <n>`                                                                                                                                                                                  | `bkt pr diff <n>`                                                                                                                                   |
+| Existing comments        | `gh api --paginate --slurp repos/{owner}/{repo}/issues/<n>/comments?per_page=100` and `gh api --paginate --slurp repos/{owner}/{repo}/pulls/<n>/reviews?per_page=100`                             | `bkt pr comments <n> --json`                                                                                                                        |
+| Publish                  | `gh pr comment <n> --body-file verdict.md`                                                                                                                                                        | `bkt pr comment <n> --text "$(cat verdict.md)"`                                                                                                     |
+| Update                   | Issue comment: `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@verdict.md`; review summary: `gh api -X PUT /repos/{owner}/{repo}/pulls/<n>/reviews/<id> -F body=@verdict.md` | Cloud: `bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/<n>/comments/<id> --input "$(jq -n --rawfile b verdict.md '{content:{raw:$b}}')"` |
+| Changes-requested review | `gh pr review <n> --request-changes --body-file verdict.md` — refused on your own PR; use a marker-free pointer body when updating a marked verdict without that native state on this head        | no reliable equivalent                                                                                                                              |
+| Clear own change request | `gh pr review <n> --approve --body-file review-signal.md` — only after the publishing user authorizes native approval and only on another author's PR                                             | no verified Bitbucket equivalent                                                                                                                    |
 
 `bkt` covers both Bitbucket Cloud and Data Center; the two differ on JSON shape and on some flags
 (`bkt pr comments --state` is Cloud-only). Verified against `gh` 2.97 and `bkt` as installed by this
@@ -113,11 +114,11 @@ quoting or silently truncate the comment. Write `verdict.md`, then pass it:
   `-f` does not).
 - `bkt`: no `--body-file`. Use command substitution — `--text "$(cat verdict.md)"` in bash/zsh,
   `--text (cat verdict.md)` in fish — or build the JSON body with `jq`, which never lets the text
-  reach the shell as syntax:
+  reach the shell as syntax. `bkt api --input` accepts a JSON **string**, not a file or stdin marker:
 
 ```sh
-jq -n --rawfile b verdict.md '{content: {raw: $b}}' |
-  bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/1042/comments/1001 --input -
+bkt api -X PUT /2.0/repositories/{ws}/{repo}/pullrequests/1042/comments/1001 \
+  --input "$(jq -n --rawfile b verdict.md '{content: {raw: $b}}')"
 ```
 
 Data Center takes `{"text": …, "version": <n>}` instead, and rejects the update without the
@@ -125,23 +126,158 @@ comment's current `version` — read it from `bkt pr comments <n> --json` first.
 
 ## Finding a previous verdict
 
-The marker is the lookup key. Search the comment bodies for `<!-- pr-verdict:` before publishing:
+Build the complete first-line marker from the anchored PR number and the first 12 characters of
+the anchored head SHA, for example `<!-- pr-verdict:1042:a1b2c3d4e5f6 -->`. The complete first line
+must equal that marker; a prefix, another PR, another SHA or a marker later in the body is not a
+match. Identify the account through the same authenticated forge context that will publish, before
+reading comments. Require a nonempty stable account ID, a complete comment listing and a valid ID
+for every exact match. A failed API call, malformed listing or missing author ID on an exact match
+stops publication, even if another owned match is present. Do not turn an uncertain read into an
+empty result.
+
+For GitHub, `gh api user --jq .id` identifies the publishing account. Read **both** paginated
+collections; `gh pr review --request-changes` creates a review summary, which is not an issue
+comment. The REST objects expose `.user.id`, `.body` and `.id`; review summaries also expose
+`.state` and `.commit_id`. Use the same repository and PR established in phase 1:
 
 ```sh
-gh pr view 1042 --json comments \
-  --jq '.comments[] | select(.body | startswith("<!-- pr-verdict:")) | {id, body: .body[0:60]}'
-
-bkt pr comments 1042 --json |
-  jq '(.comments // [])[] | select(.content.raw // .text | startswith("<!-- pr-verdict:")) | {id}'
+gh api user --jq '.id'
+gh api --paginate --slurp 'repos/{owner}/{repo}/issues/1042/comments?per_page=100' |
+  jq --arg marker '<!-- pr-verdict:1042:a1b2c3d4e5f6 -->' \
+    'if length > 0 and all(.[]; type == "array") and
+        all(.[][]; type == "object" and (.body | type == "string") and (.id | type == "number")) then
+       [.[][] | select((.body // "" | split("\n")[0]) == $marker) | {id, author_id: .user.id}]
+     else error("invalid issue-comment listing") end'
+gh api --paginate --slurp 'repos/{owner}/{repo}/pulls/1042/reviews?per_page=100' |
+  jq --arg marker '<!-- pr-verdict:1042:a1b2c3d4e5f6 -->' \
+    'if length > 0 and all(.[]; type == "array") and
+        all(.[][]; type == "object" and (.body | type == "string") and (.id | type == "number")) then
+       [.[][] | select((.body // "" | split("\n")[0]) == $marker) | {id, author_id: .user.id, state, commit_id}]
+     else error("invalid review listing") end'
 ```
 
-On Bitbucket Cloud, `bkt pr comments --json` wraps the list in `{comments, repo, workspace}`, and
-`.comments` is `null` when the PR has no comment (`bkt` 0.32.1). The Data Center shape has not been
-checked. Pipe the output to `jq` instead of using `--jq`: the built-in evaluator prints `null` for an
-empty result, which looks like a match.
+Configure bash or zsh to propagate a failed pipeline stage so a failed paginated fetch cannot look
+like an empty list. Compare the numeric `author_id` with the numeric viewer ID, and keep the source
+(`issue comment` or `review summary`) with each match. A GitHub login name or
+`author_association` is not the ownership key. Immediately before an update, read the selected
+object again by ID and recheck its author and exact first-line marker. Update a review summary with
+the review endpoint in the command table; updating an issue comment through that endpoint fails.
+The review update changes its body, not its native review state. Use the **full**, chronological
+GitHub review listing, not only the marker-filtered matches, to find the publishing account's last
+opinionated review (`APPROVED` or `CHANGES_REQUESTED`) and its `commit_id`. Ignore later `COMMENTED`
+reviews when deciding the opinionated state. If review state is dismissed or cannot be established,
+stop before publishing a conflicting verdict. GitHub's REST references document
+[issue comments](https://docs.github.com/en/rest/issues/comments) and
+[review summaries](https://docs.github.com/en/rest/pulls/reviews) as separate resources.
 
-Same `<pr>:<sha>` → update that comment. Different SHA → publish a new verdict and leave the old one
-in place; it is the record of what was judged on the superseded head.
+```sh
+publisher_id=$(gh api user --jq '.id')
+gh api --paginate --slurp 'repos/{owner}/{repo}/pulls/1042/reviews?per_page=100' |
+  jq --arg publisher_id "$publisher_id" '
+    def known_state:
+      . == "APPROVED" or . == "CHANGES_REQUESTED" or . == "COMMENTED" or
+      . == "PENDING" or . == "DISMISSED";
+    def valid_account_review:
+      (.id | type == "number") and (.state | known_state) and
+      (if .state == "APPROVED" or .state == "CHANGES_REQUESTED" then
+         (.commit_id | type == "string") and (.commit_id | length > 0)
+       else true end);
+    if length > 0 and all(.[]; type == "array") and
+       all(.[][]; type == "object") and
+       all(.[][] | select((.user.id | @json) == $publisher_id); valid_account_review) then
+      [.[][] | select((.user.id | @json) == $publisher_id)
+       | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED")
+       | {id, state, commit_id}] | last
+    else error("invalid review listing") end'
+```
+
+GitHub documents chronological review listing. A `null` result means this account has no
+opinionated review. Validate the numeric viewer ID before running this query; an uncertain or
+dismissed state stops the transition.
+
+For a blocking reassessment of someone else's PR, skip another request-changes review only when
+that last opinionated review is `CHANGES_REQUESTED` **and** its `commit_id` is the anchored head.
+Otherwise submit a marker-free request-changes review linking the updated marked verdict, then
+verify that the publishing account's latest opinionated review on this head is
+`CHANGES_REQUESTED`. A historical change request followed by an approval does not satisfy this
+check. For a new head, the newly created marked request-changes review itself establishes the
+state.
+
+For an approval verdict on someone else's PR, check whether the latest opinionated review by this
+account is `CHANGES_REQUESTED`, even when it belongs to an older head. If so, native approval is
+needed to clear the existing request. Name that action when asking to publish; if it is not
+authorized, return the verdict unpublished instead of announcing approval over an active native
+block. Use a pending marked body first: keep any earlier assessment intact and add a visible line
+saying the new approval assessment awaits native approval and is not yet published. On a new head,
+create a marked pending comment containing that status. Reconcile the pending object's author,
+marker and URL before the next write. Submit one marker-free `gh pr review --approve` review whose
+body links to that object, then verify through a fresh review listing that this account's latest
+opinionated review is `APPROVED`. Only then replace the pending body with the complete approved
+`verdict.md` and read it back. If native approval fails or is uncertain, do not write the final body;
+re-read the reviews and pending object, then report only their observed states. If the final body
+update fails or is uncertain, re-read the object by ID: a confirmed final body completes the
+publication, a confirmed pending body leaves it incomplete, and an unreadable body leaves its state
+unknown. Stop and reconcile before retrying; never repeat a native approval already observed.
+If no active change request exists, retain the existing comment-only approval publication. Never
+put the verdict marker in a state-only review. A state review does not by itself prove a mechanical
+merge block or unblock; branch rules and bypasses still matter.
+
+For Bitbucket Cloud, `bkt api /2.0/user` returns the publishing account's `.uuid`.
+`bkt pr comments 1042 --json` returns all comments in `.comments` (`null` when empty), including
+inline comments and replies. Match the exact first line of `.content.raw` and compare `.user.uuid`
+with the authenticated UUID; do not use display names. Exclude a deleted comment from updates.
+Only a top-level global comment, with both `.parent` and `.inline` absent, is eligible for update.
+An exact marker in an owned reply or inline comment is misplaced: stop rather than updating it or
+publishing another verdict. An unknown author on such a match also stops; a known foreign reply or
+inline comment does not mask publication by the current account.
+`bkt` 0.34.0 follows Cloud pagination; a CLI or API failure stops publication. Check that
+`.comments` is an array or `null`, then read the selected comment through
+`bkt api /2.0/repositories/{ws}/{repo}/pullrequests/1042/comments/<id>` and verify its author and
+marker before using the Cloud update endpoint in the command table.
+The Cloud API documents `.user`, `.content.raw`, `.deleted` and the update endpoint. If a live
+payload omits `.user.uuid`, `.content.raw` or `.id`, stop and inspect the actual response.
+The [Cloud user API](https://developer.atlassian.com/cloud/bitbucket/rest/api-group-users/)
+identifies the current account; the [pull request comments API](https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/)
+defines the comment data and update operation.
+
+```sh
+bkt api /2.0/user --json --jq '.uuid'
+bkt pr comments 1042 --json |
+  jq --arg marker '<!-- pr-verdict:1042:a1b2c3d4e5f6 -->' \
+    'if has("comments") and (.comments == null or (.comments | type == "array")) and
+        all((.comments // [])[]; type == "object" and (.id | type == "number") and
+            (.deleted == true or (.content.raw | type == "string"))) then
+       [(.comments // [])[] | select(.deleted != true)
+        | select((.content.raw // "" | split("\n")[0]) == $marker)
+        | {id, author_uuid: .user.uuid, general: (.parent == null and .inline == null)}]
+     else error("invalid Bitbucket comment listing") end'
+```
+
+Bitbucket Data Center comments use `.author` and `.text`, but its documented user listing does not
+identify which account owns the current token. A configured `bkt` username alone is not forge
+proof of the publishing account. Until a verified authenticated-user response is available for the
+target instance, stop before creating or updating a Data Center verdict. Do not infer ownership from
+a matching marker or a display name.
+
+Classify all exact, not-deleted matches across the applicable surfaces before writing:
+
+| Result                                                                           | Action                                                                            |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| One eligible owned match                                                         | Re-read it, then update that object through its own endpoint.                     |
+| No owned match, only known foreign matches or none                               | Publish a new verdict for the current account. Foreign comments remain untouched. |
+| More than one owned match                                                        | Stop and report their IDs; never choose one or add another.                       |
+| Owned match in an ineligible Bitbucket reply or inline comment                   | Stop and report its ID; never update it as the general verdict.                   |
+| Unknown author, missing ID, incomplete listing or uncertain publication response | Stop and reconcile through a fresh remote read before retrying.                   |
+
+After an update, read back its returned ID and verify the author and marker. Creation commands may
+return only a URL or success message, so repeat the full lookup after creation and require exactly
+one newly owned match on the current marker before treating publication as confirmed. On a timeout
+or uncertain response, do the same remote reconciliation before any retry; if it remains uncertain,
+stop without another write. Same `<pr>:<sha>` is account-local idempotency; a different SHA receives a new verdict and leaves the old
+record intact. Do not use `gh pr comment --edit-last`: the last comment may carry another marker.
+The lookup and re-read do not lock the forge: simultaneous publishers can both create a comment.
+Coordinate concurrent publication for the same account and head, and report any duplicate found by
+post-publication reconciliation rather than choosing one to overwrite.
 
 ## Review state and merge enforcement
 
