@@ -17,10 +17,7 @@ const pluginsSchema = z.array(
 const quarantineDays = 3;
 const millisecondsPerDay = 86_400_000;
 
-async function upgradePackages(
-  runner: UpgradeRunner,
-  moon: string,
-): Promise<void> {
+async function upgradePackages(runner: UpgradeRunner): Promise<void> {
   process.stdout.write("ℹ️  Brew\n");
   await runner.command("Brew metadata", ["brew", "update"]);
   await runner.command("Brew packages", [
@@ -45,8 +42,6 @@ async function upgradePackages(
   process.stdout.write("ℹ️  Mas upgrade\n");
   await runner.command("Mas outdated", ["mas", "outdated"]);
   await runner.command("Mas upgrade", ["mas", "upgrade"]);
-  process.stdout.write("ℹ️  Moon upgrade\n");
-  await runner.command("Moon upgrade", [moon, "upgrade"], { required: true });
 }
 
 async function upgradeClaudePlugins(runner: UpgradeRunner): Promise<void> {
@@ -104,7 +99,7 @@ async function main(): Promise<number> {
   const runner = createUpgradeRunner();
   process.stdout.write("ℹ️  Dotfiles\n");
   await upgradeRepository(runner, repository, moon);
-  await upgradePackages(runner, moon);
+  await upgradePackages(runner);
   process.stdout.write("ℹ️  Volta Node.js upgrade\n");
   await upgradeNode(runner, repository);
   process.stdout.write("ℹ️  npm global packages upgrade\n");
