@@ -321,3 +321,50 @@ block claim for that scope; the verdict cites the observation and its account.
 
 **Own PR.** The authenticated account authored the PR. The skill publishes a comment instead of
 attempting `gh pr review --request-changes`, and the verdict explicitly says it is advisory.
+
+## Case L — verdict marker ownership and replay
+
+The anchored head is `a1b2c3d4e5f6…` on PR 1042. The authenticated forge account has ID 7.
+The expected first line is exactly `<!-- pr-verdict:1042:a1b2c3d4e5f6 -->`.
+
+**Update:** One issue comment or GitHub review summary has that first line and author ID 7.
+Expected: re-read that object's ID, confirm the same author and marker, then update through its
+own endpoint. A review summary must not be patched as an issue comment.
+
+**Foreign copy:** A comment with the exact marker belongs to account 8; no owned match exists.
+Expected: leave it untouched and permit account 7 to publish one verdict. A prefix-only marker,
+another PR, another SHA, or the correct marker on a later line is not a match.
+
+**Ambiguity:** Two exact matches belong to account 7, including when one is an issue comment and
+one is a review summary. Expected: stop without choosing or publishing. The same applies when an
+exact match has no author or ID, the authenticated account cannot be established, either GitHub
+listing is incomplete, or a publication response is uncertain. A failed lookup never becomes an
+empty list.
+
+**New head:** The old account-7 verdict bears `a1b2c3d4e5f6`, while the new anchored SHA begins
+`b2c3d4e5f6a1`. Expected: leave the old verdict intact and publish one new head-specific verdict.
+These scenarios require controlled read and selection evidence, not a write to a third-party PR.
+
+**Blocking reassessment:** The owned marked verdict is an issue comment or a `COMMENTED` review
+summary on someone else's GitHub PR. Its same-head reassessment now requires changes. Expected:
+update that object and ensure the account has a native `CHANGES_REQUESTED` review on this head,
+using a marker-free pointer to the marked object if a review is needed. Do not create a second
+marked verdict or a duplicate native state review.
+
+**Opinionated review transitions:** A `CHANGES_REQUESTED` review followed by an `APPROVED` review
+on the same head does not satisfy a later blocking reassessment: submit a new marker-free change
+request after updating its marked verdict. Conversely, an approved reassessment after this account's
+active change request, on the same or an older SHA, requires an explicitly authorized marker-free
+native approval before the complete approved assessment is published. Without that authorization, leave the new
+approval verdict unpublished. A later `COMMENTED` review does not clear a change request.
+
+**Partial approval publication:** An approved reassessment must clear this account's active
+change request. Expected: first show a marked pending status without replacing historical verdict
+text, then submit and verify the marker-free native approval, then publish and read back the complete
+approved assessment in that same marked object. A failed or uncertain native review or final update
+requires remote reconciliation. Report confirmed pending as incomplete, confirmed final body as
+published, or an unreadable body as unknown; never infer the visible state from a timeout.
+
+**Bitbucket placement:** The same marker is present in a Cloud inline comment or reply. Expected:
+never update it as the general verdict. An owned or unknown-author occurrence stops publication;
+a known foreign occurrence does not block a new general verdict by the current account.
