@@ -290,16 +290,17 @@ current checkout branch:
 
 ```sh
 gh api "repos/$target_repository/branches/$encoded_destination_branch" --jq '{name, protected}'
-gh api "repos/$target_repository/rules/branches/$encoded_destination_branch"
+gh api --paginate --slurp "repos/$target_repository/rules/branches/$encoded_destination_branch"
 gh api "repos/$target_repository/branches/$encoded_destination_branch/protection"
 ```
 
 The branch rules endpoint reports [active rulesets applicable to that branch](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch),
-including rules from higher scopes. The protection endpoint covers classic protection and returns
-`Branch not protected` when none exists; that response alone says nothing about rulesets. Read the applicable
-pull-request requirement, reviewer's `write` or stronger permission, and relevant administrator or
-ruleset bypass for the account that would merge. Inspect the ruleset details when bypass actors
-matter; [GitHub may omit them without ruleset write access](https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset).
+including rules from higher scopes. Its slurped response contains one array per page; inspect every
+page before concluding that no pull-request rule applies. The classic protection endpoint returns
+`Branch not protected` when no classic rule exists; that response alone says nothing about rulesets.
+Read the applicable pull-request requirement, the reviewer's `write` or stronger permission, and
+any administrator or ruleset bypass for the account that would merge. Inspect the ruleset details
+when bypass actors matter; [GitHub may omit them without ruleset write access](https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset).
 Treat a failed or incomplete lookup as unknown, not as proof of no protection.
 
 If no active rule demonstrates a block, or a bypass or permission remains uncertain, label the

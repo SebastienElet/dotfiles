@@ -314,6 +314,10 @@ effect advisory, and never says GitHub refuses merging.
 the relevant bypass actors or prove the merge account's rights. The verdict records the rule and
 the unknown, then remains advisory. A rule listing alone does not satisfy a mechanical-block claim.
 
+**Later-page rule.** More than 30 active rules apply, with a pull-request rule beyond the first
+page. The reviewer fetches every page before assessing enforcement; a partial listing is unknown,
+never evidence that no rule applies.
+
 **Proven refusal.** A controlled PR on the same repository and destination branch shows that a
 request-changes review from an eligible reviewer causes GitHub to reject a merge attempt by the
 named account under the recorded active rules. Only this observed refusal supports a mechanical
