@@ -90,12 +90,6 @@
   },
   "overrides": [
     {
-      "files": ["tooling/scrapling-container.ts"],
-      "rules": {
-        "eslint/no-control-regex": "off"
-      }
-    },
-    {
       "files": ["oxfmt.config.ts"],
       "rules": {
         "import/no-default-export": "off"

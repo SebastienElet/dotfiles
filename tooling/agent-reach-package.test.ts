@@ -39,11 +39,11 @@ async function fixture(): Promise<
   await writeFile(join(source, "LICENSE"), "Upstream license\n");
   await writeFile(
     join(source, "agent_reach/skill/SKILL_en.md"),
-    "---\nname: agent-reach\ndescription: MUST USE for anything\n---\n# Upstream skill\n\n## Routing table\n\n[Web](references/web.md)\n\n## Configure a channel\n\nInstall everything automatically.\n",
+    '---\nname: agent-reach\ndescription: MUST USE for anything\n---\n# Upstream skill\n\n## Routing table\n\n[Web](references/web.md)\n\ncurl -s "https://r.jina.ai/URL"\n\n## Configure a channel\n\nInstall everything automatically.\n',
   );
   await writeFile(
     join(source, "agent_reach/skill/references/web.md"),
-    'curl URL\nmcporter call exa.web_search_exa query="query"\nagent-reach doctor --json\n',
+    'curl URL\nmcporter call exa.web_search_exa query="query"\nagent-reach doctor --json\n## Web Reader (MCP)\nmcporter call web-reader.webReader\n## RSS (feedparser)\n',
   );
   await writeFile(
     join(source, "agent_reach/skill/references/video.md"),
@@ -109,7 +109,7 @@ test("routes RSS and podcast commands through the isolated Python environment", 
   const options = await fixture();
   await writeFile(
     join(options.source, "agent_reach/skill/references/web.md"),
-    'python3 -c "import feedparser"\n',
+    '## Web Reader (MCP)\nmcporter call web-reader.webReader\n## RSS (feedparser)\npython3 -c "import feedparser"\n',
   );
   const marketplace = await prepareAgentReachPlugin(options);
   const plugin = join(marketplace, "plugins/agent-reach");
@@ -126,6 +126,69 @@ test("routes RSS and podcast commands through the isolated Python environment", 
     'export PATH="$HOME/.local/share/agent-reach/python-tools/agent-reach/bin:$PATH"',
   );
 });
+
+test("packages bounded Jina reads without advertising the unconfigured Web Reader", async () => {
+  const options = await fixture();
+  const recipeCount = 2;
+  await writeFile(
+    join(options.source, "agent_reach/skill/references/web.md"),
+    [
+      "## Jina Reader",
+      'curl -s "https://r.jina.ai/URL"',
+      'curl -s "https://r.jina.ai/https://example.com/article"',
+      "## Web Reader (MCP)",
+      '```bash\nmcporter call web-reader.webReader url="https://example.com"\n```',
+      "## RSS (feedparser)",
+      'python3 -c "import feedparser"',
+      "| Images | web-reader MCP |",
+      "",
+    ].join("\n"),
+  );
+  const marketplace = await prepareAgentReachPlugin(options);
+  const web = await readFile(
+    join(
+      marketplace,
+      "plugins/agent-reach/skills/agent-reach/references/web.md",
+    ),
+    "utf8",
+  );
+  expect(web).not.toContain("web-reader");
+  expect(web).not.toContain("Web Reader (MCP)");
+  expect(web.match(/--max-time 30/gu)).toHaveLength(recipeCount);
+  expect(web.match(/--connect-timeout 10/gu)).toHaveLength(recipeCount);
+  expect(web.match(/--include/gu)).toHaveLength(recipeCount);
+  expect(web.match(/X-No-Cache: true/gu)).toHaveLength(recipeCount);
+  expect(web.match(/DNT: 1/gu)).toHaveLength(recipeCount);
+  expect(web).toContain("scripts/agent-reach-python");
+  expect(web).toContain("https://r.jina.ai/https://example.com/article");
+  const skill = await readFile(
+    join(marketplace, "plugins/agent-reach/skills/agent-reach/SKILL.md"),
+    "utf8",
+  );
+  expect(skill).toContain("--max-time 30");
+  expect(skill).not.toContain('curl -s "https://r.jina.ai/');
+});
+
+test.each([
+  "## Web Reader v2\nweb-reader.webReader\n## RSS (feedparser)\n",
+  "## Web Reader (MCP)\nweb-reader.webReader\n## Feeds\n",
+  "## RSS (feedparser)\n## Web Reader (MCP)\nweb-reader.webReader\n",
+  "## Web Reader (MCP)\nweb-reader.webReader\n## RSS (feedparser)\nweb-reader.webReader\n",
+])(
+  "rejects changed upstream web structure without publishing: %s",
+  async (web) => {
+    const options = await fixture();
+    await writeFile(
+      join(options.source, "agent_reach/skill/references/web.md"),
+      web,
+    );
+    await rejects(
+      prepareAgentReachPlugin(options),
+      /Upstream web reference sections changed/u,
+    );
+    expect(await readdir(options.home)).toEqual([]);
+  },
+);
 
 test("missing upstream resources do not publish a partial marketplace", async () => {
   const options = await fixture();

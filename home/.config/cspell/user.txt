@@ -16,7 +16,6 @@ behaviour
 bytewise
 cette
 clippy
-cloakbrowser
 cloakhq
 cloakserve
 codepoint
@@ -63,7 +62,6 @@ resumability
 rustc
 rustup
 référence
-scrapling
 sdef
 semctx
 startswith
@@ -108,3 +106,4 @@ wasmtime
 Plannotator
 assertledger
 UNSANDBOXED
+Jina

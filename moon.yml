@@ -54,8 +54,7 @@ tasks:
       - repository:dependencies
       - repository:node
       - harness:cursor
-      - repository:cloakbrowser
-      - repository:scrapling
+      - harness:agent-reach
       - home:postgresql
       - repository:daisydisk
       - repository:things-3

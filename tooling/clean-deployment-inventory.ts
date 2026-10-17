@@ -95,7 +95,6 @@ const links = [
     "tooling/agent-handoff/target/release/agent-handoff",
     ".local/bin/agent-handoff",
   ],
-  ["tooling/scrapling-mcp", ".local/bin/scrapling_mcp"],
 ] as const;
 const regularFiles = [
   ".codex/AGENTS.md",

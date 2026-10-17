@@ -153,7 +153,7 @@ test("cleans and reinstalls portable minimal Moon deployments without global dep
   expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 
-test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling links separately", () => {
+test("cleans and reinstalls optional Cursor, Herdr and PostgreSQL links separately", () => {
   const fixture = createDeploymentFixture("clean-moon-optional");
   const existingFiles = deployedArtifacts(fixture.home);
   const environment = {
@@ -165,11 +165,8 @@ test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling lin
   const tasks = ["harness:cursor-rules", "harness:cursor-skills", "home:herdr"];
   const postgresql = (): ReturnType<typeof runDeploymentMoon> =>
     runDeploymentMoon(fixture, ["home:postgresql"], environment);
-  const scrapling = (): ReturnType<typeof runDeploymentMoon> =>
-    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
-  expectSuccess(scrapling());
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
     (path) => !existingFiles.includes(path),
@@ -181,7 +178,6 @@ test("cleans and reinstalls optional Cursor, Herdr, PostgreSQL and Scrapling lin
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
-  expectSuccess(scrapling());
   expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 

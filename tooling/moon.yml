@@ -27,10 +27,6 @@ fileGroups:
     - deployment-links.test.ts
     - moon/optional-links.test.ts
     - moon/cursor.test.ts
-    - docker-install-test-provider.ts
-    - install-docker-artifact
-    - install-docker-artifact.ts
-    - scrapling-mcp
     - design-claim-audit.test.ts
     - deployment-moon-runner.ts
     - deployment-test-support.ts
@@ -39,7 +35,6 @@ fileGroups:
     - /tooling/agent-memory/moon.yml
     - /tooling/agent-handoff/moon.yml
     - /tooling/arnes/moon.yml
-    - deploy-scrapling-launcher*.ts
     - check-docker-cli
     - /.moon/tasks/docker.yml
     - assemble-agent-instructions*.ts
@@ -61,18 +56,6 @@ fileGroups:
     - /.moon/tasks/harness-cursor.yml
     - /.moon/tasks/docker.yml
 tasks:
-  scrapling-mcp:
-    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-scrapling-launcher.ts"
-    inputs:
-      - deploy-scrapling-launcher.ts
-      - deploy-link.ts
-      - scrapling-mcp
-    deps:
-      - repository:dependencies
-    toolchains: bun
-    options:
-      cache: false
-      runInCI: false
   test:
     command: noop
     deps:
@@ -89,7 +72,7 @@ tasks:
       - "@group(deploymentSources)"
       - /install.sh
   deployment-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deployment-moon.test.ts tooling/deploy-link.test.ts tooling/deploy-scrapling-launcher.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/moon/cursor.test.ts tooling/clean-deployment-worker-marker.test.ts tooling/clean-deployment-worker-owner.test.ts tooling/clean-deployment-worker-inspect.test.ts tooling/clean-deployment-remem.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-http.test.ts tooling/clean-deployment-semctx.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/deployment-fish.test.ts tooling/deployment-links.test.ts tooling/deployment-xdg.test.ts tooling/deployment-moon.test.ts tooling/deploy-link.test.ts tooling/assemble-agent-instructions.test.ts tooling/install-agent-skills.test.ts tooling/design-claim-audit.test.ts tooling/moon/optional-links.test.ts tooling/moon/cursor.test.ts tooling/clean-deployment-worker-marker.test.ts tooling/clean-deployment-worker-owner.test.ts tooling/clean-deployment-worker-inspect.test.ts tooling/clean-deployment-remem.test.ts tooling/clean-deployment.test.ts tooling/clean-deployment-config.test.ts tooling/clean-deployment-http.test.ts tooling/clean-deployment-semctx.test.ts tooling/clean-deployment-moon.test.ts tooling/clean-deployment-decoding.test.ts
     deps:
       - repository:dependencies
     options:
@@ -208,34 +191,6 @@ tasks:
       - moon/bootstrap.integration.ts
       - install-moon
       - "@group(bunTestSupport)"
-  docker-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/docker-install.test.ts tooling/docker-verify.test.ts tooling/scrapling-mcp.test.ts tooling/scrapling-image.test.ts tooling/cloakbrowser.test.ts
-    deps:
-      - repository:dependencies
-    options:
-      runFromWorkspaceRoot: true
-      cache: false
-    inputs:
-      - docker-*.ts
-      - install-docker-artifact*
-      - scrapling-*.ts
-      - scrapling-mcp
-      - cloakbrowser*
-      - /.moon/tasks/docker.yml
-      - "@group(rootToolchain)"
-  docker-smoke:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 ./tooling/docker-images.integration.ts tooling/scrapling-mcp.test.ts
-    deps:
-      - repository:dependencies
-    options:
-      runFromWorkspaceRoot: true
-      cache: false
-    env:
-      SCRAPLING_DOCKER_SMOKE: "1"
-      SCRAPLING_DOCKER_CANONICAL_SMOKE: "1"
-    inputs:
-      - "@group(toolingSources)"
-      - "@group(rootToolchain)"
   smoke-minimal:
     command: bun tooling/smoke-minimal.ts
     deps:

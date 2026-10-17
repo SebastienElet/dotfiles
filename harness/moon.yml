@@ -80,6 +80,7 @@ tasks:
     inputs:
       [
         plugins/agent-reach/source.json,
+        plugins/agent-reach/SKILL.md,
         /tooling/agent-reach-package.ts,
         /tooling/agent-reach-source.ts,
         /tooling/agent-reach.ts,
@@ -88,12 +89,12 @@ tasks:
     options: { mutex: harness-mutation }
   agent-reach-claude:
     command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts claude "$workspaceRoot" "$HOME"
-    deps: [agent-reach-package, claude-binary]
+    deps: [agent-reach-package, claude-binary, claude-instructions]
     toolchains: bun
     options: { os: macos, mutex: harness-mutation }
   agent-reach-codex:
     command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts codex "$workspaceRoot" "$HOME"
-    deps: [agent-reach-package, codex-binary]
+    deps: [agent-reach-package, codex-binary, codex-instructions]
     toolchains: bun
     options: { os: macos, mutex: harness-mutation }
   agent-reach-check:

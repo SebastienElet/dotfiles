@@ -6,7 +6,6 @@ import {
   fileIdentity,
   pathExists,
   project,
-  requireCommand,
 } from "../deployment-test-support.ts";
 import { dirname, join } from "node:path";
 import {
@@ -14,10 +13,8 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs";
-import type { DeploymentFixture } from "../deployment-test-support.ts";
 import { runDeploymentMoon } from "../deployment-moon-runner.ts";
 
 const psqlrcSource = join(project, "home", ".psqlrc");
@@ -51,96 +48,6 @@ test("refuses a divergent psqlrc without replacing it", () => {
     `${destination} exists and is not the expected symbolic link`,
   );
   expect(readFileSync(destination, "utf8")).toBe("personal\n");
-});
-
-function scraplingFixture(): Readonly<{
-  destination: string;
-  fixture: DeploymentFixture;
-  trace: string;
-}> {
-  const fixture = createDeploymentFixture("optional-scrapling");
-  const destination = join(fixture.home, ".local", "bin", "scrapling_mcp");
-  const trace = join(fixture.root, "docker-trace");
-  mkdirSync(dirname(destination), { recursive: true });
-  symlinkSync(
-    join(project, "tooling", "docker-install-test-provider.ts"),
-    join(fixture.bin, "docker"),
-  );
-  writeFileSync(trace, "");
-  return { destination, fixture, trace };
-}
-
-test("Moon links Scrapling without Docker", () => {
-  const { destination, fixture, trace } = scraplingFixture();
-  const source = join(project, "tooling", "scrapling-mcp");
-  const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
-
-  expect(
-    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment).exitCode,
-  ).toBe(0);
-  expect(readlinkSync(destination)).toBe(source);
-  expect(readFileSync(trace, "utf8")).toBe("");
-});
-
-test("Moon preserves an existing Scrapling launcher silently without Docker", () => {
-  const { destination, fixture, trace } = scraplingFixture();
-  const source = join(project, "tooling", "scrapling-mcp");
-  const environment = { PATH: `${dirname(process.execPath)}:/usr/bin:/bin` };
-  symlinkSync(source, destination);
-  const inode = lstatSync(destination).ino;
-
-  expect(
-    runDeploymentMoon(fixture, ["tooling:scrapling-mcp"], environment),
-  ).toEqual({
-    exitCode: 0,
-    stdout: "",
-    stderr: "",
-  });
-  expect(lstatSync(destination).ino).toBe(inode);
-  expect(readFileSync(trace, "utf8")).toBe("");
-});
-
-test("Moon Scrapling refuses an occupied link before Docker API commands", () => {
-  const { destination, fixture, trace } = scraplingFixture();
-  writeFileSync(destination, "personal\n");
-
-  const result = Bun.spawnSync(
-    [
-      process.env.DEPLOYMENT_MOON ?? requireCommand("moon"),
-      "exec",
-      "--quiet",
-      "--ignore-ci-checks",
-      "--no-actions",
-      "--upstream",
-      "none",
-      "repository:scrapling",
-    ],
-    {
-      cwd: project,
-      env: {
-        ...process.env,
-        HOME: fixture.home,
-        MOON_HOME:
-          process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
-        PROTO_HOME:
-          process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
-        PROTO_OFFLINE: "true",
-        DOCKER_INSTALL_TEST_SCENARIO: "artifact-present",
-        DOCKER_INSTALL_TEST_STATE: trace,
-        DOCKER_INSTALL_TEST_TARGET: "scrapling",
-        PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
-      },
-      stderr: "pipe",
-      stdout: "pipe",
-    },
-  );
-
-  expect(result.exitCode).not.toBe(0);
-  expect(result.stderr.toString()).toContain(
-    `${destination} exists and is not the expected symbolic link`,
-  );
-  expect(readFileSync(destination, "utf8")).toBe("personal\n");
-  expect(readFileSync(trace, "utf8")).toBe("");
 });
 
 test.skipIf(process.platform !== "darwin").each([

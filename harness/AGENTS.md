@@ -45,18 +45,8 @@ Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and
 
 ## Web Fetching
 
-Escalate only when the previous tier fails; never start above the first tier:
-
-1. Built-in fetch, then `scrapling` `fetch` for JS-rendered pages.
-2. `scrapling` `stealthy_fetch` for anti-bot protections (add `solve_cloudflare` for Turnstile).
-3. CloakBrowser, when `stealthy_fetch` is still blocked. Reuse the `cloak` container instead of
-   starting a new one, so a forgotten `docker stop` costs at most one container:
-   ```sh
-   "$HOME/.dotfiles/tooling/cloakbrowser"
-   ```
-   Then call `scrapling` `fetch` with `cdp_url=http://host.docker.internal:9222` — the Scrapling MCP
-   runs inside Docker, so `localhost` would resolve to its own container. Stop the container
-   (`docker stop cloak`) once done; `--idle-timeout` stops it on its own after five idle minutes.
+Use the Agent-Reach skill for web reading. If it is unavailable or cannot retrieve the requested
+content, report the limitation. Keep private or sensitive resources out of hosted readers.
 
 ## Verification Claims
 
