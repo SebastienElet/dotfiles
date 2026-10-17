@@ -5,7 +5,7 @@ description: >
   Use only when the user explicitly requests Herdr to work on an issue; never select it for
   issue lookup, generic implementation, an agent or pane name alone, or implementation already
   provisioned by Herdr Projects.
-compatibility: Requires HERDR_ENV=1, the native Herdr CLI, Git, and authenticated tracker access.
+compatibility: Requires a verifiable Herdr caller pane, the native Herdr CLI, Git, and authenticated tracker access.
 metadata:
   category: dev
 ---
@@ -47,9 +47,22 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
 
 ## Steps
 
-1. **Establish the native contract.** Verify `HERDR_ENV=1` before controlling Herdr; otherwise
-   report the unavailable environment and stop. Load the installed `herdr` skill, using
-   `herdr --skill` when it is not already available. Follow its safety and startup rules.
+1. **Establish the native contract.** Load the installed `herdr` skill, using `herdr --skill` when
+   it is not already available. Its `HERDR_ENV=1` gate applies to the calling agent's launch
+   context. A tool subprocess may have a sanitized environment; its missing variable alone does
+   not establish that the agent runs outside Herdr. If the subprocess has no Herdr context, obtain
+   both the exact caller agent PID and pane ID from trusted host launch context or an explicit user
+   identification. Inspect only that PID's environment with OS read-only facilities; on macOS use
+   `ps eww -p <caller-agent-pid> | rg -o 'HERDR_(ENV|PANE_ID|SOCKET_PATH|SESSION)=[^[:space:]]+'`.
+   Require `HERDR_ENV=1`, the supplied `HERDR_PANE_ID`, and a socket path. Never print the full
+   process environment. Carry these verified values into the Herdr CLI subprocess and run the
+   installed skill's `HERDR_ENV=1` check there. Then use `herdr status --json` and
+   `herdr pane process-info --pane <caller-pane-id>` to confirm the selected socket is live and
+   the supplied PID is a foreground agent process in that pane. If any identity or check is
+   unavailable, report the caller context as unverified and stop Herdr operations. Never infer the
+   caller from a parent daemon, matching cwd, agent list, or focused pane. Restoring independently
+   verified launch values in a sanitized subprocess is this skill's sole adaptation to the installed
+   gate; follow its remaining safety and startup rules.
    Inspect `herdr --help`, client/server status, and the worktree, workspace, pane, and agent
    command groups. Rediscover `worktree create --help`, `worktree open --help`, and
    `agent start --help` before using them. Missing native worktree labeling support is a blocker;
@@ -118,6 +131,10 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
 
 ## Gotchas
 
+- **Trusting a tool subprocess environment** — its missing `HERDR_ENV` can falsely reject a managed
+  agent; verify the identified caller process, then restore its context for native commands.
+- **Guessing the caller from focus or cwd** — several agents can share a checkout while focus belongs
+  to another pane; require a trusted caller PID and pane ID and confirm both against native state.
 - **Naming only the agent** — the sidebar still lacks the issue worktree; verify native workspace
   worktree metadata and its exact human label.
 - **Slugging the title into the label** — punctuation and casing are lost; preserve the tracker
@@ -132,6 +149,9 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
 ## Constraints
 
 - Activate only for explicit Herdr issue-work requests, never for issue consultation alone.
+- Never treat a sanitized child environment as proof that the calling agent is outside Herdr.
+- Never copy Herdr variables from a parent daemon or an unverified agent process.
+- Never use a focused pane or another agent's process as a fallback for an unverified caller.
 - Use native Herdr operations; add no wrapper, custom validator, or copied Herdr procedure.
 - Keep the exact tracker identifier and title in the workspace label; keep IDs opaque.
 - Never change the main checkout's branch or overwrite existing work on resume.
