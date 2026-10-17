@@ -66,7 +66,7 @@ La disponibilité d'une commande locale est contrôlée sans l'exécuter :
 - un nom de commande simple doit résoudre vers un fichier exécutable dans le `PATH` injecté ;
 - un chemin relatif est résolu depuis la racine du scope, home pour `user` et dépôt pour `project` ;
 - une référence de chemin non résoluble ou ambiguë est une erreur de diagnostic, jamais un succès ;
-- un wrapper couvert par l'ADR-031 est traité comme toute autre commande locale, sans inspection de
+- un wrapper couvert par [l'ADR-031 alors en vigueur](https://github.com/SebastienElet/dotfiles/blob/51bcd83d161f34fdc588d4f73c3a486f76ef16fe/docs/adr/031-mcp-en-conteneurs-nommes.md) est traité comme toute autre commande locale, sans inspection de
   son image, de son daemon ou de ses conteneurs.
 
 Le chemin réellement résolu est la valeur contrôlée. Une simple présence textuelle dans le fichier
@@ -128,4 +128,4 @@ périmètre. Le diagnostic prouve la conformité statique de l'inscription et la
 du lanceur ; il ne prétend pas prouver qu'un serveur démarrera ni qu'un outil MCP répondra.
 
 Cette conception implémente l'issue #121, sous le contrat en lecture seule de l'issue parente #111,
-et respecte la topologie des wrappers couverts par l'ADR-031 sans l'étendre aux autres MCP.
+et respecte la topologie des wrappers couverts par [l'ADR-031 alors en vigueur](https://github.com/SebastienElet/dotfiles/blob/51bcd83d161f34fdc588d4f73c3a486f76ef16fe/docs/adr/031-mcp-en-conteneurs-nommes.md) sans l'étendre aux autres MCP.
