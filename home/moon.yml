@@ -27,15 +27,37 @@ tasks:
     script: |
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -e
-      mkdir -p "$HOME/.config/bat/themes"
-      curl -fSL -o "$HOME/.config/bat/themes/Catppuccin Latte.tmTheme" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Latte.tmTheme
-      curl -fSL -o "$HOME/.config/bat/themes/Catppuccin Mocha.tmTheme" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
+      theme_dir="$HOME/.config/bat/themes"
+      cache_dir="$(bat --cache-dir)"
+      test -n "$cache_dir"
+      mkdir -p "$theme_dir"
+      rm -f "$cache_dir/.catppuccin-ready"
+      theme_file="$(mktemp "$theme_dir/.Catppuccin-Latte.XXXXXX")"
+      trap 'rm -f "$theme_file"' EXIT
+      curl -fSL -o "$theme_file" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Latte.tmTheme
+      mv "$theme_file" "$theme_dir/Catppuccin Latte.tmTheme"
+      theme_file="$(mktemp "$theme_dir/.Catppuccin-Mocha.XXXXXX")"
+      curl -fSL -o "$theme_file" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
+      mv "$theme_file" "$theme_dir/Catppuccin Mocha.tmTheme"
       bat cache --build
+      touch "$cache_dir/.catppuccin-ready"
     deps:
       - repository:bat-setup
     checks:
       - check: condition
-        script: test -f "$HOME/.config/bat/themes/Catppuccin Latte.tmTheme"
+        script: |-
+          set -eo pipefail
+          theme_dir="$HOME/.config/bat/themes"
+          cache_dir="$(bat --cache-dir)"
+          test -n "$cache_dir"
+          test -f "$cache_dir/.catppuccin-ready"
+          test -s "$cache_dir/themes.bin"
+          test -s "$cache_dir/syntaxes.bin"
+          test -s "$cache_dir/metadata.yaml"
+          test -s "$theme_dir/Catppuccin Latte.tmTheme"
+          test -s "$theme_dir/Catppuccin Mocha.tmTheme"
+          bat --list-themes | grep -Fx 'Catppuccin Latte' > /dev/null
+          bat --list-themes | grep -Fx 'Catppuccin Mocha' > /dev/null
     toolchains: system
     options:
       cache: false
