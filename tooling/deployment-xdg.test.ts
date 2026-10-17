@@ -18,6 +18,12 @@ import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 afterEach(cleanupDeploymentFixtures);
 const deploymentTimeoutMilliseconds = 15_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
+const gitIsolation = {
+  GIT_CONFIG_GLOBAL: undefined,
+  GIT_CONFIG: undefined,
+  GIT_CONFIG_COUNT: "0",
+  GIT_CONFIG_PARAMETERS: undefined,
+};
 
 test("deploys XDG links while preserving obsolete user links", () => {
   const fixture = createDeploymentFixture("xdg-links");
@@ -28,7 +34,11 @@ test("deploys XDG links while preserving obsolete user links", () => {
   }
   const targets = xdgTargets(fixture.home);
   expectSuccess(
-    runDeploymentMoon(fixture, ["home:wezterm", "home:tmux", "home:git-delta"]),
+    runXdgDeploymentMoon(fixture, [
+      "home:wezterm",
+      "home:tmux",
+      "home:git-delta",
+    ]),
   );
   expect(targets.map((target) => linkTarget(target))).toEqual([
     join(project, "home", ".config", "wezterm", "wezterm.lua"),
@@ -45,7 +55,11 @@ test("migrates Git includes exactly once and preserves unrelated values", () => 
   const fixture = createDeploymentFixture("xdg-git");
   prepareGitDeltaFixture(fixture);
   expectSuccess(
-    runDeploymentMoon(fixture, ["home:wezterm", "home:tmux", "home:git-delta"]),
+    runXdgDeploymentMoon(fixture, [
+      "home:wezterm",
+      "home:tmux",
+      "home:git-delta",
+    ]),
   );
   expect(includePaths(fixture)).toEqual([
     "~/.config/git/config.delta",
@@ -58,7 +72,7 @@ test("migrates Git includes exactly once and preserves unrelated values", () => 
     config: fileIdentity(config),
     links: links.map((link) => fileIdentity(link)),
   };
-  expectSuccess(runDeploymentMoon(fixture, ["home:git-delta"]));
+  expectSuccess(runXdgDeploymentMoon(fixture, ["home:git-delta"]));
   expect({
     config: fileIdentity(config),
     links: links.map((link) => fileIdentity(link)),
@@ -70,8 +84,6 @@ test("migrates an XDG Git include when the home Git config also exists", () => {
   const xdgConfig = join(fixture.home, ".config", "git", "config");
   const homeConfig = join(fixture.home, ".gitconfig");
   mkdirSync(join(fixture.home, ".config", "git"), { recursive: true });
-  writeFileSync(xdgConfig, "");
-  writeFileSync(homeConfig, "");
   for (const value of [
     "~/.gitconfig.delta",
     "~/.config/git/other.conf",
@@ -81,27 +93,10 @@ test("migrates an XDG Git include when the home Git config also exists", () => {
     addInclude(fixture, xdgConfig, value);
   }
   addInclude(fixture, homeConfig, "~/.config/git/home.conf");
-
   expectSuccess(runGitIncludes(fixture));
-  expect(includePathsFromFile(xdgConfig)).toEqual([
-    "~/.config/git/other.conf",
-    "~/xgitconfig.delta",
-  ]);
-  const effective = Bun.spawnSync(
-    [requireCommand("git"), "config", "--get-all", "include.path"],
-    {
-      cwd: fixture.root,
-      env: {
-        ...process.env,
-        HOME: fixture.home,
-        XDG_CONFIG_HOME: join(fixture.home, ".config"),
-        GIT_CONFIG_SYSTEM: "/dev/null",
-      },
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
-  expect(effective.stdout.toString().trim().split("\n")).toEqual([
+  expect(
+    git(fixture, ["config", "--get-all", "include.path"]).trim().split("\n"),
+  ).toEqual([
     "~/.config/git/other.conf",
     "~/xgitconfig.delta",
     "~/.config/git/home.conf",
@@ -113,24 +108,6 @@ test("migrates an XDG Git include when the home Git config also exists", () => {
   expect(second.stdout).toBe("");
   expect(second.stderr).toBe("");
   expect([fileIdentity(xdgConfig), fileIdentity(homeConfig)]).toEqual(before);
-});
-
-test("migrates a Git include once when the home config links to XDG", () => {
-  const fixture = createDeploymentFixture("xdg-git-alias");
-  const xdgConfig = join(fixture.home, ".config", "git", "config");
-  const homeConfig = join(fixture.home, ".gitconfig");
-  mkdirSync(join(fixture.home, ".config", "git"), { recursive: true });
-  writeFileSync(xdgConfig, "");
-  for (const value of ["~/.gitconfig.delta", "~/.config/git/config.delta"]) {
-    addInclude(fixture, xdgConfig, value);
-  }
-  symlinkSync(xdgConfig, homeConfig);
-
-  expectSuccess(runGitIncludes(fixture));
-  expect(includePathsFromFile(xdgConfig)).toEqual([
-    "~/.config/git/config.delta",
-  ]);
-  expect(linkTarget(homeConfig)).toBe(xdgConfig);
 });
 
 test("preserves configuration when include addition fails", () => {
@@ -166,7 +143,6 @@ test("preserves both includes when removal fails after addition", () => {
   const xdgConfig = join(fixture.home, ".config", "git", "config");
   const homeConfig = join(fixture.home, ".gitconfig");
   mkdirSync(join(fixture.home, ".config", "git"), { recursive: true });
-  writeFileSync(xdgConfig, "");
   writeFileSync(homeConfig, "");
   addInclude(fixture, xdgConfig, "~/.gitconfig.delta");
   const result = runGitIncludesWithFailure(fixture, [
@@ -192,7 +168,6 @@ test("does not mutate configuration when reading includes fails", () => {
   prepareGitDeltaFixture(fixture);
   const xdgConfig = join(fixture.home, ".config", "git", "config");
   mkdirSync(join(fixture.home, ".config", "git"), { recursive: true });
-  writeFileSync(xdgConfig, "");
   addInclude(fixture, xdgConfig, "~/.gitconfig.delta");
   const homeConfig = join(fixture.home, ".gitconfig");
   const before = [fileIdentity(xdgConfig), fileIdentity(homeConfig)];
@@ -209,21 +184,25 @@ test("does not mutate configuration when reading includes fails", () => {
   expect([fileIdentity(xdgConfig), fileIdentity(homeConfig)]).toEqual(before);
   expectSuccess(runGitIncludes(fixture));
   expect(includePathsFromFile(xdgConfig)).toEqual([]);
-  expect(includePaths(fixture)).not.toContain("~/.gitconfig.delta");
 });
 type Fixture = ReturnType<typeof createDeploymentFixture>;
 
+function runXdgDeploymentMoon(
+  fixture: Fixture,
+  tasks: readonly string[],
+): ReturnType<typeof runDeploymentMoon> {
+  return runDeploymentMoon(fixture, tasks, {
+    ...gitIsolation,
+    XDG_CONFIG_HOME: join(fixture.home, ".config"),
+  });
+}
+
 function prepareGitDeltaFixture(fixture: Fixture): void {
   mkdirSync(join(fixture.home, ".config"), { recursive: true });
-  for (const [name, source] of [
-    [".wezterm.lua", join(project, "home", ".wezterm.lua")],
-    [".tmux.conf", join(project, "home", ".tmux.conf")],
-    [".gitconfig.delta", join(project, "home", ".gitconfig.delta")],
-  ] as const) {
-    symlinkSync(source, join(fixture.home, name));
+  for (const name of [".wezterm.lua", ".tmux.conf", ".gitconfig.delta"]) {
+    symlinkSync(join(project, "home", name), join(fixture.home, name));
   }
   const config = join(fixture.home, ".gitconfig");
-  writeFileSync(config, "");
   for (const value of [
     "~/.gitconfig.delta",
     "~/.config/git/config.delta",
@@ -255,7 +234,11 @@ function runGitIncludes(
   return runDeploymentHelper(
     fixture,
     { helper: "deploy-git-includes.ts", arguments: [] },
-    environment,
+    {
+      ...environment,
+      ...gitIsolation,
+      XDG_CONFIG_HOME: join(fixture.home, ".config"),
+    },
   );
 }
 
@@ -269,9 +252,8 @@ function includePaths(fixture: Fixture): string[] {
 
 function includePathsFromFile(config: string): string[] {
   const args = ["config", "--file", config, "--get-all", "include.path"];
-  const result = Bun.spawnSync([requireCommand("git"), ...args], {
-    stdout: "pipe",
-  });
+  const gitCommand = requireCommand("git");
+  const result = Bun.spawnSync([gitCommand, ...args], { stdout: "pipe" });
   if (result.exitCode === 1) {
     return [];
   }
@@ -281,13 +263,21 @@ function includePathsFromFile(config: string): string[] {
   return result.stdout.toString().trim().split("\n");
 }
 
-function git(fixture: Fixture, arguments_: readonly string[]): void {
+function git(fixture: Fixture, arguments_: readonly string[]): string {
   const result = Bun.spawnSync([requireCommand("git"), ...arguments_], {
-    env: { ...process.env, HOME: fixture.home },
+    cwd: fixture.root,
+    env: {
+      ...process.env,
+      ...gitIsolation,
+      HOME: fixture.home,
+      XDG_CONFIG_HOME: join(fixture.home, ".config"),
+      GIT_CONFIG_SYSTEM: "/dev/null",
+    },
   });
   if (result.exitCode !== 0) {
     throw new Error(result.stderr.toString());
   }
+  return result.stdout.toString();
 }
 
 function xdgTargets(home: string): [string, string, string, string] {

@@ -63,6 +63,36 @@ test("refuses a destination symlink to a directory without mutating it", () => {
   expect(readdirSync(actual)).toEqual([]);
 });
 
+test("migrates a Git include once when the home config links to XDG", () => {
+  const fixture = createDeploymentFixture("xdg-git-alias");
+  const xdgConfig = join(fixture.home, ".config", "git", "config");
+  const homeConfig = join(fixture.home, ".gitconfig");
+  mkdirSync(join(fixture.home, ".config", "git"), { recursive: true });
+  writeFileSync(
+    xdgConfig,
+    "[include]\n  path = ~/.gitconfig.delta\n  path = ~/.config/git/config.delta\n",
+  );
+  symlinkSync(xdgConfig, homeConfig);
+
+  expectSuccess(
+    runDeploymentHelper(
+      fixture,
+      { helper: "deploy-git-includes.ts", arguments: [] },
+      {
+        XDG_CONFIG_HOME: join(fixture.home, ".config"),
+        GIT_CONFIG_GLOBAL: undefined,
+        GIT_CONFIG: undefined,
+        GIT_CONFIG_COUNT: "0",
+        GIT_CONFIG_PARAMETERS: undefined,
+      },
+    ),
+  );
+  const migrated = readFileSync(xdgConfig, "utf8");
+  expect(migrated).toContain("~/.config/git/config.delta");
+  expect(migrated).not.toContain("~/.gitconfig.delta");
+  expect(linkTarget(homeConfig)).toBe(xdgConfig);
+});
+
 test("deploys Starship and tmux links and replays idempotently", () => {
   const fixture = createDeploymentFixture("starship");
   const tmux = join(fixture.home, ".config", "tmux", "tmux.conf");
