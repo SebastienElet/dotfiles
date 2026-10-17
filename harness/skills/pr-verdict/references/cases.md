@@ -25,9 +25,9 @@ index backs the uniqueness the service checks in code. Unit tests exist and pass
 - The barrier paragraph gives counts _and_ states that the passing tests are sequential and therefore
   say nothing about the concurrent interleaving that motivates the blockers.
 - A fix ticket is linked, and no ticket exists solely to request or record the re-review.
-- The closing sentence is "do not approve or merge this head" (in the PR's language). On Bitbucket
-  this sentence is the entire enforcement; its absence fails the case even if everything else is
-  right.
+- The closing sentence asks readers not to approve or merge this head (in the PR's language) and
+  states that the Bitbucket comment is advisory. Its absence fails the case even if everything else
+  is right.
 
 **Fail signals**
 
@@ -302,3 +302,73 @@ is required. Record the optional claim as `unproven`; require its removal, quali
 
 **Counterexample:** the optional claim is removed. No benchmark is required for it; any independent
 instruction-adoption criterion or required budget still applies.
+
+## Case K — GitHub review state versus merge enforcement
+
+**Unprotected target.** A reviewer with write access requests changes on another author's PR.
+The target branch has no classic protection and no active ruleset requiring pull requests. The
+review state may be `CHANGES_REQUESTED`, but the verdict names the repository and branch, calls its
+effect advisory, and never says GitHub refuses merging.
+
+**Unknown bypass.** The target has an active pull-request rule, but the reviewer cannot inspect
+the relevant bypass actors or prove the merge account's rights. The verdict records the rule and
+the unknown, then remains advisory. A rule listing alone does not satisfy a mechanical-block claim.
+
+**Later-page rule.** More than 30 active rules apply, with a pull-request rule beyond the first
+page. The reviewer fetches every page before assessing enforcement; a partial listing is unknown,
+never evidence that no rule applies.
+
+**Proven refusal.** A controlled PR on the same repository and destination branch shows that a
+request-changes review from an eligible reviewer causes GitHub to reject a merge attempt by the
+named account under the recorded active rules. Only this observed refusal supports a mechanical
+block claim for that scope; the verdict cites the observation and its account.
+
+**Own PR.** The authenticated account authored the PR. The skill publishes a comment instead of
+attempting `gh pr review --request-changes`, and the verdict explicitly says it is advisory.
+
+## Case L — verdict marker ownership and replay
+
+The anchored head is `a1b2c3d4e5f6…` on PR 1042. The authenticated forge account has ID 7.
+The expected first line is exactly `<!-- pr-verdict:1042:a1b2c3d4e5f6 -->`.
+
+**Update:** One issue comment or GitHub review summary has that first line and author ID 7.
+Expected: re-read that object's ID, confirm the same author and marker, then update through its
+own endpoint. A review summary must not be patched as an issue comment.
+
+**Foreign copy:** A comment with the exact marker belongs to account 8; no owned match exists.
+Expected: leave it untouched and permit account 7 to publish one verdict. A prefix-only marker,
+another PR, another SHA, or the correct marker on a later line is not a match.
+
+**Ambiguity:** Two exact matches belong to account 7, including when one is an issue comment and
+one is a review summary. Expected: stop without choosing or publishing. The same applies when an
+exact match has no author or ID, the authenticated account cannot be established, either GitHub
+listing is incomplete, or a publication response is uncertain. A failed lookup never becomes an
+empty list.
+
+**New head:** The old account-7 verdict bears `a1b2c3d4e5f6`, while the new anchored SHA begins
+`b2c3d4e5f6a1`. Expected: leave the old verdict intact and publish one new head-specific verdict.
+These scenarios require controlled read and selection evidence, not a write to a third-party PR.
+
+**Blocking reassessment:** The owned marked verdict is an issue comment or a `COMMENTED` review
+summary on someone else's GitHub PR. Its same-head reassessment now requires changes. Expected:
+update that object and ensure the account has a native `CHANGES_REQUESTED` review on this head,
+using a marker-free pointer to the marked object if a review is needed. Do not create a second
+marked verdict or a duplicate native state review.
+
+**Opinionated review transitions:** A `CHANGES_REQUESTED` review followed by an `APPROVED` review
+on the same head does not satisfy a later blocking reassessment: submit a new marker-free change
+request after updating its marked verdict. Conversely, an approved reassessment after this account's
+active change request, on the same or an older SHA, requires an explicitly authorized marker-free
+native approval before the complete approved assessment is published. Without that authorization, leave the new
+approval verdict unpublished. A later `COMMENTED` review does not clear a change request.
+
+**Partial approval publication:** An approved reassessment must clear this account's active
+change request. Expected: first show a marked pending status without replacing historical verdict
+text, then submit and verify the marker-free native approval, then publish and read back the complete
+approved assessment in that same marked object. A failed or uncertain native review or final update
+requires remote reconciliation. Report confirmed pending as incomplete, confirmed final body as
+published, or an unreadable body as unknown; never infer the visible state from a timeout.
+
+**Bitbucket placement:** The same marker is present in a Cloud inline comment or reply. Expected:
+never update it as the general verdict. An owned or unknown-author occurrence stops publication;
+a known foreign occurrence does not block a new general verdict by the current account.
