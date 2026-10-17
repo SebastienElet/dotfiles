@@ -3,9 +3,33 @@ description: Install the locked Moon CLI and native binary from npm
 runs:
   using: composite
   steps:
-    - shell: bash
+    - id: setup
+      shell: bash
+      run: |
+        lock_hash="$(shasum -a 256 "$GITHUB_ACTION_PATH/package-lock.json")"
+        echo "hash=${lock_hash%% *}" >> "$GITHUB_OUTPUT"
+        echo "node-modules=$(cd "$GITHUB_ACTION_PATH" && pwd -P)/node_modules" >> "$GITHUB_OUTPUT"
+    - id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.setup.outputs.node-modules }}
+        key: setup-moon-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup.outputs.hash }}
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
       run: |
         npm ci --prefix "$GITHUB_ACTION_PATH" --ignore-scripts --no-audit --no-fund --fetch-retries=0
-        moon_binary="$(node -p 'require(process.env.GITHUB_ACTION_PATH + "/node_modules/@moonrepo/cli/utils").findMoonExe()')"
-        echo "$(dirname "$moon_binary")" >> "$GITHUB_PATH"
-        "$moon_binary" --version
+    - shell: bash
+      run: |
+        moon_binary="$(node -p '
+          try {
+            require(process.env.GITHUB_ACTION_PATH + "/node_modules/@moonrepo/cli/utils").findMoonExe()
+          } catch (error) {
+            console.error("::error::Missing Moon native package or binary: " + error.message);
+            process.exit(1);
+          }
+        ')"
+        if ! "$moon_binary" --version; then
+          echo "::error::Moon binary failed --version: $moon_binary"
+          exit 1
+        fi
+        dirname "$moon_binary" >> "$GITHUB_PATH"
