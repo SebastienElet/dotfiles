@@ -73,7 +73,7 @@ ici sont les dates d'auteur.
 | [027](027-soul-et-user-separes.md)                     | `SOUL.md` et `USER.md` séparés de `AGENTS.md`                    | 2026-08 |
 | [028](028-skills-ssot.md)                              | `.agents/skills/` comme source unique des skills projet          | 2026-05 |
 | [029](029-pas-de-skills-tierces.md)                    | Skills tierces refusées par défaut                               | 2026-05 |
-| [031](031-mcp-en-conteneurs-nommes.md)                 | MCP en conteneurs Docker nommés                                  | 2026-08 |
+| [031](031-lecture-web-agent-reach.md)                  | Lecture web générique via Agent-Reach                            | 2026-10 |
 | [033](033-pas-de-rtk.md)                               | Ne pas utiliser RTK                                              | 2026-08 |
 | [034](034-pas-de-caveman.md)                           | Ne pas utiliser les skills Caveman                               | 2026-08 |
 | [035](035-agents-md-elague-par-mesure.md)              | `AGENTS.md` élagué par mesure du no-op                           | 2026-08 |

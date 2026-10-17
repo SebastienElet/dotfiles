@@ -15,7 +15,7 @@
 - Diagnosis is read-only: no agent CLI, server, wrapper, subprocess, container, image, network, or configuration mutation.
 - A manifest entry contains only environment-variable names; observed secret values are never rendered.
 - Command availability follows the actual resolved file: scope root for relative paths and ordered `PATH` lookup for bare names.
-- ADR-031 wrappers are checked as executable files only; their Docker topology is never inspected.
+- Wrappers covered by the [then-current ADR-031](https://github.com/SebastienElet/dotfiles/blob/51bcd83d161f34fdc588d4f73c3a486f76ef16fe/docs/adr/031-mcp-en-conteneurs-nommes.md) are checked as executable files only; their Docker topology is never inspected.
 - Unknown types, missing inputs, duplicate keys, and parser failures fail closed with an actionable diagnostic.
 - Production files stay under the 250-line review trigger and production functions under 50 logical lines.
 - No new dependency and no production comment.
