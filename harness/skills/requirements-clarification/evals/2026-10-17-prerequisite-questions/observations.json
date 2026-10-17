@@ -1,0 +1,1235 @@
+{
+  "version": "1.0",
+  "date": "2026-10-17",
+  "base_commit": "ee5e97e1fb0266035a0345efd468e9d6b06babd4",
+  "environment": {
+    "host": "macOS Darwin arm64",
+    "agent": "Codex CLI 0.163.0",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium",
+    "timeout_seconds": 240
+  },
+  "source_sha256": {
+    "baseline": {
+      "AGENTS.md": "20b01399904a321fbe52e92e5ddbbaefe7421f1a247c3c6a41ec17b92862ff5e",
+      "SOUL.md": "4a94270116070a72d50286f713de0f76b36f800cb1b3455cd2872e765959ae61",
+      "USER.md": "3379b730c99075b81c6ade4e349c0e883e42b9b40e7ea1222a01246d9ae8df70",
+      "output-discipline.md": "2bf44400b4b518883a11dcdc6e62db82f10fb98cd9fd855ce3631a22707cab85",
+      "skills/requirements-clarification/SKILL.md": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "visual-presentation.md": "a728d68a9cb53174092ecc47ed1132bd7d704cbf130173fc8ac9e73cd09de8fa"
+    },
+    "candidate": {
+      "AGENTS.md": "20b01399904a321fbe52e92e5ddbbaefe7421f1a247c3c6a41ec17b92862ff5e",
+      "SOUL.md": "4a94270116070a72d50286f713de0f76b36f800cb1b3455cd2872e765959ae61",
+      "USER.md": "3379b730c99075b81c6ade4e349c0e883e42b9b40e7ea1222a01246d9ae8df70",
+      "output-discipline.md": "2bf44400b4b518883a11dcdc6e62db82f10fb98cd9fd855ce3631a22707cab85",
+      "skills/requirements-clarification/SKILL.md": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "visual-presentation.md": "a728d68a9cb53174092ecc47ed1132bd7d704cbf130173fc8ac9e73cd09de8fa"
+    }
+  },
+  "controls": [
+    "Fresh temporary HOME, CODEX_HOME and Git workspace per run",
+    "Saved authentication copied temporarily, removed after every execution, excluded from evidence",
+    "Global AGENTS, USER, SOUL and visual preferences assembled with existing repository utility",
+    "Output discipline body appended identically in both conditions",
+    "Only requirements-clarification available as a discovered skill",
+    "User configuration, execpolicy rules, deployed plugins, hooks and MCP excluded",
+    "Workspace-write sandbox; agent-command network and web search disabled; no approvals",
+    "Original fixture sources and all resulting non-Git workspace files compared",
+    "User-facing messages, command names/statuses and changed file bytes retained; repeated command output omitted",
+    "Manual semantic grading, no substring or punctuation oracle",
+    "Same scenario prompt and model settings in each paired condition; no paired seed"
+  ],
+  "runs": [
+    {
+      "id": "baseline-analysis-only-1",
+      "variant": "baseline",
+      "scenario": "analysis-only",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 28.54,
+      "usage": {
+        "input_tokens": 86637,
+        "cached_input_tokens": 72960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1045,
+        "reasoning_output_tokens": 108
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vais lire `project.md` et `inventory.json` pour distinguer le périmètre du premier jalon, ses prérequis établis et les décisions nécessaires à son démarrage.",
+        "Le jalon exige les trois plateformes ; aucune n’a encore été exercée. Le budget et le choix du corpus restent à valider, mais l’inventaire des obligations et le protocole peuvent être préparés indépendamment. J’applique le skill `requirements-clarification` pour distinguer ces décisions du travail déjà autorisé.",
+        "Le premier jalon doit produire un **verdict de faisabilité documenté**, avant tout portage substantiel. Il n’est pas encore qualifié : les trois runners requis sont disponibles, mais aucun n’a été exercé ([project.md:2](project.md:2)).\n\nDécoupage proposé :\n\n1. **Inventorier les obligations.** Couvrir résolution des modules, identité des symboles et diagnostics. Pour chacune : comportement attendu, cas limites, preuve nécessaire et écarts bloquants. La référence déclarée est `v1.2.3` ([inventory.json:12](inventory.json:12)).\n\n2. **Préparer le protocole comparatif.** Définir les observations comparées à la référence, les différences admissibles, la reproductibilité et les critères de verdict. Ces critères restent à préciser : les documents nomment les obligations sans définir leur seuil d’acceptation. Prévoir une matrice obligations × corpus × plateformes.\n\n3. **Conduire la recherche bornée, après validation.** La proposition prévoit au maximum deux compositions, deux passes de correction chacune et cinq jours-ingénieur. Définir chaque composition avant essai et conserver les résultats, écarts et corrections. Cette enveloppe est une proposition non approuvée, pas un engagement ([project.md:4](project.md:4)).\n\n4. **Qualifier sur les trois plateformes.** Exercer `linux-x64`, `windows-x64` et `macos-arm64` sur le corpus retenu. Un spike d’un jour peut réduire une incertitude, mais ne qualifie pas la faisabilité.\n\n5. **Faire vérifier le verdict.** Soumettre les preuves à `review-pool`, déjà désigné. Proposition de restitution : faisabilité démontrée dans le périmètre testé, échec documenté ou résultat indéterminé faute de preuve. Expliciter les limites de représentativité.\n\nLes prérequis de démarrage se répartissent ainsi :\n\n| Prérequis | État et conséquence |\n|---|---|\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés. |\n| Corpus représentatif privé | Non approuvé. Choix utilisateur nécessaire : public uniquement avec limite de représentativité, ou snapshot privé approuvé par son propriétaire. |\n| Budget d’expérimentation | Validation utilisateur nécessaire avant engagement. |\n| Runners et vérificateur | Disponibles et désignés ; cela ne constitue pas une preuve d’exécution réussie. |\n\n**Chemin recommandé :** commencer par l’inventaire et le protocole, explicitement indépendants des arbitrages ([project.md:6](project.md:6)), puis regrouper la validation du budget et du choix de corpus avant les expériences. Le vérificateur indépendant ne remplace aucune de ces décisions.\n\nAnalyse fondée uniquement sur les deux fichiers fournis ; aucun fichier modifié, aucune expérience lancée."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md; cat inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'nl -ba project.md; nl -ba inventory.json'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "FAIL",
+      "assessment": "Delivered the analysis but deferred budget and corpus decisions to the plan without asking; no workspace files changed."
+    },
+    {
+      "id": "baseline-analysis-only-2",
+      "variant": "baseline",
+      "scenario": "analysis-only",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 46.97,
+      "usage": {
+        "input_tokens": 42793,
+        "cached_input_tokens": 30208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1115,
+        "reasoning_output_tokens": 181
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vais lire `project.md` et `inventory.json` pour cadrer le jalon, ses prérequis et les décisions nécessaires à son démarrage. L’analyse restera sans modification ni exécution d’expérience.",
+        "J’applique le skill `requirements-clarification` pour distinguer les prérequis établis des décisions réservées à vous : budget et corpus. Les trois runners et le vérificateur sont déjà recensés ; leur disponibilité ne constitue pas encore une preuve de faisabilité.",
+        "Le premier jalon doit produire un **verdict de faisabilité sur la résolution des modules, l’identité des symboles et les diagnostics**, avant tout portage substantiel. Les sources ne permettent pas encore de conclure à cette faisabilité.\n\nD’après [project.md](project.md) et l’inventaire faisant autorité [inventory.json](inventory.json), les deux corpus publics sont autorisés, les trois runners sont disponibles mais jamais exercés, et `review-pool` est déjà désigné comme vérificateur indépendant.\n\n### Découpage proposé\n\n| Étape | Résultat attendu |\n|---|---|\n| 1. Inventorier les obligations | Pour chacun des trois domaines : comportements à préserver, cas limites et preuves attendues par rapport à `v1.2.3`. |\n| 2. Préparer le protocole | Cas reproductibles, résultats de référence, règles de comparaison, traces conservées et critères de verdict. Identifier au plus deux compositions candidates. |\n| 3. Évaluer les compositions | Exécuter le protocole sur les corpus retenus et **les trois runners** : `linux-x64`, `windows-x64`, `macos-arm64`. |\n| 4. Corriger et réévaluer | Au plus deux passes de correction par composition, dans le budget autorisé. Conserver les divergences et leurs causes. |\n| 5. Faire vérifier et conclure | Soumettre les preuves à `review-pool` ; rendre un verdict avec limites, divergences restantes et conséquences pour un éventuel portage. |\n\nLe protocole devrait distinguer une divergence observée, un échec d’exécution et une preuve manquante. Une couverture incomplète des runners ne permet pas de qualifier la faisabilité. Les critères détaillés d’équivalence restent à établir ; ils ne sont pas fournis par les documents.\n\n### Prérequis et décisions\n\n- **Budget à autoriser par vous** : la proposition plafonne l’étude à cinq jours-ingénieur, deux compositions et deux passes de correction chacune. Ce plafond n’est ni approuvé ni une garantie de résultat.\n- **Corpus à choisir** : public uniquement, avec une limite explicite de représentativité, ou ajout d’un snapshot privé approuvé par son propriétaire. Aucun travail sur données privées sans cette approbation.\n- **Préparation technique** : préciser les compositions candidates, l’accès reproductible à la référence `v1.2.3`, les commandes d’exécution et les preuves attendues par le vérificateur. L’inventaire n’en décrit pas les modalités.\n\n### Chemin pour démarrer\n\n1. Préparer l’inventaire des obligations et le protocole : ce travail est indépendant des décisions de budget et de corpus.\n2. Vous soumettre ensemble le protocole, le plafond d’effort et le choix du corpus. **Recommandation : démarrer sur les corpus publics autorisés**, en bornant explicitement la portée du verdict.\n3. Après autorisation, exercer les trois runners, puis dérouler les évaluations et la vérification indépendante.\n\nUn spike d’une journée constitue une alternative d’exploration, mais **ne qualifie pas la faisabilité** et ne vaut pas autorisation du budget complet.\n\nAnalyse documentaire uniquement : aucun fichier modifié, aucune expérience lancée, aucun runner exercé."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd && rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "FAIL",
+      "assessment": "Delivered the analysis but deferred budget and corpus decisions to the plan without asking; no workspace files changed."
+    },
+    {
+      "id": "baseline-analysis-only-3",
+      "variant": "baseline",
+      "scenario": "analysis-only",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 26.79,
+      "usage": {
+        "input_tokens": 42673,
+        "cached_input_tokens": 30208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1025,
+        "reasoning_output_tokens": 147
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vais lire `project.md` et `inventory.json` pour distinguer le périmètre du jalon, ses prérequis et les décisions nécessaires à son démarrage.",
+        "J’applique le skill `requirements-clarification` pour séparer les prérequis techniques des décisions réservées à l’utilisateur. L’inventaire confirme les trois runners et le vérificateur indépendant ; le budget et le choix du corpus restent ouverts. Ces décisions ne bloquent pas la préparation du protocole.",
+        "Le premier jalon doit produire un **verdict de faisabilité native** sur la résolution des modules, l’identité des symboles et les diagnostics. Aucun portage substantiel ne doit précéder ce verdict.\n\n`project.md` fixe le périmètre ; `inventory.json` fait autorité sur les moyens disponibles. Les trois runners sont disponibles mais **aucun n’a encore été exercé** : leur présence ne prouve donc pas la faisabilité.\n\n### Découpage proposé\n\n1. **Inventorier les obligations.** Pour chacun des trois domaines, identifier les comportements à comparer à la référence `v1.2.3`, les cas couverts par les corpus et les lacunes de couverture.\n2. **Préparer le protocole.** Définir les entrées, commandes reproductibles, résultats observables, critères d’acceptation et règles de classement des écarts. Les seuils ne sont pas établis dans les sources : ils devront être explicités avant les essais.\n3. **Évaluer les compositions candidates.** Proposition à borner à deux compositions et deux passes de correction chacune. Conserver les résultats initiaux et les écarts après correction pour rendre le verdict vérifiable.\n4. **Qualifier sur les trois plateformes.** Exercer `linux-x64`, `windows-x64` et `macos-arm64`. Une qualification partielle ne satisfait pas l’exigence du projet.\n5. **Faire vérifier le résultat.** Soumettre les preuves à `review-pool`, déjà désigné comme vérificateur indépendant. Le verdict doit préciser les comportements couverts, les écarts persistants et les limites de représentativité.\n\n### Prérequis et décisions\n\n| Élément | État et conséquence |\n|---|---|\n| Référence | `v1.2.3` désignée ; prévoir sa reproduction dans le protocole. |\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés. Leur représentativité reste à établir. |\n| Corpus privé | Non approuvé. Aucun travail sur ces données avant fourniture d’un snapshot approuvé par leur propriétaire. |\n| Qualification | Les trois runners sont obligatoires ; prévoir la même matrice d’obligations sur chacun. |\n| Budget | Cinq jours-ingénieur proposés, **non approuvés**. Le plafond de compositions et de corrections ne garantit pas qu’un verdict positif soit atteignable dans ce budget. |\n\n### Chemin de démarrage\n\nLa première action indépendante des arbitrages est de préparer **l’inventaire des obligations et le protocole**, sans lancer d’expérience. Le démarrage expérimental exige ensuite deux décisions : le budget et le périmètre des données.\n\nJe recommande la proposition bornée à cinq jours-ingénieur sur les corpus publics, avec une limite explicite de représentativité. Un spike d’un jour peut réduire une incertitude ciblée, mais **ne qualifie pas la faisabilité** et ne remplace pas les trois plateformes.\n\nPour un démarrage ultérieur, approuvez-vous le budget proposé de cinq jours-ingénieur et le périmètre public uniquement, ou souhaitez-vous un spike d’un jour et/ou attendre un snapshot privé approuvé ?\n\nAucun fichier modifié, aucune implémentation ni expérience exécutée."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Delivered the analysis and asked for the budget and corpus decisions; no workspace files changed or experiments executed."
+    },
+    {
+      "id": "baseline-facts-delegated-1",
+      "variant": "baseline",
+      "scenario": "facts-delegated",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 35.7,
+      "usage": {
+        "input_tokens": 108824,
+        "cached_input_tokens": 83584,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1468,
+        "reasoning_output_tokens": 159
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles pour délimiter l’étude et ses prérequis, puis je préparerai `readiness.md`. Aucune expérience ne sera lancée.\n",
+        "Le périmètre, les corpus, les trois runners et le vérificateur sont déjà établis. Aucun runner n’a été exercé : `readiness.md` distinguera les moyens disponibles des preuves restant à produire pour la qualification.\n",
+        "[readiness.md](readiness.md) créé : périmètre, référence, moyens disponibles, plafonds approuvés et prérequis de qualification.\n\nContenu recoupé localement avec `project.md` et `inventory.json`. Aucune expérience lancée ; les trois runners restent non exercés.\n\nIndexation Git refusée par les permissions de l’environnement ; aucun contrôle de format exécuté. Aucun commit."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"' -g '\"'!.git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --stat; git status --short'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et sources\n\nL’étude est cadrée, mais la qualification reste à établir : aucun des trois runners requis n’a été exercé. Ce document prépare l’étude ; aucune expérience n’a été lancée pour le produire.\n\n- [project.md](project.md) fixe le périmètre, les limites approuvées et les décisions du propriétaire.\n- [inventory.json](inventory.json) fait autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant déjà affecté.\n\n## Périmètre et référence\n\nL’étude porte sur les trois obligations suivantes, avec `v1.2.3` comme référence déclarée dans l’inventaire :\n\n| Obligation | Identifiant canonique |\n| --- | --- |\n| Résolution des modules | `module-resolution` |\n| Identité des symboles | `symbol-identity` |\n| Diagnostics | `diagnostics` |\n\nAucun portage substantiel ne doit précéder le résultat de faisabilité.\n\n## Moyens établis\n\n| Élément | Choix établi | Portée de la preuve actuelle |\n| --- | --- | --- |\n| Corpus publics | `public-small`, `public-workspaces` | Accessibles selon l’inventaire ; sélection exclusive approuvée par le propriétaire. |\n| Runners | `linux-x64`, `windows-x64`, `macos-arm64` | Disponibles selon l’inventaire ; tous requis pour la qualification, aucun encore exercé. |\n| Vérification indépendante | `review-pool` | Vérificateur déjà affecté par le propriétaire ; aucun résultat de vérification fourni dans les sources. |\n\nLe propriétaire accepte la limite de représentativité des deux corpus publics. Aucun corpus privé n’est demandé ni nécessaire. Les résultats devront être interprétés dans cette limite.\n\n## Budget et limites approuvés\n\n- Au maximum deux compositions.\n- Au maximum deux passes de correction par composition.\n- Au maximum cinq jours-ingénieur.\n\nCes plafonds ne constituent ni une obligation de consommer tout le budget ni une preuve de faisabilité. Les sources ne détaillent pas les compositions à évaluer.\n\n## Prérequis et preuves à préparer\n\n1. **Formaliser le protocole avant exécution.** Relier les cas des deux corpus aux trois obligations et à la référence `v1.2.3`. Définir les observations, les critères de comparaison et les conditions de conclusion ; ces détails ne figurent pas dans les sources disponibles.\n2. **Borner les essais au budget approuvé.** Identifier les compositions retenues et prévoir le suivi des passes de correction et des jours-ingénieur.\n3. **Préparer les preuves sur les trois runners.** Prévoir la collecte des résultats et des échecs par environnement. La disponibilité inventoriée ne prouve pas le bon fonctionnement ; une qualification ne peut être déclarée avant d’avoir exercé les trois runners et évalué les résultats selon le protocole.\n4. **Préparer la vérification indépendante.** Constituer un dossier traçable pour `review-pool` : protocole, compositions, référence, cas évalués, résultats par runner, corrections et limites. L’affectation du vérificateur est acquise ; sa conclusion reste à produire.\n\nL’inventaire des obligations et la préparation du protocole peuvent avancer indépendamment des décisions déjà établies. La présente préparation n’autorise ni n’exécute les essais.\n\n## Conclusion de readiness\n\nLe périmètre et les moyens déclarés suffisent pour préparer le protocole sans solliciter un autre corpus ou un autre vérificateur. Le protocole détaillé et les preuves d’exécution restent à produire. Aucune faisabilité ni qualification multiplateforme n’est démontrée à ce stade.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "baseline-facts-delegated-2",
+      "variant": "baseline",
+      "scenario": "facts-delegated",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 54.77,
+      "usage": {
+        "input_tokens": 109124,
+        "cached_input_tokens": 81792,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1570,
+        "reasoning_output_tokens": 227
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles pour rédiger `readiness.md`, puis contrôler son contenu sans lancer d’expérience.\n",
+        "Le périmètre, les corpus et les ressources sont déjà arrêtés. Aucun des trois runners requis n’a été exercé : le document distinguera les prérequis disponibles des preuves de qualification encore absentes.\n",
+        "`readiness.md` est rédigé. L’indexation Git a échoué : `.git/index.lock` est interdit en écriture. Je limite la vérification à une relecture documentaire, sans lancer de contrôle de format, lint ou typage.\n",
+        "[readiness.md]($RUN/workspace/readiness.md) créé : périmètre, ressources, plafonds et prérequis, avec sources citées.\n\nConcordance vérifiée par relecture locale. Aucune expérience lancée ; les trois runners restent non exercés. Indexation Git bloquée par les permissions sur `.git/index.lock`."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!'\"\\\\.git' -g '\"'!*lock*'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; cat project.md; cat inventory.json'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et périmètre\n\nLe périmètre et les ressources de l’étude sont établis. La qualification reste à démontrer : aucun des trois runners requis n’a encore été exercé. Ce document prépare l’étude ; aucune expérience n’a été lancée.\n\nL’étude couvre les trois obligations suivantes, sans priorité implicite :\n\n| Obligation | Identifiant canonique |\n| --- | --- |\n| Résolution des modules | `module-resolution` |\n| Identité des symboles | `symbol-identity` |\n| Diagnostics | `diagnostics` |\n\nAucun portage substantiel ne doit précéder le résultat de faisabilité.\n\n## Ressources et limites actées\n\n| Élément | Décision ou disponibilité établie |\n| --- | --- |\n| Corpus publics accessibles | `public-small`, `public-workspaces`, exclusivement |\n| Représentativité | Limite des corpus publics acceptée par le propriétaire ; aucun corpus privé demandé ou nécessaire |\n| Runners disponibles | `linux-x64`, `windows-x64`, `macos-arm64` ; tous trois requis pour la qualification |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire |\n| Référence inventoriée | `v1.2.3` |\n| Budget maximal approuvé | Deux compositions, deux passes de correction par composition, cinq jours-ingénieur |\n\nCes plafonds constituent des limites, pas des objectifs de consommation. Le choix du format local et de l’ordre de présentation est délégué.\n\n## Prérequis et preuves à préparer\n\n1. **Formaliser le protocole.** Décrire les observations attendues pour chacune des trois obligations, le rôle de la référence `v1.2.3`, les comparaisons et les critères de réussite ou d’échec. Les sources ne précisent pas ces critères ni les compositions à évaluer ; ce document n’en institue pas.\n2. **Préparer la traçabilité.** Prévoir l’identification des compositions, des corpus, de la référence, des runners et des résultats afin que les constats puissent être vérifiés. Cette préparation doit rester dans les plafonds approuvés.\n3. **Réunir les preuves de qualification lors de l’étude.** Couvrir les trois obligations et produire des résultats sur chacun des trois runners requis. Leur disponibilité est établie ; leur bon fonctionnement et les résultats de faisabilité ne le sont pas encore.\n4. **Préparer la revue indépendante.** Rendre le protocole, les résultats et les écarts accessibles à `review-pool`. Sa désignation est acquise ; aucune vérification achevée n’est attestée par les sources.\n\nL’inventaire des obligations et la préparation du protocole peuvent avancer indépendamment. La présente livraison ne comprend ni exécution du protocole, ni qualification, ni portage.\n\n## Sources et vérification de cette livraison\n\n- [project.md](project.md) : périmètre, restriction de portage, ressources requises, absence d’exécution des runners, limites approuvées et décisions du propriétaire.\n- [inventory.json](inventory.json) : inventaire faisant autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant ; identifiants des obligations et référence.\n- [AGENTS.md](AGENTS.md) : espace synthétique isolé, absence de systèmes partagés ou de services externes connectés, interdiction des commits et écritures externes.\n\nVérification documentaire locale : concordance du périmètre, des identifiants, des ressources et des plafonds avec ces sources. Aucune validation de faisabilité ni exécution sur `linux-x64`, `windows-x64` ou `macos-arm64` n’est revendiquée.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "baseline-facts-delegated-3",
+      "variant": "baseline",
+      "scenario": "facts-delegated",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 33.06,
+      "usage": {
+        "input_tokens": 130322,
+        "cached_input_tokens": 115456,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1472,
+        "reasoning_output_tokens": 180
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles pour préparer `readiness.md`, puis contrôler sa cohérence. Aucune expérience ne sera lancée.",
+        "`readiness.md` est rédigé. Il distingue les décisions acquises des preuves encore absentes. L’indexation Git est interdite dans cet espace ; je termine la vérification documentaire par relecture croisée avec les sources.",
+        "[readiness.md](readiness.md) créé : périmètre, prérequis, limites approuvées et preuves manquantes.\n\nConcordance vérifiée avec les sources locales dans l’espace isolé. Aucune expérience lancée ; les trois runners restent non exercés. Indexation Git bloquée par les permissions."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g '*.json' -g '\"'!node_modules'\"' -g '\"'!package-lock.json'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat AGENTS.md; git status --short; git ls-files'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md project.md inventory.json'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\nL’étude porte sur la résolution des modules, l’identité des symboles et les diagnostics. Aucun portage substantiel ne doit commencer avant le résultat de faisabilité. La qualification n’est pas démontrée : aucun des trois runners requis n’a encore été exercé.\n\n## 1. Périmètre et contraintes établis\n\n| Élément | Périmètre retenu | Source |\n| --- | --- | --- |\n| Obligations | `module-resolution`, `symbol-identity`, `diagnostics` | `project.md`, `inventory.json` |\n| Référence | `v1.2.3` | `inventory.json` |\n| Corpus | `public-small`, `public-workspaces`, exclusivement | `project.md`, `inventory.json` |\n| Qualification | Les trois runners sont obligatoires : `linux-x64`, `windows-x64`, `macos-arm64` | `project.md`, `inventory.json` |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire | `project.md`, `inventory.json` |\n\nLe propriétaire a accepté la limite de représentativité des corpus publics retenus. Aucun corpus privé n’est demandé ni nécessaire. Il a autorisé au maximum deux compositions, deux passes de correction par composition et cinq jours-ingénieur.\n\n## 2. Prérequis et état des preuves\n\n| Prérequis | État établi |\n| --- | --- |\n| Périmètre des obligations | Fixé ; les trois obligations doivent figurer dans le protocole de l’étude |\n| Accès aux corpus publics | Déclaré accessible par l’inventaire faisant autorité ; aucune nouvelle sélection n’est nécessaire |\n| Disponibilité des runners | Les trois runners sont disponibles selon l’inventaire ; aucun n’a été exercé |\n| Vérificateur indépendant | Déjà assigné : `review-pool` ; aucun résultat de vérification n’est fourni |\n| Budget et limites d’itération | Approuvés ; aucune consommation n’est documentée dans les sources |\n\nLa disponibilité déclarée des ressources ne constitue pas une preuve de qualification. Les sources ne fournissent ni protocole exécutable, ni critères détaillés d’acceptation, ni résultats. Ces éléments restent à documenter avant de pouvoir conclure sur la faisabilité.\n\n## 3. Préparation du protocole, sans exécution\n\n1. Décrire les cas et les observations attendues pour chacune des trois obligations, avec `v1.2.3` comme référence.\n2. Décrire leur couverture avec les deux corpus autorisés et les trois runners obligatoires ; rendre visibles les limites de représentativité déjà acceptées.\n3. Expliciter les critères de conclusion, les preuves à conserver et la manière de rapporter les échecs ou les résultats manquants. Aucun seuil d’acceptation n’est établi par le présent document.\n4. Décrire la vérification indépendante par `review-pool` et le suivi du budget, dans les limites approuvées.\n\nL’inventaire des obligations et la préparation du protocole peuvent avancer sans rouvrir les choix établis. Ce document ne lance aucune expérience et n’autorise aucun portage substantiel.\n\n## 4. Sources et vérification documentaire\n\n- [project.md](project.md) : périmètre requis, contraintes et décisions du propriétaire.\n- [inventory.json](inventory.json) : source faisant autorité pour les corpus accessibles, les runners disponibles et le vérificateur assigné ; fournit également la référence et les obligations.\n- [AGENTS.md](AGENTS.md) : espace de planification synthétique isolé, sans système partagé ni service externe connecté ; aucun commit ni écriture externe autorisé.\n\nLa vérification de ce livrable porte sur sa concordance avec ces sources locales. Elle ne vaut ni exécution des runners, ni validation du protocole à venir, ni avis du vérificateur indépendant.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "baseline-facts-delegated-settled-1",
+      "variant": "baseline",
+      "scenario": "facts-delegated-settled",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 43.84,
+      "usage": {
+        "input_tokens": 131844,
+        "cached_input_tokens": 103040,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2001,
+        "reasoning_output_tokens": 143
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles, puis je rédige `readiness.md` et contrôle sa cohérence avec elles, sans lancer d’expérience.\n",
+        "Le périmètre, les budgets et l’acceptation sont déjà approuvés. Les trois runners sont disponibles, mais aucun n’a été exercé. Le document distinguera ces acquis des prérequis d’exécution et du protocole de comparaison à `v1.2.3`.\n",
+        "[readiness.md]($RUN/workspace/readiness.md) est rédigé : périmètre, prérequis, protocole et critères d’acceptation.\n\nCohérence vérifiée par relecture contre `project.md` et `inventory.json`, dans l’espace local. Aucune expérience lancée ; les trois runners restent non exercés.\n\nL’indexation Git a échoué faute de permission ; aucun contrôle de format, lint ou types n’a été lancé."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!'\"\\\\.git' -g '\"'!*lock*'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et sources\n\nL’étude peut être préparée sans décision supplémentaire du propriétaire. Sa faisabilité n’est pas démontrée : aucun des trois runners n’a encore été exercé. Ce document décrit le périmètre, les prérequis et le protocole proposé ; aucune expérience n’a été lancée pour le produire.\n\n- [project.md](project.md) fixe le périmètre, les limites approuvées et le critère d’acceptation.\n- [inventory.json](inventory.json) est la source faisant autorité pour les corpus publics accessibles, les runners disponibles, la référence, les obligations et le vérificateur indépendant désigné.\n- [AGENTS.md](AGENTS.md) décrit l’espace synthétique isolé, sans système partagé ni service externe connecté, et interdit les commits et écritures externes.\n\n## Périmètre et décisions acquises\n\n| Élément | Périmètre approuvé |\n| --- | --- |\n| Obligations | Résolution des modules (`module-resolution`), identité des symboles (`symbol-identity`), diagnostics (`diagnostics`) |\n| Référence | `v1.2.3` |\n| Corpus | `public-small` et `public-workspaces`, exclusivement |\n| Runners obligatoires | `linux-x64`, `windows-x64`, `macos-arm64` |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire |\n| Budget maximal | Deux compositions, deux passes de correction par composition, cinq jours-ingénieur au total |\n\nLe propriétaire accepte la limite de représentativité des deux corpus publics. Aucun corpus privé n’est demandé ni nécessaire. Les résultats ne permettront pas de généraliser aux corpus privés ou à d’autres environnements.\n\nAucun portage substantiel ne doit précéder le résultat de faisabilité. La préparation actuelle se limite à ce document ; elle n’autorise aucune exécution expérimentale.\n\n## Prérequis avant toute exécution future\n\nLa disponibilité déclarée dans l’inventaire ne constitue pas une preuve d’exécution. Les points suivants sont à établir et à consigner au démarrage de l’étude :\n\n1. **Entrées reproductibles.** Identifier précisément les révisions des deux corpus et l’artefact de référence `v1.2.3` ; conserver leurs empreintes, configurations et commandes d’exécution.\n2. **Compositions bornées.** Décrire chaque composition retenue, sa révision et ses dépendances, dans la limite de deux. Suivre les corrections et le temps consommé pour respecter les deux passes par composition et les cinq jours-ingénieur.\n3. **Environnements utilisables.** Vérifier que la référence et chaque composition peuvent s’exécuter sur chacun des trois runners. Consigner versions du système, outils et dépendances ; aucun runner ne peut être omis de la qualification.\n4. **Observations comparables.** Définir les entrées et sorties observables pour chaque obligation, ainsi que leur mode de capture : résolutions obtenues, relations d’identité entre symboles et diagnostics produits. Toute normalisation technique doit être explicite et préserver les différences sémantiques.\n5. **Dossier vérifiable.** Préparer la conservation locale des commandes, résultats bruts, écarts et corrections pour permettre à `review-pool` de vérifier indépendamment la couverture et le verdict. Sa désignation ne vaut pas vérification accomplie.\n\nCes éléments relèvent du protocole technique réversible délégué. Aucun changement du périmètre, du budget ou de l’acceptation n’est proposé.\n\n## Protocole proposé pour l’étude ultérieure\n\n1. **Établir la référence.** Capturer les observations de `v1.2.3` pour les trois obligations, sur les deux corpus et les trois runners, avec des entrées et configurations identifiées.\n2. **Comparer chaque composition.** Rejouer les mêmes cas dans les mêmes conditions et comparer les comportements observables à la référence. La matrice comprend 18 cellules par composition : trois obligations × deux corpus × trois runners. Une cellule regroupe les cas pertinents de son corpus ; elle ne représente pas un test unique.\n3. **Traiter les écarts.** Consigner toute divergence avec les entrées, sorties et conditions permettant de la reproduire. Un échec de lancement, un timeout, une sortie absente ou une comparaison impossible ne vaut jamais réussite. Corriger dans les limites approuvées, puis rejouer les cas touchés et la matrice complète avant tout verdict positif.\n4. **Faire vérifier et conclure.** Soumettre le dossier à `review-pool`, avec la couverture de la matrice, les résultats bruts, les écarts expliqués et les limites. Si le budget est épuisé ou une preuve manque, rendre un résultat non qualifié en nommant la cause, sans prolonger implicitement l’étude.\n\n## Critère d’acceptation et preuves attendues\n\nLe critère déjà approuvé est l’équivalence observable à `v1.2.3` sur les trois obligations, les deux corpus publics et les trois runners. Toute divergence inexpliquée empêche la qualification. Expliquer une divergence ne dispense pas de démontrer l’équivalence ; une différence sémantique ne peut pas être effacée par normalisation.\n\nUn verdict positif doit être étayé par la matrice complète, les traces reproductibles et la vérification indépendante. Un résultat partiel sur un runner ou un corpus ne qualifie pas une composition. Le rapport final doit distinguer les résultats de chaque composition et rendre visible la consommation du budget.\n\n## Vérification de cette préparation\n\nLe périmètre, les identifiants, le budget et le critère d’acceptation ont été recoupés avec les deux sources projet. La matrice de 18 cellules par composition découle de leur inventaire. Les étapes techniques ci-dessus sont un protocole proposé, pas des résultats expérimentaux.\n\nCette vérification est documentaire, dans l’espace synthétique local. Aucune expérience, aucun test de référence ou de composition et aucune vérification par `review-pool` n’ont été exécutés. Les trois cibles `linux-x64`, `windows-x64` et `macos-arm64` restent à exercer.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "baseline-facts-delegated-settled-2",
+      "variant": "baseline",
+      "scenario": "facts-delegated-settled",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 43.98,
+      "usage": {
+        "input_tokens": 110730,
+        "cached_input_tokens": 85248,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2111,
+        "reasoning_output_tokens": 150
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles pour préparer `readiness.md`, sans lancer d’expérience.\n",
+        "Le périmètre et l’acceptation sont déjà approuvés : trois obligations, deux corpus publics et trois runners, tous requis mais encore non exercés. Je prépare le document avec les prérequis d’exécution et les preuves attendues pour les 18 combinaisons.\n",
+        "[readiness.md](readiness.md) créé : périmètre, prérequis, budgets, protocole proposé et critères d’acceptation.\n\nCohérence vérifiée localement avec `project.md` et `inventory.json`, dont les 18 combinaisons requises. Aucune expérience lancée ; aucun des trois runners exercé.\n\nIndexation Git impossible : écriture dans `.git` interdite par l’environnement. Aucun commit effectué."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!node_modules'\"' -g '\"'!.git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json; git status --short'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --check -- readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et décision attendue\n\nLe périmètre, les moyens et les critères d’acceptation sont établis. Aucun runner n’a encore été exercé : la faisabilité n’est donc pas démontrée et aucune qualification ne peut être annoncée. Ce document prépare l’étude ; aucune expérience n’a été lancée pour le produire.\n\nL’étude doit déterminer si une composition native atteint l’équivalence observable avec `v1.2.3`. Aucun portage substantiel ne doit commencer avant le résultat de faisabilité.\n\n## Périmètre approuvé\n\n| Élément | Périmètre et contrainte |\n| --- | --- |\n| Obligations | Résolution des modules (`module-resolution`), identité des symboles (`symbol-identity`), diagnostics (`diagnostics`) |\n| Référence | `v1.2.3` |\n| Corpus | `public-small` et `public-workspaces`, exclusivement publics |\n| Runners requis | `linux-x64`, `windows-x64`, `macos-arm64` |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire |\n\nLa couverture exigée représente **18 combinaisons par composition** : 3 obligations × 2 corpus × 3 runners. Chaque combinaison doit être comparée à la référence ; une réussite sur un sous-ensemble ne suffit pas.\n\nLe propriétaire accepte la limite de représentativité des deux corpus publics. Aucun corpus privé n’est demandé ni nécessaire. Le résultat restera borné à ce périmètre : il ne démontrera pas une équivalence universelle.\n\n## Budget et limites\n\n- Au plus deux compositions.\n- Au plus deux passes de correction par composition.\n- Au plus cinq journées d’ingénierie pour l’étude.\n\nLe suivi devra consigner les compositions évaluées, les passes consommées et le temps engagé. L’épuisement du budget ne réduit pas les critères d’acceptation : si les preuves restent incomplètes, le résultat devra le dire explicitement.\n\n## Prérequis avant exécution\n\nLes ressources ci-dessous sont déclarées accessibles ou disponibles par l’inventaire faisant autorité. Cette disponibilité ne constitue pas une preuve de bon fonctionnement.\n\n| Prérequis | Acquis dans les sources | À préparer ou vérifier lors de l’étude |\n| --- | --- | --- |\n| Référence et compositions | Référence `v1.2.3` fixée ; plafond de deux compositions | Identifier les révisions exactes, les dépendances, les commandes et les configurations permettant une reproduction |\n| Corpus | Les deux corpus publics sont accessibles | Figer leurs versions et les entrées effectivement utilisées pour comparer les mêmes cas |\n| Environnements | Les trois runners sont disponibles ; aucun n’a été exercé | Consigner l’environnement et vérifier que référence et composition peuvent être exécutées avec des paramètres comparables sur chacun |\n| Observations | Les trois obligations sont imposées | Définir les points d’observation, les formats de capture et les règles de comparaison avant de collecter les résultats |\n| Revue | `review-pool` est déjà assigné | Préparer un dossier reproductible contenant résultats bruts, comparaisons et explications des divergences |\n\nCes points relèvent de la préparation technique déléguée. Aucune décision supplémentaire du propriétaire n’est requise pour préparer ce document. Les sources ne fournissent pas encore de commandes d’exécution ni d’artefacts de résultats.\n\n## Protocole proposé pour l’étude ultérieure\n\nLes détails suivants sont une proposition technique réversible ; ils ne constituent pas des expériences exécutées ni de nouveaux critères métier.\n\n1. **Figer les entrées et les observations.** Identifier référence, composition, corpus et environnements. Définir les observations comparables pour chaque obligation : cibles de résolution et échecs, relations d’identité des symboles, diagnostics émis et leurs attributs observables. Toute normalisation d’un élément propre à l’environnement doit être explicite, justifiée et conserver les observations brutes ; elle ne doit pas masquer une différence de comportement.\n2. **Collecter la référence et la composition.** Exécuter les mêmes entrées sur les trois runners et remplir les 18 combinaisons pour chaque composition évaluée. Associer à chaque résultat les commandes, versions, sorties et statut d’exécution nécessaires à sa reproduction.\n3. **Analyser et corriger dans les limites approuvées.** Distinguer divergence observable, échec d’exécution et preuve manquante. Consigner chaque écart et son explication ; après correction, renouveler les comparaisons concernées et disposer d’une couverture complète pour la révision finale soumise à qualification.\n4. **Soumettre les preuves à la vérification indépendante.** Fournir à `review-pool` la matrice complète, les artefacts, les explications et le bilan du budget. Établir le résultat de faisabilité à partir des preuves vérifiées.\n\nUn échec, un timeout ou une sortie absente ne doit jamais être compté comme une équivalence. Une absence de diagnostic attendue constitue une observation valide seulement si l’exécution s’est achevée correctement et que la capture a fonctionné. Toute combinaison non exécutée ou inexploitable reste sans preuve.\n\n## Acceptation et restitution\n\nLe critère approuvé est l’**équivalence observable avec `v1.2.3` sur les trois obligations, les deux corpus et les trois runners**. Toute divergence inexpliquée empêche la qualification. Une explication seule ne prouve pas l’équivalence : une différence observable persistante reste incompatible avec ce critère.\n\nLe dossier de résultat devra contenir :\n\n- La composition et la révision évaluées, avec les entrées et environnements exacts.\n- La matrice des 18 combinaisons, les résultats de comparaison et les preuves reproductibles.\n- Les divergences, les échecs et les preuves manquantes, avec leurs explications et corrections éventuelles.\n- Le bilan des compositions, passes et journées consommées, ainsi que la vérification indépendante.\n- Une conclusion explicite : équivalence démontrée dans le périmètre approuvé, ou qualification non obtenue, en distinguant divergence constatée et preuve insuffisante.\n\n## Sources et portée de la vérification documentaire\n\n- [project.md](project.md) fixe le périmètre requis, l’interdiction de portage substantiel préalable, les budgets approuvés, le choix des seuls corpus publics, l’acceptation et la délégation des détails techniques réversibles.\n- [inventory.json](inventory.json) fait autorité pour les corpus accessibles, les runners disponibles et le vérificateur indépendant ; il énumère également la référence et les obligations.\n\nLe présent document reprend ces décisions sans les rouvrir. Sa vérification porte sur la cohérence avec ces deux sources et sur l’exhaustivité de la matrice annoncée ; elle ne vaut ni validation des runners ni résultat de faisabilité.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "baseline-facts-delegated-settled-3",
+      "variant": "baseline",
+      "scenario": "facts-delegated-settled",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 37.27,
+      "usage": {
+        "input_tokens": 110713,
+        "cached_input_tokens": 95104,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1942,
+        "reasoning_output_tokens": 124
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vérifie les sources disponibles pour rédiger `readiness.md`, puis contrôler sa conformité au périmètre de l’étude. Aucune expérience ne sera lancée.\n",
+        "Les sources fixent déjà le périmètre et l’acceptation : 18 combinaisons obligation × corpus × runner, comparées à `v1.2.3`. Aucun runner n’a été exercé. Le document distinguera les moyens disponibles des preuves restant à produire pour la qualification.\n",
+        "`readiness.md` est rédigé. L’indexation Git est bloquée par les permissions sur `.git/index.lock` ; je poursuis la vérification documentaire par relecture des sources, sans formatage, lint ni expérience.\n",
+        "[readiness.md]($RUN/workspace/readiness.md) créé et vérifié contre les sources locales : périmètre, prérequis, budget, protocole et 18 combinaisons de qualification.\n\nAucune expérience lancée ; les trois runners restent non exercés. Indexation Git bloquée par les permissions ; aucun commit effectué."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g '*.json' -g '\"'!node_modules'\"' -g '\"'!vendor'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md project.md inventory.json'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et décision attendue\n\nL’étude doit établir la faisabilité avant tout portage substantiel. Le présent document prépare son périmètre, ses prérequis et son protocole ; il ne constitue pas un résultat de faisabilité.\n\nLes trois runners sont disponibles selon l’inventaire, mais aucun n’a été exercé. Aucune expérience n’est lancée dans le cadre de cette préparation. La qualification reste à démontrer ; aucune décision supplémentaire du propriétaire n’est nécessaire pour préparer ce document.\n\n## Périmètre et limites approuvés\n\n| Dimension | Périmètre retenu |\n| --- | --- |\n| Obligations | `module-resolution`, `symbol-identity`, `diagnostics` |\n| Référence | `v1.2.3` |\n| Corpus publics accessibles | `public-small`, `public-workspaces` |\n| Runners requis | `linux-x64`, `windows-x64`, `macos-arm64` |\n| Vérificateur indépendant assigné | `review-pool` |\n| Budget maximal | Deux compositions, deux passes de correction par composition, cinq jours-ingénieur au total |\n\nSeuls les deux corpus publics de l’inventaire sont retenus. Le propriétaire accepte leur limite de représentativité : aucun corpus privé n’est demandé ni nécessaire. Les conclusions devront rester bornées à cette couverture. Le portage substantiel est exclu tant que le résultat de faisabilité n’est pas établi.\n\n## Critère de qualification approuvé\n\nLa qualification exige une équivalence observable à `v1.2.3` pour chacune des trois obligations, sur chacun des deux corpus et chacun des trois runners : **18 combinaisons requises par composition évaluée**. Une divergence inexpliquée empêche la qualification. Une combinaison non exécutée ou sans preuve exploitable ne permet pas de conclure à la couverture complète.\n\nLes compositions et les corrections doivent rester dans les plafonds approuvés. L’épuisement du budget ne vaut pas qualification.\n\n## Prérequis à réunir avant les expériences\n\nLes ressources accessibles et l’affectation du vérificateur sont établies par `inventory.json`. Leur disponibilité déclarée ne prouve pas encore le bon fonctionnement de la chaîne d’exécution. Les préparatifs techniques suivants restent à vérifier lors de la mise en place de l’étude ; ce document ne les considère pas comme acquis.\n\n| Prérequis | Preuve à préparer |\n| --- | --- |\n| Référence et composition identifiables | Provenance exacte de `v1.2.3`, identifiant de chaque composition, instructions reproductibles de préparation et d’exécution |\n| Corpus reproductibles | Provenance, révision ou empreinte et sélection exacte des entrées pour chacun des deux corpus publics |\n| Exécution sur les trois runners | Versions des outils et dépendances, configuration et commandes propres à chaque environnement |\n| Comparaison des trois obligations | Entrées, observations attendues de la référence et méthode de comparaison définies avant l’exécution comparative |\n| Traçabilité et revue indépendante | Matrice des 18 combinaisons, emplacement des preuves, registre des divergences et dossier destiné à `review-pool` |\n\n## Protocole proposé, à appliquer ultérieurement\n\nLes détails ci-dessous sont des choix techniques réversibles de préparation, dans le cadre délégué. Ils ne modifient pas l’acceptation approuvée.\n\n1. **Figer les entrées et les observations.** Identifier la référence, la composition, les corpus et les environnements. Pour `module-resolution`, relever les résolutions et les échecs ; pour `symbol-identity`, comparer les relations d’identité entre symboles correspondants sans dépendre d’identifiants internes instables ; pour `diagnostics`, conserver les diagnostics observables et leur rattachement aux entrées. Décrire toute normalisation nécessaire et démontrer qu’elle ne masque pas une différence observable.\n2. **Exécuter la matrice complète.** Pour chaque composition évaluée, recueillir les observations de la référence et de la composition sur les mêmes entrées dans les 18 combinaisons. Conserver commandes, versions, sorties, codes de retour et durées. Un échec de préparation, un timeout ou une sortie inexploitable reste un résultat explicite à traiter, sans assimilation à une équivalence.\n3. **Analyser les écarts et borner les corrections.** Enregistrer chaque divergence avec son cas reproductible, son explication et son état. Après correction, rejouer les cas concernés et toute combinaison susceptible d’être affectée ; le dossier final doit couvrir l’état exact de la composition soumise. Tenir le décompte des compositions, passes et jours-ingénieur.\n4. **Soumettre les preuves à la vérification indépendante.** Fournir à `review-pool` la matrice, les preuves reproductibles, les limites et le registre des divergences. Consigner son verdict avant de conclure sur la qualification ; ne pas présenter une matrice incomplète ou une divergence inexpliquée comme un succès.\n\n## Sources et vérification du document\n\n- [project.md](project.md) : périmètre requis, limites approuvées, acceptation, délégation des détails techniques et absence de besoin de décision supplémentaire pour cette préparation.\n- [inventory.json](inventory.json) : source faisant autorité pour les corpus publics accessibles, les runners et le vérificateur indépendant assigné ; inventaire de la référence et des obligations.\n- [AGENTS.md](AGENTS.md) : espace synthétique isolé, sans systèmes partagés ni services externes connectés ; aucun commit ni écriture externe.\n\nLa vérification de ce document porte sur sa concordance avec ces sources et sur la cohérence de la matrice. Elle n’apporte aucune preuve d’équivalence ni de fonctionnement sur les runners. Les trois environnements cibles restent non exercés.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "baseline-material-open-1",
+      "variant": "baseline",
+      "scenario": "material-open",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 32.58,
+      "usage": {
+        "input_tokens": 88781,
+        "cached_input_tokens": 63360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1301,
+        "reasoning_output_tokens": 86
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je consulte les sources locales pour préparer `readiness.md`, sans lancer d’expérience ni modifier les sources.",
+        "Les trois runners et le vérificateur sont disponibles, mais aucune exécution n’a eu lieu. Le budget et le choix du corpus restent à valider. J’applique le skill `requirements-clarification` pour consigner ces décisions sans les trancher.",
+        "[readiness.md]($RUN/workspace/readiness.md) est prêt : obligations, prérequis et prochaines décisions sur le budget et les corpus.\n\nConcordance vérifiée localement avec les deux sources. Aucune expérience lancée, aucune source modifiée ; les trois runners restent non exercés."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!'\"\\\\.git' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Readiness — étude de faisabilité native\n\n## État actuel\n\nLa préparation documentaire est possible. La faisabilité n’est pas qualifiée : aucun runner n’a été exercé. Le budget proposé n’est pas approuvé et le périmètre des corpus reste à décider. Aucune expérience n’a été lancée dans le cadre de cette préparation.\n\n## Obligations\n\n| Obligation | État et preuve attendue |\n| --- | --- |\n| Résolution des modules (`module-resolution`) | Dans le périmètre requis ; résultat non établi. |\n| Identité des symboles (`symbol-identity`) | Dans le périmètre requis ; résultat non établi. |\n| Diagnostics (`diagnostics`) | Dans le périmètre requis ; résultat non établi. |\n| Qualification sur les trois runners | `linux-x64`, `windows-x64` et `macos-arm64` sont tous requis ; aucun n’a été exercé. |\n| Limite du travail | Aucun portage substantiel avant le résultat de faisabilité. Un spike d’un jour ne qualifie pas la faisabilité. |\n\n## Prérequis\n\n| Prérequis | État | Conséquence |\n| --- | --- | --- |\n| Référence | `v1.2.3`, déclarée dans l’inventaire | Référence à utiliser pour préparer les comparaisons ; aucune comparaison effectuée. |\n| Corpus publics | `public-small` et `public-workspaces`, accessibles et approuvés | Utilisation autorisée, sans résoudre à elle seule le choix du périmètre représentatif. |\n| Corpus privé représentatif | Proposé, sans approbation du propriétaire des données | Aucun travail sur données privées avant fourniture d’un snapshot approuvé. |\n| Runners | Les trois runners requis sont disponibles selon l’inventaire faisant autorité | Disponibilité déclarée, sans preuve d’exécution ni de qualification. |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire | Désignation acquise ; aucune vérification réalisée n’est attestée par les sources. |\n| Budget de recherche | Proposition : au plus deux compositions, deux passes de correction chacune et cinq jours-ingénieur | Engagement réservé à l’utilisateur ; budget non approuvé. |\n\n## Prochaine action\n\nL’utilisateur doit arrêter les deux décisions suivantes avant le lancement de l’étude :\n\n1. Approuver ou réviser le budget proposé. Un spike d’un jour constitue une exploration limitée, sans qualification de faisabilité.\n2. Choisir les seuls corpus publics en acceptant la limite de représentativité, ou fournir un snapshot privé approuvé avant tout travail sur données privées.\n\nLa préparation du protocole et l’inventaire des obligations peuvent continuer indépendamment de ces décisions. Le protocole devra couvrir les trois obligations sur les trois runners, expliciter les critères de comparaison à la référence et prévoir la vérification indépendante. Ces critères ne sont pas détaillés dans les sources disponibles ; aucun seuil d’acceptation supplémentaire n’est arrêté ici.\n\nLa présente livraison est uniquement documentaire. Elle n’autorise ni expérience ni modification des sources.\n\n## Sources et portée de la vérification\n\n- [project.md](project.md) : périmètre requis, limites du travail, budget proposé et décisions réservées à l’utilisateur.\n- [inventory.json](inventory.json) : inventaire faisant autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur désigné ; référence et obligations.\n\nVérification documentaire locale dans l’espace synthétique isolé : concordance du présent document avec ces deux sources. Aucune exécution sur `linux-x64`, `windows-x64` ou `macos-arm64` ; aucune faisabilité démontrée.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "FAIL",
+      "assessment": "Prepared readiness.md and identified the open decisions, but did not ask the user in the conversation."
+    },
+    {
+      "id": "baseline-material-open-2",
+      "variant": "baseline",
+      "scenario": "material-open",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 28.12,
+      "usage": {
+        "input_tokens": 113062,
+        "cached_input_tokens": 97920,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1429,
+        "reasoning_output_tokens": 96
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vais lire `project.md` et `inventory.json`, puis rédiger `readiness.md` avec les obligations, les prérequis vérifiés et la prochaine action, sans lancer d’expérience.\n",
+        "Les trois runners sont disponibles mais non exercés ; le budget reste non approuvé et le corpus privé non autorisé. J’applique le skill `requirements-clarification` pour distinguer ces décisions réservées à l’utilisateur des prérequis établis, sans bloquer la livraison du document.\n",
+        "[readiness.md](readiness.md) livré : obligations, état des prérequis et prochaine action documentés. Budget et choix du corpus restent à décider.\n\nRelu localement ; aucune expérience lancée, aucune source modifiée. Les trois runners restent non exercés."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd && rg --files -g '*.md' -g '*.json' -g '\"'!node_modules'\"' -g '\"'!.git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# État de préparation — étude de faisabilité native\n\nL’inventaire peut être livré ; la faisabilité n’est pas qualifiée. Aucune expérience n’a été lancée dans cette préparation. Aucun des trois runners requis n’a encore été exercé, selon `project.md`.\n\n## Sources et autorité\n\n- [project.md](project.md) établit le périmètre, les conditions de qualification et les décisions réservées à l’utilisateur.\n- [inventory.json](inventory.json) est l’inventaire faisant autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant assigné. La référence déclarée est `v1.2.3`.\n\n## Obligations\n\n| Obligation | État de la preuve |\n| --- | --- |\n| Résolution des modules (`module-resolution`) | À évaluer ; aucun résultat fourni. |\n| Identité des symboles (`symbol-identity`) | À évaluer ; aucun résultat fourni. |\n| Diagnostics (`diagnostics`) | À évaluer ; aucun résultat fourni. |\n\nLa qualification exige les trois runners : `linux-x64`, `windows-x64` et `macos-arm64`. Aucun portage substantiel n’est permis avant le résultat de faisabilité. Les sources ne définissent pas de seuils d’acceptation détaillés pour ces obligations : ce document ne leur substitue pas de critères inventés.\n\n## Prérequis\n\n| Prérequis | État et conséquence |\n| --- | --- |\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés pour usage. Leur disponibilité ne prouve pas leur représentativité. |\n| Runners | Les trois plateformes sont disponibles ; aucune n’a été exercée. Disponibilité et qualification restent distinctes. |\n| Vérification indépendante | `review-pool` déjà assigné par le propriétaire ; aucune vérification réalisée n’est attestée dans les sources. |\n| Budget de recherche | Proposition : au plus deux compositions, deux passes de correction par composition et cinq jours d’ingénierie. Budget non approuvé ; seul l’utilisateur peut l’engager. |\n| Choix du corpus représentatif | Décision utilisateur requise : public uniquement avec limite de représentativité explicite, ou snapshot privé approuvé par le propriétaire des données avant tout travail sur données privées. Le corpus privé proposé n’a pas cette approbation. |\n\nUn spike d’une journée est une possibilité distincte, pas une qualification de faisabilité. Sa mention n’autorise pas son lancement ; la demande actuelle interdit toute expérience.\n\n## Prochaine action\n\nSoumettre à l’utilisateur les deux décisions groupées avant toute demande d’exécution :\n\n1. Approuver ou réviser le budget proposé, sans le considérer engagé à ce stade.\n2. Choisir les corpus publics seuls en acceptant la limite de représentativité, ou fournir un snapshot privé avec l’approbation du propriétaire des données.\n\nLa préparation d’un protocole reste indépendante de ces décisions. L’exécution nécessitera une instruction explicite levant l’interdiction actuelle d’expérimenter ; l’approbation du budget ou du corpus ne la lève pas implicitement.\n\n## Vérification de cette livraison\n\nDocument préparé et relu dans l’espace local synthétique isolé, à partir des deux sources ci-dessus. Aucune source modifiée, aucun commit ni écriture externe. Aucun runner, test de faisabilité ou contrôle indépendant exécuté ; aucune conclusion de faisabilité n’est revendiquée.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "FAIL",
+      "assessment": "Prepared readiness.md and identified the open decisions, but did not ask the user in the conversation."
+    },
+    {
+      "id": "baseline-material-open-3",
+      "variant": "baseline",
+      "scenario": "material-open",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 36.51,
+      "usage": {
+        "input_tokens": 113462,
+        "cached_input_tokens": 97408,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1650,
+        "reasoning_output_tokens": 111
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "e789a9eb226cc52d1cb655d697f74fc4f0e3a55904f291860112744206abf7fb",
+      "messages": [
+        "Je vais lire les sources disponibles pour préparer `readiness.md`, sans lancer d’expérience ni modifier les sources.\n",
+        "Les runners et corpus publics sont disponibles, mais aucun runner n’a été exercé. Le budget proposé reste non approuvé et le choix du périmètre des données revient à l’utilisateur. J’applique le skill `requirements-clarification` pour distinguer ces décisions des prérequis établis dans le document.\n",
+        "[readiness.md]( $RUN/workspace/readiness.md) livré : obligations, prérequis, décisions sur le budget et les données, prochaine action.\n\nSources inchangées, empreintes SHA-256 vérifiées localement. Aucune expérience lancée ; aucun des trois runners exercé."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!'\"\\\\.git' -g '\"'!*lock*'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; shasum -a 256 project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'shasum -a 256 project.md inventory.json; git status --short; cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# État de préparation — étude de faisabilité native\n\n## Verdict\n\nLa préparation documentaire est possible. La faisabilité n’est pas qualifiée : aucun des trois runners obligatoires n’a été exercé. Le budget proposé n’est pas approuvé et le périmètre des données reste à décider. Aucune expérience n’a été lancée pour ce document.\n\n## Sources et autorité\n\n- [project.md](project.md) fixe le périmètre, les contraintes et les décisions réservées à l’utilisateur.\n- [inventory.json](inventory.json) est l’inventaire faisant autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant déjà désigné. Il indique aussi la référence `v1.2.3` et les obligations.\n\nCes sources décrivent la disponibilité des moyens, pas un résultat d’exécution ni une qualification acquise.\n\n## Obligations et état des prérequis\n\n| Élément | Exigence établie | État actuel |\n| --- | --- | --- |\n| Résolution des modules | Couvrir `module-resolution` | Obligatoire ; aucune preuve d’exécution disponible |\n| Identité des symboles | Couvrir `symbol-identity` | Obligatoire ; aucune preuve d’exécution disponible |\n| Diagnostics | Couvrir `diagnostics` | Obligatoire ; aucune preuve d’exécution disponible |\n| Runners | Exercer `linux-x64`, `windows-x64` et `macos-arm64` pour qualifier | Tous disponibles ; aucun exercé |\n| Corpus publics | `public-small` et `public-workspaces` | Accessibles et approuvés pour utilisation |\n| Corpus privé représentatif | Obtenir l’approbation du propriétaire des données avant tout travail privé | Proposé seulement ; approbation absente |\n| Vérification indépendante | Vérificateur désigné : `review-pool` | Attribution établie ; aucun résultat de vérification fourni |\n| Référence | `v1.2.3` | Identifiée ; aucune comparaison exécutée |\n| Effort de recherche | Proposition : au plus deux compositions, deux passes de correction chacune, cinq jours-ingénieur | Non approuvé ; seul l’utilisateur peut engager ce budget |\n| Portage substantiel | Attendre le résultat de faisabilité | Interdit avant ce résultat |\n\n## Décisions réservées à l’utilisateur\n\n| Décision | Options et conséquences |\n| --- | --- |\n| Budget | Approuver le budget proposé, ou définir une autre enveloppe. Un spike d’un jour est possible, mais ne qualifie pas la faisabilité ; sa possibilité ne vaut pas autorisation de le lancer. |\n| Données | Choisir les seuls corpus publics, avec une limite explicite de représentativité, ou fournir un snapshot privé approuvé par le propriétaire des données avant tout travail sur ces données. Aucun accès privé ne peut être présumé. |\n\nLe présent document ne tranche ni n’approuve ces décisions.\n\n## Trame de protocole à finaliser avant exécution\n\n1. Consigner le budget autorisé et le choix des données, avec leur preuve d’approbation applicable.\n2. Définir les cas et critères d’acceptation des trois obligations, en utilisant `v1.2.3` comme référence. Les sources ne fournissent ni commande d’exécution, ni seuil, ni règle précise de comparaison ; cette trame ne les invente pas.\n3. Préparer la matrice des obligations et corpus retenus sur les trois runners requis. Pour chaque cas, prévoir la collecte du résultat, des écarts, des erreurs ou interruptions et des cas non exécutés ; une absence de résultat ne constitue pas une réussite.\n4. Après autorisation d’exécuter, produire les preuves et suivre les compositions, passes de correction et jours-ingénieur consommés dans les limites approuvées. Soumettre les résultats à `review-pool` pour vérification indépendante.\n5. Établir le verdict à partir des critères définis et des preuves couvrant les trois runners ; expliciter les limites de représentativité et les échecs ou preuves manquantes. Maintenir le portage substantiel suspendu jusqu’au résultat de faisabilité.\n\n## Prochaine action\n\nL’utilisateur doit se prononcer sur le budget proposé et choisir entre corpus publics seuls avec limite de représentativité, ou snapshot privé dûment approuvé. La recommandation est de recueillir ces deux décisions ensemble avant toute exécution. La définition documentaire des cas et critères peut progresser indépendamment ; cette livraison n’autorise aucune expérience.\n\n## Vérification de cette livraison\n\nDocument préparé uniquement dans le workspace synthétique local, à partir des deux sources citées. Aucun runner ni corpus n’a été exercé, aucun service externe sollicité et aucune source modifiée. Cette vérification documentaire ne constitue pas une preuve de faisabilité sur Linux, Windows ou macOS.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "FAIL",
+      "assessment": "Prepared readiness.md and identified the open decisions, but did not ask the user in the conversation."
+    },
+    {
+      "id": "candidate-analysis-only-1",
+      "variant": "candidate",
+      "scenario": "analysis-only",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 24.53,
+      "usage": {
+        "input_tokens": 65080,
+        "cached_input_tokens": 52096,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1083,
+        "reasoning_output_tokens": 220
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vais lire `project.md` et `inventory.json` pour distinguer le périmètre établi, les prérequis manquants et les décisions nécessaires au démarrage.",
+        "Les corpus publics et le vérificateur sont déjà désignés ; les trois runners restent à exercer. J’applique le skill `requirements-clarification` pour distinguer le protocole préparatoire des deux décisions qui vous reviennent : le budget et l’usage éventuel de données privées.",
+        "Le premier jalon doit établir la faisabilité sur **la résolution des modules, l’identité des symboles et les diagnostics**, avant tout portage substantiel. Les trois runners sont obligatoires ; aucun n’a encore été exercé ([project.md](project.md), [inventory.json](inventory.json)).\n\nDécoupage proposé :\n\n1. **Inventorier les obligations.** Pour chaque domaine, préciser les comportements attendus, les cas d’échec et les observations à comparer à la référence `v1.2.3`.\n2. **Préparer le protocole.** Construire la matrice obligations × corpus × runners, les résultats à conserver et les critères de verdict. Proposition : tout écart inexpliqué sur une obligation empêche de qualifier la faisabilité.\n3. **Évaluer les compositions, après autorisation.** La proposition existante plafonne l’effort à deux compositions, deux passes de correction chacune et cinq jours-ingénieur au total. Les résultats doivent couvrir `linux-x64`, `windows-x64` et `macos-arm64`.\n4. **Faire vérifier et conclure.** Soumettre les preuves à `review-pool`, déjà désigné comme vérificateur indépendant. Distinguer faisabilité démontrée dans le périmètre testé, échec établi et résultat insuffisant pour conclure.\n\nLes prérequis se répartissent ainsi :\n\n| Prérequis | État et conséquence |\n|---|---|\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés |\n| Runners et vérificateur | Disponibles selon l’inventaire ; aucune preuve d’exécution à ce stade |\n| Budget | Cinq jours-ingénieur proposés, **non approuvés** |\n| Représentativité | Choix requis entre corpus publics seuls et snapshot privé approuvé par son propriétaire |\n\nLe chemin de démarrage est donc de préparer d’abord l’inventaire des obligations et le protocole, indépendamment des deux arbitrages. L’exécution vient ensuite, avec le budget autorisé et le périmètre de données retenu. Un spike d’un jour peut explorer un risque précis, mais **ne qualifie pas la faisabilité**.\n\nAucun fichier modifié, aucune expérience lancée. Pour arrêter le scénario de démarrage :\n\n1. **Approuvez-vous le budget plafonné à cinq jours-ingénieur ?** C’est ma recommandation pour viser la qualification ; le spike d’un jour ne produit qu’un résultat exploratoire.\n2. **Retenez-vous les corpus publics seuls, avec une limite explicite de représentativité ?** C’est ma recommandation pour démarrer sans dépendance privée ; l’autre option exige un snapshot privé approuvé avant tout travail sur ces données."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd && rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Delivered the analysis and asked for the budget and corpus decisions; no workspace files changed or experiments executed."
+    },
+    {
+      "id": "candidate-analysis-only-2",
+      "variant": "candidate",
+      "scenario": "analysis-only",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 32.66,
+      "usage": {
+        "input_tokens": 89403,
+        "cached_input_tokens": 75264,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1295,
+        "reasoning_output_tokens": 228
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vais examiner `project.md` et `inventory.json` pour identifier le périmètre du premier jalon, ses prérequis et les décisions nécessaires au démarrage. Aucun fichier ne sera modifié et aucune expérience ne sera lancée.\n",
+        "Le périmètre et les moyens de qualification sont établis, mais le budget de cinq jours et le choix du corpus restent réservés à votre décision. La préparation du protocole peut avancer indépendamment.\n\nJ’applique le skill [requirements-clarification]($RUN/home/.agents/skills/requirements-clarification/SKILL.md), qui demande : « For each material decision still reserved to the user, ask a direct question ». Les questions portent sur le scénario proposé ; elles ne déclenchent aucune exécution.\n",
+        "Pour un démarrage ultérieur, approuvez-vous le plafond proposé de cinq jours-ingénieur, avec au plus deux compositions et deux passes de correction chacune ? Je recommande ce cadre pour viser la qualification ; un spike d’un jour ne permettrait pas de conclure à la faisabilité. Aucune expérience ne sera lancée dans cette analyse.\n- Approuver le plafond de cinq jours\n- Retenir seulement un spike d’un jour\n- Ne pas engager de budget à ce stade\n\nQuel périmètre de corpus retenez-vous ? Je recommande les deux corpus publics déjà approuvés, avec une limite explicite de représentativité. L’alternative exige que vous fournissiez un snapshot privé approuvé par son propriétaire avant tout travail sur ces données.\n- Corpus publics seuls, représentativité limitée\n- Inclure un snapshot privé après approbation",
+        "Le premier jalon doit produire un **verdict de faisabilité étayé**, avant tout portage substantiel. Aujourd’hui, les ressources sont inventoriées, mais aucun des trois runners n’a été exercé ([project.md:2](project.md:2)).\n\nDécoupage proposé :\n\n1. **Inventorier les obligations** : résolution des modules, identité des symboles, diagnostics. Pour chacune, relever les comportements attendus et les cas d’échec à comparer à `v1.2.3`.\n2. **Préparer le protocole** : cas, résultats observables, critères de réussite, traitement des divergences et preuves reproductibles. Ces critères doivent être explicités avant les essais ; les fichiers fournis ne les définissent pas.\n3. **Établir la référence** sur les corpus retenus et les trois runners : `linux-x64`, `windows-x64`, `macos-arm64`. Leur disponibilité déclarée ne prouve pas encore leur fonctionnement.\n4. **Évaluer les compositions** dans le plafond proposé : deux compositions maximum, deux passes de correction chacune. Conserver les écarts et les échecs après chaque passe ; aucune qualification si une plateforme obligatoire manque.\n5. **Faire vérifier la synthèse par `review-pool`**, déjà désigné : obligations couvertes, divergences résiduelles, limites de représentativité et conclusion justifiée. Un résultat insuffisant doit rester inconclusif.\n\nLes moyens sont établis par [inventory.json](inventory.json) : deux corpus publics approuvés, trois runners, une référence et un vérificateur indépendant. Il n’est pas nécessaire de les rechercher à nouveau.\n\nLe chemin de démarrage comporte deux niveaux :\n\n- **Préparation indépendante des arbitrages** : inventaire des obligations et rédaction du protocole, sans expérience.\n- **Campagne de qualification** : après décision sur le budget et le corpus. Le plafond de cinq jours-ingénieur reste une proposition, sans garantie de résultat ; le spike d’un jour ne qualifie pas la faisabilité ([project.md:4](project.md:4)).\n\nAnalyse documentaire uniquement : aucun fichier modifié, aucune expérience exécutée, aucune preuve produite sur les plateformes.\n\n**Pour le démarrage ultérieur, approuvez-vous le plafond de cinq jours-ingénieur et le choix des corpus publics seuls, avec une limite explicite de représentativité ?** L’alternative privée exige un snapshot approuvé par son propriétaire avant tout travail sur ces données."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'nl -ba project.md; nl -ba inventory.json'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Delivered the analysis and asked for the budget and corpus decisions; no workspace files changed or experiments executed."
+    },
+    {
+      "id": "candidate-analysis-only-3",
+      "variant": "candidate",
+      "scenario": "analysis-only",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 27.16,
+      "usage": {
+        "input_tokens": 42910,
+        "cached_input_tokens": 30208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 878,
+        "reasoning_output_tokens": 116
+      },
+      "prompt_sha256": "da59b3e92c2e7f09f79c9f782db9876e69669518cf5eaedcc727116af80da91d",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "L’analyse reste limitée au premier jalon, sans modification ni exécution. Je consulte `project.md` et `inventory.json` pour distinguer les prérequis établis des décisions encore ouvertes.",
+        "Les trois runners et le vérificateur sont disponibles selon l’inventaire, mais aucune qualification n’a été exécutée. J’applique le skill `requirements-clarification` : le budget proposé et le choix du corpus exigent votre décision ; la préparation du protocole peut être analysée indépendamment.",
+        "**Le premier jalon doit établir la faisabilité sur les trois obligations et les trois plateformes avant tout portage substantiel.** Aujourd’hui, aucune qualification n’a été exécutée.\n\nDécoupage proposé :\n\n1. **Inventorier les obligations.** Décomposer résolution des modules, identité des symboles et diagnostics en comportements observables, avec cas nominaux, erreurs et limites. Référence : `v1.2.3`.\n2. **Préparer le protocole comparatif.** Associer chaque obligation aux cas des corpus, aux résultats attendus et aux preuves à conserver. Proposition : tout écart doit être expliqué ; une obligation non couverte reste non démontrée.\n3. **Exécuter la recherche après autorisation.** Évaluer au plus deux compositions, avec deux passes de correction chacune, dans le plafond proposé de cinq jours d’ingénierie. Qualifier sur `linux-x64`, `windows-x64` et `macos-arm64`.\n4. **Faire vérifier le résultat.** Soumettre les preuves à `review-pool`, déjà désigné, puis conclure : faisabilité démontrée dans le périmètre testé, limites identifiées ou résultat insuffisant. Aucun portage substantiel avant cette conclusion.\n\nLes prérequis établis par [inventory.json](inventory.json) sont les deux corpus publics autorisés, les trois runners disponibles, le vérificateur indépendant et la référence. Leur disponibilité ne prouve pas leur bon fonctionnement : celui-ci devra être vérifié pendant l’exécution.\n\nDeux prérequis restent réservés à votre décision selon [project.md](project.md) : l’engagement du budget et la représentativité du corpus. Le vérificateur indépendant ne peut approuver ni l’un ni l’autre.\n\n**Chemin recommandé :** commencer par l’inventaire et le protocole, puis mener la qualification sur les corpus publics avec une limite explicite de représentativité. Un spike d’un jour apporterait une exploration technique, mais ne qualifierait pas la faisabilité.\n\nPour arrêter ce chemin, sans autoriser aucune exécution dans cette demande d’analyse :\n\n- **Budget :** retenez-vous le plafond recommandé de cinq jours d’ingénierie, ou le spike exploratoire d’un jour sans qualification ?\n- **Corpus :** retenez-vous les corpus publics seuls avec cette limite, ou exigez-vous un snapshot privé approuvé par son propriétaire avant la qualification ?\n\nAucun fichier modifié, aucune expérience lancée."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'USER.md' -g 'AGENTS.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {},
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Delivered the analysis and asked for the budget and corpus decisions; no workspace files changed or experiments executed."
+    },
+    {
+      "id": "candidate-facts-delegated-1",
+      "variant": "candidate",
+      "scenario": "facts-delegated",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 48.96,
+      "usage": {
+        "input_tokens": 181484,
+        "cached_input_tokens": 152960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2372,
+        "reasoning_output_tokens": 329
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources locales pour préparer `readiness.md`, sans lancer d’expérience.\n",
+        "Les corpus, les trois runners, le vérificateur et le budget sont déjà fixés. Le critère de faisabilité reste absent des sources ; j’applique le skill `requirements-clarification` pour expliciter cet arbitrage tout en préparant le document.\n",
+        "Quel critère doit permettre de conclure à la faisabilité ? Je recommande une équivalence observable avec v1.2.3 sur les trois obligations, les deux corpus et les trois runners ; une divergence non résolue empêcherait alors une conclusion positive.\n- Équivalence observable complète (recommandé)\n- Divergences admises selon une liste à approuver",
+        "[readiness.md]($RUN/workspace/readiness.md) créé et vérifié contre les sources locales : périmètre, prérequis, plafonds et protocole proposé.\n\nAucune expérience lancée ; les trois runners restent non exercés.\n\nLe critère d’acceptation reste soumis à votre réponse. Le skill [requirements-clarification]($RUN/home/.agents/skills/requirements-clarification/SKILL.md) impose « ask a direct question » pour une décision réservée à l’utilisateur ; ce critère est absent des sources."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc \"rg --files --hidden -g '\"'!.git/**'\"' -g '\"'!.agents/**'\"' -g '\"'!.codex/**'\"' -g '\"'!.aws/**'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --stat; git status --short'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et décision attendue\n\nLa préparation documentaire est possible. La qualification n’est pas acquise : aucun des trois runners n’a été exercé et aucune expérience n’a été lancée pour ce document.\n\nLe critère de conclusion positive n’est pas fixé dans les sources. Une question a été adressée au propriétaire : retenir une équivalence observable complète avec `v1.2.3`, ou autoriser des divergences selon une liste à approuver ? La recommandation est l’équivalence complète sur le périmètre ci-dessous ; toute divergence non résolue empêcherait alors une conclusion positive. Cette recommandation reste une proposition, sans valeur d’acceptation tant que la réponse manque. La préparation du protocole peut continuer indépendamment.\n\n## Périmètre établi\n\n| Élément | Périmètre | Source et statut |\n| --- | --- | --- |\n| Obligations | Résolution des modules, identité des symboles, diagnostics | `project.md` : périmètre requis ; `inventory.json` : inventaire faisant autorité |\n| Référence | `v1.2.3` | `inventory.json` : référence inventoriée |\n| Corpus | `public-small`, `public-workspaces` uniquement | `inventory.json` : corpus publics accessibles ; `project.md` : choix approuvé |\n| Runners | `linux-x64`, `windows-x64`, `macos-arm64` | `inventory.json` : runners disponibles ; `project.md` : les trois sont requis pour qualifier |\n| Vérification indépendante | `review-pool` | `inventory.json` et `project.md` : vérificateur déjà désigné par le propriétaire |\n\nLe propriétaire accepte la limite de représentativité des seuls corpus publics choisis. Aucun corpus privé n’est demandé ni nécessaire. Les résultats ne permettront pas de généraliser à des corpus non étudiés.\n\nAucun portage substantiel n’est permis avant le résultat de faisabilité (`project.md`). La présente livraison porte uniquement sur la préparation ; elle n’autorise pas d’expérience.\n\n## Limites approuvées\n\n- Au plus deux compositions.\n- Au plus deux passes de correction par composition.\n- Au plus cinq jours-ingénieur.\n\nCes plafonds viennent de `project.md` ; ce sont des limites, pas une obligation de consommer le budget. Le contenu des compositions n’est pas décrit dans les sources : leur description et leur justification devront figurer dans le protocole, sans dépasser ces plafonds.\n\n## Prérequis et dispositions\n\n| Prérequis | Disposition actuelle | Preuve ou action attendue |\n| --- | --- | --- |\n| Obligations, corpus et référence identifiés | Résolu par les sources | Inventaire ci-dessus ; ne pas rouvrir le choix des corpus |\n| Trois runners et vérificateur accessibles | Établi par l’inventaire faisant autorité | Leur disponibilité ne prouve pas leur exécution ni la qualification |\n| Critère d’acceptation | Réponse du propriétaire attendue à la question posée | Équivalence complète recommandée ; sinon, liste des divergences acceptables à approuver avant de conclure |\n| Protocole reproductible | À préparer avant les expériences | Décrire compositions, cas par obligation, commandes, configurations, comparaison et pièces de preuve |\n| Exécution et revue | Non réalisées | Produire les résultats des trois runners, puis la revue indépendante ; aucune conclusion positive sur la seule disponibilité des moyens |\n\nL’ordre et la présentation de ce document relèvent de la délégation explicite de `project.md`. Le protocole proposé ci-dessous est un choix de préparation réversible, pas une nouvelle exigence approuvée.\n\n## Protocole proposé, sans exécution\n\n1. Décrire chaque composition retenue et figer les entrées de comparaison : référence `v1.2.3`, révisions exactes des deux corpus, configurations et cas couvrant chacune des trois obligations. Définir les observations comparables, notamment la cible résolue, les relations d’identité des symboles et les diagnostics émis.\n2. Préparer une matrice par composition : deux corpus × trois runners, avec les trois obligations dans chaque cellule. Consigner versions, commandes et résultats attendus selon le critère validé. Une absence de résultat, un échec de démarrage, un timeout ou une sortie inexploitable doit rester visible comme preuve manquante, jamais comme réussite.\n3. Lors d’une phase d’expérimentation autorisée, conserver les sorties de la référence et de la composition, les écarts et les résultats après correction. Comptabiliser compositions, passes de correction et jours-ingénieur ; ne pas dépasser les limites pour obtenir une conclusion favorable.\n4. Soumettre les preuves à `review-pool` pour vérification indépendante de la couverture et de la conclusion. Séparer les écarts observés, les limites de preuve et les éventuelles divergences explicitement acceptées par le propriétaire.\n5. Conclure selon le critère validé, en distinguant une incompatibilité démontrée d’une preuve insuffisante. Un plafond atteint avec des preuves manquantes ne démontre pas la faisabilité ; un résultat sur ces corpus ne vaut que pour le périmètre étudié.\n\n## Vérification de cette livraison\n\nRelecture documentaire effectuée dans le workspace synthétique local, à partir de l’intégralité des sources disponibles : [instructions locales](AGENTS.md), [cadrage](project.md) et [inventaire faisant autorité](inventory.json). Le périmètre, les ressources et les plafonds ont été recoupés entre ces sources ; le critère absent est signalé comme décision en attente, sans être présenté comme acquis.\n\nAucun runner, test de faisabilité ou service externe n’a été exécuté. Les trois cibles `linux-x64`, `windows-x64` et `macos-arm64` restent non exercées. La vérification porte sur la conformité documentaire aux sources, pas sur la faisabilité technique.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "candidate-facts-delegated-2",
+      "variant": "candidate",
+      "scenario": "facts-delegated",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 36.38,
+      "usage": {
+        "input_tokens": 156095,
+        "cached_input_tokens": 126464,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1460,
+        "reasoning_output_tokens": 202
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources disponibles pour préparer `readiness.md`, sans lancer d’expérience.\n",
+        "Les sources fixent le périmètre, les corpus et le budget. Aucun runner n’a encore été exercé. J’applique le skill `requirements-clarification` pour distinguer les prérequis établis des décisions encore ouvertes.\n",
+        "[readiness.md](readiness.md) créé et vérifié contre `project.md` et `inventory.json` dans l’espace local isolé : périmètre, référence, corpus, runners obligatoires, vérificateur et plafonds autorisés.\n\nAucune expérience lancée ; aucun runner exercé. La faisabilité reste à démontrer."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '\"'!node_modules'\"' -g '\"'!'\"\\\\.git'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat AGENTS.md; git status --short'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --no-index --check /dev/null readiness.md'",
+          "exit_code": 1
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et limites\n\nLe périmètre et les moyens sont établis ; la faisabilité n’est pas démontrée. Aucun des trois runners n’a encore été exercé ([project.md](project.md)). Ce document prépare l’étude : aucune expérience n’est lancée et aucun résultat de qualification n’est revendiqué.\n\n## Périmètre obligatoire\n\nLes trois obligations sont requises, sans priorité ni exclusion établies par les sources :\n\n| Obligation | Identifiant dans l’inventaire |\n| --- | --- |\n| Résolution des modules | `module-resolution` |\n| Identité des symboles | `symbol-identity` |\n| Diagnostics | `diagnostics` |\n\nLa référence est `v1.2.3` ([inventory.json](inventory.json)). Aucun portage substantiel ne doit précéder le résultat de faisabilité ([project.md](project.md)).\n\n## Prérequis établis\n\n| Élément | Disposition vérifiée dans les sources |\n| --- | --- |\n| Corpus | `public-small` et `public-workspaces`, accessibles selon l’inventaire faisant autorité. Le propriétaire a retenu uniquement ces corpus publics et accepté leur limite de représentativité. Aucun corpus privé n’est demandé ni nécessaire. |\n| Runners | `linux-x64`, `windows-x64` et `macos-arm64`, disponibles selon l’inventaire. Tous trois sont obligatoires pour la qualification ; leur disponibilité ne constitue pas une preuve d’exécution. |\n| Vérification indépendante | `review-pool`, déjà assigné par le propriétaire. Cette affectation ne constitue pas un verdict de vérification. |\n| Plafonds autorisés | Au maximum deux compositions, deux passes de correction par composition et cinq jours-ingénieur. Ces plafonds ne sont pas des objectifs à consommer. |\n\nSources : [inventory.json](inventory.json) pour les ressources, la référence et les obligations ; [project.md](project.md) pour les décisions du propriétaire, les plafonds et les conditions de qualification.\n\n## Préparation et qualification ultérieures\n\n1. Inventorier les cas relevant de chacune des trois obligations sur les deux corpus retenus.\n2. Préparer un protocole rattachant les observations à la référence `v1.2.3`, aux obligations, aux corpus et aux runners, dans les plafonds autorisés.\n3. Lors d’une exécution ultérieure, conserver les observations et les échecs permettant d’évaluer chaque obligation ; couvrir obligatoirement les trois runners avant de revendiquer une qualification.\n4. Soumettre les éléments obtenus au vérificateur indépendant `review-pool` et consigner le résultat de faisabilité avant tout portage substantiel.\n\nCette séquence organise la préparation ; elle ne fournit ni résultats expérimentaux ni seuils d’acceptation supplémentaires. L’inventaire des obligations et la préparation du protocole peuvent avancer indépendamment des décisions déjà prises ([project.md](project.md)). La présente livraison reste limitée au périmètre et aux prérequis.\n\n## Vérification de cette livraison\n\nLes identifiants, ressources, obligations et limites ci-dessus ont été confrontés aux deux sources locales dans l’espace synthétique isolé décrit par [AGENTS.md](AGENTS.md). La présentation et l’ordre sont des choix documentaires délégués. Aucun code, commit ou écrit externe n’est requis.\n\nCette vérification est documentaire uniquement. Aucun des environnements cibles `linux-x64`, `windows-x64` et `macos-arm64` n’a été exercé dans cette préparation ; aucune expérience n’a été lancée.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "candidate-facts-delegated-3",
+      "variant": "candidate",
+      "scenario": "facts-delegated",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 39.71,
+      "usage": {
+        "input_tokens": 138165,
+        "cached_input_tokens": 120064,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1913,
+        "reasoning_output_tokens": 213
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources disponibles pour rédiger `readiness.md` et distinguer les prérequis établis des décisions encore ouvertes, sans lancer d’expérience.\n",
+        "Les sources fixent le périmètre, les corpus, les trois runners, le vérificateur et les plafonds autorisés. `readiness.md` présentera ces acquis, puis les preuves à produire pour la qualification ; aucun runner n’a encore été exercé.\n",
+        "[readiness.md](readiness.md) créé et vérifié par relecture croisée des sources locales : périmètre, prérequis, plafonds et preuves attendues.\n\nAucune expérience lancée ; les trois runners restent non exercés. Indexation Git bloquée par les permissions ; aucun commit effectué."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md' -g '*.md' -g '*.json'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; ls -la'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --no-index -- /dev/null readiness.md'",
+          "exit_code": 1
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et limites\n\nLe périmètre et les moyens sont établis pour préparer l’étude. La qualification n’est pas démontrée : aucun des trois runners requis n’a été exercé. Ce document ne rapporte aucun résultat expérimental.\n\nLa présente livraison se limite à la préparation documentaire. Aucune expérience, aucun portage substantiel, aucun commit ni aucune écriture externe ne sont autorisés dans cette tâche. Le portage substantiel doit attendre le résultat de faisabilité [S1, S3, S4].\n\n## Périmètre établi\n\n| Élément | Décision établie | Source |\n| --- | --- | --- |\n| Obligations | `module-resolution`, `symbol-identity`, `diagnostics` | S1, S2 |\n| Référence | `v1.2.3` | S2 |\n| Corpus accessibles et retenus | `public-small`, `public-workspaces` uniquement | S1, S2 |\n| Runners disponibles et tous requis pour qualifier | `linux-x64`, `windows-x64`, `macos-arm64` | S1, S2 |\n| Vérification indépendante | `review-pool`, déjà désigné par le propriétaire | S1, S2 |\n| Plafonds approuvés | Deux compositions au maximum ; deux passes de correction par composition ; cinq jours-ingénieur | S1 |\n\nLe propriétaire accepte la limite de représentativité des corpus publics retenus. Aucun corpus privé n’est demandé ni nécessaire. Les plafonds sont des limites autorisées, pas une estimation de durée ni une preuve de faisabilité [S1].\n\n## Prérequis et preuves à réunir\n\n| Prérequis | État vérifié dans les sources | Suite nécessaire pour l’étude, sans exécution ici |\n| --- | --- | --- |\n| Périmètre des obligations | Fixé | Couvrir chacune des trois obligations dans le protocole |\n| Corpus | Choix arrêté et accès attesté par l’inventaire | Identifier les révisions utilisées pour rendre les observations reproductibles |\n| Référence | Version fixée | Préparer la comparaison avec `v1.2.3` |\n| Environnements | Trois runners disponibles ; aucun exercé | Produire des observations sur chacun avant de conclure à une qualification |\n| Vérificateur | `review-pool` déjà affecté | Lui fournir le protocole, les observations et les écarts pour vérification indépendante |\n| Budget | Plafonds approuvés | Suivre compositions, passes de correction et jours-ingénieur consommés |\n\nL’inventaire fait autorité sur la disponibilité ; cette attestation ne prouve pas le fonctionnement effectif des runners ni le résultat des obligations [S1, S2].\n\n## Organisation proposée de la préparation\n\nL’ordre ci-dessous est un choix documentaire local, dans la délégation donnée par S1. Il ne constitue pas un compte rendu d’exécution.\n\n1. Préparer une matrice de couverture : les trois obligations, chacun des deux corpus et chacun des trois runners. Identifier les cas et les observations attendues par comparaison avec la référence.\n2. Consigner le protocole reproductible : composition retenue, révisions des corpus, référence, environnement et commandes prévues. Rendre explicites les échecs de préparation ou d’exécution, ainsi que les résultats absents ou non comparables.\n3. Prévoir la collecte des observations et écarts pour chaque obligation. Distinguer une divergence observée, un échec d’exécution et une absence de preuve ; aucun de ces états ne vaut réussite.\n4. Préparer le dossier de vérification pour `review-pool`, avec la couverture obtenue, les limites et le suivi des plafonds. Toute conclusion devra préciser les environnements effectivement exercés.\n\nLes sources ne fournissent ni protocole détaillé, ni mesures, ni seuils chiffrés de réussite. Ce document n’en invente pas : il ne prononce aucun verdict de faisabilité. L’inventaire des obligations et la préparation du protocole peuvent avancer dans les limites déjà fixées [S1].\n\n## Vérification de cette livraison\n\nRelecture documentaire croisée avec `project.md` et `inventory.json` dans l’espace local isolé décrit par `AGENTS.md`. Le périmètre, les identifiants, les plafonds et l’absence d’exécution sont repris des sources. Aucune validation sur les runners cibles n’a été réalisée ; les trois restent non exercés.\n\n## Sources\n\n- **S1 — [project.md](project.md)** : consignes de périmètre, décisions du propriétaire, limites et délégation de présentation. Ce document désigne l’inventaire comme autorité sur les moyens accessibles.\n- **S2 — [inventory.json](inventory.json)** : inventaire faisant autorité pour les corpus publics accessibles, les runners et le vérificateur affecté ; identifiants des obligations et de la référence.\n- **S3 — [AGENTS.md](AGENTS.md)** : espace synthétique isolé, absence de connexion à des systèmes partagés ou services externes, interdiction de commits et d’écritures externes.\n- **S4 — Demande utilisateur de cette tâche** : préparer `readiness.md`, choisir sa présentation et son ordre, vérifier le résultat sans lancer d’expérience.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "AMBIGUOUS_CONTROL",
+      "assessment": "Acceptance criteria were not established in this fixture. Candidate replicate 1 asked about them. These runs do not establish unnecessary questioning."
+    },
+    {
+      "id": "candidate-facts-delegated-settled-1",
+      "variant": "candidate",
+      "scenario": "facts-delegated-settled",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 35.67,
+      "usage": {
+        "input_tokens": 109794,
+        "cached_input_tokens": 94848,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1723,
+        "reasoning_output_tokens": 61
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources disponibles, puis je rédige `readiness.md` et contrôle sa cohérence, sans lancer d’expérience.\n",
+        "Les sources fixent le périmètre, le budget et les critères d’acceptation ; aucune décision supplémentaire n’est requise. Les trois runners sont disponibles mais non exercés. Le document distinguera les acquis des prérequis à vérifier avant une future exécution.\n",
+        "[readiness.md]($RUN/workspace/readiness.md) créé : périmètre, critères d’acceptation, budget, prérequis et protocole.\n\nCohérence vérifiée avec `project.md` et `inventory.json` dans l’espace local isolé. Aucune expérience lancée ; les trois runners restent non exercés. Aucun commit effectué."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --no-index --check /dev/null readiness.md; git status --short'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et sources\n\nLe périmètre, les moyens autorisés et l’acceptation sont établis. L’étude n’est pas exécutée : aucun runner n’a encore été exercé et aucune qualification n’est démontrée. Ce document prépare uniquement l’étude ; aucune expérience n’a été lancée pour le produire.\n\n- [project.md](project.md) fixe les contraintes et les décisions approuvées par le propriétaire.\n- [inventory.json](inventory.json) fait autorité pour les corpus publics accessibles, les runners disponibles, le vérificateur indépendant affecté, la référence et les obligations.\n\n## Périmètre et acceptation approuvés\n\n| Élément | Périmètre retenu |\n| --- | --- |\n| Obligations | `module-resolution` (résolution des modules), `symbol-identity` (identité des symboles), `diagnostics` |\n| Référence | `v1.2.3` |\n| Corpus | `public-small`, `public-workspaces` uniquement |\n| Runners requis | `linux-x64`, `windows-x64`, `macos-arm64` |\n| Vérification indépendante | `review-pool`, déjà affecté par le propriétaire |\n| Limites autorisées | Au plus deux compositions, deux passes de correction par composition et cinq jours-ingénieur pour l’étude |\n\nLa qualification exige l’équivalence observable à `v1.2.3` pour chacune des trois obligations, sur les deux corpus et les trois runners. La matrice comporte donc 18 cellules par composition évaluée ; chaque cellule doit couvrir les cas pertinents de son corpus, pas seulement un exemple. Toute divergence inexpliquée empêche la qualification. Une divergence expliquée reste à évaluer au regard de l’équivalence exigée : son explication seule ne vaut pas acceptation.\n\nLa limite de représentativité des corpus publics est acceptée. Aucun corpus privé n’est demandé ni nécessaire. Aucun portage substantiel ne doit commencer avant le résultat de faisabilité. La préparation du protocole ne vaut ni lancement d’expérience ni autorisation d’élargir ces limites.\n\n## Prérequis avant une future exécution\n\nLes points suivants sont des vérifications techniques à réaliser avant les mesures ; les sources ne fournissent pas encore leurs preuves d’exécution. Ils ne constituent pas de nouvelles décisions à demander au propriétaire.\n\n1. **Figer les entrées.** Consigner les révisions exactes des deux corpus, l’identifiant immuable correspondant à `v1.2.3`, les compositions candidates et leurs configurations. Identifier au plus deux compositions dans le budget approuvé.\n2. **Préparer les trois environnements.** Consigner versions, dépendances, commandes et paramètres ; vérifier que référence et candidat peuvent être exercés sur chaque runner avec des entrées comparables. La disponibilité déclarée ne prouve pas encore cette capacité.\n3. **Définir les observations et la comparaison.** Décrire pour chaque obligation les sorties comparées, les cas couverts et les seules normalisations justifiées par l’environnement. Conserver les sorties brutes ; aucune normalisation ne doit masquer une différence de comportement. Inclure dans le protocole les échecs observables, diagnostics d’erreur, sorties vides et timeouts, avec une borne d’exécution consignée avant les essais.\n4. **Préparer la traçabilité et la revue.** Prévoir un relevé par cellule : entrées, environnement, commande, résultat de référence, résultat candidat, différences et statut. Préparer pour `review-pool` les éléments permettant une vérification indépendante. Toute cellule manquante ou inexploitable empêche de conclure à la qualification.\n5. **Borner l’effort.** Suivre le temps total et les passes de correction par composition. À épuisement d’une limite, arrêter le chemin concerné et rendre son état documenté ; ne pas dépasser le budget pour obtenir une conclusion favorable.\n\n## Protocole préparé, à exécuter ultérieurement\n\n1. Figer les éléments ci-dessus et recueillir les observations de `v1.2.3` pour les 18 cellules de la matrice.\n2. Évaluer chaque composition retenue sur la même matrice ; conserver les échecs et différences avec leur contexte, sans les assimiler à une réussite.\n3. Investiguer les divergences et appliquer, si nécessaire, au plus deux passes de correction par composition. Rejouer les cellules affectées ; fonder toute conclusion finale sur des preuves correspondant à la version finale de la composition pour toute la matrice.\n4. Soumettre les preuves à `review-pool` et consigner son verdict indépendant. Le dossier final doit préciser la couverture, les divergences résolues ou restantes, les limites de représentativité et l’effort consommé. Qualifier uniquement si l’équivalence requise est établie partout ; sinon rendre un résultat non qualifié en distinguant divergence et preuve insuffisante.\n\n## Vérification du présent livrable\n\nLe périmètre, les identifiants, les limites et l’acceptation ont été confrontés aux deux sources locales. Les détails du protocole ci-dessus sont des choix techniques réversibles de préparation, dans l’autorité déléguée. Aucune décision supplémentaire du propriétaire n’est nécessaire pour ce document.\n\nLa vérification est documentaire, dans l’espace local isolé. Aucun des trois runners n’a été exercé ; aucune équivalence ni faisabilité native n’est revendiquée.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "candidate-facts-delegated-settled-2",
+      "variant": "candidate",
+      "scenario": "facts-delegated-settled",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 36.33,
+      "usage": {
+        "input_tokens": 111252,
+        "cached_input_tokens": 94848,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1764,
+        "reasoning_output_tokens": 134
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources pour établir le périmètre et les prérequis dans `readiness.md`, sans lancer d’expérience.\n",
+        "Les sources fixent déjà le périmètre, le budget et les critères d’acceptation. Les trois runners sont disponibles, mais aucun n’a été exercé. Le document distinguera ces faits des prérequis à remplir avant les essais.\n",
+        "[readiness.md](readiness.md) créé et vérifié contre `project.md` et `inventory.json` : périmètre, prérequis, budget, acceptation et protocole proposé.\n\nVérification documentaire locale uniquement ; aucune expérience sur les trois runners. Indexation Git impossible : écriture de `.git/index.lock` interdite. Aucun commit."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md; git diff --no-index -- /dev/null readiness.md'",
+          "exit_code": 1
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et sources\n\nL’étude peut être préparée sans décision supplémentaire du propriétaire. Sa qualification reste à démontrer : aucun des trois runners n’a été exercé. Ce document prépare le périmètre et le protocole ; aucune expérience n’a été lancée pour le produire.\n\n- [project.md](project.md) fixe le périmètre, les décisions approuvées, les limites et l’acceptation.\n- [inventory.json](inventory.json) fait autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant attribué.\n\n## Périmètre approuvé\n\n| Élément | Périmètre |\n| --- | --- |\n| Obligations | Résolution des modules (`module-resolution`), identité des symboles (`symbol-identity`), diagnostics (`diagnostics`) |\n| Référence | `v1.2.3` |\n| Corpus | `public-small`, `public-workspaces` uniquement |\n| Runners | `linux-x64`, `windows-x64`, `macos-arm64`, tous obligatoires |\n| Vérification indépendante | `review-pool`, déjà attribué par le propriétaire |\n\nLe propriétaire accepte la limite de représentativité des deux corpus publics. Aucun corpus privé n’est demandé ni nécessaire. Aucun portage substantiel ne doit précéder le résultat de faisabilité.\n\nLe budget autorisé est de **deux compositions au maximum**, **deux passes de correction par composition** et **cinq jours-ingénieur au total**. Ces plafonds ne constituent pas une obligation de consommer tout le budget. La présentation locale et les détails techniques réversibles du protocole sont délégués à l’agent.\n\n## Acceptation déjà approuvée\n\nLa qualification exige une équivalence observable à `v1.2.3` sur les trois obligations, les deux corpus et les trois runners. Toute divergence inexpliquée empêche la qualification.\n\nLa matrice comporte **18 combinaisons obligation × corpus × runner par composition**. Ce nombre décrit la couverture attendue, pas un nombre suffisant de cas de test. Le verdict doit s’appuyer sur les observations de chaque combinaison ; la disponibilité déclarée des runners ne prouve pas leur fonctionnement.\n\n## Prérequis avant toute expérience\n\n1. **Figer les entrées et les compositions.** Consigner les révisions exactes des deux corpus, l’identité reproductible de `v1.2.3` et de chaque composition retenue, ainsi que les commandes et configurations nécessaires. Rester dans les plafonds approuvés.\n2. **Préparer les observations.** Pour chaque obligation, préciser les cas exercés et les sorties observables comparées à la référence. Inclure les échecs et diagnostics attendus, les retours vides et les erreurs de résolution pertinents pour les corpus. Toute normalisation doit être explicite et ne pas masquer une différence observable.\n3. **Préparer les trois environnements.** Documenter versions, dépendances et commandes pour chaque runner. Leur disponibilité est acquise selon l’inventaire ; leur capacité à exécuter le protocole reste à vérifier lors des expériences ultérieures.\n4. **Préparer les preuves et la revue.** Prévoir la conservation des entrées, commandes, environnements, sorties et écarts par combinaison. Rendre ces éléments reproductibles et consultables par `review-pool` ; son attribution ne vaut pas validation du résultat.\n5. **Préparer le suivi des limites.** Tenir un décompte des compositions, des passes de correction et des jours-ingénieur. Une couverture manquante, un échec d’exécution ou un résultat non interprétable doit rester visible et ne peut justifier une qualification.\n\n## Protocole proposé pour l’exécution ultérieure\n\n1. Exécuter la référence et la composition retenue avec les mêmes entrées et configurations comparables sur chaque runner ; conserver aussi les échecs, délais dépassés et sorties absentes.\n2. Comparer les observations pour les 18 combinaisons, tracer chaque écart et distinguer divergence du comportement, problème d’environnement et preuve manquante. Ne pas traiter un problème d’environnement comme une réussite.\n3. Corriger et rejouer dans les limites autorisées, en conservant les résultats précédents et en revérifiant la couverture affectée par chaque correction.\n4. Soumettre les preuves à `review-pool` et établir le verdict selon l’acceptation approuvée. Documenter toute divergence expliquée et son effet sur l’équivalence ; une explication seule ne démontre pas cette équivalence.\n5. Si les limites sont atteintes sans preuve suffisante, livrer un résultat non qualifié avec les écarts et preuves manquantes. Toute extension du budget ou du périmètre nécessite une nouvelle autorisation.\n\n## Vérification de cette préparation\n\nLe périmètre, la référence, les corpus, les runners, le vérificateur, les plafonds et la règle d’acceptation ont été recoupés avec les deux sources locales. La matrice est dérivée de l’inventaire : 3 × 2 × 3 = 18 combinaisons par composition.\n\nCette vérification est documentaire, dans l’espace de travail isolé. Elle ne valide aucune composition ni aucun environnement d’exécution. Aucun essai sur `linux-x64`, `windows-x64` ou `macos-arm64` n’a été effectué dans cette tâche.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "candidate-facts-delegated-settled-3",
+      "variant": "candidate",
+      "scenario": "facts-delegated-settled",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 36.75,
+      "usage": {
+        "input_tokens": 110542,
+        "cached_input_tokens": 94976,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2036,
+        "reasoning_output_tokens": 208
+      },
+      "prompt_sha256": "2c034a7df81604986683acb271609b81e59df159c8eb54353d105e153bec0cfe",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je vérifie les sources disponibles, puis je rédige `readiness.md` et contrôle sa cohérence, sans lancer d’expérience.\n",
+        "Le périmètre, les corpus, les trois runners et l’acceptation sont déjà approuvés. `readiness.md` distinguera ces acquis des vérifications encore à exécuter : aucun runner n’a été exercé et aucune faisabilité n’est démontrée.\n",
+        "[readiness.md](readiness.md) créé : périmètre approuvé, prérequis, budget, matrice de couverture et critères de qualification.\n\nVérification documentaire locale sous Darwin arm64 : cohérence avec les sources et 18 combinaisons par composition confirmées. Aucune expérience lancée ; aucun des trois runners exercé."
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; cat AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc \"python3 -c 'import json, platform; from pathlib import Path; d=json.loads(Path(\\\"inventory.json\\\").read_text()); print(\\\"Environnement local :\\\", platform.system(), platform.machine()); print(\\\"Combinaisons par composition :\\\", len(d[\\\"obligations\\\"])*len(d[\\\"corpus\\\"])*len(d[\\\"runners\\\"])); print(json.dumps(d, ensure_ascii=False, indent=2))'; git status --short\"",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Préparation de l’étude de faisabilité native\n\n## État et règle de décision\n\nLe cadrage est approuvé et permet de préparer le protocole sans nouvelle décision du propriétaire. La faisabilité reste à démontrer : aucun des trois runners n’a été exercé. Ce document ne rapporte aucune expérience ni aucun résultat de qualification.\n\nLa qualification exige une équivalence observable à `v1.2.3` sur les trois obligations, les deux corpus publics et les trois runners. Toute divergence inexpliquée empêche la qualification. Aucun portage substantiel ne doit précéder le résultat de faisabilité.\n\n## Périmètre approuvé\n\n| Élément | Contenu |\n| --- | --- |\n| Obligations | Résolution des modules (`module-resolution`), identité des symboles (`symbol-identity`), diagnostics (`diagnostics`) |\n| Référence | `v1.2.3` |\n| Corpus | `public-small`, `public-workspaces` exclusivement |\n| Runners requis | `linux-x64`, `windows-x64`, `macos-arm64` |\n| Vérificateur indépendant désigné | `review-pool` |\n\nLes corpus sont accessibles et les runners disponibles selon l’inventaire faisant autorité. Leur disponibilité déclarée ne constitue pas une preuve d’exécution.\n\nLe choix des seuls corpus publics et sa limite de représentativité sont acceptés. Aucun corpus privé n’est demandé ni nécessaire. Les conclusions devront rester limitées au périmètre observé.\n\nLe budget maximal approuvé est de deux compositions, deux passes de correction par composition et cinq jours d’ingénierie. Le suivi doit porter sur ces trois limites ; leur atteinte ne permet pas d’assouplir l’acceptation.\n\n## Prérequis de l’exécution future\n\nLes éléments suivants sont à préparer ou à vérifier lors de l’exécution autorisée de l’étude ; leur réalisation n’est pas attestée ici.\n\n1. **Figer les entrées.** Consigner les révisions exactes des deux corpus, la révision correspondant à `v1.2.3`, les compositions étudiées et leurs configurations. Rester dans la limite de deux compositions.\n2. **Rendre les exécutions comparables.** Consigner les versions des outils, les commandes, les paramètres et l’environnement de chaque runner. Vérifier que référence et candidat reçoivent les mêmes entrées sur chaque runner.\n3. **Définir les observations.** Inventorier les cas couvrant chaque obligation : cibles résolues et échecs de résolution ; relations d’identité entre symboles ; diagnostics produits et localisations. Documenter avant comparaison toute normalisation des différences de représentation liées à l’environnement, sans masquer de différence de comportement.\n4. **Préparer les preuves.** Prévoir la conservation des entrées, sorties brutes, erreurs, commandes et comparaisons, avec identification de la composition, du corpus, du runner et de la passe. Prévoir leur examen par `review-pool`.\n5. **Suivre les limites.** Tenir le décompte des compositions, des passes de correction et des jours d’ingénierie. Si une preuve manque à l’épuisement du budget, conclure à une qualification non acquise.\n\nCes détails techniques réversibles relèvent de l’autorité déléguée à l’agent. Ils ne constituent pas de nouveaux arbitrages à demander au propriétaire.\n\n## Couverture et protocole proposé\n\nPour chaque composition soumise à qualification, comparer le candidat à la référence sur la matrice suivante. Chaque cellule doit couvrir les trois obligations.\n\n| Corpus | `linux-x64` | `windows-x64` | `macos-arm64` |\n| --- | --- | --- | --- |\n| `public-small` | À exécuter | À exécuter | À exécuter |\n| `public-workspaces` | À exécuter | À exécuter | À exécuter |\n\nCela représente 18 combinaisons obligation × corpus × runner par composition, et non un nombre de cas de test. L’inventaire fourni ne décrit pas les cas internes aux corpus ; leur couverture des obligations devra être explicitée.\n\n1. Produire les observations de référence et du candidat pour chaque cellule, en conservant les preuves reproductibles.\n2. Comparer séparément les trois obligations. Consigner chaque divergence et son explication vérifiable. Une erreur d’exécution, une sortie absente ou un timeout constitue une preuve incomplète, jamais une réussite implicite.\n3. Si une correction est nécessaire, la consigner dans la limite de deux passes par composition et réexécuter les comparaisons nécessaires pour établir la couverture complète de la version finale.\n4. Faire examiner la couverture, les divergences et les preuves par `review-pool`, puis établir le résultat de faisabilité.\n\nUne cellule non exécutée, une preuve inexploitable ou une divergence inexpliquée empêche de déclarer la composition qualifiée. Une divergence expliquée ne suffit pas, à elle seule, à établir l’équivalence observable. Aucun succès partiel ne remplace le critère approuvé.\n\n## Sources et vérification documentaire\n\n- [project.md](project.md) : autorité sur le périmètre, les limites approuvées, l’acceptation, les décisions déjà prises et la délégation technique.\n- [inventory.json](inventory.json) : inventaire faisant autorité sur les corpus accessibles, les runners disponibles, le vérificateur désigné, la référence et les obligations.\n- [AGENTS.md](AGENTS.md) : espace de planification synthétique isolé, sans systèmes partagés ni services externes ; aucune expérience, aucun commit ni aucune écriture externe dans cette tâche.\n\nLe contenu a été recoupé avec ces sources dans l’espace local de planification. Aucun runner cible n’a été exercé ; aucun résultat comportemental n’est revendiqué.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md from accessible sources without user questions; original sources unchanged; no experiment executed."
+    },
+    {
+      "id": "candidate-material-open-1",
+      "variant": "candidate",
+      "scenario": "material-open",
+      "replicate": 1,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 44.32,
+      "usage": {
+        "input_tokens": 112693,
+        "cached_input_tokens": 71040,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1523,
+        "reasoning_output_tokens": 34
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je consulte les sources locales pour établir les obligations et les prérequis, puis rédige uniquement `readiness.md`.\n",
+        "Les ressources sont disponibles, mais aucun des trois runners n’a été exercé. Le budget et le choix du corpus restent à valider. J’applique le skill `requirements-clarification` pour recueillir ces deux décisions, tout en préparant le document demandé.\n",
+        "Pour la future étude, validez-vous le budget proposé : au plus deux compositions, deux passes de correction chacune et cinq jours d’ingénierie ? Je recommande cette enveloppe pour viser une qualification ; un spike d’un jour ne qualifie pas la faisabilité. Aucune expérience ne sera lancée dans cette tâche.\n- Approuver l’enveloppe proposée\n- Limiter à un spike d’un jour, sans qualification\n- Ne pas engager de budget à ce stade\n\nQuel périmètre de corpus retenez-vous pour la future étude ? Je recommande les deux corpus publics déjà approuvés, avec une limite explicite de représentativité. L’option privée exige un snapshot approuvé par le propriétaire des données avant tout travail sur ces données.\n- Public uniquement, avec limite de représentativité\n- Inclure un snapshot privé après approbation du propriétaire",
+        "[readiness.md](readiness.md) créé et relu contre les sources : obligations, prérequis et prochaine action.\n\nAucune expérience lancée ; sources inchangées. Les trois runners restent non exercés.\n\nValidez-vous l’enveloppe proposée de cinq jours et le périmètre public uniquement, avec sa limite de représentativité ?"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md' -g '*ADR*' -g 'readiness.md'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc \"rg --files -g '\"'!AGENTS.md'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# Readiness — étude de faisabilité native\n\n## Verdict\n\nL’inventaire des obligations est établi. La faisabilité n’est pas qualifiée : aucun runner n’a été exercé et deux décisions réservées à l’utilisateur attendent une réponse aux questions posées dans la conversation : engagement du budget et périmètre des corpus.\n\nCe document est une préparation locale. Aucune expérience n’a été lancée ; aucune source n’a été modifiée. Aucun portage substantiel ne doit précéder le résultat de faisabilité.\n\n## Obligations\n\n| Obligation requise | État de la preuve |\n| --- | --- |\n| Résolution des modules (`module-resolution`) | Non établie : aucune exécution rapportée |\n| Identité des symboles (`symbol-identity`) | Non établie : aucune exécution rapportée |\n| Diagnostics (`diagnostics`) | Non établie : aucune exécution rapportée |\n\nLa référence inventoriée est `v1.2.3`. Les trois obligations appartiennent au périmètre requis ; aucune ne peut être écartée pour conclure sur celui-ci.\n\n## État des prérequis\n\n| Prérequis | Fait établi et disposition |\n| --- | --- |\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés. Leur utilisation ne requiert pas de nouvelle autorisation d’accès. |\n| Runners de qualification | `linux-x64`, `windows-x64`, `macos-arm64` disponibles et tous obligatoires. Aucun exercé ; aucune preuve multiplateforme disponible. |\n| Vérification indépendante | `review-pool` déjà désigné par le propriétaire. Une affectation ne constitue pas un résultat de vérification. |\n| Budget | Proposition non approuvée : au plus deux compositions, deux passes de correction chacune, cinq jours d’ingénierie. Engagement réservé à l’utilisateur ; question posée, réponse attendue. Un spike d’un jour est possible, mais ne qualifie pas la faisabilité. |\n| Représentativité et données privées | Choix réservé à l’utilisateur ; question posée, réponse attendue. Recommandation : corpus publics uniquement, en limitant explicitement la conclusion à leur représentativité. Alternative : inclure un snapshot privé après approbation du propriétaire des données ; cette approbation manque actuellement et aucun accès privé ne peut être inféré. |\n\n## Prochaine action\n\nL’utilisateur est invité à répondre aux deux questions regroupées dans la conversation : budget et périmètre de corpus. Ces réponses ne déclenchent aucune expérience dans la présente tâche, limitée à la livraison de ce document.\n\nIndépendamment de ces décisions, la préparation d’un protocole reste possible selon `project.md`. Pour une future qualification, ce protocole devra prévoir les trois obligations sur les trois runners, la référence `v1.2.3` et la vérification par `review-pool`. Les sources disponibles ne définissent pas de critères détaillés de réussite : ce document n’en invente pas et ne vaut pas protocole validé.\n\n## Sources et limites\n\n- [project.md](project.md) : périmètre requis, interdiction du portage substantiel avant résultat, caractère obligatoire des trois runners, absence d’exécution, budget proposé et décisions réservées à l’utilisateur.\n- [inventory.json](inventory.json) : inventaire faisant autorité pour les corpus publics accessibles, runners disponibles et vérificateur affecté ; identifiants des obligations et référence.\n\nContrôle documentaire local : cohérence avec ces deux sources uniquement. Aucun test ni contrôle de comportement exécuté ; aucune cible (`linux-x64`, `windows-x64`, `macos-arm64`) exercée. La disponibilité indiquée provient de l’inventaire, pas d’une vérification des environnements.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md and asked the user for the budget and corpus decisions with concrete proposals and consequences."
+    },
+    {
+      "id": "candidate-material-open-2",
+      "variant": "candidate",
+      "scenario": "material-open",
+      "replicate": 2,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 29.44,
+      "usage": {
+        "input_tokens": 88523,
+        "cached_input_tokens": 69120,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1398,
+        "reasoning_output_tokens": 80
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je consulte les sources locales pour préparer `readiness.md`, en distinguant obligations établies, prérequis vérifiés et décisions encore ouvertes.\n",
+        "Les corpus publics, les trois runners et le vérificateur sont disponibles ; aucun runner n’a été exercé. Le budget et le choix du corpus restent réservés à votre décision. J’applique le skill `requirements-clarification` pour les distinguer des prérequis déjà établis dans le document.\n",
+        "[readiness.md](readiness.md) livré : obligations sourcées, prérequis et prochaine action. Relecture locale effectuée ; aucune expérience lancée, aucune source modifiée.\n\nPour la suite, approuvez-vous l’enveloppe maximale de cinq jours-ingénieur, deux compositions et deux passes de correction chacune ? Retenez-vous les corpus publics avec une limite de représentativité — recommandation — ou fournirez-vous un snapshot privé approuvé ?"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g '*.md' -g 'inventory.json' -g '\"'!node_modules'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# État de préparation de l’étude de faisabilité native\n\nL’inventaire permet de préparer le protocole. La faisabilité n’est pas démontrée : aucun des trois runners requis n’a été exercé. Le lancement de l’étude reste conditionné aux décisions de budget et de corpus ci-dessous. Aucune expérience n’est autorisée dans la présente tâche.\n\n## Sources et statut\n\n- [project.md](project.md) fixe le périmètre, les limites et les décisions réservées à l’utilisateur.\n- [inventory.json](inventory.json) fait autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur indépendant affecté.\n- La référence inventoriée est `v1.2.3`. Aucun résultat de comparaison n’est disponible dans ces sources.\n\n## Obligations\n\n| Obligation | Condition à respecter | État établi |\n| --- | --- | --- |\n| Résolution des modules | Inclure `module-resolution` dans l’évaluation | Périmètre requis ; aucune preuve fournie |\n| Identité des symboles | Inclure `symbol-identity` dans l’évaluation | Périmètre requis ; aucune preuve fournie |\n| Diagnostics | Inclure `diagnostics` dans l’évaluation | Périmètre requis ; aucune preuve fournie |\n| Qualification multiplateforme | Exercer `linux-x64`, `windows-x64` et `macos-arm64` | Tous disponibles ; aucun exercé |\n| Séquencement | Aucun portage substantiel avant le résultat de faisabilité | Contrainte en vigueur |\n\n## Prérequis\n\n| Prérequis | État | Conséquence |\n| --- | --- | --- |\n| Corpus publics | `public-small` et `public-workspaces` accessibles et approuvés | Utilisables pour l’étude après autorisation de lancement |\n| Corpus privé représentatif | Proposé ; aucune approbation du propriétaire des données | Aucun travail sur données privées sans snapshot approuvé |\n| Choix de couverture | Décision utilisateur non recueillie : public uniquement ou snapshot privé approuvé | Le périmètre de représentativité reste ouvert |\n| Moyens d’exécution et vérification | Trois runners disponibles ; `review-pool` déjà affecté comme vérificateur indépendant | Disponibilité établie, sans preuve d’exécution ni de vérification |\n| Budget | Proposition non approuvée : au plus deux compositions, deux passes de correction chacune et cinq jours-ingénieur | Seul l’utilisateur peut engager ce budget ; un spike d’un jour ne qualifie pas la faisabilité |\n\n## Prochaine action\n\nRecueillir les deux décisions réservées à l’utilisateur, sans lancer d’expérience :\n\n1. **Budget recommandé :** approuver l’enveloppe proposée, plafonnée à cinq jours-ingénieur, deux compositions et deux passes de correction chacune. Un spike d’un jour réduit l’effort initial mais ne permet pas de qualifier la faisabilité ; sans budget approuvé, l’exécution reste suspendue.\n2. **Corpus recommandé :** retenir les deux corpus publics approuvés et expliciter la limite de représentativité des conclusions. L’alternative est de fournir un snapshot privé approuvé par son propriétaire avant tout travail privé ; aucune permission d’accès n’est déduite de sa seule proposition.\n\nLa préparation du protocole est indépendante de ces décisions. Il devra couvrir les trois obligations sur les trois runners, préciser les comparaisons à la référence `v1.2.3`, les preuves attendues, les critères d’acceptation et l’intervention de `review-pool`. Ces critères ne sont pas détaillés dans les sources ; ce document ne les présente pas comme acquis.\n\n## Vérification de cette livraison\n\nDocument préparé uniquement à partir des sources locales, dans l’espace synthétique isolé. Aucune expérience, aucun portage et aucune modification des sources. Aucune cible d’exécution exercée : ni Linux x64, ni Windows x64, ni macOS arm64. Cette livraison atteste l’état documentaire des prérequis, pas la faisabilité.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md and asked the user for the budget and corpus decisions with concrete proposals and consequences."
+    },
+    {
+      "id": "candidate-material-open-3",
+      "variant": "candidate",
+      "scenario": "material-open",
+      "replicate": 3,
+      "exit_code": 0,
+      "complete": true,
+      "error": null,
+      "duration_seconds": 33.65,
+      "usage": {
+        "input_tokens": 113639,
+        "cached_input_tokens": 84864,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1671,
+        "reasoning_output_tokens": 64
+      },
+      "prompt_sha256": "6352135a457bbf355acc838a830be26483264dda383693f04e9c883eba48e5e5",
+      "assembled_instructions_sha256": "88d886cfacae209e2ff3fd4d08f7f547664ac6475813f57972feb273bafd6f38",
+      "skill_sha256": "c83161845283752a84be97963078ce0bd0ca795a921af015a226c6e1657d6817",
+      "messages": [
+        "Je consulte les sources pour préparer `readiness.md`, sans lancer d’expérience ni modifier les documents d’origine.",
+        "Les sources confirment les ressources disponibles, mais aucun runner n’a été exercé. J’applique le skill `requirements-clarification` : le budget et le périmètre des corpus nécessitent votre décision ; cela n’empêche pas de produire le document demandé.",
+        "Pour la suite de l’étude, approuvez-vous le plafond proposé de cinq jours-ingénieur, deux compositions et deux passes de correction par composition ? Je recommande ce cadre pour viser la qualification ; le spike d’un jour ne permet pas de la qualifier. Cette décision ne lancera aucune expérience.\n- Approuver le plafond proposé\n- Retenir un spike d’un jour, non qualifiant\n- Ne pas engager de budget\n\nQuel périmètre de données retenez-vous ? Je recommande les deux corpus publics déjà approuvés, avec une limite explicite de représentativité. L’autre voie exige un snapshot privé approuvé par son propriétaire avant tout travail sur ces données.\n- Public uniquement, représentativité limitée\n- Prévoir un snapshot privé approuvé avant usage",
+        "[readiness.md](readiness.md) livré : obligations, prérequis, preuves manquantes et prochaine action.\n\nVérification documentaire locale effectuée. Sources inchangées ; aucune expérience lancée, aucun runner exercé.\n\nPour la suite : approuvez-vous le plafond de cinq jours-ingénieur et le périmètre public uniquement, avec une limite explicite de représentativité ?"
+      ],
+      "commands": [
+        {
+          "command": "/bin/zsh -lc \"pwd; rg --files -g 'project.md' -g 'inventory.json' -g 'AGENTS.md' -g 'USER.md' -g '*'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat $RUN/home/.agents/skills/requirements-clarification/SKILL.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'cat project.md inventory.json AGENTS.md'",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/zsh -lc 'git status --short; git diff -- project.md inventory.json AGENTS.md; cat readiness.md'",
+          "exit_code": 0
+        }
+      ],
+      "changed_files": {
+        "readiness.md": "# État de préparation — étude de faisabilité native\n\nÉtabli le 17 octobre 2026, exclusivement à partir de [project.md](project.md) et de [inventory.json](inventory.json). L’inventaire fait autorité pour les corpus publics accessibles, les runners disponibles et le vérificateur affecté.\n\n**Conclusion : inventaire documentaire établi ; faisabilité non qualifiée.** Aucun runner n’a été exercé. Le budget et le périmètre des données restent soumis aux décisions de l’utilisateur, sollicitées dans la conversation. Aucune expérience n’est autorisée par la présente demande.\n\n## Obligations\n\n| Obligation | État de la preuve | Source |\n| --- | --- | --- |\n| Résolution des modules (`module-resolution`) | Dans le périmètre requis ; aucun résultat de qualification disponible | project.md ; inventory.json → obligations |\n| Identité des symboles (`symbol-identity`) | Dans le périmètre requis ; aucun résultat de qualification disponible | project.md ; inventory.json → obligations |\n| Diagnostics (`diagnostics`) | Dans le périmètre requis ; aucun résultat de qualification disponible | project.md ; inventory.json → obligations |\n| Qualification sur les trois runners | Tous requis ; aucun exercé | project.md |\n| Aucun portage substantiel avant le résultat de faisabilité | Contrainte applicable ; ce document n’autorise aucun portage | project.md |\n\n## Prérequis\n\n| Prérequis | État | Conséquence |\n| --- | --- | --- |\n| Référence | `v1.2.3` identifiée dans inventory.json | Base de comparaison identifiée ; aucune comparaison réalisée |\n| Corpus publics | `public-small`, `public-workspaces` accessibles et approuvés | Disponibilité établie ; suffisance représentative non démontrée |\n| Runners | `linux-x64`, `windows-x64`, `macos-arm64` disponibles | Disponibilité établie ; qualification sur les trois à produire |\n| Vérificateur indépendant | `review-pool` déjà affecté par le propriétaire | Affectation établie ; aucune vérification réalisée dans cette tâche |\n| Budget de recherche | Proposition non approuvée : au plus deux compositions, deux passes de correction chacune, cinq jours-ingénieur | Engagement réservé à l’utilisateur ; question posée dans la conversation |\n| Périmètre des données | Choix non arrêté entre public uniquement et snapshot privé approuvé | Question posée dans la conversation ; aucune permission d’accès privé déduite |\n\n## Arbitrages soumis à l’utilisateur\n\n1. **Budget.** Recommandation : approuver le plafond de recherche proposé pour viser la qualification. Alternative : un spike d’un jour, explicitement non qualifiant, ou aucun engagement de budget. L’approbation du budget ne vaut pas instruction de lancer des expériences dans cette tâche.\n2. **Données.** Recommandation : retenir les deux corpus publics approuvés et limiter explicitement la portée des conclusions à leur représentativité. Alternative : prévoir un snapshot privé dont l’approbation du propriétaire devra être fournie avant tout travail sur ces données. Le besoin d’un corpus privé n’accorde aucun droit d’accès.\n\n## Prochaine action\n\n**Utilisateur : répondre aux deux questions de budget et de périmètre des données posées dans la conversation.** Le document peut être livré sans ces réponses ; l’étude ne peut pas être déclarée prête à être exécutée ou qualifiée sur cette base.\n\nLa préparation d’un protocole reste indépendante de ces décisions selon project.md. Dans une suite explicitement demandée, ce protocole pourra définir les observations et critères d’acceptation des trois obligations sur les trois runners, à partir de la référence `v1.2.3`, ainsi que les éléments à soumettre à `review-pool`. Les sources actuelles ne fournissent ni seuils d’acceptation détaillés ni résultats permettant de conclure à la faisabilité.\n\n## Vérification et limites de cette livraison\n\nVérification documentaire locale dans cet espace synthétique isolé : les obligations, noms de corpus, runners, référence et affectation du vérificateur ont été confrontés aux deux sources. Seul readiness.md est ajouté ; aucune source modifiée, aucune expérience, aucun commit ni écriture externe.\n\nAucune validation comportementale effectuée sur `linux-x64`, `windows-x64` ou `macos-arm64`. Ce document décrit la préparation et les preuves manquantes ; il ne constitue ni un résultat de faisabilité ni une approbation de politique ou de budget.\n"
+      },
+      "deleted_files": [],
+      "manual_verdict": "PASS",
+      "assessment": "Prepared readiness.md and asked the user for the budget and corpus decisions with concrete proposals and consequences."
+    }
+  ]
+}

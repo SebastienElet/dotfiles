@@ -202,13 +202,16 @@ fn identify(
                 entry.args.as_slice(),
             )
         })
-        .chain(manifest.mcp_registrations().map(|entry| {
-            let (command, args) = match entry.transport {
-                McpTransport::Stdio { command, args, .. } => (Some(command), args),
-                McpTransport::Http { .. } => (None, &[][..]),
-            };
-            (entry.agent, entry.name, command, args)
-        }));
+        .chain(
+            manifest
+                .mcp_registrations()
+                .filter_map(|entry| match entry.transport {
+                    McpTransport::Stdio { command, args, .. } => {
+                        Some((entry.agent, entry.name, Some(command), args))
+                    }
+                    McpTransport::Http { .. } => None,
+                }),
+        );
     let ranked = candidates
         .map(|(agent, name, executable, args)| {
             (

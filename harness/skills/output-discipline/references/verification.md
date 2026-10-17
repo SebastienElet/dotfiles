@@ -170,3 +170,9 @@ behavior, and Linux were not exercised in these trials.
 - The user-skill index was regenerated twice with Prettier; both outputs match
   SHA-256 `b9758d906607a6afb6de27ed08ad1a7fac582b3229f3d8827ad2d1ca6f283633` and the
   existing index bytes. No index membership or frontmatter changed.
+
+## Claude continuation follow-up — 2026-10-16
+
+The [native Claude evaluation](continuation-evaluation.md) records the completed-work decision
+scenario, rejected variants, boundary controls and limits of the retained USER.md/rule 3 alignment.
+It does not establish a general cure for every idle session or the complete Claude/Codex repair loop.

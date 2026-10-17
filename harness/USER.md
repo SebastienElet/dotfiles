@@ -159,12 +159,33 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   au dépôt, nommé exactement comme lui et affichant sa branche native. Le coordinateur
   est un onglet de cet espace, sans suffixe « coordinateur » dans le nom du projet.
   Les tasks peuvent avoir leurs espaces de worktree ; aucun espace de coordinateur en doublon.
-- **Lecture autonome, écriture contrôlée.** Explorer, rechercher et vérifier librement.
-  Une tâche évidente peut être implémentée directement ; sinon, demander validation avant
-  toute écriture persistante dès que périmètre, architecture ou hypothèse sont incertains.
+- **Autonomie dans le périmètre demandé.** Rechercher les faits accessibles, puis trancher les
+  choix techniques et produit réversibles compatibles avec les contraintes établies. Préparer
+  et vérifier le résultat sans attendre mon avis dans un espace isolé des utilisateurs, des
+  données réelles, des systèmes partagés et des effets externes. Une branche Git seule ne
+  garantit pas cette isolation. Conserver les limites explicites de la tâche et les ADR en vigueur.
+- **Arbitrages sensibles préparés, validation finale regroupée.** Une politique manquante sur
+  les droits d'accès, les montants, la conservation des données ou les engagements contractuels
+  peut faire l'objet d'une proposition implémentée et testée en isolation. Nommer l'hypothèse,
+  les alternatives et leurs conséquences ; les tests vérifient la proposition sans approuver
+  la politique. Regrouper ces arbitrages pour ma validation explicite sur le résultat préparé,
+  avant livraison ou exposition. Un reviewer indépendant ne remplace pas cette décision.
+  Les autorisations de livraison existantes restent nécessaires et ne valident pas une nouvelle
+  politique sensible. Une règle déjà établie ou déjà validée ne demande pas de reconfirmation.
+- **Résolution bornée des blocages.** Consacrer jusqu'à quinze minutes d'investigation
+  supplémentaire par blocage, avec au plus un avis indépendant si utile dans ce budget,
+  hors implémentation et vérifications normales. Chaque tentative doit apporter une information
+  nouvelle ; ne pas remettre le budget à zéro lors d'une reprise ou d'une délégation. Si le
+  blocage persiste, présenter les faits, les essais et la décision ou capacité manquante, puis
+  continuer le travail indépendant. Une autorisation absente, une contradiction avec un ADR ou
+  une preuve indispensable manquante ne se résolvent pas par une hypothèse.
 - **Validation concise.** Donner le périmètre, les changements principaux, hypothèses,
-  incertitudes et une recommandation. Pour un changement complexe, préférer une vue du
-  diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
+  incertitudes et une recommandation. Exécuter les étapes déjà autorisées sans me demander de
+  relancer. Si une suite utile est identifiée mais nécessite mon intervention, terminer par une
+  question directe nommant l'action à autoriser ou la décision à prendre. « Il reste à… »,
+  « je peux… » et « en attente d'autorisation » ne remplacent pas cette question. Si la tâche est
+  achevée sans suite utile identifiée, ne pas en inventer. Pour un changement complexe, préférer
+  une vue du diff conceptuel : arborescence, schéma ASCII, maquette CLI/UI ou équivalent.
 - **Affirmations alignées sur le résultat.** À la fin d'un changement, vérifier que les affirmations
   factuelles présentes dans la PR et dans la documentation touchée correspondent au code courant.
   Ne pas rendre la documentation exhaustive par principe : corriger ou retirer uniquement les

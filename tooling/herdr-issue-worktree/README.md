@@ -67,8 +67,9 @@ Collisions, incompatible repositories, changed occupants and unavailable identit
 
 ## Installation and validation
 
-`moon run repository:herdr-plugin` links this plugin alongside worktree cleanup on macOS, using the
-existing optional Herdr installation. Bun, authenticated tracker access and the composed skills must
+`moon exec repository:herdr-issue-plugin` explicitly opts into this plugin on macOS. The regular
+Herdr installation keeps Projects and worktree cleanup; it leaves existing launcher links intact.
+Bun, authenticated tracker access and the composed skills must
 be available to the selected provider. No tracker engine or project catalogue is installed here.
 
 Run the portable owned-behavior tests with:
