@@ -15,6 +15,7 @@ Corrections completed on `<final-head-sha>`.
 
 Validation: <environment, tier, principal checks and counts>; required CI: <linked result on this SHA, or none required>.
 Independent review: `approved` on `<final-head-sha>`, no remaining actionable defect.
+Review threads: <links to corrected threads and their verified resolution, or none>.
 Native approval: <confirmed for <account> on `<final-head-sha>` | already present for <account>, not bound to a SHA on Bitbucket | not granted: <refusal, user decline or prohibition, or own PR>>; PR state: <forge state, e.g. OPEN>.
 Limits: <material evidence gaps or deliberately excluded findings and reasons; omit this line when none>.
 ```
@@ -28,6 +29,8 @@ Limits: <material evidence gaps or deliberately excluded findings and reasons; o
 - Stable PR marker first; update the existing repair comment even when the SHA changes.
 - One opening sentence, correction bullets, one validation paragraph; aim for 15 non-empty lines.
 - Cover all final corrected problems across passes; group related outcomes instead of truncating.
+- Link each corrected review thread and state its read-back resolution; a root comment is not the
+  thread reply.
 - State material limits and reasoned omissions directly after validation; retain full proof in the
   journal and never copy old results as evidence for the final SHA.
 - Body passed through a file; no local paths, formal verdict or merge decision.

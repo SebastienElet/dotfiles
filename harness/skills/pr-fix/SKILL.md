@@ -62,12 +62,17 @@ explicit correction request above. This distinction does not change any push or 
    Read earlier passes before planning; reconcile them against the current diff and commits.
    If the journal is missing or damaged, recover only verifiable history from the forge and report
    any gap; never invent prior corrections. One repair session owns a PR journal at a time.
+   Inventory review threads, including PR-level threads where the forge exposes them, and standalone
+   PR comments. Bind each thread-backed finding to its forge thread ID, top-level comment ID,
+   author, URL and current resolution state using
+   `references/review-threads.md`; only a standalone comment without a thread has no resolution state.
 
 2. **Bound the repair.** Present one repair slate before editing: every blocker has its failure
    mechanism, broken invariant and lift test; at most three non-blocking items may follow, and only
    when they are objective, localized and observable. Continue without another confirmation because
    invoking this workflow authorized the repair. Stop before editing when a correction requires an
-   unresolved product, architecture, migration or public-contract decision.
+   unresolved product, architecture, migration or public-contract decision. Name the originating
+   review thread beside each thread-backed correction so publication can return to that discussion.
 
 3. **Isolate the work.** Create a clean temporary worktree at the anchored SHA so the caller's
    checkout and uncommitted work remain untouched. Preserve all author commits and unrelated changes.
@@ -144,6 +149,16 @@ explicit correction request above. This distinction does not change any push or 
    `approved with reservations` keeps the journal pending and proposes no approval: list each
    reservation and the decision expected from the user, then stop.
 
+   Reconcile every corrected review thread through `references/review-threads.md` before the
+   approval question or the cumulative repair record. On the stable approved head, reply in the
+   original thread with the final correction and evidence, read the reply back, then resolve the
+   thread and verify its state. Resolution is required to finish a corrected thread; if the forge
+   refuses it or does not expose a readable state, keep the repair pending. Record each reply and
+   resolution in the journal. Leave uncorrected, refuted or newly contested threads open. An
+   uncertain reply, unavailable resolution or moved head keeps publication pending; a root PR
+   comment cannot stand in for the thread response. When there are no corrected review threads,
+   record that fact and continue with the existing approval and summary flow.
+
    When the approval gate in `references/native-approval.md` holds, present these three items and
    wait for the answer:
    1. the independent verdict (`approved`), the head SHA and the SHA of the CI run;
@@ -155,8 +170,9 @@ explicit correction request above. This distinction does not change any push or 
 
    Never publish the verdict or approve before an explicit answer; the invocation of this workflow,
    an earlier general authorization or silence is not one. The answer binds the presented SHA: after
-   it, re-read the head, and if it moved discard the answer and ask again on the new head. When no
-   user can answer, keep the journal pending, record the awaited answer and report it.
+   it, re-read the head and every corrected thread. If the head moved or a thread reopened or gained
+   a new objection, discard the answer and return to review before asking again. When no user can
+   answer, keep the journal pending, record the awaited answer and report it.
 
    - **Publish and approve:** publish the draft through `pr-verdict/references/forges.md` (its
      marker lookup updates a same-head verdict in place), read it back, record its comment ID and URL
@@ -171,6 +187,11 @@ explicit correction request above. This distinction does not change any push or 
    withdrawn approval pauses it.
    The approval never authorizes merging or adding the PR to a merge queue; each requires a
    separate explicit request.
+
+   Immediately before native approval and again before publishing the repair record, re-read the
+   head and every corrected thread. A reopened thread or new reviewer objection pauses publication
+   and approval even when the head SHA is unchanged. If approval was already submitted, report its
+   actual forge state without claiming the reopened discussion is closed.
 
    Build `assets/repair-record.md` from all journal passes in the PR's language: one opening sentence
    with the final SHA, one short bullet per corrected problem, validation counts and limits, then
@@ -188,11 +209,12 @@ explicit correction request above. This distinction does not change any push or 
    returned comment ID, URL and published SHA in the journal. After a timeout or uncertain response,
    re-read remote comments before retrying; if lookup fails, keep publication pending.
 
-9. **Close or pause the repair.** Report the final SHA, verdict, native approval state, journal path
-   and either the summary URL or the reason publication is pending. On Bitbucket, report the PR state
-   beside the reviewer approval. Keep the journal across sessions and after publication; a later
-   correction resumes it, renews the native approval on the new head and updates the same comment
-   only after renewed independent approval and CI.
+9. **Close or pause the repair.** Report the final SHA, verdict, native approval state, journal path,
+   corrected thread reply URLs and verified resolution states, and either the summary URL or the
+   reason publication is pending. On Bitbucket, report the PR state beside the reviewer approval.
+   Keep the journal across sessions and after publication; a later correction resumes it, renews
+   the native approval on the new head and updates the same comment only after renewed independent
+   approval and CI.
    Do not create a fix ticket for a defect corrected by this run. Remove the temporary worktree only
    after its commits are pushed and it is clean; retain the journal even when removing the worktree.
 
@@ -230,6 +252,11 @@ explicit correction request above. This distinction does not change any push or 
   confused with an approved or merged PR, whose `state` stays `OPEN`. Report both separately.
 - **A timeout is treated as a failed publication** — a blind retry duplicates an accepted comment.
   Look up the stable PR marker before retrying and preserve the journal when lookup is unavailable.
+- **Replying at the PR root** — the reviewer never sees the answer in the discussion that raised the
+  defect, and the thread remains open. Reply to the mapped thread and verify its resolution before
+  publishing the root repair record.
+- **Resolving after an ambiguous reply** — the reply may be missing, duplicated or followed by a
+  new reviewer objection. Re-read the whole thread and the head before resolving it.
 - **A failed push worktree is discarded** — the only copy of useful commits becomes hard to recover.
   Preserve the worktree and report the commit SHAs when the branch cannot be updated.
 - **The head is amended after its verdict was delegated** — the fresh context spends its whole pass
@@ -259,6 +286,10 @@ explicit correction request above. This distinction does not change any push or 
   on the current head; pause with the journal intact when that condition is unmet.
 - Never create a new repair comment merely because the SHA changed; use the stable PR marker,
   preserve existing replies, and always pass the body through a file.
+- Never substitute a standalone PR comment for a reply to a corrected review thread, resolve
+  an uncorrected or newly contested thread, or report resolution without forge read-back.
+- Never repeat a thread reply after an ambiguous write until the stable marker and author have been
+  checked in the original thread; an unresolved thread action keeps publication pending.
 - Keep every correction, its mechanism, evidence and reasoned omission in the journal; publish a
   concise cumulative account of final outcomes with numeric validation evidence and its limits.
 - Never claim a defect fixed before its failure-path test and the barrier tier its delta reaches
@@ -273,4 +304,6 @@ explicit correction request above. This distinction does not change any push or 
 - [assets/repair-journal.md](assets/repair-journal.md) — local cumulative state, loaded in step 1.
 - [references/native-approval.md](references/native-approval.md) — approval gate, forge commands
   and resume states, read in step 8.
+- [references/review-threads.md](references/review-threads.md) — thread inventory, reply and
+  resolution procedure, read in steps 1 and 8.
 - [assets/repair-record.md](assets/repair-record.md) — concise public summary, filled in step 8.

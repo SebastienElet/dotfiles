@@ -28,6 +28,12 @@ Published head: <SHA, or not published>
   Evidence: <failing observation, then passing command and counts; tested SHA and environment>.
   Limits: <what the evidence does not cover>.
 
+## Review threads
+
+- <forge thread ID and top-level comment ID>: <finding, reviewer and original URL>.
+  Head: <reviewed SHA>; reply: <ID, URL and author, or pending>.
+  Resolution: <verified resolved | already resolved | pending, with read-back time or reason>.
+
 ## Passes
 
 - <date, starting SHA → resulting SHA>: <corrections and any superseded attempts>.
@@ -49,6 +55,12 @@ Published head: <SHA, or not published>
 - Preserve earlier evidence with its original SHA; a new head requires a current verdict and checks.
 - After an uncertain publication, find the stable PR marker remotely before retrying; a missing
   local comment ID does not prove that the comment was never created.
+- After an uncertain thread reply, read that thread for the stable thread marker and publishing
+  account before retrying; a root repair comment does not prove a thread reply exists.
+- Re-read the head and every corrected thread before resolving or claiming closure. Preserve a
+  reviewer-reopened thread as pending rather than treating the old resolution as current.
+- Re-read corrected threads after an approval question is answered and immediately before native
+  approval or root-record publication; an unchanged head does not imply an unchanged discussion.
 - If history is incomplete, record the gap and recover only verifiable facts before summarizing.
 - After `requested` or `uncertain`, read the forge's approvals before calling approve again; a
   missing local confirmation does not prove that the approval was never recorded.
