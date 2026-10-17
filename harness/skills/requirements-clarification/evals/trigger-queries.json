@@ -1,6 +1,6 @@
 {
   "skill": "requirements-clarification",
-  "version": "3.0",
+  "version": "4.0",
   "queries": [
     {
       "query": "Add authentication to tooling/arnes. Do not modify files; assess the request and next action in at most 250 words.",
@@ -56,6 +56,16 @@
       "query": "Implement the documented rule that only administrators may export. All other roles must be denied. The local tests use synthetic records and no shared service.",
       "should_activate": false,
       "reason": "The sensitive policy and verification boundary are already established; its domain alone does not justify another decision request."
+    },
+    {
+      "query": "Analyze the feasibility milestone and propose its prerequisites and sequence. The effort budget and public versus private corpus remain unapproved; runner availability and the independent verifier are documented. Analysis only: do not implement or launch experiments.",
+      "should_activate": true,
+      "reason": "An analysis may require actual user decisions on effort and data scope; naming prerequisites or future approval steps does not collect those decisions."
+    },
+    {
+      "query": "Prepare a local readiness document from the approved effort budget, public corpus, acceptance criteria, runner inventory and assigned verifier. Choose the document format and reversible technical protocol details. Do not launch experiments.",
+      "should_activate": false,
+      "reason": "All material owner decisions are established; source inspection and delegated technical choices suffice without another interview."
     }
   ]
 }
