@@ -1,0 +1,41 @@
+{
+  "skill": "pr-review-feedback",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "/pr-review-feedback 1042",
+      "should_activate": true,
+      "reason": "Explicit invocation selects the authored-PR feedback workflow"
+    },
+    {
+      "query": "My open PR 1042 has new reviewer comments. Handle the feedback and update the branch.",
+      "should_activate": true,
+      "reason": "The user requests corrections on their own published PR"
+    },
+    {
+      "query": "Il y a eu un retour de review sur ma PR ; traite les commentaires.",
+      "should_activate": true,
+      "reason": "Review feedback during an ongoing authored PR task needs thread-aware corrections"
+    },
+    {
+      "query": "Fix the findings on another developer's open PR after your independent merge review.",
+      "should_activate": false,
+      "reason": "Another contributor's PR repair belongs to pr-fix"
+    },
+    {
+      "query": "Fix the findings in my uncommitted local diff before opening a PR.",
+      "should_activate": false,
+      "reason": "Local pre-PR corrections belong to review-fix"
+    },
+    {
+      "query": "Review my PR and tell me whether it is safe to merge; do not make changes.",
+      "should_activate": false,
+      "reason": "A merge verdict without repair belongs to pr-verdict when explicitly invoked"
+    },
+    {
+      "query": "Summarize recurring review feedback from my last ten merged PRs.",
+      "should_activate": false,
+      "reason": "Retrospective, read-only analysis belongs to pr-feedback"
+    }
+  ]
+}

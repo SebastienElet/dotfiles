@@ -35,14 +35,16 @@ requirements. Other skills own their specialized steps; this skill owns when dev
 1. **Establish the task and prerequisites.** Read repository instructions, current Git state,
    relevant sources and ADRs. Identify the requirements, allowed files, existing changes and
    verification boundary. Resolve only material unknowns with `requirements-clarification`.
-   Before implementation, verify that `review-fix`, its Codex companion and the required checks
-   are available. Use its Claude transport reference for runtime setup and keep the Stop review
-   gate disabled. Missing runtime or essential evidence leaves the task incomplete; do not install
-   dependencies or silently drop the final review during development.
+   For ordinary local implementation, verify that `review-fix`, its Codex companion and the required
+   checks are available. Use its Claude transport reference for runtime setup and keep the Stop
+   review gate disabled. Missing runtime or essential evidence leaves the task incomplete; do not
+   install dependencies or silently drop the final review during development. An enclosing
+   open-PR repair workflow owns its own review prerequisites.
 2. **Respect the enclosing workflow.** For a Linear task, let `linear-start` and `linear-workflow`
    own eligibility, branch, tracker and PR state. Other specialized workflows retain their own
-   authority and boundaries. When this task repairs an open PR, use the authorized `pr-fix`
-   workflow for repair and independent review; do not start a concurrent local repair loop.
+   authority and boundaries. Incoming review feedback on an authored PR belongs to
+   `pr-review-feedback`; an independent merge review followed by repair on another contributor's
+   PR belongs to `pr-fix`. Do not start a concurrent local repair loop.
    Ordinary local implementation remains here even when no other skill was invoked.
 3. **Implement the settled outcome.** Preserve unrelated work. Apply `tdd` for owned executable
    behavior and native or existing validation for declarative changes. Use the relevant domain
@@ -52,16 +54,17 @@ requirements. Other skills own their specialized steps; this skill owns when dev
    Run the repository barrier appropriate to the actual change, with named environment and limits.
    Failed checks are unfinished development, not permission to skip the final stage or weaken
    assertions. Fix only authorized failures and keep missing essential evidence explicit.
-5. **Finish through independent review once.** After implementation and checks pass, activate
-   `review-fix` on the complete local task delta with requirements, checked source references,
+5. **Finish through independent review once.** For ordinary local implementation, after checks
+   pass, activate `review-fix` on the complete local task delta with requirements, checked source references,
    candidate identity and raw verification evidence. Explicitly authorize Codex to correct
    demonstrated defects only within the task's original scope and relevant tests. Suspend Claude's
    writes and wait for its result before delivering. A clean initial independent review can serve
    as the final review only under `review-fix`'s candidate and evidence stability checks; changed
    inputs require a later review. It owns the two-pass bound, dispositions and incomplete outcomes.
    Do not re-enter `development` or `review-fix`
-   inside its delegated correction. If `pr-fix` already owns repair and final review, retain that
-   sequence and report its actual result instead of starting this second loop.
+   inside its delegated correction. If `pr-review-feedback` or `pr-fix` already owns the open-PR
+   repair and review, retain that sequence and report its actual result instead of starting this
+   second loop.
 6. **Deliver the observed result.** Report the final candidate, changed behavior, finding
    dispositions, actual checks, environment and remaining limits. A missing, stale or incomplete
    review keeps the task incomplete. Do not say development is finished merely because code was
@@ -78,14 +81,14 @@ requirements. Other skills own their specialized steps; this skill owns when dev
   only the outer development owner invokes the final stage.
 - **A configuration edit skips TDD** — skipping a value test can also skip review by mistake;
   use native validation and retain independent review.
-- **An existing PR repair gets a second loop** — competing writers and verdicts diverge; retain
-  the `pr-fix` owner and its final independent review.
+- **An existing PR repair gets a second loop** — competing writers and reviews diverge; retain
+  the `pr-review-feedback` or `pr-fix` owner for its respective PR case.
 
 ## Constraints
 
 - Never start implementation, repair or publication from a planning or review-only request.
 - Never deliver completed development without the applicable independent final review.
 - Never override user limits or expand beyond the requested outcome and confirmed corrections.
-- Never duplicate the `review-fix` or `pr-fix` loop inside a delegated correction.
+- Never duplicate the `review-fix`, `pr-review-feedback` or `pr-fix` loop inside a delegated correction.
 - Never enable a Stop review gate or present automatic skill selection as technically enforced.
 - Never install missing runtimes or replace missing evidence with a successful-looking result.

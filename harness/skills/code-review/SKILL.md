@@ -26,7 +26,8 @@ Use `$code-review <scope>` or `/code-review <scope>`, or apply it to a requested
 For example: `Review the current staged and unstaged changes before committing.` Without a
 supplied scope, use the current working changes. This skill returns local findings; it neither
 publishes a review nor grants a merge verdict. `pr-verdict` retains its explicit invocation contract;
-an authorized `pr-fix` retains responsibility for open-PR repair.
+`pr-review-feedback` owns incoming feedback on an authored PR, while `pr-fix` owns independent
+verdict-backed repair.
 
 ## Steps
 

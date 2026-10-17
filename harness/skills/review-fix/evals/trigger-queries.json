@@ -23,9 +23,14 @@
       "reason": "Review-only work belongs to code-review and does not authorize repair"
     },
     {
-      "query": "Fix the blocking review findings on open PR 1042",
+      "query": "Fix the blocking review findings on my open PR 1042",
       "should_activate": false,
-      "reason": "Repairs on an open PR belong to pr-fix"
+      "reason": "Incoming feedback on an authored PR belongs to pr-review-feedback"
+    },
+    {
+      "query": "Fix the blocking findings on another developer's open PR 1042 after your merge review",
+      "should_activate": false,
+      "reason": "Verdict-backed repair on another contributor's PR belongs to pr-fix"
     },
     {
       "query": "Prepare a manual prompt for Claude to implement this feature",

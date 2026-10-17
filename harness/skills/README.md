@@ -32,6 +32,7 @@ This directory is the canonical source for user-scoped agent skills.
 | `linear-workflow`               | Apply the shared Linear and Bitbucket work invariants.                                               |
 | `pr-feedback`                   | Collect evidence-backed review feedback and reviewer-authored fixes from merged pull requests.       |
 | `pr-fix`                        | Repair an open pull request after an independent merge review.                                       |
+| `pr-review-feedback`            | Address review feedback on a pull request you authored.                                              |
 | `pr-verdict`                    | Deliver a PR verdict on an open pull request, yours or another author's.                             |
 | `prepare-next`                  | Select and prepare the next available project ticket before development.                             |
 | `proof-integrity-review`        | Review changes to verification mechanisms.                                                           |

@@ -23,6 +23,11 @@
       "reason": "The user authorizes implementation of the current PR findings"
     },
     {
+      "query": "There is new review feedback on my open PR. Address the comments and resolve the threads.",
+      "should_activate": false,
+      "reason": "Routine feedback on an authored PR belongs to pr-review-feedback"
+    },
+    {
       "query": "Is PR 1042 safe to merge?",
       "should_activate": false,
       "reason": "A merge decision without mutation belongs to pr-verdict"

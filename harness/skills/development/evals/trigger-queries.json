@@ -23,9 +23,14 @@
       "reason": "Development composes with Linear's lifecycle owner"
     },
     {
-      "query": "Repair the confirmed defects on this open PR with the authorized pr-fix workflow.",
+      "query": "Repair the confirmed defects on another contributor's open PR with the authorized pr-fix workflow.",
       "should_activate": true,
       "reason": "The outer development workflow retains pr-fix's repair and final-review ownership"
+    },
+    {
+      "query": "Handle the new review comments on the open PR I authored in Claude, correct the code and reply in each thread.",
+      "should_activate": true,
+      "reason": "The outer development workflow composes the authored-PR feedback owner without starting review-fix"
     },
     {
       "query": "Propose an implementation plan, but do not change files or run checks.",
