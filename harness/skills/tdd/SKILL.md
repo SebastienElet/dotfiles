@@ -17,7 +17,7 @@ Build one observable behavior at a time: red, green, then a small refactor while
 Tests cross the public interface that owns the invariant, with expected outcomes independent of the
 implementation. Repository instructions and ADRs govern the validation strategy.
 
-Adapted from [tdd by Matt Pocock](https://github.com/mattpocock/skills/tree/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/tdd).
+Adapted from [tdd by Matt Pocock](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/engineering/tdd).
 The upstream license is preserved in [LICENSE](LICENSE).
 
 ## Usage
@@ -30,7 +30,8 @@ tests are part of that authorization; do not ask again when the behavior and tes
 
 1. Locate the affected behavior, consumers, authoritative requirements and existing tests. Read
    the domain glossary when present. Name the behavior and the public boundary that can detect its
-   failure. Use `requirements-clarification` only for an unresolved material policy decision.
+   failure. For each proposed test boundary, state in one line what it detects and what it leaves
+   uncovered. Use `requirements-clarification` only for an unresolved material policy decision.
 2. Choose the smallest relevant existing or native oracle. For configuration without owned
    behavior, use its parser, schema, dry-run or execution instead of a declaration mirror test.
    Consult `codebase-design` when the interface itself needs design, without expanding the scope.

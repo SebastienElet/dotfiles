@@ -19,7 +19,7 @@ Organize decisions by their prerequisites, ask questions that can be answered no
 answer to expose the next decisions. Facts are the agent's research responsibility; policy and
 product choices belong to the user.
 
-Adapted from [grilling by Matt Pocock](https://github.com/mattpocock/skills/tree/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/productivity/grilling).
+Adapted from [grilling by Matt Pocock](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/productivity/grilling).
 The upstream license is preserved in [LICENSE](LICENSE).
 
 ## Usage
@@ -39,7 +39,8 @@ restriction is instruction-level; model invocation remains available for the aut
 2. Map the decisions and their dependencies. Identify the frontier: choices whose prerequisites
    are already settled. A question depending on an unanswered choice belongs to a later round.
 3. Ask a small group of independent frontier questions, with a recommendation and its concrete
-   trade-off for each. Prioritize decisions affecting the outcome, users, scope, security, data,
+   trade-off for each. Word each question so "yes" accepts the recommended answer.
+   Prioritize decisions affecting the outcome, users, scope, security, data,
    error states, compatibility or acceptance criteria. Challenge consequential assumptions using
    realistic failure and edge scenarios rather than adding hypothetical features.
 4. Wait for the user's answers before using those choices downstream. Investigate independent facts

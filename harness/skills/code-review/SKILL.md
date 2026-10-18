@@ -17,7 +17,7 @@ Review two independent axes: compliance with repository standards, and correctne
 requested behavior. A green check is evidence, not a review. Keep findings tied to the actual
 candidate, distinguish defects from style preferences and inspect every included change.
 
-Adapted from [code-review by Matt Pocock](https://github.com/mattpocock/skills/tree/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/code-review).
+Adapted from [code-review by Matt Pocock](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/engineering/code-review).
 The upstream license is preserved in [LICENSE](LICENSE).
 
 ## Usage
@@ -40,12 +40,15 @@ an authorized `pr-fix` retains responsibility for open-PR repair.
    implementation. An invalid ref blocks that comparison; an empty comparison is not an approval
    and does not hide pending worktree changes. Review the captured diff if no changes remain after
    a commit; do not infer an unrelated base branch.
-3. Locate and read the relevant standards, ADRs and consumers. Establish the requirement from
+3. Search the repository for every file documenting coding standards, including nested instructions
+   and `CODING_STANDARDS.md` or `CONTRIBUTING.md` when present. Read the standards applicable to the
+   included files, relevant ADRs and consumers. Establish the requirement from
    the user's request, a supplied spec or linked issue via the existing authorized tracker tools.
    No dedicated tracker configuration or setup skill is required. If the requirement is unavailable,
    continue the standards review and report the spec axis as unavailable.
-4. Run independent standards and spec reviews with fresh subagents when available. Give each
-   the exact scope, file inventory and source references, without the author's prior verdict.
+4. Launch independent standards and spec reviews together with fresh subagents when available,
+   then wait for both reports before consolidating. Give each the exact scope, file inventory and
+   source references, without the author's prior verdict.
    Locate sources in the main thread before delegation. Reviewers must not edit or publish.
    If subagents are unavailable, perform the axes sequentially and state the independence limit.
 5. For standards, identify concrete violations with the rule and location. Use
