@@ -24,16 +24,24 @@ links. Name that representation; do not imply native blocking where only text li
 
 ```text
 Title: the decision in domain language
+Type: research, prototype, grilling or task (when no established type label exists)
 Question: the precise choice or investigation
 Prerequisites: named decisions or unavailable evidence
 Resolution criterion: what makes this question answered
 Answer and evidence: populated when resolved, with proposals distinguished from facts
 ```
 
-Choose investigation for a discoverable fact, interview for a user choice, or a separately authorized
-prototype when a concrete artifact is needed to make a decision. A prerequisite task is justified
+Use the established tracker convention for types. Where `wayfinder:` labels are already supported,
+use `wayfinder:map` for the map and `wayfinder:<type>` for each decision; read that label when
+resuming. Otherwise record the type in the ticket field above. Do not add implementation-triage
+labels such as `ready-for-agent` to decision work or remove unrelated existing tracker metadata.
+Applying labels still requires the write authority described in the skill.
+
+Choose `research` for a discoverable fact, `grilling` for a user choice, or a separately authorized
+`prototype` when a concrete artifact is needed to make a decision. A prerequisite `task` is justified
 only by the decision it unblocks; it does not silently extend planning into delivery.
 
-Display links by their map or ticket title rather than a bare ID. Keep the detailed answer in one
+Display links by their map or ticket title and target the verified real tracker ID; never publish
+placeholder issue numbers, which can link to unrelated work. Keep the detailed answer in one
 canonical ticket or section and index it from the map. An unresolved question never becomes closed
 merely because the session ends or a recommendation was offered.

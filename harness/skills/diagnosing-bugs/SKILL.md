@@ -17,7 +17,7 @@ Establish a reproduction that can detect the reported symptom, reduce it, then t
 hypotheses one variable at a time. A suggested cause is a claim to investigate. Distinguish facts,
 hypotheses and missing execution evidence throughout the diagnosis.
 
-Adapted from [diagnosing-bugs by Matt Pocock](https://github.com/mattpocock/skills/tree/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/diagnosing-bugs).
+Adapted from [diagnosing-bugs by Matt Pocock](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/engineering/diagnosing-bugs).
 The upstream license is preserved in [LICENSE](LICENSE).
 
 ## Usage
@@ -45,8 +45,11 @@ and existing probes freely; permission to diagnose does not authorize production
    debugger, focused temporary instrumentation or bisection. For performance, measure a baseline
    and compare the same workload. Keep instrumentation bounded and remove it after diagnosis.
 6. Once execution confirms the cause, use `tdd` to turn the reproduction into the smallest
-   regression test at the boundary owning the failure, then apply the repair. If no adequate test
-   boundary exists, report that gap and the available direct reproduction evidence explicitly.
+   regression test at the boundary owning the failure. If a temporary code or fixture mutation
+   forces the red result, diff against a pristine pre-mutation copy to confirm the mutation landed
+   before trusting that result. Preserve existing edits and undo only the temporary mutation after
+   the probe, then apply the repair. If no adequate test boundary exists, report that gap and the
+   available direct reproduction evidence explicitly.
 7. Run the original scenario and the relevant required checks. Remove temporary instrumentation
    and disposable artifacts. Report the demonstrated cause, checks, execution environment and
    any supported environments left untested.

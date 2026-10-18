@@ -18,7 +18,7 @@ Find the route through an effort too uncertain for one session. Keep a shared ma
 open decision questions, dependencies and resolved answers. Decision tickets clarify what to do;
 they are not implementation tickets. Planning is the default scope.
 
-Adapted from [wayfinder by Matt Pocock](https://github.com/mattpocock/skills/tree/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/wayfinder).
+Adapted from [wayfinder by Matt Pocock](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/engineering/wayfinder).
 The upstream license is preserved in [LICENSE](LICENSE).
 
 ## Usage
@@ -47,13 +47,17 @@ destination and write. An invocation does not authorize production tasks or impl
 5. When saving is explicitly requested, use the established local destination and one canonical map.
    For requested issue creation, use `issue-creation` for each coherent map or decision issue. It
    owns duplicate search, publication authority and verified creation. Create identities before
-   linking dependencies, then read back the links. Do not invent tracker labels or require a setup
-   skill. If linking fails after creation, retain the verified IDs and report the incomplete graph
-   rather than creating replacement issues.
-6. When resuming, take the named decision or the next available frontier question. Use `grilling`
+   linking dependencies and cross-references with verified real IDs, then read back the links.
+   Follow the type and label conventions in the map reference; do not invent tracker labels or
+   require a setup skill. If linking fails after creation, retain the verified IDs and report the
+   incomplete graph rather than creating replacement issues.
+6. When resuming, take the named decision or the next available frontier question and read its type
+   from the established label or explicit ticket field before choosing the workflow. Use `grilling`
    for user choices; research discoverable facts with existing read-only tools and relevant skills.
    Locate sources before any delegated reading. A prototype, prerequisite task or external mutation
    needs its own established authorization; do not import additional skills as an assumed dependency.
+   If authorized research uses a disposable `research/<name>` branch, link it from the ticket.
+   Push only with existing publication authority; never open a PR or merge that research branch.
 7. Resolve at most one user decision per invocation. Record its answer and evidence at its canonical
    location, update the map's linked index, and promote newly precise questions from uncertainty to
    tickets. Persist updates or close issues only within the user's existing write authority, after
