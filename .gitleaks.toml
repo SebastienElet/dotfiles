@@ -23,9 +23,9 @@ regexes = ['''^\s*\("pem-pkcs8", "-----BEGIN PRIVATE KEY-----"\),\s*\("pem-rsa-c
 [[rules]]
 id = "bitbucket-client-secret"
 [[rules.allowlists]]
-description = "SHA-256 source-file digests in the audited evaluation manifests"
+description = "SHA-256 source-file digests in current and historical evaluation manifests"
 condition = "AND"
-paths = ['''^docs/evidence/issue-160-(?:calibration|ablation)-2026-09-21/input-hashes\.json$''']
+paths = ['''^(?:docs/evidence/issue-160-(?:calibration|ablation)-2026-09-21/input-hashes\.json|harness/skills/linear-workflow/evals/2026-09-16/environment\.json)$''']
 regexTarget = "line"
 regexes = ['''^\s*"(?:harness/)?skills/linear-workflow/references/bitbucket\.md": "[a-f0-9]{64}",?\s*$''']
 
