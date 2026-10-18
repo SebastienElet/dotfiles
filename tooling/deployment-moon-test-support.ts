@@ -46,7 +46,10 @@ function prepareMoonWorkspaceFixture(repository: string): void {
       path !== join(project, ".moon/cache"),
     recursive: true,
   });
-  symlinkSync(join(project, "node_modules"), join(repository, "node_modules"));
+  cpSync(join(project, "node_modules"), join(repository, "node_modules"), {
+    dereference: true,
+    recursive: true,
+  });
   for (const projectId of ["agent-handoff", "arnes"]) {
     const release = join(repository, "tooling", projectId, "target/release");
     mkdirSync(release, { recursive: true });
