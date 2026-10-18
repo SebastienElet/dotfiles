@@ -13,6 +13,12 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 ## Contexte personnel
 
 - **Default Obsidian corpus:** `/Users/sebastien/Code/brain`
+- **PARA :** `~/Documents` reste exclu de toute organisation. Dans un projet,
+  nommer les éléments `Projet : Sujet`, avec le domaine en préfixe si utile,
+  jamais la catégorie PARA. Avant classement, ajouter un en-tête court : objectif,
+  état, prochaine étape et date de mise à jour ; demander les faits manquants et
+  noter `???` sans les inventer. Rechercher les éléments liés et déplacer le projet
+  avec son contexte, dans le périmètre du plan approuvé.
 
 ## Biais techniques
 
