@@ -244,10 +244,8 @@ fn setup_installs_handoff_without_requiring_measurement()
     let harness = Harness::new()?;
     harness.write_handoff_only_manifest()?;
     let handoff = harness.executable("agent-handoff")?;
-    let old_source = harness.repository.join("tooling/agent-handoff");
-    let old_script = harness.repository.join("scripts/agent_handoff");
     let third_party = serde_json :: json ! ({ "type" : "command" , "command" : "third-party" , "args" : ["keep"] , "async" : true });
-    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : old_source , "timeout" : 7 } , third_party , { "type" : "command" , "command" : old_script }] }] } })) ? ;
+    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff , "timeout" : 7 } , third_party] }] } })) ? ;
     let output = harness.setup("claude")?;
     assert_eq!(
         output.status.code(),
@@ -256,21 +254,6 @@ fn setup_installs_handoff_without_requiring_measurement()
         String::from_utf8_lossy(&output.stderr)
     );
     let config = harness.config()?;
-    let serialized = serde_json::to_string(&config)?;
-    assert!(
-        !serialized.contains(
-            old_source
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
-    assert!(
-        !serialized.contains(
-            old_script
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
     let handlers: Vec<&Value> = (*(*(config).get("hooks").ok_or("missing fixture index hooks")?)
         .get("Stop")
         .ok_or("missing fixture index Stop")?)
@@ -356,27 +339,11 @@ fn setup_removes_owned_capabilities_absent_from_the_manifest()
     harness.write_measurement_only_manifest()?;
     let arnes = harness.executable("arnes")?;
     let handoff = harness.home.join(".local/bin/agent-handoff");
-    let old_source = harness.repository.join("tooling/agent-handoff");
-    let old_script = harness.repository.join("scripts/agent_handoff");
-    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff } , { "type" : "command" , "command" : old_source } , { "type" : "command" , "command" : old_script } , { "type" : "command" , "command" : "third-party" }] }] } })) ? ;
+    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff } , { "type" : "command" , "command" : "third-party" }] }] } })) ? ;
     let output = harness.setup("claude")?;
     assert_eq!(output.status.code(), Some(0));
     let serialized = serde_json::to_string(&harness.config()?)?;
     assert!(!serialized.contains(handoff.to_str().ok_or("required test value is missing")?));
-    assert!(
-        !serialized.contains(
-            old_source
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
-    assert!(
-        !serialized.contains(
-            old_script
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
     assert!(serialized.contains("third-party"));
     assert!(serialized.contains(&format!(
         "'{}' measure hook --agent claude-code",

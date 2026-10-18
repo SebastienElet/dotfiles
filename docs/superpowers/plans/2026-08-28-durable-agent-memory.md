@@ -11,7 +11,7 @@ comme état du plan d’origine, sans indiquer du travail restant à réaliser.
 Les crates `agent-memory` et `agent-handoff` ont été intégrés dans
 [#249, commit `8c606d1b`](https://github.com/SebastienElet/dotfiles/commit/8c606d1b35eaa8f021600fdab9fce50fd95006d8).
 La capacité `agent-memory` est retirée dans [#551](https://github.com/SebastienElet/dotfiles/issues/551).
-Les sources d’`agent-handoff` restent dans [`tooling/agent-handoff/`](../../../tooling/agent-handoff/).
+La capacité `agent-handoff` est consommée depuis le paquet publié dans [#550](https://github.com/SebastienElet/dotfiles/issues/550).
 Ce constat ne certifie ni chaque étape du plan ni son comportement actuel sur chaque agent et plateforme.
 ADR-042 a été retirée dans [#365](https://github.com/SebastienElet/dotfiles/pull/365) ;
 elle ne figure plus dans l’index des décisions en vigueur.

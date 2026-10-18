@@ -84,8 +84,6 @@ tasks:
       - arnes:fmt
       - arnes:clippy
       - arnes:check
-      - agent-handoff:fmt
-      - agent-handoff:clippy
     toolchains: system
   test:
     description: Run repository behavior tests
@@ -95,5 +93,4 @@ tasks:
       - tooling:test
       - secret-test
       - arnes:test
-      - agent-handoff:test
     toolchains: system

@@ -13,7 +13,9 @@ tiers et recouvre partiellement les autres.
 
 ## Décision
 
-N'installer par défaut que les skills maintenues dans ce dépôt. Les paquets de
+N'installer par défaut que les skills maintenues dans ce dépôt, avec l'exception
+de `handoff` externalisée dans #550 et consommée depuis son paquet publié à
+version exacte par Bun (voir l'[ADR-040](040-skills-user-dans-harness.md)). Les paquets de
 skills tierces ont été retirés par vagues successives, jusqu'à caveman et rtk
 en 2026-08. Une skill tierce doit justifier sa place, comme toute dépendance.
 

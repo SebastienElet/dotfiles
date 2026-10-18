@@ -196,9 +196,15 @@ tasks:
       - claude
       - codex
       - arnes:install
-      - agent-handoff:install
+      - agent-handoff
       - assertledger
     toolchains: system
+  agent-handoff:
+    description: Deploy the published Agent Handoff executable
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/agent-handoff" "$HOME/.local/bin/agent-handoff"
+    deps:
+      - repository:dependencies
+    toolchains: bun
   assertledger:
     description: Install the pinned AssertLedger CLI with the Volta-managed npm
     script: |-

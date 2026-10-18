@@ -21,16 +21,23 @@ que l'ADR-038 place les capacités partagées du harnais sous `harness/`.
 Séparer les sources par portée :
 
 - `harness/skills/` contient les skills personnelles installées au niveau user, sauf
-  `proof-integrity-review`, fourni par le paquet npm
-  `@sebastienelet/proof-integrity-review@0.0.1` acquis par Bun à version exacte ;
+  `proof-integrity-review` et `handoff`, fournis respectivement par les paquets npm
+  `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`
+  acquis par Bun à version exacte ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
 - les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers sa source sous
   `harness/skills/`, ou vers `node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review`
-  pour la capacité distribuée ;
+  et `node_modules/@sebastienelet/agent-handoff/skills/handoff`
+  pour les capacités distribuées ;
 - `skill-manager` vit dans `harness/skills/`, est installé au niveau user et gère
   les deux collections sans autoriser un même slug dans les deux ;
 - Arnes dérive les skills projet de `.agents/skills/` et les installations user
   des déclarations du manifeste.
+
+Pour la capacité externalisée dans #550, la source de `handoff` est le paquet
+publié `@sebastienelet/agent-handoff`, installé par Bun à version exacte et
+verrouillée. Moon déploie sa skill par liens feuilles vers le paquet ; Arnes
+la déclare comme skill externe gérée. Sa source ne reste pas dans `harness/skills/`.
 
 ## Conséquences
 

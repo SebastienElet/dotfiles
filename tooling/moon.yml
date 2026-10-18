@@ -32,7 +32,6 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
-    - /tooling/agent-handoff/moon.yml
     - /tooling/arnes/moon.yml
     - check-docker-cli
     - /.moon/tasks/docker.yml
@@ -62,7 +61,6 @@ tasks:
       - upgrade-test
       - deployment-test
       - hunspell-test
-      - agent-handoff:deployment-test
     toolchains: system
     inputs:
       - "@group(toolingSources)"
