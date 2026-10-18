@@ -1,7 +1,7 @@
-import { readFileSync, statSync } from "node:fs";
+import { isAbsolute, join, relative, sep } from "node:path";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import { skillSource, skillSourceSchema } from "./agent-skill-source.ts";
 import { deployLink } from "./deploy-link.ts";
-import { join } from "node:path";
 import { z } from "zod";
 
 const agentSchema = z.enum(["claude", "codex", "cursor"]);
@@ -37,6 +37,7 @@ function installAgentSkills(
   home: string,
   agent: z.infer<typeof agentSchema>,
 ): void {
+  const repositoryRoot = realpathSync(repository);
   const manifest = manifestSchema.parse(
     Bun.YAML.parse(readFileSync(join(repository, "home/.arnes.yaml"), "utf8")),
   );
@@ -51,6 +52,16 @@ function installAgentSkills(
     destination: join(home, skillDirectories[agent], skill.slug),
   }));
   for (const { source } of sources) {
+    const relativeSource = relative(repositoryRoot, realpathSync(source));
+    if (
+      relativeSource === ".." ||
+      relativeSource.startsWith(`..${sep}`) ||
+      isAbsolute(relativeSource)
+    ) {
+      throw new Error(
+        `skill source must stay within the repository: ${source}`,
+      );
+    }
     if (!statSync(join(source, "SKILL.md")).isFile()) {
       throw new Error(`Skill source is not a file: ${source}`);
     }

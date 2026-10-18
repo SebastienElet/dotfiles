@@ -1,11 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readlinkSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -135,6 +137,38 @@ test("rejects missing skill sources before installing any links", () => {
   expect(
     Bun.file(join(paths.home, ".claude/skills/shared/SKILL.md")).size,
   ).toBe(0);
+});
+
+test("rejects linked/alpha escaping the repository before installing any links", () => {
+  const paths = fixture();
+  const outside = `${paths.repository}-outside`;
+  mkdirSync(join(outside, "alpha"), { recursive: true });
+  writeFileSync(join(outside, "alpha/SKILL.md"), "foreign\n");
+  symlinkSync(outside, join(paths.repository, "linked"));
+  writeFileSync(
+    join(paths.repository, "home/.arnes.yaml"),
+    Bun.YAML.stringify({
+      version: 1,
+      skills: [
+        {
+          slug: "shared",
+          source: "node_modules/@sebastienelet/agent-skills/skills/shared",
+          installations: [{ agent: "claude", scope: "user" }],
+        },
+        {
+          slug: "alpha",
+          source: "linked/alpha",
+          installations: [{ agent: "claude", scope: "user" }],
+        },
+      ],
+    }),
+  );
+  const result = run(paths, "claude");
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr.toString()).toContain(
+    "skill source must stay within the repository",
+  );
+  expect(existsSync(join(paths.home, ".claude"))).toBe(false);
 });
 
 test("deploys packaged and local skills together for every selected host", () => {
