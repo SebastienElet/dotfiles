@@ -12,7 +12,6 @@ home/.config/fish/fish_variables
 PRODUCTIVITY_REVIEW.md
 tooling/arnes/target/
 tooling/herdr-issue-worktree/target/
-tooling/bitbucket-linear/target/
 harness/skills/proof-integrity-review/scripts/target/
 .moon/cache/
 node_modules/

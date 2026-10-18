@@ -5,7 +5,6 @@
       harness: harness,
       arnes: tooling/arnes,
       herdr-issue: tooling/herdr-issue-worktree,
-      bitbucket-linear-sync: tooling/bitbucket-linear,
       proof-integrity: harness/skills/proof-integrity-review/scripts,
       home: home,
       tooling: tooling,
