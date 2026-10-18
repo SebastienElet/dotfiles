@@ -46,9 +46,9 @@ tasks:
     script: |-
       set -e
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" codex
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review" "$HOME/.agents/skills/proof-integrity-review"
     deps:
       - repository:dependencies
-      - proof-integrity:build
     toolchains: bun
   codex-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent codex'

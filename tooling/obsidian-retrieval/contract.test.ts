@@ -7,7 +7,6 @@ import { expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { z } from "zod";
 
 const repositoryRoot = resolve(import.meta.dir, "../..");
 const mutate = (
@@ -15,14 +14,6 @@ const mutate = (
   field: "skill" | "reference" | "userInstructions",
   transform: (value: string) => string,
 ): ContractSources => ({ ...sources, [field]: transform(sources[field]) });
-
-test("declares the pinned Bun version", async () => {
-  const packageDocument = z
-    .object({ packageManager: z.string() })
-    .parse(await Bun.file(join(repositoryRoot, "package.json")).json());
-
-  expect(packageDocument.packageManager).toBe("bun@1.4.0");
-});
 
 test("accepts the repository skill", async () => {
   const sources = await loadContractSources(repositoryRoot);

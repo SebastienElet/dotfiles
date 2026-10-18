@@ -134,11 +134,6 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: proof-integrity-review
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
   - slug: pr-fix
     installations:
       - { agent: claude, scope: user }
@@ -256,6 +251,24 @@ external:
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
+    - {
+        agent: claude,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
+    - {
+        agent: cursor,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
     - {
         agent: claude,
         scope: user,

@@ -84,6 +84,18 @@ const links = [
   ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
   [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".claude/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".agents/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".cursor/skills/proof-integrity-review",
+  ],
+  [
     "tooling/agent-handoff/target/release/agent-handoff",
     ".local/bin/agent-handoff",
   ],

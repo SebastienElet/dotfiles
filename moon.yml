@@ -89,9 +89,6 @@ tasks:
       - bitbucket-linear-sync:check
       - agent-handoff:fmt
       - agent-handoff:clippy
-      - proof-integrity:fmt
-      - proof-integrity:clippy
-      - proof-integrity:check
     toolchains: system
   test:
     description: Run repository behavior tests
@@ -103,5 +100,4 @@ tasks:
       - arnes:test
       - bitbucket-linear-sync:test
       - agent-handoff:test
-      - proof-integrity:test
     toolchains: system
