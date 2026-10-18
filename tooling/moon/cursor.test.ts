@@ -84,7 +84,7 @@ test(
       fixture.home,
       ".cursor",
       "rules",
-      "memory-governance-cursor.mdc",
+      "visual-presentation.mdc",
     );
     const skill = join(fixture.home, ".cursor", "skills", "skill-manager");
     const plugin = join(fixture.home, ".cursor/plugins/local/dotfiles-harness");
@@ -92,7 +92,7 @@ test(
 
     expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(readlinkSync(rule)).toBe(
-      join(project, "harness", "rules", "memory-governance-cursor.mdc"),
+      join(project, "harness", "visual-presentation.md"),
     );
     expect(readlinkSync(skill)).toBe(
       join(project, "harness", "skills", "skill-manager"),
@@ -170,7 +170,7 @@ test("Moon preserves a divergent Cursor rule and returns failure", () => {
     fixture.home,
     ".cursor",
     "rules",
-    "memory-governance-cursor.mdc",
+    "visual-presentation.mdc",
   );
   mkdirSync(dirname(rule), { recursive: true });
   writeFileSync(rule, "personal\n");

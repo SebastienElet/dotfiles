@@ -62,7 +62,6 @@ test("installs an executable handoff runtime through Moon with foreign CI refere
   });
   expect(invocation.exitCode).toBe(0);
   expect(invocation.stdout.toString()).toBe("");
-  expect(pathExists(join(fixture.home, ".local/bin/agent-memory"))).toBeFalse();
 });
 
 test("propagates a handoff build failure", () => {

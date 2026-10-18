@@ -82,15 +82,7 @@ const links = [
     "harness/rules/agent-instructions.md",
     ".claude/rules/agent-instructions.md",
   ],
-  [
-    "harness/rules/memory-governance-cursor.mdc",
-    ".cursor/rules/memory-governance-cursor.mdc",
-  ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
-  [
-    "tooling/agent-memory/target/release/agent-memory",
-    ".local/bin/agent-memory",
-  ],
   [
     "tooling/agent-handoff/target/release/agent-handoff",
     ".local/bin/agent-handoff",

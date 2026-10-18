@@ -38,16 +38,6 @@ hooks:
       - { agent: claude, scope: user }
 resources: []
 ";
-pub const MEMORY_MANIFEST: &str = "version: 1
-agents:
-  - id: claude
-    scopes: [user]
-hooks:
-  - id: memory
-    installations:
-      - { agent: claude, scope: user }
-resources: []
-";
 /// # Errors
 /// Returns an error if the fixture files, directories or symbolic links cannot be prepared.
 pub fn configured_fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {

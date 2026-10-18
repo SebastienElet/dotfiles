@@ -17,11 +17,6 @@ fileGroups:
     - tooling/git-main-branch
     - tooling/format-edited-file
     - tooling/upgrade
-    - tooling/agent-memory/Cargo.toml
-    - tooling/agent-memory/Cargo.lock
-    - tooling/agent-memory/moon.yml
-    - tooling/agent-memory/build*.rs
-    - tooling/agent-memory/src/**/*
     - tooling/herdr-issue-worktree/Cargo.toml
     - tooling/herdr-issue-worktree/Cargo.lock
     - tooling/herdr-issue-worktree/moon.yml
@@ -50,7 +45,6 @@ tasks:
   typescript-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     deps:
-      - agent-memory:build
       - herdr-issue:build
       - fish-setup
       - rust
