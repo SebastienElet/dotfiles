@@ -12,7 +12,7 @@ end
 
 set -gx HOME "$test_root/home"
 mkdir -p "$HOME"
-ln -s "$project_root" "$HOME/.dotfiles"
+source "$project_root/home/.config/fish/conf.d/git_main_branch.fish"
 source "$project_root/home/.config/fish/conf.d/git-abbreviations.fish"
 
 set repository "$test_root/repository"
@@ -36,4 +36,4 @@ git -C "$repository" switch --quiet feature
 cd "$repository"
 grbm; or fail "grbm failed"
 test (git merge-base HEAD main) = "$main_tip"; or fail "grbm did not rebase onto main"
-echo "ok - grbm resolves the main branch through the shipped entrypoint"
+echo "ok - grbm resolves the main branch through the Fish function without a tooling launcher"

@@ -75,7 +75,7 @@ deux occurrences.
 `tooling/` regroupe deux formes d'outils :
 
 - les exécutables directs, sans extension et nommés en kebab-case, comme
-  `upgrade`, `agent-handoff` et `git-main-branch` ;
+  `upgrade` et `agent-handoff` ;
 - les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
 Les exécutables destinés au `PATH` sont liés par leur projet Moon,

@@ -14,13 +14,14 @@ eux.
 
 ## Décision
 
-Ce dépôt utilise `main`. L'abbreviation `grbm` passe par
-`tooling/git-main-branch`, qui interroge le dépôt courant et retombe sur
+Ce dépôt utilise `main`. L'abbreviation `grbm` appelle la fonction Fish
+`git_main_branch`, qui interroge le dépôt courant et retombe sur
 `master` ou `trunk` le cas échéant. Le mode local reste une heuristique destinée
 aux usages interactifs.
 
-La détection reste une fonction Fish locale, exposée à `upgrade` par
-`tooling/git-main-branch`, sans paquet autonome ni publication.
+La détection reste une fonction Fish locale. Les consommateurs Fish l'appellent
+directement ; `upgrade` charge son fichier dans Fish sans configuration utilisateur.
+Aucun lanceur dédié, paquet autonome ni publication n'est nécessaire.
 Le mode fournisseur est retiré, sans remplacement ni compatibilité 1.x.
 L'heuristique locale ne prouve pas la branche distante faisant autorité.
 Le mode `--strict` conserve les erreurs de sondage Git, mais le repli `main`

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-exec fish --no-config -c "source \$argv[1]; and git_main_branch \$argv[2..]" -- "$(dirname "$0")/../home/.config/fish/conf.d/git_main_branch.fish" "$@"

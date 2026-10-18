@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, rm, symlink } from "node:fs/promises";
+import { chmod, mkdtemp, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -18,7 +18,11 @@ type CommandResult = Readonly<{
   stdout: Uint8Array;
 }>;
 
-const entrypoint = join(import.meta.dir, "..", "git-main-branch");
+const configuration = join(
+  import.meta.dir,
+  "../..",
+  "home/.config/fish/conf.d/git_main_branch.fish",
+);
 const fakeCommand = join(import.meta.dir, "fake-command.ts");
 const temporaryDirectories: string[] = [];
 const executableFileMode = 0o755;
@@ -48,17 +52,27 @@ async function run(
   if (fish === null) {
     throw new Error("fish missing from test environment");
   }
-  await symlink(fish, join(bin, "fish"));
-  return Bun.spawnSync([entrypoint, ...commandArguments], {
-    cwd: root,
-    env: {
-      ...process.env,
-      FIXTURE_PATH: join(root, "fixture.json"),
-      PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+  return Bun.spawnSync(
+    [
+      fish,
+      "--no-config",
+      "-c",
+      "source $argv[1]; and git_main_branch $argv[2..]",
+      "--",
+      configuration,
+      ...commandArguments,
+    ],
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        FIXTURE_PATH: join(root, "fixture.json"),
+        PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
     },
-    stderr: "pipe",
-    stdout: "pipe",
-  });
+  );
 }
 
 export { cleanup, run };

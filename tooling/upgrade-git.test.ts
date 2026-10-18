@@ -9,7 +9,6 @@ import { rm } from "node:fs/promises";
 afterEach(cleanupUpgradeFixtures);
 
 test.each([
-  ["repository", "tooling/git-main-branch"],
   ["repository", "home/.config/fish/conf.d/git_main_branch.fish"],
   ["bin", "fish"],
 ] as const)(

@@ -184,7 +184,6 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
     (name) =>
       name === "upgrade" ||
       name === "install-moon" ||
-      name === "git-main-branch" ||
       name === "node-version-contract.ts" ||
       (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );

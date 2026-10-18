@@ -3,7 +3,14 @@ import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const entrypoint = join(import.meta.dir, "git-main-branch");
+const invocation = [
+  "fish",
+  "--no-config",
+  "-c",
+  "source $argv[1]; and git_main_branch $argv[2..]",
+  "--",
+  join(import.meta.dir, "../home/.config/fish/conf.d/git_main_branch.fish"),
+] as const;
 const roots: string[] = [];
 const environment = {
   ...process.env,
@@ -62,12 +69,15 @@ function resolve(
   directory: string,
   ...arguments_: readonly string[]
 ): readonly [number, string, string] {
-  const result = Bun.spawnSync([entrypoint, ...arguments_, "-C", directory], {
-    cwd: tmpdir(),
-    env: environment,
-    stderr: "pipe",
-    stdout: "pipe",
-  });
+  const result = Bun.spawnSync(
+    [...invocation, ...arguments_, "-C", directory],
+    {
+      cwd: tmpdir(),
+      env: environment,
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
   return [
     result.exitCode,
     result.stdout.toString(),
@@ -79,14 +89,14 @@ test("resolves a branch with Git and Fish but without Bun on PATH", async () => 
   const directory = await repository("master");
   const bin = join(await temporaryDirectory(), "bin");
   await mkdir(bin);
-  for (const command of ["bash", "dirname", "fish", "git"]) {
+  for (const command of ["fish", "git"]) {
     const executable = Bun.which(command);
     if (executable === null) {
       throw new Error(`${command} missing from test environment`);
     }
     await symlink(executable, join(bin, command));
   }
-  const result = Bun.spawnSync([entrypoint, "--strict", "-C", directory], {
+  const result = Bun.spawnSync([...invocation, "--strict", "-C", directory], {
     env: { ...environment, PATH: bin },
     stderr: "pipe",
     stdout: "pipe",
