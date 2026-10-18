@@ -29,7 +29,6 @@ fileGroups:
     - "harness/skills/design-claim-audit/evals/trigger-queries.json"
     - "home/.codex/agents/design-claim-auditor.toml"
     - "harness/skills/issue-creation/evals/trigger-queries.json"
-    - "harness/skills/memory-governance/evals/trigger-queries.json"
     - "harness/skills/obsidian-retrieval/evals/trigger-queries.json"
     - "harness/skills/pr-feedback/evals/trigger-queries.json"
     - "harness/skills/requirements-clarification/evals/trigger-queries.json"

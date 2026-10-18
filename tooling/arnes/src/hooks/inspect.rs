@@ -12,10 +12,9 @@ mod expectation;
 mod presence;
 mod unmanaged;
 
-const KINDS: [HookKind; 6] = [
+const KINDS: [HookKind; 5] = [
     HookKind::Measurement,
     HookKind::Handoff,
-    HookKind::Memory,
     HookKind::OutputDiscipline,
     HookKind::FormatEditedFile,
     HookKind::SemctxNudge,
@@ -79,7 +78,6 @@ fn diagnose_one(roots: &Roots, manifest: &Manifest, agent: Agent, scope: Scope) 
             .filter(|kind| {
                 declared.contains(kind)
                     || match kind {
-                        HookKind::Memory => policy.memory_event.is_some(),
                         HookKind::FormatEditedFile => policy.format_edited_file_matcher.is_some(),
                         HookKind::SemctxNudge => agent != Agent::Cursor,
                         HookKind::Measurement | HookKind::Handoff | HookKind::OutputDiscipline => {

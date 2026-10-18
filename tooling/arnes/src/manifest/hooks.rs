@@ -7,7 +7,6 @@ use std::fmt::{self, Display};
 pub enum HookKind {
     Measurement,
     Handoff,
-    Memory,
     #[serde(rename = "output-discipline")]
     OutputDiscipline,
     #[serde(rename = "format-edited-file")]
@@ -21,7 +20,6 @@ impl Display for HookKind {
         formatter.write_str(match self {
             Self::Measurement => "measurement",
             Self::Handoff => "handoff",
-            Self::Memory => "memory",
             Self::OutputDiscipline => "output-discipline",
             Self::FormatEditedFile => "format-edited-file",
             Self::SemctxNudge => "semctx-nudge",

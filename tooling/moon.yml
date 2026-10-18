@@ -32,7 +32,6 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
-    - /tooling/agent-memory/moon.yml
     - /tooling/agent-handoff/moon.yml
     - /tooling/arnes/moon.yml
     - check-docker-cli
@@ -63,7 +62,6 @@ tasks:
       - upgrade-test
       - deployment-test
       - hunspell-test
-      - agent-memory:deployment-test
       - agent-handoff:deployment-test
     toolchains: system
     inputs:

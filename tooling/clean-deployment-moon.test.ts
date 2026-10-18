@@ -38,7 +38,6 @@ const portableMinimalTasks = [
   "harness:codex-agents",
   "harness:codex-skills",
   "arnes:binary",
-  "agent-memory:binary",
   "agent-handoff:binary",
 ];
 

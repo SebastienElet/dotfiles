@@ -217,96 +217,27 @@ fn setup_installs_manifest_hooks_in_one_agent_configuration()
     assert!(commands.contains(&handoff.to_str().ok_or("expected JSON string")?));
     Ok(())
 }
+
 #[test]
-fn setup_installs_memory_prompt_hook_for_codex_and_claude()
+fn setup_rejects_retired_memory_hooks_without_changing_configuration()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let _: () = for agent in ["codex", "claude"] {
+    for agent in ["claude", "codex", "cursor"] {
         let harness = Harness::new()?;
         harness.write_memory_manifest(agent)?;
-        let memory = harness.executable("agent-memory")?;
-        let output = harness.setup(agent)?;
-        assert_eq!(
-            output.status.code(),
-            Some(0),
-            "stderr: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        let config = if agent == "codex" {
-            harness.codex_config()?
-        } else {
-            harness.config()?
-        };
-        let hooks = (*(config).get("hooks").ok_or("missing fixture index hooks")?)
-            .as_object()
-            .ok_or("expected JSON object")?;
-        assert_eq!(hooks.len(), 1);
-        let handler = (*(*(*(hooks)
-            .get("UserPromptSubmit")
-            .ok_or("missing fixture index UserPromptSubmit")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?)
-        .get("hooks")
-        .ok_or("missing fixture index hooks")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?;
-        assert_eq!(
-            *(handler).get("type").ok_or("missing fixture index type")?,
-            "command"
-        );
-        assert_eq!(
-            *(handler)
-                .get("command")
-                .ok_or("missing fixture index command")?,
-            format!("'{}' hook --agent {agent}", memory.display())
-        );
-        assert_eq!(
-            *(handler)
-                .get("timeout")
-                .ok_or("missing fixture index timeout")?,
-            30
-        );
-    };
-    Ok(())
-}
-#[test]
-fn setup_rejects_memory_for_cursor_without_creating_configuration()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let harness = Harness::new()?;
-    harness.write_memory_manifest("cursor")?;
-    harness.executable("agent-memory")?;
-    let output = harness.setup("cursor")?;
-    assert_eq!(output.status.code(), Some(2));
-    assert!(
-        String::from_utf8_lossy(&output.stderr).contains("Cursor does not support the memory hook")
-    );
-    assert!(!harness.home.join(".cursor/hooks.json").exists());
-    Ok(())
-}
-#[test]
-fn setup_rejects_invalid_memory_runtime_without_changing_configuration()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let _: () = for case in ["missing", "directory", "non-executable"] {
-        let harness = Harness::new()?;
-        harness.write_memory_manifest("codex")?;
-        let initial = serde_json :: json ! ({ "hooks" : { "UserPromptSubmit" : [{ "hooks" : [{ "type" : "command" , "command" : "third-party" }] }] } });
+        harness.executable("agent-memory")?;
+        let initial = serde_json::json!({"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"third-party"}]}]}});
+        harness.write_claude_config(&initial)?;
         harness.write_codex_config(&initial)?;
-        let memory = harness.home.join(".local/bin/agent-memory");
-        match case {
-            "missing" => {}
-            "directory" => fs::create_dir_all(&memory)?,
-            "non-executable" => {
-                fs::create_dir_all(memory.parent().ok_or("fixture path has no parent")?)?;
-                fs::write(&memory, b"binary")?;
-                fs::set_permissions(&memory, fs::Permissions::from_mode(0o600))?;
-            }
-            _ => return Err("unsupported hook fixture shape".to_string().into()),
-        }
-        let output = harness.setup("codex")?;
-        assert_eq!(output.status.code(), Some(2), "{case}");
-        assert_eq!(harness.codex_config()?, initial, "{case}");
-    };
+        let output = harness.setup(agent)?;
+        assert_eq!(output.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("unknown variant"));
+        assert_eq!(harness.config()?, initial);
+        assert_eq!(harness.codex_config()?, initial);
+        assert!(!harness.home.join(".cursor/hooks.json").exists());
+    }
     Ok(())
 }
+
 #[test]
 fn setup_installs_handoff_without_requiring_measurement()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

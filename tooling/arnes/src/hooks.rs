@@ -28,7 +28,6 @@ const SEMCTX_NUDGE: MatchedHandler = MatchedHandler {
 };
 const FORMAT_EDITED_FILE_EVENT: &str = "PostToolUse";
 const FORMAT_EDITED_FILE_TIMEOUT_SECONDS: u64 = 30;
-const MEMORY_HOOK_TIMEOUT_SECONDS: u64 = 30;
 pub use inspect::diagnose;
 
 pub struct MatchedHandler {
@@ -66,15 +65,9 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     let policy = adapters::policy(args.agent);
     let measurement_path = measurement_path(roots.home());
     let handoff_path = handoff_path(roots.home());
-    let memory_path = memory_path(roots.home());
     let measurement = measurement_command(&measurement_path, args.agent)?;
     let handoff_aliases = handoff_aliases(&handoff_path, roots.repository(), args.agent)?;
-    let memory = memory_command(&memory_path, args.agent)?;
-    let memory_event = policy.memory_event;
     let output_discipline = output_discipline_command(&measurement_path)?;
-    if desired.contains(&HookKind::Memory) && (memory.is_none() || memory_event.is_none()) {
-        return Err(HooksError::new("Cursor does not support the memory hook"));
-    }
     let file = io::ConfigFile::open(roots.home(), policy.directory, policy.filename)?;
     let mut config = file
         .content()
@@ -84,9 +77,6 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     validate::configuration(&config, args.agent)?;
     retired_remem::remove(&mut config, args.agent, roots.home())?;
     ownership::remove_everywhere(&mut config, args.agent, &measurement)?;
-    if let Some(command) = &memory {
-        ownership::remove_everywhere(&mut config, args.agent, command)?;
-    }
     ownership::remove_everywhere(&mut config, args.agent, &output_discipline)?;
     if desired.contains(&HookKind::OutputDiscipline) {
         validate_command(&measurement_path)?;
@@ -100,21 +90,6 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
             policy.nested,
             policy.excluded,
             &measurement,
-        )?;
-    }
-    if desired.contains(&HookKind::Memory) {
-        let Some(memory) = memory else {
-            return Err(HooksError::new("Cursor does not support the memory hook"));
-        };
-        let Some(memory_event) = memory_event else {
-            return Err(HooksError::new("Cursor does not support the memory hook"));
-        };
-        validate_command(&memory_path)?;
-        reconcile::memory(
-            &mut config,
-            memory_event,
-            &memory,
-            MEMORY_HOOK_TIMEOUT_SECONDS,
         )?;
     }
     reconcile_format_edited_file(&mut config, &roots, args.agent, &desired)?;
@@ -212,7 +187,6 @@ pub(crate) fn source_paths(roots: &Roots, manifest: &manifest::Manifest) -> Vec<
         .flat_map(|(agent, scope)| manifest.hooks(agent, scope))
         .map(|kind| match kind {
             HookKind::Measurement | HookKind::OutputDiscipline => measurement_path(roots.home()),
-            HookKind::Memory => memory_path(roots.home()),
             HookKind::Handoff => handoff_path(roots.home()),
             HookKind::FormatEditedFile => format_edited_file_path(roots.deployment_repository()),
             HookKind::SemctxNudge => semctx_nudge_path(roots.deployment_repository()),
@@ -242,10 +216,6 @@ fn measurement_path(home: &Path) -> PathBuf {
 
 fn handoff_path(home: &Path) -> PathBuf {
     home.join(".local/bin/agent-handoff")
-}
-
-fn memory_path(home: &Path) -> PathBuf {
-    home.join(".local/bin/agent-memory")
 }
 
 fn handoff_aliases(
@@ -309,17 +279,6 @@ fn output_discipline_command(command: &Path) -> Result<String, HooksError> {
     let command = path_string(command)?;
     let quoted = format!("'{}'", command.replace('\'', "'\\''"));
     Ok(format!("{quoted} output-discipline"))
-}
-
-fn memory_command(command: &Path, agent: Agent) -> Result<Option<String>, HooksError> {
-    let agent = match agent {
-        Agent::Codex => "codex",
-        Agent::Claude => "claude",
-        Agent::Cursor => return Ok(None),
-    };
-    let command = path_string(command)?;
-    let quoted = format!("'{}'", command.replace('\'', "'\\''"));
-    Ok(Some(format!("{quoted} hook --agent {agent}")))
 }
 
 fn path_string(path: &Path) -> Result<String, HooksError> {
