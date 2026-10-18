@@ -19,25 +19,24 @@ Ce dépôt utilise `main`. L'abbreviation `grbm` passe par
 `master` ou `trunk` le cas échéant. Le mode local reste une heuristique destinée
 aux usages interactifs.
 
-La capacité cible est le paquet Bun autonome `@sebastienelet/git-main-branch`.
+La détection reste une fonction Fish locale, exposée à `upgrade` par
+`tooling/git-main-branch`, sans paquet autonome ni publication.
 Le mode fournisseur est retiré, sans remplacement ni compatibilité 1.x.
 L'heuristique locale ne prouve pas la branche distante faisant autorité.
 Le mode `--strict` conserve les erreurs de sondage Git, mais le repli `main`
 reste possible lorsqu'aucune candidate locale n'existe.
-
-Le chemin local et ses consommateurs Fish/upgrade sont conservés jusqu'à
-qualification du paquet publié sur macOS ARM64 et Linux x64 glibc, selon le
-[plan #548](https://github.com/SebastienElet/dotfiles/issues/548#issuecomment-6249854102).
 
 ## Conséquences
 
 - Les mêmes raccourcis fonctionnent sur les dépôts anciens et récents.
 - Une indirection de plus dans chaque fonction concernée.
 - La logique de détection est centralisée en un point unique.
-- Le résolveur local dépend de Bun et de Git, sans requête réseau ni écriture Git.
+- Le résolveur local dépend de Fish et de Git, sans requête réseau ni écriture Git.
 
 ## Alternatives écartées
 
 - Nom en dur : casse sur les dépôts restés en `master`.
 - Variable de configuration par dépôt : à renseigner manuellement à chaque
   clone.
+- Paquet Bun autonome : distribution et chaîne de publication disproportionnées
+  pour cette heuristique partagée par trois usages des dotfiles.

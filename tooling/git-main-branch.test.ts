@@ -1,9 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const entrypoint = join(import.meta.dir, "..", "cli.ts");
+const entrypoint = join(import.meta.dir, "git-main-branch");
 const roots: string[] = [];
 const environment = {
   ...process.env,
@@ -74,6 +74,29 @@ function resolve(
     result.stderr.toString(),
   ] as const;
 }
+
+test("resolves a branch with Git and Fish but without Bun on PATH", async () => {
+  const directory = await repository("master");
+  const bin = join(await temporaryDirectory(), "bin");
+  await mkdir(bin);
+  for (const command of ["bash", "dirname", "fish", "git"]) {
+    const executable = Bun.which(command);
+    if (executable === null) {
+      throw new Error(`${command} missing from test environment`);
+    }
+    await symlink(executable, join(bin, command));
+  }
+  const result = Bun.spawnSync([entrypoint, "--strict", "-C", directory], {
+    env: { ...environment, PATH: bin },
+    stderr: "pipe",
+    stdout: "pipe",
+  });
+  expect([
+    result.exitCode,
+    result.stdout.toString(),
+    result.stderr.toString(),
+  ]).toEqual([0, "master\n", ""]);
+});
 
 test.each(["main", "master", "trunk"])(
   "resolves real Git %s without changing refs, index, configuration or files",

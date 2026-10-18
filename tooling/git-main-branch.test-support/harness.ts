@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdtemp, rm, symlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -18,7 +18,7 @@ type CommandResult = Readonly<{
   stdout: Uint8Array;
 }>;
 
-const entrypoint = join(import.meta.dir, "../..", "cli.ts");
+const entrypoint = join(import.meta.dir, "..", "git-main-branch");
 const fakeCommand = join(import.meta.dir, "fake-command.ts");
 const temporaryDirectories: string[] = [];
 const executableFileMode = 0o755;
@@ -44,6 +44,11 @@ async function run(
     `#!/bin/sh\nexec "${process.execPath}" "${fakeCommand}" git "$@"\n`,
   );
   await chmod(executable, executableFileMode);
+  const fish = Bun.which("fish");
+  if (fish === null) {
+    throw new Error("fish missing from test environment");
+  }
+  await symlink(fish, join(bin, "fish"));
   return Bun.spawnSync([entrypoint, ...commandArguments], {
     cwd: root,
     env: {

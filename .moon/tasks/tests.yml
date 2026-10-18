@@ -15,6 +15,7 @@ fileGroups:
     - tooling/install-moon
     - tooling/install-homebrew
     - tooling/git-main-branch
+    - home/.config/fish/conf.d/git_main_branch.fish
     - tooling/format-edited-file
     - tooling/upgrade
     - tooling/agent-memory/Cargo.toml
@@ -45,7 +46,6 @@ fileGroups:
   fishBehaviorDependencies:
     - .gitignore
     - tooling/git-main-branch
-    - tooling/git-main-branch-package/**/*
 tasks:
   typescript-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"

@@ -8,19 +8,28 @@ import { rm } from "node:fs/promises";
 
 afterEach(cleanupUpgradeFixtures);
 
-test("missing central branch executable prevents Git mutations and continues upgrades", async () => {
-  const fixture = await upgradeFixture();
-  await rm(join(fixture.repository, "tooling/git-main-branch"));
-  const result = await fixture.run();
-  expect(result.status).toBe(1);
-  expect(result.output).toContain("[failed] Dotfiles main branch");
-  expect(result.output).toContain("[not-attempted] Dotfiles repository update");
-  expect(result.output).toContain("[not-attempted] NeoVim lockfile commit");
-  expect(result.calls).not.toContain(" pull");
-  expect(result.calls).not.toContain(" commit");
-  expect(result.calls).toContain("brew update");
-  expect(result.calls).toContain("nvim --headless");
-});
+test.each([
+  ["repository", "tooling/git-main-branch"],
+  ["repository", "home/.config/fish/conf.d/git_main_branch.fish"],
+  ["bin", "fish"],
+] as const)(
+  "missing %s/%s prevents Git mutations and continues upgrades",
+  async (root, path) => {
+    const fixture = await upgradeFixture();
+    await rm(join(fixture[root], path));
+    const result = await fixture.run();
+    expect(result.status).toBe(1);
+    expect(result.output).toContain("[failed] Dotfiles main branch");
+    expect(result.output).toContain(
+      "[not-attempted] Dotfiles repository update",
+    );
+    expect(result.output).toContain("[not-attempted] NeoVim lockfile commit");
+    expect(result.calls).not.toContain(" pull");
+    expect(result.calls).not.toContain(" commit");
+    expect(result.calls).toContain("brew update");
+    expect(result.calls).toContain("nvim --headless");
+  },
+);
 
 test.each(["feature", "detached"])(
   "protects %s while leaving plugin changes available",

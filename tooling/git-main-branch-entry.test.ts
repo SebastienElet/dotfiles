@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { cleanup, run } from "./test-support/harness.ts";
+import { cleanup, run } from "./git-main-branch.test-support/harness.ts";
 
 afterEach(cleanup);
 
