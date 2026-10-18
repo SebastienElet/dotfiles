@@ -195,7 +195,7 @@ The CI routing matrix is owned by [#407](https://github.com/SebastienElet/dotfil
 and its sub-issues; this local task guide does not duplicate its path-to-workflow policy.
 
 Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
-`agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
+and `agent-handoff:deployment-test`.
 Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
 on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
 these families; `moon run test` still includes their local tests.

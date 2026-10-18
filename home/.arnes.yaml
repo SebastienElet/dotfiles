@@ -19,11 +19,6 @@ agents:
       effort: high
       context_window: 512000
 skills:
-  - slug: para-organizer
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
   - slug: things-tasks
     installations:
       - { agent: claude, scope: user }
@@ -129,9 +124,6 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
-  - slug: memory-governance
-    installations:
-      - { agent: cursor, scope: user }
   - slug: code-enforcement
     installations:
       - { agent: claude, scope: user }
@@ -371,14 +363,6 @@ resources:
         path: harness/skills/agent-instructions/references/maintenance.md,
       }
     destination: { root: home, path: .claude/rules/agent-instructions.md }
-  - id: cursor-user-memory-governance
-    kind: rules
-    agent: cursor
-    scope: user
-    source:
-      { root: repository, path: harness/rules/memory-governance-cursor.mdc }
-    destination:
-      { root: home, path: .cursor/rules/memory-governance-cursor.mdc }
   - id: cursor-user-visual-presentation
     kind: rules
     agent: cursor

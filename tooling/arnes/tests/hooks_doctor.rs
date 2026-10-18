@@ -3,8 +3,8 @@
 pub mod hook_support;
 pub mod support;
 use hook_support::{
-    MEASUREMENT_ONLY_MANIFEST, configured_fixture, executable, installed_fixture, run, settings,
-    settings_path, write_settings,
+    MEASUREMENT_ONLY_MANIFEST, configured_fixture, installed_fixture, run, settings, settings_path,
+    write_settings,
 };
 use serde_json::{Value, json};
 use std::fs;
@@ -30,24 +30,7 @@ fn setup_makes_the_declared_hooks_healthy() -> Result<(), Box<dyn std::error::Er
     assert_eq!(stderr, "");
     Ok(())
 }
-#[test]
-fn setup_makes_the_declared_memory_hook_healthy()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let fixture = support::Fixture::new()?;
-    fixture.write_home(".arnes.yaml", hook_support::MEMORY_MANIFEST)?;
-    executable(&fixture, "arnes")?;
-    executable(&fixture, "agent-memory")?;
-    let (setup_code, _, setup_stderr) = run(&fixture, &["setup", "hooks", "--agent", "claude"])?;
-    assert_eq!(setup_code, 0, "{setup_stderr}");
-    let (code, stdout, stderr) = doctor(&fixture)?;
-    assert_eq!(code, 0, "{stdout}");
-    assert!(
-        stdout.contains("healthy hooks: claude user memory hook is installed on UserPromptSubmit"),
-        "{stdout}"
-    );
-    assert_eq!(stderr, "");
-    Ok(())
-}
+
 #[test]
 fn a_missing_configuration_file_is_drift() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;

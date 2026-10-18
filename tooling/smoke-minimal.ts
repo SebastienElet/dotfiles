@@ -22,7 +22,6 @@ const snapshotPaths = [
   ".config/wezterm",
   ".gitconfig",
   ".local/bin/agent-handoff",
-  ".local/bin/agent-memory",
   ".local/bin/arnes",
   ".local/bin/claude",
   ".tmux/plugins/tpm",
@@ -51,7 +50,7 @@ function verifyInstallation(home: string, root: string): void {
     join(root, "Brewfile"),
   ]);
   const executables = [
-    ...["agent-handoff", "agent-memory", "arnes", "claude"].map((command) =>
+    ...["agent-handoff", "arnes", "claude"].map((command) =>
       join(home, ".local/bin", command),
     ),
     ...["codex", "node", "pnpm"].map((command) =>

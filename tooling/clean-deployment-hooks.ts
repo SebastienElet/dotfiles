@@ -50,7 +50,6 @@ function commands(
     `${arnes} output-discipline`,
     `${quoted(semctxNudge)} --host ${agent}`,
     `${semctxNudge} --host ${agent}`,
-    `${quoted(join(home, ".local/bin/agent-memory"))} hook --agent ${agent}`,
     join(home, ".local/bin/agent-handoff"),
     join(repository, "tooling/agent-handoff"),
     join(repository, "scripts/agent_handoff"),

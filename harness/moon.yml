@@ -200,7 +200,6 @@ tasks:
       - codex
       - arnes:install
       - agent-handoff:install
-      - agent-memory:install
       - assertledger
     toolchains: system
   assertledger:

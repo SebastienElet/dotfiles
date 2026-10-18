@@ -18,7 +18,7 @@ function fixture(): ReturnType<typeof gateFixture> {
   for (const location of [".local/bin", ".volta/bin"]) {
     mkdirSync(join(result.home, location), { recursive: true });
   }
-  for (const command of ["agent-handoff", "agent-memory", "arnes", "claude"]) {
+  for (const command of ["agent-handoff", "arnes", "claude"]) {
     executable(join(result.home, ".local/bin"), command, "true");
   }
   for (const command of ["codex", "node", "pnpm"]) {

@@ -1,6 +1,6 @@
 # Rust checks
 
-`agent-handoff`, `agent-memory`, `arnes`, and `herdr-issue-state` remain independent packages under
+`agent-handoff`, `arnes`, and `herdr-issue-state` remain independent packages under
 `tooling/`, with their existing lockfiles and deployment directories.
 
 ## Policy

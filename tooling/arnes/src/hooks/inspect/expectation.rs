@@ -2,8 +2,8 @@ use super::super::adapters::Policy;
 use super::super::{
     HooksError, MatchedHandler, OUTPUT_DISCIPLINE, SEMCTX_NUDGE, format_edited_file_handler,
     format_edited_file_path, handoff_aliases, handoff_path, measurement_command, measurement_path,
-    memory_command, memory_path, output_discipline_command, quoted_command, semctx_nudge_command,
-    semctx_nudge_path, unquoted_semctx_nudge_command,
+    output_discipline_command, quoted_command, semctx_nudge_command, semctx_nudge_path,
+    unquoted_semctx_nudge_command,
 };
 use super::{drift, error};
 use crate::Roots;
@@ -71,23 +71,6 @@ pub fn expectation(
                 settings: None,
                 path,
                 label: "~/.local/bin/agent-handoff",
-            })
-        }
-        HookKind::Memory => {
-            let path = memory_path(roots.home());
-            let command = memory_command(&path, agent)?
-                .ok_or_else(|| HooksError::new("Cursor does not support the memory hook"))?;
-            let event = policy
-                .memory_event
-                .ok_or_else(|| HooksError::new("Cursor does not support the memory hook"))?;
-            Ok(Expectation {
-                events: vec![event],
-                nested: policy.nested,
-                command,
-                superseded: Vec::new(),
-                settings: None,
-                path,
-                label: "~/.local/bin/agent-memory",
             })
         }
         HookKind::FormatEditedFile => {

@@ -58,10 +58,8 @@ This directory is the canonical source for user-scoped agent skills.
 | `disaster-recovery-plan`  | Fill a disaster recovery plan (PRA) from a Word template using repository evidence and operational facts. |
 | `handoff`                 | Hand the current work to a fresh session instead of letting the context compact.                          |
 | `harness-simplify`        | Simplify a real harness workflow.                                                                         |
-| `memory-governance`       | Govern durable local agent memory.                                                                        |
 | `obsidian-retrieval`      | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                              |
 | `output-discipline`       | Shape responses so decisive information and next actions are easy to find.                                |
-| `para-organizer`          | Apply PARA (Projects, Areas, Resources, Archives) to a file tree outside ~/Documents.                     |
 | `prose-edit`              | Revise existing prose while preserving the writer's voice and meaning.                                    |
 | `security-assurance-plan` | Fill security assurance plans (PAS) from a DOCX template and traceable evidence.                          |
 | `skill-manager`           | Manage user and project skills: create, doctor, fix, cross-check, and sync their README indexes.          |

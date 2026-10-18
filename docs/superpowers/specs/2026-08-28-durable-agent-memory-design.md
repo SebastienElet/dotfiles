@@ -2,6 +2,9 @@
 
 ## Statut et portée
 
+Design historique de la PR 249. La capacité est retirée dans
+[#551](https://github.com/SebastienElet/dotfiles/issues/551) ; le contrat ci-dessous ne s’applique plus.
+
 Ce document remplace le design candidate-only du 27 août 2026 pour la suite de la PR 249. Le
 contrat candidate-only reste le comportement observé au commit `4ca15f5509f9509457c4d4b09027441dd65379b7`,
 mais il ne satisfait pas la promesse de mémoire durable : il ne persiste, n'indexe, ne retrouve et

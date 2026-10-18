@@ -1,10 +1,4 @@
-import {
-  lstatSync,
-  readFileSync,
-  readlinkSync,
-  statSync,
-  unlinkSync,
-} from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { deployLink } from "./deploy-link.ts";
 import { join } from "node:path";
 import { z } from "zod";
@@ -36,22 +30,6 @@ const skillDirectories = {
 const argumentOffset = 2;
 const failure = 1;
 
-function retiredMemorySkill(
-  source: string,
-  destination: string,
-): string | undefined {
-  const metadata = lstatSync(destination, { throwIfNoEntry: false });
-  if (metadata === undefined) {
-    return undefined;
-  }
-  if (!metadata.isSymbolicLink() || readlinkSync(destination) !== source) {
-    throw new Error(
-      `${destination} is not the owned legacy memory skill; preserve it and review the migration`,
-    );
-  }
-  return destination;
-}
-
 function installAgentSkills(
   repository: string,
   home: string,
@@ -66,16 +44,6 @@ function installAgentSkills(
         installation.agent === agent && installation.scope === "user",
     ),
   );
-  const slugs = new Set(selected.map((skill) => skill.slug));
-  const retired =
-    agent !== "cursor" &&
-    slugs.has("remem-memory") &&
-    !slugs.has("memory-governance")
-      ? retiredMemorySkill(
-          join(repository, "harness/skills/memory-governance"),
-          join(home, skillDirectories[agent], "memory-governance"),
-        )
-      : undefined;
   const sources = selected.map((skill) => ({
     source: join(repository, "harness/skills", skill.slug),
     destination: join(home, skillDirectories[agent], skill.slug),
@@ -87,9 +55,6 @@ function installAgentSkills(
   }
   for (const { source, destination } of sources) {
     deployLink(source, destination);
-  }
-  if (retired !== undefined) {
-    unlinkSync(retired);
   }
 }
 
