@@ -56,7 +56,6 @@ This directory is the canonical source for user-scoped agent skills.
 | Skill                     | Description                                                                                               |
 | ------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `disaster-recovery-plan`  | Fill a disaster recovery plan (PRA) from a Word template using repository evidence and operational facts. |
-| `handoff`                 | Hand the current work to a fresh session instead of letting the context compact.                          |
 | `harness-simplify`        | Simplify a real harness workflow.                                                                         |
 | `obsidian-retrieval`      | Retrieve read-only knowledge from Obsidian vaults or local Markdown corpora.                              |
 | `output-discipline`       | Shape responses so decisive information and next actions are easy to find.                                |

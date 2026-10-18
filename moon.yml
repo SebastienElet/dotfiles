@@ -84,8 +84,6 @@ tasks:
       - arnes:fmt
       - arnes:clippy
       - arnes:check
-      - agent-handoff:fmt
-      - agent-handoff:clippy
       - proof-integrity:fmt
       - proof-integrity:clippy
       - proof-integrity:check
@@ -98,6 +96,5 @@ tasks:
       - tooling:test
       - secret-test
       - arnes:test
-      - agent-handoff:test
       - proof-integrity:test
     toolchains: system

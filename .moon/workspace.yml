@@ -3,7 +3,6 @@
     {
       repository: ".",
       harness: harness,
-      agent-handoff: tooling/agent-handoff,
       arnes: tooling/arnes,
       herdr-issue: tooling/herdr-issue-worktree,
       proof-integrity: harness/skills/proof-integrity-review/scripts,

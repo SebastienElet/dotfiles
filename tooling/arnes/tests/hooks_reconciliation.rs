@@ -68,26 +68,12 @@ impl Harness {
     }
     fn install_claude_with_handoff(
         &self,
+        repository: &Path,
         current: &Path,
-        legacy: &Path,
     ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
-        assert_eq!(
-            legacy,
-            current
-                .parent()
-                .ok_or("fixture path has no parent")?
-                .parent()
-                .ok_or("fixture path has no parent")?
-                .join("scripts/agent_handoff")
-        );
         let deployed = self.home.join(".local/bin/agent-handoff");
         symlink(current, deployed)?;
         self.write_manifest(true)?;
-        let repository = current
-            .parent()
-            .ok_or("fixture path has no parent")?
-            .parent()
-            .ok_or("fixture path has no parent")?;
         self.setup_in_repository("claude-code", repository)
     }
     fn config(&self, agent: &str) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {

@@ -6,7 +6,7 @@ rust:
   syncToolchainConfig: false
 
 bun:
-  version: "1.4.0"
+  version: "1.4.3"
   installArgs:
     - --config=/dev/null
     - --no-env-file

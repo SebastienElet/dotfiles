@@ -29,6 +29,11 @@ Séparer les sources par portée :
 - Arnes dérive les skills projet de `.agents/skills/` et les installations user
   des déclarations du manifeste.
 
+Pour la capacité externalisée dans #550, la source de `handoff` est le paquet
+publié `@sebastienelet/agent-handoff`, installé par Bun à version exacte et
+verrouillée. Moon déploie sa skill par liens feuilles vers le paquet ; Arnes
+la déclare comme skill externe gérée. Sa source ne reste pas dans `harness/skills/`.
+
 ## Conséquences
 
 - Une skill user n'est plus exposée une seconde fois par le checkout dotfiles.
