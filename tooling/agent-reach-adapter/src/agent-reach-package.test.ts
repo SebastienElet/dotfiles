@@ -105,6 +105,45 @@ test("packages upstream resources for both hosts and preserves an unchanged repl
   expect(after.ino).toBe(before.ino);
 });
 
+test.each([
+  "agent-reach install --env-only",
+  "pipx run --spec twitter-cli==0.8.5 twitter search query",
+  "pipx upgrade twitter-cli",
+  "npm --global install mcporter@0.14.2",
+  "pip install --upgrade twitter-cli==0.8.5",
+  "uv pip install twitter-cli==0.8.5",
+  "npm i mcporter@0.14.2",
+  "brew install ffmpeg",
+  "brew update && brew upgrade ffmpeg",
+  "npm update mcporter",
+  "bun add mcporter@0.14.2",
+  "pnpm dlx mcporter@0.14.2 list",
+  "npx --package=mcporter@0.14.2 mcporter list",
+  "bunx mcporter@0.14.2 list",
+  "uvx twitter-cli==0.8.5 search query",
+  "uv run --with 'git+https://github.com/can4hou6joeng4/boss-agent-cli.git@4c991b77086a203173bf08a4cb64a23af6514fe6' boss search query",
+])(
+  "rewrites package acquisition in packaged references: %s",
+  async (command) => {
+    const options = await fixture();
+    await writeFile(
+      join(options.source, "agent_reach/skill/references/social.md"),
+      `Retry \`${command}\`.\n\`\`\`bash\n${command}\n\`\`\`\ntwitter search query\npipx list\n`,
+    );
+    const marketplace = await prepareAgentReachPlugin(options);
+    const reference = await readFile(
+      join(
+        marketplace,
+        "plugins/agent-reach/skills/agent-reach/references/social.md",
+      ),
+      "utf8",
+    );
+    expect(reference).toBe(
+      "Retry `install the declared prerequisites explicitly; see the adapter README`.\n```bash\ninstall the declared prerequisites explicitly; see the adapter README\n```\ntwitter search query\npipx list\n",
+    );
+  },
+);
+
 test("routes RSS and podcast commands through the isolated Python environment", async () => {
   const options = await fixture();
   await writeFile(

@@ -58,7 +58,7 @@ function adaptedCommands(content: string): string {
       "user-controlled LinkedIn login with the configured Docker service",
     )
     .replaceAll(
-      /agent-reach install[^\n`]*|pipx install[^\n`]*|brew install ffmpeg/gu,
+      /\b(?:(?:agent-reach|pipx|pip3?|brew|npm|pnpm|yarn|bun|uv(?:\s+(?:pip|tool))?)\s+(?:-[^\s`]+\s+)*(?:install|i|reinstall(?:-all)?|add|upgrade(?:-all)?|update|sync|ci|fetch|exec|dlx|x)\b|(?:uv|pipx)\s+(?:-[^\s`]+\s+)*run\b|uvx\b|npx\b|bunx\b)[^\n`]*/gu,
       "install the declared prerequisites explicitly; see the adapter README",
     );
 }
