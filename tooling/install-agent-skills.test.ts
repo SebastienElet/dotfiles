@@ -28,11 +28,12 @@ function fixture(): Readonly<{ repository: string; home: string }> {
   mkdirSync(join(repository, "home"), { recursive: true });
   mkdirSync(home);
   for (const slug of ["shared", "claude-only"]) {
-    mkdirSync(join(repository, "harness/skills", slug), { recursive: true });
-    writeFileSync(
-      join(repository, "harness/skills", slug, "SKILL.md"),
-      "skill\n",
-    );
+    const collection =
+      slug === "shared"
+        ? "node_modules/@sebastienelet/agent-skills/skills"
+        : "harness/skills";
+    mkdirSync(join(repository, collection, slug), { recursive: true });
+    writeFileSync(join(repository, collection, slug, "SKILL.md"), "skill\n");
   }
   writeFileSync(
     join(repository, "home/.arnes.yaml"),
@@ -41,6 +42,7 @@ function fixture(): Readonly<{ repository: string; home: string }> {
       skills: [
         {
           slug: "shared",
+          source: "node_modules/@sebastienelet/agent-skills/skills/shared",
           installations: [
             { agent: "codex", scope: "user" },
             { agent: "claude", scope: "user" },
@@ -74,7 +76,10 @@ test("deploys only selected user skills and preserves their identity on replay",
   expect(run(paths).exitCode).toBe(0);
   const destination = join(paths.home, ".agents/skills/shared");
   expect(readlinkSync(destination)).toBe(
-    join(paths.repository, "harness/skills/shared"),
+    join(
+      paths.repository,
+      "node_modules/@sebastienelet/agent-skills/skills/shared",
+    ),
   );
   expect(
     Bun.file(join(paths.home, ".agents/skills/claude-only/SKILL.md")).size,
@@ -129,5 +134,38 @@ test("rejects missing skill sources before installing any links", () => {
   expect(run(paths, "claude").exitCode).not.toBe(0);
   expect(
     Bun.file(join(paths.home, ".claude/skills/shared/SKILL.md")).size,
+  ).toBe(0);
+});
+
+test("deploys packaged and local skills together for every selected host", () => {
+  const paths = fixture();
+  expect(run(paths, "claude").exitCode).toBe(0);
+  expect(
+    readFileSync(join(paths.home, ".claude/skills/shared/SKILL.md"), "utf8"),
+  ).toBe("skill\n");
+  expect(readlinkSync(join(paths.home, ".claude/skills/claude-only"))).toBe(
+    join(paths.repository, "harness/skills/claude-only"),
+  );
+});
+
+test.each([
+  "/outside",
+  "../outside",
+  "node_modules/../../outside",
+  "",
+  "./skill",
+])("rejects an invalid skill source %s before linking", (source) => {
+  const paths = fixture();
+  const manifest = join(paths.repository, "home/.arnes.yaml");
+  writeFileSync(
+    manifest,
+    readFileSync(manifest, "utf8").replace(
+      "node_modules/@sebastienelet/agent-skills/skills/shared",
+      JSON.stringify(source),
+    ),
+  );
+  expect(run(paths).exitCode).not.toBe(0);
+  expect(
+    Bun.file(join(paths.home, ".agents/skills/shared/SKILL.md")).size,
   ).toBe(0);
 });

@@ -1,4 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
+import { skillSource, skillSourceSchema } from "./agent-skill-source.ts";
 import { deployLink } from "./deploy-link.ts";
 import { join } from "node:path";
 import { z } from "zod";
@@ -15,6 +16,7 @@ const installationSchema = z
 const skillSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+    source: skillSourceSchema,
     installations: z.array(installationSchema).readonly(),
   })
   .readonly();
@@ -45,7 +47,7 @@ function installAgentSkills(
     ),
   );
   const sources = selected.map((skill) => ({
-    source: join(repository, "harness/skills", skill.slug),
+    source: skillSource(repository, skill),
     destination: join(home, skillDirectories[agent], skill.slug),
   }));
   for (const { source } of sources) {

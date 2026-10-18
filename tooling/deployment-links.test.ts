@@ -151,10 +151,16 @@ test("deploys shared instructions and skills and replays idempotently", () => {
     ]),
   );
   expect(linkTarget(claudeRule)).toBe(
-    join(project, "harness", "rules", "agent-instructions.md"),
+    join(
+      project,
+      "node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md",
+    ),
   );
   expect(linkTarget(codexSkill)).toBe(
-    join(project, "harness", "skills", "agent-instructions"),
+    join(
+      project,
+      "node_modules/@sebastienelet/agent-skills/skills/agent-instructions",
+    ),
   );
   expect(readFileSync(codexInstructions, "utf8")).toBe(
     expectedCodexInstructions(),

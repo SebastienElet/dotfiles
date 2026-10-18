@@ -52,7 +52,7 @@ tasks:
   claude-rules:
     script: |-
       set -e
-      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/agent-instructions.md" "$HOME/.claude/rules/agent-instructions.md"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md" "$HOME/.claude/rules/agent-instructions.md"
     deps:
       - repository:dependencies
     toolchains: bun

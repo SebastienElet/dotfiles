@@ -14,6 +14,9 @@ pub fn validate(
     for (skill_index, skill) in skills.iter().enumerate() {
         let field = |name: &str| format!("skills[{skill_index}].{name}");
         validate_slug(&field("slug"), &skill.slug)?;
+        if let Some(source) = &skill.source {
+            super::validate_path(&field("source"), source)?;
+        }
         if skill.installations.is_empty() {
             return Err(ManifestError::new(
                 field("installations"),

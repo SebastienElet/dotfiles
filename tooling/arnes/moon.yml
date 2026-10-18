@@ -9,6 +9,7 @@ fileGroups:
     - /.moon/tasks/harness-claude.yml
     - /.moon/tasks/javascript.yml
     - /tooling/assemble-agent-instructions.ts
+    - /tooling/agent-skill-source.ts
     - /tooling/install-agent-skills.ts
     - /tooling/deploy-link.ts
     - /package.json

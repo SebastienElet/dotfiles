@@ -203,24 +203,25 @@ tasks:
       - assertledger
     toolchains: system
   assertledger:
-    description: Install the pinned AssertLedger CLI with the Volta-managed npm
+    description: Install the pinned AssertLedger CLI with Bun
     script: |-
       set -e
-      . ./harness/skills/assertledger/version.env
-      VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/npm" install --global "assertledger@$ASSERTLEDGER_VERSION"
+      . ./node_modules/@sebastienelet/agent-skills/skills/assertledger/version.env
+      bun --config=/dev/null --no-env-file install --global --exact --ignore-scripts "assertledger@$ASSERTLEDGER_VERSION"
     checks:
       - check: condition
         script: |-
           set -e
-          . ./harness/skills/assertledger/version.env
-          test -x "$HOME/.volta/bin/assertledger" &&
-            installed_assertledger_version=$(VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" "$HOME/.volta/bin/assertledger" --version) &&
+          . ./node_modules/@sebastienelet/agent-skills/skills/assertledger/version.env
+          test -x "$HOME/.bun/bin/assertledger" &&
+            installed_assertledger_version=$("$HOME/.bun/bin/assertledger" --version) &&
             test "$installed_assertledger_version" = "assertledger $ASSERTLEDGER_VERSION"
     deps:
+      - repository:dependencies
       - repository:node
-    toolchains: system
+    toolchains: bun
     options:
       os: macos
-      mutex: volta
+      mutex: bun-global
 tags:
   - harness

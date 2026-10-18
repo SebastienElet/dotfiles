@@ -32,7 +32,9 @@ Adopter trois frontières :
    exécutables placés directement sous ce répertoire sont sans extension et
    nommés en kebab-case.
 
-Les outils propres à un skill résident dans son répertoire canonique, sous
+Les skills génériques sont consommées depuis leur paquet publié selon l'ADR-040 ;
+leurs sources, tests et ressources appartiennent au dépôt autonome. Les outils propres
+à un skill encore maintenu ici résident dans son répertoire canonique, sous
 `harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
 sources, les manifestes de compilation, les fichiers de verrouillage, les tests
 et les binaires associés. Le choix du langage suit l'ADR-041.

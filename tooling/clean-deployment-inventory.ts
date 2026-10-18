@@ -1,3 +1,4 @@
+import { skillSource, skillSourceSchema } from "./agent-skill-source.ts";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
@@ -9,6 +10,7 @@ const installationSchema = z
 const skillSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+    source: skillSourceSchema,
     installations: z.array(installationSchema).readonly(),
   })
   .readonly();
@@ -79,7 +81,7 @@ const links = [
     ".cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
   ],
   [
-    "harness/rules/agent-instructions.md",
+    "node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md",
     ".claude/rules/agent-instructions.md",
   ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
@@ -111,7 +113,7 @@ function deploymentArtifacts(
     skill.installations
       .filter((installation) => installation.scope === "user")
       .map((installation) => ({
-        source: join(repository, "harness/skills", skill.slug),
+        source: skillSource(repository, skill),
         destination: join(
           home,
           skillDirectories[installation.agent],

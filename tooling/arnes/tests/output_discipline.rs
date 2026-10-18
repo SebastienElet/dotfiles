@@ -6,7 +6,7 @@ use std::os::unix::fs::{PermissionsExt, symlink};
 use std::process::Command;
 use support::Fixture;
 type Result = std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>;
-const SOURCE: &str = "harness/skills/output-discipline/SKILL.md";
+const SOURCE: &str = "node_modules/@sebastienelet/agent-skills/skills/output-discipline/SKILL.md";
 
 #[test]
 fn absent_marker_is_silent_even_with_broken_deployment() -> Result {

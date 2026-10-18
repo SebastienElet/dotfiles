@@ -95,7 +95,10 @@ test(
       join(project, "harness", "visual-presentation.md"),
     );
     expect(readlinkSync(skill)).toBe(
-      join(project, "harness", "skills", "skill-manager"),
+      join(
+        project,
+        "node_modules/@sebastienelet/agent-skills/skills/skill-manager",
+      ),
     );
     expect(lstatSync(plugin).isDirectory()).toBeTrue();
     expect(readlinkSync(join(plugin, ".cursor-plugin/plugin.json"))).toBe(

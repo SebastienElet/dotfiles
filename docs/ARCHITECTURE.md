@@ -50,19 +50,21 @@ destinations divergentes selon l'ADR-003 ; le smoke vérifie le rejeu du profil 
 ## Intégrations d'agents
 
 `harness/` contient les sources communes `AGENTS.md`, `SOUL.md` et `USER.md`,
-les skills et leurs adaptateurs sous `harness/rules/`. Les tâches Moon les adaptent
+les compagnons de skills encore locaux et les intégrations d'agents. Les tâches Moon les adaptent
 aux contraintes de chaque agent : Claude reçoit des liens symboliques, tandis
 que Codex reçoit un `~/.codex/AGENTS.md` assemblé.
 
 La procédure `agent-instructions` est une rule globale Claude et une skill conditionnelle Codex,
-issues de la même source canonique sous `harness/skills/`.
+issues de la même ressource du paquet `@sebastienelet/agent-skills`.
 `moon exec harness:cursor-instructions` assemble les sources communes en règle `alwaysApply`
 dans le plugin local `~/.cursor/plugins/local/dotfiles-harness`. Après installation, recharger
 Cursor et vérifier son activation dans Customize. La réception a été observée dans Desktop
 Agent Chat, pas dans le CLI ; les liens sous `~/.cursor/rules` ne prouvent pas un chargement global.
 
-Les skills user vivent dans `harness/skills/` et sont déployées individuellement
-vers les répertoires utilisateur de Claude, Cursor et Codex. Le déploiement Moon
+Les skills génériques viennent du paquet npm `@sebastienelet/agent-skills`, acquis par Bun
+à version exacte ; `harness/skills/` conserve les compagnons locaux en attente de leurs lots.
+Les skills user sont déployées individuellement vers les répertoires utilisateur de
+Claude, Cursor et Codex. Le déploiement Moon
 sélectionne les installations user dans le manifeste Arnes existant ; celui de Cursor,
 `harness:cursor`, reste hors du minimal et appartient au profil optionnel. Les skills propres
 au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et

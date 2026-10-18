@@ -86,7 +86,7 @@ fn diagnose_leaves(
         .collect::<HashSet<PathBuf>>();
     let mut diagnostics = skills
         .iter()
-        .map(|skill| projection::leaf(roots, resource, skill))
+        .map(|skill| projection::leaf(roots, manifest, resource, skill))
         .collect::<Vec<_>>();
     diagnostics.extend(discovery::unmanaged(
         roots,

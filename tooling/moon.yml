@@ -37,6 +37,7 @@ fileGroups:
     - check-docker-cli
     - /.moon/tasks/docker.yml
     - assemble-agent-instructions*.ts
+    - agent-skill-source.ts
     - install-agent-skills*.ts
     - /home/moon.yml
     - /home/.psqlrc
@@ -48,7 +49,6 @@ fileGroups:
     - /harness/moon.yml
     - /harness/SOUL.md
     - /harness/USER.md
-    - /harness/rules/agent-instructions.md
     - /harness/skills/*/SKILL.md
     - /.moon/tasks/harness-claude.yml
     - /.moon/tasks/harness-codex.yml

@@ -15,8 +15,10 @@ arnes sync commands --agent claude --scope project
 arnes sync mcp --agent claude --scope project
 ```
 
-Les skills user sont des liens feuille vers `harness/skills/` du checkout
-identifié par le manifeste déployé. Les skills project sont des liens racine
+Les skills user sont des liens feuille vers leur `source` déclarée, relative au checkout
+identifié par le manifeste déployé ; sans `source`, elles viennent de `harness/skills/<slug>`.
+Les skills génériques utilisent le paquet sous `node_modules/@sebastienelet/agent-skills/skills/`.
+Les skills project sont des liens racine
 vers `.agents/skills/` du dépôt courant. Les trois agents sont pris en charge.
 Les rules restent limitées à Claude et Cursor user ; leurs sources restent
 relatives au dépôt courant, comme dans Doctor.

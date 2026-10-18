@@ -89,6 +89,80 @@ fn fixture() -> Result<Fixture, Box<dyn std::error::Error + Send + Sync>> {
     Ok(fixture)
 }
 
+#[test]
+fn packaged_user_skills_sync_and_diagnose_for_each_agent() -> TestResult {
+    for (agent, destination) in [
+        ("claude", ".claude"),
+        ("codex", ".agents"),
+        ("cursor", ".cursor"),
+    ] {
+        let fixture = fixture()?;
+        let source = "node_modules/@sebastienelet/agent-skills/skills/alpha";
+        fixture.write_home(
+            ".arnes.yaml",
+            &MANIFEST.replace(
+                "  - slug: alpha\n",
+                &format!("  - slug: alpha\n    source: {source}\n"),
+            ),
+        )?;
+        fixture.write_repository(format!("{source}/SKILL.md"), "[guide](guide.md)\n")?;
+        fixture.write_repository(format!("{source}/guide.md"), "packaged guide\n")?;
+        sync(&fixture, "skills", agent, "user")?;
+        let installed = fixture.home().join(destination).join("skills/alpha");
+        assert_eq!(
+            fs::read_link(&installed)?,
+            fixture.repository().join(source).canonicalize()?
+        );
+        let output = fixture.command(["doctor", "skills", "--agent", agent, "--scope", "user"])?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        let before = fs::symlink_metadata(&installed)?.ino();
+        sync(&fixture, "skills", agent, "user")?;
+        assert_eq!(fs::symlink_metadata(&installed)?.ino(), before);
+        fs::remove_file(fixture.repository().join(source).join("guide.md"))?;
+        assert!(
+            !fixture
+                .command(["doctor", "skills", "--agent", agent, "--scope", "user"])?
+                .status
+                .success()
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn packaged_sources_refuse_invalid_missing_and_escaping_paths() -> TestResult {
+    for source in [
+        "/outside",
+        "../outside",
+        "node_modules/../../outside",
+        "",
+        "missing/alpha",
+        "linked/alpha",
+    ] {
+        let fixture = fixture()?;
+        fixture.write_home(
+            ".arnes.yaml",
+            &MANIFEST.replace(
+                "  - slug: alpha\n",
+                &format!("  - slug: alpha\n    source: {source:?}\n"),
+            ),
+        )?;
+        let outside = tempfile::tempdir()?;
+        fs::create_dir(outside.path().join("alpha"))?;
+        fs::write(outside.path().join("alpha/SKILL.md"), "foreign\n")?;
+        symlink(outside.path(), fixture.repository().join("linked"))?;
+        let before = fixture.snapshot()?;
+        let output = fixture.command(["sync", "skills", "--agent", "codex", "--scope", "user"])?;
+        assert!(!output.status.success(), "{source}");
+        assert_eq!(fixture.snapshot()?, before);
+    }
+    Ok(())
+}
+
 fn sync(fixture: &Fixture, resource: &str, agent: &str, scope: &str) -> TestResult {
     let output = fixture.command(["sync", resource, "--agent", agent, "--scope", scope])?;
     assert!(
