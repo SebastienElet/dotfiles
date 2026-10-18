@@ -23,7 +23,7 @@ Séparer les sources par portée :
 
 - les skills génériques proviennent du paquet npm `@sebastienelet/agent-skills`, acquis par Bun
   à version exacte et verrouillé dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
-- `harness/skills/` conserve les compagnons locaux `handoff`, `herdr-issue-worktree` et
+- `harness/skills/` conserve les compagnons locaux `herdr-issue-worktree` et
   `proof-integrity-review`, jusqu'à la bascule de leurs lots respectifs ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
 - les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers la
@@ -33,6 +33,11 @@ Séparer les sources par portée :
   ne doit aussi exister dans la collection projet ;
 - Arnes dérive les skills projet de `.agents/skills/` et les installations user
   des déclarations du manifeste.
+
+Pour la capacité externalisée dans #550, la source de `handoff` est le paquet
+publié `@sebastienelet/agent-handoff`, installé par Bun à version exacte et
+verrouillée. Moon déploie sa skill par liens feuilles vers le paquet ; Arnes
+la déclare comme skill externe gérée. Sa source ne reste pas dans `harness/skills/`.
 
 ## Conséquences
 

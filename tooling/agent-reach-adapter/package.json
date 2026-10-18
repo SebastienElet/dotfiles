@@ -1,0 +1,54 @@
+{
+  "name": "@sebastienelet/agent-reach-adapter",
+  "version": "1.0.0",
+  "description": "Pinned Agent-Reach resources and marketplace adaptation for Claude and Codex.",
+  "type": "module",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienElet/agent-reach-adapter.git"
+  },
+  "packageManager": "bun@1.4.3",
+  "engines": {
+    "bun": "1.4.3"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "bin": {
+    "agent-reach-adapter": "src/agent-reach.ts"
+  },
+  "files": [
+    "src/",
+    "resources/",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json",
+    ".oxlintrc.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org",
+    "provenance": true
+  },
+  "scripts": {
+    "test": "bun test src",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings src",
+    "format:check": "oxfmt --check src"
+  },
+  "dependencies": {
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2",
+    "oxlint": "1.87.0",
+    "oxlint-tsgolint": "7.0.2004",
+    "oxfmt": "0.72.0",
+    "npm": "11.21.0"
+  }
+}

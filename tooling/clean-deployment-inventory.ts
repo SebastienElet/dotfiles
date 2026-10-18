@@ -85,9 +85,14 @@ const links = [
     ".claude/rules/agent-instructions.md",
   ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
+  ["node_modules/.bin/agent-handoff", ".local/bin/agent-handoff"],
   [
-    "tooling/agent-handoff/target/release/agent-handoff",
-    ".local/bin/agent-handoff",
+    "node_modules/@sebastienelet/agent-handoff/skills/handoff",
+    ".claude/skills/handoff",
+  ],
+  [
+    "node_modules/@sebastienelet/agent-handoff/skills/handoff",
+    ".agents/skills/handoff",
   ],
 ] as const;
 const regularFiles = [

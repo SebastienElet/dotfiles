@@ -32,7 +32,7 @@ type RunMoonOptions = Readonly<{
 type MoonProjectFixturePaths = Readonly<{
   destination: string;
   home: string;
-  projectId: "agent-handoff" | "arnes";
+  projectId: "arnes";
   repository: string;
   source: string;
 }>;
@@ -50,7 +50,7 @@ function prepareMoonWorkspaceFixture(repository: string): void {
     dereference: true,
     recursive: true,
   });
-  for (const projectId of ["agent-handoff", "arnes"]) {
+  for (const projectId of ["arnes"]) {
     const release = join(repository, "tooling", projectId, "target/release");
     mkdirSync(release, { recursive: true });
     writeFileSync(join(release, projectId), "fixture binary\n", {
@@ -70,7 +70,7 @@ const foreignGitHubEnvironment = {
 };
 
 function createMoonDeploymentFixture(
-  projectId: "agent-handoff" | "arnes",
+  projectId: "arnes",
 ): MoonDeploymentFixture {
   const root = mkdtempSync(join(tmpdir(), `moon-${projectId}-deployment-`));
   const repository = join(root, "repository");

@@ -51,10 +51,7 @@ function commands(
     `${quoted(semctxNudge)} --host ${agent}`,
     `${semctxNudge} --host ${agent}`,
     join(home, ".local/bin/agent-handoff"),
-    join(repository, "tooling/agent-handoff"),
-    join(repository, "scripts/agent_handoff"),
-    join(repository, "tooling/agent-handoff/target/release/agent-handoff"),
-    ...(agent === "claude" ? ["$HOME/.claude/hooks/agent_handoff"] : []),
+    join(repository, "node_modules/.bin/agent-handoff"),
     quoted(join(repository, "tooling/format-edited-file")),
     ...["context", "session-init", "observe", "summarize"].flatMap(
       (subcommand) =>

@@ -130,10 +130,6 @@ skills:
     installations:
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: handoff
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
   - slug: harness-reflection
     source: node_modules/@sebastienelet/agent-skills/skills/harness-reflection
     installations:
@@ -296,6 +292,8 @@ external:
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
+    - { agent: claude, scope: user, origin: managed, slug: handoff }
+    - { agent: codex, scope: user, origin: managed, slug: handoff }
     - {
         agent: claude,
         scope: user,

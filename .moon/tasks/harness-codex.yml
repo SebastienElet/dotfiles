@@ -46,6 +46,7 @@ tasks:
     script: |-
       set -e
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" codex
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/agent-handoff/skills/handoff" "$HOME/.agents/skills/handoff"
     deps:
       - repository:dependencies
       - proof-integrity:build
@@ -55,7 +56,7 @@ tasks:
     deps:
       - repository:dependencies
       - arnes:install
-      - agent-handoff:install
+      - agent-handoff
     checks:
       - check: condition
         script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'

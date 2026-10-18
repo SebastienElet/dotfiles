@@ -72,12 +72,16 @@ au dépôt vivent dans `.agents/skills/` ; `.claude/skills`, `.codex/skills` et
 pas exister dans les deux collections, car les agents peuvent alors exposer les
 deux occurrences.
 
+Pour `handoff`, les liens user visent la skill du paquet publié
+`@sebastienelet/agent-handoff`, installé par Bun à version exacte ; sa source
+est maintenue hors de ce dépôt.
+
 ## Outillage maintenu
 
 `tooling/` regroupe deux formes d'outils :
 
 - les exécutables directs, sans extension et nommés en kebab-case, comme
-  `upgrade`, `agent-handoff` et `git-main-branch` ;
+  `upgrade` et `git-main-branch` ;
 - les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
 Les exécutables destinés au `PATH` sont liés par leur projet Moon,
