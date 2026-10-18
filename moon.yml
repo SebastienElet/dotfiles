@@ -84,9 +84,6 @@ tasks:
       - arnes:fmt
       - arnes:clippy
       - arnes:check
-      - proof-integrity:fmt
-      - proof-integrity:clippy
-      - proof-integrity:check
     toolchains: system
   test:
     description: Run repository behavior tests
@@ -96,5 +93,4 @@ tasks:
       - tooling:test
       - secret-test
       - arnes:test
-      - proof-integrity:test
     toolchains: system

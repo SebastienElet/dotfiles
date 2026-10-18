@@ -6,6 +6,7 @@
       "name": "dotfiles",
       "dependencies": {
         "@sebastienelet/agent-handoff": "0.0.1",
+        "@sebastienelet/proof-integrity-review": "0.0.1",
         "zod": "4.6.6",
       },
       "devDependencies": {
@@ -257,6 +258,12 @@
     "@sebastienelet/agent-handoff-darwin-arm64": ["@sebastienelet/agent-handoff-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-2baDGhHRCBAnMPqtEufsOeJilzBKnMikmyqSrc1o8s71g2V9/ZnuJ7ElUQ0RXEOrXHkVlKtrlihEaNegfG5aAA=="],
 
     "@sebastienelet/agent-handoff-linux-x64-gnu": ["@sebastienelet/agent-handoff-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-2KX6fes0VVYmhJpuZjEMSI4dKHjrsmR+HoZ2qhpuvOVcbq7OT9HKfHEUWQqBbKgeOLSb7J01oKVl3LYhKUJQzg=="],
+
+    "@sebastienelet/proof-integrity-review": ["@sebastienelet/proof-integrity-review@0.0.1", "", { "optionalDependencies": { "@sebastienelet/proof-integrity-review-darwin-arm64": "0.0.1", "@sebastienelet/proof-integrity-review-linux-x64-gnu": "0.0.1" }, "bin": { "proof-integrity": "bin/proof-integrity.ts" } }, "sha512-7sRwi4fBUgKVWgNV/cCU2SZsHUipV9jY4AQWWtZxl92+9VQ5i8Le8oU9BAMO44gQ6Hb/7k6QfLJd0jAND9EZcw=="],
+
+    "@sebastienelet/proof-integrity-review-darwin-arm64": ["@sebastienelet/proof-integrity-review-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-OOXkl7u5CeYvOBLRC7j7mYn3L3YDVJ/JCQC7wXO/t+I/gspmXQoB2plhK3ywXBk4fCcDQbB+gQlQwQYvNIuREg=="],
+
+    "@sebastienelet/proof-integrity-review-linux-x64-gnu": ["@sebastienelet/proof-integrity-review-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-Jt7lKElGEipJndVqnVqFbYTgBLVnV5krH5NwZ+7f7Kw1jZL1Es7Z0vP8JWy5wMmMkXQ29HMMWV9Y9jctfLCY1g=="],
 
     "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
 

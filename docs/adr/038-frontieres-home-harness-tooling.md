@@ -33,7 +33,11 @@ Adopter trois frontières :
    nommés en kebab-case.
 
 Les outils propres à un skill résident dans son répertoire canonique, sous
-`harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
+`harness/skills/` ou `.agents/skills/` selon sa portée. Pour `proof-integrity-review`
+et `handoff`, ces répertoires sont fournis respectivement par les paquets npm
+`@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`,
+acquis par Bun à version exacte ; leurs sources et builds ne sont plus maintenus dans dotfiles.
+Cette règle de colocalisation comprend les
 sources, les manifestes de compilation, les fichiers de verrouillage, les tests
 et les binaires associés. Le choix du langage suit l'ADR-041.
 
