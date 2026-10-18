@@ -51,15 +51,17 @@ transcription does not require an API key. Summarization is optional and configu
 separately. The Minutes CLI is not installed by this task.
 
 [Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
-with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
+with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
 The [issue launcher](tooling/herdr-issue-worktree/README.md) is an explicit opt-in with
 `moon exec repository:herdr-issue-plugin` for standalone Ctrl-click work on GitHub, GitLab
 or Linear issues.
 Existing launcher installations remain linked until explicitly unlinked.
-It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
-checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
+It installs `@sebastienelet/herdr-worktree-cleanup@1.0.1` with Bun in
+`~/.local/share/herdr-worktree-cleanup` and links its `dotfiles.worktree-cleanup` plugin,
+which removes a linked worktree's checkout when its workspace closes.
+The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.
 Git refuses modified tracked files, non-ignored untracked files, and locked worktrees;
 the plugin also skips detached HEADs. Removal failures are reported with a nonzero exit,

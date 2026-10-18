@@ -166,6 +166,18 @@ test("cleans and reinstalls optional Cursor, Herdr and PostgreSQL links separate
     runDeploymentMoon(fixture, ["home:postgresql"], environment);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
+  const deployHerdrManifests = (): void => {
+    for (const name of ["package.json", "bun.lock"]) {
+      const path = `.local/share/herdr-worktree-cleanup/${name}`;
+      expectSuccess(
+        runDeploymentHelper(fixture, {
+          helper: "deploy-link.ts",
+          arguments: [join(project, "home", path), join(fixture.home, path)],
+        }),
+      );
+    }
+  };
+  deployHerdrManifests();
   const cache = cacheFixture(fixture.home);
   const files = deployedArtifacts(fixture.home).filter(
     (path) => !existingFiles.includes(path),
@@ -177,6 +189,7 @@ test("cleans and reinstalls optional Cursor, Herdr and PostgreSQL links separate
   expect(identities(deployedFiles(cache.directory))).toEqual(cache.before);
   expectSuccess(runDeploymentMoon(fixture, tasks, environment));
   expectSuccess(postgresql());
+  deployHerdrManifests();
   expect(deploymentSnapshot(files, existingFiles)).toEqual(before);
 });
 

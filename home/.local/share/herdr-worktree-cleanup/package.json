@@ -1,0 +1,7 @@
+{
+  "name": "dotfiles-herdr-worktree-cleanup",
+  "private": true,
+  "dependencies": {
+    "@sebastienelet/herdr-worktree-cleanup": "1.0.1"
+  }
+}

@@ -58,6 +58,14 @@ const links = [
   ["home/.config/nvim", ".config/nvim"],
   ["home/.config/wezterm/wezterm.lua", ".config/wezterm/wezterm.lua"],
   ["home/.config/herdr/config.toml", ".config/herdr/config.toml"],
+  [
+    "home/.local/share/herdr-worktree-cleanup/package.json",
+    ".local/share/herdr-worktree-cleanup/package.json",
+  ],
+  [
+    "home/.local/share/herdr-worktree-cleanup/bun.lock",
+    ".local/share/herdr-worktree-cleanup/bun.lock",
+  ],
   ["home/.config/git/config.delta", ".config/git/config.delta"],
   ["home/.config/git/ignore", ".config/git/ignore"],
   ["home/.config/starship.toml", ".config/starship.toml"],
