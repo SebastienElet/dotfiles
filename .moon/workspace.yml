@@ -6,7 +6,6 @@
       agent-handoff: tooling/agent-handoff,
       arnes: tooling/arnes,
       herdr-issue: tooling/herdr-issue-worktree,
-      bitbucket-linear-sync: tooling/bitbucket-linear,
       home: home,
       tooling: tooling,
     },

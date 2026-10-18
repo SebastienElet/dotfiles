@@ -1,11 +1,11 @@
 # Rust checks
 
-`agent-handoff`, `arnes`, `bitbucket-linear-sync`, and `herdr-issue-state` remain independent packages under
+`agent-handoff`, `arnes`, and `herdr-issue-state` remain independent packages under
 `tooling/`, with their existing lockfiles and deployment directories.
 
 ## Policy
 
-All five manifests use the following native policy, without disabled group
+All three manifests use the following native policy, without disabled group
 members or local `allow`/`expect` suppressions:
 
 ```toml
@@ -107,7 +107,7 @@ worktree whose runtimes and package dependencies are already installed, use
 installation dependencies after preparing rustup. Root Rust version and Clippy/rustfmt
 configuration changes are inputs to all Rust verification tasks and their affected CI selection.
 
-Agent Memory, Agent Handoff, and Bitbucket Linear CI target macOS and Ubuntu; Arnes CI targets
+Agent Memory and Agent Handoff CI target macOS and Ubuntu; Arnes CI targets
 Ubuntu. Herdr issue bindings CI targets macOS and Ubuntu. Local evidence applies only to the platform exercised. Remote CI must
 pass before merge.
 
