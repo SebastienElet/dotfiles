@@ -2,6 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2023-12
+- **Révision** : 2026-10-18, lot [#556](https://github.com/SebastienElet/dotfiles/issues/556)
 - **Commits** : `cc9e0db`, `7070bc9`
 
 ## Contexte
@@ -18,19 +19,22 @@ Ce dépôt utilise `main`. L'abbreviation `grbm` passe par
 `master` ou `trunk` le cas échéant. Le mode local reste une heuristique destinée
 aux usages interactifs.
 
-Le mode Bitbucket Cloud établit l'identité du dépôt depuis les URL Git de fetch,
-interroge le `HEAD` publié par les remotes et la réponse du fournisseur, puis
-exige leur accord. Les références distantes locales ne font pas autorité dans
-ce mode. Une preuve absente, invalide, ambiguë, indisponible ou discordante est
-une erreur plutôt qu'un repli sur un nom plausible.
+La capacité cible est le paquet Bun autonome `@sebastienelet/git-main-branch`.
+Le mode fournisseur est retiré, sans remplacement ni compatibilité 1.x.
+L'heuristique locale ne prouve pas la branche distante faisant autorité.
+Le mode `--strict` conserve les erreurs de sondage Git, mais le repli `main`
+reste possible lorsqu'aucune candidate locale n'existe.
+
+Le chemin local et ses consommateurs Fish/upgrade sont conservés jusqu'à
+qualification du paquet publié sur macOS ARM64 et Linux x64 glibc, selon le
+[plan #548](https://github.com/SebastienElet/dotfiles/issues/548#issuecomment-6249854102).
 
 ## Conséquences
 
 - Les mêmes raccourcis fonctionnent sur les dépôts anciens et récents.
 - Une indirection de plus dans chaque fonction concernée.
 - La logique de détection est centralisée en un point unique.
-- La résolution Bitbucket Cloud dépend explicitement de `git`, de `bkt`, du
-  réseau et d'un unique contexte Bitbucket Cloud configuré.
+- Le résolveur local dépend de Bun et de Git, sans requête réseau ni écriture Git.
 
 ## Alternatives écartées
 

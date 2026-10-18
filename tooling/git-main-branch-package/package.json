@@ -1,0 +1,37 @@
+{
+  "name": "@sebastienelet/git-main-branch",
+  "version": "1.0.0",
+  "description": "Resolve a Git branch using the local main, master, trunk heuristic",
+  "license": "BSD-2-Clause",
+  "type": "module",
+  "packageManager": "bun@1.4.3",
+  "engines": {
+    "bun": "1.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienElet/git-main-branch.git"
+  },
+  "bin": {
+    "git-main-branch": "cli.ts"
+  },
+  "files": [
+    "cli.ts",
+    "tests/",
+    "tsconfig.json",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun --config=/dev/null --no-env-file test --timeout 15000",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2",
+    "zod": "4.6.6"
+  }
+}

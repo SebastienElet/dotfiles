@@ -136,8 +136,7 @@ tasks:
       - upgrade*.ts
       - node-version-*.ts
       - git-main-branch
-      - git-main-branch-cli.ts
-      - git-main-branch-core.ts
+      - git-main-branch-package/**/*
       - /package.json
       - /bun.lock
       - /.prototools
@@ -157,7 +156,8 @@ tasks:
       - upgrade
       - upgrade*.ts
       - node-version-*.ts
-      - git-main-branch*
+      - git-main-branch
+      - git-main-branch-package/**/*
       - /home/.config/nvim/**/*
       - /.github/workflows/test.yml
   installer-test:

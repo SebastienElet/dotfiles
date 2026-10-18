@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
 
-import { main } from "./git-main-branch-cli.ts";
+import { main } from "./git-main-branch-package/cli.ts";
 
 main(process.argv.slice(2));

@@ -60,6 +60,13 @@ les capacités des agents, y compris l'intégration des outils embarqués dans l
 skills ; les projets de `tooling/` portent les outils et oracles autonomes ou
 partagés.
 
+Pour le lot [#556](https://github.com/SebastienElet/dotfiles/issues/556),
+`tooling/git-main-branch-package/` prépare le paquet autonome propriétaire de
+`git-main-branch`, avec ses tests, sa licence et sa chaîne de publication.
+L'entrée locale reste utilisable pendant cette préparation ; elle sera retirée
+après qualification des consommateurs depuis l'artefact publié, selon #548.
+Cette préparation ne constitue ni une installation ni une bascule de propriétaire.
+
 ## Conséquences
 
 - L'emplacement d'un nouvel artefact se déduit de sa destination et de sa

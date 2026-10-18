@@ -178,12 +178,16 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
       name === "install-moon" ||
       name === "git-main-branch" ||
       name === "node-version-contract.ts" ||
-      ((name.startsWith("upgrade-") || name.startsWith("git-main-branch-")) &&
-        name.endsWith(".ts")),
+      (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );
   for (const file of files) {
     await cp(join(import.meta.dir, file), join(repository, "tooling", file));
   }
+  await mkdir(join(repository, "tooling/git-main-branch-package"));
+  await cp(
+    join(import.meta.dir, "git-main-branch-package/cli.ts"),
+    join(repository, "tooling/git-main-branch-package/cli.ts"),
+  );
 }
 
 async function installFakeCommands(bin: string, home: string): Promise<void> {
