@@ -1,4 +1,0 @@
-interface:
-  display_name: "Proof Integrity Review"
-  short_description: "Review changes to verification mechanisms and their evidence"
-  default_prompt: "Audit the changed verification mechanisms with an independent reviewer and relevant observed evidence; use structured receipts only when explicitly requested."

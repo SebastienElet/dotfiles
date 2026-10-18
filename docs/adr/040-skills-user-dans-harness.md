@@ -23,12 +23,16 @@ Séparer les sources par portée :
 
 - les skills génériques proviennent du paquet npm `@sebastienelet/agent-skills`, acquis par Bun
   à version exacte et verrouillé dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
-- `harness/skills/` conserve les compagnons locaux `herdr-issue-worktree` et
-  `proof-integrity-review`, jusqu'à la bascule de leurs lots respectifs ;
+- `proof-integrity-review` et `handoff` proviennent respectivement des paquets npm
+  `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`,
+  acquis par Bun à version exacte et verrouillés dans `bun.lock` ;
+- `harness/skills/` conserve le compagnon local `herdr-issue-worktree` ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
 - les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers la
   `source` relative au checkout déclarée dans le manifeste Arnes ; en son absence, la source est
-  `harness/skills/<slug>` ;
+  `harness/skills/<slug>` ; pour les capacités externes gérées, les liens ciblent
+  `node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review` et
+  `node_modules/@sebastienelet/agent-handoff/skills/handoff` ;
 - `skill-manager` est consommé depuis le paquet et installé au niveau user ; aucune skill user
   ne doit aussi exister dans la collection projet ;
 - Arnes dérive les skills projet de `.agents/skills/` et les installations user

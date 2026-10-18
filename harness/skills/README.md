@@ -11,7 +11,6 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Dev
 
-| Skill                    | Description                                                                              |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| `herdr-issue-worktree`   | Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude. |
-| `proof-integrity-review` | Review changes to verification mechanisms.                                               |
+| Skill                  | Description                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| `herdr-issue-worktree` | Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude. |

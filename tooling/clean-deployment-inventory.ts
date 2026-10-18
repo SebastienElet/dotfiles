@@ -60,6 +60,14 @@ const links = [
   ["home/.config/nvim", ".config/nvim"],
   ["home/.config/wezterm/wezterm.lua", ".config/wezterm/wezterm.lua"],
   ["home/.config/herdr/config.toml", ".config/herdr/config.toml"],
+  [
+    "home/.local/share/herdr-worktree-cleanup/package.json",
+    ".local/share/herdr-worktree-cleanup/package.json",
+  ],
+  [
+    "home/.local/share/herdr-worktree-cleanup/bun.lock",
+    ".local/share/herdr-worktree-cleanup/bun.lock",
+  ],
   ["home/.config/git/config.delta", ".config/git/config.delta"],
   ["home/.config/git/ignore", ".config/git/ignore"],
   ["home/.config/starship.toml", ".config/starship.toml"],
@@ -86,6 +94,18 @@ const links = [
   ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
   ["node_modules/.bin/agent-handoff", ".local/bin/agent-handoff"],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".claude/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".agents/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".cursor/skills/proof-integrity-review",
+  ],
   [
     "node_modules/@sebastienelet/agent-handoff/skills/handoff",
     ".claude/skills/handoff",

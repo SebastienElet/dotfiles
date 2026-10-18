@@ -153,11 +153,6 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: proof-integrity-review
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
   - slug: pr-fix
     source: node_modules/@sebastienelet/agent-skills/skills/pr-fix
     installations:
@@ -294,6 +289,24 @@ external:
   skills:
     - { agent: claude, scope: user, origin: managed, slug: handoff }
     - { agent: codex, scope: user, origin: managed, slug: handoff }
+    - {
+        agent: claude,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
+    - {
+        agent: cursor,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        origin: managed,
+        slug: proof-integrity-review,
+      }
     - {
         agent: claude,
         scope: user,

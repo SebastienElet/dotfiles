@@ -8,7 +8,7 @@ Cette matrice consolide les contributions de
 [#500](https://github.com/SebastienElet/dotfiles/pull/500) et
 [#505](https://github.com/SebastienElet/dotfiles/pull/505) pour
 [#407](https://github.com/SebastienElet/dotfiles/issues/407).
-Elle couvre les 13 workflows actuels, dont Herdr et Secret scanning ajoutés au
+Elle couvre les 12 workflows actuels, dont Herdr et Secret scanning ajoutés au
 périmètre historique des 14 familles. Les entrées Moon restent canoniques ; les
 tables en résument les frontières sans définir un second sélecteur. Le
 [relevé #272](moon-gates-272.md) est historique.
@@ -35,14 +35,14 @@ l'interrogation affectée. Aucun filtre de chemins parallèle ne décide à la p
 Sélection et exécution utilisent ces mêmes révisions. Le push couvre ainsi tous
 ses commits, pas uniquement le dernier. Une révision introuvable reste un échec.
 
-Les 12 agrégats `… required` s'exécutent avec `always()` sur Ubuntu. Une sélection
+Les 11 agrégats `… required` s'exécutent avec `always()` sur Ubuntu. Une sélection
 doit réussir et déclarer explicitement chaque suite affectée réussie ou chaque
 suite non affectée skipped ; une sortie absente, un échec ou une annulation ne
 donne pas un agrégat vert. Herdr et le smoke exigent leur job amont réussi.
 `Secret scan` reste un contrôle continu distinct. Le blocage effectif de fusion
 nécessite les Settings manuels décrits dans #491 ; ces statuts seuls ne l'activent pas.
 
-## Matrice hors des deux familles Rust
+## Matrice hors de la famille Rust Arnes
 
 Chaque suite sélectionnée inclut son workflow et ses dépendances Moon dans ses
 entrées de contrôle. Le setup actuel installe Moon 2.5.3 par `npm ci` avec son
@@ -79,10 +79,9 @@ Les entrées communes sont les manifests/lockfiles Cargo, `build*.rs`,
 toolchains et héritage Rust. `.moon/tasks/workstation.yml` est une entrée explicite
 car il déclare le prérequis `repository:rust`. Chaque famille déclare son propre workflow.
 
-| Workflow              | Projet / tâches sélectionnées                 | Entrées transversales supplémentaires                                                                                                                                                                                                              | Runners spécialisés / statuts            |
-| --------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Arnes tests           | `arnes:{fmt,clippy,check,test,doc}`           | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt | Ubuntu / `arnes`                         |
-| Proof Integrity tests | `proof-integrity:{fmt,clippy,check,test,doc}` | Skill `proof-integrity-review/SKILL.md`, ses `references/**/*` et `scripts/policy-sources.json`                                                                                                                                                    | macOS et Ubuntu / `proof-integrity (os)` |
+| Workflow    | Projet / tâches sélectionnées       | Entrées transversales supplémentaires                                                                                                                                                                                                                                       | Runners spécialisés / statuts |
+| ----------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Arnes tests | `arnes:{fmt,clippy,check,test,doc}` | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `agent-skill-source.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt | Ubuntu / `arnes`              |
 
 Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
 `moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque
@@ -95,8 +94,8 @@ la fraîcheur et exécute les contrôles/tests après restauration ; un cache ab
 reprend le graphe normal. Aucun résultat de tâche Moon ni installation utilisateur
 n'est stocké. Les autres suites et fixtures gardent leur politique existante.
 
-Les statuts spécialisés peuvent être skipped. Leurs agrégats continus sont
-`Arnes required` et `Proof Integrity required` (#491).
+Le statut spécialisé Arnes peut être skipped. Son agrégat continu est
+`Arnes required` (#491).
 
 ## Observations
 
