@@ -1,24 +1,21 @@
 use super::*;
 #[test]
-fn installs_and_migrates_the_owned_claude_stop_hook_in_the_same_write()
+fn normalizes_the_linked_claude_stop_hook_in_the_same_write()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let harness = Harness::new()?;
     let repository = harness.home.join("repository");
-    let current = repository.join("tooling/agent-handoff");
-    let legacy = repository.join("scripts/agent_handoff");
+    let current = repository.join("node_modules/.bin/agent-handoff");
     fs::create_dir_all(current.parent().ok_or("fixture path has no parent")?)?;
-    fs::create_dir_all(legacy.parent().ok_or("fixture path has no parent")?)?;
     fs::write(&current, b"binary")?;
     fs::set_permissions(&current, fs::Permissions::from_mode(0o700))?;
-    harness . write_config ("claude-code" , & serde_json :: json ! ({ "keep" : true , "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : legacy , "timeout" : 7 , "async" : true , "asyncRewake" : true , "once" : true , "if" : "never" } , { "type" : "command" , "command" : "third-party" }] }] } }) ,) ? ;
-    assert_success(&harness.install_claude_with_handoff(&current, &legacy)?);
+    harness . write_config ("claude-code" , & serde_json :: json ! ({ "keep" : true , "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : current , "timeout" : 7 , "async" : true , "asyncRewake" : true , "once" : true , "if" : "never" } , { "type" : "command" , "command" : "third-party" }] }] } }) ,) ? ;
+    assert_success(&harness.install_claude_with_handoff(&repository, &current)?);
     let config = read_json(harness.config("claude-code")?)?;
     let serialized = serde_json::to_string(&config)?;
     assert_eq!(
         *(config).get("keep").ok_or("missing fixture index keep")?,
         true
     );
-    assert!(!serialized.contains(legacy.to_str().ok_or("required test value is missing")?));
     assert!(!serialized.contains(current.to_str().ok_or("required test value is missing")?));
     let deployed = harness.home.join(".local/bin/agent-handoff");
     assert_eq!(

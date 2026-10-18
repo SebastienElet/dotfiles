@@ -66,7 +66,7 @@ pub fn setup(args: SetupHooksArgs) -> Result<(), HooksError> {
     let measurement_path = measurement_path(roots.home());
     let handoff_path = handoff_path(roots.home());
     let measurement = measurement_command(&measurement_path, args.agent)?;
-    let handoff_aliases = handoff_aliases(&handoff_path, roots.repository(), args.agent)?;
+    let handoff_aliases = handoff_aliases(&handoff_path)?;
     let output_discipline = output_discipline_command(&measurement_path)?;
     let file = io::ConfigFile::open(roots.home(), policy.directory, policy.filename)?;
     let mut config = file
@@ -218,18 +218,8 @@ fn handoff_path(home: &Path) -> PathBuf {
     home.join(".local/bin/agent-handoff")
 }
 
-fn handoff_aliases(
-    command: &Path,
-    repository: &Path,
-    agent: Agent,
-) -> Result<Vec<String>, HooksError> {
+fn handoff_aliases(command: &Path) -> Result<Vec<String>, HooksError> {
     let mut aliases = vec![path_string(command)?];
-    aliases
-        .extend((agent == Agent::Claude).then_some("$HOME/.claude/hooks/agent_handoff".to_owned()));
-    aliases.extend([
-        path_string(&repository.join("tooling/agent-handoff"))?,
-        path_string(&repository.join("scripts/agent_handoff"))?,
-    ]);
     let metadata = match fs::symlink_metadata(command) {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(aliases),
@@ -323,24 +313,5 @@ impl From<rustix::io::Errno> for HooksError {
 impl From<serde_json::Error> for HooksError {
     fn from(error: serde_json::Error) -> Self {
         Self(error.to_string())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::handoff_aliases;
-    use std::path::Path;
-
-    #[test]
-    fn handoff_aliases_include_repository_runtimes() -> Result<(), Box<dyn std::error::Error>> {
-        let aliases = handoff_aliases(
-            Path::new("/tmp/home/.local/bin/agent-handoff"),
-            Path::new("/tmp/repository"),
-            crate::manifest::Agent::Claude,
-        )?;
-
-        assert!(aliases.contains(&"/tmp/repository/tooling/agent-handoff".to_owned()));
-        assert!(aliases.contains(&"/tmp/repository/scripts/agent_handoff".to_owned()));
-        Ok(())
     }
 }

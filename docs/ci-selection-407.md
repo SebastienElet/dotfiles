@@ -79,18 +79,16 @@ Les entrées communes sont les manifests/lockfiles Cargo, `build*.rs`,
 toolchains et héritage Rust. `.moon/tasks/workstation.yml` est une entrée explicite
 car il déclare le prérequis `repository:rust`. Chaque famille déclare son propre workflow.
 
-| Workflow               | Projet / tâches sélectionnées                               | Entrées transversales supplémentaires                                                                                                                                                                                                                                                    | Runners spécialisés / statuts             |
-| ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Arnes tests            | `arnes:{fmt,clippy,check,test,doc}`                         | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt                                       | Ubuntu / `arnes`                          |
-| Bitbucket Linear tests | `bitbucket-linear-sync:{fmt,clippy,check,test,doc}`         | `home/.config/fish/conf.d/aliases.fish`                                                                                                                                                                                                                                                  | macOS et Ubuntu / `bitbucket-linear (os)` |
-| Agent Handoff tests    | `agent-handoff:{fmt,clippy,check,test,doc,deployment-test}` | Déploiement : helpers `deployment-{agent-handoff.test,moon-runner,moon-test-support,test-support,test-command}.ts`, `deploy-link.ts`, `clean-deployment*.ts`, `clean-deployment-worker-inspect.js`, `home/.arnes.yaml`, `package.json`, `bun.lock`, `tsconfig.json`, héritage JavaScript | macOS et Ubuntu / `agent-handoff (os)`    |
-| Proof Integrity tests  | `proof-integrity:{fmt,clippy,check,test,doc}`               | Skill `proof-integrity-review/SKILL.md`, ses `references/**/*` et `scripts/policy-sources.json`                                                                                                                                                                                          | macOS et Ubuntu / `proof-integrity (os)`  |
+| Workflow               | Projet / tâches sélectionnées                       | Entrées transversales supplémentaires                                                                                                                                                                                                              | Runners spécialisés / statuts             |
+| ---------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Arnes tests            | `arnes:{fmt,clippy,check,test,doc}`                 | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt | Ubuntu / `arnes`                          |
+| Bitbucket Linear tests | `bitbucket-linear-sync:{fmt,clippy,check,test,doc}` | `home/.config/fish/conf.d/aliases.fish`                                                                                                                                                                                                            | macOS et Ubuntu / `bitbucket-linear (os)` |
+| Proof Integrity tests  | `proof-integrity:{fmt,clippy,check,test,doc}`       | Skill `proof-integrity-review/SKILL.md`, ses `references/**/*` et `scripts/policy-sources.json`                                                                                                                                                    | macOS et Ubuntu / `proof-integrity (os)`  |
 
 Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
 `moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque
 plateforme lorsqu'une autre échoue. Les cinq contrôles Rust restent disponibles, avec
-les flags et mutex existants ; Handoff et Memory conservent leurs tests de
-déploiement. `select` ne prépare ni Cargo ni Bun par exécution de tâche.
+les flags et mutex existants. `select` ne prépare ni Cargo ni Bun par exécution de tâche.
 Depuis #505, seule Arnes restaure `tooling/arnes/target` : clé exacte OS/architecture,
 toolchain Rust, manifests/lockfile/configuration Cargo, YAML Moon, `.prototools`
 et workflow, sans préfixe de repli ; `CARGO_INCREMENTAL=0`. Cargo vérifie encore
@@ -99,7 +97,7 @@ reprend le graphe normal. Aucun résultat de tâche Moon ni installation utilisa
 n'est stocké. Les autres suites et fixtures gardent leur politique existante.
 
 Les statuts spécialisés peuvent être skipped. Leurs agrégats continus sont
-`Arnes required`, `Bitbucket Linear required`, `Agent Handoff required`,
+`Arnes required`, `Bitbucket Linear required`,
 `Agent Memory required` et `Proof Integrity required` (#491).
 
 ## Observations

@@ -38,7 +38,7 @@ const portableMinimalTasks = [
   "harness:codex-agents",
   "harness:codex-skills",
   "arnes:binary",
-  "agent-handoff:binary",
+  "harness:agent-handoff",
 ];
 
 function deployedFiles(directory: string): readonly string[] {

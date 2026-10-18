@@ -5,6 +5,7 @@
     "": {
       "name": "dotfiles",
       "dependencies": {
+        "@sebastienelet/agent-handoff": "0.0.1",
         "zod": "4.6.6",
       },
       "devDependencies": {
@@ -250,6 +251,12 @@
     "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.87.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-daptNsEOuru4/nJTxV4DBHNJ5GepzmaBVQf+jjgKQGi9NRlZKik+RFq4hUL7ewsF1pwjKM+SkYaMbF82UwFGnw=="],
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.87.0", "", { "os": "win32", "cpu": "x64" }, "sha512-k+m/EShyXE29J/r1fjk0HlAzhN5JhIvj044oSJkXTEkCLrWZQgXb/3r4q5LTw/eaKW/4GuMXG2xmiJs3s5rPNw=="],
+
+    "@sebastienelet/agent-handoff": ["@sebastienelet/agent-handoff@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "optionalDependencies": { "@sebastienelet/agent-handoff-darwin-arm64": "0.0.1", "@sebastienelet/agent-handoff-linux-x64-gnu": "0.0.1" }, "bin": { "agent-handoff": "bin/agent-handoff.ts" } }, "sha512-9l+VsUtkFVHj6/0q3oyaQ/JsS8gJx86thxqqcK0KjZbZP+Zald0YjhKVRyOfovdzYkbjaEs7PEUqO3d6IQt2jQ=="],
+
+    "@sebastienelet/agent-handoff-darwin-arm64": ["@sebastienelet/agent-handoff-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-2baDGhHRCBAnMPqtEufsOeJilzBKnMikmyqSrc1o8s71g2V9/ZnuJ7ElUQ0RXEOrXHkVlKtrlihEaNegfG5aAA=="],
+
+    "@sebastienelet/agent-handoff-linux-x64-gnu": ["@sebastienelet/agent-handoff-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-2KX6fes0VVYmhJpuZjEMSI4dKHjrsmR+HoZ2qhpuvOVcbq7OT9HKfHEUWQqBbKgeOLSb7J01oKVl3LYhKUJQzg=="],
 
     "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
 

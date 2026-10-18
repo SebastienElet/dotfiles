@@ -67,7 +67,7 @@ pub fn linked_handoff_fixture() -> Result<Fixture, Box<dyn std::error::Error + S
     let fixture = Fixture::new()?;
     fixture.write_home(".arnes.yaml", MANIFEST)?;
     executable(&fixture, "arnes")?;
-    let target = fixture.repository().join("tooling/agent-handoff");
+    let target = fixture.repository().join("node_modules/.bin/agent-handoff");
     fs::create_dir_all(target.parent().ok_or("fixture path has no parent")?)?;
     fs::write(&target, b"binary")?;
     fs::set_permissions(&target, fs::Permissions::from_mode(0o700))?;
@@ -83,11 +83,12 @@ pub fn linked_handoff_fixture() -> Result<Fixture, Box<dyn std::error::Error + S
 pub fn superseded_handoff_command(
     fixture: &Fixture,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    Ok(fs::canonicalize(fixture.repository())?
-        .join("scripts/agent_handoff")
-        .to_str()
-        .ok_or("required test value is missing")?
-        .to_owned())
+    Ok(
+        fs::read_link(fixture.home().join(".local/bin/agent-handoff"))?
+            .to_str()
+            .ok_or("required test value is missing")?
+            .to_owned(),
+    )
 }
 /// # Errors
 /// Returns an error if the fixture executable cannot be written or its permissions cannot be set.
