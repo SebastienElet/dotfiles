@@ -1,11 +1,9 @@
-import {
-  fetchAgentReachSource,
-  runAgentReachCommand,
-} from "./agent-reach-source.ts";
 import { readFile, realpath } from "node:fs/promises";
 import { copyAgentReachFile } from "./agent-reach-config.ts";
 import { join } from "node:path";
-import { prepareAgentReachPlugin } from "./agent-reach-package.ts";
+import { projectAgentReachCursor } from "./agent-reach-cursor.ts";
+import repositoryMetadata from "../package.json";
+import { runAgentReachCommand } from "./agent-reach-source.ts";
 import { z } from "zod";
 
 const sourceSchema = z
@@ -27,12 +25,23 @@ const invocationSchema = z.tuple([
     "configuration",
     "claude",
     "codex",
+    "cursor",
   ]),
   z.string().min(1),
   z.string().min(1),
 ]);
 const argumentOffset = 2;
 const indentation = 2;
+const adapterPackage = "node_modules/@sebastienelet/agent-reach-adapter";
+
+function marketplacePath(home: string): string {
+  return join(
+    home,
+    ".local/share/agent-reach/adapter",
+    repositoryMetadata.dependencies["@sebastienelet/agent-reach-adapter"],
+    "marketplace",
+  );
+}
 
 function installationEnvironment(
   home: string,
@@ -44,21 +53,18 @@ function installationEnvironment(
   };
 }
 
-async function packagePlugin(
-  configuration: Source,
-  home: string,
-): Promise<void> {
-  const source = await fetchAgentReachSource({
+async function packagePlugin(repository: string, home: string): Promise<void> {
+  const marketplace = await runAgentReachCommand([
+    process.execPath,
+    "--config=/dev/null",
+    "--no-env-file",
+    join(repository, adapterPackage, "src/agent-reach.ts"),
+    "prepare",
     home,
-    repository: "https://github.com/Panniantong/Agent-Reach.git",
-    revision: configuration.revision,
-  });
-  const marketplace = await prepareAgentReachPlugin({
-    source,
-    home,
-    version: configuration.version,
-    revision: configuration.revision,
-  });
+  ]);
+  if (marketplace !== marketplacePath(home)) {
+    throw new Error("Unexpected Agent-Reach marketplace path");
+  }
   await copyAgentReachFile({
     home,
     source: join(
@@ -91,9 +97,15 @@ async function installPython(
 }
 
 async function installPlugin(
-  host: "claude" | "codex",
+  host: "claude" | "codex" | "cursor",
   home: string,
 ): Promise<void> {
+  if (host === "cursor") {
+    process.stdout.write(
+      `${await projectAgentReachCursor(home, marketplacePath(home))}\n`,
+    );
+    return;
+  }
   const executable =
     host === "claude"
       ? join(home, ".local/bin/claude")
@@ -102,7 +114,7 @@ async function installPlugin(
     ...installationEnvironment(home),
     CLAUDE_CONFIG_DIR: join(home, ".claude"),
   };
-  const marketplace = join(home, ".local/share/agent-reach/marketplace");
+  const marketplace = marketplacePath(home);
   process.stdout.write(
     await runAgentReachCommand(
       [executable, "plugin", "marketplace", "add", marketplace],
@@ -115,7 +127,7 @@ async function installPlugin(
           executable,
           "plugin",
           "install",
-          "agent-reach@dotfiles-agent-reach",
+          "agent-reach@agent-reach-adapter",
           "--scope",
           "user",
         ]
@@ -123,7 +135,7 @@ async function installPlugin(
           executable,
           "plugin",
           "add",
-          "agent-reach@dotfiles-agent-reach",
+          "agent-reach@agent-reach-adapter",
           "--json",
         ];
   process.stdout.write(await runAgentReachCommand(installation, environment));
@@ -165,7 +177,7 @@ async function main(): Promise<void> {
   const configuration = sourceSchema.parse(
     JSON.parse(
       await readFile(
-        join(repository, "harness/plugins/agent-reach/source.json"),
+        join(repository, adapterPackage, "resources/source.json"),
         "utf8",
       ),
     ),
@@ -177,7 +189,7 @@ async function main(): Promise<void> {
     return;
   }
   if (operation === "package") {
-    await packagePlugin(configuration, home);
+    await packagePlugin(repository, home);
     return;
   }
   if (process.platform !== "darwin") {
@@ -191,7 +203,11 @@ async function main(): Promise<void> {
     });
     return;
   }
-  if (operation === "claude" || operation === "codex") {
+  if (
+    operation === "claude" ||
+    operation === "codex" ||
+    operation === "cursor"
+  ) {
     await installPlugin(operation, home);
     return;
   }

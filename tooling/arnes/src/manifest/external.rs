@@ -31,6 +31,17 @@ impl ExternalPolicy {
             .map(|plugin| plugin.id.as_str())
     }
 
+    pub(super) fn required_plugins(
+        &self,
+        agent: Agent,
+        scope: Scope,
+    ) -> impl Iterator<Item = &str> {
+        self.plugins
+            .iter()
+            .filter(move |plugin| plugin.agent == agent && plugin.scope == scope && plugin.required)
+            .map(|plugin| plugin.id.as_str())
+    }
+
     pub(super) fn skills(
         &self,
         agent: Agent,
@@ -62,6 +73,8 @@ pub(super) struct ExternalPluginDeclaration {
     pub(super) agent: Agent,
     pub(super) scope: Scope,
     pub(super) id: String,
+    #[serde(default)]
+    pub(super) required: bool,
 }
 
 #[derive(Deserialize)]
