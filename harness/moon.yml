@@ -28,7 +28,7 @@ tasks:
   agent-reach:
     description: Install the complete Agent-Reach plugin and macOS backends
     command: noop
-    deps: [agent-reach-check]
+    deps: [agent-reach-install-check]
     toolchains: system
     options: { os: macos }
   agent-reach-runtime:
@@ -62,14 +62,7 @@ tasks:
   agent-reach-package:
     command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts package "$workspaceRoot" "$HOME"
     deps: [repository:dependencies]
-    inputs:
-      [
-        plugins/agent-reach/source.json,
-        plugins/agent-reach/SKILL.md,
-        /tooling/agent-reach-package.ts,
-        /tooling/agent-reach-source.ts,
-        /tooling/agent-reach.ts,
-      ]
+    inputs: [/package.json, /bun.lock, /tooling/agent-reach.ts]
     toolchains: bun
     options: { mutex: harness-mutation }
   agent-reach-claude:
@@ -83,10 +76,33 @@ tasks:
     toolchains: bun
     options: { os: macos, mutex: harness-mutation }
   agent-reach-check:
+    description: Audit required Agent-Reach plugins without installing them
     script: |-
       set -e
+      cmp "$workspaceRoot/home/.arnes.yaml" "$HOME/.arnes.yaml"
       arnes doctor skills --agent claude --scope user
       arnes doctor skills --agent codex --scope user
+      arnes doctor skills --agent cursor --scope user
+    toolchains: system
+    options: { cache: false, os: macos }
+  agent-reach-cursor:
+    command: bun --config=/dev/null --no-env-file tooling/agent-reach.ts cursor "$workspaceRoot" "$HOME"
+    deps: [agent-reach-package]
+    inputs:
+      [
+        /tooling/agent-reach-cursor.ts,
+        /tooling/agent-reach-config.ts,
+        /tooling/agent-reach-files.ts,
+      ]
+    toolchains: bun
+    options: { cache: false, os: macos, mutex: harness-mutation }
+  agent-reach-install-check:
+    script: |-
+      set -e
+      cmp "$workspaceRoot/home/.arnes.yaml" "$HOME/.arnes.yaml"
+      arnes doctor skills --agent claude --scope user
+      arnes doctor skills --agent codex --scope user
+      arnes doctor skills --agent cursor --scope user
       agent-reach --version
       mcporter --config "$HOME/.config/agent-reach/mcporter.json" config list --json
     deps:
@@ -95,6 +111,7 @@ tasks:
         agent-reach-backends,
         agent-reach-claude,
         agent-reach-codex,
+        agent-reach-cursor,
         arnes:install,
         home:arnes-config,
       ]

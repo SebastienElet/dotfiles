@@ -122,6 +122,7 @@ async function publishMarketplace(
 
 export {
   ensureDirectories,
+  installedFiles,
   metadata,
   preserveExisting,
   publishMarketplace,

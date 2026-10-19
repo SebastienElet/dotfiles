@@ -1,8 +1,14 @@
 # Agent-Reach via Moon
 
-L'installation est optionnelle et cible macOS. Le plugin conserve les références de tous les
-canaux d'Agent-Reach. Moon installe les outils ; les gestionnaires natifs de Claude Code et Codex
-installent le plugin ; Arnes audite sa déclaration externe.
+L'installation est optionnelle et cible macOS ARM64. Le plugin conserve les références de tous les
+canaux d'Agent-Reach. Moon utilise `@sebastienelet/agent-reach-adapter`, épinglé dans `package.json`
+et `bun.lock` ; les gestionnaires natifs de Claude Code et Codex installent le plugin. Harness copie
+ses ressources et son manifeste `.cursor-plugin/plugin.json` sous `~/.cursor/plugins/local/agent-reach`.
+Arnes exige ensuite sa présence et son activation durable pour les trois agents.
+
+Limite actuelle : Cursor ne publie aucune source locale supportée certifiant l'autorisation
+d'import et la priorité effective du plugin. Le contrôle obligatoire Cursor reste donc en erreur,
+même avec une projection valide ; le parcours complet ne peut pas encore conclure au succès.
 
 Depuis le checkout canonique, après intégration des changements :
 
@@ -15,15 +21,17 @@ et les tests locaux ne nécessitent pas d'installation globale.
 
 ## Sources et rejeu
 
-`harness/plugins/agent-reach/source.json` fixe le commit Agent-Reach, la version du plugin et les
-coordonnées directes des CLI Python et Node. `uv tool install` isole chaque outil Python sous
+Le fichier `resources/source.json` du paquet npm fixe le commit Agent-Reach et les coordonnées
+directes des CLI Python et Node. `uv tool install` isole chaque outil Python sous
 `~/.local/share/agent-reach/python-tools/` ; Volta
 installe les outils Node. Les dépendances transitives Python et npm ne sont pas verrouillées.
 L'image LinkedIn dans `home/.config/agent-reach/compose.yaml` est épinglée par digest multiarchitecture.
 
 Le cache Git et le plugin assemblé résident sous `~/.local/share/agent-reach/`. La marketplace
-locale `dotfiles-agent-reach` livre le même contenu aux deux agents. Le packaging conserve un
-résultat identique et refuse un fichier, lien ou contenu divergent. Un changement du pin ou du
+locale `agent-reach-adapter` livre le même contenu à Claude et Codex depuis
+`adapter/<version-du-paquet>/marketplace`. Cursor reçoit une copie locale des mêmes ressources.
+Le packaging et la projection Cursor conservent un
+résultat identique et refusent un fichier, lien ou contenu divergent. Un changement du pin ou du
 packaging exige une reconstruction explicite de la marketplace générée ; l'installation ne
 supprime pas automatiquement l'ancienne pour contourner ce refus. Les caches des agents restent
 gérés par leurs commandes natives.
@@ -73,9 +81,19 @@ docker compose --file ~/.config/agent-reach/compose.yaml stop linkedin
 
 ## Vérification
 
-`harness:agent-reach-check` suit les installations et lance les audits Arnes, la commande de
-version Agent-Reach et la lecture native de configuration MCPorter. Il ne se connecte à aucune
-plateforme et ne prétend pas valider une collecte. Les audits Arnes portent sur l'agent entier et peuvent
+`moon run harness:agent-reach-check` lance uniquement les audits Arnes de Claude, Codex et Cursor,
+sans dépendance d'installation ni cache. Il exige un binaire Arnes à jour et compare d'abord le
+manifeste utilisateur au fichier canonique `home/.arnes.yaml` : une politique absente ou ancienne
+fait échouer le contrôle. Un plugin `required: true` manque ou est désactivé : le contrôle échoue ;
+une activation indéterminable échoue également. Pour Cursor, la projection locale ne prouve pas
+l'autorisation d'import ni l'absence de priorité d'un plugin marketplace homonyme. Arnes rapporte
+donc `exposure=unknown` et une erreur plutôt qu'une activation certifiée. Cette limite est
+distincte du chargement dans une session, qui n'est observé pour aucun agent.
+
+`harness:agent-reach-install-check`, appelé par le parcours d'installation complet, attend les
+installations puis lance ces audits, la commande de version Agent-Reach et la lecture native de
+configuration MCPorter. Il ne se connecte à aucune plateforme et ne prétend pas valider une
+collecte. Les audits Arnes portent sur l'agent entier et peuvent
 signaler un défaut externe sans rapport avec Agent-Reach.
 
 Le Doctor global n'est pas lancé automatiquement : le backend Boss du commit épinglé peut

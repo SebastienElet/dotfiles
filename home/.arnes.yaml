@@ -276,8 +276,19 @@ external:
       location: { root: home, path: .codex/skills/.system }
   plugins:
     - { agent: claude, scope: user, id: codex@openai-codex }
-    - { agent: claude, scope: user, id: agent-reach@dotfiles-agent-reach }
-    - { agent: codex, scope: user, id: agent-reach@dotfiles-agent-reach }
+    - {
+        agent: claude,
+        scope: user,
+        id: agent-reach@agent-reach-adapter,
+        required: true,
+      }
+    - {
+        agent: codex,
+        scope: user,
+        id: agent-reach@agent-reach-adapter,
+        required: true,
+      }
+    - { agent: cursor, scope: user, id: agent-reach, required: true }
     - { agent: codex, scope: user, id: chrome@openai-bundled }
     - { agent: codex, scope: user, id: code-review@openai-bundled }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
@@ -332,20 +343,27 @@ external:
         agent: claude,
         scope: user,
         origin: plugin,
-        plugin: agent-reach@dotfiles-agent-reach,
+        plugin: agent-reach@agent-reach-adapter,
         slug: agent-reach,
       }
     - {
         agent: codex,
         scope: user,
         origin: plugin,
-        plugin: agent-reach@dotfiles-agent-reach,
+        plugin: agent-reach@agent-reach-adapter,
         slug: agent-reach,
       }
     - agent: codex
       scope: user
       origin: system
       slug: openai-docs
+    - {
+        agent: cursor,
+        scope: user,
+        origin: plugin,
+        plugin: agent-reach,
+        slug: agent-reach,
+      }
     - {
         agent: codex,
         scope: user,
