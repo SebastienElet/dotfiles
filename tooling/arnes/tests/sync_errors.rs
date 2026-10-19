@@ -335,6 +335,7 @@ fn rules_never_create_destinations_inside_unselected_canonical_sources() -> Test
         "home/source",
         ".agents/skills/local",
         "user-skills/local",
+        "node_modules/@sebastienelet/agent-skills/skills/local",
     ] {
         let fixture = fixture()?;
         fixture.write_repository(std::path::Path::new(boundary).join("source.md"), "source")?;
@@ -346,7 +347,11 @@ fn rules_never_create_destinations_inside_unselected_canonical_sources() -> Test
             )?;
         }
         let home = fixture.repository().join(boundary);
-        fs::write(home.join(".arnes.yaml"), MANIFEST)?;
+        let manifest = MANIFEST.replace(
+            "  - slug: alpha\n",
+            &format!("  - slug: alpha\n    source: {boundary}\n"),
+        );
+        fs::write(home.join(".arnes.yaml"), manifest)?;
         let before = fixture.snapshot()?;
         let output = Command::new(env!("CARGO_BIN_EXE_arnes"))
             .args(["sync", "rules", "--agent", "claude", "--scope", "user"])

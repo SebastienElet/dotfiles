@@ -79,9 +79,9 @@ Les entrées communes sont les manifests/lockfiles Cargo, `build*.rs`,
 toolchains et héritage Rust. `.moon/tasks/workstation.yml` est une entrée explicite
 car il déclare le prérequis `repository:rust`. Chaque famille déclare son propre workflow.
 
-| Workflow    | Projet / tâches sélectionnées       | Entrées transversales supplémentaires                                                                                                                                                                                                              | Runners spécialisés / statuts |
-| ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Arnes tests | `arnes:{fmt,clippy,check,test,doc}` | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt | Ubuntu / `arnes`              |
+| Workflow    | Projet / tâches sélectionnées       | Entrées transversales supplémentaires                                                                                                                                                                                                                                       | Runners spécialisés / statuts |
+| ----------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Arnes tests | `arnes:{fmt,clippy,check,test,doc}` | `home/.arnes.yaml`, `harness/**/*`, `home/moon.yml`, héritages Codex/Claude/JavaScript, helpers `assemble-agent-instructions.ts`, `agent-skill-source.ts`, `install-agent-skills.ts`, `deploy-link.ts`, `package.json`, `bun.lock`, `tsconfig.json` pour les tests du dépôt | Ubuntu / `arnes`              |
 
 Chaque suite retenue garde son checkout, son setup toolchain et ses commandes
 `moon ci --downstream none`. Les matrices désactivent `fail-fast` pour conserver un résultat propre à chaque

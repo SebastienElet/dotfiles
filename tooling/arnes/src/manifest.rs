@@ -128,6 +128,15 @@ impl Manifest {
         self.0.external.roots()
     }
 
+    pub(crate) fn skill_source(&self, slug: &str, collection: &Path) -> PathBuf {
+        self.0
+            .skills
+            .iter()
+            .find(|skill| skill.slug == slug)
+            .and_then(|skill| skill.source.clone())
+            .unwrap_or_else(|| collection.join(slug))
+    }
+
     pub fn external_plugins(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
         self.0.external.plugins(agent, scope)
     }
@@ -175,6 +184,7 @@ pub struct SkillProjection<'a> {
 #[serde(deny_unknown_fields)]
 struct SkillDeclaration {
     slug: String,
+    source: Option<PathBuf>,
     installations: Vec<SkillInstallation>,
 }
 

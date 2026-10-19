@@ -228,7 +228,7 @@ pub(super) fn select(
                                 id: format!("{}:{slug}", projection.id),
                                 root: root.to_owned(),
                                 destination: projection.destination.join(slug),
-                                source: source_root.join(source).join(slug),
+                                source: source_root.join(manifest.skill_source(slug, source)),
                                 source_root: source_root.to_owned(),
                                 kind: SourceKind::Skill,
                             });

@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
   "version": "0.2",
-  "words": ["yarnrc", "rclone", "Tlmc", "prisma", "herdr"],
+  "words": ["yarnrc", "rclone", "Tlmc", "prisma", "herdr", "sebastienelet"],
   "language": "en",
   "globRoot": ".",
   "dictionaries": ["user-dictionary", "fr-fr"],

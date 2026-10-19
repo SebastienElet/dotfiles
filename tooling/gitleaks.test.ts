@@ -1,10 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 const source = join(import.meta.dir, "..");
 const roots: string[] = [];
+const bitbucketSecretLength = 64;
+const jsonIndentation = 2;
 const tokenWordRepetitions = 4;
 const token = `ghp_${"fictitious".repeat(tokenWordRepetitions)}`;
 const environment = {
@@ -141,6 +144,85 @@ test("a known fictitious AWS false positive is allowed but an adjacent token is 
     run(root, ["git", "commit", "-qm", "adjacent fictitious token"]).exitCode,
   ).not.toBe(0);
 });
+
+test("the CI scan accepts a deleted historical source digest", async () => {
+  const root = await repository();
+  const path =
+    "harness/skills/linear-workflow/evals/2026-09-16/environment.json";
+  await mkdir(join(root, "harness/skills/linear-workflow/evals/2026-09-16"), {
+    recursive: true,
+  });
+  const digest = createHash("sha256")
+    .update("public documentation")
+    .digest("hex");
+  const content = JSON.stringify(
+    {
+      source_sha256: {
+        "harness/skills/linear-workflow/references/bitbucket.md": digest,
+      },
+    },
+    null,
+    jsonIndentation,
+  );
+  await writeFile(join(root, path), content);
+  git(root, "add", path);
+  git(root, "-c", "core.hooksPath=/dev/null", "commit", "-qm", "source digest");
+  git(root, "rm", "-q", path);
+  git(root, "commit", "-qm", "delete historical manifest");
+  expect(moon(root, "secret-scan").exitCode).toBe(0);
+});
+
+test.each(["another path", "another key", "non-digest", "adjacent secret"])(
+  "the historical digest exception refuses %s",
+  async (scenario) => {
+    const root = await repository();
+    const directory = "harness/skills/linear-workflow/evals/2026-09-16";
+    const path = join(
+      directory,
+      scenario === "another path" ? "unexpected.json" : "environment.json",
+    );
+    await mkdir(join(root, directory), { recursive: true });
+    const digest = createHash("sha256")
+      .update("public documentation")
+      .digest("hex");
+    const secret = "fictitious"
+      .repeat(bitbucketSecretLength)
+      .slice(0, bitbucketSecretLength);
+    const key =
+      scenario === "another key"
+        ? "bitbucket_client_secret"
+        : "harness/skills/linear-workflow/references/bitbucket.md";
+    const content = JSON.stringify(
+      {
+        source_sha256: {
+          [key]: scenario === "non-digest" ? secret : digest,
+          ...(scenario === "adjacent secret"
+            ? { bitbucket_client_secret: secret }
+            : {}),
+        },
+      },
+      null,
+      jsonIndentation,
+    );
+    await writeFile(join(root, path), content);
+    git(root, "add", path);
+    git(
+      root,
+      "-c",
+      "core.hooksPath=/dev/null",
+      "commit",
+      "-qm",
+      "fictitious secret",
+    );
+    const result = moon(root, "secret-scan");
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout.toString() + result.stderr.toString()).not.toContain(
+      scenario === "another path" || scenario === "another key"
+        ? digest
+        : secret,
+    );
+  },
+);
 
 test.each([".ENV", "ID_RSA", "backup.P12"])(
   "native rules refuse a private text file named %s",

@@ -99,10 +99,10 @@ its dependencies install Homebrew, Volta, and the exact Node version from `packa
 
 [AssertLedger](https://github.com/hoklims/assertledger) qualifies regression tests against a
 declared fault and neutral control. The minimal profile installs its pinned CLI through
-`harness:assertledger`, using npm with the Volta-managed Node runtime. Install it independently
+`harness:assertledger`, using Bun and the version supplied by the skills package. Install it independently
 with `moon exec harness:assertledger` on macOS.
 
-The locally maintained [skill](harness/skills/assertledger/SKILL.md) is deployed to Claude Code
+The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.0.1) is deployed to Claude Code
 and Codex with the minimal profile, and to Cursor with the optional profile. Start with
 `assertledger --version` and `assertledger doctor /path/to/repository --json`.
 The Git `check` workflow accepts committed dependency-free JavaScript `node:test` regressions;

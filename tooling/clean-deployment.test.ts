@@ -141,12 +141,12 @@ test("uses manifest user installations to remove managed skills without deleting
   const context = fixture();
   writeFileSync(
     join(context.repository, "home/.arnes.yaml"),
-    "version: 1\nskills:\n  - slug: example\n    installations:\n      - { agent: codex, scope: user }\n      - { agent: cursor, scope: user }\n",
+    "version: 1\nskills:\n  - slug: example\n    source: node_modules/@sebastienelet/agent-skills/skills/example\n    installations:\n      - { agent: codex, scope: user }\n      - { agent: cursor, scope: user }\n",
   );
   const codex = managedLink(
     context,
     ".agents/skills/example",
-    "harness/skills/example",
+    "node_modules/@sebastienelet/agent-skills/skills/example",
   );
   const cursor = join(context.home, ".cursor/skills/example");
   mkdirSync(dirname(cursor), { recursive: true });

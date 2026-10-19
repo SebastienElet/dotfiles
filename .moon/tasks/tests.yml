@@ -34,9 +34,6 @@ fileGroups:
     - .github/dependabot.yml
     - install.sh
     - harness/USER.md
-    - harness/skills/obsidian-retrieval/SKILL.md
-    - harness/skills/obsidian-retrieval/references/obsidian-cli.md
-    - harness/skills/obsidian-retrieval/evals/trigger-queries.json
   fishBehaviorDependencies:
     - .gitignore
     - tooling/git-main-branch
