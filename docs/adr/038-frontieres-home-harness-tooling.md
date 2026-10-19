@@ -35,7 +35,7 @@ Adopter trois frontières :
 Les skills génériques sont consommées depuis leur paquet publié selon l'ADR-040 ;
 leurs sources, tests et ressources appartiennent au dépôt autonome. Les capacités
 `proof-integrity-review` et `handoff` sont fournies respectivement par les paquets npm
-`@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`,
+`@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.2`,
 acquis par Bun à version exacte ; leurs sources et builds ne sont plus maintenus dans dotfiles.
 Les outils propres à un skill encore maintenu ici résident dans son répertoire
 canonique, sous `harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
