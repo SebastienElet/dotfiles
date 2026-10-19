@@ -57,6 +57,37 @@ test("validates the native session snapshot rather than accepting malformed stat
   expect(result[0]?.status).toBe("rejected");
 });
 
+test.each([
+  { kind: "codex", options: ["--no-daemon"] },
+  { kind: "claude", options: [] },
+] as const)(
+  "passes standalone mode only to Codex: $kind",
+  async ({ kind, options }) => {
+    const calls: (readonly string[])[] = [];
+    const herdr = createNativeHerdr((arguments_) => {
+      calls.push(arguments_);
+      return Promise.resolve({ type: "agent_started" });
+    });
+    await herdr.start({
+      paneId: "fixture:p1",
+      name: "fixture",
+      kind,
+      prompt: "Read the fixture request",
+    });
+    expect(calls[0]?.slice(0, -1)).toEqual([
+      "agent",
+      "start",
+      "fixture",
+      "--kind",
+      kind,
+      "--pane",
+      "fixture:p1",
+      "--",
+      ...options,
+    ]);
+  },
+);
+
 test("accepts the native primary source when the selected checkout is a linked worktree of that repository", async () => {
   const fixture = issueFixture();
   fixtures.push(fixture);
