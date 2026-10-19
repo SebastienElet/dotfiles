@@ -24,7 +24,6 @@ tasks:
       - pnpm
       - home:install
       - harness:install
-      - harness:prime-agent
       - jq-setup
       - secret-prepare
     toolchains: system

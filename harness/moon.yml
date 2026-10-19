@@ -25,21 +25,6 @@ taskOptions:
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
-  prime-agent:
-    description: Install the stable Prime Agent CLI
-    script: |-
-      set -euo pipefail
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      installer=$(curl -fsSL --connect-timeout 10 --max-time 60 https://app.primeintellect.ai/prime-agent/install.sh)
-      printf '%s\n' "$installer" | PRIME_AGENT_RELEASE_CHANNEL=stable sh
-      "$HOME/.local/bin/prime-agent" --version
-      "$HOME/.local/bin/prime-agent" --help >/dev/null
-    checks:
-      - check: condition
-        script: test -x "$HOME/.local/bin/prime-agent" && "$HOME/.local/bin/prime-agent" --version >/dev/null
-    deps: [repository:uv-setup]
-    toolchains: system
-    options: { os: macos }
   agent-reach:
     description: Install the complete Agent-Reach plugin and macOS backends
     command: noop
