@@ -50,6 +50,7 @@ function createNativeHerdr(
           "--pane",
           paneId,
           "--",
+          ...(kind === "codex" ? ["--no-daemon"] : []),
           initialPrompt(bindings.directory, prompt),
         ]),
       );

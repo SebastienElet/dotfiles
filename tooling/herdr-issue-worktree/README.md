@@ -19,6 +19,12 @@ focus. Preparation reads the authenticated tracker and composes the installed
 and exact title, checkout policy and implementation handoff. Repository instructions and composed
 workflows retain branch, eligibility, pull-request and lifecycle decisions.
 
+Codex preparation starts with `--no-daemon`; the composed workflow requests the same option for
+the implementation agent. This keeps tool commands in the launching pane's process context instead
+of inheriting another pane from a shared app-server. An existing shared-daemon caller must be resumed
+by its owner with `codex --no-daemon resume <session-id>` from the intended Herdr terminal.
+This option requires a Codex CLI that exposes it in `codex --help` (native validation used 0.163.0).
+
 New agents receive a short private-file reference through native `agent start --` arguments. The
 complete request is a JSON string in a mode-0600 file inside a mode-0700 per-launch directory under
 the binding directory. Only the base64-encoded JSON path travels through the shell; the agent reads

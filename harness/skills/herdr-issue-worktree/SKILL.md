@@ -49,18 +49,37 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
 
 1. **Establish the native contract.** Load the installed `herdr` skill, using `herdr --skill` when
    it is not already available. Its `HERDR_ENV=1` gate applies to the calling agent's launch
-   context. A tool subprocess may have a sanitized environment; its missing variable alone does
-   not establish that the agent runs outside Herdr. If the subprocess has no Herdr context, obtain
-   both the exact caller agent PID and pane ID from trusted host launch context or an explicit user
-   identification. Inspect only that PID's environment with OS read-only facilities; on macOS use
+   context. Read the complete context with
+   `env | rg '^HERDR_(ENV|PANE_ID|SOCKET_PATH|SESSION)='`; macOS `printenv` with several names
+   prints only the first and cannot establish which other fields are absent.
+   Require `HERDR_ENV=1`, a pane ID and a socket path; `HERDR_SESSION` is optional.
+   Missing fields do not establish that Herdr is unavailable or that the agent runs outside it.
+   For a terminal agent, follow only the current tool shell's process ancestry with OS read-only
+   facilities to identify its calling Codex or Claude process. Use `ps` to read each process ID,
+   parent process ID and executable without its environment.
+   Use `herdr status --json`, `herdr pane current --current` and
+   `herdr pane process-info --pane <returned-caller-pane-id>` on the explicit inherited socket.
+   Require that exact calling process PID among the pane's foreground agent processes. This
+   discovers and verifies the caller without asking the user for identities already available locally.
+   A shared app-server daemon is not a foreground terminal caller: even complete inherited values
+   can point to another live agent or a closed pane. Neither a successful `pane current` response,
+   matching cwd nor compatible `status` proves the binding.
+   If the tool environment is incomplete, prefer trusted host launch context bound to this agent.
+   If that supplies an exact caller PID and pane ID, inspect only that PID's environment; on macOS use
    `ps eww -p <caller-agent-pid> | rg -o 'HERDR_(ENV|PANE_ID|SOCKET_PATH|SESSION)=[^[:space:]]+'`.
    Require `HERDR_ENV=1`, the supplied `HERDR_PANE_ID`, and a socket path. Never print the full
-   process environment. Carry these verified values into the Herdr CLI subprocess and run the
+   process environment. Carry only these independently verified values into the Herdr CLI subprocess and run the
    installed skill's `HERDR_ENV=1` check there. Then use `herdr status --json` and
    `herdr pane process-info --pane <caller-pane-id>` to confirm the selected socket is live and
    the supplied PID is a foreground agent process in that pane. If any identity or check is
-   unavailable, report the caller context as unverified and stop Herdr operations. Never infer the
-   caller from a parent daemon, matching cwd, agent list, or focused pane. Restoring independently
+   unavailable, report the caller context as unverified and stop Herdr control operations.
+   Without a verifiable caller binding, name the missing evidence instead of requesting an arbitrary
+   daemon PID. For an existing Codex session using shared context, preserve its work and direct its
+   owner to resume it from the intended Herdr terminal with `codex --no-daemon resume <session-id>`.
+   Do not launch a duplicate or resume it in a pane selected from focus, cwd or a daemon's environment.
+   Never infer the caller from a parent daemon, its shell snapshot, matching cwd, agent list, or
+   focused pane. On Herdr 0.9.5, `pane current` with and without `--current` uses the same inherited
+   pane ID; without that ID either form can fall back to focus. Restoring independently
    verified launch values in a sanitized subprocess is this skill's sole adaptation to the installed
    gate; follow its remaining safety and startup rules.
    Inspect `herdr --help`, client/server status, and the worktree, workspace, pane, and agent
@@ -109,8 +128,14 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
    processes first. On resume, reuse an existing agent only after verifying its kind, pane, cwd,
    and issue session identity. Do not restart it or resubmit a prompt while it is working.
    For a new launch only, require an available shell with its cwd resolving to the returned checkout
-   and use native
-   `herdr agent start <unique-name> --kind <codex-or-claude> --pane <returned-pane-id>`.
+   and use native `herdr agent start <unique-name> --kind codex --pane <returned-pane-id> -- --no-daemon`
+   for Codex. This keeps its tools in the launching pane's process context instead of reusing a
+   shared app-server's environment. For Claude, use
+   `herdr agent start <unique-name> --kind claude --pane <returned-pane-id>`.
+   Rediscover support with `codex --help`; an unsupported `--no-daemon` blocks this Codex launch
+   rather than silently returning to shared context. An existing shared-daemon session is not
+   repaired by editing its environment: preserve its work and have its owner resume it from the
+   intended Herdr terminal with `codex --no-daemon resume <session-id>`.
    A different occupant,
    uncertain ownership, or the wrong cwd blocks launch; never replace, close, rename, or send
    input to another agent. Follow the composed Herdr skill for readiness, trust dialogs, prompts,
@@ -131,10 +156,13 @@ agent-selected delegation. A request for a manual Claude handoff belongs to `cla
 
 ## Gotchas
 
-- **Trusting a tool subprocess environment** — its missing `HERDR_ENV` can falsely reject a managed
-  agent; verify the identified caller process, then restore its context for native commands.
+- **Trusting a partial tool environment** — `HERDR_ENV=1` does not supply a pane or endpoint;
+  resolve the complete caller binding before launch and name missing fields when it is unavailable.
+- **Reusing daemon launch values** — a shared app-server or shell snapshot can retain another
+  pane's environment; require a host binding for this thread instead of copying those values.
 - **Guessing the caller from focus or cwd** — several agents can share a checkout while focus belongs
-  to another pane; require a trusted caller PID and pane ID and confirm both against native state.
+  to another pane; require a trusted caller binding to its pane and endpoint. Verify the foreground
+  PID against native state when the caller is an identified terminal agent.
 - **Naming only the agent** — the sidebar still lacks the issue worktree; verify native workspace
   worktree metadata and its exact human label.
 - **Slugging the title into the label** — punctuation and casing are lost; preserve the tracker
