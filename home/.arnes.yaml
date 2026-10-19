@@ -48,6 +48,11 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
+  - slug: archify
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: wayfinder
     source: node_modules/@sebastienelet/agent-skills/skills/wayfinder
     installations:
