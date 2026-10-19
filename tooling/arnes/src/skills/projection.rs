@@ -2,12 +2,17 @@ use super::references;
 use crate::Roots;
 use crate::diagnostic::{Diagnostic, HumanDetail, State};
 use crate::files::paths::{ancestor_within, canonical_within, destination, label};
-use crate::manifest::{Scope, SkillProjection};
+use crate::manifest::{Manifest, Scope, SkillProjection};
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagnostic {
+pub fn leaf(
+    roots: &Roots,
+    manifest: &Manifest,
+    resource: &SkillProjection<'_>,
+    name: &str,
+) -> Diagnostic {
     let installed = resource.destination.join(name);
     let subject = format!(
         "managed {} {} skill {name} at {}",
@@ -19,7 +24,7 @@ pub fn leaf(roots: &Roots, resource: &SkillProjection<'_>, name: &str) -> Diagno
         Scope::User => roots.deployment_repository(),
         Scope::Project => roots.repository(),
     };
-    let source = source_root.join(resource.source).join(name);
+    let source = source_root.join(manifest.skill_source(name, resource.source));
     let destination = destination(roots, resource.scope, &installed);
     let human = ProjectionHuman::new(name, label(resource.scope, &installed));
     match expected_link(

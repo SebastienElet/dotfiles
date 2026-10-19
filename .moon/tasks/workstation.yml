@@ -138,10 +138,29 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install herdr
+  herdr-cleanup-install:
+    description: Install the published Herdr worktree cleanup package
+    deps:
+      - dependencies
+    toolchains: bun
+    inputs:
+      - /home/.local/share/herdr-worktree-cleanup/package.json
+      - /home/.local/share/herdr-worktree-cleanup/bun.lock
+      - /tooling/deploy-link.ts
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+    script: |-
+      set -e
+      mkdir -p "$HOME/.local/share/herdr-worktree-cleanup"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/home/.local/share/herdr-worktree-cleanup/package.json" "$HOME/.local/share/herdr-worktree-cleanup/package.json"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/home/.local/share/herdr-worktree-cleanup/bun.lock" "$HOME/.local/share/herdr-worktree-cleanup/bun.lock"
+      bun --config=/dev/null --no-env-file install --cwd "$HOME/.local/share/herdr-worktree-cleanup" --frozen-lockfile --ignore-scripts
   herdr-plugin:
     description: Link the Herdr worktree cleanup plugin
     deps:
-      - dependencies
+      - herdr-cleanup-install
       - herdr-setup
     toolchains: system
     options:
@@ -150,7 +169,7 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      herdr plugin link "$workspaceRoot/tooling/herdr-worktree-cleanup"
+      herdr plugin link "$HOME/.local/share/herdr-worktree-cleanup/node_modules/@sebastienelet/herdr-worktree-cleanup"
   herdr-issue-plugin:
     description: Link the optional standalone Herdr issue launcher
     deps:

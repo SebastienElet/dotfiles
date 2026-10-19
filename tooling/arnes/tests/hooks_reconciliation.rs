@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::fs;
 use std::os::unix::fs::{FileTypeExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 use tempfile::TempDir;
 struct Harness {
     _root: TempDir,
@@ -66,38 +66,14 @@ impl Harness {
             .env("HOME", &self.home);
         command
     }
-    fn executable_named(
-        &self,
-        name: &str,
-    ) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
-        let path = self.home.join(".local/bin").join(name);
-        fs::create_dir_all(path.parent().ok_or("fixture path has no parent")?)?;
-        fs::write(&path, b"binary")?;
-        fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
-        Ok(path)
-    }
     fn install_claude_with_handoff(
         &self,
+        repository: &Path,
         current: &Path,
-        legacy: &Path,
     ) -> Result<Output, Box<dyn std::error::Error + Send + Sync>> {
-        assert_eq!(
-            legacy,
-            current
-                .parent()
-                .ok_or("fixture path has no parent")?
-                .parent()
-                .ok_or("fixture path has no parent")?
-                .join("scripts/agent_handoff")
-        );
         let deployed = self.home.join(".local/bin/agent-handoff");
         symlink(current, deployed)?;
         self.write_manifest(true)?;
-        let repository = current
-            .parent()
-            .ok_or("fixture path has no parent")?
-            .parent()
-            .ok_or("fixture path has no parent")?;
         self.setup_in_repository("claude-code", repository)
     }
     fn config(&self, agent: &str) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
@@ -116,40 +92,6 @@ impl Harness {
             .ok_or("required test value is missing")?
             .replace('\'', "'\\''");
         Ok(format!("'{path}' measure hook --agent {agent}"))
-    }
-    fn memory_command(
-        &self,
-        agent: &str,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let agent = if agent == "claude-code" {
-            "claude"
-        } else {
-            agent
-        };
-        let path = self
-            .home
-            .join(".local/bin/agent-memory")
-            .to_str()
-            .ok_or("required test value is missing")?
-            .replace('\'', "'\\''");
-        Ok(format!("'{path}' hook --agent {agent}"))
-    }
-    fn write_memory_manifest(
-        &self,
-        agent: &str,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let agent = if agent == "claude-code" {
-            "claude"
-        } else {
-            agent
-        };
-        fs::write(
-            self.home.join(".arnes.yaml"),
-            format!(
-                "version: 1\nagents:\n  - id: {agent}\n    scopes: [user]\nhooks:\n  - id: memory\n    installations:\n      - {{ agent: {agent}, scope: user }}\nresources: []\n"
-            ),
-        )?;
-        Ok(())
     }
     fn write_manifest(
         &self,

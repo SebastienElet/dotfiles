@@ -17,11 +17,6 @@ fileGroups:
     - home/.config/fish/conf.d/git_main_branch.fish
     - tooling/format-edited-file
     - tooling/upgrade
-    - tooling/agent-memory/Cargo.toml
-    - tooling/agent-memory/Cargo.lock
-    - tooling/agent-memory/moon.yml
-    - tooling/agent-memory/build*.rs
-    - tooling/agent-memory/src/**/*
     - tooling/herdr-issue-worktree/Cargo.toml
     - tooling/herdr-issue-worktree/Cargo.lock
     - tooling/herdr-issue-worktree/moon.yml
@@ -39,16 +34,12 @@ fileGroups:
     - .github/dependabot.yml
     - install.sh
     - harness/USER.md
-    - harness/skills/obsidian-retrieval/SKILL.md
-    - harness/skills/obsidian-retrieval/references/obsidian-cli.md
-    - harness/skills/obsidian-retrieval/evals/trigger-queries.json
   fishBehaviorDependencies:
     - .gitignore
 tasks:
   typescript-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     deps:
-      - agent-memory:build
       - herdr-issue:build
       - fish-setup
       - rust

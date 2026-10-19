@@ -32,8 +32,13 @@ Adopter trois frontières :
    exécutables placés directement sous ce répertoire sont sans extension et
    nommés en kebab-case.
 
-Les outils propres à un skill résident dans son répertoire canonique, sous
-`harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
+Les skills génériques sont consommées depuis leur paquet publié selon l'ADR-040 ;
+leurs sources, tests et ressources appartiennent au dépôt autonome. Les capacités
+`proof-integrity-review` et `handoff` sont fournies respectivement par les paquets npm
+`@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`,
+acquis par Bun à version exacte ; leurs sources et builds ne sont plus maintenus dans dotfiles.
+Les outils propres à un skill encore maintenu ici résident dans son répertoire
+canonique, sous `harness/skills/` ou `.agents/skills/` selon sa portée. Cette règle comprend les
 sources, les manifestes de compilation, les fichiers de verrouillage, les tests
 et les binaires associés. Le choix du langage suit l'ADR-041.
 

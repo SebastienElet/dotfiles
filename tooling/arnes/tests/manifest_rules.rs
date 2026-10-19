@@ -33,7 +33,7 @@ fn rules_reject_codex_user_projections() -> Result<(), Box<dyn std::error::Error
 #[test]
 fn cursor_user_rules_use_the_mdc_discovery_directory()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    valid("cursor", ".cursor/rules/memory-governance-cursor.mdc")?;
+    valid("cursor", ".cursor/rules/visual-presentation.mdc")?;
     assert_eq!(
         error("cursor", "user", ".cursor/rules/rule.md")?,
         "resources[0].destination.path: cursor rules must be MDC files below .cursor/rules"

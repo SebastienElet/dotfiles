@@ -1,0 +1,17 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "dotfiles-herdr-worktree-cleanup",
+      "dependencies": {
+        "@sebastienelet/herdr-worktree-cleanup": "1.0.1",
+      },
+    },
+  },
+  "packages": {
+    "@sebastienelet/herdr-worktree-cleanup": ["@sebastienelet/herdr-worktree-cleanup@1.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64" }, "sha512-vDQDzIRZVP4I1eOcsRtHa7Q4mHqZm3lli0POWViDs/84cVqybCBT4EbkCAJLybnSo8b24FdPIZvpLcS92ZuUgA=="],
+
+    "zod": ["zod@4.6.6", "", {}, "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="],
+  }
+}

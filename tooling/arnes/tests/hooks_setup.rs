@@ -217,106 +217,35 @@ fn setup_installs_manifest_hooks_in_one_agent_configuration()
     assert!(commands.contains(&handoff.to_str().ok_or("expected JSON string")?));
     Ok(())
 }
+
 #[test]
-fn setup_installs_memory_prompt_hook_for_codex_and_claude()
+fn setup_rejects_retired_memory_hooks_without_changing_configuration()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let _: () = for agent in ["codex", "claude"] {
+    for agent in ["claude", "codex", "cursor"] {
         let harness = Harness::new()?;
         harness.write_memory_manifest(agent)?;
-        let memory = harness.executable("agent-memory")?;
-        let output = harness.setup(agent)?;
-        assert_eq!(
-            output.status.code(),
-            Some(0),
-            "stderr: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        let config = if agent == "codex" {
-            harness.codex_config()?
-        } else {
-            harness.config()?
-        };
-        let hooks = (*(config).get("hooks").ok_or("missing fixture index hooks")?)
-            .as_object()
-            .ok_or("expected JSON object")?;
-        assert_eq!(hooks.len(), 1);
-        let handler = (*(*(*(hooks)
-            .get("UserPromptSubmit")
-            .ok_or("missing fixture index UserPromptSubmit")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?)
-        .get("hooks")
-        .ok_or("missing fixture index hooks")?)
-        .get(0)
-        .ok_or("missing fixture index 0")?;
-        assert_eq!(
-            *(handler).get("type").ok_or("missing fixture index type")?,
-            "command"
-        );
-        assert_eq!(
-            *(handler)
-                .get("command")
-                .ok_or("missing fixture index command")?,
-            format!("'{}' hook --agent {agent}", memory.display())
-        );
-        assert_eq!(
-            *(handler)
-                .get("timeout")
-                .ok_or("missing fixture index timeout")?,
-            30
-        );
-    };
-    Ok(())
-}
-#[test]
-fn setup_rejects_memory_for_cursor_without_creating_configuration()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let harness = Harness::new()?;
-    harness.write_memory_manifest("cursor")?;
-    harness.executable("agent-memory")?;
-    let output = harness.setup("cursor")?;
-    assert_eq!(output.status.code(), Some(2));
-    assert!(
-        String::from_utf8_lossy(&output.stderr).contains("Cursor does not support the memory hook")
-    );
-    assert!(!harness.home.join(".cursor/hooks.json").exists());
-    Ok(())
-}
-#[test]
-fn setup_rejects_invalid_memory_runtime_without_changing_configuration()
--> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let _: () = for case in ["missing", "directory", "non-executable"] {
-        let harness = Harness::new()?;
-        harness.write_memory_manifest("codex")?;
-        let initial = serde_json :: json ! ({ "hooks" : { "UserPromptSubmit" : [{ "hooks" : [{ "type" : "command" , "command" : "third-party" }] }] } });
+        harness.executable("agent-memory")?;
+        let initial = serde_json::json!({"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"third-party"}]}]}});
+        harness.write_claude_config(&initial)?;
         harness.write_codex_config(&initial)?;
-        let memory = harness.home.join(".local/bin/agent-memory");
-        match case {
-            "missing" => {}
-            "directory" => fs::create_dir_all(&memory)?,
-            "non-executable" => {
-                fs::create_dir_all(memory.parent().ok_or("fixture path has no parent")?)?;
-                fs::write(&memory, b"binary")?;
-                fs::set_permissions(&memory, fs::Permissions::from_mode(0o600))?;
-            }
-            _ => return Err("unsupported hook fixture shape".to_string().into()),
-        }
-        let output = harness.setup("codex")?;
-        assert_eq!(output.status.code(), Some(2), "{case}");
-        assert_eq!(harness.codex_config()?, initial, "{case}");
-    };
+        let output = harness.setup(agent)?;
+        assert_eq!(output.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("unknown variant"));
+        assert_eq!(harness.config()?, initial);
+        assert_eq!(harness.codex_config()?, initial);
+        assert!(!harness.home.join(".cursor/hooks.json").exists());
+    }
     Ok(())
 }
+
 #[test]
 fn setup_installs_handoff_without_requiring_measurement()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let harness = Harness::new()?;
     harness.write_handoff_only_manifest()?;
     let handoff = harness.executable("agent-handoff")?;
-    let old_source = harness.repository.join("tooling/agent-handoff");
-    let old_script = harness.repository.join("scripts/agent_handoff");
     let third_party = serde_json :: json ! ({ "type" : "command" , "command" : "third-party" , "args" : ["keep"] , "async" : true });
-    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : old_source , "timeout" : 7 } , third_party , { "type" : "command" , "command" : old_script }] }] } })) ? ;
+    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff , "timeout" : 7 } , third_party] }] } })) ? ;
     let output = harness.setup("claude")?;
     assert_eq!(
         output.status.code(),
@@ -325,21 +254,6 @@ fn setup_installs_handoff_without_requiring_measurement()
         String::from_utf8_lossy(&output.stderr)
     );
     let config = harness.config()?;
-    let serialized = serde_json::to_string(&config)?;
-    assert!(
-        !serialized.contains(
-            old_source
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
-    assert!(
-        !serialized.contains(
-            old_script
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
     let handlers: Vec<&Value> = (*(*(config).get("hooks").ok_or("missing fixture index hooks")?)
         .get("Stop")
         .ok_or("missing fixture index Stop")?)
@@ -425,27 +339,11 @@ fn setup_removes_owned_capabilities_absent_from_the_manifest()
     harness.write_measurement_only_manifest()?;
     let arnes = harness.executable("arnes")?;
     let handoff = harness.home.join(".local/bin/agent-handoff");
-    let old_source = harness.repository.join("tooling/agent-handoff");
-    let old_script = harness.repository.join("scripts/agent_handoff");
-    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff } , { "type" : "command" , "command" : old_source } , { "type" : "command" , "command" : old_script } , { "type" : "command" , "command" : "third-party" }] }] } })) ? ;
+    harness . write_claude_config (& serde_json :: json ! ({ "hooks" : { "Stop" : [{ "hooks" : [{ "type" : "command" , "command" : handoff } , { "type" : "command" , "command" : "third-party" }] }] } })) ? ;
     let output = harness.setup("claude")?;
     assert_eq!(output.status.code(), Some(0));
     let serialized = serde_json::to_string(&harness.config()?)?;
     assert!(!serialized.contains(handoff.to_str().ok_or("required test value is missing")?));
-    assert!(
-        !serialized.contains(
-            old_source
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
-    assert!(
-        !serialized.contains(
-            old_script
-                .to_str()
-                .ok_or("required test value is missing")?
-        )
-    );
     assert!(serialized.contains("third-party"));
     assert!(serialized.contains(&format!(
         "'{}' measure hook --agent claude-code",

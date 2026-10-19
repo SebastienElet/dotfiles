@@ -1,7 +1,8 @@
-# ADR-040 — Skills user dans `harness/`
+# ADR-040 — Sources et projections des skills user
 
 - **Statut** : accepté
 - **Date** : 2026-08
+- **Révision** : 2026-10-18 — consommation du paquet publié, décisions #546 et #548, lot #549.
 
 ## Contexte
 
@@ -20,23 +21,39 @@ que l'ADR-038 place les capacités partagées du harnais sous `harness/`.
 
 Séparer les sources par portée :
 
-- `harness/skills/` contient les skills personnelles installées au niveau user ;
+- les skills génériques proviennent du paquet npm `@sebastienelet/agent-skills`, acquis par Bun
+  à version exacte et verrouillé dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
+- `proof-integrity-review` et `handoff` proviennent respectivement des paquets npm
+  `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.1`,
+  acquis par Bun à version exacte et verrouillés dans `bun.lock` ;
+- `harness/skills/` conserve le compagnon local `herdr-issue-worktree` ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
-- les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers sa source sous
-  `harness/skills/` ;
-- `skill-manager` vit dans `harness/skills/`, est installé au niveau user et gère
-  les deux collections sans autoriser un même slug dans les deux ;
+- les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers la
+  `source` relative au checkout déclarée dans le manifeste Arnes ; en son absence, la source est
+  `harness/skills/<slug>` ; pour les capacités externes gérées, les liens ciblent
+  `node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review` et
+  `node_modules/@sebastienelet/agent-handoff/skills/handoff` ;
+- `skill-manager` est consommé depuis le paquet et installé au niveau user ; aucune skill user
+  ne doit aussi exister dans la collection projet ;
 - Arnes dérive les skills projet de `.agents/skills/` et les installations user
   des déclarations du manifeste.
+
+Pour la capacité externalisée dans #550, la source de `handoff` est le paquet
+publié `@sebastienelet/agent-handoff`, installé par Bun à version exacte et
+verrouillée. Moon déploie sa skill par liens feuilles vers le paquet ; Arnes
+la déclare comme skill externe gérée. Sa source ne reste pas dans `harness/skills/`.
 
 ## Conséquences
 
 - Une skill user n'est plus exposée une seconde fois par le checkout dotfiles.
-- Les deux collections ont chacune leur index dérivé et leur source canonique.
+- Le paquet, les compagnons locaux et la collection projet gardent chacun leur index dérivé.
 - Ajouter une skill user exige de déclarer ses installations par agent dans le manifeste Arnes ;
   les tâches Moon déploient les liens correspondants. Une skill projet n'est jamais installée globalement.
 - Le déplacement d'une skill entre portées migre simultanément sa source, ses
   projections et ses liens déjà installés.
+- Les anciens liens et slugs renommés sont retirés manuellement avant le déploiement ; aucune
+  destination divergente n'est remplacée automatiquement. Les slugs publiés sont
+  `code-review-fix` et `claude-development`.
 
 ## Alternatives écartées
 

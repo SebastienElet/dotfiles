@@ -62,6 +62,11 @@ fn reservations(roots: &Roots, manifest: &Manifest) -> Result<Vec<PathBuf>, &'st
     for projection in manifest.skill_projections() {
         let root = source_root(roots, projection.scope);
         reserve(&mut reserved, &root.join(projection.source), root)?;
+        for slug in manifest.installed_skills(projection.agent, projection.scope) {
+            let source = root.join(manifest.skill_source(slug, projection.source));
+            let collection = source.parent().ok_or("skill source has no collection")?;
+            reserve(&mut reserved, collection, root)?;
+        }
     }
     for prompt in manifest.prompts() {
         let source = roots.repository().join(prompt.source());

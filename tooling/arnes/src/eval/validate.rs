@@ -4,21 +4,6 @@ use super::{
 };
 use std::{fs, path::Path, process::Command};
 
-const HISTORICAL_SKILL_EVIDENCE: [&str; 12] = [
-    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-09.md",
-    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-10.md",
-    "harness/skills/linear-workflow/references/linear-guard-observation-2026-09-10.json",
-    "harness/skills/linear-workflow/evals/2026-09-16/README.md",
-    "harness/skills/linear-workflow/evals/2026-09-16/start.json",
-    "harness/skills/linear-workflow/evals/2026-09-16/checkbox.json",
-    "harness/skills/linear-workflow/evals/2026-09-16/prose.json",
-    "harness/skills/requirements-clarification/evals/2026-09-16/README.md",
-    "harness/skills/requirements-clarification/evals/2026-09-16/environment.json",
-    "harness/skills/pr-verdict/references/execution-evidence.md",
-    "harness/skills/security-assurance-plan/references/synthetic-evaluation.md",
-    "harness/skills/visual-explanation/references/comparison.md",
-];
-
 /// # Errors
 /// Returns errors loading cases, enumerating or reading tracked skills, finding numbered references, or validating activation contracts.
 pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
@@ -53,10 +38,10 @@ pub fn validate_evaluations(repository: &Path) -> Result<String, String> {
     for path in skills {
         let text = read_source(repository, path)
             .map_err(|e| format!("Cannot read tracked skill: {path}: {e}"))?;
-        if !HISTORICAL_SKILL_EVIDENCE.contains(path)
-            && text.as_bytes().windows(2).any(|pair| {
-                pair.first() == Some(&b'#') && pair.get(1).is_some_and(u8::is_ascii_digit)
-            })
+        if text
+            .as_bytes()
+            .windows(2)
+            .any(|pair| pair.first() == Some(&b'#') && pair.get(1).is_some_and(u8::is_ascii_digit))
         {
             return Err(format!(
                 "Forbidden numbered PR/issue reference in skill: {path}"

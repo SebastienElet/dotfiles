@@ -32,7 +32,7 @@ type RunMoonOptions = Readonly<{
 type MoonProjectFixturePaths = Readonly<{
   destination: string;
   home: string;
-  projectId: "agent-memory" | "agent-handoff" | "arnes";
+  projectId: "arnes";
   repository: string;
   source: string;
 }>;
@@ -46,8 +46,11 @@ function prepareMoonWorkspaceFixture(repository: string): void {
       path !== join(project, ".moon/cache"),
     recursive: true,
   });
-  symlinkSync(join(project, "node_modules"), join(repository, "node_modules"));
-  for (const projectId of ["agent-memory", "agent-handoff", "arnes"]) {
+  cpSync(join(project, "node_modules"), join(repository, "node_modules"), {
+    dereference: true,
+    recursive: true,
+  });
+  for (const projectId of ["arnes"]) {
     const release = join(repository, "tooling", projectId, "target/release");
     mkdirSync(release, { recursive: true });
     writeFileSync(join(release, projectId), "fixture binary\n", {
@@ -67,7 +70,7 @@ const foreignGitHubEnvironment = {
 };
 
 function createMoonDeploymentFixture(
-  projectId: "agent-memory" | "agent-handoff" | "arnes",
+  projectId: "arnes",
 ): MoonDeploymentFixture {
   const root = mkdtempSync(join(tmpdir(), `moon-${projectId}-deployment-`));
   const repository = join(root, "repository");

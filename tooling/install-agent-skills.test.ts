@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -29,11 +30,12 @@ function fixture(): Readonly<{ repository: string; home: string }> {
   mkdirSync(join(repository, "home"), { recursive: true });
   mkdirSync(home);
   for (const slug of ["shared", "claude-only"]) {
-    mkdirSync(join(repository, "harness/skills", slug), { recursive: true });
-    writeFileSync(
-      join(repository, "harness/skills", slug, "SKILL.md"),
-      "skill\n",
-    );
+    const collection =
+      slug === "shared"
+        ? "node_modules/@sebastienelet/agent-skills/skills"
+        : "harness/skills";
+    mkdirSync(join(repository, collection, slug), { recursive: true });
+    writeFileSync(join(repository, collection, slug, "SKILL.md"), "skill\n");
   }
   writeFileSync(
     join(repository, "home/.arnes.yaml"),
@@ -42,6 +44,7 @@ function fixture(): Readonly<{ repository: string; home: string }> {
       skills: [
         {
           slug: "shared",
+          source: "node_modules/@sebastienelet/agent-skills/skills/shared",
           installations: [
             { agent: "codex", scope: "user" },
             { agent: "claude", scope: "user" },
@@ -75,7 +78,10 @@ test("deploys only selected user skills and preserves their identity on replay",
   expect(run(paths).exitCode).toBe(0);
   const destination = join(paths.home, ".agents/skills/shared");
   expect(readlinkSync(destination)).toBe(
-    join(paths.repository, "harness/skills/shared"),
+    join(
+      paths.repository,
+      "node_modules/@sebastienelet/agent-skills/skills/shared",
+    ),
   );
   expect(
     Bun.file(join(paths.home, ".agents/skills/claude-only/SKILL.md")).size,
@@ -133,82 +139,67 @@ test("rejects missing skill sources before installing any links", () => {
   ).toBe(0);
 });
 
-function memoryMigration(agent: string): ReturnType<typeof fixture> {
+test("rejects linked/alpha escaping the repository before installing any links", () => {
   const paths = fixture();
-  for (const slug of ["memory-governance", "remem-memory"]) {
-    mkdirSync(join(paths.repository, "harness/skills", slug));
-    writeFileSync(
-      join(paths.repository, "harness/skills", slug, "SKILL.md"),
-      "skill\n",
-    );
-  }
+  const outside = `${paths.repository}-outside`;
+  mkdirSync(join(outside, "alpha"), { recursive: true });
+  writeFileSync(join(outside, "alpha/SKILL.md"), "foreign\n");
+  symlinkSync(outside, join(paths.repository, "linked"));
   writeFileSync(
     join(paths.repository, "home/.arnes.yaml"),
     Bun.YAML.stringify({
       version: 1,
       skills: [
-        { slug: "remem-memory", installations: [{ agent, scope: "user" }] },
+        {
+          slug: "shared",
+          source: "node_modules/@sebastienelet/agent-skills/skills/shared",
+          installations: [{ agent: "claude", scope: "user" }],
+        },
+        {
+          slug: "alpha",
+          source: "linked/alpha",
+          installations: [{ agent: "claude", scope: "user" }],
+        },
       ],
     }),
   );
-  return paths;
-}
-
-test.each(["codex", "claude"])(
-  "retires the owned legacy memory skill for %s after remem deployment",
-  (agent) => {
-    const paths = memoryMigration(agent);
-    const directory = join(
-      paths.home,
-      agent === "codex" ? ".agents/skills" : ".claude/skills",
-    );
-    mkdirSync(directory, { recursive: true });
-    const old = join(directory, "memory-governance");
-    symlinkSync(
-      join(paths.repository, "harness/skills/memory-governance"),
-      old,
-    );
-    expect(run(paths, agent).exitCode).toBe(0);
-    expect(lstatSync(old, { throwIfNoEntry: false })).toBeUndefined();
-    expect(readlinkSync(join(directory, "remem-memory"))).toBe(
-      join(paths.repository, "harness/skills/remem-memory"),
-    );
-    expect(run(paths, agent).exitCode).toBe(0);
-  },
-);
-
-test.each(["file", "foreign-link"])(
-  "preserves a divergent legacy memory %s before changing skills",
-  (kind) => {
-    const paths = memoryMigration("codex");
-    const directory = join(paths.home, ".agents/skills");
-    mkdirSync(directory, { recursive: true });
-    const old = join(directory, "memory-governance");
-    if (kind === "file") {
-      writeFileSync(old, "keep\n");
-    } else {
-      symlinkSync("/unrelated/memory-skill", old);
-    }
-    expect(run(paths).exitCode).not.toBe(0);
-    if (kind === "file") {
-      expect(readFileSync(old, "utf8")).toBe("keep\n");
-    } else {
-      expect(readlinkSync(old)).toBe("/unrelated/memory-skill");
-    }
-    expect(
-      lstatSync(join(directory, "remem-memory"), { throwIfNoEntry: false }),
-    ).toBeUndefined();
-  },
-);
-
-test("keeps Cursor's legacy skill", () => {
-  const paths = memoryMigration("cursor");
-  const directory = join(paths.home, ".cursor/skills");
-  mkdirSync(directory, { recursive: true });
-  const old = join(directory, "memory-governance");
-  symlinkSync(join(paths.repository, "harness/skills/memory-governance"), old);
-  expect(run(paths, "cursor").exitCode).toBe(0);
-  expect(readlinkSync(old)).toBe(
-    join(paths.repository, "harness/skills/memory-governance"),
+  const result = run(paths, "claude");
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr.toString()).toContain(
+    "skill source must stay within the repository",
   );
+  expect(existsSync(join(paths.home, ".claude"))).toBe(false);
+});
+
+test("deploys packaged and local skills together for every selected host", () => {
+  const paths = fixture();
+  expect(run(paths, "claude").exitCode).toBe(0);
+  expect(
+    readFileSync(join(paths.home, ".claude/skills/shared/SKILL.md"), "utf8"),
+  ).toBe("skill\n");
+  expect(readlinkSync(join(paths.home, ".claude/skills/claude-only"))).toBe(
+    join(paths.repository, "harness/skills/claude-only"),
+  );
+});
+
+test.each([
+  "/outside",
+  "../outside",
+  "node_modules/../../outside",
+  "",
+  "./skill",
+])("rejects an invalid skill source %s before linking", (source) => {
+  const paths = fixture();
+  const manifest = join(paths.repository, "home/.arnes.yaml");
+  writeFileSync(
+    manifest,
+    readFileSync(manifest, "utf8").replace(
+      "node_modules/@sebastienelet/agent-skills/skills/shared",
+      JSON.stringify(source),
+    ),
+  );
+  expect(run(paths).exitCode).not.toBe(0);
+  expect(
+    Bun.file(join(paths.home, ".agents/skills/shared/SKILL.md")).size,
+  ).toBe(0);
 });

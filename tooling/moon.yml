@@ -32,12 +32,11 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
-    - /tooling/agent-memory/moon.yml
-    - /tooling/agent-handoff/moon.yml
     - /tooling/arnes/moon.yml
     - check-docker-cli
     - /.moon/tasks/docker.yml
     - assemble-agent-instructions*.ts
+    - agent-skill-source.ts
     - install-agent-skills*.ts
     - /home/moon.yml
     - /home/.psqlrc
@@ -49,7 +48,6 @@ fileGroups:
     - /harness/moon.yml
     - /harness/SOUL.md
     - /harness/USER.md
-    - /harness/rules/agent-instructions.md
     - /harness/skills/*/SKILL.md
     - /.moon/tasks/harness-claude.yml
     - /.moon/tasks/harness-codex.yml
@@ -63,8 +61,6 @@ tasks:
       - upgrade-test
       - deployment-test
       - hunspell-test
-      - agent-memory:deployment-test
-      - agent-handoff:deployment-test
     toolchains: system
     inputs:
       - "@group(toolingSources)"

@@ -37,7 +37,7 @@ test.each([
 ])(
   "executes fixture tasks with foreign $source references",
   ({ environment }: Readonly<{ environment: Readonly<NodeJS.ProcessEnv> }>) => {
-    const fixture = createMoonDeploymentFixture("agent-memory");
+    const fixture = createMoonDeploymentFixture("arnes");
 
     expectSuccess(
       runMoon(fixture, "repository:rust", { cache: "off", environment }),
@@ -45,7 +45,7 @@ test.each([
   },
 );
 
-const harnessBinaries = ["agent-memory", "agent-handoff", "arnes"] as const;
+const harnessBinaries = ["arnes"] as const;
 const binaryCollisions = [
   "file",
   "foreign-link",

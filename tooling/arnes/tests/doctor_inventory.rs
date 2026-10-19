@@ -111,7 +111,7 @@ fn empty_orphan_caches_and_settings_only_plugins_fail_read_only() -> Result {
     for directory in [
         ".claude/plugins/cache/remem",
         ".codex/plugins/cache/semctx-stable",
-        ".codex/plugins/cache/superpowers-marketplace",
+        ".codex/plugins/cache/orphan-marketplace",
         ".codex/plugins/cache/allowed/unexpected",
     ] {
         fs::create_dir_all(fixture.home().join(directory))?;
@@ -131,7 +131,7 @@ fn empty_orphan_caches_and_settings_only_plugins_fail_read_only() -> Result {
     for expected in [
         "cache/remem",
         "cache/semctx-stable",
-        "cache/superpowers-marketplace",
+        "cache/orphan-marketplace",
         "unexpected@allowed",
         "browser@openai-bundled",
         "disabled@marketplace",

@@ -34,7 +34,7 @@ fn load() -> Result<(), Box<dyn std::error::Error>> {
     let roots = Roots::from_environment()?;
     let source = roots
         .deployment_repository()
-        .join("harness/skills/output-discipline/SKILL.md");
+        .join("node_modules/@sebastienelet/agent-skills/skills/output-discipline/SKILL.md");
     let text =
         fs::read_to_string(&source).map_err(|error| format!("{}: {error}", source.display()))?;
     let body = strip_frontmatter(&text).trim_end_matches(['\r', '\n']);

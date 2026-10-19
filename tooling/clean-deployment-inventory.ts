@@ -1,3 +1,4 @@
+import { skillSource, skillSourceSchema } from "./agent-skill-source.ts";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
@@ -9,6 +10,7 @@ const installationSchema = z
 const skillSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+    source: skillSourceSchema,
     installations: z.array(installationSchema).readonly(),
   })
   .readonly();
@@ -58,6 +60,14 @@ const links = [
   ["home/.config/nvim", ".config/nvim"],
   ["home/.config/wezterm/wezterm.lua", ".config/wezterm/wezterm.lua"],
   ["home/.config/herdr/config.toml", ".config/herdr/config.toml"],
+  [
+    "home/.local/share/herdr-worktree-cleanup/package.json",
+    ".local/share/herdr-worktree-cleanup/package.json",
+  ],
+  [
+    "home/.local/share/herdr-worktree-cleanup/bun.lock",
+    ".local/share/herdr-worktree-cleanup/bun.lock",
+  ],
   ["home/.config/git/config.delta", ".config/git/config.delta"],
   ["home/.config/git/ignore", ".config/git/ignore"],
   ["home/.config/starship.toml", ".config/starship.toml"],
@@ -79,21 +89,30 @@ const links = [
     ".cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
   ],
   [
-    "harness/rules/agent-instructions.md",
+    "node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md",
     ".claude/rules/agent-instructions.md",
   ],
-  [
-    "harness/rules/memory-governance-cursor.mdc",
-    ".cursor/rules/memory-governance-cursor.mdc",
-  ],
   ["tooling/arnes/target/release/arnes", ".local/bin/arnes"],
+  ["node_modules/.bin/agent-handoff", ".local/bin/agent-handoff"],
   [
-    "tooling/agent-memory/target/release/agent-memory",
-    ".local/bin/agent-memory",
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".claude/skills/proof-integrity-review",
   ],
   [
-    "tooling/agent-handoff/target/release/agent-handoff",
-    ".local/bin/agent-handoff",
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".agents/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review",
+    ".cursor/skills/proof-integrity-review",
+  ],
+  [
+    "node_modules/@sebastienelet/agent-handoff/skills/handoff",
+    ".claude/skills/handoff",
+  ],
+  [
+    "node_modules/@sebastienelet/agent-handoff/skills/handoff",
+    ".agents/skills/handoff",
   ],
 ] as const;
 const regularFiles = [
@@ -119,7 +138,7 @@ function deploymentArtifacts(
     skill.installations
       .filter((installation) => installation.scope === "user")
       .map((installation) => ({
-        source: join(repository, "harness/skills", skill.slug),
+        source: skillSource(repository, skill),
         destination: join(
           home,
           skillDirectories[installation.agent],

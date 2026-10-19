@@ -52,7 +52,7 @@ tasks:
   claude-rules:
     script: |-
       set -e
-      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/agent-instructions.md" "$HOME/.claude/rules/agent-instructions.md"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md" "$HOME/.claude/rules/agent-instructions.md"
     deps:
       - repository:dependencies
     toolchains: bun
@@ -60,16 +60,17 @@ tasks:
     script: |-
       set -e
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" claude
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review" "$HOME/.claude/skills/proof-integrity-review"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/agent-handoff/skills/handoff" "$HOME/.claude/skills/handoff"
     deps:
       - repository:dependencies
-      - proof-integrity:build
     toolchains: bun
   claude-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'
     deps:
       - repository:dependencies
       - arnes:install
-      - agent-handoff:install
+      - agent-handoff
     checks:
       - check: condition
         script: '"$HOME/.local/bin/arnes" doctor hooks --agent claude --color never'

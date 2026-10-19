@@ -51,15 +51,17 @@ transcription does not require an API key. Summarization is optional and configu
 separately. The Minutes CLI is not installed by this task.
 
 [Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
-with `moon exec repository:herdr` on macOS, using the official Homebrew formula.
+with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
 The [issue launcher](tooling/herdr-issue-worktree/README.md) is an explicit opt-in with
 `moon exec repository:herdr-issue-plugin` for standalone Ctrl-click work on GitHub, GitLab
 or Linear issues.
 Existing launcher installations remain linked until explicitly unlinked.
-It also links the `dotfiles.worktree-cleanup` plugin, which removes a linked worktree's
-checkout when its workspace closes. The plugin explicitly enables untracked-file visibility
+It installs `@sebastienelet/herdr-worktree-cleanup@1.0.1` with Bun in
+`~/.local/share/herdr-worktree-cleanup` and links its `dotfiles.worktree-cleanup` plugin,
+which removes a linked worktree's checkout when its workspace closes.
+The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.
 Git refuses modified tracked files, non-ignored untracked files, and locked worktrees;
 the plugin also skips detached HEADs. Removal failures are reported with a nonzero exit,
@@ -97,10 +99,10 @@ its dependencies install Homebrew, Volta, and the exact Node version from `packa
 
 [AssertLedger](https://github.com/hoklims/assertledger) qualifies regression tests against a
 declared fault and neutral control. The minimal profile installs its pinned CLI through
-`harness:assertledger`, using npm with the Volta-managed Node runtime. Install it independently
+`harness:assertledger`, using Bun and the version supplied by the skills package. Install it independently
 with `moon exec harness:assertledger` on macOS.
 
-The locally maintained [skill](harness/skills/assertledger/SKILL.md) is deployed to Claude Code
+The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.0.1) is deployed to Claude Code
 and Codex with the minimal profile, and to Cursor with the optional profile. Start with
 `assertledger --version` and `assertledger doctor /path/to/repository --json`.
 The Git `check` workflow accepts committed dependency-free JavaScript `node:test` regressions;
@@ -194,8 +196,7 @@ is `moon exec tooling:smoke-minimal` on a dedicated macOS runner.
 The CI routing matrix is owned by [#407](https://github.com/SebastienElet/dotfiles/issues/407)
 and its sub-issues; this local task guide does not duplicate its path-to-workflow policy.
 
-Deployment families run through `tooling:deployment-test`, `tooling:hunspell-test`,
-`agent-memory:deployment-test`, and `agent-handoff:deployment-test`.
+Deployment families run through `tooling:deployment-test` and `tooling:hunspell-test`.
 Their CI workflows use `moon ci --downstream none` to select consumers of changed inputs
 on macOS and Linux. The general `repository:typescript-test` excludes tests owned by
 these families; `moon run test` still includes their local tests.

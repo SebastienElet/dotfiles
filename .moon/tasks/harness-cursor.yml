@@ -31,7 +31,6 @@ tasks:
   cursor-rules:
     script: |-
       set -e
-      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/rules/memory-governance-cursor.mdc" "$HOME/.cursor/rules/memory-governance-cursor.mdc"
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/harness/visual-presentation.md" "$HOME/.cursor/rules/visual-presentation.mdc"
     deps:
       - repository:dependencies
@@ -40,15 +39,14 @@ tasks:
     script: |-
       set -e
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-skills.ts" "$workspaceRoot" "$HOME" cursor
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review" "$HOME/.cursor/skills/proof-integrity-review"
     deps:
       - repository:dependencies
-      - proof-integrity:build
     toolchains: bun
   cursor-hooks:
     script: '"$HOME/.local/bin/arnes" setup hooks --agent cursor'
     deps:
       - arnes:install
-      - agent-memory:install
     checks:
       - check: condition
         script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'

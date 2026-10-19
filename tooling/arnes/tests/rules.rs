@@ -23,21 +23,15 @@ fn claude_user_rule_symlinks_are_healthy() -> Result<(), Box<dyn std::error::Err
 #[test]
 fn cursor_user_rule_symlinks_are_healthy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = support::Fixture::new()?;
-    fixture . write_home (".arnes.yaml" , "version: 1\nagents:\n  - id: cursor\n    scopes: [user]\nresources:\n  - id: memory-governance-cursor\n    kind: rules\n    agent: cursor\n    scope: user\n    source: { root: repository, path: harness/rules/memory-governance-cursor.mdc }\n    destination: { root: home, path: .cursor/rules/memory-governance-cursor.mdc }\n" ,) ? ;
+    fixture . write_home (".arnes.yaml" , "version: 1\nagents:\n  - id: cursor\n    scopes: [user]\nresources:\n  - id: visual-presentation\n    kind: rules\n    agent: cursor\n    scope: user\n    source: { root: repository, path: harness/visual-presentation.md }\n    destination: { root: home, path: .cursor/rules/visual-presentation.mdc }\n" ,) ? ;
     fixture.write_repository(
-        "harness/rules/memory-governance-cursor.mdc",
+        "harness/visual-presentation.md",
         "---\nalwaysApply: true\n---\n",
     )?;
-    let destination = fixture
-        .home()
-        .join(".cursor/rules/memory-governance-cursor.mdc");
+    let destination = fixture.home().join(".cursor/rules/visual-presentation.mdc");
     fs::create_dir_all(destination.parent().ok_or("fixture path has no parent")?)?;
     symlink(
-        fs::canonicalize(
-            fixture
-                .repository()
-                .join("harness/rules/memory-governance-cursor.mdc"),
-        )?,
+        fs::canonicalize(fixture.repository().join("harness/visual-presentation.md"))?,
         destination,
     )?;
     let (code, stdout, stderr) = run(
@@ -47,8 +41,8 @@ fn cursor_user_rule_symlinks_are_healthy() -> Result<(), Box<dyn std::error::Err
         ],
     )?;
     assert_eq!(code, 0, "{stdout}");
-    assert!(stdout.contains("healthy rules: cursor user rule memory-governance-cursor"));
-    assert!(stdout.contains("destination ~/.cursor/rules/memory-governance-cursor.mdc is current"));
+    assert!(stdout.contains("healthy rules: cursor user rule visual-presentation"));
+    assert!(stdout.contains("destination ~/.cursor/rules/visual-presentation.mdc is current"));
     assert_eq!(stderr, "");
     Ok(())
 }
