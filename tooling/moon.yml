@@ -122,6 +122,7 @@ tasks:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 tooling/upgrade.test.ts tooling/upgrade-git.test.ts tooling/upgrade-node.test.ts tooling/node-version-installation.test.ts
     deps:
       - repository:dependencies
+      - repository:fish-setup
     toolchains: bun
     options:
       runFromWorkspaceRoot: true
@@ -131,9 +132,7 @@ tasks:
       - upgrade
       - upgrade*.ts
       - node-version-*.ts
-      - git-main-branch
-      - git-main-branch-cli.ts
-      - git-main-branch-core.ts
+      - /home/.config/fish/conf.d/git_main_branch.fish
       - /package.json
       - /bun.lock
       - /.prototools
@@ -144,6 +143,7 @@ tasks:
     command: bun --config=/dev/null --no-env-file test --timeout 30000 ./tooling/upgrade-neovim.integration.ts
     deps:
       - repository:dependencies
+      - repository:fish-setup
     toolchains: bun
     options:
       runFromWorkspaceRoot: true
@@ -153,7 +153,7 @@ tasks:
       - upgrade
       - upgrade*.ts
       - node-version-*.ts
-      - git-main-branch*
+      - /home/.config/fish/conf.d/git_main_branch.fish
       - /home/.config/nvim/**/*
       - /.github/workflows/test.yml
   installer-test:

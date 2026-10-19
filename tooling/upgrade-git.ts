@@ -5,6 +5,13 @@ import { z } from "zod";
 
 const branchSchema = z.string().trim().regex(/^\S+$/u);
 const lockfile = "home/.config/nvim/lazy-lock.json";
+const fishMainBranchCommand = [
+  "fish",
+  "--no-config",
+  "-c",
+  "source $argv[1]; and git_main_branch $argv[2..]",
+  "--",
+] as const;
 
 async function onMainBranch(
   runner: UpgradeRunner,
@@ -27,7 +34,13 @@ async function onMainBranch(
   }
   const main = await runner.command(
     "Dotfiles main branch",
-    [join(repository, "tooling/git-main-branch"), "--strict", "-C", repository],
+    [
+      ...fishMainBranchCommand,
+      join(repository, "home/.config/fish/conf.d/git_main_branch.fish"),
+      "--strict",
+      "-C",
+      repository,
+    ],
     options,
   );
   if (main.state !== "succeeded") {

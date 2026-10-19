@@ -41,3 +41,24 @@ not command git config --get-regexp '^branch\.feature\.'
 or fail "fetch removes configuration for a deleted branch"
 
 echo "ok - fetch removes a clean worktree and detaches its local branch"
+
+create_repository missing-main-branch-function
+create_tracked_branch feature
+set -l worktree_path "$test_root/missing-function-feature"
+must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
+must git --git-dir="$remote_path" update-ref -d refs/heads/feature
+functions -e git_main_branch
+cd "$repository_path"
+or fail "could not enter $repository_path"
+set -l fetch_output (git fetch 2>&1)
+or fail "fetch failed without the main branch function"
+source "$project_root/home/.config/fish/conf.d/git_main_branch.fish"
+
+test -d "$worktree_path"
+or fail "fetch removes a worktree without main branch evidence"
+command git show-ref --verify --quiet refs/heads/feature
+or fail "fetch removes a branch without main branch evidence"
+string match --quiet -- '*primary branch lookup failed*' $fetch_output
+or fail "fetch does not report the missing main branch function"
+
+echo "ok - fetch without the main branch function skips cleanup and preserves the worktree and branch"

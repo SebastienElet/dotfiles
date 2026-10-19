@@ -7,18 +7,6 @@ interface Fixture {
   localBranches?: readonly string[];
   showRefStatus?: number;
   showRefStderr?: string;
-  remotes?: Readonly<
-    Record<
-      string,
-      Readonly<{
-        urls: readonly string[];
-        head?: string;
-        headOutput?: string;
-      }>
-    >
-  >;
-  contexts?: unknown;
-  repositories?: Readonly<Record<string, unknown>>;
   failures?: Readonly<
     Record<string, Readonly<{ status: number; stderr: string }>>
   >;
@@ -30,7 +18,11 @@ type CommandResult = Readonly<{
   stdout: Uint8Array;
 }>;
 
-const entrypoint = join(import.meta.dir, "..", "git-main-branch");
+const configuration = join(
+  import.meta.dir,
+  "../..",
+  "home/.config/fish/conf.d/git_main_branch.fish",
+);
 const fakeCommand = join(import.meta.dir, "fake-command.ts");
 const temporaryDirectories: string[] = [];
 const executableFileMode = 0o755;
@@ -50,24 +42,37 @@ async function run(
   const bin = join(root, "bin");
   await Bun.$`mkdir -p ${bin}`.quiet();
   await Bun.write(join(root, "fixture.json"), JSON.stringify(fixture));
-  for (const command of ["git", "bkt"] as const) {
-    const executable = join(bin, command);
-    await Bun.write(
-      executable,
-      `#!/bin/sh\nexec "${process.execPath}" "${fakeCommand}" ${command} "$@"\n`,
-    );
-    await chmod(executable, executableFileMode);
+  const executable = join(bin, "git");
+  await Bun.write(
+    executable,
+    `#!/bin/sh\nexec "${process.execPath}" "${fakeCommand}" git "$@"\n`,
+  );
+  await chmod(executable, executableFileMode);
+  const fish = Bun.which("fish");
+  if (fish === null) {
+    throw new Error("fish missing from test environment");
   }
-  return Bun.spawnSync([entrypoint, ...commandArguments], {
-    cwd: root,
-    env: {
-      ...process.env,
-      FIXTURE_PATH: join(root, "fixture.json"),
-      PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+  return Bun.spawnSync(
+    [
+      fish,
+      "--no-config",
+      "-c",
+      "source $argv[1]; and git_main_branch $argv[2..]",
+      "--",
+      configuration,
+      ...commandArguments,
+    ],
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        FIXTURE_PATH: join(root, "fixture.json"),
+        PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
     },
-    stderr: "pipe",
-    stdout: "pipe",
-  });
+  );
 }
 
 export { cleanup, run };

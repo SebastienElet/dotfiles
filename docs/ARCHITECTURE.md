@@ -80,8 +80,7 @@ est maintenue hors de ce dépôt.
 
 `tooling/` regroupe deux formes d'outils :
 
-- les exécutables directs, sans extension et nommés en kebab-case, comme
-  `upgrade` et `git-main-branch` ;
+- les exécutables directs, sans extension et nommés en kebab-case, comme `upgrade` ;
 - les applications structurées dans leur propre répertoire, comme le projet Rust `arnes/`.
 
 Les exécutables destinés au `PATH` sont liés par leur projet Moon,

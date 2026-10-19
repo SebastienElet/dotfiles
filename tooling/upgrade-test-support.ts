@@ -161,7 +161,15 @@ async function prepareFixtureFiles(
 }
 
 async function installBoundaryCommands(bin: string): Promise<void> {
-  for (const command of ["bash", "dirname", "mktemp", "rm", "mkdir", "cp"]) {
+  for (const command of [
+    "bash",
+    "dirname",
+    "fish",
+    "mktemp",
+    "rm",
+    "mkdir",
+    "cp",
+  ]) {
     const executable = Bun.which(command);
     if (executable === null) {
       throw new Error(`${command} missing from test environment`);
@@ -176,14 +184,18 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
     (name) =>
       name === "upgrade" ||
       name === "install-moon" ||
-      name === "git-main-branch" ||
       name === "node-version-contract.ts" ||
-      ((name.startsWith("upgrade-") || name.startsWith("git-main-branch-")) &&
-        name.endsWith(".ts")),
+      (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );
   for (const file of files) {
     await cp(join(import.meta.dir, file), join(repository, "tooling", file));
   }
+  const configuration = "home/.config/fish/conf.d";
+  await mkdir(join(repository, configuration), { recursive: true });
+  await cp(
+    join(repositoryRoot, configuration, "git_main_branch.fish"),
+    join(repository, configuration, "git_main_branch.fish"),
+  );
 }
 
 async function installFakeCommands(bin: string, home: string): Promise<void> {
