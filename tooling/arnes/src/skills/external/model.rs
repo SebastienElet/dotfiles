@@ -111,8 +111,7 @@ pub(super) fn plugin_diagnostics(
             let plugin_allowed = allowed.contains(&plugin.id.as_str());
             let plugin_required = required.contains(&plugin.id.as_str());
             if plugin_required && agent == Agent::Cursor && plugin.exposure == Exposure::Enabled && plugin.topology == Topology::Healthy {
-                plugin.exposure = Exposure::Unknown;
-                plugin.detail = Some("Cursor local import authorization and marketplace precedence are not observable".to_owned());
+                plugin.detail = Some("Cursor local projection is present; local import authorization and marketplace precedence are not observed".to_owned());
             }
             if plugin_required && plugin.exposure == Exposure::Disabled && plugin.detail.is_none() {
                 plugin.detail = Some("required plugin is disabled".to_owned());
@@ -186,6 +185,7 @@ const fn plugin_activation(agent: Agent, plugin: &Plugin) -> &'static str {
     match (agent, plugin.topology, plugin.exposure) {
         (_, Topology::Missing, Exposure::Enabled) => "unavailable",
         (Agent::Codex, Topology::Unknown, Exposure::Enabled | Exposure::Unknown) => "unknown",
+        (Agent::Cursor, Topology::Healthy, Exposure::Enabled) => "unobserved",
         _ => activation(plugin.exposure),
     }
 }
@@ -209,7 +209,7 @@ fn skill_diagnostic(
             plugin.exposure,
             skill.topology,
             policy(allowed),
-            activation(plugin.exposure),
+            plugin_activation(agent, plugin),
             skill.path.display(),
             detail(skill.detail.as_deref()),
         ),

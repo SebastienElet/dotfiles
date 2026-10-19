@@ -23,8 +23,10 @@ ce qui est audité.
 
 Une autorisation permet une capacité, elle ne la rend pas obligatoire. Son absence ne crée donc
 aucun drift par défaut. Une entrée `external.plugins` avec `required: true` exige en revanche
-une installation présente et activée selon la configuration durable observable : absence ou
-désactivation produit un `drift`, et une observation indéterminable produit une erreur. Le champ
+une installation présente et, pour Claude/Codex, activée selon la configuration durable observable :
+absence ou désactivation produit un `drift`, et une observation indéterminable Claude/Codex produit
+une erreur. Pour Cursor, seule la présence structurellement valide est exigée ; l'activation reste
+`unobserved` sans bloquer ce contrôle. Le champ
 est booléen et vaut `false` par défaut ; les scopes projet Codex et Cursor, non observables par
 ce contrôle, ne peuvent pas déclarer un plugin obligatoire. Cette exigence ne permet pas les
 skills futurs du plugin et ne prouve pas son chargement dans une session. Le manifeste du harness
@@ -117,9 +119,9 @@ filesystem stable pour les builtins. Il documente le chargement de plugins de d�
 
 La découverte locale dépend aussi de l'autorisation **Allow Local Plugin Imports** ; une
 installation marketplace de même nom prend priorité sur la copie locale. Ces deux états ne sont
-pas publiés par une source filesystem supportée. Une projection Cursor obligatoire reste donc
-`exposure=unknown` avec une erreur, même lorsque son contenu est valide. La simple présence
-dans cette racine ne satisfait pas `required: true`.
+pas publiés par une source filesystem supportée. Une projection Cursor obligatoire et valide
+satisfait donc uniquement une exigence de présence : `required: true` refuse son absence ou ses
+défauts structurels, et indique `activation=unobserved` sans en faire une erreur.
 
 Customize reste l'interface officielle des plugins marketplace installés. Aucun registre
 filesystem stable ne publie leur activation, `cursor-agent plugin marketplace list` n'énumère que

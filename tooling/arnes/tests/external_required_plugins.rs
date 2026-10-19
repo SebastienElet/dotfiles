@@ -101,14 +101,18 @@ fn required_plugins_accept_enabled_installations_with_observable_activation() ->
 }
 
 #[test]
-fn a_required_cursor_projection_does_not_prove_local_import_authorization() -> TestResult {
+fn a_required_cursor_projection_checks_presence_without_certifying_activation() -> TestResult {
     let fixture = configured_fixture()?;
     fixture.write_home(".arnes.yaml", &manifest("cursor", ", required: true"))?;
     install(&fixture, "cursor", true)?;
     let (code, stdout, stderr) = doctor(&fixture, "cursor")?;
-    assert_eq!(code, 2, "{stdout}\n{stderr}");
-    assert!(stdout.contains("exposure=unknown"), "{stdout}");
-    assert!(stdout.contains("local import authorization"), "{stdout}");
+    assert_eq!(code, 0, "{stdout}\n{stderr}");
+    assert!(stdout.contains("topology=healthy"), "{stdout}");
+    assert!(stdout.contains("activation=unobserved"), "{stdout}");
+    assert!(
+        !stdout.contains("activation=available-not-runtime-observed"),
+        "{stdout}"
+    );
     Ok(())
 }
 
@@ -205,11 +209,7 @@ fn requiring_a_plugin_does_not_allow_undeclared_skills() -> TestResult {
         };
         fixture.write_home(format!("{root}/skills/foreign/SKILL.md"), "# Foreign\n")?;
         let (code, stdout, stderr) = doctor(&fixture, agent)?;
-        assert_eq!(
-            code,
-            if agent == "cursor" { 2 } else { 1 },
-            "{agent}: {stdout}\n{stderr}"
-        );
+        assert_eq!(code, 1, "{agent}: {stdout}\n{stderr}");
         assert!(stdout.contains("skill foreign"), "{agent}: {stdout}");
         assert!(stdout.contains("policy=unexpected"), "{agent}: {stdout}");
     }

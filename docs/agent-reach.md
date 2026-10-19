@@ -4,11 +4,13 @@ L'installation est optionnelle et cible macOS ARM64. Le plugin conserve les réf
 canaux d'Agent-Reach. Moon utilise `@sebastienelet/agent-reach-adapter`, épinglé dans `package.json`
 et `bun.lock` ; les gestionnaires natifs de Claude Code et Codex installent le plugin. Harness copie
 ses ressources et son manifeste `.cursor-plugin/plugin.json` sous `~/.cursor/plugins/local/agent-reach`.
-Arnes exige ensuite sa présence et son activation durable pour les trois agents.
+Arnes exige ensuite sa présence pour les trois agents et son activation durable observable pour
+Claude et Codex.
 
 Limite actuelle : Cursor ne publie aucune source locale supportée certifiant l'autorisation
-d'import et la priorité effective du plugin. Le contrôle obligatoire Cursor reste donc en erreur,
-même avec une projection valide ; le parcours complet ne peut pas encore conclure au succès.
+d'import et la priorité effective du plugin. Pour Cursor, le contrôle obligatoire valide la
+présence et l'intégrité structurelle de la projection locale, avec `activation=unobserved`.
+L'activation effective reste à vérifier dans Cursor ; cette limite ne bloque pas le contrôle.
 
 Depuis le checkout canonique, après intégration des changements :
 
@@ -85,9 +87,10 @@ docker compose --file ~/.config/agent-reach/compose.yaml stop linkedin
 sans dépendance d'installation ni cache. Il exige un binaire Arnes à jour et compare d'abord le
 manifeste utilisateur au fichier canonique `home/.arnes.yaml` : une politique absente ou ancienne
 fait échouer le contrôle. Un plugin `required: true` manque ou est désactivé : le contrôle échoue ;
-une activation indéterminable échoue également. Pour Cursor, la projection locale ne prouve pas
+une activation indéterminable Claude/Codex échoue également. Pour Cursor, la projection locale ne prouve pas
 l'autorisation d'import ni l'absence de priorité d'un plugin marketplace homonyme. Arnes rapporte
-donc `exposure=unknown` et une erreur plutôt qu'une activation certifiée. Cette limite est
+donc `activation=unobserved` sans rendre ce point bloquant lorsque la projection est présente et
+structurellement valide. Cette limite est
 distincte du chargement dans une session, qui n'est observé pour aucun agent.
 
 `harness:agent-reach-install-check`, appelé par le parcours d'installation complet, attend les
