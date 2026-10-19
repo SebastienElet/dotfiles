@@ -21,6 +21,29 @@ moon run harness:agent-reach
 Ne pas lancer cette installation globale depuis un worktree ou un HOME de fixture. Le packaging
 et les tests locaux ne nécessitent pas d'installation globale.
 
+## Installation précédente
+
+Le parcours ajoute `agent-reach@agent-reach-adapter` sans retirer
+`agent-reach@dotfiles-agent-reach`. Avant de remplacer une installation précédente, conserver le
+chemin de sa marketplace locale et qualifier le retour à son activation. Le retour arrière utilise
+les commandes natives pour désactiver ou retirer le nouveau plugin, réajouter la marketplace
+conservée si nécessaire et réinstaller l'ancien plugin.
+
+Après cette qualification, retirer explicitement l'ancien plugin et sa marketplace avant le
+parcours complet :
+
+```sh
+claude plugin uninstall agent-reach@dotfiles-agent-reach --scope user --keep-data
+claude plugin marketplace remove dotfiles-agent-reach --scope user
+codex plugin remove agent-reach@dotfiles-agent-reach
+codex plugin marketplace remove dotfiles-agent-reach
+```
+
+La désactivation seule ne suffit pas : Arnes signale aussi un plugin ou une marketplace hors
+politique. Inspecter les éventuels caches orphelins aux chemins exacts rapportés par Arnes avant
+tout retrait manuel ; ne pas supprimer un répertoire de cache partagé ni la source locale conservée
+pour le retour arrière. Relancer ensuite le parcours complet et `harness:agent-reach-check`.
+
 ## Sources et rejeu
 
 Le fichier `resources/source.json` du paquet npm fixe le commit Agent-Reach et les coordonnées
