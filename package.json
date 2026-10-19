@@ -26,6 +26,6 @@
     "oxlint-tsgolint": "7.0.2004",
     "prettier": "3.9.10",
     "typescript": "7.0.2",
-    "cspell": "10.3.6"
+    "cspell": "10.4.0"
   }
 }
