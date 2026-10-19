@@ -33,9 +33,15 @@ test("reports the pinned source and backend coordinates without installing anyth
     await mkdtemp(join(tmpdir(), "agent-reach-plan-")),
   );
   directories.push(root);
-  await mkdir(join(root, "harness/plugins/agent-reach"), { recursive: true });
+  await mkdir(
+    join(root, "node_modules/@sebastienelet/agent-reach-adapter/resources"),
+    { recursive: true },
+  );
   await writeFile(
-    join(root, "harness/plugins/agent-reach/source.json"),
+    join(
+      root,
+      "node_modules/@sebastienelet/agent-reach-adapter/resources/source.json",
+    ),
     JSON.stringify({
       version: "1.2.3",
       revision: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -54,9 +60,15 @@ test("rejects malformed metadata before running any installer", async () => {
     await mkdtemp(join(tmpdir(), "agent-reach-cli-")),
   );
   directories.push(root);
-  await mkdir(join(root, "harness/plugins/agent-reach"), { recursive: true });
+  await mkdir(
+    join(root, "node_modules/@sebastienelet/agent-reach-adapter/resources"),
+    { recursive: true },
+  );
   await writeFile(
-    join(root, "harness/plugins/agent-reach/source.json"),
+    join(
+      root,
+      "node_modules/@sebastienelet/agent-reach-adapter/resources/source.json",
+    ),
     '{"revision":"main"}',
   );
   const result = await invoke("runtime", root, root);

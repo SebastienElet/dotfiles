@@ -141,6 +141,14 @@ impl Manifest {
         self.0.external.plugins(agent, scope)
     }
 
+    pub(crate) fn required_external_plugins(
+        &self,
+        agent: Agent,
+        scope: Scope,
+    ) -> impl Iterator<Item = &str> {
+        self.0.external.required_plugins(agent, scope)
+    }
+
     pub fn external_skills(
         &self,
         agent: Agent,

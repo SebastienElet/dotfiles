@@ -1,8 +1,16 @@
 # Agent-Reach via Moon
 
-L'installation est optionnelle et cible macOS. Le plugin conserve les références de tous les
-canaux d'Agent-Reach. Moon installe les outils ; les gestionnaires natifs de Claude Code et Codex
-installent le plugin ; Arnes audite sa déclaration externe.
+L'installation est optionnelle et cible macOS ARM64. Le plugin conserve les références de tous les
+canaux d'Agent-Reach. Moon utilise `@sebastienelet/agent-reach-adapter`, épinglé dans `package.json`
+et `bun.lock` ; les gestionnaires natifs de Claude Code et Codex installent le plugin. Harness copie
+ses ressources et son manifeste `.cursor-plugin/plugin.json` sous `~/.cursor/plugins/local/agent-reach`.
+Arnes exige ensuite sa présence pour les trois agents et son activation durable observable pour
+Claude et Codex.
+
+Limite actuelle : Cursor ne publie aucune source locale supportée certifiant l'autorisation
+d'import et la priorité effective du plugin. Pour Cursor, le contrôle obligatoire valide la
+présence et l'intégrité structurelle de la projection locale, avec `activation=unobserved`.
+L'activation effective reste à vérifier dans Cursor ; cette limite ne bloque pas le contrôle.
 
 Depuis le checkout canonique, après intégration des changements :
 
@@ -13,17 +21,42 @@ moon run harness:agent-reach
 Ne pas lancer cette installation globale depuis un worktree ou un HOME de fixture. Le packaging
 et les tests locaux ne nécessitent pas d'installation globale.
 
+## Installation précédente
+
+Le parcours ajoute `agent-reach@agent-reach-adapter` sans retirer
+`agent-reach@dotfiles-agent-reach`. Avant de remplacer une installation précédente, conserver le
+chemin de sa marketplace locale et qualifier le retour à son activation. Le retour arrière utilise
+les commandes natives pour désactiver ou retirer le nouveau plugin, réajouter la marketplace
+conservée si nécessaire et réinstaller l'ancien plugin.
+
+Après cette qualification, retirer explicitement l'ancien plugin et sa marketplace avant le
+parcours complet :
+
+```sh
+claude plugin uninstall agent-reach@dotfiles-agent-reach --scope user --keep-data
+claude plugin marketplace remove dotfiles-agent-reach --scope user
+codex plugin remove agent-reach@dotfiles-agent-reach
+codex plugin marketplace remove dotfiles-agent-reach
+```
+
+La désactivation seule ne suffit pas : Arnes signale aussi un plugin ou une marketplace hors
+politique. Inspecter les éventuels caches orphelins aux chemins exacts rapportés par Arnes avant
+tout retrait manuel ; ne pas supprimer un répertoire de cache partagé ni la source locale conservée
+pour le retour arrière. Relancer ensuite le parcours complet et `harness:agent-reach-check`.
+
 ## Sources et rejeu
 
-`harness/plugins/agent-reach/source.json` fixe le commit Agent-Reach, la version du plugin et les
-coordonnées directes des CLI Python et Node. `uv tool install` isole chaque outil Python sous
+Le fichier `resources/source.json` du paquet npm fixe le commit Agent-Reach et les coordonnées
+directes des CLI Python et Node. `uv tool install` isole chaque outil Python sous
 `~/.local/share/agent-reach/python-tools/` ; Volta
 installe les outils Node. Les dépendances transitives Python et npm ne sont pas verrouillées.
 L'image LinkedIn dans `home/.config/agent-reach/compose.yaml` est épinglée par digest multiarchitecture.
 
 Le cache Git et le plugin assemblé résident sous `~/.local/share/agent-reach/`. La marketplace
-locale `dotfiles-agent-reach` livre le même contenu aux deux agents. Le packaging conserve un
-résultat identique et refuse un fichier, lien ou contenu divergent. Un changement du pin ou du
+locale `agent-reach-adapter` livre le même contenu à Claude et Codex depuis
+`adapter/<version-du-paquet>/marketplace`. Cursor reçoit une copie locale des mêmes ressources.
+Le packaging et la projection Cursor conservent un
+résultat identique et refusent un fichier, lien ou contenu divergent. Un changement du pin ou du
 packaging exige une reconstruction explicite de la marketplace générée ; l'installation ne
 supprime pas automatiquement l'ancienne pour contourner ce refus. Les caches des agents restent
 gérés par leurs commandes natives.
@@ -73,9 +106,20 @@ docker compose --file ~/.config/agent-reach/compose.yaml stop linkedin
 
 ## Vérification
 
-`harness:agent-reach-check` suit les installations et lance les audits Arnes, la commande de
-version Agent-Reach et la lecture native de configuration MCPorter. Il ne se connecte à aucune
-plateforme et ne prétend pas valider une collecte. Les audits Arnes portent sur l'agent entier et peuvent
+`moon run harness:agent-reach-check` lance uniquement les audits Arnes de Claude, Codex et Cursor,
+sans dépendance d'installation ni cache. Il exige un binaire Arnes à jour et compare d'abord le
+manifeste utilisateur au fichier canonique `home/.arnes.yaml` : une politique absente ou ancienne
+fait échouer le contrôle. Un plugin `required: true` manque ou est désactivé : le contrôle échoue ;
+une activation indéterminable Claude/Codex échoue également. Pour Cursor, la projection locale ne prouve pas
+l'autorisation d'import ni l'absence de priorité d'un plugin marketplace homonyme. Arnes rapporte
+donc `activation=unobserved` sans rendre ce point bloquant lorsque la projection est présente et
+structurellement valide. Cette limite est
+distincte du chargement dans une session, qui n'est observé pour aucun agent.
+
+`harness:agent-reach-install-check`, appelé par le parcours d'installation complet, attend les
+installations puis lance ces audits, la commande de version Agent-Reach et la lecture native de
+configuration MCPorter. Il ne se connecte à aucune plateforme et ne prétend pas valider une
+collecte. Les audits Arnes portent sur l'agent entier et peuvent
 signaler un défaut externe sans rapport avec Agent-Reach.
 
 Le Doctor global n'est pas lancé automatiquement : le backend Boss du commit épinglé peut

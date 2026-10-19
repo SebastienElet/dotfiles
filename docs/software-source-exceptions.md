@@ -31,7 +31,8 @@ son remplacement nécessite une réinstallation explicite.
 Les sources internes à un outil local appelé par Moon relèvent des tests de cet outil.
 
 Agent-Reach est installé optionnellement par `moon run harness:agent-reach`. Son commit et les
-coordonnées directes des outils Python/Node sont déclarés dans
-`harness/plugins/agent-reach/source.json` ; uv et Volta assurent leurs installations. Les
+coordonnées directes des outils Python/Node proviennent de `resources/source.json` du paquet
+`@sebastienelet/agent-reach-adapter`, épinglé dans `package.json` et `bun.lock` ; uv et Volta assurent leurs installations. Les
 dépendances transitives ne sont pas verrouillées. Le plugin est assemblé depuis ce même commit
-et livré par une marketplace locale aux deux agents. Voir [le parcours Agent-Reach](agent-reach.md).
+et livré par une marketplace locale à Claude/Codex et une projection locale à Cursor.
+Voir [le parcours Agent-Reach](agent-reach.md).

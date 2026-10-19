@@ -58,6 +58,12 @@ fn validate_plugins(
         let field = |name: &str| format!("external.plugins[{index}].{name}");
         super::validate_target(&field, plugin.agent, plugin.scope, agents)?;
         super::skills::validate_slug(&field("id"), &plugin.id)?;
+        if plugin.required && plugin.scope == Scope::Project && plugin.agent != Agent::Claude {
+            return Err(ManifestError::new(
+                field("required"),
+                "required plugins need an observable scope",
+            ));
+        }
         if !declarations.insert((plugin.agent, plugin.scope, plugin.id.clone())) {
             return Err(ManifestError::new(field("id"), "duplicate external plugin"));
         }
