@@ -4,7 +4,6 @@
       repository: ".",
       harness: harness,
       arnes: tooling/arnes,
-      herdr-issue: tooling/herdr-issue-worktree,
       home: home,
       tooling: tooling,
     },

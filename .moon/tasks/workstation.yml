@@ -170,20 +170,6 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       herdr plugin link "$HOME/.local/share/herdr-worktree-cleanup/node_modules/@sebastienelet/herdr-worktree-cleanup"
-  herdr-issue-plugin:
-    description: Link the optional standalone Herdr issue launcher
-    deps:
-      - dependencies
-      - herdr-setup
-      - herdr-issue:build
-    toolchains: system
-    options:
-      cache: false
-      os: macos
-      runInCI: false
-    script: |-
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      herdr plugin link "$workspaceRoot/tooling/herdr-issue-worktree"
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
