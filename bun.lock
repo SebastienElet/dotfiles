@@ -9,6 +9,7 @@
         "@sebastienelet/agent-reach-adapter": "0.0.1",
         "@sebastienelet/agent-skills": "0.0.1",
         "@sebastienelet/proof-integrity-review": "0.0.1",
+        "archify-upstream": "https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz",
         "zod": "4.6.7",
       },
       "devDependencies": {
@@ -316,6 +317,8 @@
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
 
     "ansi-regex": ["ansi-regex@6.4.0", "", {}, "sha512-KzTVk2tCWAHtYrvvvaP8bJKJq2pVinhLcGEQdtLIYPbmNGNyYe8QwNaTUYQp2J7/vIsUKt5QCqAfUkYyG9DkOw=="],
+
+    "archify-upstream": ["archify-repository@https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz", {}, "sha512-jyXfT9/6A8thb1rZDX3NvnBUDrd520RgZF2nuTzAX/30DsQm71zNilGPQN+ph0zdK7cT0qy5kLkES0d+82KsvA=="],
 
     "array-timsort": ["array-timsort@1.0.3", "", {}, "sha512-/+3GRL7dDAGEfM6TseQk/U+mi18TU2Ms9I3UlLdUMhz2hbvGNTKdj9xniwXfUqgYhHxRx0+8UnKkvlNwVU+cWQ=="],
 
