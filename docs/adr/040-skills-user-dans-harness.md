@@ -3,6 +3,7 @@
 - **Statut** : accepté
 - **Date** : 2026-08
 - **Révision** : 2026-10-18 — consommation du paquet publié, décisions #546 et #548, lot #549.
+- **Révision** : 2026-10-19 — retrait du lanceur d'issues inutilisé et de son compagnon, décision #554.
 
 ## Contexte
 
@@ -26,7 +27,8 @@ Séparer les sources par portée :
 - `proof-integrity-review` et `handoff` proviennent respectivement des paquets npm
   `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.2`,
   acquis par Bun à version exacte et verrouillés dans `bun.lock` ;
-- `harness/skills/` conserve le compagnon local `herdr-issue-worktree` ;
+- `harness/skills/` reste l'emplacement des skills user locales ; le compagnon
+  `herdr-issue-worktree` est retiré avec le lanceur inutilisé selon la décision #554 ;
 - `.agents/skills/` contient uniquement les skills propres au dépôt ;
 - les tâches du projet Moon `harness` déploient chaque skill user par un lien feuille vers la
   `source` relative au checkout déclarée dans le manifeste Arnes ; en son absence, la source est

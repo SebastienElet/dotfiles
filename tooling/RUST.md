@@ -1,7 +1,7 @@
 # Rust checks
 
-`arnes` and `herdr-issue-state` remain independent packages under
-`tooling/`, with their existing lockfiles and deployment directories.
+`arnes` remains an independent package under `tooling/`, with its existing
+lockfile and deployment directory.
 
 ## Policy
 
@@ -107,8 +107,8 @@ worktree whose runtimes and package dependencies are already installed, use
 installation dependencies after preparing rustup. Root Rust version and Clippy/rustfmt
 configuration changes are inputs to all Rust verification tasks and their affected CI selection.
 
-Arnes CI targets Ubuntu. Herdr issue bindings CI targets macOS and Ubuntu. Local evidence applies only to the platform exercised. Remote CI must
-pass before merge.
+Arnes CI targets Ubuntu. Local evidence applies only to the platform exercised.
+Remote CI must pass before merge.
 
 References: [Cargo lint configuration](https://doc.rust-lang.org/cargo/reference/manifest.html#the-lints-section),
 [rustc lint levels](https://doc.rust-lang.org/rustc/lints/levels.html),

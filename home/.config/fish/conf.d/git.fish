@@ -10,14 +10,7 @@ function git
         return $status
     end
 
-    set -l main_branch_script (path resolve (path dirname (status filename))/../../../../tooling/git-main-branch)
-    if not test -x "$main_branch_script"
-        echo "git: branch cleanup disabled: $main_branch_script is unavailable" >&2
-        command git $argv
-        return $status
-    end
-
-    set -l main_branch (command "$main_branch_script" --strict $git_context)
+    set -l main_branch (git_main_branch --strict $git_context)
     if test $status -ne 0; or test -z "$main_branch"
         echo "git: branch cleanup disabled: primary branch lookup failed" >&2
         command git $argv

@@ -11,7 +11,6 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Dev
 
-| Skill                  | Description                                                                              |
-| ---------------------- | ---------------------------------------------------------------------------------------- |
-| `archify`              | Generate interactive HTML diagrams with Archify.                                         |
-| `herdr-issue-worktree` | Start or resume issue work in a visibly labeled Herdr Git worktree with Codex or Claude. |
+| Skill     | Description                                      |
+| --------- | ------------------------------------------------ |
+| `archify` | Generate interactive HTML diagrams with Archify. |

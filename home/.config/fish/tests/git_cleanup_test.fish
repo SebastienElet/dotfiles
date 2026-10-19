@@ -52,6 +52,10 @@ for function_file in "$project_root"/home/.config/fish/conf.d/git.fish "$project
 end
 
 source "$project_root/home/.config/fish/tests/git_cleanup/branch_test.fish"
+or exit $status
 source "$project_root/home/.config/fish/tests/git_cleanup/worktree_test.fish"
+or exit $status
 source "$project_root/home/.config/fish/tests/git_cleanup/recovery_test.fish"
+or exit $status
 source "$project_root/home/.config/fish/tests/git_cleanup/invocation_test.fish"
+or exit $status
