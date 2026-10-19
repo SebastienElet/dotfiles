@@ -54,10 +54,6 @@ separately. The Minutes CLI is not installed by this task.
 with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
-The [issue launcher](tooling/herdr-issue-worktree/README.md) is an explicit opt-in with
-`moon exec repository:herdr-issue-plugin` for standalone Ctrl-click work on GitHub, GitLab
-or Linear issues.
-Existing launcher installations remain linked until explicitly unlinked.
 It installs `@sebastienelet/herdr-worktree-cleanup@1.0.1` with Bun in
 `~/.local/share/herdr-worktree-cleanup` and links its `dotfiles.worktree-cleanup` plugin,
 which removes a linked worktree's checkout when its workspace closes.
@@ -80,6 +76,13 @@ before deploying. Keep the lock until the change is integrated into the canonica
 the affected links are explicitly repointed there, and their resolved targets are verified.
 Only then run `git worktree unlock /absolute/worktree/path` and allow cleanup.
 The plugin does not detect deployed links or copy, repoint, or repair them automatically.
+
+The unused issue launcher and its companion skill have been retired. For an existing installation,
+inspect `herdr plugin list`, then disable and unlink only `dotfiles.issue-worktree` with
+`herdr plugin disable dotfiles.issue-worktree` and `herdr plugin unlink dotfiles.issue-worktree`.
+Remove the `herdr-issue-worktree` skill symlinks under `~/.claude/skills`, `~/.cursor/skills` and
+`~/.agents/skills` only after verifying that they target the retired source. Existing worktrees,
+agent sessions and launcher state are retained; deployment does not perform this removal.
 
 [Grok Bot](https://x.ai/bot) belongs to the minimal profile. Install it independently with
 `moon exec repository:grokbot` (macOS 12 or newer, Apple Silicon

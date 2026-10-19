@@ -37,11 +37,6 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: herdr-issue-worktree
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
   - slug: visual-explanation
     source: node_modules/@sebastienelet/agent-skills/skills/visual-explanation
     installations:
