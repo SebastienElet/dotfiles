@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@sebastienelet/proof-integrity-review": "0.0.1",
-    "@sebastienelet/agent-handoff": "0.0.1",
+    "@sebastienelet/agent-handoff": "0.0.2",
     "@sebastienelet/agent-skills": "0.0.1",
     "zod": "4.6.7"
   },
