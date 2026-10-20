@@ -1,26 +1,53 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
+repository_directory="$PWD"
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64)
+    bun_target=bun-darwin-aarch64
+    bun_checksum=80afd4c069b46a6fa8f3ec520bebc750a7843e4a8d5b9583d29ad436c00a3403
+    moon_target=macos-arm64
+    ;;
+  Linux-x86_64)
+    bun_target=bun-linux-x64
+    bun_checksum=3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18
+    moon_target=linux-x64-gnu
+    ;;
+  *)
+    printf '%s\n' 'Error: unsupported bootstrap platform (requires macOS ARM64 or Linux x64 glibc)' >&2
+    exit 1
+    ;;
+esac
+
 bootstrap_directory="$(mktemp -d "${TMPDIR:-/tmp}/moon-bootstrap.XXXXXX")"
 trap 'rm -r "$bootstrap_directory"' EXIT
-export PROTO_HOME="$bootstrap_directory/proto"
-export PROTO_CLI_UNMANAGED_INSTALL="$PROTO_HOME/bin"
-export PROTO_OFFLINE=false
-export PROTO_AUTO_INSTALL=true
-export PROTO_DETECT_STRATEGY=only-prototools
-unset PROTO_MOON_VERSION PROTO_ENV
-unset PROTO_CLI_INSTALL_DIR CARGO_DIST_FORCE_INSTALL_DIR
-
-proto_installer="$(curl -fsSL --connect-timeout 10 --max-time 60 https://github.com/moonrepo/proto/releases/latest/download/proto_cli-installer.sh)" || {
+cd "$bootstrap_directory"
+curl -fsSL --connect-timeout 10 --max-time 60 -o bun.zip \
+  "https://github.com/oven-sh/bun/releases/download/bun-v1.4.3/$bun_target.zip" || {
   download_status=$?
-  printf '%s\n' 'Error: unable to download the proto installer' >&2
+  printf '%s\n' 'Error: unable to download Bun' >&2
   exit "$download_status"
 }
-/bin/sh -c "$proto_installer"
-"$PROTO_HOME/bin/proto" --config-mode local run moon -- --version
-moon_binary="$("$PROTO_HOME/bin/proto" --config-mode local bin moon)"
+printf '%s  bun.zip\n' "$bun_checksum" | shasum -a 256 -c - || {
+  checksum_status=$?
+  printf '%s\n' 'Error: Bun checksum verification failed' >&2
+  exit "$checksum_status"
+}
+unzip -q bun.zip -d "$bootstrap_directory"
+mkdir moon
+cp "$repository_directory/.github/actions/setup-moon/package.json" \
+  "$repository_directory/.github/actions/setup-moon/bun.lock" moon/
+cd moon
+export BUN_INSTALL_CACHE_DIR="$bootstrap_directory/cache"
+unset BUN_CONFIG_SKIP_LOAD_LOCKFILE BUN_CONFIG_NO_VERIFY BUN_OPTIONS
+HOME="$bootstrap_directory" XDG_CONFIG_HOME="$bootstrap_directory" \
+  TMPDIR="$bootstrap_directory" \
+  "$bootstrap_directory/$bun_target/bun" install --config=/dev/null --no-env-file \
+  --frozen-lockfile --ignore-scripts
+moon_binary="$PWD/node_modules/@moonrepo/core-$moon_target/moon"
+"$moon_binary" --version
 mkdir -p "$HOME/.moon/bin"
 install -m 755 "$moon_binary" "$HOME/.moon/bin/moon"
 "$HOME/.moon/bin/moon" --version

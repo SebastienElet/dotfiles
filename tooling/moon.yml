@@ -168,6 +168,7 @@ tasks:
       - install.test.ts
       - moon/bootstrap.test.ts
       - install-moon
+      - /.github/actions/setup-moon/**/*
       - /install.sh
       - /package.json
       - /bun.lock
@@ -186,6 +187,7 @@ tasks:
     inputs:
       - moon/bootstrap.integration.ts
       - install-moon
+      - /.github/actions/setup-moon/**/*
       - "@group(bunTestSupport)"
   smoke-minimal:
     command: bun tooling/smoke-minimal.ts

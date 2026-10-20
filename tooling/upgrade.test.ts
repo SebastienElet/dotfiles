@@ -91,7 +91,14 @@ test("rejects an invalid pulled Moon pin before redeployment", async () => {
   expect(result.calls).not.toContain("moon exec");
 });
 
-test.each(["curl", "run moon", "bin moon", "install", "moon --version"])(
+test.each([
+  "curl",
+  "shasum",
+  "unzip",
+  "bun install",
+  "install -m",
+  "moon --version",
+])(
   "refuses redeployment when Moon acquisition or validation fails at %s",
   async (failure) => {
     const fixture = await upgradeFixture();

@@ -62,9 +62,13 @@ async function publishMoonPin(
   repository: string,
   version: string,
 ): Promise<void> {
-  await Bun.write(join(repository, ".prototools"), `moon = "${version}"\n`);
+  const manifestPath = ".github/actions/setup-moon/package.json";
+  await Bun.write(
+    join(repository, manifestPath),
+    JSON.stringify({ dependencies: { "@moonrepo/cli": version } }),
+  );
   for (const args of [
-    ["add", ".prototools"],
+    ["add", ".github/actions/setup-moon/package.json"],
     ["commit", "-qm", "advance Moon pin"],
     ["push", "-q", "origin", "HEAD"],
     ["reset", "--hard", "HEAD~1"],
@@ -88,7 +92,7 @@ async function upgradeFixture(): Promise<UpgradeFixture> {
     PATH: bin,
     REAL_GIT: realGit,
     REAL_INSTALL: Bun.which("install") ?? "install",
-    UPGRADE_PROTO_STUB: join(bin, "proto"),
+    UPGRADE_BUN_STUB: join(bin, "bun-install"),
     UPGRADE_LOG: join(root, "calls"),
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_CONFIG_GLOBAL: "/dev/null",
@@ -136,8 +140,9 @@ async function prepareFixtureFiles(
   );
   await copyUpgradeFiles(repository);
   await cp(
-    join(repositoryRoot, ".prototools"),
-    join(repository, ".prototools"),
+    join(repositoryRoot, ".github/actions/setup-moon"),
+    join(repository, ".github/actions/setup-moon"),
+    { recursive: true },
   );
   await Bun.write(
     join(repository, "package.json"),
@@ -213,7 +218,10 @@ async function installFakeCommands(bin: string, home: string): Promise<void> {
     "nvim",
     "date",
     "curl",
-    "proto",
+    "bun-install",
+    "shasum",
+    "unzip",
+    "uname",
     "install",
   ]) {
     const target = join(bin, command);

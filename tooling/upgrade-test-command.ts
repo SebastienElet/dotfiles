@@ -6,7 +6,7 @@ import {
   readdir,
   rename,
 } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { z } from "zod";
 
 const environment = z
@@ -21,7 +21,7 @@ const environment = z
     UPGRADE_NODE_EFFECT: z.enum(["", "publication", "cleanup"]).default(""),
     REAL_GIT: z.string(),
     REAL_INSTALL: z.string(),
-    UPGRADE_PROTO_STUB: z.string(),
+    UPGRADE_BUN_STUB: z.string(),
   })
   .parse(process.env);
 const argumentOffset = 2;
@@ -46,10 +46,24 @@ if (command === "git") {
   });
   process.exit(await child.exited);
 }
+if (command === "uname") {
+  process.stdout.write(commandArguments[0] === "-s" ? "Darwin\n" : "arm64\n");
+}
 if (command === "curl") {
-  process.stdout.write(
-    'mkdir -p "$PROTO_HOME/bin"; cp "$UPGRADE_PROTO_STUB" "$PROTO_HOME/bin/proto"\n',
+  const output = z
+    .string()
+    .parse(commandArguments[commandArguments.indexOf("-o") + 1]);
+  await Bun.write(output, "fixture archive");
+}
+if (command === "unzip") {
+  const output = z.string().parse(commandArguments.at(-1));
+  const bun = join(output, "bun-darwin-aarch64/bun");
+  await mkdir(dirname(bun), { recursive: true });
+  await Bun.write(
+    bun,
+    `#!${process.execPath}\nimport ${JSON.stringify(environment.UPGRADE_BUN_STUB)};\n`,
   );
+  await chmod(bun, executableMode);
 }
 if (command === "install") {
   const child = Bun.spawn([environment.REAL_INSTALL, ...commandArguments], {
@@ -59,28 +73,24 @@ if (command === "install") {
   });
   process.exit(await child.exited);
 }
-if (command === "proto") {
+if (command === "bun") {
   const configuration = z
-    .object({ moon: z.string().regex(/^\d+\.\d+\.\d+$/u) })
-    .safeParse(Bun.TOML.parse(await Bun.file(".prototools").text()));
+    .object({
+      dependencies: z.object({
+        "@moonrepo/cli": z.string().regex(/^\d+\.\d+\.\d+$/u),
+      }),
+    })
+    .safeParse(await Bun.file("package.json").json());
   if (!configuration.success) {
     process.stderr.write("invalid Moon pin\n");
     process.exit(1);
   }
-  const pin = configuration.data.moon;
-  const selected = join(environment.HOME, "selected-moon");
-  if (
-    commandArguments.join(" ") === "--config-mode local run moon -- --version"
-  ) {
-    const source = `#!${process.execPath}\nconst version = ${JSON.stringify(pin)};\nconst args = process.argv.slice(2).join(" ");\nawait Bun.write(process.env.UPGRADE_LOG, await Bun.file(process.env.UPGRADE_LOG).text() + "moon " + args + "\\n" + "moon " + version + " " + args + "\\n");\nif (args === "--version") { if (process.env.UPGRADE_FAILURE === "moon --version") { console.error("simulated failure: moon --version"); process.exit(42); } process.stdout.write("moon " + version + "\\n"); }\nif (args.startsWith("exec ") && process.env.UPGRADE_FAILURE === "moon exec") { console.error("simulated failure: moon exec"); process.exit(42); }\n`;
-    await Bun.write(selected, source);
-    await chmod(selected, executableMode);
-    process.stdout.write(`moon ${pin}\n`);
-  } else if (commandArguments.join(" ") === "--config-mode local bin moon") {
-    process.stdout.write(selected);
-  } else {
-    process.exit(1);
-  }
+  const pin = configuration.data.dependencies["@moonrepo/cli"];
+  const selected = join("node_modules/@moonrepo/core-macos-arm64/moon");
+  await mkdir(dirname(selected), { recursive: true });
+  const source = `#!${process.execPath}\nconst version = ${JSON.stringify(pin)};\nconst args = process.argv.slice(2).join(" ");\nawait Bun.write(process.env.UPGRADE_LOG, await Bun.file(process.env.UPGRADE_LOG).text() + "moon " + args + "\\n" + "moon " + version + " " + args + "\\n");\nif (args === "--version") { if (process.env.UPGRADE_FAILURE === "moon --version") { console.error("simulated failure: moon --version"); process.exit(42); } process.stdout.write("moon " + version + "\\n"); }\nif (args.startsWith("exec ") && process.env.UPGRADE_FAILURE === "moon exec") { console.error("simulated failure: moon exec"); process.exit(42); }\n`;
+  await Bun.write(selected, source);
+  await chmod(selected, executableMode);
 }
 if (command === "date") {
   process.stdout.write("2026-09-07T00:00:00Z\n");
