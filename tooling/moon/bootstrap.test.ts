@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 
 const bootstrap = fileURLToPath(new URL("../install-moon", import.meta.url));
 const downloadFailureExitCode = 22;
+const downloadTimeoutExitCode = 28;
 const installerFailureExitCode = 42;
 const selectedVersion = "moon 2.5.2";
 const installer = `
@@ -102,14 +103,17 @@ test("installs and executes the binary selected by local proto configuration", (
   expect(result.stdout).toContain(selectedVersion);
 });
 
-test("does not execute partial installer content after download failure", () => {
-  const result = bootstrapMoon(
-    'printf "installer executed"',
-    downloadFailureExitCode,
-  );
-  expect(result.exitCode).toBe(downloadFailureExitCode);
-  expect(result.stdout).not.toContain("installer executed");
-});
+test.each([downloadFailureExitCode, downloadTimeoutExitCode])(
+  "reports download failure %s without executing partial installer content",
+  (downloadStatus) => {
+    const result = bootstrapMoon('printf "installer executed"', downloadStatus);
+    expect(result.exitCode).toBe(downloadStatus);
+    expect(result.stderr).toContain(
+      "Error: unable to download the proto installer",
+    );
+    expect(result.stdout).not.toContain("installer executed");
+  },
+);
 
 test("propagates a proto installer failure", () => {
   expect(bootstrapMoon(`exit ${installerFailureExitCode}`, 0).exitCode).toBe(
