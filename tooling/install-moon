@@ -41,11 +41,13 @@ cp "$repository_directory/.github/actions/setup-moon/package.json" \
   "$repository_directory/.github/actions/setup-moon/bun.lock" moon/
 cd moon
 export BUN_INSTALL_CACHE_DIR="$bootstrap_directory/cache"
+unset BUN_CONFIG_SKIP_LOAD_LOCKFILE BUN_CONFIG_NO_VERIFY BUN_OPTIONS
 HOME="$bootstrap_directory" XDG_CONFIG_HOME="$bootstrap_directory" \
   TMPDIR="$bootstrap_directory" \
   "$bootstrap_directory/$bun_target/bun" install --config=/dev/null --no-env-file \
   --frozen-lockfile --ignore-scripts
 moon_binary="$PWD/node_modules/@moonrepo/core-$moon_target/moon"
+"$moon_binary" --version
 mkdir -p "$HOME/.moon/bin"
 install -m 755 "$moon_binary" "$HOME/.moon/bin/moon"
 "$HOME/.moon/bin/moon" --version

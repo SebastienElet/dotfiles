@@ -2,6 +2,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
@@ -16,6 +17,7 @@ const failureExitCode = 42;
 const downloadFailureExitCode = 22;
 const downloadTimeoutExitCode = 28;
 const selectedVersion = "moon 2.5.3";
+const previousBinary = "#!/bin/sh\necho moon previous\n";
 
 function writeBootstrapCommands(directory: string): void {
   const commands = {
@@ -53,6 +55,7 @@ type BootstrapFailures = Readonly<{
   version?: number;
   realChecksum?: boolean;
   arch?: string;
+  existing?: boolean;
 }>;
 
 function bootstrapEnvironment(
@@ -80,12 +83,18 @@ function bootstrapMoon(failures: BootstrapFailures = {}): Readonly<{
   stdout: string;
   stderr: string;
   installed: boolean;
+  contents: string | undefined;
 }> {
   const directory = mkdtempSync(join(tmpdir(), "moon-bootstrap-test-"));
   try {
     writeBootstrapCommands(directory);
     if (failures.realChecksum === true) {
       rmSync(join(directory, "shasum"));
+    }
+    const binary = join(directory, ".moon/bin/moon");
+    if (failures.existing === true) {
+      mkdirSync(join(directory, ".moon/bin"), { recursive: true });
+      writeFileSync(binary, previousBinary, { mode: 0o755 });
     }
     const temporary = join(directory, "temporary");
     mkdirSync(temporary);
@@ -95,13 +104,14 @@ function bootstrapMoon(failures: BootstrapFailures = {}): Readonly<{
       stdout: "pipe",
       stderr: "pipe",
     });
-    const installed = existsSync(join(directory, ".moon/bin/moon"));
+    const installed = existsSync(binary);
     expect(readdirSync(temporary)).toEqual([]);
     return {
       exitCode: result.exitCode,
       stdout: result.stdout.toString(),
       stderr: result.stderr.toString(),
       installed,
+      contents: installed ? readFileSync(binary, "utf8") : undefined,
     };
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -138,7 +148,7 @@ test.each(["checksum", "unzip", "bun", "copy", "version"] as const)(
   (stage) => {
     const result = bootstrapMoon({ [stage]: failureExitCode });
     expect(result.exitCode).toBe(failureExitCode);
-    expect(result.installed).toBe(stage === "version");
+    expect(result.installed).toBeFalse();
   },
 );
 
@@ -147,4 +157,10 @@ test("refuses unsupported platforms before installing Moon", () => {
   expect(result.exitCode).not.toBe(0);
   expect(result.stderr).toContain("Error: unsupported bootstrap platform");
   expect(result.installed).toBeFalse();
+});
+
+test("preserves the working Moon binary when the candidate cannot execute", () => {
+  const result = bootstrapMoon({ existing: true, version: failureExitCode });
+  expect(result.exitCode).toBe(failureExitCode);
+  expect(result.contents).toBe(previousBinary);
 });

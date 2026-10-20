@@ -20,7 +20,11 @@ const expectedVersion = z
   .object({ dependencies: z.object({ "@moonrepo/cli": z.string() }) })
   .parse(JSON.parse(pin)).dependencies["@moonrepo/cli"];
 
-type CheckoutState = "fresh" | "stale-moon" | "missing-lock";
+type CheckoutState =
+  | "fresh"
+  | "stale-moon"
+  | "missing-lock"
+  | "invalid-integrity";
 
 type BootstrapFixture = Readonly<{
   directory: string;
@@ -37,6 +41,21 @@ function writeForeignConfiguration(directory: string, home: string): void {
   writeFileSync(join(foreignConfig, ".bunfig.toml"), "invalid = [");
   writeFileSync(join(directory, ".prototools"), 'moon = "latest"');
   writeFileSync(join(home, ".prototools"), 'moon = "latest"');
+}
+
+function writeMoonLock(manifest: string, state: CheckoutState): void {
+  if (state !== "missing-lock") {
+    const lock = readFileSync(
+      join(root, manifestDirectory, "bun.lock"),
+      "utf8",
+    );
+    writeFileSync(
+      join(manifest, "bun.lock"),
+      state === "invalid-integrity"
+        ? lock.replace(/sha512-./u, "sha512-A")
+        : lock,
+    );
+  }
 }
 
 function checkoutFixture(
@@ -56,12 +75,7 @@ function checkoutFixture(
   );
   const manifest = join(checkout, manifestDirectory);
   mkdirSync(manifest, { recursive: true });
-  if (state !== "missing-lock") {
-    copyFileSync(
-      join(root, manifestDirectory, "bun.lock"),
-      join(manifest, "bun.lock"),
-    );
-  }
+  writeMoonLock(manifest, state);
   if (pinContent !== undefined) {
     writeFileSync(join(manifest, "package.json"), pinContent);
   }
@@ -86,6 +100,7 @@ function verifyVersion(binary: string): void {
 function bootstrap(
   pinContent: string | undefined,
   state: CheckoutState = "fresh",
+  overrides: Readonly<Record<string, string>> = {},
 ): void {
   const { directory, checkout, home, temporary, binary } = checkoutFixture(
     pinContent,
@@ -104,9 +119,10 @@ function bootstrap(
         PROTO_OFFLINE: "true",
         PROTO_CLI_INSTALL_DIR: join(directory, "foreign-proto"),
         CARGO_DIST_FORCE_INSTALL_DIR: join(directory, "foreign-cargo"),
+        ...overrides,
       },
     });
-    if (pinContent === pin && state !== "missing-lock") {
+    if (pinContent === pin && (state === "fresh" || state === "stale-moon")) {
       expect(result.stderr.toString()).not.toContain("error");
       expect(result.exitCode).toBe(0);
       verifyVersion(binary);
@@ -114,6 +130,9 @@ function bootstrap(
       expect(result.exitCode).not.toBe(0);
       expect(result.stderr.toString()).not.toBe("");
       expect(existsSync(binary)).toBeFalse();
+      if (state === "invalid-integrity") {
+        expect(result.stderr.toString()).toContain("IntegrityCheckFailed");
+      }
     }
     expect(readdirSync(temporary)).toEqual([]);
     expect(existsSync(join(home, ".proto"))).toBeFalse();
@@ -143,3 +162,16 @@ test.each([undefined, "", "{", pin.replace(expectedVersion, "0.0.0")])(
 test("refuses a checkout without its Moon lockfile", () => {
   bootstrap(pin, "missing-lock");
 });
+
+test("loads the committed lock despite a caller override", () => {
+  bootstrap(pin.replace(expectedVersion, "2.5.2"), "fresh", {
+    BUN_CONFIG_SKIP_LOAD_LOCKFILE: "1",
+  });
+});
+
+test.each([{ BUN_CONFIG_NO_VERIFY: "0" }, { BUN_OPTIONS: "--no-verify" }])(
+  "verifies package integrity despite caller overrides: %j",
+  (overrides: Readonly<Record<string, string>>) => {
+    bootstrap(pin, "invalid-integrity", overrides);
+  },
+);
