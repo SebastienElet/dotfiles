@@ -21,7 +21,6 @@ fileGroups:
     - "/{rust-toolchain,rust-toolchain.toml}"
     - /.moon/toolchains.yml
     - /.moon/tasks/workstation.yml
-    - /.prototools
     - /moon.yml
     - /LICENSE
     - /tooling/RUST.md

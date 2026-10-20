@@ -15,7 +15,6 @@ fileGroups:
     - /package.json
     - /bun.lock
     - /.moon/**/*
-    - /.prototools
     - /rust-toolchain.toml
     - /moon.yml
     - /.github/workflows/test-harness.yml

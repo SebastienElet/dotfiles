@@ -6,7 +6,6 @@ fileGroups:
     - /package.json
     - /bun.lock
     - /tsconfig.json
-    - /.prototools
     - /.github/workflows/**/*
     - /.moon/**/*
     - /moon.yml
@@ -21,7 +20,6 @@ fileGroups:
     - /package.json
     - /bun.lock
     - /tsconfig.json
-    - /.prototools
     - /.moon/**/*
   linkDeployment:
     - deployment-links.test.ts
@@ -135,7 +133,6 @@ tasks:
       - /home/.config/fish/conf.d/git_main_branch.fish
       - /package.json
       - /bun.lock
-      - /.prototools
       - /.moon/toolchains.yml
       - /.moon/workspace.yml
       - /.github/workflows/check-shell.yml
@@ -172,7 +169,6 @@ tasks:
       - /install.sh
       - /package.json
       - /bun.lock
-      - /.prototools
       - /.moon/toolchains.yml
       - /.moon/workspace.yml
       - /.github/workflows/check-shell.yml

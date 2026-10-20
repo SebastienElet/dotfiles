@@ -4,7 +4,6 @@ inheritedBy:
 fileGroups:
   luaLintSupport:
     - moon.yml
-    - .prototools
     - .moon/tasks/packages.yml
     - .moon/tasks/workstation.yml
     - tooling/install-homebrew

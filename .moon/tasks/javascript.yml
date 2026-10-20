@@ -11,7 +11,6 @@ fileGroups:
     - tooling/**/*.ts
     - oxfmt.config.ts
   typescriptToolchain:
-    - .prototools
     - package.json
     - bun.lock
     - .moon/workspace.yml
