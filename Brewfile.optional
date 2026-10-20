@@ -25,7 +25,6 @@ cask "dopplerhq/cli/doppler", trusted: true
 cask "handy"
 cask "languagetool-desktop"
 cask "obsidian"
-cask "rectangle-pro"
 cask "vibe-island"
 cask "whatsapp"
 unless ENV["HOMEBREW_DOTFILES_SKIP_PAID_APPS"] == "1"
