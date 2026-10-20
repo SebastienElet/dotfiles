@@ -91,7 +91,27 @@ test("deploys only selected user skills and preserves their identity on replay",
   expect(replay.exitCode).toBe(0);
   expect(replay.stdout.toString()).toBe("");
   expect(replay.stderr.toString()).toBe("");
-  expect(lstatSync(destination)).toEqual(before);
+  expect(lstatSync(destination)).toMatchObject({
+    dev: before.dev,
+    ino: before.ino,
+    mode: before.mode,
+    nlink: before.nlink,
+    uid: before.uid,
+    gid: before.gid,
+    rdev: before.rdev,
+    size: before.size,
+    blksize: before.blksize,
+    blocks: before.blocks,
+    mtimeMs: before.mtimeMs,
+    ctimeMs: before.ctimeMs,
+    birthtimeMs: before.birthtimeMs,
+  });
+  expect(readlinkSync(destination)).toBe(
+    join(
+      paths.repository,
+      "node_modules/@sebastienelet/agent-skills/skills/shared",
+    ),
+  );
 });
 
 test("preserves a conflicting user destination", () => {

@@ -13,7 +13,11 @@ export PROTO_DETECT_STRATEGY=only-prototools
 unset PROTO_MOON_VERSION PROTO_ENV
 unset PROTO_CLI_INSTALL_DIR CARGO_DIST_FORCE_INSTALL_DIR
 
-proto_installer="$(curl -fsSL --connect-timeout 10 --max-time 60 https://github.com/moonrepo/proto/releases/latest/download/proto_cli-installer.sh)"
+proto_installer="$(curl -fsSL --connect-timeout 10 --max-time 60 https://github.com/moonrepo/proto/releases/latest/download/proto_cli-installer.sh)" || {
+  download_status=$?
+  printf '%s\n' 'Error: unable to download the proto installer' >&2
+  exit "$download_status"
+}
 /bin/sh -c "$proto_installer"
 "$PROTO_HOME/bin/proto" --config-mode local run moon -- --version
 moon_binary="$("$PROTO_HOME/bin/proto" --config-mode local bin moon)"
