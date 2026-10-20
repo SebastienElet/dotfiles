@@ -18,11 +18,13 @@ cd && \
   "$HOME/.moon/bin/moon" exec --quiet install
 ```
 
-The bootstrap uses proto's native local `.prototools` resolution in a temporary
-store, copies the selected binary to `~/.moon/bin/moon`, and prints its executed
-version. The temporary proto store is removed; no global pin or shell profile is
-written. Missing or invalid Moon configuration and download/installation failures
-stop before workstation installation. Network access is required on every bootstrap.
+The bootstrap downloads Bun 1.4.3, verifies its pinned SHA-256 checksum, and installs
+Moon from `.github/actions/setup-moon/package.json` and its frozen `bun.lock` in a
+temporary directory. It copies the native binary to `~/.moon/bin/moon` and prints
+its executed version. Temporary downloads, dependencies and caches are removed; no
+global pin or shell profile is written. Missing or invalid Moon configuration and
+download/installation failures stop before workstation installation. Network access
+is required on every bootstrap.
 
 Cloning fails if `~/.dotfiles` already exists and is not empty. For an existing
 checkout, use the manual install below.
@@ -119,9 +121,9 @@ See the [skills audit](docs/skills-audit-412.md) for the obsolete instructions c
 
 ### Contributing from a worktree
 
-Use the Moon version pinned in `.prototools` and start with the smallest relevant
-task below. Workstation installation is macOS-only; portable checks also run on
-Ubuntu. Inspect the task definition and its native action graph before running
+Use `tooling/install-moon` to install the locked Moon version and start with the
+smallest relevant task below. Workstation installation is macOS-only; portable
+checks also run on Ubuntu. Inspect the task definition and its native action graph before running
 it, especially before either repository aggregate:
 
 ```bash
