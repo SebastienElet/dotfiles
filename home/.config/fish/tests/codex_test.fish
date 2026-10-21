@@ -79,6 +79,48 @@ test "$output" = 'TERM=dumb -c exec doctor --help'; or fail "option value was mi
 set output (codex -- 'exec')
 test "$output" = "TERM=dumb $roots -- exec"; or fail "explicit prompt separator was not preserved"
 
+for shell_directory in "$repository" "$codex_test_root"
+    cd "$shell_directory"
+    for option in -C --cd
+        set output (codex $option "$worktree" exec prompt)
+        test $status -eq 17; or fail "$option before exec: exit status changed"
+        test (count $output) -eq 9; or fail "$option before exec: argument boundaries changed"
+        test "$output" = "TERM=dumb $option $worktree exec $roots prompt"
+        or fail "$option before exec: target Git directories were not used"
+
+        set output (codex exec $option "$worktree" prompt)
+        test $status -eq 17; or fail "$option after exec: exit status changed"
+        test (count $output) -eq 9; or fail "$option after exec: argument boundaries changed"
+        test "$output" = "TERM=dumb exec $roots $option $worktree prompt"
+        or fail "$option after exec: target Git directories were not used"
+    end
+
+    set output (codex exec --cd="$worktree" prompt)
+    test "$output" = "TERM=dumb exec $roots --cd=$worktree prompt"
+    or fail "--cd=: target Git directories were not used"
+end
+
+set output (codex exec -C 'linked worktree' prompt)
+test "$output" = "TERM=dumb exec $roots -C linked worktree prompt"
+or fail "relative -C: target Git directories were not used"
+
+cd "$repository"
+for destination in "$codex_test_root" "$codex_test_root/missing" ''
+    set output (codex exec --cd "$destination" prompt)
+    test $status -eq 17; or fail "non-Git destination: exit status changed"
+    test (count $output) -eq 5; or fail "non-Git destination: argument boundaries changed"
+    test "$output" = "TERM=dumb exec --cd $destination prompt"
+    or fail "non-Git destination: shell Git directories were injected"
+end
+
+set output (codex exec -C)
+test $status -eq 17; or fail "missing -C value: exit status changed"
+test "$output" = 'TERM=dumb exec -C'; or fail "missing -C value: arguments changed"
+
+set output (codex -- --cd "$worktree")
+test "$output" = "TERM=dumb --add-dir $common_directory -- --cd $worktree"
+or fail "prompt separator: --cd was interpreted as an option"
+
 mkdir "$codex_test_root/broken"
 printf 'gitdir: missing\n' >"$codex_test_root/broken/.git"
 cd "$codex_test_root/broken"

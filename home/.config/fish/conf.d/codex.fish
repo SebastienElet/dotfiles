@@ -23,9 +23,19 @@ function codex --description "Run Codex with TERM=dumb and writable Git metadata
         end
     end
 
-    set -l git_directories (command git rev-parse --path-format=absolute --git-common-dir --absolute-git-dir 2>/dev/null)
+    argparse --ignore-unknown 'c/config=' 'C/cd=' -- $argv 2>/dev/null
+    or begin
+        command codex $prefix $arguments
+        return $status
+    end
+    set -l working_directory "$PWD"
+    if set -q _flag_cd
+        set working_directory "$_flag_cd"
+    end
+
+    set -l git_directories (command git -C "$working_directory" rev-parse --path-format=absolute --git-common-dir --absolute-git-dir 2>/dev/null)
     set -l git_arguments
-    if test $status -eq 0; and test (count $git_directories) -eq 2
+    if test $status -eq 0; and test (count $git_directories) -eq 2; and test -n "$working_directory"
         set -a git_arguments --add-dir "$git_directories[1]"
         if test "$git_directories[1]" != "$git_directories[2]"
             set -a git_arguments --add-dir "$git_directories[2]"

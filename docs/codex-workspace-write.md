@@ -73,7 +73,7 @@ racines de workspace. Pour un worktree lié, ajouter seulement le `.git` princip
 **n'a pas suffi** : son répertoire administratif propre restait protégé.
 Le wrapper Fish versionné dans `home/.config/fish/conf.d/codex.fish` ajoute
 automatiquement `--add-dir` pour les deux chemins absolus fournis par Git depuis
-le répertoire courant :
+le répertoire de travail effectif (`-C`/`--cd`, sinon le répertoire courant) :
 
 ```sh
 git rev-parse --path-format=absolute --git-common-dir
