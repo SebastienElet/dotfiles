@@ -7,7 +7,7 @@
       "dependencies": {
         "@sebastienelet/agent-handoff": "0.0.2",
         "@sebastienelet/agent-reach-adapter": "0.0.1",
-        "@sebastienelet/agent-skills": "0.0.1",
+        "@sebastienelet/agent-skills": "0.1.0",
         "@sebastienelet/proof-integrity-review": "0.0.1",
         "archify-upstream": "https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz",
         "zod": "4.6.7",
@@ -264,7 +264,7 @@
 
     "@sebastienelet/agent-reach-adapter": ["@sebastienelet/agent-reach-adapter@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64", "bin": { "agent-reach-adapter": "src/agent-reach.ts" } }, "sha512-U5b54vmOZ4pkPVH7neWNsxcXv61wodcOqDiPTYmv47A1YC9MtnudzOTPKIpQ4d118oQRBryxc9rKYXpr6XDNAQ=="],
 
-    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "sha512-M3S6ugtZCqFzsb5aKD1Y9bcFGqXNDJRDalhD0uh1RF8+cDlFoT2a/uP1pOl6bPPT/GJQcUTKrABLgXsYR/8Yng=="],
+    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@0.1.0", "", { "dependencies": { "zod": "4.6.7" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "sha512-j0lia1EII/TPMBbwB62hRsaj5WJp7yec6DQULzATnHlsKPgWRHoMUCqH2m+IwLuqyx1ti06jenE3RyRW5ns4FQ=="],
 
     "@sebastienelet/proof-integrity-review": ["@sebastienelet/proof-integrity-review@0.0.1", "", { "optionalDependencies": { "@sebastienelet/proof-integrity-review-darwin-arm64": "0.0.1", "@sebastienelet/proof-integrity-review-linux-x64-gnu": "0.0.1" }, "bin": { "proof-integrity": "bin/proof-integrity.ts" } }, "sha512-7sRwi4fBUgKVWgNV/cCU2SZsHUipV9jY4AQWWtZxl92+9VQ5i8Le8oU9BAMO44gQ6Hb/7k6QfLJd0jAND9EZcw=="],
 
@@ -407,8 +407,6 @@
     "zod": ["zod@4.6.7", "", {}, "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg=="],
 
     "@sebastienelet/agent-reach-adapter/zod": ["zod@4.6.6", "", {}, "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="],
-
-    "@sebastienelet/agent-skills/zod": ["zod@4.6.6", "", {}, "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="],
 
     "chalk-template/chalk": ["chalk@5.6.2", "", {}, "sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA=="],
   }
