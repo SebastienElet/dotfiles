@@ -4,6 +4,8 @@ inheritedBy:
 fileGroups:
   luaLintSupport:
     - moon.yml
+    - .github/actions/setup-moon/package.json
+    - .github/actions/setup-moon/bun.lock
     - .moon/tasks/packages.yml
     - .moon/tasks/workstation.yml
     - tooling/install-homebrew

@@ -12,6 +12,8 @@ fileGroups:
     - tooling/check-scripts.ts
     - package.json
     - bun.lock
+    - .github/actions/setup-moon/package.json
+    - .github/actions/setup-moon/bun.lock
     - .moon/toolchains.yml
     - .moon/workspace.yml
     - .moon/tasks/checks.yml
@@ -40,6 +42,8 @@ fileGroups:
   fishGate:
     - home/.config/fish/**/*.fish
     - moon.yml
+    - .github/actions/setup-moon/package.json
+    - .github/actions/setup-moon/bun.lock
     - .moon/workspace.yml
     - .moon/tasks/checks.yml
     - .moon/tasks/packages.yml
@@ -58,6 +62,8 @@ tasks:
       - tooling/skill-markdown-paths.ts
       - tooling/check-command.ts
       - bun.lock
+      - .github/actions/setup-moon/package.json
+      - .github/actions/setup-moon/bun.lock
       - .gitignore
       - file: .prettierignore
         optional: true
@@ -113,6 +119,8 @@ tasks:
       - tooling/deploy-link.ts
       - package.json
       - bun.lock
+      - .github/actions/setup-moon/package.json
+      - .github/actions/setup-moon/bun.lock
       - .github/workflows/check-text.yml
   fish-syntax:
     deps:
