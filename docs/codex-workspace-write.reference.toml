@@ -8,7 +8,6 @@ exclude_slash_tmp = false
 writable_roots = [
   "~/Code",
   "~/.dotfiles",
-  "~/.dotfiles/.git",
   "~/.herdr",
   "~/.bun",
   "~/.npm",

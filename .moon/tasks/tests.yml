@@ -51,6 +51,7 @@ tasks:
     script: |
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       set -euo pipefail
+      fish --no-config home/.config/fish/tests/codex_test.fish
       fish --no-config home/.config/fish/tests/git_cleanup_test.fish
       fish --no-config home/.config/fish/tests/git_main_branch_test.fish
       fish --no-config home/.config/fish/tests/path_test.fish
