@@ -21,7 +21,8 @@ fileGroups:
     - "/{rust-toolchain,rust-toolchain.toml}"
     - /.moon/toolchains.yml
     - /.moon/tasks/workstation.yml
-    - /.prototools
+    - /.github/actions/setup-moon/package.json
+    - /.github/actions/setup-moon/bun.lock
     - /moon.yml
     - /LICENSE
     - /tooling/RUST.md

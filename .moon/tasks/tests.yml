@@ -27,7 +27,8 @@ fileGroups:
     - .moon/tasks/checks.yml
     - .moon/tasks/docker.yml
     - .oxlintrc.json
-    - .prototools
+    - .github/actions/setup-moon/package.json
+    - .github/actions/setup-moon/bun.lock
     - .github/dependabot.yml
     - install.sh
     - harness/USER.md

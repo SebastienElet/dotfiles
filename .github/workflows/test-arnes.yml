@@ -56,7 +56,7 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tooling/arnes/target
-          key: arnes-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/rust-toolchain*', 'tooling/arnes/Cargo.*', '**/.cargo/config*', '.moon/**/*.yml', '.prototools', 'moon.yml', 'tooling/arnes/moon.yml', '.github/workflows/test-arnes.yml') }}
+          key: arnes-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/rust-toolchain*', 'tooling/arnes/Cargo.*', '**/.cargo/config*', '.moon/**/*.yml', '.github/actions/setup-moon/package.json', '.github/actions/setup-moon/bun.lock', 'moon.yml', 'tooling/arnes/moon.yml', '.github/workflows/test-arnes.yml') }}
       - run: >-
           moon ci --downstream none arnes:fmt arnes:clippy
           arnes:check arnes:test arnes:doc
