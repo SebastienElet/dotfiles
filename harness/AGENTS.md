@@ -28,6 +28,9 @@ Before implementing any request:
   on it.
 - Never record a workaround for a defect in code we own as intended behavior: fix it, or
   open a ticket and reference it.
+- Before changing factual claims, `rg` data and integrated docs; keep caveats until facts change, cite proof, and update all mentions together.
+  Check open PRs/branches for related decisions; align or declare dependencies instead of silently contradicting them.
+  A guarantee attributed to a layer must be implemented there and tested by bypassing higher layers.
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.

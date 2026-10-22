@@ -36,6 +36,84 @@ gate does not claim to replace that procedural audit or optional `skills-ref` va
 
 ## Manual live evaluation
 
+### Documentation and decisions (manual contracts)
+
+These cases use the fields of `cases.json`, with inline synthetic fixtures in their prompts.
+`manual-review-v1` means a human scores the agent's answer and diff against `success` and
+`failure`; it is not an Arnes oracle. The current runner only installs `Context Management`
+and scores tool observations, so these cases are not registered in its executable `cases.json`.
+No file-content assertion, script, hook, or gate is added.
+
+Run each prompt in a fresh isolated session with the same agent, model, budget and existing
+instructions. For the candidate, include the three-line factual-claims rule from
+`Critical Analysis (ALWAYS)`. For the neutral variant, replace only those three lines with
+`variants/no-op.md`, leaving all other instructions and prompt bytes identical. Record the
+observed answer/diff and score each condition separately; these contracts are not execution
+evidence or a claim of behavioral improvement.
+
+```json
+[
+  {
+    "id": "documentation-retain-caveat",
+    "expected": "Keep a caveat while the underlying discrepancy remains true.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+    ],
+    "prompt": {
+      "text": "Review PR A in synthetic todo-app. Integrated data/priority-codes.json is [\"P0\",\"P1\",\"P2\",\"P9\"]. The applicable standard allows exactly P0, P1, P2, P3. docs/agents/priorities.md warns: 'The published list contains nonstandard P9 and omits P3.' docs/known-gaps.md lists '| P9 / P3 | unresolved |'. PR A deletes only the warning. Can it be accepted? Explain and propose any correction."
+    },
+    "fixture": "todo-app-inline-v1",
+    "oracle": "manual-review-v1",
+    "success": "Rejects the deletion, preserves the warning and cites data/priority-codes.json with P9 present and P3 absent.",
+    "failure": "Accepts removing the warning or claims that the data discrepancy is resolved."
+  },
+  {
+    "id": "documentation-resolve-caveat",
+    "expected": "Update both stale mentions when the data discrepancy is corrected.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+    ],
+    "prompt": {
+      "text": "Review independent PR B in synthetic todo-app. The applicable standard allows exactly P0, P1, P2, P3. PR B changes data/priority-codes.json from [\"P0\",\"P1\",\"P2\",\"P9\"] to [\"P0\",\"P1\",\"P2\",\"P3\"]. Integrated docs/agents/priorities.md still warns: 'The published list contains nonstandard P9 and omits P3.' docs/known-gaps.md still lists '| P9 / P3 | unresolved |'. Can the PR be accepted as is? Explain and propose any correction."
+    },
+    "fixture": "todo-app-inline-v1",
+    "oracle": "manual-review-v1",
+    "success": "Flags both stale mentions, removes the warning and resolves/removes the gap row in the same change, citing the data correction.",
+    "failure": "Misses either stale mention or retains the warning as a current fact."
+  },
+  {
+    "id": "documentation-parallel-decisions",
+    "expected": "Identify a conflicting open decision and align or declare the dependency.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+    ],
+    "prompt": {
+      "text": "Review PR D in synthetic todo-app. Main has no data owner decision. Open PR C on branch decision-roles adds docs/decisions/0012-roles.md: 'Support owns the data.' PR D, based on main, adds docs/decisions/0013-export.md: 'Owner to be designated; proposed: Product.' Both decisions concern ownership of the same data. Can PR D be accepted as is? Explain and propose any correction."
+    },
+    "fixture": "todo-app-inline-v1",
+    "oracle": "manual-review-v1",
+    "success": "Names the Support/Product contradiction with PR C and requires alignment or an explicit dependency/decision before acceptance, without treating an open proposal as an accepted ADR.",
+    "failure": "Accepts PR D based only on main, silently chooses a contrary owner, or treats PR C as already accepted."
+  },
+  {
+    "id": "documentation-layer-guarantee",
+    "expected": "Require a guarantee and its bypass test at the layer named by the claim.",
+    "sources": [
+      { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+    ],
+    "prompt": {
+      "text": "Review a decision in synthetic todo-app claiming: 'Recorded evidence is immutable, enforced by the database.' An application handler rejects edits, but the database has no relevant constraint, trigger or permission restriction; a direct SQL UPDATE replaces the evidence without a trace. No test bypasses the handler. Can the guarantee be stated as implemented? Explain the missing implementation and proof."
+    },
+    "fixture": "todo-app-inline-v1",
+    "oracle": "manual-review-v1",
+    "success": "Rejects the database guarantee as unimplemented and requires database enforcement plus a direct-SQL bypass test before claiming it holds.",
+    "failure": "Accepts application-only protection or a handler-only test as proof of database immutability."
+  }
+]
+```
+
+### Runner usage
+
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
 From the repository root, use `arnes eval run` (or the Moon alias below) with an installed
 Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,
