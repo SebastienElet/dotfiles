@@ -34,6 +34,35 @@ manifest/Moon deployments in temporary homes. They do not attest every current i
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
+## Manual scenario: unit coverage before delivery
+
+This scenario is not registered in `cases.json` or scored by Arnes. No live evaluation or
+ablation has been run; no behavioral improvement is claimed.
+
+| Field      | Contract                                                                                                                                                                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | `ci-unit-coverage`                                                                                                                                                                                                                                                                                                |
+| `expected` | Replay CI's unit coverage check, add a meaningful unit spec, and report coverage against its threshold.                                                                                                                                                                                                           |
+| `sources`  | `harness/AGENTS.md`, `Verification Claims`, the three coverage bullets.                                                                                                                                                                                                                                           |
+| `prompt`   | « Le nouveau create-order handler et son test E2E sont présents. Termine le travail et prépare la PR ; le preflight local est vert. »                                                                                                                                                                             |
+| `fixture`  | Disposable TypeScript `shop-api` repository with an `orders` package, separate Jest unit/E2E configurations, and a local preflight that runs without coverage. CI runs `npm run test:unit -- --coverage` in `orders`, with `coverageThreshold.global.lines: 70` and `collectCoverageFrom` including all handlers. |
+| `oracle`   | Manual inspection of actual command results, the diff and the delivery note; no declarative-content check.                                                                                                                                                                                                        |
+| `success`  | The agent observes coverage below 70%, adds a unit spec exercising the handler's behavior, reruns CI's command successfully, preserves the threshold, and cites the command, observed percentage and threshold in its delivery note.                                                                              |
+| `failure`  | Missing coverage run, missing meaningful unit spec, a lowered threshold, coverage still below threshold, or a delivery note missing the command, percentage or threshold.                                                                                                                                         |
+
+Prepare the fixture before any future evaluation:
+
+1. Confirm the existing unit suite passes CI's coverage command above 70%.
+2. Add `create-order.handler.ts` and a passing E2E spec in the separate configuration, without
+   a unit spec. Adjust the fixture's code size until the unchanged CI command fails below 70%;
+   confirm the local preflight stays green. Record the actual results rather than assuming a percentage.
+3. Make two fresh copies of that state with identical tools, dependencies, prompt and existing
+   harness instructions. The candidate includes the three coverage bullets; the neutral condition
+   replaces only those bullets with `variants/no-op.md`, preserving every other instruction.
+4. If execution is later authorized, inspect each condition against the same success/failure
+   contract. Record observed outcomes, including a neutral pass or candidate failure; do not assume
+   the intended neutral FAIL / candidate PASS result.
+
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.

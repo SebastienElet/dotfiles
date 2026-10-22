@@ -50,6 +50,9 @@ content, report the limitation. Keep private or sensitive resources out of hoste
 
 ## Verification Claims
 
+- Before declaring a PR ready, run CI's coverage command for each affected package; report the command, percentage and threshold.
+- When CI measures unit coverage, give each new handler, mapper, controller or view a unit spec; E2E tests do not replace it.
+- Never lower a coverage threshold to make a package pass.
 - **Index new files before validation.** Before format, lint or typecheck, add every new file in
   the intended change to Git's index with explicit pathspecs and stop if staging fails. Do not use
   a broad untracked-file scan to compensate: these gates may deliberately discover inputs from the
