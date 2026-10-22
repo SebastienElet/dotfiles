@@ -36,6 +36,31 @@ gate does not claim to replace that procedural audit or optional `skills-ref` va
 
 ## Manual live evaluation
 
+### Personal data and public API compatibility
+
+This manual case uses the same contract fields as `cases.json` but is not registered there:
+the runner only scores search commands and installs `Context Management`. It cannot score this
+case's response. No automated PASS or measured instruction improvement is claimed.
+
+| Field      | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`       | `personal-data-persistence-v1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `expected` | Identify unintended personal-data copies, incomplete export/erasure coverage, and a versioned API contract break.                                                                                                                                                                                                                                                                                                                                                                                |
+| `sources`  | `harness/AGENTS.md`, `Critical Analysis (ALWAYS)`                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `prompt`   | Review this proposed change to a synthetic shared-list application. The public v1 deletion API promises 204 with anonymization; the patch returns 409 until retention policy is decided. The creation interceptor saves the response below for idempotent replay, without expiry or erasure participation. Export and erasure cover only lists and tasks; the integrated schema also contains comments.author_id marked @personal. Report concrete defects and the required decisions or checks. |
+| `fixture`  | `idempotencyStore.save(key, { status: 201, body: { id, ownerName: "Alice Martin", ownerEmail: "alice@example.test" } });`                                                                                                                                                                                                                                                                                                                                                                        |
+| `oracle`   | Manual review of the agent's response.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `success`  | Flags the persisted name and email; requires removal or justified retention and exact stored-body equality while preserving the caller's response; detects comments.author_id missing from export/erasure using the integrated schema; classifies v1 204 → 409 as a contract break requiring a new version or an explicit owner decision grouped with retention approval.                                                                                                                        |
+| `failure`  | Misses a personal-data copy or the uncovered schema field, trusts the closed context list, or accepts the v1 response change without the required decision.                                                                                                                                                                                                                                                                                                                                      |
+
+For marginal ablation, keep the prompt, fixture, model and other instructions identical; replace
+only the three personal-data/API bullets with the existing neutral `variants/no-op.md` text.
+Review responses against the same oracle. The schema-coverage failure test requested by the issue
+is not implemented: this fixture supplies no application database, and no declaration-content test
+or new gate is added.
+
+### Automated search cases
+
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
 From the repository root, use `arnes eval run` (or the Moon alias below) with an installed
 Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,

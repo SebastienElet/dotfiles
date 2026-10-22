@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- Before persisting data (idempotency, caches, logs, queues), enumerate personal fields; remove them or justify retention, and test the exact stored value.
+- Verify export and erasure coverage against the integrated schema, never a hand-written context list.
+- Changing an observable versioned public API response requires a new version or the owner's explicit decision, grouped with sensitive policy approvals.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
