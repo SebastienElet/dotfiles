@@ -62,20 +62,8 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   frontière exercée : une application montée in-process avec vraie DB et systèmes externes
   substitués in-memory relève de l'intégration. Réserver E2E à une frontière système assemblée,
   proche de la production ; HTTP ou une convention de framework, notamment NestJS, ne suffisent pas.
-  Exception au TDD : déclaratif sans comportement propre, notamment constante, version, variable
-  d'environnement ou option de commande, sans test de valeur. Pour Moon, Makefiles ou YAML, utiliser
-  d'abord les oracles natifs ou existants qui détectent une erreur réelle. Un invariant de
-  configuration possédé, notamment de sécurité ou de compatibilité, mérite une preuve de son
-  comportement ; ne pas recopier la déclaration comme attendu ni retester le graphe ou les options
-  de l'outil. Dériver l'attendu d'une autre source canonique indépendante lorsque c'est possible.
-  Ne pas créer spontanément de script Bash/TypeScript, validateur, lint rule, gate CI ou test harness
-  pour renforcer la validation du déclaratif. Si un manque significatif semble justifier cette
-  nouvelle infrastructure, suspendre seulement sa création et demander l'avis de l'utilisateur :
-  invariant possédé, source canonique, oracles considérés, preuve manquante, criticité du risque
-  résiduel et contrôle envisagé. Ce checkpoint porte sur la pertinence de cette nouvelle surface de
-  maintenance, pas sur les tests ordinaires du code possédé. Une gate directement demandée par
-  l'utilisateur ou une autorité externe reste à implémenter ; un plan, une spécification, une ADR
-  ou une revue produits par un agent dans le même flux ne constituent pas cette demande.
+- **Déclaratif et réglages ponctuels.** Ne jamais tester le contenu d'un fichier déclaratif (workflow, config YAML/TOML/JSON, manifeste, définition, inventaire) : vérifier son comportement en usage.
+  Pour un réglage ponctuel, fournir les commandes à exécuter, sans script committé.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
