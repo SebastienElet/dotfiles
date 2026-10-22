@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -7,10 +7,7 @@ const argumentOffset = 2;
 const commandFailureExitCode = 128;
 const usageFailureExitCode = 64;
 
-if (mode === "ln") {
-  appendFileSync(required("DEPLOYMENT_MARKER"), "called\n");
-  forward(required("DEPLOYMENT_REAL_COMMAND"));
-} else if (mode === "git") {
+if (mode === "git") {
   const expected = z
     .array(z.string())
     .parse(JSON.parse(required("DEPLOYMENT_FAIL_ARGUMENTS")));

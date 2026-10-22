@@ -98,12 +98,6 @@ function snapshot(home: string): string {
 }
 
 type ProfileOutput = Readonly<{ stdout: string; stderr: string }>;
-type ProfileOperations = Readonly<{
-  install: () => ProfileOutput;
-  clean: () => ProfileOutput;
-  verify: () => void;
-  snapshot: () => string;
-}>;
 
 function emitResult(result: ProfileOutput): void {
   process.stdout.write(result.stdout);
@@ -115,47 +109,25 @@ function profileCommand(command: readonly string[]): ProfileOutput {
   return { stdout: result.stdout.toString(), stderr: result.stderr.toString() };
 }
 
-function verifyReplay(operations: ProfileOperations): void {
-  const before = operations.snapshot();
-  const repeat = operations.install();
+function verifyReplay(home: string, root: string): void {
+  const before = snapshot(home);
+  const repeat = profileCommand(installCommand);
   if (repeat.stdout.length > 0 || repeat.stderr.length > 0) {
     emitResult(repeat);
     throw new Error("Repeated installation must be silent");
   }
-  if (operations.snapshot() !== before) {
+  if (snapshot(home) !== before) {
     throw new Error("Installed artifacts changed on repeat installation");
   }
-  operations.verify();
-}
-
-function smokeMinimalProfile(operations: ProfileOperations): void {
-  emitResult(operations.install());
-  operations.verify();
-  verifyReplay(operations);
-  emitResult(operations.clean());
-  emitResult(operations.install());
-  operations.verify();
-  verifyReplay(operations);
+  verifyInstallation(home, root);
 }
 
 function main(): void {
   const home = pathSchema.parse(process.env.HOME);
   const root = resolve(import.meta.dir, "..");
-  smokeMinimalProfile({
-    install: () => profileCommand(installCommand),
-    clean: () =>
-      profileCommand([
-        "moon",
-        "exec",
-        "--quiet",
-        "--ignore-ci-checks",
-        "repository:clean",
-      ]),
-    verify: () => {
-      verifyInstallation(home, root);
-    },
-    snapshot: () => snapshot(home),
-  });
+  emitResult(profileCommand(installCommand));
+  verifyInstallation(home, root);
+  verifyReplay(home, root);
 }
 
 if (import.meta.main) {
@@ -165,6 +137,3 @@ if (import.meta.main) {
     reportCheckFailure(error);
   }
 }
-
-export { smokeMinimalProfile };
-export type { ProfileOperations };

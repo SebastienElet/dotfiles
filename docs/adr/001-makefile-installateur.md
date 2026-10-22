@@ -37,7 +37,6 @@ n'implique pas déployer sa configuration.
 
 Le `Makefile` est retiré. `moon exec repository:optional` porte le profil optionnel, qui
 converge d'abord le minimal Moon ; il ne réimplémente pas son installation.
-`moon exec repository:clean` porte le nettoyage existant.
 
 `install.sh` vérifie les prérequis macOS et amorce Moon avant le profil minimal.
 L'installation de Moon lui-même reste hors de son graphe. `tooling/upgrade` appelle
@@ -50,7 +49,7 @@ ne suffit pas à intégrer automatiquement ses plugins et leurs prérequis hôte
 
 - Le minimal possède un point d'entrée Moon, partagé avec le smoke macOS de l'ADR-023.
 - Les contrôles de développement déclarent leurs prérequis sans installer tout le poste.
-- Le profil optionnel et le nettoyage possèdent leurs points d'entrée Moon.
+- Le profil optionnel possède son point d'entrée Moon.
 - L'état observé et le silence au rejeu sont évalués par les oracles exécutés, pas par la seule
   présence des tâches ou des dépendances dans le graphe.
 

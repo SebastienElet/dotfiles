@@ -6,9 +6,7 @@ et la [PR #365](https://github.com/SebastienElet/dotfiles/pull/365#issuecomment-
 portent ce retrait. L’ADR-042 ne fait plus partie des décisions en vigueur ; Git conserve son historique.
 
 Les profils Codex et Claude ne déploient plus remem : installation, configuration, MCP, hooks,
-worker et skill `remem-memory` sont retirés. La procédure de
-[nettoyage explicite](deployment-clean.md) reconnaît les anciens déploiements après suppression
-de leurs déclarations du manifeste.
+worker et skill `remem-memory` sont retirés.
 
 `arnes setup hooks --agent codex` et `arnes setup hooks --agent claude`, appelés par les
 profils Moon, retirent aussi les anciennes commandes de hooks `remem` et `remem-hook`.

@@ -34,7 +34,7 @@ Plannotator reste évalué séparément, sans installation ni succès runtime al
 | Cursor | Même source liée sous `.cursor/rules/visual-presentation.mdc`, avec `alwaysApply: true`     | `~/.cursor/skills/visual-explanation` |
 
 Arnes déclare ces installations dans `home/.arnes.yaml`. Moon conserve ses tâches
-existantes. Le nettoyage connaît les deux nouveaux liens ; l'empreinte des
+existantes. L'empreinte des
 instructions Claude suit aussi la source liée. Les ADR acceptées 025, 027, 029,
 038 et 040 restent en vigueur.
 
