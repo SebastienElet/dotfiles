@@ -20,7 +20,12 @@ tasks:
   claude-binary:
     script: |-
       set -euo pipefail
-      curl -fsSL --connect-timeout 10 --max-time 60 https://claude.ai/install.sh | bash -s latest
+      claude_installer=$(mktemp)
+      trap 'rm -f "$claude_installer"' EXIT
+      curl -fsSL --connect-timeout 10 --max-time 60 \
+        --retry 5 --retry-all-errors --retry-max-time 180 \
+        --output "$claude_installer" https://claude.ai/install.sh
+      bash "$claude_installer" latest
       test -x "$HOME/.local/bin/claude"
     checks:
       - check: condition
