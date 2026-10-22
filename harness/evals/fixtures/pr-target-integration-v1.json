@@ -1,0 +1,7 @@
+{
+  "id": "pr-target-integration-v1",
+  "files": {
+    "test/host.ts": "export interface AuditSink { write(): void }\nexport function createTestHost(options: { auditSink?: AuditSink }) { return options; }\n",
+    "test/existing.spec.ts": "import { createTestHost } from \"./host\";\ncreateTestHost({});\n"
+  }
+}

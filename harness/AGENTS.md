@@ -50,6 +50,9 @@ content, report the limitation. Keep private or sensitive resources out of hoste
 
 ## Verification Claims
 
+- Before declaring a PR ready, fetch its target, check with `git merge-tree`, integrate it if behind or conflicted, and rerun typecheck, tests and E2E on the integrated tree; cite the integrated target SHA and replayed commands.
+- When introducing a required contract, use `rg` to find every consumer in the integrated tree, including consumers newly added to the target.
+- After resolving conflicts, rerun checks introduced by the PR; taking the target side must not restore behavior the PR forbids.
 - **Index new files before validation.** Before format, lint or typecheck, add every new file in
   the intended change to Git's index with explicit pathspecs and stop if staging fails. Do not use
   a broad untracked-file scan to compensate: these gates may deliberately discover inputs from the

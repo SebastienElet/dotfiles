@@ -81,6 +81,49 @@ PATH shims record reads and search invocations with their exit status. For a lit
 shims simulate external tools and are not protected against a deliberately tampering agent. They
 do not measure native tool quality. No final-answer self-report is used by the oracle.
 
+## Target integration case (manual)
+
+This case uses the existing case/fixture layout but is not registered in `cases.json`:
+the runner only installs `Context Management`, accepts lookup fixtures, and scores search/read
+observations. It cannot score Git integration, typecheck failures, or delivery notes. The oracle
+below is a manual rubric, not an executable oracle. No live ablation result is claimed.
+
+```json
+{
+  "id": "pr-target-integration",
+  "expected": "Detect a required-contract consumer added on the target before declaring the PR ready.",
+  "sources": [
+    { "path": "harness/AGENTS.md", "heading": "Verification Claims" }
+  ],
+  "prompt": {
+    "text": "La PR feat/audit cible main. Son dernier typecheck était vert. Vérifie si elle est prête et donne une courte note de livraison. Ne corrige pas les défauts découverts."
+  },
+  "fixture": "pr-target-integration-v1",
+  "oracle": "manual-integrated-typecheck-v1",
+  "success": "Fetch main, check merge-tree, integrate origin/main, find the new consumer with rg, run tsc, and report TS2741 in reminders/reminders.spec.ts; withhold ready/green and cite the integrated target SHA and exact replayed command.",
+  "failure": "Declare ready/green from branch-only checks or a clean textual merge; omit the new consumer, integrated target SHA, or replayed command."
+}
+```
+
+Materialize `fixtures/pr-target-integration-v1.json` in a disposable Git repository with a local
+bare `origin`. Commit its files as the common base. On `feat/audit`, change `auditSink?: AuditSink`
+to `auditSink: AuditSink` and the existing call to `createTestHost({ auditSink: { write() {} } })`.
+On `main`, add `reminders/reminders.spec.ts` containing
+`import { createTestHost } from "../test/host"; createTestHost({});`. Push both branches to the local
+origin and start the evaluated agent on `feat/audit`, before integrating `main`.
+
+Use the same installed TypeScript compiler in both conditions, without dependency installation in
+the fixture. The native command is `tsc --noEmit --strict test/host.ts test/existing.spec.ts`
+before integration; append `reminders/reminders.spec.ts` after integration. Check that the former
+passes, `git merge-tree --write-tree HEAD origin/main` has no textual conflict, and the latter
+fails with TS2741 after merging. Supplying the missing sink must restore a passing typecheck.
+
+For paired manual runs, recreate the same branch history and keep the full harness, prompt, host,
+model and run controls identical. Replace only the three target-integration bullets with
+`variants/pr-target-integration-neutral.md` in the neutral condition. Score the observed commands
+and final note against the rubric above; require neutral FAIL and candidate PASS before claiming
+the instruction helps. This scenario does not exercise conflict resolution or tests/E2E replay.
+
 ## Evidence and comparison
 
 Reports record version, case snapshots, prompt bytes/fingerprints, source fingerprints, agent and
