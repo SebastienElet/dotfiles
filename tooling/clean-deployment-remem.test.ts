@@ -12,11 +12,13 @@ import {
   cleanupDeploymentFixtures,
   expectSuccess,
   pathExists,
+  runDeploymentHelper,
 } from "./deployment-test-support.ts";
 import { dirname, join } from "node:path";
 import {
   mkdirSync,
   readFileSync,
+  readlinkSync,
   symlinkSync,
   unlinkSync,
   writeFileSync,
@@ -25,6 +27,31 @@ import {
 afterEach(cleanupDeploymentFixtures);
 const workerTestTimeoutMilliseconds = 30_000;
 setDefaultTimeout(workerTestTimeoutMilliseconds);
+
+test("cleans the retired Claude development link without its manifest entry", () => {
+  const context = fixture();
+  const { destination, source } = managedLink(
+    context,
+    ".claude/skills/claude-development",
+    "node_modules/@sebastienelet/agent-skills/skills/claude-development",
+  );
+  mkdirSync(dirname(source), { recursive: true });
+  writeFileSync(source, "source stays\n");
+  const inspection = runDeploymentHelper(context, {
+    helper: "clean-deployment.ts",
+    arguments: [context.repository, context.home],
+  });
+  expectSuccess(inspection);
+  expect(inspection.stdout).toContain(destination);
+  expect(readlinkSync(destination)).toBe(source);
+  expectSuccess(clean(context));
+  expect(pathExists(destination)).toBeFalse();
+  expect(readFileSync(source, "utf8")).toBe("source stays\n");
+  expectSuccess(clean(context));
+  symlinkSync(context.repository, destination);
+  expectSuccess(clean(context));
+  expect(readlinkSync(destination)).toBe(context.repository);
+});
 
 test("removes retired remem skill links after their manifest entries disappear", () => {
   const context = fixture();

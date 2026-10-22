@@ -7,7 +7,7 @@
       "dependencies": {
         "@sebastienelet/agent-handoff": "0.0.2",
         "@sebastienelet/agent-reach-adapter": "0.0.1",
-        "@sebastienelet/agent-skills": "0.1.0",
+        "@sebastienelet/agent-skills": "0.2.0",
         "@sebastienelet/proof-integrity-review": "0.0.1",
         "archify-upstream": "https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz",
         "zod": "4.6.7",
@@ -264,7 +264,7 @@
 
     "@sebastienelet/agent-reach-adapter": ["@sebastienelet/agent-reach-adapter@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64", "bin": { "agent-reach-adapter": "src/agent-reach.ts" } }, "sha512-U5b54vmOZ4pkPVH7neWNsxcXv61wodcOqDiPTYmv47A1YC9MtnudzOTPKIpQ4d118oQRBryxc9rKYXpr6XDNAQ=="],
 
-    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@0.1.0", "", { "dependencies": { "zod": "4.6.7" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "sha512-j0lia1EII/TPMBbwB62hRsaj5WJp7yec6DQULzATnHlsKPgWRHoMUCqH2m+IwLuqyx1ti06jenE3RyRW5ns4FQ=="],
+    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@0.2.0", "", { "dependencies": { "zod": "4.6.7" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "sha512-SxZLwCJbbnEOJFXFIt/y5L9UKbH+PAnVT6YUSk42j6IdDSdeeN3VyN92ncC2ZQPgG9kc/WkfcZW8KNXN59xqgg=="],
 
     "@sebastienelet/proof-integrity-review": ["@sebastienelet/proof-integrity-review@0.0.1", "", { "optionalDependencies": { "@sebastienelet/proof-integrity-review-darwin-arm64": "0.0.1", "@sebastienelet/proof-integrity-review-linux-x64-gnu": "0.0.1" }, "bin": { "proof-integrity": "bin/proof-integrity.ts" } }, "sha512-7sRwi4fBUgKVWgNV/cCU2SZsHUipV9jY4AQWWtZxl92+9VQ5i8Le8oU9BAMO44gQ6Hb/7k6QfLJd0jAND9EZcw=="],
 

@@ -16,7 +16,7 @@
   "dependencies": {
     "@sebastienelet/agent-handoff": "0.0.2",
     "@sebastienelet/agent-reach-adapter": "0.0.1",
-    "@sebastienelet/agent-skills": "0.1.0",
+    "@sebastienelet/agent-skills": "0.2.0",
     "@sebastienelet/proof-integrity-review": "0.0.1",
     "archify-upstream": "https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz",
     "zod": "4.6.7"
