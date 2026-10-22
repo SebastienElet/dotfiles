@@ -78,6 +78,10 @@ const links = [
   ["home/.remem/config.toml", ".remem/config.toml"],
   ["harness/skills/remem-memory", ".agents/skills/remem-memory"],
   ["harness/skills/remem-memory", ".claude/skills/remem-memory"],
+  [
+    "node_modules/@sebastienelet/agent-skills/skills/claude-development",
+    ".claude/skills/claude-development",
+  ],
   ["home/.psqlrc", ".psqlrc"],
   ["harness/AGENTS.md", ".claude/CLAUDE.md"],
   ["harness/SOUL.md", ".claude/SOUL.md"],
