@@ -81,6 +81,40 @@ PATH shims record reads and search invocations with their exit status. For a lit
 shims simulate external tools and are not protected against a deliberately tampering agent. They
 do not measure native tool quality. No final-answer self-report is used by the oracle.
 
+## Manual review case: state-changing acts
+
+This case uses the existing case fields for manual evaluation only. Do not add it to
+`cases.json`: Arnes currently supports search-command oracles, not review findings, and installs
+only `Context Management`. `harness:check` does not execute or score this case.
+
+```json
+{
+  "id": "state-changing-acts",
+  "expected": "Identify replay, stale versions, invalid inputs, ambiguous allocation and irreversible creation before admission and validation.",
+  "sources": [
+    { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+  ],
+  "prompt": {
+    "text": "Review orders.ts in orders-api. Every mutation of an existing order requires the version read by its caller. Cancellation refunds once. Amounts must be positive and dates must belong to an open period. A customer must belong to the account (current or former) before opening a permanent, sequentially numbered ledger. Multiple address candidates mean unknown; shared amounts must be explicitly apportioned. Identify defects and propose regression tests without changing code."
+  },
+  "fixture": "orders-api-v1",
+  "oracle": "manual-review-v1",
+  "success": "The review identifies double refunds on cancel replay, absent version checks on each mutation, invalid amount/date acceptance at creation, arbitrary address selection, duplicated allocation, and permanent ledger creation before refusal checks or customer admission.",
+  "failure": "Any required finding is absent, or proposed refusal tests permit a ledger, consumed number or irreversible external call."
+}
+```
+
+Create a disposable workspace from `fixtures/orders-api-v1.json`'s `files` map. Compare the same
+prompt with the candidate rule and with `variants/no-op.md` as its neutral replacement;
+keep the remaining instructions, model and run controls identical. Score findings manually.
+No live runs or uplift are claimed here.
+
+The proposed regression tests must cover replay without a second refund, stale versions without
+mutation, zero amounts and closed-period dates rejected at creation, and ambiguous addresses or
+shared amounts without arbitrary selection or duplicate totals. For each refusal, assert no
+ledger, consumed sequence number or irreversible external call; reject unrelated customers and admit former
+customers. A corrected fixture and executable regression tests are not supplied by this manual case.
+
 ## Evidence and comparison
 
 Reports record version, case snapshots, prompt bytes/fingerprints, source fingerprints, agent and

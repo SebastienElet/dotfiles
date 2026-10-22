@@ -1,0 +1,6 @@
+{
+  "id": "orders-api-v1",
+  "files": {
+    "orders.ts": "type Order = { id: number; accountId: number; customerId: number; version: number; status: \"open\" | \"cancelled\"; amount: number; date: string };\ntype Ports = {\n  refund(orderId: number, amount: number): Promise<void>;\n  insert(order: Order, ledgerId?: number): Promise<void>;\n  openLedger(accountId: number, customerId: number): Promise<number>;\n  assertOpenPeriod(accountId: number, date: string): Promise<void>;\n};\nexport async function cancel(order: Order, ports: Ports) {\n  await ports.refund(order.id, order.amount);\n  order.status = \"cancelled\";\n  order.version += 1;\n}\nexport function revise(order: Order, amount: number) {\n  order.amount = amount;\n  order.version += 1;\n}\nexport async function create(order: Order, ports: Ports) {\n  await ports.insert(order);\n}\nexport async function pay(order: Order, ports: Ports) {\n  const ledgerId = await ports.openLedger(order.accountId, order.customerId);\n  await ports.assertOpenPeriod(order.accountId, order.date);\n  if (order.amount <= 0) throw new Error(\"invalid amount\");\n  await ports.insert(order, ledgerId);\n}\nexport function allocate(amount: number, ownerIds: number[]) {\n  return ownerIds.map(ownerId => ({ ownerId, amount }));\n}\nexport function address(candidates: string[]) {\n  return candidates[0];\n}\n"
+  }
+}

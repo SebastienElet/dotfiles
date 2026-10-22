@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- For every state-changing act, test replay/idempotence, stale versions on each act, the strictest downstream domain at entry, and ambiguity (unknown or explicit allocation).
+  Plan read-only; admit referenced entities (existence and account link) and resolve all refusals before irreversible effects.
+  For every refusal, test that no resource is created, sequence number consumed, or irreversible external call made.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
