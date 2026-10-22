@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- Before implementing an operation referencing another object, list its authorizing state and compatible
+  attributes (unit, period, owner, withdrawal), beyond existence. Refuse each divergence with a dedicated
+  error code and a test that fails when its corresponding check is removed.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 

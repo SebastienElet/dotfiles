@@ -34,6 +34,55 @@ manifest/Moon deployments in temporary homes. They do not attest every current i
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
+## Manual scenario: linked-object-invariants
+
+This scenario is not registered in `cases.json` or scored by Arnes. It has not been executed;
+no behavioral improvement is claimed. For #613, the user authorized adding the rule before ablation
+as an exception to ADR-036; whether to execute that ablation remains to be decided before merge.
+
+- **ID:** `linked-object-invariants`.
+- **Expected:** validate the referenced object's authorizing state and compatible attributes before mutation.
+- **Source:** `harness/AGENTS.md`, `Critical Analysis (ALWAYS)`, the bullet beginning
+  “Before implementing an operation referencing another object”.
+- **Fixture:** a disposable TypeScript `shop-api` repository with in-memory reviews and quotes;
+  stock reconciliation records writes. Reviews have statuses `PENDING`, `APPROVED`, `REJECTED`,
+  `WITHDRAWN` and a `withdrawn` flag. Stock counts and warehouses have a quantity and unit
+  (`KILOGRAM` or `PIECE`). Only an approved, non-withdrawn review authorizes approval;
+  reconciliation requires matching units. No period or owner constraint is defined in this fixture.
+- **Prompt:** “Complete these operations in `shop-api`. Explain the design before implementing it
+  and include tests.” Supply these starting functions:
+
+```ts
+function approveQuote(quoteId: QuoteId, reviewId: ReviewId) {
+  if (!reviews.exists(reviewId)) throw new DomainError("REVIEW_NOT_FOUND");
+  quotes.markApproved(quoteId, reviewId);
+}
+
+function importStock(count: StockCount, warehouse: Warehouse) {
+  const gap = warehouse.quantity - count.quantity;
+  if (gap === 0) return warehouse.recordReconciled(count);
+}
+```
+
+- **Variants:** keep the fixture, prompt, agent/model, budget and all other instructions identical.
+  The candidate includes the source bullet verbatim. For the neutral condition, replace only that
+  bullet with [variants/no-op.md](variants/no-op.md); retain the rest of the instructions.
+  This is a manual setup, not an `arnes eval run --variant-file` case.
+- **Oracle:** manually inspect the design, implementation and test execution in the disposable repository.
+- **Success:** before implementation, the design lists review status, withdrawal and stock unit as
+  validity attributes. Missing reviews retain `REVIEW_NOT_FOUND`; `PENDING` and `REJECTED` reviews
+  produce `REVIEW_NOT_APPROVED`; withdrawn reviews (status `WITHDRAWN` or flag `withdrawn: true`)
+  produce `REVIEW_WITHDRAWN`; mismatched units produce `STOCK_UNIT_MISMATCH`, including equal
+  quantities such as `12 KILOGRAM` versus `12 PIECE`. Refusals leave quotes and stock records unchanged.
+  Tests cover each divergence separately, plus successful approval and same-unit reconciliation.
+  Removing each corresponding guard in turn must make its divergence test fail; restore each guard
+  before the next check. Test the withdrawal flag with an otherwise `APPROVED` review, and unit
+  mismatch with equal quantities, so unrelated checks cannot mask a missing guard.
+- **Failure:** existence-only validation, an omitted validity attribute, a missing or wrong error code,
+  a mutation on refusal, a broken valid operation, or a divergence test that still passes without its guard.
+  Missing execution evidence is unverified, not a pass. Record candidate and neutral outcomes independently;
+  a neutral pass is possible and does not demonstrate an effect from the instruction.
+
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
