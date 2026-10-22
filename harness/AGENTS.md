@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- For new tables or columns, use `rg` to find affected purge, archive, export, personal-data deletion
+  and seed routines; update them with tests and verify deletion order for `RESTRICT` foreign keys.
+  Backfill new columns or handle `NULL` explicitly, with a test on a pre-migration row.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 

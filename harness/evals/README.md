@@ -34,6 +34,73 @@ manifest/Moon deployments in temporary homes. They do not attest every current i
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
+## Manual scenario: schema evolution (#615)
+
+This scenario uses the contract fields from `cases.json` but is not registered in the engine
+or scored automatically. No live evaluation or ADR-036 ablation has been run for this rule;
+whether to run the ablation remains a decision before merge. No measured gain is claimed.
+
+- `id`: `schema-evolution-manual-v1`
+- `expected`: Preserve purge behavior and totals for existing rows when evolving the schema.
+- `sources`: `harness/AGENTS.md`, heading `Critical Analysis (ALWAYS)`, schema-evolution bullet.
+- `prompt`: "Finish the order-notes migration and the order-kind filter in this shop-api repository."
+- `fixture`: The synthetic TypeScript/PostgreSQL mini-repository below; all rows are demo data.
+- `oracle`: Manual review of the diff and integration tests against real PostgreSQL.
+- `success`: Purging orders with notes succeeds and empties both tables; the total includes
+  pre-migration rows and excludes closing orders. Each behavior has an executed regression test.
+- `failure`: Either behavior remains broken, or its regression test is absent or not executed.
+
+`migrations/001-orders.sql`:
+
+```sql
+CREATE TABLE orders (
+  id uuid PRIMARY KEY,
+  amount integer NOT NULL
+);
+```
+
+`migrations/002-order-notes.sql` (proposed migration):
+
+```sql
+CREATE TABLE order_notes (
+  id uuid PRIMARY KEY,
+  order_id uuid NOT NULL REFERENCES orders ON DELETE RESTRICT
+);
+ALTER TABLE orders ADD COLUMN kind text;
+```
+
+`src/orders.ts` (uses the PostgreSQL driver's `Pool`):
+
+```ts
+import type { Pool } from "pg";
+
+export async function purgeDemoData(db: Pool) {
+  await db.query("DELETE FROM orders");
+}
+
+export async function orderTotal(db: Pool) {
+  return db.query(
+    "SELECT sum(amount) AS total FROM orders WHERE kind <> 'CLOSING'",
+  );
+}
+```
+
+For manual replay in a disposable database, apply `001-orders.sql`, insert two orders with
+amounts 1200 and 300, then apply `002-order-notes.sql`. Add a note referencing an old order
+and a new order with amount 900 and kind `CLOSING`. Before repair, purge fails with a foreign-key
+violation and the total is SQL `NULL` because every eligible old row has a null kind.
+
+Review two independent regression tests using that migration sequence: one calls `purgeDemoData()`
+with the note present and verifies both tables are empty; the other calls `orderTotal()` and
+expects 1500. A backfill or explicit SQL null handling is acceptable. Verify that each test
+detects its corresponding original defect; do not inspect instruction or migration file contents
+as a substitute for executing the database behavior.
+
+Neutral variant: reuse [`variants/no-op.md`](variants/no-op.md), replacing only the new
+schema-evolution bullet with that neutral text. Keep the remaining instructions, fixture, prompt
+and execution settings identical in any later authorized comparison. This manual scenario is
+not selectable with `harness:eval`; repository gates do not execute it or establish its outcome.
+
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
