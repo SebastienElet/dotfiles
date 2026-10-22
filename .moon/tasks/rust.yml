@@ -25,7 +25,7 @@ fileGroups:
     - /.github/actions/setup-moon/bun.lock
     - /moon.yml
     - /LICENSE
-    - /tooling/RUST.md
+    - /README.md
 tasks:
   fmt:
     deps:

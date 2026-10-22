@@ -190,6 +190,10 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   factuelles présentes dans la PR et dans la documentation touchée correspondent au code courant.
   Ne pas rendre la documentation exhaustive par principe : corriger ou retirer uniquement les
   affirmations devenues fausses, trop fortes ou contradictoires avec l'implémentation.
+- **Documentation durable seulement.** Ne conserver une doc que si elle est hautement qualitative,
+  concise, à jour et exploitable par un humain comme par un agent. Restituer les notes d'issue,
+  audits et validations ponctuelles dans la conversation ou la PR, sans fichier versionné.
+  Une décision structurante encore vivante rejoint l'ADR concernée ; supprimer la doc obsolète.
 - **Spécifier le résultat, redécouvrir l'implémentation.** Une issue ou spécification doit être
   précise sur le comportement attendu, les contraintes produit, les états visibles, les designs
   ou composants à respecter et les critères d'acceptation, sans figer architecture, fichiers ou
