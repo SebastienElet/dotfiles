@@ -137,6 +137,13 @@ impl Manifest {
             .unwrap_or_else(|| collection.join(slug))
     }
 
+    pub(crate) fn skill_sources(&self, collection: &Path) -> impl Iterator<Item = PathBuf> {
+        self.0
+            .skills
+            .iter()
+            .map(move |skill| self.skill_source(&skill.slug, collection))
+    }
+
     pub fn external_plugins(&self, agent: Agent, scope: Scope) -> impl Iterator<Item = &str> {
         self.0.external.plugins(agent, scope)
     }

@@ -9,6 +9,62 @@ use std::path::Path;
 use std::process::Command;
 use support::Fixture;
 #[test]
+fn references_to_declared_skills_preserve_canonical_confinement()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let fixture = configured_fixture()?;
+    fixture.write_home(
+        ".arnes.yaml",
+        &MANIFEST.replace(
+            "resources:",
+            "  - slug: beta\n    source: harness/shared/beta\n    installations:\n      - { agent: codex, scope: user }\nresources:",
+        ),
+    )?;
+    fixture.write_repository("harness/shared/beta/SKILL.md", "# Beta\n")?;
+    skill_support::link_home(&fixture, "harness/shared/beta", ".agents/skills/beta")?;
+    fixture.write_repository(
+        "harness/skills/alpha/SKILL.md",
+        "[workflow](../../shared/beta/SKILL.md)\n",
+    )?;
+    let (code, stdout, _) = run(&fixture, &["doctor", "skills", "-v"])?;
+    assert_eq!(code, 0, "{stdout}");
+    assert_eq!(stdout.matches("HEALTHY alpha").count(), 3, "{stdout}");
+    fixture.write_repository("outside.md", "outside\n")?;
+    symlink(
+        "../../../outside.md",
+        fixture.repository().join("harness/shared/beta/escape.md"),
+    )?;
+    fixture.write_repository("harness/skills/undeclared/SKILL.md", "# Undeclared\n")?;
+    for (reference, expected_code, reason) in [
+        ("../../shared/beta/missing.md", 1, "is missing"),
+        ("../undeclared/SKILL.md", 2, "resolves outside its skill"),
+        (
+            "../../shared/beta/escape.md",
+            2,
+            "resolves outside its skill",
+        ),
+    ] {
+        fixture.write_repository(
+            "harness/skills/alpha/SKILL.md",
+            &format!("[workflow]({reference})\n"),
+        )?;
+        let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--agent", "claude"])?;
+        assert_eq!(code, expected_code, "{stdout}");
+        assert!(stdout.contains(reason), "{stdout}");
+    }
+    let source = fixture.repository().join("harness/shared/beta");
+    let outside = fixture.home().join("outside-beta");
+    fs::rename(&source, &outside)?;
+    symlink(&outside, source)?;
+    fixture.write_repository(
+        "harness/skills/alpha/SKILL.md",
+        "[workflow](../../shared/beta/SKILL.md)\n",
+    )?;
+    let (code, stdout, _) = run(&fixture, &["doctor", "skills", "--agent", "claude"])?;
+    assert_eq!(code, 2, "{stdout}");
+    assert!(stdout.contains("resolves outside its skill"), "{stdout}");
+    Ok(())
+}
+#[test]
 fn user_scope_is_default_for_declared_skills()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fixture = configured_fixture()?;
