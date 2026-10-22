@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- For every exemption from a mandatory check, name its criterion and safety-critical attributes;
+  freeze them or recheck every mutation, attachment and ownership change. Test that repurposing an
+  exempt object for real operations is refused; name the exemption and its safeguard in the PR.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 

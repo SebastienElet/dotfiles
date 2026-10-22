@@ -1,0 +1,19 @@
+[
+  {
+    "id": "exemption-freeze",
+    "expected": "Identify that a demo listing can acquire real stock or a payout account after receiving a publication exemption; lock those attributes or recheck eligibility on mutation.",
+    "sources": [
+      {
+        "path": "harness/AGENTS.md",
+        "heading": "Critical Analysis (ALWAYS)"
+      }
+    ],
+    "prompt": {
+      "text": "Review listings.js in shop-api. An unverified seller may publish the demo listing created at signup. The listing update endpoint accepts title, price, stockItems and payoutAccount. Identify any authorization bypass and propose the smallest repair, preserving harmless demo edits and ordinary listings. Include the required regression tests and a PR description."
+    },
+    "fixture": "shop-api-v1",
+    "oracle": "manual-exemption-freeze-v1",
+    "success": "The evaluated agent identifies the update-to-publication bypass, names isDemo and the stockItems/payoutAccount safety attributes, protects both before real operations, preserves title/price edits and another seller’s ordinary listing, and names the exemption and safeguard in the PR description. Run the four fixture tests: shop-api-fixed-v1 passes all four; shop-api-v1 fails exactly the two refusal assertions with Missing expected exception. For marginal ablation, keep all current instructions identical and replace only the three-line exemption rule with variants/exemption-freeze-neutral.md in the neutral condition.",
+    "failure": "The agent trusts isDemo alone, misses either mutation path, blocks harmless or ordinary edits, omits the exemption/safeguard from the PR description, or the refusal tests pass on shop-api-v1 or fail through a setup error. No automated PASS may be inferred from reading the source or from the deterministic harness gate."
+  }
+]

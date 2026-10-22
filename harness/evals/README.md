@@ -36,6 +36,13 @@ gate does not claim to replace that procedural audit or optional `skills-ref` va
 
 ## Manual live evaluation
 
+`manual/exemption-freeze.json` follows the case format for manual review of `shop-api-v1`;
+`shop-api-fixed-v1` supplies the corrected reference with the same four behavioral tests.
+Its manual oracle is outside `cases.json`: the runner only scores file lookup observations and
+installs `Context Management`, so `harness:check` does not evaluate this security behavior.
+For marginal ablation, keep all current instructions and replace only the exemption rule with
+`variants/exemption-freeze-neutral.md`. No live comparison has been recorded for this case.
+
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
 From the repository root, use `arnes eval run` (or the Moon alias below) with an installed
 Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,
