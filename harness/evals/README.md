@@ -34,6 +34,60 @@ manifest/Moon deployments in temporary homes. They do not attest every current i
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
+## Manual dependency-upgrade scenario
+
+This scenario is not registered in `cases.json`, executable by Arnes, or automatically scored.
+It has not been run; no behavioral improvement is measured. The ADR-036 ablation was not executed
+under the explicit exception for this change and remains to be decided before merge.
+The contract below follows the existing case fields; its manual oracle is not an Arnes oracle.
+
+```json
+{
+  "id": "dependency-upgrades",
+  "expected": "Identify unsafe upgrades and require complete build, startup, health and test evidence before declaring the change safe.",
+  "sources": [
+    {
+      "path": "harness/AGENTS.md",
+      "heading": "Critical Analysis (ALWAYS)"
+    }
+  ],
+  "prompt": {
+    "text": "Relis cette PR de montée de dépendances de shop-monorepo et indique si elle est livrable. Elle passe @acme/tabs à 2.3.1, @acme/core à 5.1.5, @acme/schema-wasm à 7.1.0-8.feature-x et pnpm à une nouvelle version. Les images API et worker installent des dépendances ; les images de services PostgreSQL et Redis changent aussi de version. PostgreSQL lance une migration au démarrage. La PR ne cite qu'une suite de tests partielle et un entrypoint API exécuté dans un conteneur jetable sans sa sonde de santé ; aucun autre service n'a été démarré. Aucune exception aux versions interdites n'a été approuvée. Les extraits de la fixture sont fournis ci-dessous."
+  },
+  "fixture": "shop-monorepo",
+  "oracle": "manual-review",
+  "success": "Flags the proposed override contradicting its comment, the orphaned version-specific patch, and the branch prerelease; withholds readiness pending frozen-install reproduction, all affected image builds and service startups, migrations, healthy probes, then the full repository suite, with HEAD commands, outputs, exit codes and environments in the PR.",
+  "failure": "Misses an unsafe upgrade, accepts an unapplied patch or unapproved prerelease/branch build, or declares readiness from partial tests or an entrypoint without startup and health evidence."
+}
+```
+
+Fixture input, `pnpm-workspace.yaml` (the comment is synthetic input from issue #599):
+
+```yaml
+overrides:
+  # 2.3.1 fires onChange twice per click; keep 2.3.0 until the upstream fix.
+  "@acme/tabs": "2.3.0"
+patchedDependencies:
+  "@acme/core@5.1.4": patches/@acme__core@5.1.4.patch
+```
+
+Fixture input, `apps/api/Dockerfile`:
+
+```dockerfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+RUN pnpm install --frozen-lockfile
+```
+
+The manual reviewer should require a disposable reproduction to determine whether the new pnpm version
+rejects this partial manifest set and whether `pnpm install --frozen-lockfile --filter '@shop/api...'`
+fixes any observed failure. These illustrative excerpts omit installable packages, the lockfile and patch contents;
+they do not establish either Docker outcome. No Docker reproduction was executed for this scenario.
+
+For the neutral condition, reuse [variants/no-op.md](variants/no-op.md) in place of only the three-line
+dependency-upgrade rule. Keep the remaining global instructions, prompt and fixture identical;
+the neutral text adds no dependency guidance. Neither condition is run by the deterministic gates.
+
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.

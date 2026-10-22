@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- For dependency upgrades, honor comments on overrides, pins and patches; keep patches applied, and reject prereleases or branch builds without explicit approval.
+  Build and start every dependency-installing image and changed service; exercise startup migrations and verify healthy probes, then run the full repository suite.
+  In the PR, include commands, outputs and exit codes from HEAD, naming the images built and started and their environment.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
