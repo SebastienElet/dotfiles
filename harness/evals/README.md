@@ -20,6 +20,12 @@ their inputs. Arnes retains its own inputs, mutex, and cache policy.
   reference, fixture, versioned oracle, and explicit success/failure conditions.
 - `fixtures/repository-lookup-v1.json`: a tiny synthetic monorepo, with no dependency installation.
 - `variants/no-op.md`: an explicit neutral replacement for the evaluated instruction section.
+- `manual-cases.json`: the #595 review scenario, with the same case fields but a manual oracle;
+  it is not loaded by Arnes. `fixtures/tests-prove-something-v1.json` contains incomplete review
+  excerpts, not an executable application. For marginal ablation, keep all existing instructions,
+  prompt and fixture unchanged; replace only the three-line "Use discriminating tests" rule with
+  `variants/tests-prove-something-neutral.md`. Agent scoring, predicate mutation replay and live
+  ablation remain manual and unexecuted; deterministic gates do not prove this rule's effect.
 - `evidence/`: optional retained reports, never a prerequisite for a green check.
 - [tooling/arnes/src/eval/](../../tooling/arnes/src/eval/): Arnes owns the execution engine,
   validation, instrumentation, reports, and comparison under ADR-038/041. Serde models and their

@@ -58,6 +58,9 @@ content, report the limitation. Keep private or sensitive resources out of hoste
   covers the behavior you changed. For declarative configuration interpreted by an external tool,
   its native syntax or schema validation, dry-run, or public execution is coverage; never add a
   mirror test merely to cover the file extension.
+- **Use discriminating tests.** For isolation, authorization or redaction, make negative cases depend only on the target predicate; break it, observe an assertion failure, then restore it and report one "red witness" line per added security test.
+  Assert exact stored payloads for redaction and sensitive data.
+  Adapter doubles share a contract suite with the real implementation, including produced states.
 - **Treat hooks as advisory.** A hook that can be bypassed is not the final barrier; verify the
   indexed change with the repository checks and require the remote CI before merge.
 - **Name the environment.** Every piece of evidence states where it was produced and is

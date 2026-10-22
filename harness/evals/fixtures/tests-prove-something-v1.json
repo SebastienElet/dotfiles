@@ -1,0 +1,8 @@
+{
+  "id": "tests-prove-something-v1",
+  "files": {
+    "tests.ts": "const bob = user({ tenant: \"B\", lists: [] });\nexpect(await search(bob, \"courses\")).toEqual([]);\n\nexpect(stored).toMatchObject({ id: 1, status: \"created\" });\n\nclass FakeAttachmentStore {\n  async create() { return { status: \"active\" }; }\n}\nexpect(await attach(new FakeAttachmentStore())).toEqual({ status: \"active\" });\n",
+    "context.ts": "const listOfA = { id: \"list-of-A\", tenant: \"A\", title: \"courses\" };\nconst incoming = { id: 1, status: \"created\", ownerName: \"Alice\" };\nconst expectedStored = { id: 1, status: \"created\", ownerName: null };\n\nasync function attach(store) {\n  const attachment = await store.create();\n  if (attachment.status !== \"active\") throw new Error(\"attachment is not active\");\n  return attachment;\n}\n",
+    "attachment-store.ts": "export class AttachmentStore {\n  async create() { return { status: \"draft\" }; }\n}\n"
+  }
+}
