@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- Apply compound date periods successively in source-rule order, without summing them; cite the source beside the function.
+  Derive test expectations from that source, never the implementation or a decision document aligned with it.
+  Test days 28–31, short months, and leap and non-leap years.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 

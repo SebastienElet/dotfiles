@@ -81,6 +81,47 @@ PATH shims record reads and search invocations with their exit status. For a lit
 shims simulate external tools and are not protected against a deliberately tampering agent. They
 do not measure native tool quality. No final-answer self-report is used by the oracle.
 
+## Manual case: compound deadlines (#614)
+
+This prepared case uses the existing case fields below. It is not registered in `cases.json`:
+the current runner only instruments file lookup and injects `Context Management`; it cannot
+score date calculations. No with/without-instruction result has been established for this rule.
+
+```json
+{
+  "id": "compound-deadline",
+  "expected": "Apply each period in source order and derive boundary-test expectations from the source rule.",
+  "sources": [
+    {
+      "path": "harness/AGENTS.md",
+      "heading": "Critical Analysis (ALWAYS)"
+    }
+  ],
+  "prompt": {
+    "text": "Implement reminderDate(orderDate) in TypeScript and provide unit tests. Source rule: ‘The reminder is sent 2 months after the expiry of a one-month grace period starting on the order date.’ Use the supplied addMonths(date, count), which adds calendar months and clamps the day to the last valid day of the destination month. Dates are date-only Gregorian values; timezone conversion is outside this exercise."
+  },
+  "fixture": "compound-deadline-v1",
+  "oracle": "manual-compound-deadline-v1",
+  "success": "The implementation applies one month, then two months, cites the source beside the function, and supplies tests with source-derived expected dates covering days 28–31, short months and leap/non-leap years, including the boundary examples below.",
+  "failure": "Periods are summed; January 31 gives April 30; boundary tests are missing; the source citation is missing; or expectations come from the implementation or an aligned decision document."
+}
+```
+
+Fixture `compound-deadline-v1`: a disposable TypeScript workspace supplying `addMonths` with the
+prompt's contract. The agent implements the function and its tests; no declarative file is graded.
+The manual oracle reviews the implementation and tests against the source rule. Required examples:
+January 28, 29, 30 and 31, 2026 → February 28 → April 28;
+January 31, 2024 → February 29 → April 29;
+February 28, 2026 → March 28 → May 28;
+February 29, 2024 → March 29 → May 29;
+March 31, 2026 → April 30 → June 30.
+
+For the neutral variant, replace only the three compound-date instruction lines with:
+“This workspace contains a synthetic TypeScript exercise. Keep the result concise.”
+Keep the other global instructions, fixture, prompt, agent, model, effort and replicate count
+identical. Score both conditions with the same manual oracle; the issue's differential criterion
+requires an observed FAIL with the neutral variant and PASS with the instruction, not just valid case data.
+
 ## Evidence and comparison
 
 Reports record version, case snapshots, prompt bytes/fingerprints, source fingerprints, agent and
