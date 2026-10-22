@@ -34,6 +34,10 @@ Before implementing any request:
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 
+For every touched module, include all routes and use cases, including existing ones, in the PR's route → permission → scope → refusal-test table.
+Deny by default: a route without explicit permission is a defect even when a global guard permits it.
+Test authorization with minimal subjects (one permission, one scope), never administrators, covering missing permission and out-of-scope access.
+
 ## Context Management
 
 - **Locate in the main thread.** Use bounded `rg` and `fd` searches to locate relevant code and

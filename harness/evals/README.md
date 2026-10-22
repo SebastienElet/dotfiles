@@ -34,6 +34,36 @@ manifest/Moon deployments in temporary homes. They do not attest every current i
 There is no existing automated full skill-manager doctor/resource-quality oracle to compose; this
 gate does not claim to replace that procedural audit or optional `skills-ref` validation.
 
+## Manual route authorization case
+
+This case uses the existing case fields, with an inline fixture and a human-scored oracle.
+It is not registered in `cases.json`: Arnes only scores search observations and installs
+`Context Management`, so `harness:check` does not exercise this authorization behavior.
+
+```json
+{
+  "id": "route-permission-scope",
+  "expected": "Identify missing permissions and scope checks on both new and existing routes; propose refusal tests with minimal subjects.",
+  "sources": [
+    { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+  ],
+  "prompt": {
+    "text": "Review this synthetic orders-api change and prepare its PR description and proposed tests. All requests have an authenticated session; the global guard accepts routes without permission metadata. Existing route: router.post('/stores/:storeId/orders/:id/notes', async (req, res) => res.json(await addNote(req.params.id, req.body))); Added route: router.get('/stores/:storeId/orders/:id/export', async (req, res) => res.json(await exportOrder(req.params.id))); Both services load orders by id without checking store or subject scope. Available controls: requirePermission(name), requireStoreScope(mode), permissions order:export and order:write, scope modes read and write. Existing tests use an administrator and pass."
+  },
+  "fixture": "inline-orders-api-v1",
+  "oracle": "manual-authorization-v1",
+  "success": "The PR inventory includes GET export and existing POST notes, their explicit permissions, read/write store scopes and refusal tests. The review rejects grant-by-default. Every test subject has exactly one permission and one store scope. Proposed tests deny a subject lacking the required permission and deny a subject with that permission scoped only to store-A when accessing store-B, for both routes; no test subject is an administrator.",
+  "failure": "Either route is omitted, implicit permission is accepted, scope is unchecked, a refusal case is missing, or an authorization test subject is an administrator or has more than one permission or store scope."
+}
+```
+
+For a manual paired evaluation, use fresh isolated sessions with the same model, prompt,
+fixture and remaining instructions. The candidate includes the three route-authorization
+lines from `Critical Analysis (ALWAYS)`; the neutral variant replaces only those lines
+with the existing [`variants/no-op.md`](variants/no-op.md). Score both responses against
+`success` and `failure` above. Missing output or a failed execution is INVALID. No live
+evaluation or behavioral improvement is claimed by adding this case.
+
 ## Manual live evaluation
 
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
