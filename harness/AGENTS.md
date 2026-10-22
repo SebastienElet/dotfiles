@@ -31,6 +31,9 @@ Before implementing any request:
 - Before writing code that parses an external value, joins, maps errors or adds a persisted
   field, make every affected failure path explicit in the design; the corresponding failure-path
   test ships in the same commit.
+- For migrations, upgrades and reference syncs, identify local derivations, invariants and user choices for each copied field.
+  Recompute locally derived fields with their owning rule or exclude them from copying; report excluded copies.
+  Test that locally derived state survives an upgrade from the reference.
 
 Keep unrelated inconsistencies out of scope. Follow `USER.md` for validation and workflow.
 

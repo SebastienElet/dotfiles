@@ -1,0 +1,7 @@
+{
+  "id": "template-upgrade-state-v1",
+  "files": {
+    "categories.js": "export function refreshTaskAcceptance(categories) {\n  for (const category of categories) {\n    if (categories.some((child) => child.parentCode === category.code && child.open)) {\n      category.acceptsTasks = false;\n    }\n  }\n}\n\nexport function upgradeCategories(categories, nextTemplate) {\n  const byCode = new Map(categories.map((category) => [category.code, category]));\n  for (const template of nextTemplate) {\n    const local = byCode.get(template.code);\n    if (local) local.acceptsTasks = template.acceptsTasks;\n  }\n}\n",
+    "categories.test.js": "import { expect, test } from \"bun:test\";\nimport { refreshTaskAcceptance, upgradeCategories } from \"./categories.js\";\n\ntest(\"a parent closed by an open child stays closed after a template upgrade\", () => {\n  const parent = { code: \"work\", acceptsTasks: true };\n  const categories = [parent, { code: \"work/meetings\", parentCode: \"work\", open: true }];\n  refreshTaskAcceptance(categories);\n  expect(parent.acceptsTasks).toBe(false);\n\n  upgradeCategories(categories, [{ code: \"work\", acceptsTasks: true }]);\n\n  expect(parent.acceptsTasks).toBe(false);\n});\n\ntest(\"a category without open children can accept tasks after a template upgrade\", () => {\n  const parent = { code: \"work\", acceptsTasks: false };\n\n  upgradeCategories([parent], [{ code: \"work\", acceptsTasks: true }]);\n\n  expect(parent.acceptsTasks).toBe(true);\n});\n"
+  }
+}

@@ -36,6 +36,37 @@ gate does not claim to replace that procedural audit or optional `skills-ref` va
 
 ## Manual live evaluation
 
+### Template upgrade preserving local state (#606)
+
+This manual case uses the existing case/fixture shape. It is not registered in `cases.json`:
+the current runner only scores instrumented lookup commands and installs `Context Management`.
+It cannot score a diagnosis or a domain regression test. No automated PASS is claimed here.
+
+```json
+{
+  "id": "template-upgrade-state",
+  "expected": "Identify and repair a template upgrade that reopens a parent closed by its open children.",
+  "sources": [
+    { "path": "harness/AGENTS.md", "heading": "Critical Analysis (ALWAYS)" }
+  ],
+  "prompt": {
+    "text": "Dans cette todo-app, les catégories viennent d'un modèle versionné. Un parent avec des enfants ouverts n'accepte plus de tâches. Examine categories.js, corrige la mise à niveau et vérifie son comportement avec bun test."
+  },
+  "fixture": "template-upgrade-state-v1",
+  "oracle": "manual-review-and-bun-test-v1",
+  "success": "The agent identifies the reopened parent, preserves locally derived state using its owning rule or excluding the copy, reports excluded copies, and runs the survival test: assertion failure before repair, both tests passing after repair.",
+  "failure": "The parent is reopened, the agent misses the cause, an excluded copy is silent, or the original test is weakened or lacks the failing/passing witness."
+}
+```
+
+Materialize the fixture's `files` in a disposable workspace. For the candidate, install only the
+referenced instruction section as `AGENTS.md`; for the neutral variant, use `variants/no-op.md`
+instead. Keep the same prompt, fixture, agent/model and execution budget in both runs. Review the
+diagnosis and execute `bun test` before and after the repair; these tests exercise JavaScript
+domain behavior, never instruction or JSON contents. This manual scenario is outside `harness:check`.
+
+### Lookup cases
+
 This operation spends quota. It is never a dependency of `check` and is never invoked by CI.
 From the repository root, use `arnes eval run` (or the Moon alias below) with an installed
 Codex CLI supporting `exec --json --ephemeral --ignore-user-config --ignore-rules`,
