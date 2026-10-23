@@ -7,10 +7,18 @@ mod parser;
 use parser::local_references;
 
 pub fn validate(skill: &Path, subject: &str) -> Result<(), Diagnostic> {
+    validate_declared(skill, subject, &[])
+}
+
+pub fn validate_declared(
+    skill: &Path,
+    subject: &str,
+    declared: &[PathBuf],
+) -> Result<(), Diagnostic> {
     let file = skill.join("SKILL.md");
     let contents = read_skill(skill, &file, subject)?;
     for reference in local_references(&contents) {
-        validate_reference(skill, &reference, subject)?;
+        validate_reference(skill, &reference, subject, declared)?;
     }
     Ok(())
 }
@@ -41,14 +49,21 @@ fn read_skill(skill: &Path, file: &Path, subject: &str) -> Result<String, Diagno
     })
 }
 
-fn validate_reference(skill: &Path, reference: &Path, subject: &str) -> Result<(), Diagnostic> {
-    let path = resolve(skill, reference).ok_or_else(|| {
-        broken(
-            subject,
-            State::Error,
-            &format!("local resource {} escapes its skill", reference.display()),
-        )
-    })?;
+fn validate_reference(
+    skill: &Path,
+    reference: &Path,
+    subject: &str,
+    declared: &[PathBuf],
+) -> Result<(), Diagnostic> {
+    let path = resolve(skill, reference)
+        .or_else(|| (!declared.is_empty()).then(|| skill.join(reference)))
+        .ok_or_else(|| {
+            broken(
+                subject,
+                State::Error,
+                &format!("local resource {} escapes its skill", reference.display()),
+            )
+        })?;
     fs::metadata(&path).map_err(|error| {
         let (state, reason) = if error.kind() == std::io::ErrorKind::NotFound {
             (State::Drift, "is missing")
@@ -61,7 +76,16 @@ fn validate_reference(skill: &Path, reference: &Path, subject: &str) -> Result<(
             &format!("local resource {} {reason}", reference.display()),
         )
     })?;
-    ensure_within(&path, skill, subject)
+    ensure_within(&path, skill, subject).or_else(|diagnostic| {
+        if declared
+            .iter()
+            .any(|root| ensure_within(&path, root, subject).is_ok())
+        {
+            Ok(())
+        } else {
+            Err(diagnostic)
+        }
+    })
 }
 
 fn ensure_within(path: &Path, skill: &Path, subject: &str) -> Result<(), Diagnostic> {

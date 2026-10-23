@@ -25,6 +25,12 @@ pub fn leaf(
         Scope::Project => roots.repository(),
     };
     let source = source_root.join(manifest.skill_source(name, resource.source));
+    let declared = manifest
+        .skill_sources(resource.source)
+        .filter_map(|source| {
+            source_directory(&source_root.join(source), source_root, &subject).ok()
+        })
+        .collect::<Vec<_>>();
     let destination = destination(roots, resource.scope, &installed);
     let human = ProjectionHuman::new(name, label(resource.scope, &installed));
     match expected_link(
@@ -36,7 +42,7 @@ pub fn leaf(
         &subject,
         &human,
     )
-    .and_then(|()| references::validate(&destination, &subject))
+    .and_then(|()| references::validate_declared(&destination, &subject, &declared))
     {
         Ok(()) => Diagnostic::new("skills", State::Healthy, format!("{subject} is current"))
             .with_human_summary(name),
