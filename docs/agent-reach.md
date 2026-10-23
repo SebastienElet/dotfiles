@@ -1,132 +1,57 @@
-# Agent-Reach via Moon
+# Agent-Reach
 
-L'installation est optionnelle et cible macOS ARM64. Le plugin conserve les références de tous les
-canaux d'Agent-Reach. Moon utilise `@sebastienelet/agent-reach-adapter`, épinglé dans `package.json`
-et `bun.lock` ; les gestionnaires natifs de Claude Code et Codex installent le plugin. Harness copie
-ses ressources et son manifeste `.cursor-plugin/plugin.json` sous `~/.cursor/plugins/local/agent-reach`.
-Arnes exige ensuite sa présence pour les trois agents et son activation durable observable pour
-Claude et Codex.
+## Usage
 
-Limite actuelle : Cursor ne publie aucune source locale supportée certifiant l'autorisation
-d'import et la priorité effective du plugin. Pour Cursor, le contrôle obligatoire valide la
-présence et l'intégrité structurelle de la projection locale, avec `activation=unobserved`.
-L'activation effective reste à vérifier dans Cursor ; cette limite ne bloque pas le contrôle.
+Le parcours optionnel cible macOS ARM64 et installe le plugin pour Claude, Codex
+et Cursor depuis le paquet épinglé `@sebastienelet/agent-reach-adapter`.
+L'installation ne connecte aucun compte. Les références des canaux sont livrées
+avec le plugin ; aucune installation globale ne doit partir d'un worktree.
 
-Depuis le checkout canonique, après intégration des changements :
+## Procédure
+
+Depuis le checkout canonique, après intégration :
 
 ```sh
 moon run harness:agent-reach
+moon run harness:agent-reach-check
 ```
 
-Ne pas lancer cette installation globale depuis un worktree ou un HOME de fixture. Le packaging
-et les tests locaux ne nécessitent pas d'installation globale.
+Le contrôle compare d'abord le manifeste déployé à `home/.arnes.yaml`, puis lance
+les diagnostics Arnes des trois agents. Un ancien plugin
+`agent-reach@dotfiles-agent-reach` n'est pas remplacé automatiquement : conserver
+sa marketplace pour le retour arrière, puis retirer explicitement cette ancienne
+installation avec les commandes natives de l'agent. Ne pas effacer un cache partagé
+pour contourner un refus de projection divergente.
 
-## Installation précédente
-
-Le parcours ajoute `agent-reach@agent-reach-adapter` sans retirer
-`agent-reach@dotfiles-agent-reach`. Avant de remplacer une installation précédente, conserver le
-chemin de sa marketplace locale et qualifier le retour à son activation. Le retour arrière utilise
-les commandes natives pour désactiver ou retirer le nouveau plugin, réajouter la marketplace
-conservée si nécessaire et réinstaller l'ancien plugin.
-
-Après cette qualification, retirer explicitement l'ancien plugin et sa marketplace avant le
-parcours complet :
-
-```sh
-claude plugin uninstall agent-reach@dotfiles-agent-reach --scope user --keep-data
-claude plugin marketplace remove dotfiles-agent-reach --scope user
-codex plugin remove agent-reach@dotfiles-agent-reach
-codex plugin marketplace remove dotfiles-agent-reach
-```
-
-La désactivation seule ne suffit pas : Arnes signale aussi un plugin ou une marketplace hors
-politique. Inspecter les éventuels caches orphelins aux chemins exacts rapportés par Arnes avant
-tout retrait manuel ; ne pas supprimer un répertoire de cache partagé ni la source locale conservée
-pour le retour arrière. Relancer ensuite le parcours complet et `harness:agent-reach-check`.
-
-## Sources et rejeu
-
-Le fichier `resources/source.json` du paquet npm fixe le commit Agent-Reach et les coordonnées
-directes des CLI Python et Node. `uv tool install` isole chaque outil Python sous
-`~/.local/share/agent-reach/python-tools/` ; Volta
-installe les outils Node. Les dépendances transitives Python et npm ne sont pas verrouillées.
-L'image LinkedIn dans `home/.config/agent-reach/compose.yaml` est épinglée par digest multiarchitecture.
-
-Le cache Git et le plugin assemblé résident sous `~/.local/share/agent-reach/`. La marketplace
-locale `agent-reach-adapter` livre le même contenu à Claude et Codex depuis
-`adapter/<version-du-paquet>/marketplace`. Cursor reçoit une copie locale des mêmes ressources.
-Le packaging et la projection Cursor conservent un
-résultat identique et refusent un fichier, lien ou contenu divergent. Un changement du pin ou du
-packaging exige une reconstruction explicite de la marketplace générée ; l'installation ne
-supprime pas automatiquement l'ancienne pour contourner ce refus. Les caches des agents restent
-gérés par leurs commandes natives.
-
-Le packaging adapte la description pour conserver la priorité des outils web/GitHub existants,
-remplace les installations automatiques par Moon et conserve la licence MIT amont. Les références
-amont détaillées restent majoritairement en chinois.
-
-## Configuration des canaux
-
-L'installation ne se connecte à aucun compte et ne démarre pas le serveur LinkedIn. Un Docker
-indisponible fait échouer l'installation du backend ; il n'est pas assimilé à une image installée.
-
-- **OpenCLI** : installer manuellement son [extension Chrome](https://chromewebstore.google.com/detail/opencli/ildkmabpimmkaediidaifkhjpohdnifk), puis utiliser une session déjà connectée et explicitement autorisée.
-- **Twitter/X et Xueqiu** : fournir explicitement les cookies à la commande de configuration, dans
-  son prompt masqué ; ne pas les transmettre dans une conversation.
-- **YouTube et Bilibili** : les commandes du plugin activent Node pour `yt-dlp` ; `bili` traite Bilibili.
-- **Transcription** : ffmpeg est installé ; la clé Groq ou OpenAI doit être configurée séparément.
-- **Boss Zhipin** : le CLI utilise le commit recommandé par Agent-Reach ; Chrome, le profil CDP
-  dédié et le login restent à configurer explicitement selon la référence empaquetée.
-
-MCPorter utilise `~/.config/agent-reach/mcporter.json`, sans import des configurations d'autres
-agents. Cette configuration contient Exa et le service LinkedIn local ; les recettes du plugin
-la sélectionnent explicitement. Le fichier MCPorter est copié comme fichier régulier, car la
-lecture de configuration d'Agent-Reach refuse les symlinks. Compose utilise un symlink ordinaire.
-Les recettes RSS et le script podcast utilisent le Python de l'environnement Agent-Reach ; le
-script podcast est également déployé au chemin attendu par le diagnostic amont.
-
-## LinkedIn
-
-Le navigateur reste dans l'image Docker. Le conteneur `agent-reach-linkedin` et le volume
-`agent-reach-linkedin-profile` sont nommés ; les ports HTTP et de login ne sont publiés que sur
-la boucle locale. La fermeture du navigateur inactif après 300 secondes n'arrête pas le conteneur.
+Les connexions restent explicites : extension Chrome OpenCLI et session autorisée,
+cookies X/Xueqiu saisis dans le prompt masqué du CLI, clés de transcription
+configurées séparément. Ne pas transmettre ces secrets dans la conversation.
+Pour LinkedIn :
 
 ```sh
 moon run harness:agent-reach-linkedin-login
 moon run harness:agent-reach-linkedin-start
-```
-
-La première commande arrête le serveur éventuel, ouvre un conteneur de login nommé temporaire
-et affiche une URL de viewer à ouvrir dans votre navigateur. Vous effectuez le login ; le profil
-reste dans le volume. La seconde démarre le serveur HTTP. Pour l'arrêter :
-
-```sh
 docker compose --file ~/.config/agent-reach/compose.yaml stop linkedin
 ```
 
-## Vérification
+Le login affiche une URL de viewer ; le profil reste dans le volume Docker nommé
+`agent-reach-linkedin-profile`. Le serveur utilise les ports de boucle locale.
+MCPorter lit `~/.config/agent-reach/mcporter.json` ; ne pas importer les
+configurations privées d'autres agents.
 
-`moon run harness:agent-reach-check` lance uniquement les audits Arnes de Claude, Codex et Cursor,
-sans dépendance d'installation ni cache. Il exige un binaire Arnes à jour et compare d'abord le
-manifeste utilisateur au fichier canonique `home/.arnes.yaml` : une politique absente ou ancienne
-fait échouer le contrôle. Un plugin `required: true` manque ou est désactivé : le contrôle échoue ;
-une activation indéterminable Claude/Codex échoue également. Pour Cursor, la projection locale ne prouve pas
-l'autorisation d'import ni l'absence de priorité d'un plugin marketplace homonyme. Arnes rapporte
-donc `activation=unobserved` sans rendre ce point bloquant lorsque la projection est présente et
-structurellement valide. Cette limite est
-distincte du chargement dans une session, qui n'est observé pour aucun agent.
+## Limites et vérification
 
-`harness:agent-reach-install-check`, appelé par le parcours d'installation complet, attend les
-installations puis lance ces audits, la commande de version Agent-Reach et la lecture native de
-configuration MCPorter. Il ne se connecte à aucune plateforme et ne prétend pas valider une
-collecte. Les audits Arnes portent sur l'agent entier et peuvent
-signaler un défaut externe sans rapport avec Agent-Reach.
+Le paquet fixe le commit amont et les coordonnées directes des outils Python/Node ;
+leurs dépendances transitives ne sont pas verrouillées. Une reconstruction de
+marketplace après changement de pin reste explicite.
 
-Le Doctor global n'est pas lancé automatiquement : le backend Boss du commit épinglé peut
-consulter les cookies de Chrome via CDP. Son invocation exige donc une autorisation explicite
-d'inspection des sessions configurées, même lorsqu'on cherche à diagnostiquer un autre canal.
+`harness:agent-reach-check` observe la présence et l'activation durable de
+Claude/Codex. Pour Cursor, la projection structurelle ne prouve ni l'autorisation
+**Allow Local Plugin Imports**, ni sa priorité face à un plugin marketplace homonyme :
+vérifier l'activation dans Cursor. Aucun de ces diagnostics ne prouve une collecte
+ou un chargement en session.
 
-Les tests Bun du packaging et du cache Git exercent le rejeu, les contenus divergents, les
-ressources manquantes et les liens symboliques. La syntaxe Moon, les manifestes plugin et la
-configuration Compose utilisent leurs validations natives. L'installation globale, le login et
-les collectes authentifiées doivent être exercés sur un poste configuré.
+Le Doctor global Agent-Reach peut consulter les cookies Chrome via CDP ; son
+invocation exige une autorisation explicite, même pour diagnostiquer un autre canal.
+Les tests Bun de packaging utilisent des fixtures ; login et collectes demandent
+un poste configuré. Les choix structurants suivent l'[ADR-031](adr/031-lecture-web-agent-reach.md).

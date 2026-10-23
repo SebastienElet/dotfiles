@@ -6,9 +6,8 @@ narrows the documentation language.
 ## Language
 
 - **Documents under `docs/` are written in French**, by explicit exception to the
-  English-documentation rule that governs the rest of the repository. They record reasoning —
-  decisions, designs, trade-offs — for a French-speaking author, not a public interface of the
-  repository.
+  English-documentation rule that governs the rest of the repository. They contain the retained
+  operational guides and architecture decisions for a French-speaking author.
 - The exception covers prose only. Identifiers, commands, file paths, API names, commit hashes and
   quoted commit bodies stay verbatim.
 - Do not translate an existing document to satisfy this rule.

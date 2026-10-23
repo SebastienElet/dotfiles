@@ -115,8 +115,6 @@ it does not qualify this repository's TypeScript/Bun or Rust suites. Repository 
 also cause the static diagnostic to refuse a checkout. Execution requires an explicitly chosen
 backend; installation does not initialize projects or register an MCP server.
 
-See the [skills audit](docs/skills-audit-412.md) for the obsolete instructions corrected in #412.
-
 ## Checks
 
 ### Contributing from a worktree
@@ -193,7 +191,7 @@ zones, choose the relevant row and inspect its graph first. `moon run harness:ch
 is the explicit deterministic aggregate. **Do not substitute `moon check harness`**:
 Moon selects build/test tasks inferred across the project, including operational
 tasks such as `semctx` that install plugins. See the
-[Harness evaluation limits](harness/evals/README.md#deterministic-testing-and-limits).
+[Harness evaluation guide](docs/arnes-eval.md).
 
 On a prepared environment, the broad local aggregates remain `moon run check` and
 `moon run test`; they are not the default worktree path. The full workstation smoke
@@ -220,8 +218,7 @@ when making one.
 
 ## Repository layout
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the complete project map,
-deployment flow, and placement rules.
+Placement follows [ADR-038](docs/adr/038-frontieres-home-harness-tooling.md).
 
 - `home/` mirrors the destination-relative paths of files deployed under `$HOME`.
 - `harness/` contains instructions and capabilities shared across agent harnesses.
@@ -230,9 +227,9 @@ deployment flow, and placement rules.
 
 ## Arnes Doctor
 
-See the [Doctor reference](docs/arnes-doctor.md) for its diagnostic scope,
-resource coverage, defaults, examples, exit codes, and observation limits for
-Claude Code, Cursor, and Codex.
+See the [Arnes guide](docs/arnes.md) for diagnosis, synchronization, measurement and
+observation limits. The [documentation index](docs/README.md) also covers Agent-Reach,
+deployment cleanup and harness evaluations.
 
 ## Harness project export
 

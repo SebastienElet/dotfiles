@@ -13,5 +13,5 @@
 ## Checklist
 
 - [ ] Changes have been tested locally
-- [ ] Documentation has been updated if necessary
+- [ ] Existing documentation remains accurate; any retained guide meets `docs/README.md`
 - [ ] No breaking changes (or documented if necessary)
