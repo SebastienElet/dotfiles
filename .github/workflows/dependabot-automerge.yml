@@ -1,0 +1,15 @@
+# Prerequisites: enable "Allow auto-merge" and require CI checks on main.
+name: Dependabot auto-merge
+on:
+  # pull_request_target permits a write token for Dependabot without running PR code.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions: {}
+
+jobs:
+  automerge:
+    permissions:
+      contents: write
+      pull-requests: write
+    # Other repositories: uses: SebastienElet/dotfiles/.github/workflows/dependabot-automerge-reusable.yml@<full-commit-sha>
+    uses: ./.github/workflows/dependabot-automerge-reusable.yml
