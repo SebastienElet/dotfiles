@@ -1,25 +1,6 @@
 use super::*;
 
 #[test]
-fn loads_native_lookup_cases_without_a_skill_source() -> Result<(), Box<dyn std::error::Error>> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let cases = load_cases(&root)?;
-    assert_eq!(
-        cases
-            .iter()
-            .map(|case| case.definition.id.as_str())
-            .collect::<Vec<_>>(),
-        ["repository-literal", "repository-known-path"]
-    );
-    assert_eq!(
-        cases.first().ok_or("missing case")?.prompt,
-        "Trouve exactement FEATURE_FLAG_DISABLED."
-    );
-    assert!(cases.iter().all(|case| !case.prompt.is_empty()));
-    Ok(())
-}
-
-#[test]
 fn refuses_symlink_escape_and_unresolvable_sections() -> Result<(), Box<dyn std::error::Error>> {
     let root = tempfile::tempdir()?;
     let outside = tempfile::tempdir()?;

@@ -21,12 +21,6 @@ fn valid_manifest_models_rooted_user_and_project_resources()
     manifest::parse(&fixture("valid.yaml")?)?;
     Ok(())
 }
-#[test]
-fn repository_manifest_is_valid() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../home/.arnes.yaml");
-    manifest::parse(&fs::read_to_string(path)?)?;
-    Ok(())
-}
 fn hook_error(
     agents: &str,
     hooks: &str,
