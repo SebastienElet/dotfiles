@@ -209,19 +209,12 @@ tasks:
       - repository:dependencies
     toolchains: bun
   assertledger:
-    description: Install the pinned AssertLedger CLI with Bun
+    description: Install the pinned AssertLedger CLI and its managed Node launcher
     script: |-
       set -e
       . ./node_modules/@sebastienelet/agent-skills/skills/assertledger/version.env
       bun --config=/dev/null --no-env-file install --global --exact --ignore-scripts "assertledger@$ASSERTLEDGER_VERSION"
-    checks:
-      - check: condition
-        script: |-
-          set -e
-          . ./node_modules/@sebastienelet/agent-skills/skills/assertledger/version.env
-          test -x "$HOME/.bun/bin/assertledger" &&
-            installed_assertledger_version=$("$HOME/.bun/bin/assertledger" --version) &&
-            test "$installed_assertledger_version" = "assertledger $ASSERTLEDGER_VERSION"
+      bun --config=/dev/null --no-env-file tooling/install-assertledger.ts "$workspaceRoot" "$HOME"
     deps:
       - repository:dependencies
       - repository:node
