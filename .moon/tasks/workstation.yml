@@ -65,47 +65,6 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew bundle install --no-upgrade --file Brewfile
-  anarlog:
-    description: Install the optional Anarlog meeting notepad
-    deps:
-      - homebrew
-    checks:
-      - check: condition
-        script: |-
-          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          brew list --cask --versions anarlog
-    env:
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      interactive: true
-      mutex: homebrew
-      os: macos
-      runInCI: false
-    script: |-
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      brew install --cask anarlog
-  minutes:
-    description: Install the optional Minutes meeting recorder
-    deps:
-      - homebrew
-    checks:
-      - check: condition
-        script: |-
-          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          brew list --cask --versions silverstein/tap/minutes
-    env:
-      HOMEBREW_NO_ASK: "1"
-    toolchains: system
-    options:
-      cache: false
-      mutex: homebrew
-      os: macos
-      runInCI: false
-    script: |-
-      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      brew install --cask silverstein/tap/minutes </dev/null
   herdr:
     description: Install the optional Herdr agent multiplexer and configuration
     command: noop
@@ -215,6 +174,19 @@ tasks:
       mutex: apple-notes-exporter
       os: macos
       runInCI: false
+  codex-quota:
+    description: Install codex-quota from the pinned Git revision
+    deps:
+      - rust
+    toolchains: system
+    options:
+      cache: false
+      mutex: cargo-install
+      os: macos
+      runInCI: false
+    script: |-
+      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+      cargo install --git https://github.com/SebastienElet/codex-quota --rev 686734c85208af44c90201c3378e7f4c4c8b74dd --locked --quiet
   rust:
     description: Install the repository Rust toolchain with rustup
     checks:

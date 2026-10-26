@@ -9,8 +9,7 @@ import { withoutMoonTaskContext } from "./deployment-moon-test-support.ts";
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 function runDeploymentMoon(
-  fixture: Pick<DeploymentFixture, "home"> &
-    Readonly<{ repositoryRoot?: string }>,
+  fixture: Pick<DeploymentFixture, "home">,
   tasks: readonly string[],
   environment: Readonly<NodeJS.ProcessEnv> = {},
 ): CommandResult {
@@ -26,7 +25,7 @@ function runDeploymentMoon(
       ...tasks,
     ],
     {
-      cwd: fixture.repositoryRoot ?? project,
+      cwd: project,
       env: {
         ...withoutMoonTaskContext(process.env),
         HOME: fixture.home,

@@ -29,7 +29,8 @@ $scripts decide whether this shell helper belongs in TypeScript or Rust
 ## Steps
 
 1. Inspect neighboring scripts, every caller, the applicable ADRs, and the behavior that tests
-   actually exercise before choosing a language.
+   actually exercise before choosing a language. For a one-off setting, provide commands to run
+   and stop; do not commit a script.
 2. Classify the change as boundary glue only when it sets environment, validates a few arguments,
    invokes a fixed sequence of commands, forwards their output or status, or selects one explicit
    platform branch. Use Bash only for that case.
@@ -88,8 +89,9 @@ $scripts decide whether this shell helper belongs in TypeScript or Rust
   embed another implementation language in Shell.
 - Use Bun and TypeScript as the default for small repository-owned utilities that exceed the Shell
   boundary; require Rust only when its delivery or correctness properties are material.
-- Every TypeScript utility must be covered by `bun test` and a pinned TypeScript 7 `tsc --noEmit`
-  gate that runs in CI.
+- Test repository-owned TypeScript behavior with `bun test` and typecheck TypeScript with the
+  pinned TypeScript 7 `tsc --noEmit` gate in CI. Never create utilities or tests solely to verify
+  declarative file contents; exercise their behavior in use.
 - Every external or structured TypeScript input must be validated with Zod at its boundary; do not
   replace the schema with casts, handwritten type guards, or permissive defaults.
 - Use `#!/usr/bin/env bash` for every permitted new executable Shell wrapper.

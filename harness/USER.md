@@ -62,20 +62,8 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   frontière exercée : une application montée in-process avec vraie DB et systèmes externes
   substitués in-memory relève de l'intégration. Réserver E2E à une frontière système assemblée,
   proche de la production ; HTTP ou une convention de framework, notamment NestJS, ne suffisent pas.
-  Exception au TDD : déclaratif sans comportement propre, notamment constante, version, variable
-  d'environnement ou option de commande, sans test de valeur. Pour Moon, Makefiles ou YAML, utiliser
-  d'abord les oracles natifs ou existants qui détectent une erreur réelle. Un invariant de
-  configuration possédé, notamment de sécurité ou de compatibilité, mérite une preuve de son
-  comportement ; ne pas recopier la déclaration comme attendu ni retester le graphe ou les options
-  de l'outil. Dériver l'attendu d'une autre source canonique indépendante lorsque c'est possible.
-  Ne pas créer spontanément de script Bash/TypeScript, validateur, lint rule, gate CI ou test harness
-  pour renforcer la validation du déclaratif. Si un manque significatif semble justifier cette
-  nouvelle infrastructure, suspendre seulement sa création et demander l'avis de l'utilisateur :
-  invariant possédé, source canonique, oracles considérés, preuve manquante, criticité du risque
-  résiduel et contrôle envisagé. Ce checkpoint porte sur la pertinence de cette nouvelle surface de
-  maintenance, pas sur les tests ordinaires du code possédé. Une gate directement demandée par
-  l'utilisateur ou une autorité externe reste à implémenter ; un plan, une spécification, une ADR
-  ou une revue produits par un agent dans le même flux ne constituent pas cette demande.
+- **Déclaratif et réglages ponctuels.** Ne jamais tester le contenu d'un fichier déclaratif (workflow, config YAML/TOML/JSON, manifeste, définition, inventaire) : vérifier son comportement en usage.
+  Pour un réglage ponctuel, fournir les commandes à exécuter, sans script committé.
 - **In-memory plutôt que mocks.** Pour les dépendances applicatives, préférer une implémentation
   in-memory minimale qui évolue sous la pression des tests. Tester le vrai composant lorsque
   l'invariant lui appartient, par exemple index unique ou trigger DB. Tester les invariants et
@@ -190,6 +178,10 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   factuelles présentes dans la PR et dans la documentation touchée correspondent au code courant.
   Ne pas rendre la documentation exhaustive par principe : corriger ou retirer uniquement les
   affirmations devenues fausses, trop fortes ou contradictoires avec l'implémentation.
+- **Documentation durable seulement.** Ne conserver une doc que si elle est hautement qualitative,
+  concise, à jour et exploitable par un humain comme par un agent. Restituer les notes d'issue,
+  audits et validations ponctuelles dans la conversation ou la PR, sans fichier versionné.
+  Une décision structurante encore vivante rejoint l'ADR concernée ; supprimer la doc obsolète.
 - **Spécifier le résultat, redécouvrir l'implémentation.** Une issue ou spécification doit être
   précise sur le comportement attendu, les contraintes produit, les états visibles, les designs
   ou composants à respecter et les critères d'acceptation, sans figer architecture, fichiers ou

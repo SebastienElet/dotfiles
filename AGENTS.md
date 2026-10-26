@@ -9,6 +9,7 @@ This file is the single source of truth for all coding agents working in this re
 - **Prefer small iterations.** Do only what was asked; avoid expanding to all similar items.
 - **Keep changes minimal.** Reuse existing structures and ask when the intended scope is ambiguous.
 - **Avoid broad refactors.** Do not migrate or reorganize unrelated configuration by default.
+- Follow [the documentation policy](docs/README.md) before adding or changing documentation.
 
 ## Code Structure
 

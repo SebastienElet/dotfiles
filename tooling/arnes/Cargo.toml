@@ -5,7 +5,7 @@ edition = "2024"
 description = "Inspection and deployment of coding-agent configuration."
 license-file = "../../LICENSE"
 repository = "https://github.com/SebastienElet/dotfiles"
-readme = "../RUST.md"
+readme = "../../README.md"
 keywords = ["dotfiles", "agents", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 

@@ -13,7 +13,7 @@ metadata:
 ## Overview
 
 Apply this repository's conventions when changing managed configuration, symlinks, or tool
-installation. Moon owns installation, development tasks and cleanup for the minimal and
+installation. Moon owns installation and development tasks for the minimal and
 optional profiles.
 
 ## Usage
@@ -50,6 +50,8 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
    does not discover or repair deployed links; ignored files do not prevent removal.
 8. Validate declarative changes with Moon's native configuration and action graph, then run the
    relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
+9. Before adding or updating documentation, apply the repository's `docs/README.md` policy and
+   shared guide template. Return one-off findings in the conversation or PR.
 
 ## Gotchas
 
