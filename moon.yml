@@ -37,8 +37,6 @@ tasks:
     deps:
       - repository:install
       - repository:bundle-optional
-      - repository:anarlog
-      - repository:minutes
       - repository:optional-artifacts
     toolchains: system
     options:

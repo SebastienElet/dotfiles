@@ -42,16 +42,6 @@ cd ~/.dotfiles && \
 
 Install the separately maintained optional profile with `moon exec repository:optional`.
 
-Anarlog belongs to the optional profile, alongside Handy. Install it independently
-with `moon exec repository:anarlog` (macOS 15 or newer).
-
-[Minutes](https://useminutes.app/) is also optional. Install the desktop app with
-`moon exec repository:minutes` (Apple Silicon, macOS 14 or newer), using the publisher's
-`silverstein/tap` Homebrew cask. Native call capture requires macOS 15 or newer.
-First launch downloads a local speech model;
-transcription does not require an API key. Summarization is optional and configured
-separately. The Minutes CLI is not installed by this task.
-
 [Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
 with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
