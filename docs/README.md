@@ -7,12 +7,11 @@ directement exploitable par un humain comme par un agent.
 
 ## Guides
 
-| Sujet                                                | Guide                            |
-| ---------------------------------------------------- | -------------------------------- |
-| Diagnostic, synchronisation et mesure du harnais     | [Arnes](arnes.md)                |
-| Installation optionnelle et connexion des canaux web | [Agent-Reach](agent-reach.md)    |
-| Inspection et retrait des déploiements possédés      | [Nettoyage](deployment-clean.md) |
-| Évaluations déterministes et essais live manuels     | [Évaluations](arnes-eval.md)     |
+| Sujet                                                | Guide                         |
+| ---------------------------------------------------- | ----------------------------- |
+| Diagnostic, synchronisation et mesure du harnais     | [Arnes](arnes.md)             |
+| Installation optionnelle et connexion des canaux web | [Agent-Reach](agent-reach.md) |
+| Évaluations déterministes et essais live manuels     | [Évaluations](arnes-eval.md)  |
 
 ## Structure
 

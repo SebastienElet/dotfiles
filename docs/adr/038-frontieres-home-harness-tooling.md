@@ -73,7 +73,7 @@ partagés.
   changer les destinations utilisées par les outils.
 - Un déplacement de source impose d'aligner les consommateurs versionnés, puis
   de reconstruire explicitement les destinations concernées avant le déploiement
-  voulu ; le nettoyage existant n’est pas une remise à zéro générale.
+  voulu.
 - Les chemins de découverte imposés restent des exceptions visibles à la
   racine plutôt que des copies sous `harness/`.
 - Un outil propre à un skill évolue avec ses instructions et ses tests dans

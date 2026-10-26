@@ -42,7 +42,7 @@ natif](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Le
 - Bun et `tsc` constituent deux oracles distincts : tests d'exécution et vérification statique.
 - Une migration de Bash reste locale au comportement modifié ; les scripts historiques ne sont pas
   réécrits sans besoin.
-- Les profils minimal et optionnel et le nettoyage utilisent leurs points d'entrée Moon.
+- Les profils minimal et optionnel utilisent leurs points d'entrée Moon.
 - La frontière Rust repose sur les garanties requises, pas sur un seuil arbitraire de lignes.
 
 ## Alternatives écartées

@@ -20,7 +20,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       deployment: ${{ fromJSON(steps.query.outputs.result).tasks.tooling['deployment-test'] != null || fromJSON(steps.query.outputs.result).tasks.tooling['hunspell-test'] != null }}
-      worker: ${{ fromJSON(steps.query.outputs.result).tasks.tooling['worker-native-test'] != null }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,13 +28,13 @@ jobs:
           filter: blob:none
       - uses: ./.github/actions/setup-moon
       - run: >-
-          moon action-graph --json tooling:deployment-test tooling:hunspell-test tooling:worker-native-test > /dev/null
+          moon action-graph --json tooling:deployment-test tooling:hunspell-test > /dev/null
       - id: query
         run: |
           {
             printf 'result<<MOON_QUERY_RESULT\n'
             moon query tasks --affected remote --upstream none --downstream none \
-              --project '^tooling$' --id '^(deployment-test|hunspell-test|worker-native-test)$'
+              --project '^tooling$' --id '^(deployment-test|hunspell-test)$'
             printf 'MOON_QUERY_RESULT\n'
           } >> "$GITHUB_OUTPUT"
   deployment:
@@ -59,24 +58,9 @@ jobs:
       - uses: ./.github/actions/setup-moon
       - run: moon ci --concurrency 1 --downstream none tooling:deployment-test tooling:hunspell-test
 
-  worker-native:
-    name: Native worker (macOS)
-    needs: select
-    if: needs.select.outputs.worker == 'true'
-    runs-on: macos-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          filter: blob:none
-      - uses: ./.github/actions/setup-moon
-      - run: moon ci --concurrency 1 --downstream none tooling:worker-native-test
-
   required:
     name: Deployment required
-    needs: [select, deployment, worker-native]
+    needs: [select, deployment]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -86,6 +70,4 @@ jobs:
           PASSED: >-
             ${{ needs.select.result == 'success' &&
             ((needs.select.outputs.deployment == 'true' && needs.deployment.result == 'success') ||
-            (needs.select.outputs.deployment == 'false' && needs.deployment.result == 'skipped')) &&
-            ((needs.select.outputs.worker == 'true' && needs.worker-native.result == 'success') ||
-            (needs.select.outputs.worker == 'false' && needs.worker-native.result == 'skipped')) }}
+            (needs.select.outputs.deployment == 'false' && needs.deployment.result == 'skipped')) }}

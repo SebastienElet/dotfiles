@@ -8,7 +8,7 @@ fileGroups:
     - oxfmt.config.ts
     - tooling/**/*.json
     - tooling/**/*.md
-    - "!tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
+    - "!tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     - tooling/deploy-link.ts
     - .moon/tasks/docker.yml
     - tooling/check-docker-cli
@@ -36,7 +36,7 @@ fileGroups:
     - .gitignore
 tasks:
   typescript-test:
-    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,clean-deployment*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
+    command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     deps:
       - fish-setup
       - rust

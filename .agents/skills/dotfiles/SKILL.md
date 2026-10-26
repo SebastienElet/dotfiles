@@ -13,7 +13,7 @@ metadata:
 ## Overview
 
 Apply this repository's conventions when changing managed configuration, symlinks, or tool
-installation. Moon owns installation, development tasks and cleanup for the minimal and
+installation. Moon owns installation and development tasks for the minimal and
 optional profiles.
 
 ## Usage

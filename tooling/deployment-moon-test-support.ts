@@ -5,7 +5,6 @@ import {
   project,
   requireCommand,
 } from "./deployment-test-support.ts";
-import { basename, join } from "node:path";
 import {
   cpSync,
   mkdirSync,
@@ -15,6 +14,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
 
 type MoonDeploymentFixture = Readonly<{
   home: string;
@@ -38,27 +38,6 @@ type MoonProjectFixturePaths = Readonly<{
 }>;
 
 const fixtures: string[] = [];
-
-function prepareMoonWorkspaceFixture(repository: string): void {
-  cpSync(project, repository, {
-    filter: (path) =>
-      ![".git", "node_modules", "target"].includes(basename(path)) &&
-      path !== join(project, ".moon/cache"),
-    recursive: true,
-  });
-  cpSync(join(project, "node_modules"), join(repository, "node_modules"), {
-    dereference: true,
-    recursive: true,
-  });
-  for (const projectId of ["arnes"]) {
-    const release = join(repository, "tooling", projectId, "target/release");
-    mkdirSync(release, { recursive: true });
-    writeFileSync(join(release, projectId), "fixture binary\n", {
-      mode: 0o755,
-    });
-  }
-  initializeGitRepository(repository);
-}
 
 const foreignGitHubEnvironment = {
   CI: "true",
@@ -265,7 +244,6 @@ export {
   cleanupMoonDeploymentFixtures,
   createMoonDeploymentFixture,
   foreignGitHubEnvironment,
-  prepareMoonWorkspaceFixture,
   runMoon,
   withoutMoonTaskContext,
 };

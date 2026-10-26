@@ -31,12 +31,7 @@ Les comportements de configuration spécifiques restent locaux à leurs utilitai
   en cas d'échec ; cette restauration n'est pas une transaction sur tous les fichiers du plugin.
 
 Les destinations et les sources restent celles de l'ADR-038. Une suppression ou reconstruction
-plus large est une action explicite. La décision [#152](https://github.com/SebastienElet/dotfiles/issues/152)
-étend `repository:clean` aux artefacts déployés possédés des profils
-minimal et optionnel, en conservant sources, données personnelles et paquets tiers.
-Le retrait de remem, autorisé le 2026-10-01 dans la même issue, arrête uniquement le worker reconnu
-avant de retirer ses artefacts possédés, en conservant ses données. Une identité native inconnue
-ou étrangère provoque un refus. Cette commande ne constitue pas une remise à zéro générale du poste.
+plus large est une action explicite.
 
 ## Conséquences
 
