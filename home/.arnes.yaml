@@ -19,6 +19,30 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: bug-fix
+    source: node_modules/@sebastienelet/agent-skills/skills/bug-fix
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: implement
+    source: node_modules/@sebastienelet/agent-skills/skills/implement
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: orchestrate
+    source: node_modules/@sebastienelet/agent-skills/skills/orchestrate
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
+  - slug: plan
+    source: node_modules/@sebastienelet/agent-skills/skills/plan
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: things-tasks
     source: node_modules/@sebastienelet/agent-skills/skills/things-tasks
     installations:
@@ -101,10 +125,6 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
-  - slug: claude-development
-    source: node_modules/@sebastienelet/agent-skills/skills/claude-development
-    installations:
-      - { agent: claude, scope: user }
   - slug: codebase-design
     source: node_modules/@sebastienelet/agent-skills/skills/codebase-design
     installations:
@@ -185,26 +205,26 @@ skills:
     installations:
       - { agent: claude, scope: user }
       - { agent: codex, scope: user }
-  - slug: linear-issue-spec
-    source: node_modules/@sebastienelet/agent-skills/skills/linear-issue-spec
+  - slug: issue-spec
+    source: node_modules/@sebastienelet/agent-skills/skills/issue-spec
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: linear-workflow
-    source: node_modules/@sebastienelet/agent-skills/skills/linear-workflow
+  - slug: issue-workflow
+    source: node_modules/@sebastienelet/agent-skills/skills/issue-workflow
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: linear-start
-    source: node_modules/@sebastienelet/agent-skills/skills/linear-start
+  - slug: issue-start
+    source: node_modules/@sebastienelet/agent-skills/skills/issue-start
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: linear-sync
-    source: node_modules/@sebastienelet/agent-skills/skills/linear-sync
+  - slug: issue-sync
+    source: node_modules/@sebastienelet/agent-skills/skills/issue-sync
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }

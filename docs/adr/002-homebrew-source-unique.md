@@ -34,8 +34,8 @@ interactives. La migration n'installe pas de toolchain par défaut hors du dép�
 
 Une source non prise en charge par Bundle est exécutée directement par Moon une fois migrée :
 Volta/npm, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink.
-Ces exceptions sont décrites dans
-[`docs/software-source-exceptions.md`](../software-source-exceptions.md) sans gate miroir.
+Leurs sources, versions et contrôles de rejeu restent dans les déclarations Moon et les
+lockfiles concernés, sans inventaire documentaire ni gate miroir.
 
 Les contrôles Rust sous Linux nécessitent le rustup du runner et installent la même toolchain depuis
 `rust-toolchain.toml` ; cette portée ne transforme pas le profil du poste en installateur Linux.

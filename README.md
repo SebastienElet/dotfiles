@@ -42,16 +42,6 @@ cd ~/.dotfiles && \
 
 Install the separately maintained optional profile with `moon exec repository:optional`.
 
-Anarlog belongs to the optional profile, alongside Handy. Install it independently
-with `moon exec repository:anarlog` (macOS 15 or newer).
-
-[Minutes](https://useminutes.app/) is also optional. Install the desktop app with
-`moon exec repository:minutes` (Apple Silicon, macOS 14 or newer), using the publisher's
-`silverstein/tap` Homebrew cask. Native call capture requires macOS 15 or newer.
-First launch downloads a local speech model;
-transcription does not require an API key. Summarization is optional and configured
-separately. The Minutes CLI is not installed by this task.
-
 [Herdr](https://herdr.dev/docs/install/) is optional. Install the agent multiplexer
 with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
@@ -114,8 +104,6 @@ The Git `check` workflow accepts committed dependency-free JavaScript `node:test
 it does not qualify this repository's TypeScript/Bun or Rust suites. Repository symlinks can
 also cause the static diagnostic to refuse a checkout. Execution requires an explicitly chosen
 backend; installation does not initialize projects or register an MCP server.
-
-See the [skills audit](docs/skills-audit-412.md) for the obsolete instructions corrected in #412.
 
 ## Checks
 
@@ -193,7 +181,7 @@ zones, choose the relevant row and inspect its graph first. `moon run harness:ch
 is the explicit deterministic aggregate. **Do not substitute `moon check harness`**:
 Moon selects build/test tasks inferred across the project, including operational
 tasks such as `semctx` that install plugins. See the
-[Harness evaluation limits](harness/evals/README.md#deterministic-testing-and-limits).
+[Harness evaluation guide](docs/arnes-eval.md).
 
 On a prepared environment, the broad local aggregates remain `moon run check` and
 `moon run test`; they are not the default worktree path. The full workstation smoke
@@ -220,8 +208,7 @@ when making one.
 
 ## Repository layout
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the complete project map,
-deployment flow, and placement rules.
+Placement follows [ADR-038](docs/adr/038-frontieres-home-harness-tooling.md).
 
 - `home/` mirrors the destination-relative paths of files deployed under `$HOME`.
 - `harness/` contains instructions and capabilities shared across agent harnesses.
@@ -230,9 +217,9 @@ deployment flow, and placement rules.
 
 ## Arnes Doctor
 
-See the [Doctor reference](docs/arnes-doctor.md) for its diagnostic scope,
-resource coverage, defaults, examples, exit codes, and observation limits for
-Claude Code, Cursor, and Codex.
+See the [Arnes guide](docs/arnes.md) for diagnosis, synchronization, measurement and
+observation limits. The [documentation index](docs/README.md) also covers Agent-Reach,
+deployment cleanup and harness evaluations.
 
 ## Harness project export
 

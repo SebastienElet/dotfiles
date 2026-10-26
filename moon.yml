@@ -8,6 +8,7 @@ tasks:
     deps:
       - applications-install
       - grokbot
+      - codex-quota
       - pnpm
       - home:install
       - harness:install
@@ -24,8 +25,6 @@ tasks:
     deps:
       - repository:install
       - repository:bundle-optional
-      - repository:anarlog
-      - repository:minutes
       - repository:optional-artifacts
     toolchains: system
     options:

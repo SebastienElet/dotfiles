@@ -54,8 +54,11 @@ la déclare comme skill externe gérée. Sa source ne reste pas dans `harness/sk
 - Le déplacement d'une skill entre portées migre simultanément sa source, ses
   projections et ses liens déjà installés.
 - Les anciens liens et slugs renommés sont retirés manuellement avant le déploiement ; aucune
-  destination divergente n'est remplacée automatiquement. Les slugs publiés sont
-  `code-review-fix` et `claude-development`.
+  destination divergente n'est remplacée automatiquement. La version 0.2.0 ajoute
+  `bug-fix`, `implement`, `orchestrate` et `plan`, retire `claude-development` et
+  renomme `linear-issue-spec`, `linear-start`, `linear-sync` et `linear-workflow`
+  en `issue-spec`, `issue-start`, `issue-sync` et `issue-workflow` respectivement.
+  Le nettoyage reconnaît encore l'ancien lien `~/.claude/skills/claude-development`.
 
 ## Alternatives écartées
 
