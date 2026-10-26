@@ -76,7 +76,7 @@ ici sont les dates d'auteur.
 | [031](031-lecture-web-agent-reach.md)                  | Lecture web générique via Agent-Reach                            | 2026-10 |
 | [033](033-pas-de-rtk.md)                               | Ne pas utiliser RTK                                              | 2026-08 |
 | [034](034-pas-de-caveman.md)                           | Ne pas utiliser les skills Caveman                               | 2026-08 |
-| [035](035-agents-md-elague-par-mesure.md)              | `AGENTS.md` élagué par mesure du no-op                           | 2026-08 |
+| [035](035-agents-md-elague-par-mesure.md)              | `AGENTS.md` limité aux conventions utiles et mesurées            | 2026-08 |
 | [036](036-regles-ia-admises-par-ablation.md)           | Règles d'instructions IA admises par ablation marginale          | 2026-08 |
 | [037](037-commentaire-absent-par-defaut.md)            | Commentaire absent par défaut, comptabilisé dans le compte rendu | 2026-08 |
 | [038](038-frontieres-home-harness-tooling.md)          | Frontières `home/`, `harness/` et `tooling/`                     | 2026-08 |

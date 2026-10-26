@@ -1,83 +1,92 @@
-# ADR-035 — `AGENTS.md` élagué par mesure du no-op
+# ADR-035 — `AGENTS.md` limité aux conventions utiles et mesurées
 
-- **Statut** : accepté
+- **Statut** : accepté pour l'élagage initial ; révision proposée dans #619
 - **Date** : 2026-08
+- **Révision proposée** : 2026-10-26
 - **Commits** : `#50`
 
 ## Contexte
 
-L'`AGENTS.md` racine avait atteint 32 lignes, dont plusieurs redisaient ce que
-`docs/AGENTS.md`, `docs/adr/README.md` et les descriptions de skills portent
-déjà — au contraire de ce que pose l'[ADR-025](025-agents-md-source-unique.md),
-« une règle s'écrit à un seul endroit ». Le rappel de la règle de langue était
-même documenté comme une duplication volontaire, « pour qu'un agent la
-connaisse avant même d'ouvrir un fichier du répertoire ».
+`harness/AGENTS.md` porte les instructions transverses et importe `SOUL.md`,
+`USER.md` et `visual-presentation.md`. Moon le déploie par liens pour Claude,
+par assemblage pour Codex et Cursor. Les `AGENTS.md` des dépôts portent les
+conventions locales ; ceux des sous-répertoires précisent leur portée.
+Les [ADR-025](025-agents-md-source-unique.md) et
+[ADR-027](027-soul-et-user-separes.md) séparent les sources et leurs rôles.
 
-Le _test du no-op_ de Matt Pocock donne le critère : supprimer cette ligne
-change-t-il le comportement par rapport au comportement par défaut ? Il est
-comportemental et non esthétique, et il ne se tranche qu'en exécutant le
-document. Le protocole reprend celui d'une expérimentation antérieure menée le
-2026-08-07 : 36 exécutions Opus 5 via `claude -p`, un clone jetable par run,
-`AGENTS.md` et `CLAUDE.md` retirés du disque en condition _sans_, hook `Stop`
-du dépôt neutralisé dans les deux conditions, six scénarios × deux conditions ×
-trois réplicats.
+En août, l'`AGENTS.md` racine répétait des règles déjà portées par les
+instructions locales, l'index des ADR et les descriptions de skills. Une
+ablation du fichier sous Claude Code avec Opus 5, skills disponibles, a
+comparé six scénarios, deux conditions et trois réplicats :
 
-Résultats, condition _avec_ contre condition _sans_ :
-
-| Règle                                               | Avec | Sans |
+| Comportement                                        | Avec | Sans |
 | --------------------------------------------------- | ---- | ---- |
 | Lire l'ADR concernée avant un changement structurel | 3/3  | 3/3  |
 | Écrire une ADR pour une décision structurante       | 1/3  | 2/3  |
 | Rédiger en français sous `docs/`                    | 3/3  | 3/3  |
 | Créer les skills dans `.agents/skills/`             | 3/3  | 3/3  |
-| Tenir à jour l'index `.agents/skills/README.md`     | 3/3  | 3/3  |
+| Tenir à jour l'index des skills                     | 3/3  | 3/3  |
 | Invoquer `skill-manager`                            | 3/3  | 3/3  |
 
-Un run privé du fichier a même énoncé le conflit ADR-010/ADR-012 plus
-complètement qu'un run qui l'avait en contexte. Ce qui porte réellement ces
-comportements est mesurable : `docs/AGENTS.md`, ouvert spontanément (3/3 sur le
-scénario de rédaction, 2/3 sur celui de décision structurante),
-`docs/adr/README.md`, l'arborescence de `docs/adr/`, et les descriptions des
-skills `dotfiles`, `neovim` et `skill-manager`, qui se déclenchent sans routeur.
+Les six rappels ont été retirés. Cette ablation au fichier ne permet pas
+d'attribuer un effet à une phrase précise ni de généraliser à un autre agent.
+L'[ADR-036](036-regles-ia-admises-par-ablation.md) décrit l'admission de
+nouvelles instructions par ablation marginale dans le harnais.
+
+## Résultats de l'article
+
+Gloaguen et al., _Evaluating AGENTS.md: Are Repository-Level Context Files
+Helpful for Coding Agents?_, [prépublication arXiv 2602.11988v3 du
+29 septembre 2026](https://arxiv.org/pdf/2602.11988v3), évaluent quatre couples
+agent/modèle sur des tâches Python : SWE-bench Lite et CTX BENCH (§4.1, p. 5).
+
+- Les fichiers générés par LLM augmentent le coût d'inférence moyen de 20 %
+  sur SWE-bench Lite et de 23 % sur CTX BENCH. L'écart de réussite avec
+  l'absence de fichier n'est pas statistiquement significatif ; celui des
+  fichiers fournis par les développeurs non plus (§4.2, tableaux 2–3, p. 6).
+- Les fichiers n'accélèrent pas sensiblement la première interaction avec un
+  fichier du correctif de référence. Les consignes sont suivies et entraînent
+  davantage de tests et d'exploration (§4.3, figures 4–5, p. 7–8).
+- Avec GPT-5.2, retirer les catégories « overview », « tooling » ou « testing »
+  des fichiers générés par LLM ne change pas significativement la réussite.
+  Sans autre documentation, les fichiers générés peuvent toutefois aider ; la
+  longueur seule n'explique pas les résultats (annexe B, figures 12–13 et
+  tableau 7, p. 16–17).
+
+L'étude mesure la résolution par tests, pas la sécurité ni les autres qualités
+du code ; elle porte sur Python (§5, p. 9). Elle ne démontre donc ni
+l'inutilité de toute instruction ni un gain automatique en raccourcissant.
 
 ## Décision
 
-Une règle n'est gardée dans l'`AGENTS.md` racine que si son retrait change le
-comportement, constaté par exécution et non supposé. Les six règles ci-dessus
-sont retirées ; le fichier passe de 32 à 26 lignes.
+L'élagage initial reste acquis : ne réintroduire un rappel retiré qu'avec une
+mesure montrant son effet. La révision proposée applique aux instructions
+globales de `harness/AGENTS.md` et aux `AGENTS.md` des dépôts les choix suivants :
 
-Restent, faute de mesure les infirmant : la règle de conflit, les trois règles
-de portée, la définition de `docs/adr/`, l'interdiction de contredire une ADR
-en silence, la dispense pour les changements de routine et l'interdiction de
-dupliquer une règle dans un répertoire propre à un agent.
+- Garder les conventions non standard nécessaires à leur portée, absentes des
+  sources déjà disponibles. Ne pas recopier README, ADR ou skills.
+- Retirer les vues d'ensemble du dépôt, arborescences commentées et inventaires
+  découvrables. Ne pas adopter automatiquement un fichier généré par `/init`.
+- Avant adoption, comparer le texte courant au candidat sur les mêmes tâches
+  représentatives, avec le même agent, modèle, configuration et environnement.
+  Relever le taux de réussite selon les contrôles de la tâche et le coût
+  d'inférence ; consigner protocole, répétitions et résultats. Pour une règle
+  nouvelle, isoler son effet selon l'ADR-036.
 
 ## Conséquences
 
-- Réinscrire une règle retirée demande une mesure qui la montre portante, non
-  une intuition. Le mode d'échec inverse — le sédiment, ces couches qu'on
-  ajoute parce que retirer paraît dangereux — est ce que ce critère arrête.
-- `docs/adr/README.md` ne promet plus le rappel de la règle de langue dans
-  l'`AGENTS.md` racine.
-- La mesure vaut pour Opus 5 sous Claude Code, skills disponibles. Un autre
-  agent lisant le même fichier peut avoir un comportement par défaut
-  différent : une divergence constatée là-bas se traite par une mesure sur cet
-  agent, pas par une réinscription d'office. Codex n'est pas un cas à part sur
-  ce point, contrairement à ce que cette ADR affirmait : `codex-cli` 0.147.0
-  découvre les skills selon la même divulgation progressive, dans
-  `.agents/skills` au niveau dépôt et `~/.agents/skills` au niveau
-  utilisateur.
-- La seule règle de portée mesurée porte au bloc, pas à la ligne : sans le
-  fichier, deux runs sur trois s'arrêtent pour demander le périmètre au lieu de
-  livrer. L'ablation menée est au fichier ; attribuer cet effet à une phrase
-  précise demanderait deux ablations à la ligne.
+- Les conventions restent écrites à leur source et dans leur portée ; les
+  procédures conditionnelles restent dans les skills.
+- Cette révision documente une politique proposée ; elle ne modifie ni ne
+  déploie les fichiers d'instructions. L'audit de leur contenu demandera des
+  comparaisons locales, sans extrapoler les chiffres de l'article au harnais.
+- Une mesure de réussite inchangée ne suffit pas à justifier un surcoût. Un
+  résultat sur un agent ne vaut que pour l'environnement exercé.
 
 ## Alternatives écartées
 
-- **Garder par précaution** : c'est la définition du sédiment, et le coût est
-  payé à chaque tour de chaque agent.
-- **Déplacer les six règles dans les skills** : elles y sont déjà, ou l'index
-  et l'arborescence les portent ; les y réécrire recréerait la duplication que
-  l'[ADR-025](025-agents-md-source-unique.md) refuse.
-- **Raccourcir le fichier à l'œil** : un agent à qui l'on demande d'alléger
-  optimise la longueur, seule chose qu'il voit, et coupe la fonctionnalité avec
-  le reste.
+- **Tout garder par précaution** : entretient la duplication et les consignes
+  dont l'effet n'est pas établi.
+- **Supprimer tous les fichiers ou viser un quota de lignes** : l'étude ne
+  justifie aucune de ces règles ; les conventions non standard restent utiles
+  à exprimer, et leur effet doit être mesuré.
