@@ -17,6 +17,7 @@ tasks:
       - git-delta
       - starship
       - tmux
+      - agent-measure-config
       - hunspell-dictionaries
     toolchains: system
     options:
@@ -162,6 +163,14 @@ tasks:
       runInCI: false
   postgresql:
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.psqlrc" "$HOME/.psqlrc"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
+  agent-measure-config:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.config/agent-measure/cursor-plugins.json" "$HOME/.config/agent-measure/cursor-plugins.json"
     deps:
       - repository:dependencies
     toolchains: bun
