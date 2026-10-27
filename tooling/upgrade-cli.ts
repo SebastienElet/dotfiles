@@ -14,8 +14,6 @@ const pluginsSchema = z.array(
       .regex(/^[^-\s]\S*$/u),
   }),
 );
-const quarantineDays = 3;
-const millisecondsPerDay = 86_400_000;
 
 function homebrewLockCommand(
   repository: string,
@@ -136,16 +134,12 @@ async function main(): Promise<number> {
   await upgradePackages(runner, repository);
   process.stdout.write("ℹ️  Volta Node.js upgrade\n");
   await upgradeNode(runner, repository);
-  process.stdout.write("ℹ️  npm global packages upgrade\n");
-  const cutoff = new Date(
-    Date.now() - quarantineDays * millisecondsPerDay,
-  ).toISOString();
-  await runner.command("npm global packages upgrade", [
+  process.stdout.write("ℹ️  Codex CLI update\n");
+  await runner.command("Codex CLI update", [
     "npm",
     "update",
     "-g",
-    `--before=${cutoff}`,
-    "--min-release-age-exclude=@openai/codex",
+    "@openai/codex",
   ]);
   await upgradeAgents(runner);
   process.stdout.write("ℹ️  NeoVim plugins\n");

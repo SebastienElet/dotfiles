@@ -52,7 +52,7 @@ test("reports success, unsupported sources and the original domain order", async
     "mas upgrade",
     "volta pin node@lts",
     "volta install node@24.19.0",
-    "npm update -g",
+    "npm update -g @openai/codex",
     "claude update",
     "claude plugin list --json",
     "claude plugin update first@fixture",
@@ -63,7 +63,7 @@ test("reports success, unsupported sources and the original domain order", async
   const offsets = order.map((invocation) => result.calls.indexOf(invocation));
   expect(offsets.every((offset) => offset >= 0)).toBe(true);
   expect(offsets).toEqual(offsets.toSorted((left, right) => left - right));
-  expect(result.output).toContain("[succeeded] npm global packages upgrade");
+  expect(result.output).toContain("[succeeded] Codex CLI update");
   expect(result.output).toContain(
     "[unsupported] Codex local and host-managed sources",
   );
@@ -197,23 +197,10 @@ test("empty plugin inventory is not reported as updated", async () => {
   expect(result.calls).not.toContain("claude plugin update");
 });
 
-test("computes three-day quarantine in UTC without the BSD date utility", async () => {
+test("updates only the unpinned Codex CLI among npm global packages", async () => {
   const fixture = await upgradeFixture();
-  const quarantineDays = 3;
-  const millisecondsPerDay = 86_400_000;
-  const oldest = Date.now() - quarantineDays * millisecondsPerDay;
   const result = await fixture.run();
-  const newest = Date.now() - quarantineDays * millisecondsPerDay;
-  const match =
-    /npm update -g --before=(?<cutoff>\S+) --min-release-age-exclude=@openai\/codex/u.exec(
-      result.calls,
-    );
-  expect(match).not.toBeNull();
-  const cutoff = Date.parse(match?.groups?.cutoff ?? "");
-  const millisecondsPerSecond = 1000;
-  expect(cutoff).toBeGreaterThanOrEqual(oldest - millisecondsPerSecond);
-  expect(cutoff).toBeLessThanOrEqual(newest);
   expect(
-    result.calls.split("\n").some((call) => call.startsWith("date ")),
-  ).toBe(false);
+    result.calls.split("\n").filter((call) => call.startsWith("npm ")),
+  ).toEqual(["npm update -g @openai/codex"]);
 });

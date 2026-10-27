@@ -290,17 +290,17 @@ tasks:
       mutex: volta
       runInCI: false
   pnpm:
-    description: Install pnpm with Volta
+    description: Install the exact pnpm version with Volta
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      VOLTA_HOME="$HOME/.volta" volta install pnpm
+      VOLTA_HOME="$HOME/.volta" volta install pnpm@12.15.0
     deps:
       - node
     checks:
       - check: condition
         script: |-
           export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          test -x "$HOME/.volta/bin/pnpm"
+          cd / && test "$(VOLTA_HOME="$HOME/.volta" "$HOME/.volta/bin/pnpm" --version)" = 12.15.0
     toolchains: system
     options:
       cache: false
@@ -339,7 +339,7 @@ tasks:
       os: macos
       runInCI: false
   things3-cli-wrapper:
-    description: Install the Things 3 CLI wrapper with npm
+    description: Install the exact Things 3 CLI wrapper version with npm
     script: |-
       bun --config=/dev/null --no-env-file --no-install tooling/paid-apps-install.ts install-cli
     deps:
@@ -347,7 +347,9 @@ tasks:
     checks:
       - check: condition
         script: |-
-          test -x "$HOME/.volta/bin/thangs"
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          VOLTA_HOME="$HOME/.volta" volta list --format plain @dougskinner/thangs |
+            grep -Fq 'package @dougskinner/thangs@1.0.2 '
     inputs:
       - tooling/paid-apps-install.ts
       - package.json
