@@ -1,0 +1,4 @@
+tpm tmux-plugins/tpm e261deb1b47614eed3400089ce7197dc68acc4eb
+tmux-sensible tmux-plugins/tmux-sensible 25cb91f42d020f675bb0a2ce3fbd3a5d96119efa
+tmux-yank tmux-plugins/tmux-yank acfd36e4fcba99f8310a7dfb432111c242fe7392
+tokyo-night-tmux janoamaral/tokyo-night-tmux fe1faa1aac237d7d7b69d8fdceb55a33222c8cfb
