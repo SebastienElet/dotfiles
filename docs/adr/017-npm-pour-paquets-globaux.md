@@ -3,6 +3,7 @@
 - **Statut** : accepté
 - **Date** : 2026-01
 - **Commits** : `8e91200`
+- **Révision** : 2026-10-27 (décision de Sébastien : rien de flottant sauf Codex et Claude)
 
 ## Contexte
 
@@ -17,6 +18,9 @@ Revenir à npm pour les installations globales. Le commit `8e91200` l'explique :
 « Replace pnpm with npm for global package installation to avoid Volta shim
 issues in CI. npm is bundled with Node and works seamlessly. » pnpm reste
 installé pour le développement de projets locaux.
+
+Les paquets globaux installés par le dépôt portent une version exacte. `tooling/upgrade` ne met à
+jour que Codex, qui suit sa dernière version par décision ; les autres changent par le dépôt.
 
 ## Conséquences
 
