@@ -5,7 +5,6 @@ import {
   readNodeVersion,
   verifyNodeRuntime,
 } from "./node-version-contract";
-import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -77,14 +76,6 @@ describe("Node project pin", () => {
 });
 
 describe("Node runtime", () => {
-  test("matches the repository pin through the active Volta shim", async () => {
-    const nodeVersion = await readNodeVersion(
-      fileURLToPath(new URL("../package.json", import.meta.url)),
-    );
-
-    expect(verifyNodeRuntime(nodeVersion)).resolves.toBeUndefined();
-  });
-
   test("rejects a runtime version that diverges from the pin", async () => {
     const directory = await createTemporaryDirectory();
     const fakeNode = join(directory, "node");

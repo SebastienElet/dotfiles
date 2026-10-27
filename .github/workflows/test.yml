@@ -26,12 +26,8 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-moon
       - run: moon run tooling:moon-bootstrap-smoke
-      - name: Bootstrap the repository Moon pin
-        run: ./tooling/install-moon
       - name: Install and replay the minimal profile
-        run: |
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon run tooling:smoke-minimal
+        run: moon run tooling:smoke-minimal
       - run: moon action-graph --json tooling:upgrade-neovim-test > /dev/null
       - id: query
         run: |

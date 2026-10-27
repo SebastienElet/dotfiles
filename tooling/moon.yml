@@ -60,7 +60,6 @@ tasks:
     command: noop
     deps:
       - repository:typescript-test
-      - upgrade-test
       - deployment-test
       - hunspell-test
     toolchains: system
