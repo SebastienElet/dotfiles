@@ -95,11 +95,17 @@ its dependencies install Homebrew, Volta, and the exact Node version from `packa
 [AssertLedger](https://github.com/hoklims/assertledger) qualifies regression tests against a
 declared fault and neutral control. The minimal profile installs its pinned CLI through
 `harness:assertledger`, using Bun and the version supplied by the skills package. Install it independently
-with `moon exec harness:assertledger` on macOS.
+with `moon exec harness:assertledger` on macOS. Its stable absolute entry is
+`$HOME/.local/bin/assertledger`. The generated launcher directly executes the exact Volta-managed
+Node from `package.json` on the installed `dist/cli.js`, without relying on Node in the caller's PATH
+or installing anything at launch. It requires that runtime and the pinned global Bun package;
+rerun the installation after updating the Node pin to refresh the launcher. Installation preserves
+and reports a conflicting destination.
 
 The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.1.0) is deployed to Claude Code
 and Codex with the minimal profile, and to Cursor with the optional profile. Start with
-`assertledger --version` and `assertledger doctor /path/to/repository --json`.
+`"$HOME/.local/bin/assertledger" --version` and
+`"$HOME/.local/bin/assertledger" doctor /path/to/repository --json`.
 The Git `check` workflow accepts committed dependency-free JavaScript `node:test` regressions;
 it does not qualify this repository's TypeScript/Bun or Rust suites. Repository symlinks can
 also cause the static diagnostic to refuse a checkout. Execution requires an explicitly chosen
