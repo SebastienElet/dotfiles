@@ -67,7 +67,7 @@ async function repository(): Promise<string> {
   );
   await writeFile(
     join(root, "moon.yml"),
-    "tags: [repository]\ntasks:\n  homebrew: {command: noop}\n  dependencies: {command: noop}\n",
+    "tags: [repository]\ntasks:\n  homebrew-catalog: {command: noop}\n  dependencies: {command: noop}\n",
   );
   git(root, "init", "-q");
   git(root, "config", "user.email", "fixture@example.invalid");
