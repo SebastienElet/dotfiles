@@ -28,13 +28,13 @@ jobs:
           filter: blob:none
       - uses: ./.github/actions/setup-moon
       - run: >-
-          moon action-graph --json repository:cspell-check repository:prettier-check > /dev/null
+          moon action-graph --json repository:cspell-check repository:prettier-check repository:floating-sources-check > /dev/null
       - id: query
         run: |
           {
             printf 'result<<MOON_QUERY_RESULT\n'
             moon query tasks --affected remote --upstream none --downstream none \
-              --project '^repository$' --id '^(cspell-check|prettier-check)$'
+              --project '^repository$' --id '^(cspell-check|prettier-check|floating-sources-check)$'
             printf 'MOON_QUERY_RESULT\n'
           } >> "$GITHUB_OUTPUT"
   cspell:
@@ -50,7 +50,7 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: ./.github/actions/setup-moon
-      - run: moon ci --downstream none repository:cspell-check repository:prettier-check
+      - run: moon ci --downstream none repository:cspell-check repository:prettier-check repository:floating-sources-check
 
   required:
     name: Text required

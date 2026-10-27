@@ -53,6 +53,12 @@ fileGroups:
     - bun.lock
     - .github/workflows/test-fish.yml
 tasks:
+  floating-sources-check:
+    command: bun --config=/dev/null --no-env-file tooling/check-floating-sources.ts
+    inputs:
+      - "**/*"
+    options:
+      cache: false
   prettier-check:
     command: bun tooling/check-prettier.ts --check "**/*.{yml,yaml,md,json}"
     inputs:
