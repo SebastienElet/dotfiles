@@ -135,6 +135,7 @@ tasks:
     description: Validate the harness deterministically without an agent or LLM
     command: noop
     deps:
+      - validate-instructions
       - validate-evals
       - validate-evidence
       - test-eval-runner
@@ -145,6 +146,23 @@ tasks:
       - repository:typescript-typecheck
       - repository:typescript-format-check
       - repository:prettier-check
+    options:
+      runInCI: true
+  validate-instructions:
+    command: bun --config=/dev/null --no-env-file tooling/check-harness-instructions.ts harness
+    toolchains: bun
+    deps:
+      - repository:dependencies
+    inputs:
+      - AGENTS.md
+      - instructions.md
+      - /tooling/check-harness-instructions.ts
+      - /tooling/check-command.ts
+      - /package.json
+      - /bun.lock
+      - /.moon/**/*
+      - moon.yml
+      - /.github/workflows/test-harness.yml
     options:
       runInCI: true
   validate-evals:

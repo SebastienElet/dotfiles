@@ -7,7 +7,9 @@ Les [cas](../harness/cases.json), fixtures et variantes sont des entrées
 exécutées par `@sebastienelet/agent-experiments`, pas des comptes rendus. `harness/`
 est le corpus passé par `--repository` ; [`selection.json`](../harness/selection.json)
 choisit les skills contrôlées et [`instructions.md`](../harness/instructions.md) reprend
-la section `Context Management` installée pour un essai live. Rust et les dépendances
+la section `Context Management` installée pour un essai live. Cette fixture figée
+est comparée à `harness/AGENTS.md` par `harness:validate-instructions`, inclus dans
+`harness:check` et exécuté par la CI. Rust et les dépendances
 Bun du dépôt sont requis ; appliquer les [précautions de worktree](../README.md#contributing-from-a-worktree).
 
 ## Procédure
@@ -18,7 +20,8 @@ moon run harness:check
 
 Ne pas substituer `moon check harness` : sa sélection peut inclure des tâches
 opérationnelles qui installent des plugins. La CI exécute les validations d'evals
-et d'evidence ; les autres contrôles ont leurs workflows dédiés.
+et d'evidence ainsi que la concordance des instructions ; les autres contrôles
+ont leurs workflows dédiés.
 
 Un essai live consomme du quota et demande une autorisation explicite. Utiliser
 un Codex CLI compatible avec les options d'isolation du runner, une authentification
@@ -56,6 +59,8 @@ reste descriptive : elle ne prouve pas un gain causal ou statistique.
 
 `harness:validate-evals`, `harness:validate-evidence` et `harness:test-eval-runner`
 vérifient les contrats et exécutent le moteur sur des fixtures, sans quota LLM ; les
-tests du moteur appartiennent à agent-experiments. Les contrats d'activation de
-`.agents/skills/` sont hors du corpus et ne sont plus validés. Un contrôle déterministe
+tests du moteur appartiennent à agent-experiments. Sébastien a décidé le 27/10/2026
+d'abandonner la validation du contrat d'activation
+`.agents/skills/adr-record/evals/trigger-queries.json` : il est hors du corpus
+confiné d'agent-experiments 0.0.1. Un contrôle déterministe
 vert n'est pas une preuve de comportement live.
