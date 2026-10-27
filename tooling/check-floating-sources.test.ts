@@ -71,6 +71,8 @@ test("accepts exact sources and the explicit exceptions", () => {
         "go install github.com/o/tool@v1.7.7",
         "cargo install --git https://github.com/o/r --rev 686734c85208af44c90201c3378e7f4c4c8b74dd --locked",
         "fisher install o/plugin@6a6136998879dcc1f29a405dfdd6b92c5f229c39",
+        "runs-on: ubuntu-24.04",
+        "os: [macos-26, ubuntu-24.04]",
       ].join("\n"),
     },
     ["bat"],
@@ -101,6 +103,8 @@ test.each([
   ["go install github.com/o/tool", "unversioned Go installation"],
   ["fisher install o/plugin", "unversioned Fisher plugin"],
   ["git clone https://github.com/o/plugin", "Git clone without a revision"],
+  ["    runs-on: ubuntu-latest", "floating CI runner label"],
+  ["        os: [macos-latest, ubuntu-24.04]", "floating CI runner label"],
 ])("refuses %p", (line, rule) => {
   const result = check(createRepository({ "tasks.yml": `${line}\n` }));
 

@@ -66,6 +66,10 @@ const rules: readonly Rule[] = [
     pattern: /\bfisher install\s+(?![^\s"]*@)[\w.-]+\/[\w.-]+/u,
   },
   {
+    name: "floating CI runner label",
+    pattern: /\b(?:ubuntu|macos|windows)-latest\b/u,
+  },
+  {
     name: "Git clone without a revision",
     pattern: /\bgit clone\b(?!.*\b[0-9a-f]{40}\b)/u,
   },
