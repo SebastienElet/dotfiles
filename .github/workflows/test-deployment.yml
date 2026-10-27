@@ -16,7 +16,7 @@ env:
 
 jobs:
   select:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       deployment: ${{ fromJSON(steps.query.outputs.result).tasks.tooling['deployment-test'] != null || fromJSON(steps.query.outputs.result).tasks.tooling['hunspell-test'] != null }}
@@ -45,8 +45,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
-          - ubuntu-latest
+          - macos-26
+          - ubuntu-24.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -62,7 +62,7 @@ jobs:
     name: Deployment required
     needs: [select, deployment]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true
