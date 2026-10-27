@@ -56,7 +56,7 @@ test("installs through the shipped deployment helper and replays without invokin
   expect(existsSync(bindings)).toBeTrue();
   expect(existsSync(pluginConfiguration)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
-    "-c fisher install PatrickF1/fzf.fish\n",
+    "-c fisher install PatrickF1/fzf.fish@6a6136998879dcc1f29a405dfdd6b92c5f229c39\n",
   );
 
   rmSync(marker);
@@ -92,7 +92,7 @@ test("repairs a partial fzf.fish installation missing its configuration", () => 
   );
   expect(existsSync(pluginConfiguration)).toBeTrue();
   expect(readFileSync(marker, "utf8")).toBe(
-    "-c fisher install PatrickF1/fzf.fish\n",
+    "-c fisher install PatrickF1/fzf.fish@6a6136998879dcc1f29a405dfdd6b92c5f229c39\n",
   );
 
   rmSync(marker);

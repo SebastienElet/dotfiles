@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
 set -e
-homebrew_installer=$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
-/bin/bash -c "$homebrew_installer"
+homebrew_installer="$(mktemp)"
+trap 'rm -f "$homebrew_installer"' EXIT
+curl -fsSL --connect-timeout 10 --max-time 60 -o "$homebrew_installer" \
+  https://raw.githubusercontent.com/Homebrew/install/85d1a3fc80d8a63932f632aca8f787de11d14a64/install.sh
+echo "5f333bbe53bc490e51e7ccb1df8779b3dd6ee73a1a7379efda216edb08ccb148  $homebrew_installer" |
+  shasum -a 256 -c - > /dev/null
+/bin/bash "$homebrew_installer"

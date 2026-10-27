@@ -44,7 +44,11 @@ function installFishPlugins(directory: string): void {
       renameSync(join(directory, path), join(backup, path));
     }
     const result = Bun.spawnSync(
-      ["fish", "-c", "fisher install PatrickF1/fzf.fish"],
+      [
+        "fish",
+        "-c",
+        "fisher install PatrickF1/fzf.fish@6a6136998879dcc1f29a405dfdd6b92c5f229c39",
+      ],
       { stderr: "inherit", stdout: "inherit" },
     );
     if (

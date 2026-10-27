@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -11,21 +11,31 @@ const installerFailureExitCode = 42;
 function runInstaller(
   installer: string,
   downloadStatus: number,
+  checksumStatus = 0,
 ): Readonly<{ exitCode: number; stdout: string }> {
   const directory = mkdtempSync(join(tmpdir(), "homebrew-install-test-"));
 
   try {
     writeFileSync(
       join(directory, "curl"),
-      '#!/bin/sh\nprintf "%s" "$HOMEBREW_TEST_INSTALLER"\nexit "$HOMEBREW_TEST_DOWNLOAD_STATUS"\n',
+      '#!/bin/sh\nwhile [ "$1" != -o ]; do shift; done\nprintf "%s" "$HOMEBREW_TEST_INSTALLER" > "$2"\nexit "$HOMEBREW_TEST_DOWNLOAD_STATUS"\n',
       { mode: 0o755 },
     );
+    writeFileSync(
+      join(directory, "shasum"),
+      '#!/bin/sh\ncat > /dev/null\nexit "$HOMEBREW_TEST_CHECKSUM_STATUS"\n',
+      { mode: 0o755 },
+    );
+    for (const command of ["mktemp", "rm"]) {
+      symlinkSync(Bun.which(command) ?? command, join(directory, command));
+    }
 
     const result = Bun.spawnSync(["/bin/bash", installerPath], {
       env: {
         PATH: directory,
         HOMEBREW_TEST_INSTALLER: installer,
         HOMEBREW_TEST_DOWNLOAD_STATUS: String(downloadStatus),
+        HOMEBREW_TEST_CHECKSUM_STATUS: String(checksumStatus),
       },
       stdout: "pipe",
       stderr: "pipe",
@@ -57,4 +67,11 @@ test("propagates a Homebrew installer failure", () => {
   expect(runInstaller(`exit ${installerFailureExitCode}`, 0).exitCode).toBe(
     installerFailureExitCode,
   );
+});
+
+test("does not execute an installer whose checksum differs from the pin", () => {
+  expect(runInstaller('printf "installer executed"', 0, 1)).toEqual({
+    exitCode: 1,
+    stdout: "",
+  });
 });
