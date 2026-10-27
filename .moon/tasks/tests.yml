@@ -3,7 +3,6 @@ inheritedBy:
     - repository
 fileGroups:
   generalTypeScriptTests:
-    - harness/plugins/agent-reach/**/*
     - tooling/**/*.ts
     - oxfmt.config.ts
     - tooling/**/*.json
