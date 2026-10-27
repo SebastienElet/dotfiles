@@ -211,8 +211,16 @@ tasks:
       case "$(uname -s)" in
         Darwin)
           if ! command -v rustup >/dev/null; then
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
-              RUSTUP_INIT_SKIP_PATH_CHECK=yes sh -s -- -y --no-modify-path --default-toolchain none
+            test "$(uname -m)" = arm64
+            rustup_directory="$(mktemp -d)"
+            trap 'rm -r "$rustup_directory"' EXIT
+            rustup_init="$rustup_directory/rustup-init"
+            curl --proto '=https' --tlsv1.2 -fsSL -o "$rustup_init" \
+              https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-apple-darwin/rustup-init
+            echo "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a  $rustup_init" |
+              shasum -a 256 -c - > /dev/null
+            chmod +x "$rustup_init"
+            RUSTUP_INIT_SKIP_PATH_CHECK=yes "$rustup_init" -y --no-modify-path --default-toolchain none
           fi
           ;;
         Linux) command -v rustup ;;
