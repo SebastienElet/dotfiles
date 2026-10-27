@@ -92,6 +92,9 @@ if (command === "bun") {
   await Bun.write(selected, source);
   await chmod(selected, executableMode);
 }
+if (command === "brew" && commandArguments[0] === "info") {
+  process.stdout.write('{"formulae":[],"casks":[]}\n');
+}
 if (command === "date") {
   process.stdout.write("2026-09-07T00:00:00Z\n");
 }

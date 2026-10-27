@@ -27,8 +27,10 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
    source and destination of every affected deployment.
 2. Put a migrated installation directly in Moon, with its actual prerequisites. Use the existing
    task group or owning project; never call Make from a migrated Moon task.
-3. Keep a non-migrated Homebrew package in its profile Brewfile. When its installation becomes an
-   autonomous Moon task, remove the formula from the Brewfile and use a native Homebrew probe.
+3. Keep a non-migrated Homebrew package in its profile Brewfile and its exact version in
+   `homebrew.lock.json`. When its installation becomes an autonomous Moon task, remove the formula
+   from the Brewfile, keep its lock entry, depend on `homebrew-catalog` and use a native Homebrew
+   probe.
 4. Keep sources under the existing home, harness or tooling boundary and add their deployment to
    the owning Moon project. Preserve the source-to-destination symlink pattern and the explicit
    assembled or copied artifacts described by the ADRs.

@@ -6,7 +6,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask google-chrome
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -18,7 +18,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install yt-dlp ffmpeg
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -45,18 +45,37 @@ tasks:
       runInCI: skip
     deps:
       - bootstrap
+  homebrew-catalog:
+    description: Refuse Homebrew installations whose catalog differs from the lock
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-catalog homebrew.lock.json Brewfile
+    deps:
+      - homebrew
+      - dependencies
+    inputs:
+      - homebrew.lock.json
+      - Brewfile
+      - tooling/homebrew-lock.ts
+    toolchains: bun
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: skip
   applications-install:
     description: Install the minimal Brewfile
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
           export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          brew bundle check --quiet --no-upgrade --file Brewfile
+          brew bundle check --quiet --no-upgrade --file Brewfile &&
+            bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-installed homebrew.lock.json
     env:
       HOMEBREW_NO_ASK: "1"
-    toolchains: system
+    toolchains: bun
     options:
       cache: false
       mutex: homebrew
@@ -64,7 +83,9 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
       brew bundle install --no-upgrade --file Brewfile
+      bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-installed homebrew.lock.json
   herdr:
     description: Install the optional Herdr agent multiplexer and configuration
     command: noop
@@ -80,7 +101,7 @@ tasks:
   herdr-setup:
     description: Install the optional Herdr agent multiplexer
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -132,7 +153,7 @@ tasks:
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -236,7 +257,7 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install volta
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-

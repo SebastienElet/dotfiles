@@ -17,9 +17,35 @@ const pluginsSchema = z.array(
 const quarantineDays = 3;
 const millisecondsPerDay = 86_400_000;
 
-async function upgradePackages(runner: UpgradeRunner): Promise<void> {
+function homebrewLockCommand(
+  repository: string,
+  operation: "refresh" | "verify-installed",
+): string[] {
+  return [
+    process.execPath,
+    "--config=/dev/null",
+    "--no-env-file",
+    "--no-install",
+    join(import.meta.dir, "homebrew-lock.ts"),
+    operation,
+    join(repository, "homebrew.lock.json"),
+  ];
+}
+
+async function upgradePackages(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
   process.stdout.write("ℹ️  Brew\n");
-  await runner.command("Brew metadata", ["brew", "update"]);
+  const metadata = await runner.command("Brew metadata", ["brew", "update"]);
+  if (metadata.state === "succeeded") {
+    await runner.command(
+      "Homebrew lock refresh",
+      homebrewLockCommand(repository, "refresh"),
+    );
+  } else {
+    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
+  }
   await runner.command("Brew packages", [
     "brew",
     "upgrade",
@@ -33,6 +59,14 @@ async function upgradePackages(runner: UpgradeRunner): Promise<void> {
     "--greedy",
     "--yes",
   ]);
+  if (metadata.state === "not-attempted") {
+    runner.skip("Homebrew lock verification", "Homebrew unavailable");
+  } else {
+    await runner.command(
+      "Homebrew lock verification",
+      homebrewLockCommand(repository, "verify-installed"),
+    );
+  }
   await runner.command("Brew cleanup", ["brew", "cleanup", "-s"], {
     env: { HOMEBREW_CLEANUP_MAX_AGE_DAYS: "7" },
   });
@@ -99,7 +133,7 @@ async function main(): Promise<number> {
   const runner = createUpgradeRunner();
   process.stdout.write("ℹ️  Dotfiles\n");
   await upgradeRepository(runner, repository, moon);
-  await upgradePackages(runner);
+  await upgradePackages(runner, repository);
   process.stdout.write("ℹ️  Volta Node.js upgrade\n");
   await upgradeNode(runner, repository);
   process.stdout.write("ℹ️  npm global packages upgrade\n");
