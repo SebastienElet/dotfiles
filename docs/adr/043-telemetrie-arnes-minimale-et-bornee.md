@@ -13,7 +13,7 @@ d’un hook, d’un événement terminal ou d’une réponse finale ne juge pas 
 ## Décision
 
 `agent-measure` porte la collecte, les outcomes, les rapports et la rétention.
-Les dotfiles installent et activent ses hooks ; Arnes vérifie leur configuration
+Les dotfiles installent et configurent ses hooks ; Arnes vérifie leur configuration
 sans la modifier, conformément à l'ADR-003.
 
 La collecte v2 ne persiste que l’identité non sensible du run, le contexte de comparaison observable
