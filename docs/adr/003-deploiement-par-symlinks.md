@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-30
+- **Révision** : 2026-10-27
 
 ## Contexte
 
@@ -22,6 +22,20 @@ Les instructions Codex restent assemblées depuis les sources du harnais, car Co
 les directives `@import`. Le résultat identique n'est pas réécrit ; un nouveau résultat
 est écrit dans un fichier temporaire puis renommé, sans écrire à travers un lien existant.
 La définition d'agent Codex garde son déploiement par copie.
+
+Les tâches Moon des dotfiles installent les hooks de Claude, Codex et Cursor depuis
+les déclarations de `home/.arnes.yaml`. Leur utilitaire fusionne les seuls handlers
+gérés, conserve les autres réglages et les handlers dont la commande n'est pas
+reconnue comme gérée, et ne réécrit pas un résultat identique.
+Un fichier malformé ou divergent par son type de chemin est refusé. Les écritures de
+cet utilitaire refusent une écriture concurrente par un verrou ; leur publication remplace un fichier
+à la fois. Il n'y a pas de transaction entre les agents ni de garantie contre un
+processus hostile qui échange les chemins en cours d'installation.
+
+Arnes sert au diagnostic sans réparation et à l'export sous `.harness-export`.
+Il n'installe ni ne réconcilie les configurations des harnais. Les hooks de collecte
+invoquent `agent-measure`, ceux d'injection `output-discipline-hook` ; Moon acquiert
+ces exécutables séparément de leur activation.
 
 Les comportements de configuration spécifiques restent locaux à leurs utilitaires :
 

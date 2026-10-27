@@ -223,7 +223,9 @@ Placement follows [ADR-038](docs/adr/038-frontieres-home-harness-tooling.md).
 
 ## Arnes Doctor
 
-See the [Arnes guide](docs/arnes.md) for diagnosis, synchronization, measurement and
+Moon installs the managed hooks; Arnes verifies harness resources without changing them.
+The installed Arnes and measurement executables are built from pinned official sources.
+See the [Arnes guide](docs/arnes.md) for diagnosis, hook installation, measurement and
 observation limits. The [documentation index](docs/README.md) also covers Agent-Reach,
 deployment cleanup and harness evaluations.
 
@@ -243,5 +245,5 @@ fails when local sources, bundles, or the manifest drift, or when an obsolete ar
 
 The export contains every non-ignored source under `harness/`, except the generated skills index and
 operating-system metadata, plus the canonical hook declarations in `home/.arnes.yaml`. Source
-categories are defined once in `tooling/arnes/src/export/sources.rs`; extend that selector
+categories are defined by the upstream Arnes exporter; extend that selector
 and its tests to add a category, then regenerate the snapshot.

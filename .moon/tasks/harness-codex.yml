@@ -52,14 +52,16 @@ tasks:
       - repository:dependencies
     toolchains: bun
   codex-hooks:
-    script: '"$HOME/.local/bin/arnes" setup hooks --agent codex'
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-hooks.ts" "$workspaceRoot" "$HOME" codex
+      ARNES_SOURCE_ROOT="$workspaceRoot" ARNES_REPOSITORY_ROOT="$workspaceRoot" "$HOME/.local/bin/arnes" doctor hooks --agent codex --color never > /dev/null
     deps:
       - repository:dependencies
       - arnes:install
       - agent-handoff
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'
+      - agent-measure
+      - output-discipline-hook
     toolchains: system
     options:
       mutex: harness-mutation

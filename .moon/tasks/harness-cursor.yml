@@ -44,12 +44,14 @@ tasks:
       - repository:dependencies
     toolchains: bun
   cursor-hooks:
-    script: '"$HOME/.local/bin/arnes" setup hooks --agent cursor'
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-hooks.ts" "$workspaceRoot" "$HOME" cursor
+      ARNES_SOURCE_ROOT="$workspaceRoot" ARNES_REPOSITORY_ROOT="$workspaceRoot" "$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never > /dev/null
     deps:
       - arnes:install
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'
+      - repository:dependencies
+      - agent-measure
     toolchains: system
     options:
       mutex: harness-mutation

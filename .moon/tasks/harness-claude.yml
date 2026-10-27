@@ -66,14 +66,16 @@ tasks:
       - repository:dependencies
     toolchains: bun
   claude-hooks:
-    script: '"$HOME/.local/bin/arnes" setup hooks --agent claude'
+    script: |-
+      set -e
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/install-agent-hooks.ts" "$workspaceRoot" "$HOME" claude
+      ARNES_SOURCE_ROOT="$workspaceRoot" ARNES_REPOSITORY_ROOT="$workspaceRoot" "$HOME/.local/bin/arnes" doctor hooks --agent claude --color never > /dev/null
     deps:
       - repository:dependencies
       - arnes:install
       - agent-handoff
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent claude --color never'
+      - agent-measure
+      - output-discipline-hook
     toolchains: system
     options:
       mutex: harness-mutation

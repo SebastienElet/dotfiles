@@ -1,0 +1,26 @@
+inheritedBy:
+  tags:
+    - harness
+taskOptions:
+  cache: false
+  runInCI: false
+  runFromWorkspaceRoot: true
+tasks:
+  agent-measure-build:
+    script: cargo install --git https://github.com/SebastienElet/agent-measure --rev c47d233617d7b69694c2d117a83ecbd380f85937 --locked --root "$workspaceRoot/tooling/arnes/target/agent-measure" --target-dir "$workspaceRoot/tooling/arnes/target/agent-measure-build"
+    deps:
+      - repository:rust
+    toolchains: rust
+    options:
+      mutex: agent-measure-cargo-target
+  agent-measure:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/tooling/arnes/target/agent-measure/bin/agent-measure" "$HOME/.local/bin/agent-measure"
+    deps:
+      - agent-measure-build
+      - repository:dependencies
+    toolchains: system
+  output-discipline-hook:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/output-discipline-hook" "$HOME/.local/bin/output-discipline-hook"
+    deps:
+      - repository:dependencies
+    toolchains: system

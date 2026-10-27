@@ -37,8 +37,11 @@ tasks:
       mutex: arnes-cargo-target
       runInCI: false
     script: |-
+      set -e
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      cargo build --quiet --release --locked
+      cargo install --git https://github.com/SebastienElet/arnes --rev 8ccea927ad08d627c5192765d85fd318000dd8d4 --locked --root "$projectRoot/target/read-only" --target-dir "$projectRoot/target/read-only-build"
+      mkdir -p "$projectRoot/target/release"
+      cp "$projectRoot/target/read-only/bin/arnes" "$projectRoot/target/release/arnes"
   binary:
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/target/release/arnes" "$HOME/.local/bin/arnes"
     deps:

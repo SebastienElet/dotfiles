@@ -82,4 +82,4 @@ ici sont les dates d'auteur.
 | [038](038-frontieres-home-harness-tooling.md)          | Frontières `home/`, `harness/` et `tooling/`                     | 2026-08 |
 | [040](040-skills-user-dans-harness.md)                 | Sources et projections des skills user                           | 2026-08 |
 | [041](041-frontiere-automatisation-typescript-rust.md) | Frontière d'automatisation entre Shell, Moon, TypeScript et Rust | 2026-08 |
-| [043](043-telemetrie-arnes-minimale-et-bornee.md)      | Télémétrie Arnes minimale et bornée                              | 2026-09 |
+| [043](043-telemetrie-arnes-minimale-et-bornee.md)      | Télémétrie des agents minimale et bornée                         | 2026-09 |

@@ -35,6 +35,16 @@ fileGroups:
   fishBehaviorDependencies:
     - .gitignore
 tasks:
+  arnes-read-only-test:
+    command: bun --config=/dev/null --no-env-file test tooling/arnes-read-only.test.ts
+    deps:
+      - dependencies
+    inputs:
+      - "**/*"
+      - ".*"
+      - ".*/**/*"
+    options:
+      cache: false
   typescript-test:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     deps:

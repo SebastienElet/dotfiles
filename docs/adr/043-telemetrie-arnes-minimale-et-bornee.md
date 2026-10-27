@@ -1,7 +1,8 @@
-# ADR-043 — Télémétrie Arnes minimale et bornée
+# ADR-043 — Télémétrie des agents minimale et bornée
 
 - **Statut** : accepté
 - **Date** : 2026-09
+- **Révision** : 2026-10-27
 
 ## Contexte
 
@@ -10,6 +11,10 @@ de hooks ont atteint environ 1,5 Go alloués, alors qu’aucun outcome n’a ét
 d’un hook, d’un événement terminal ou d’une réponse finale ne juge pas le résultat de la tâche.
 
 ## Décision
+
+`agent-measure` porte la collecte, les outcomes, les rapports et la rétention.
+Les dotfiles installent et activent ses hooks ; Arnes vérifie leur configuration
+sans la modifier, conformément à l'ADR-003.
 
 La collecte v2 ne persiste que l’identité non sensible du run, le contexte de comparaison observable
 et un flux compact d’événements horodatés. Prompts, réponses, transcripts, chemins locaux, identifiants
@@ -33,7 +38,7 @@ jugeabilité, `pass` déclarés, événements, appels d’outils, latence observ
 - Les données v2 ont une durée de vie explicite ; les données historiques ne sont pas supprimées par
   l’installation.
 - Une configuration de hook prouve seulement une configuration ; seule une capture stockée prouve
-  une activité observée par Arnes, pas l’exécution réussie des autres hooks.
+  une activité observée par `agent-measure`, pas l'exécution réussie des autres hooks.
 - La validité des comparaisons reste limitée aux agents, modèles, systèmes et versions réellement
   observés.
 
