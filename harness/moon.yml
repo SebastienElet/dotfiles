@@ -3,21 +3,21 @@ layer: configuration
 
 fileGroups:
   evaluation:
-    - evals/**/*
+    - cases.json
+    - selection.json
+    - instructions.md
+    - fixtures/**/*
+    - variants/**/*
+    - evidence/**/*
     - skills/**/*
     - AGENTS.md
     - USER.md
     - SOUL.md
-    - /tooling/arnes/src/**/*
-    - /tooling/arnes/Cargo.toml
-    - /tooling/arnes/Cargo.lock
-    - /.cargo/**/*
     - /package.json
     - /bun.lock
     - /.moon/**/*
     - /.github/actions/setup-moon/package.json
     - /.github/actions/setup-moon/bun.lock
-    - /rust-toolchain.toml
     - /moon.yml
     - /.github/workflows/test-harness.yml
 
@@ -148,50 +148,44 @@ tasks:
     options:
       runInCI: true
   validate-evals:
-    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evals
-    toolchains: rust
+    command: node_modules/.bin/agent-experiments validate-evals --repository harness
+    toolchains: bun
     deps:
-      - repository:rust
+      - repository:dependencies
     inputs:
       - "@group(evaluation)"
-      - /.agents/skills/**/evals/trigger-queries.json
     options:
       runInCI: true
-      mutex: arnes-cargo-target
   validate-evidence:
-    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval validate-evidence
-    toolchains: rust
+    command: node_modules/.bin/agent-experiments validate-evidence --repository harness
+    toolchains: bun
     deps:
-      - repository:rust
+      - repository:dependencies
     inputs:
       - "@group(evaluation)"
     options:
       runInCI: true
-      mutex: arnes-cargo-target
   test-eval-runner:
-    command: noop
+    command: node_modules/.bin/agent-experiments fixture-smoke --repository harness
+    toolchains: bun
     deps:
-      - arnes:test
+      - repository:dependencies
     inputs:
       - "@group(evaluation)"
     options:
       runInCI: true
   eval:
     description: Manually run selected live Codex evaluations using LLM quota
-    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval run
-    toolchains: rust
+    command: node_modules/.bin/agent-experiments run --repository harness
+    toolchains: bun
     deps:
-      - repository:rust
-    options:
-      mutex: arnes-cargo-target
+      - repository:dependencies
   compare:
     description: Compare reports with identical recorded experimental controls
-    command: cargo run --quiet --locked --manifest-path tooling/arnes/Cargo.toml -- eval compare
-    toolchains: rust
+    command: node_modules/.bin/agent-experiments compare
+    toolchains: bun
     deps:
-      - repository:rust
-    options:
-      mutex: arnes-cargo-target
+      - repository:dependencies
   install:
     description: Install migrated harness capabilities
     command: noop
