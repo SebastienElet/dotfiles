@@ -2,6 +2,21 @@ inheritedBy:
   tags:
     - repository
 tasks:
+  entire:
+    description: Install the optional Entire CLI
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      brew install --cask entireio/tap/entire
+    deps: [homebrew]
+    checks:
+      - check: condition
+        script: |-
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          brew list --cask --versions entire
+    env:
+      HOMEBREW_NO_ASK: "1"
+    toolchains: system
+    options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
   google-chrome:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
