@@ -1,49 +1,24 @@
 import { afterEach, expect, test } from "bun:test";
 import {
-  cleanupMoonDeploymentFixtures,
-  createMoonDeploymentFixture,
-  foreignGitHubEnvironment,
-  runMoon,
-} from "./deployment-moon-test-support.ts";
-import { dirname, join } from "node:path";
-import {
+  cleanupDeploymentFixtures,
+  createDeploymentFixture,
   expectSuccess,
   fileIdentity,
   linkTarget,
   pathExists,
+  project,
 } from "./deployment-test-support.ts";
+import { dirname, join } from "node:path";
 import {
   lstatSync,
   mkdirSync,
   readFileSync,
-  realpathSync,
-  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { runDeploymentMoon } from "./deployment-moon-runner.ts";
 
-afterEach(cleanupMoonDeploymentFixtures);
-
-test.each([
-  { source: "GitHub", environment: foreignGitHubEnvironment },
-  {
-    source: "caller",
-    environment: {
-      ...foreignGitHubEnvironment,
-      MOON_BASE: "foreign-base",
-      MOON_HEAD: "foreign-head",
-    },
-  },
-])(
-  "executes fixture tasks with foreign $source references",
-  ({ environment }: Readonly<{ environment: Readonly<NodeJS.ProcessEnv> }>) => {
-    const fixture = createMoonDeploymentFixture("arnes");
-
-    expectSuccess(
-      runMoon(fixture, "repository:rust", { cache: "off", environment }),
-    );
-  },
-);
+afterEach(cleanupDeploymentFixtures);
 
 const harnessBinaries = ["arnes"] as const;
 const binaryCollisions = [
@@ -76,21 +51,13 @@ function occupyBinaryDestination(
 }
 
 function binaryFixture(projectId: (typeof harnessBinaries)[number]): Readonly<{
-  fixture: ReturnType<typeof createMoonDeploymentFixture>;
+  fixture: ReturnType<typeof createDeploymentFixture>;
   source: string;
   destination: string;
 }> {
-  const fixture = createMoonDeploymentFixture(projectId);
-  const source = join(
-    realpathSync(fixture.repository),
-    "tooling",
-    projectId,
-    "target/release",
-    projectId,
-  );
+  const fixture = createDeploymentFixture(projectId);
+  const source = join(project, "node_modules/.bin", projectId);
   const destination = join(fixture.home, ".local/bin", projectId);
-  mkdirSync(dirname(source), { recursive: true });
-  writeFileSync(source, "canonical binary\n", { mode: 0o755 });
   return { fixture, source, destination };
 }
 
@@ -98,15 +65,11 @@ for (const projectId of harnessBinaries) {
   test(`${projectId} binary deployment through Moon creates the absent destination and preserves the canonical link silently on replay`, () => {
     const { fixture, source, destination } = binaryFixture(projectId);
     const sourceBefore = fileIdentity(source);
-    expectSuccess(
-      runMoon(fixture, `${projectId}:binary`, { upstream: "none" }),
-    );
+    expectSuccess(runDeploymentMoon(fixture, [`harness:${projectId}`]));
     expect(linkTarget(destination)).toBe(source);
     const inode = lstatSync(destination).ino;
 
-    const replay = runMoon(fixture, `${projectId}:binary`, {
-      upstream: "none",
-    });
+    const replay = runDeploymentMoon(fixture, [`harness:${projectId}`]);
 
     expect(replay).toEqual({ exitCode: 0, stdout: "", stderr: "" });
     expect(linkTarget(destination)).toBe(source);
@@ -121,9 +84,7 @@ for (const projectId of harnessBinaries) {
       const sourceBefore = fileIdentity(source);
       const foreign = join(
         fixture.root,
-        "other-checkout/tooling",
-        projectId,
-        "target/release",
+        "other-checkout/node_modules/.bin",
         projectId,
       );
       occupyBinaryDestination(destination, foreign, destinationType);
@@ -131,9 +92,7 @@ for (const projectId of harnessBinaries) {
       const foreignBefore =
         destinationType === "foreign-link" ? fileIdentity(foreign) : undefined;
 
-      const result = runMoon(fixture, `${projectId}:binary`, {
-        upstream: "none",
-      });
+      const result = runDeploymentMoon(fixture, [`harness:${projectId}`]);
 
       expect(result.exitCode).not.toBe(0);
       expect(result.stderr).toContain(
@@ -158,17 +117,4 @@ for (const projectId of harnessBinaries) {
       }
     },
   );
-
-  test(`${projectId} binary deployment through Moon refuses a missing canonical source before creating a destination`, () => {
-    const { fixture, source, destination } = binaryFixture(projectId);
-    rmSync(source);
-
-    const result = runMoon(fixture, `${projectId}:binary`, {
-      upstream: "none",
-    });
-
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain(source);
-    expect(pathExists(destination)).toBeFalse();
-  });
 }

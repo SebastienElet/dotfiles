@@ -9,8 +9,8 @@ est le corpus passé par `--repository` ; [`selection.json`](../harness/selectio
 choisit les skills contrôlées et [`instructions.md`](../harness/instructions.md) reprend
 la section `Context Management` installée pour un essai live. Cette fixture figée
 est comparée à `harness/AGENTS.md` par `harness:validate-instructions`, inclus dans
-`harness:check` et exécuté par la CI. Rust et les dépendances
-Bun du dépôt sont requis ; appliquer les [précautions de worktree](../README.md#contributing-from-a-worktree).
+`harness:check` et exécuté par la CI. Les dépendances
+Bun du dépôt sont requises ; appliquer les [précautions de worktree](../README.md#contributing-from-a-worktree).
 
 ## Procédure
 

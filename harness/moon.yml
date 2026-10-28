@@ -119,7 +119,7 @@ tasks:
         agent-reach-claude,
         agent-reach-codex,
         agent-reach-cursor,
-        arnes:install,
+        arnes,
         home:arnes-config,
       ]
     toolchains: system
@@ -145,9 +145,6 @@ tasks:
       - validate-evals
       - validate-evidence
       - test-eval-runner
-      - arnes:fmt
-      - arnes:clippy
-      - arnes:check
       - repository:typescript-lint
       - repository:typescript-typecheck
       - repository:typescript-format-check
@@ -216,10 +213,17 @@ tasks:
     deps:
       - claude
       - codex
-      - arnes:install
+      - arnes
       - agent-handoff
       - assertledger
     toolchains: system
+  arnes:
+    description: Déployer le binaire Arnes publié
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/arnes" "$HOME/.local/bin/arnes"
+    deps:
+      - repository:dependencies
+      - home:arnes-config
+    toolchains: bun
   agent-handoff:
     description: Deploy the published Agent Handoff executable
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/agent-handoff" "$HOME/.local/bin/agent-handoff"
