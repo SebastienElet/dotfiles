@@ -19,6 +19,12 @@ agents:
       effort: high
       context_window: 512000
 skills:
+  - slug: design-taste-frontend
+    source: node_modules/@sebastienelet/agent-skills/skills/design-taste-frontend
+    installations:
+      - { agent: claude, scope: user }
+      - { agent: cursor, scope: user }
+      - { agent: codex, scope: user }
   - slug: bug-fix
     source: node_modules/@sebastienelet/agent-skills/skills/bug-fix
     installations:
@@ -39,12 +45,6 @@ skills:
       - { agent: codex, scope: user }
   - slug: plan
     source: node_modules/@sebastienelet/agent-skills/skills/plan
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
-  - slug: things-tasks
-    source: node_modules/@sebastienelet/agent-skills/skills/things-tasks
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
@@ -92,12 +92,6 @@ skills:
       - { agent: codex, scope: user }
   - slug: grilling
     source: node_modules/@sebastienelet/agent-skills/skills/grilling
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
-  - slug: to-spec
-    source: node_modules/@sebastienelet/agent-skills/skills/to-spec
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
@@ -200,11 +194,6 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: skill-simplify
-    source: node_modules/@sebastienelet/agent-skills/skills/skill-simplify
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
   - slug: issue-spec
     source: node_modules/@sebastienelet/agent-skills/skills/issue-spec
     installations:
@@ -241,11 +230,6 @@ skills:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
-  - slug: issue-simplify
-    source: node_modules/@sebastienelet/agent-skills/skills/issue-simplify
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
   - slug: workflow-automation
     source: node_modules/@sebastienelet/agent-skills/skills/workflow-automation
     installations:
@@ -254,18 +238,6 @@ skills:
       - { agent: codex, scope: user }
   - slug: requirements-clarification
     source: node_modules/@sebastienelet/agent-skills/skills/requirements-clarification
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
-  - slug: disaster-recovery-plan
-    source: node_modules/@sebastienelet/agent-skills/skills/disaster-recovery-plan
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
-  - slug: security-assurance-plan
-    source: node_modules/@sebastienelet/agent-skills/skills/security-assurance-plan
     installations:
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
