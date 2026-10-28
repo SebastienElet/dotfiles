@@ -115,6 +115,12 @@ backend; installation does not initialize projects or register an MCP server.
 
 ### Contributing from a worktree
 
+- Add workstation configuration under `home/` and its deployment to the owning Moon project; validate with the tool's native check and `tooling:deployment-test`.
+- Add packages to their Brewfile or owning Moon task, with exact versions in `homebrew.lock.json`; Bun dependencies belong in `package.json` and `bun.lock`, validated by a frozen install.
+- Change generic skills in [agent-skills](https://github.com/SebastienElet/agent-skills), run its checks, then update the pinned consumer; repository skills stay in `.agents/skills/`.
+- Change extracted tools in their own repositories ([Arnes](https://github.com/SebastienElet/arnes), [agent-handoff](https://github.com/SebastienElet/agent-handoff), [agent-experiments](https://github.com/SebastienElet/agent-experiments), [agent-reach-adapter](https://github.com/SebastienElet/agent-reach-adapter), [proof-integrity-review](https://github.com/SebastienElet/proof-integrity-review), [agent-measure](https://github.com/SebastienElet/agent-measure)); run their checks before updating the dotfiles consumer.
+- Resume work with the published `handoff` skill from agent-handoff: it writes a resume prompt; the user or enclosing workflow starts the next session.
+
 Use `tooling/install-moon` to install the locked Moon version and start with the
 smallest relevant task below. Workstation installation is macOS-only; portable
 checks also run on Ubuntu. Inspect the task definition and its native action graph before running
@@ -185,7 +191,7 @@ For a README-only change, inspect and run `repository:prettier-check`. For other
 zones, choose the relevant row and inspect its graph first. `moon run harness:check`
 is the explicit deterministic aggregate. **Do not substitute `moon check harness`**:
 Moon selects build/test tasks inferred across the project, including operational
-tasks such as `semctx` that install plugins. See the
+tasks that install plugins. See the
 [Harness evaluation guide](docs/arnes-eval.md).
 
 On a prepared environment, the broad local aggregates remain `moon run check` and
