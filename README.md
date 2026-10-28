@@ -223,7 +223,8 @@ Placement follows [ADR-038](docs/adr/038-frontieres-home-harness-tooling.md).
 
 ## Arnes Doctor
 
-See the [Arnes guide](docs/arnes.md) for diagnosis, synchronization, measurement and
+In dotfiles, Arnes is only used to check the harness configuration; install hooks manually.
+See the [Arnes guide](docs/arnes.md) for diagnosis, measurement and
 observation limits. The [documentation index](docs/README.md) also covers Agent-Reach,
 deployment cleanup and harness evaluations.
 

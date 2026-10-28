@@ -157,9 +157,6 @@ function verifyCatalog(lock: Lock, brewfiles: readonly string[]): string[] {
     Object.entries(lock[kind]).flatMap(([name, version]: Entry) => {
       const available = find(catalog[kind], name)?.available;
       if (available === undefined && isTapQualified(name)) {
-        process.stderr.write(
-          `homebrew-lock: ${name} is verified after installation because its tap is not trusted yet\n`,
-        );
         return [];
       }
       return available === version

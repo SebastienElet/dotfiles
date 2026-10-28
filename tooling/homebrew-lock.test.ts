@@ -86,7 +86,7 @@ function createFixture(lock: unknown, catalog: Catalog): string {
 function run(
   root: string,
   ...commandArguments: readonly string[]
-): Readonly<{ exitCode: number; stderr: string }> {
+): Readonly<{ exitCode: number; stdout: string; stderr: string }> {
   const result = Bun.spawnSync(
     [
       process.execPath,
@@ -105,7 +105,11 @@ function run(
       stdout: "pipe",
     },
   );
-  return { exitCode: result.exitCode, stderr: result.stderr.toString() };
+  return {
+    exitCode: result.exitCode,
+    stdout: result.stdout.toString(),
+    stderr: result.stderr.toString(),
+  };
 }
 
 const lock = {
@@ -132,6 +136,7 @@ test("accepts a catalog that matches every locked version", () => {
 
   expect(run(root, "verify-catalog", "LOCK", "Brewfile")).toEqual({
     exitCode: 0,
+    stdout: "",
     stderr: "",
   });
 });
@@ -163,19 +168,22 @@ test("refuses a Brewfile entry without a locked version", () => {
   expect(result.stderr).toContain("Brewfile: fd has no locked version");
 });
 
-test("defers an untrusted tap formula to the installed-version check", () => {
-  const root = createFixture(lock, {
-    ...catalog,
-    untrusted: ["owner/tap/tool"],
-  });
+test.each([
+  { kind: "formulae", name: "owner/tap/tool" },
+  { kind: "casks", name: "owner/tap/app" },
+] as const)(
+  "silently defers an unavailable tap $kind on repeated checks",
+  ({ kind, name }) => {
+    const root = createFixture(
+      { ...lock, [kind]: { ...lock[kind], [name]: "1.0.0" } },
+      { ...catalog, untrusted: [name] },
+    );
+    const expected = { exitCode: 0, stdout: "", stderr: "" };
 
-  const result = run(root, "verify-catalog", "LOCK", "Brewfile");
-
-  expect(result.exitCode).toBe(0);
-  expect(result.stderr).toContain(
-    "owner/tap/tool is verified after installation",
-  );
-});
+    expect(run(root, "verify-catalog", "LOCK", "Brewfile")).toEqual(expected);
+    expect(run(root, "verify-catalog", "LOCK", "Brewfile")).toEqual(expected);
+  },
+);
 
 test("refuses an installed version that drifted from the lock", () => {
   const root = createFixture(lock, {
@@ -204,6 +212,7 @@ test("ignores locked packages that are not installed", () => {
 
   expect(run(root, "verify-installed", "LOCK")).toEqual({
     exitCode: 0,
+    stdout: "",
     stderr: "",
   });
 });

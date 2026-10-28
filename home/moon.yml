@@ -149,6 +149,9 @@ tasks:
           git init --quiet "$plugin_dir"
           git -C "$plugin_dir" remote add origin "https://github.com/$repository.git"
         fi
+        if [ "$(git -C "$plugin_dir" rev-parse -q --verify HEAD)" = "$revision" ]; then
+          continue
+        fi
         git -C "$plugin_dir" fetch --quiet --depth 1 origin "$revision"
         git -C "$plugin_dir" checkout --quiet --detach "$revision"
       done < "$projectRoot/tmux-plugins.lock"

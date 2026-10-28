@@ -33,4 +33,4 @@ function reportCheckFailure(error: unknown): void {
   process.exitCode = error instanceof CheckCommandError ? error.exitCode : 1;
 }
 
-export { checkCommand, reportCheckFailure };
+export { CheckCommandError, checkCommand, reportCheckFailure };
