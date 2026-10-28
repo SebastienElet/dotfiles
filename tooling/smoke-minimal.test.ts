@@ -5,7 +5,13 @@ import {
   gateFixture,
   runGate,
 } from "./gate-test-support.ts";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 afterEach(clearGateFixtures);
@@ -60,12 +66,70 @@ test.each(["moon", "brew", "bun", "tar"])("refuses %s failure", (command) => {
   executable(
     context.bin,
     command,
-    String.raw`printf "%s\n" rejected >&2; exit 31`,
+    String.raw`printf "%s\n" command-stdout; printf "%s\n" rejected >&2; exit 31`,
   );
   const result = runGate("smoke-minimal.ts", context);
   expect(result.exitCode).toBe(failureStatus);
   expect(result.stderr.toString()).toContain("rejected");
+  expect(result.stderr.toString()).toContain("Command failed:");
+  expect(result.stderr.toString()).toContain(`"${command}"`);
+  expect(result.stderr.toString()).toContain("stdout:\ncommand-stdout");
+  expect(result.stderr.toString()).toContain("stderr:\nrejected");
 });
+
+function changingSnapshotFixture(change: string): ReturnType<typeof fixture> {
+  const context = fixture();
+  mkdirSync(join(context.home, ".claude"));
+  executable(
+    context.bin,
+    "tar",
+    'if [ "$1" = --no-recursion ]; then exec /usr/bin/tar "$@"; fi\nif [ -e "$GATE_FIXTURE/replayed" ]; then printf changed; else printf initial; fi',
+  );
+  executable(
+    context.bin,
+    "moon",
+    `set -e\nif [ -e "$GATE_FIXTURE/ran" ]; then\n${change}\n: > "$GATE_FIXTURE/replayed"\nfi\n: > "$GATE_FIXTURE/ran"`,
+  );
+  return context;
+}
+
+test.each([
+  {
+    kind: "added",
+    change: 'printf changed-content > "$HOME/.claude/observed"',
+  },
+  { kind: "removed", change: '/bin/rm "$HOME/.claude/observed"' },
+  {
+    kind: "modified",
+    change: 'printf changed-content > "$HOME/.claude/observed"',
+  },
+  { kind: "modified", change: '/bin/chmod 600 "$HOME/.claude/observed"' },
+  {
+    kind: "modified",
+    change: '/bin/ln -sf changed-target "$HOME/.claude/observed"',
+    link: true,
+  },
+] as const)(
+  "reports a $kind snapshot path after $change",
+  ({
+    kind,
+    change,
+    link,
+  }: Readonly<{ kind: string; change: string; link?: boolean }>) => {
+    const context = changingSnapshotFixture(change);
+    const path = join(context.home, ".claude/observed");
+    if (link === true) {
+      symlinkSync("original-target", path);
+    } else if (kind !== "added") {
+      writeFileSync(path, "original-content", { mode: 0o644 });
+    }
+    const result = runGate("smoke-minimal.ts", context);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr.toString()).toContain(`${kind}: ".claude/observed"`);
+    expect(result.stderr.toString()).toContain("Installed artifacts changed");
+    expect(result.stderr.toString()).not.toContain("changed-content");
+  },
+);
 
 test.each(["stdout", "stderr"])(
   "refuses repeat installation output on %s",
