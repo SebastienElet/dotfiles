@@ -15,7 +15,6 @@ tasks:
       - claude-instructions
       - claude-rules
       - claude-skills
-      - claude-hooks
     toolchains: system
   claude-binary:
     script: |-
@@ -65,15 +64,3 @@ tasks:
     deps:
       - repository:dependencies
     toolchains: bun
-  claude-hooks:
-    script: '"$HOME/.local/bin/arnes" doctor hooks --agent claude --color never'
-    deps:
-      - repository:dependencies
-      - arnes:install
-      - agent-handoff
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent claude --color never'
-    toolchains: system
-    options:
-      mutex: harness-mutation

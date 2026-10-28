@@ -21,6 +21,7 @@ import {
 import { runDeploymentMoon } from "../deployment-moon-runner.ts";
 
 const cursorDeploymentAndReplayTimeout = 30_000;
+const doctorFailureStatus = 9;
 
 afterEach(cleanupDeploymentFixtures);
 
@@ -56,6 +57,7 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
       env: {
         ...process.env,
         HOME: fixture.home,
+        FAKE_FAIL_ON: "doctor hooks",
         FAKE_TRACE: trace,
         MOON_HOME:
           process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
@@ -76,7 +78,7 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
 }
 
 test(
-  "Moon deploys the Cursor rules and skills without global dependencies",
+  "Moon deploys the Cursor rules and skills without global dependencies or installed hooks",
   () => {
     const { fixture, trace } = cursorFixture();
     const rule = join(
@@ -109,15 +111,23 @@ test(
     expect(readFileSync(commonRule, "utf8")).toContain(
       "alwaysApply: true\n---\n# Global AI Instructions",
     );
-    expect(readFileSync(trace, "utf8")).toContain(
-      '"arguments":["doctor","hooks","--agent","cursor","--color","never"]',
-    );
     const ruleInode = lstatSync(rule).ino;
     const commonRuleInode = lstatSync(commonRule).ino;
 
     expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(lstatSync(rule).ino).toBe(ruleInode);
     expect(lstatSync(commonRule).ino).toBe(commonRuleInode);
+    expect(readFileSync(trace, "utf8")).toBe("");
+
+    expect(
+      runDeploymentMoon(fixture, ["harness:doctor"], {
+        FAKE_TRACE: trace,
+        FAKE_FAIL_ON: "doctor hooks",
+      }).exitCode,
+    ).toBe(doctorFailureStatus);
+    expect(readFileSync(trace, "utf8")).toContain(
+      '"arguments":["doctor","hooks","--scope","user","--color","never"]',
+    );
   },
   cursorDeploymentAndReplayTimeout,
 );

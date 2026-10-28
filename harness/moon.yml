@@ -26,6 +26,12 @@ taskOptions:
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
+  doctor:
+    description: Check manually installed user hooks for all agents
+    script: '"$HOME/.local/bin/arnes" doctor hooks --scope user --color never'
+    toolchains: system
+    options:
+      runInCI: false
   agent-reach:
     description: Install the complete Agent-Reach plugin and macOS backends
     command: noop

@@ -13,7 +13,6 @@ tasks:
       - cursor-instructions
       - cursor-rules
       - cursor-skills
-      - cursor-hooks
     toolchains: system
   cursor-instructions:
     description: Assemble common instructions as an always-applied local Cursor plugin rule
@@ -43,13 +42,3 @@ tasks:
     deps:
       - repository:dependencies
     toolchains: bun
-  cursor-hooks:
-    script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'
-    deps:
-      - arnes:install
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'
-    toolchains: system
-    options:
-      mutex: harness-mutation

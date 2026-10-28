@@ -12,6 +12,8 @@ les hooks s'installent à la main.
 
 ## Procédure
 
+Vérifier les hooks après leur installation manuelle : `moon run harness:doctor`, hors du profil d'installation.
+
 Diagnostiquer sans réparation, puis cibler explicitement l'agent et la portée :
 
 ```sh

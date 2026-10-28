@@ -13,7 +13,6 @@ tasks:
       - codex-instructions
       - codex-agents
       - codex-skills
-      - codex-hooks
     toolchains: system
   codex-binary:
     script: VOLTA_HOME="$HOME/.volta" PATH="$HOME/.volta/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" volta install @openai/codex
@@ -51,15 +50,3 @@ tasks:
     deps:
       - repository:dependencies
     toolchains: bun
-  codex-hooks:
-    script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'
-    deps:
-      - repository:dependencies
-      - arnes:install
-      - agent-handoff
-    checks:
-      - check: condition
-        script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'
-    toolchains: system
-    options:
-      mutex: harness-mutation
