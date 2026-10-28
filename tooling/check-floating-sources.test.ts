@@ -8,8 +8,6 @@ const exceptedFiles = {
   ".moon/tasks/harness-claude.yml":
     "curl -fsSL https://claude.ai/install.sh | bash -s latest\n",
   ".moon/tasks/harness-codex.yml": "script: volta install @openai/codex\n",
-  "tooling/agent-reach-package.ts":
-    '"uvx mcp-server-linkedin@latest --login",\n',
   "install.sh":
     "git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles\n",
 };

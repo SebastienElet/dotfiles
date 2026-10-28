@@ -86,11 +86,6 @@ const exceptions: readonly Exception[] = [
     reason: "Codex stays on its latest release by policy",
   },
   {
-    path: "tooling/agent-reach-package.ts",
-    line: '"uvx mcp-server-linkedin@latest --login",',
-    reason: "upstream instruction text rewritten to the pinned container task",
-  },
-  {
     path: "install.sh",
     line: "git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles",
     reason: "bootstrap of this repository itself",

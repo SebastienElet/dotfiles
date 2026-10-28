@@ -50,6 +50,7 @@
     "cursor-cli": "2026.10.22-27dcf5f",
     "discord": "0.0.420",
     "dopplerhq/cli/doppler": "3.77.1",
+    "entireio/tap/entire": "0.12.2",
     "font-jetbrains-mono-nerd-font": "3.5.1",
     "google-chrome": "156.0.8078.48",
     "grok-bot": "0.77.0",
