@@ -6,7 +6,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install uv
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -18,7 +18,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install gh
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -28,7 +28,7 @@ tasks:
     options: { cache: false, mutex: homebrew, os: macos, runInCI: false }
   bat-setup:
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -47,7 +47,7 @@ tasks:
       brew install bat
   fisher-setup:
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -66,7 +66,7 @@ tasks:
       brew install fisher
   fzf-setup:
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -93,7 +93,7 @@ tasks:
         *) exit 1 ;;
       esac
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -120,7 +120,7 @@ tasks:
         *) exit 1 ;;
       esac
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -147,7 +147,7 @@ tasks:
         *) exit 1 ;;
       esac
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -174,7 +174,7 @@ tasks:
         *) exit 1 ;;
       esac
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -201,7 +201,7 @@ tasks:
         *) exit 1 ;;
       esac
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-

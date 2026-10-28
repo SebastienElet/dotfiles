@@ -156,6 +156,10 @@ async function prepareFixtureFiles(
     join(repository, "home/.config/nvim/lazy-lock.json"),
     "base\n",
   );
+  await Bun.write(
+    join(repository, "homebrew.lock.json"),
+    '{"formulae":{},"casks":{}}\n',
+  );
   await symlink(
     join(repositoryRoot, "node_modules"),
     join(repository, "node_modules"),
@@ -190,6 +194,7 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
       name === "upgrade" ||
       name === "install-moon" ||
       name === "node-version-contract.ts" ||
+      name === "homebrew-lock.ts" ||
       (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );
   for (const file of files) {

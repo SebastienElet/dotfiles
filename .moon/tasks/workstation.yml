@@ -21,7 +21,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install --cask google-chrome
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -33,7 +33,7 @@ tasks:
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install yt-dlp ffmpeg
-    deps: [homebrew]
+    deps: [homebrew-catalog]
     checks:
       - check: condition
         script: |-
@@ -60,18 +60,37 @@ tasks:
       runInCI: skip
     deps:
       - bootstrap
+  homebrew-catalog:
+    description: Refuse Homebrew installations whose catalog differs from the lock
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-catalog homebrew.lock.json Brewfile
+    deps:
+      - homebrew
+      - dependencies
+    inputs:
+      - homebrew.lock.json
+      - Brewfile
+      - tooling/homebrew-lock.ts
+    toolchains: bun
+    options:
+      cache: false
+      mutex: homebrew
+      os: macos
+      runInCI: skip
   applications-install:
     description: Install the minimal Brewfile
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
           export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          brew bundle check --quiet --no-upgrade --file Brewfile
+          brew bundle check --quiet --no-upgrade --file Brewfile &&
+            bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-installed homebrew.lock.json
     env:
       HOMEBREW_NO_ASK: "1"
-    toolchains: system
+    toolchains: bun
     options:
       cache: false
       mutex: homebrew
@@ -79,7 +98,9 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
       brew bundle install --no-upgrade --file Brewfile
+      bun --config=/dev/null --no-env-file --no-install tooling/homebrew-lock.ts verify-installed homebrew.lock.json
   herdr:
     description: Install the optional Herdr agent multiplexer and configuration
     command: noop
@@ -95,7 +116,7 @@ tasks:
   herdr-setup:
     description: Install the optional Herdr agent multiplexer
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -147,7 +168,7 @@ tasks:
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -226,8 +247,16 @@ tasks:
       case "$(uname -s)" in
         Darwin)
           if ! command -v rustup >/dev/null; then
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
-              RUSTUP_INIT_SKIP_PATH_CHECK=yes sh -s -- -y --no-modify-path --default-toolchain none
+            test "$(uname -m)" = arm64
+            rustup_directory="$(mktemp -d)"
+            trap 'rm -r "$rustup_directory"' EXIT
+            rustup_init="$rustup_directory/rustup-init"
+            curl --proto '=https' --tlsv1.2 -fsSL -o "$rustup_init" \
+              https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-apple-darwin/rustup-init
+            echo "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a  $rustup_init" |
+              shasum -a 256 -c - > /dev/null
+            chmod +x "$rustup_init"
+            RUSTUP_INIT_SKIP_PATH_CHECK=yes "$rustup_init" -y --no-modify-path --default-toolchain none
           fi
           ;;
         Linux) command -v rustup ;;
@@ -243,7 +272,7 @@ tasks:
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
       brew install volta
     deps:
-      - homebrew
+      - homebrew-catalog
     checks:
       - check: condition
         script: |-
@@ -276,17 +305,17 @@ tasks:
       mutex: volta
       runInCI: false
   pnpm:
-    description: Install pnpm with Volta
+    description: Install the exact pnpm version with Volta
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      VOLTA_HOME="$HOME/.volta" volta install pnpm
+      VOLTA_HOME="$HOME/.volta" volta install pnpm@12.15.0
     deps:
       - node
     checks:
       - check: condition
         script: |-
           export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-          test -x "$HOME/.volta/bin/pnpm"
+          cd / && test "$(VOLTA_HOME="$HOME/.volta" "$HOME/.volta/bin/pnpm" --version)" = 12.15.0
     toolchains: system
     options:
       cache: false
@@ -325,7 +354,7 @@ tasks:
       os: macos
       runInCI: false
   things3-cli-wrapper:
-    description: Install the Things 3 CLI wrapper with npm
+    description: Install the exact Things 3 CLI wrapper version with npm
     script: |-
       bun --config=/dev/null --no-env-file --no-install tooling/paid-apps-install.ts install-cli
     deps:
@@ -333,7 +362,9 @@ tasks:
     checks:
       - check: condition
         script: |-
-          test -x "$HOME/.volta/bin/thangs"
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          VOLTA_HOME="$HOME/.volta" volta list --format plain @dougskinner/thangs |
+            grep -Fq 'package @dougskinner/thangs@1.0.2 '
     inputs:
       - tooling/paid-apps-install.ts
       - package.json

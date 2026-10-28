@@ -16,7 +16,7 @@ env:
 
 jobs:
   select:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       affected: ${{ fromJSON(steps.query.outputs.result).tasks.repository != null || fromJSON(steps.query.outputs.result).tasks.tooling != null }}
@@ -41,7 +41,7 @@ jobs:
     name: Shell scripts
     needs: select
     if: needs.select.outputs.affected == 'true'
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,7 +57,7 @@ jobs:
     name: Shell required
     needs: [select, shellcheck]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true

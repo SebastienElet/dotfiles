@@ -28,7 +28,7 @@ function runPaidAppInstallation(): number {
         join(environment.HOME, ".volta", "bin", "npm"),
         "install",
         "-g",
-        "@dougskinner/thangs",
+        "@dougskinner/thangs@1.0.2",
       ],
       { stdin: "inherit", stdout: "inherit", stderr: "inherit" },
     );

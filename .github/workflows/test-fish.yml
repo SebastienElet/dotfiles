@@ -16,7 +16,7 @@ env:
 
 jobs:
   select:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       affected: ${{ fromJSON(steps.query.outputs.result).tasks.repository != null }}
@@ -46,8 +46,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
-          - ubuntu-latest
+          - macos-26
+          - ubuntu-24.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -62,7 +62,7 @@ jobs:
     name: Fish required
     needs: [select, fish]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true

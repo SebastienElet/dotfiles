@@ -34,10 +34,12 @@ tasks:
       rm -f "$cache_dir/.catppuccin-ready"
       theme_file="$(mktemp "$theme_dir/.Catppuccin-Latte.XXXXXX")"
       trap 'rm -f "$theme_file"' EXIT
-      curl -fSL -o "$theme_file" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Latte.tmTheme
+      curl -fSL -o "$theme_file" https://raw.githubusercontent.com/catppuccin/bat/6810349b28055dce54076712fc05fc68da4b8ec0/themes/Catppuccin%20Latte.tmTheme
+      echo "a2ddb65bfcf7328802ee4770d1e34ef4093a20fd5c300be3138c99f8a45ed5cb  $theme_file" | shasum -a 256 -c - > /dev/null
       mv "$theme_file" "$theme_dir/Catppuccin Latte.tmTheme"
       theme_file="$(mktemp "$theme_dir/.Catppuccin-Mocha.XXXXXX")"
-      curl -fSL -o "$theme_file" https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
+      curl -fSL -o "$theme_file" https://raw.githubusercontent.com/catppuccin/bat/6810349b28055dce54076712fc05fc68da4b8ec0/themes/Catppuccin%20Mocha.tmTheme
+      echo "395566f08ceb301b936b91c077690ef94f7aeb651b121553f201c99c2bd4aa77  $theme_file" | shasum -a 256 -c - > /dev/null
       mv "$theme_file" "$theme_dir/Catppuccin Mocha.tmTheme"
       bat cache --build
       touch "$cache_dir/.catppuccin-ready"
@@ -55,8 +57,8 @@ tasks:
           test -s "$cache_dir/themes.bin"
           test -s "$cache_dir/syntaxes.bin"
           test -s "$cache_dir/metadata.yaml"
-          test -s "$theme_dir/Catppuccin Latte.tmTheme"
-          test -s "$theme_dir/Catppuccin Mocha.tmTheme"
+          echo "a2ddb65bfcf7328802ee4770d1e34ef4093a20fd5c300be3138c99f8a45ed5cb  $theme_dir/Catppuccin Latte.tmTheme" | shasum -a 256 -c - > /dev/null
+          echo "395566f08ceb301b936b91c077690ef94f7aeb651b121553f201c99c2bd4aa77  $theme_dir/Catppuccin Mocha.tmTheme" | shasum -a 256 -c - > /dev/null
           bat --list-themes | grep -Fx 'Catppuccin Latte' > /dev/null
           bat --list-themes | grep -Fx 'Catppuccin Mocha' > /dev/null
     toolchains: system
@@ -140,11 +142,24 @@ tasks:
   tmux-plugins:
     script: |
       set -e
-      mkdir -p "$HOME/.tmux/plugins"
-      git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+      while read -r name repository revision; do
+        plugin_dir="$HOME/.tmux/plugins/$name"
+        if [ ! -d "$plugin_dir/.git" ]; then
+          git init --quiet "$plugin_dir"
+          git -C "$plugin_dir" remote add origin "https://github.com/$repository.git"
+        fi
+        git -C "$plugin_dir" fetch --quiet --depth 1 origin "$revision"
+        git -C "$plugin_dir" checkout --quiet --detach "$revision"
+      done < "$projectRoot/tmux-plugins.lock"
     checks:
       - check: condition
-        script: test -e "$HOME/.tmux/plugins/tpm/tpm"
+        script: |-
+          set -e
+          while read -r name _ revision; do
+            test "$(git -C "$HOME/.tmux/plugins/$name" rev-parse HEAD)" = "$revision"
+          done < "$projectRoot/tmux-plugins.lock"
+    inputs:
+      - tmux-plugins.lock
     toolchains: system
     options:
       cache: false

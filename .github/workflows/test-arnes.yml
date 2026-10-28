@@ -18,7 +18,7 @@ env:
 
 jobs:
   select:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       affected: ${{ fromJSON(steps.query.outputs.result).tasks['arnes'] != null }}
@@ -42,7 +42,7 @@ jobs:
   arnes:
     needs: select
     if: needs.select.outputs.affected == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       CARGO_INCREMENTAL: "0"
@@ -65,7 +65,7 @@ jobs:
     name: Arnes required
     needs: [select, arnes]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true

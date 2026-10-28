@@ -5,7 +5,7 @@ import {
   gateFixture,
   runGate,
 } from "./gate-test-support.ts";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 afterEach(clearGateFixtures);
@@ -108,4 +108,21 @@ test("propagates a failure of the repeated installation", () => {
   const result = runGate("smoke-minimal.ts", context);
   expect(result.exitCode).toBe(failureStatus);
   expect(result.stderr.toString()).toContain("rejected");
+});
+
+test("refreshes the Homebrew lock from the runner catalog before installing", () => {
+  const context = fixture();
+  executable(
+    context.bin,
+    "bun",
+    String.raw`printf "bun %s\n" "$*" >> "$GATE_FIXTURE/moon-calls"`,
+  );
+  expect(runGate("smoke-minimal.ts", context).exitCode).toBe(0);
+  const calls = readFileSync(join(context.root, "moon-calls"), "utf8").split(
+    "\n",
+  );
+  expect(calls[0]).toMatch(
+    /^bun .*tooling\/homebrew-lock\.ts refresh .*homebrew\.lock\.json$/u,
+  );
+  expect(calls[1]).toBe("exec --quiet --ignore-ci-checks repository:install");
 });

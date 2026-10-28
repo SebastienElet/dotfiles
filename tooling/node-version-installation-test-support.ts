@@ -87,9 +87,13 @@ async function createUpgradeFakes(
     }
     await symlink(executable, join(bin, command));
   }
-  for (const command of ["brew", "mas", "npm"]) {
+  for (const command of ["mas", "npm"]) {
     await writeExecutable(join(bin, command), "exit 0");
   }
+  await writeExecutable(
+    join(bin, "brew"),
+    String.raw`if [ "$1" = info ]; then printf '%s\n' '{"formulae":[],"casks":[]}'; fi`,
+  );
   await writeExecutable(
     join(bin, "date"),
     String.raw`printf '%s\n' 2026-08-23T00:00:00Z`,
@@ -120,6 +124,10 @@ async function runUpgrade(scenario: UpgradeScenario): Promise<CommandResult> {
   if (scenario.includeDependencies === false) {
     await rm(join(fixture, "node_modules"));
   }
+  await Bun.write(
+    join(fixture, "homebrew.lock.json"),
+    '{"formulae":{},"casks":{}}\n',
+  );
   const pinnedPackagePath = join(root, "pinned-package.json");
   const voltaLog = join(root, "volta.log");
   await Bun.write(pinnedPackagePath, JSON.stringify(scenario.pinnedPackage));

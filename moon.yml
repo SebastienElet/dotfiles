@@ -1,6 +1,8 @@
 language: typescript
 tags:
   - repository
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
 tasks:
   install:
     description: Install the minimal workstation
@@ -61,6 +63,7 @@ tasks:
       - shell-lint
       - workflows-lint
       - cspell-check
+      - floating-sources-check
       - neovim-lint
       - wezterm-lint
       - fish-syntax

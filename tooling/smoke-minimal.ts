@@ -122,9 +122,22 @@ function verifyReplay(home: string, root: string): void {
   verifyInstallation(home, root);
 }
 
+function homebrewLockRefreshCommand(root: string): string[] {
+  return [
+    "bun",
+    "--config=/dev/null",
+    "--no-env-file",
+    "--no-install",
+    join(root, "tooling/homebrew-lock.ts"),
+    "refresh",
+    join(root, "homebrew.lock.json"),
+  ];
+}
+
 function main(): void {
   const home = pathSchema.parse(process.env.HOME);
   const root = resolve(import.meta.dir, "..");
+  emitResult(profileCommand(homebrewLockRefreshCommand(root)));
   emitResult(profileCommand(installCommand));
   verifyInstallation(home, root);
   verifyReplay(home, root);

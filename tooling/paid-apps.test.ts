@@ -174,7 +174,7 @@ test("things3-cli-wrapper: standalone installation ignores the paid skip", () =>
   expect(result).toEqual({
     exitCode: 0,
     stderr: "",
-    stdout: "install\n-g\n@dougskinner/thangs\n",
+    stdout: "install\n-g\n@dougskinner/thangs@1.0.2\n",
   });
 });
 
