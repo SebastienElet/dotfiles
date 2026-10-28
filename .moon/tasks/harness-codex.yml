@@ -52,7 +52,7 @@ tasks:
       - repository:dependencies
     toolchains: bun
   codex-hooks:
-    script: '"$HOME/.local/bin/arnes" setup hooks --agent codex'
+    script: '"$HOME/.local/bin/arnes" doctor hooks --agent codex --color never'
     deps:
       - repository:dependencies
       - arnes:install

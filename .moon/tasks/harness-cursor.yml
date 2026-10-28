@@ -44,7 +44,7 @@ tasks:
       - repository:dependencies
     toolchains: bun
   cursor-hooks:
-    script: '"$HOME/.local/bin/arnes" setup hooks --agent cursor'
+    script: '"$HOME/.local/bin/arnes" doctor hooks --agent cursor --color never'
     deps:
       - arnes:install
     checks:

@@ -56,7 +56,6 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
       env: {
         ...process.env,
         HOME: fixture.home,
-        FAKE_FAIL_ON: "doctor hooks",
         FAKE_TRACE: trace,
         MOON_HOME:
           process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
@@ -111,7 +110,7 @@ test(
       "alwaysApply: true\n---\n# Global AI Instructions",
     );
     expect(readFileSync(trace, "utf8")).toContain(
-      '"arguments":["setup","hooks","--agent","cursor"]',
+      '"arguments":["doctor","hooks","--agent","cursor","--color","never"]',
     );
     const ruleInode = lstatSync(rule).ino;
     const commonRuleInode = lstatSync(commonRule).ino;
