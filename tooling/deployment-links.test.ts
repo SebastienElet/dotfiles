@@ -9,6 +9,7 @@ import {
   runDeploymentHelper,
 } from "./deployment-test-support.ts";
 import {
+  lstatSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -23,6 +24,60 @@ afterEach(cleanupDeploymentFixtures);
 
 const deploymentTimeoutMilliseconds = 15_000;
 setDefaultTimeout(deploymentTimeoutMilliseconds);
+
+test("deploys the Cursor plugin selection through Moon and preserves its link on replay", () => {
+  const fixture = createDeploymentFixture("agent-measure");
+  const destination = join(
+    fixture.home,
+    ".config/agent-measure/cursor-plugins.json",
+  );
+  expectSuccess(runDeploymentMoon(fixture, ["home:agent-measure-config"]));
+  expect(linkTarget(destination)).toBe(
+    join(project, "home/.config/agent-measure/cursor-plugins.json"),
+  );
+  const before = fileIdentity(destination);
+  const inode = lstatSync(destination).ino;
+  const replay = runDeploymentMoon(fixture, ["home:agent-measure-config"]);
+  expect(replay).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+  expect(fileIdentity(destination)).toEqual(before);
+  expect(lstatSync(destination).ino).toBe(inode);
+});
+
+test("refuses an existing Cursor plugin selection without changing its contents", () => {
+  const fixture = createDeploymentFixture("agent-measure-file");
+  const destination = join(
+    fixture.home,
+    ".config/agent-measure/cursor-plugins.json",
+  );
+  mkdirSync(join(fixture.home, ".config/agent-measure"), { recursive: true });
+  writeFileSync(destination, '["personal-plugin"]\n');
+  const before = fileIdentity(destination);
+  const result = runDeploymentMoon(fixture, ["home:agent-measure-config"]);
+  expect(result.exitCode).not.toBe(0);
+  expect(result.stderr).toContain(
+    "exists and is not the expected symbolic link",
+  );
+  expect(fileIdentity(destination)).toEqual(before);
+});
+
+test("refuses a divergent Cursor plugin selection link without changing its target", () => {
+  const fixture = createDeploymentFixture("agent-measure-link");
+  const destination = join(
+    fixture.home,
+    ".config/agent-measure/cursor-plugins.json",
+  );
+  const foreign = join(fixture.root, "personal.json");
+  mkdirSync(join(fixture.home, ".config/agent-measure"), { recursive: true });
+  writeFileSync(foreign, '["personal-plugin"]\n');
+  symlinkSync(foreign, destination);
+  const before = fileIdentity(foreign);
+  const inode = lstatSync(destination).ino;
+  const result = runDeploymentMoon(fixture, ["home:agent-measure-config"]);
+  expect(result.exitCode).not.toBe(0);
+  expect(linkTarget(destination)).toBe(foreign);
+  expect(lstatSync(destination).ino).toBe(inode);
+  expect(fileIdentity(foreign)).toEqual(before);
+});
 test("refuses existing directories without linking inside them", () => {
   const fixture = createDeploymentFixture("existing-directory");
   const source = join(fixture.repository, "home", ".config", "fish");

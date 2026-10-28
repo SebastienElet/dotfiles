@@ -17,7 +17,6 @@ pub struct Cli {
 pub enum Command {
     OutputDiscipline,
     Sync(crate::sync_cli::SyncArgs),
-    Eval(crate::eval_cli::EvalArgs),
     Export {
         #[arg(long)]
         check: bool,

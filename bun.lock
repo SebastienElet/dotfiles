@@ -5,6 +5,7 @@
     "": {
       "name": "dotfiles",
       "dependencies": {
+        "@sebastienelet/agent-experiments": "0.0.1",
         "@sebastienelet/agent-handoff": "0.0.2",
         "@sebastienelet/agent-reach-adapter": "0.0.1",
         "@sebastienelet/agent-skills": "0.2.0",
@@ -255,6 +256,12 @@
     "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.89.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-saFy07cO94E664glwgLmKLI40HgTL1PY86y4T6+ud4niX4H0Kdqjcmqmjps7mQNdBytV5guGbXDdyQtRfeLbLA=="],
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.89.0", "", { "os": "win32", "cpu": "x64" }, "sha512-hLFJ/o0f/dTJh/EW0vmcbREYSQO9tYgfiAAlsOkiLFiJuRRWvYtFELUXN5o2ijpSo/tlO1n+YlWN58tZwPG18A=="],
+
+    "@sebastienelet/agent-experiments": ["@sebastienelet/agent-experiments@0.0.1", "", { "optionalDependencies": { "@sebastienelet/agent-experiments-darwin-arm64": "0.0.1", "@sebastienelet/agent-experiments-linux-x64-gnu": "0.0.1" }, "bin": { "agent-experiments": "bin/agent-experiments.mjs" } }, "sha512-EX3DJDQKYNRpThjGMmzYKtfPtzkeFrreJND75aJyfxc9PDkvHrJsdmlnNhEueygbylDewtXo5/t/PryhRiQc6Q=="],
+
+    "@sebastienelet/agent-experiments-darwin-arm64": ["@sebastienelet/agent-experiments-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-G4jF4WInJuxV/1QXdJRCCXei2oNhSCgzXmWfbu22CvTMAWGawwCd+0iRO51Pz8HQpgvF5gP+jPCjUmBJ0FAlLQ=="],
+
+    "@sebastienelet/agent-experiments-linux-x64-gnu": ["@sebastienelet/agent-experiments-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64", "libc": "glibc" }, "sha512-gTG8uEZO2ZelvnY8o6XrovL72N8hpjo2iSs4yuUnaYxXMJGtkan9fwClkweD9s1I1o+IaBswxi8tJc5QCwSClA=="],
 
     "@sebastienelet/agent-handoff": ["@sebastienelet/agent-handoff@0.0.2", "", { "dependencies": { "zod": "4.6.7" }, "optionalDependencies": { "@sebastienelet/agent-handoff-darwin-arm64": "0.0.2", "@sebastienelet/agent-handoff-linux-x64-gnu": "0.0.2" }, "bin": { "agent-handoff": "bin/agent-handoff.ts" } }, "sha512-XtA1emObCyU1yAwT1SR035g+xMyKFu2oTxSjIOUw/NNfbvzvP3qF7X9WkhrTszkxkDLA8aWWn+tp2ecd9AdtOA=="],
 

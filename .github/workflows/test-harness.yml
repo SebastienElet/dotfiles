@@ -30,13 +30,13 @@ jobs:
           filter: blob:none
       - uses: ./.github/actions/setup-moon
       - run: >-
-          moon action-graph --json harness:validate-evals harness:validate-evidence > /dev/null
+          moon action-graph --json harness:validate-evals harness:validate-evidence harness:validate-instructions > /dev/null
       - id: query
         run: |
           {
             printf 'result<<MOON_QUERY_RESULT\n'
             moon query tasks --affected remote --upstream none --downstream none \
-              --project '^harness$' --id '^(validate-evals|validate-evidence)$'
+              --project '^harness$' --id '^(validate-evals|validate-evidence|validate-instructions)$'
             printf 'MOON_QUERY_RESULT\n'
           } >> "$GITHUB_OUTPUT"
   harness:
@@ -51,7 +51,7 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: ./.github/actions/setup-moon
-      - run: moon ci --downstream none harness:validate-evals harness:validate-evidence
+      - run: moon ci --downstream none harness:validate-evals harness:validate-evidence harness:validate-instructions
 
   required:
     name: Harness required

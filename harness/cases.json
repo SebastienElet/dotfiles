@@ -4,7 +4,7 @@
     "expected": "Use exact lookup for the supplied literal.",
     "sources": [
       {
-        "path": "harness/AGENTS.md",
+        "path": "AGENTS.md",
         "heading": "Context Management"
       }
     ],
@@ -21,7 +21,7 @@
     "expected": "Read the known file without repository exploration.",
     "sources": [
       {
-        "path": "harness/AGENTS.md",
+        "path": "AGENTS.md",
         "heading": "Context Management"
       }
     ],
