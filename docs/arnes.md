@@ -22,6 +22,7 @@ arnes doctor instructions --agent claude --scope project
 
 Le lien `$HOME/.local/bin/arnes` cible `node_modules/.bin/arnes`.
 Le déploiement conserve le lien attendu et refuse une destination divergente.
+Sur un poste installé avant ce changement, supprimer le lien `~/.local/bin/arnes`, puis relancer l'installation.
 
 Les hooks s’installent manuellement. Vérifier ensuite leur configuration avec
 `moon run harness:doctor`, hors du profil d’installation.
