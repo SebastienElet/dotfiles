@@ -131,6 +131,32 @@ test.each([
   },
 );
 
+test.each([
+  {
+    path: ".claude/plugins/cache/openai-codex/codex/1.0.6/.in_use",
+    excluded: true,
+  },
+  { path: ".claude/unrelated/.in_use", excluded: false },
+] as const)(
+  "scopes the usage-marker exclusion to $path",
+  ({ path, excluded }: Readonly<{ path: string; excluded: boolean }>) => {
+    const context = changingSnapshotFixture(
+      `printf changed > "$HOME/${path}/usage"\nprintf changed > "$HOME/.claude/observed"`,
+    );
+    mkdirSync(join(context.home, path), { recursive: true });
+    writeFileSync(join(context.home, path, "usage"), "original");
+    writeFileSync(join(context.home, ".claude/observed"), "original");
+    const result = runGate("smoke-minimal.ts", context);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr.toString()).toContain('modified: ".claude/observed"');
+    if (excluded) {
+      expect(result.stderr.toString()).not.toContain(".in_use");
+    } else {
+      expect(result.stderr.toString()).toContain(`modified: "${path}/usage"`);
+    }
+  },
+);
+
 test.each(["stdout", "stderr"])(
   "refuses repeat installation output on %s",
   (stream) => {

@@ -5,6 +5,10 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 
 const pathSchema = z.string().min(1);
+const snapshotExclusion = ".claude/plugins/cache/*/*/*/.in_use";
+const excludedSnapshotPath = new Bun.Glob(snapshotExclusion);
+const isExcludedSnapshotPath =
+  excludedSnapshotPath.match.bind(excludedSnapshotPath);
 const snapshotPaths = [
   ".agents/skills",
   ".arnes.yaml",
@@ -137,6 +141,9 @@ type HomeSnapshot = Readonly<{
 }>;
 
 function observedPaths(home: string, path: string): string[] {
+  if (isExcludedSnapshotPath(path)) {
+    return [];
+  }
   const absolute = join(home, path);
   const metadata = lstatSync(absolute, { throwIfNoEntry: false });
   if (metadata === undefined) {
@@ -152,7 +159,7 @@ function observedPaths(home: string, path: string): string[] {
 
 function snapshot(home: string): HomeSnapshot {
   const digest = archiveDigest(home, snapshotPaths, [
-    "--exclude=.claude/plugins/cache/*/*/*/.in_use",
+    `--exclude=${snapshotExclusion}`,
   ]);
   const paths = snapshotPaths.flatMap((path) => observedPaths(home, path));
   const entries = Object.fromEntries(
