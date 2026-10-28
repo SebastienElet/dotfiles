@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-set -e
-exec "$HOME/.local/share/agent-reach/python-tools/agent-reach/bin/python" "$@"

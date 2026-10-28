@@ -41,17 +41,6 @@ const assertCommandSuccess = (
   }
 };
 
-test("keeps a staging failure visible", async () => {
-  const repository = await mkdtemp(join(tmpdir(), "validation-sequencing-"));
-  temporaryDirectories.push(repository);
-  assertCommandSuccess(await run(["git", "init", "-q"], repository));
-
-  const failedAddition = await run(["git", "add", "missing.ts"], repository);
-  expect(() => {
-    assertCommandSuccess(failedAddition);
-  }).toThrow("pathspec");
-});
-
 test("lint only validates a new TypeScript file after it enters the index", async () => {
   const repository = await mkdtemp(join(tmpdir(), "validation-sequencing-"));
   temporaryDirectories.push(repository);

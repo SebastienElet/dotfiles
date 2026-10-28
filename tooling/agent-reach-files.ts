@@ -1,15 +1,5 @@
-import { dirname, join, relative, resolve, sep } from "node:path";
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  realpath,
-  rm,
-  symlink,
-  writeFile,
-} from "node:fs/promises";
+import { join, relative, resolve, sep } from "node:path";
+import { lstat, mkdir, readFile, readdir, realpath } from "node:fs/promises";
 import type { Stats } from "node:fs";
 import { z } from "zod";
 
@@ -99,32 +89,10 @@ async function preserveExisting(
   }
 }
 
-async function publishMarketplace(
-  directory: string,
-  destination: string,
-  files: readonly (readonly [string, string])[],
-): Promise<void> {
-  const staging = await mkdtemp(join(directory, ".marketplace-"));
-  let published = false;
-  try {
-    for (const [path, content] of files) {
-      await mkdir(dirname(join(staging, path)), { recursive: true });
-      await writeFile(join(staging, path), content);
-    }
-    await symlink(staging, destination);
-    published = true;
-  } finally {
-    if (!published) {
-      await rm(staging, { recursive: true, force: true });
-    }
-  }
-}
-
 export {
   ensureDirectories,
   installedFiles,
   metadata,
   preserveExisting,
-  publishMarketplace,
   regularText,
 };

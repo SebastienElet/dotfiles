@@ -102,7 +102,7 @@ or installing anything at launch. It requires that runtime and the pinned global
 rerun the installation after updating the Node pin to refresh the launcher. Installation preserves
 and reports a conflicting destination.
 
-The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.1.0) is deployed to Claude Code
+The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.2.0) is deployed to Claude Code
 and Codex with the minimal profile, and to Cursor with the optional profile. Start with
 `"$HOME/.local/bin/assertledger" --version` and
 `"$HOME/.local/bin/assertledger" doctor /path/to/repository --json`.
