@@ -20,7 +20,6 @@ const ignoredPaths = [
   /(?:^|\/)bun\.lock$/u,
   /lazy-lock\.json$/u,
   /^docs\//u,
-  /^tooling\/arnes\//u,
   /^tooling\/check-floating-sources\.ts$/u,
   /\.(?:test|integration)\.ts$/u,
   /test-(?:support|command|provider)/u,

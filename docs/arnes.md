@@ -2,52 +2,49 @@
 
 ## Usage
 
-Arnes compare le manifeste [`home/.arnes.yaml`](../home/.arnes.yaml) aux ressources
-locales de Claude Code, Codex et Cursor. Lancer les commandes depuis la racine du
-dépôt à examiner ; `HOME` doit être absolu et contenir `.arnes.yaml`.
-Moon reste l'orchestrateur d'installation. L'aide `arnes <commande> --help`
-décrit les options du binaire utilisé.
-Dans les dotfiles, Arnes sert seulement à vérifier la configuration du harnais ;
-les hooks s'installent à la main.
+Arnes vérifie la configuration de Claude Code, Codex et Cursor sans la réparer.
+Le manifeste déployé provient de
+[`home/.arnes.yaml`](../home/.arnes.yaml).
+Moon acquiert le paquet publié `@sebastienelet/arnes` à la version exacte
+déclarée dans `package.json` et verrouillée dans `bun.lock`.
 
 ## Procédure
 
-Vérifier les hooks après leur installation manuelle : `moon run harness:doctor`, hors du profil d'installation.
-
-Diagnostiquer sans réparation, puis cibler explicitement l'agent et la portée :
+Depuis le checkout canonique, déployer le lanceur publié et le manifeste :
 
 ```sh
+moon run harness:arnes
+arnes --version
 arnes doctor
 arnes doctor skills --agent codex --scope user --format json
 arnes doctor instructions --agent claude --scope project
 ```
 
-Le passage sans filtre ne couvre pas toutes les portées de toutes les ressources.
-Le JSON expose `resource`, `state`, `message`. Examiner aussi `unsupported` et les
-ressources absentes du rapport : le code `0` n'atteste pas une couverture complète.
-`drift` contribue au code `1`, `error` au code `2`, qui prime.
+Le lien `$HOME/.local/bin/arnes` cible `node_modules/.bin/arnes`.
+Le déploiement conserve le lien attendu et refuse une destination divergente.
+Sur un poste installé avant ce changement, supprimer le lien `~/.local/bin/arnes`, puis relancer l'installation.
 
-Pour observer les exécutions collectées et déclarer séparément leur résultat :
-
-```sh
-arnes measure list --without-result
-arnes measure report --format json
-arnes measure outcome RUN_ID --status pass --oracle cargo-test
-```
-
-Le silence mesure le temps depuis le dernier événement observable, sans prouver
-un blocage ou un processus vivant. Un outcome nomme un oracle externe ; Arnes
-ne l'exécute pas. Un changement d'outcome exige `--replace` et conserve l'historique.
-La rétention des mesures suit l'[ADR-043](adr/043-telemetrie-arnes-minimale-et-bornee.md).
+Les hooks s’installent manuellement. Vérifier ensuite leur configuration avec
+`moon run harness:doctor`, hors du profil d’installation.
+Ce diagnostic ne les installe pas et ne les exécute pas.
+Les évaluations appartiennent à
+[`@sebastienelet/agent-experiments`](arnes-eval.md).
 
 ## Limites et vérification
 
-Doctor observe des fichiers et configurations, sans démarrer les agents, hooks ou
-serveurs MCP. Une projection conforme ne prouve pas son chargement en session.
-Les capacités externes dépendent des racines et registres observables ; les
-inventaires indisponibles peuvent rester absents. Pour un plugin Cursor obligatoire,
-la présence structurelle suffit au contrôle et l'activation reste `unobserved`.
+Le manifeste est `$HOME/.arnes.yaml`. `ARNES_MANIFEST` permet de sélectionner
+un autre chemin absolu. Le répertoire courant définit les sources par défaut ;
+`ARNES_REPOSITORY_ROOT` et `ARNES_SOURCE_ROOT` permettent de les préciser.
+Le lien du manifeste ne suffit pas à déterminer le checkout source.
 
-`moon run arnes:test` exerce la CLI dans des dépôts et HOME temporaires sur les
-cibles macOS et Ubuntu. Ces tests ne prouvent pas l'activation des agents réels.
-Depuis un worktree, appliquer les [précautions de validation](../README.md#contributing-from-a-worktree).
+Doctor observe les fichiers sans démarrer les agents, hooks ou serveurs MCP.
+Une projection conforme ne prouve pas son chargement en session.
+Le code `0` signale un diagnostic sain, `1` une divergence et `2` une entrée
+invalide ou illisible. Examiner également les ressources non prises en charge :
+un résultat sain ne prouve pas une couverture complète.
+
+`moon run tooling:deployment-test` exerce le déploiement du lanceur publié,
+le rejeu et les collisions dans des HOME temporaires sur macOS et Ubuntu.
+Les tests internes de la CLI appartiennent au paquet Arnes.
+Depuis un worktree, appliquer les
+[précautions de validation](../README.md#contributing-from-a-worktree).

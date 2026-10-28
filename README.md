@@ -107,7 +107,7 @@ and Codex with the minimal profile, and to Cursor with the optional profile. Sta
 `"$HOME/.local/bin/assertledger" --version` and
 `"$HOME/.local/bin/assertledger" doctor /path/to/repository --json`.
 The Git `check` workflow accepts committed dependency-free JavaScript `node:test` regressions;
-it does not qualify this repository's TypeScript/Bun or Rust suites. Repository symlinks can
+Ce workflow ne qualifie pas les suites TypeScript/Bun de ce dépôt. Repository symlinks can
 also cause the static diagnostic to refuse a checkout. Execution requires an explicitly chosen
 backend; installation does not initialize projects or register an MCP server.
 
@@ -166,21 +166,20 @@ All task names below are existing Moon targets, invoked with `moon run TARGET`.
 Prerequisites include the pinned Bun toolchain and root package dependencies where
 the task uses Bun. Effects include Moon's caches in addition to those listed.
 
-| Changed zone                      | Existing Moon target(s)                                                                                   | Additional prerequisites                                    | Platforms                 | Effects / worktree constraint                                                            |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
-| Markdown, JSON, YAML              | `repository:prettier-check`                                                                               | Root package dependencies                                   | macOS, Ubuntu             | Reads files; no workstation deployment                                                   |
-| Skills and spelling configuration | `repository:cspell-check`                                                                                 | Root package CSpell                                         | macOS, Ubuntu             | Reads indexed inputs; deploys temporary configuration/dictionary links, then cleans them |
-| TypeScript                        | `repository:typescript-lint`, `repository:typescript-typecheck`, `repository:typescript-format-check`     | Root package dependencies                                   | macOS, Ubuntu             | Reads sources; lint/format require new files in the index                                |
-| Harness deterministic validation  | `harness:check`                                                                                           | Pinned Rust, rustfmt, Clippy; root package dependencies     | macOS, Ubuntu             | Cargo builds and temporary test fixtures; global Rust preparation requires a runner      |
-| Rust CLI                          | `arnes:fmt`, `arnes:clippy`, `arnes:check`, `arnes:test` (or the same targets in the owning Rust project) | Pinned Rust, rustfmt, Clippy; Bun for suites using fixtures | macOS, Ubuntu             | Cargo builds/downloads and test fixtures; inspect `repository:rust`                      |
-| Neovim / WezTerm Lua              | `repository:neovim-lint`, `repository:wezterm-lint`                                                       | Luacheck                                                    | macOS, Ubuntu             | Reads configuration; `luacheck-setup` can install globally                               |
-| Fish                              | `repository:fish-syntax`, `repository:fish-format`, `repository:fish-test`                                | Fish                                                        | macOS, Ubuntu             | Syntax/format checks and behavior fixtures; `fish-setup` can install globally            |
-| Shell helpers                     | `repository:shell-lint`                                                                                   | Shellcheck                                                  | macOS, Ubuntu             | Reads scripts; `shellcheck-setup` can install globally                                   |
-| GitHub workflows                  | `repository:workflows-lint`                                                                               | Actionlint, Shellcheck                                      | macOS, Ubuntu             | Reads workflows; both setup tasks can install globally                                   |
-| Deployment helpers                | `tooling:deployment-test`                                                                                 | Root package dependencies                                   | macOS, Ubuntu             | Temporary fixture links/configuration and installer substitutes                          |
-| Hunspell installer                | `tooling:hunspell-test`                                                                                   | Root package dependencies                                   | macOS, Ubuntu             | Temporary fixture dictionaries and simulated downloads                                   |
-| Docker integration                | `tooling:docker-smoke`                                                                                    | Running Docker daemon and image/network access              | macOS, Ubuntu with Docker | Runs containers, creates volumes and downloads images; explicit opt-in                   |
-| Full minimal installation         | `tooling:smoke-minimal`                                                                                   | Dedicated macOS runner, installer/network access            | macOS                     | Global packages and deployed user artifacts; never run from a worktree                   |
+| Changed zone                       | Existing Moon target(s)                                                                               | Additional prerequisites                         | Platforms                 | Effects / worktree constraint                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------- | ---------------------------------------------------------------------------------------- |
+| Markdown, JSON, YAML               | `repository:prettier-check`                                                                           | Root package dependencies                        | macOS, Ubuntu             | Reads files; no workstation deployment                                                   |
+| Skills and spelling configuration  | `repository:cspell-check`                                                                             | Root package CSpell                              | macOS, Ubuntu             | Reads indexed inputs; deploys temporary configuration/dictionary links, then cleans them |
+| TypeScript                         | `repository:typescript-lint`, `repository:typescript-typecheck`, `repository:typescript-format-check` | Root package dependencies                        | macOS, Ubuntu             | Reads sources; lint/format require new files in the index                                |
+| Validation déterministe du harnais | `harness:check`                                                                                       | Dépendances Bun du dépôt                         | macOS, Ubuntu             | Contrôles et fixtures temporaires                                                        |
+| Neovim / WezTerm Lua               | `repository:neovim-lint`, `repository:wezterm-lint`                                                   | Luacheck                                         | macOS, Ubuntu             | Reads configuration; `luacheck-setup` can install globally                               |
+| Fish                               | `repository:fish-syntax`, `repository:fish-format`, `repository:fish-test`                            | Fish                                             | macOS, Ubuntu             | Syntax/format checks and behavior fixtures; `fish-setup` can install globally            |
+| Shell helpers                      | `repository:shell-lint`                                                                               | Shellcheck                                       | macOS, Ubuntu             | Reads scripts; `shellcheck-setup` can install globally                                   |
+| GitHub workflows                   | `repository:workflows-lint`                                                                           | Actionlint, Shellcheck                           | macOS, Ubuntu             | Reads workflows; both setup tasks can install globally                                   |
+| Deployment helpers                 | `tooling:deployment-test`                                                                             | Root package dependencies                        | macOS, Ubuntu             | Temporary fixture links/configuration and installer substitutes                          |
+| Hunspell installer                 | `tooling:hunspell-test`                                                                               | Root package dependencies                        | macOS, Ubuntu             | Temporary fixture dictionaries and simulated downloads                                   |
+| Docker integration                 | `tooling:docker-smoke`                                                                                | Running Docker daemon and image/network access   | macOS, Ubuntu with Docker | Runs containers, creates volumes and downloads images; explicit opt-in                   |
+| Full minimal installation          | `tooling:smoke-minimal`                                                                               | Dedicated macOS runner, installer/network access | macOS                     | Global packages and deployed user artifacts; never run from a worktree                   |
 
 For a README-only change, inspect and run `repository:prettier-check`. For other
 zones, choose the relevant row and inspect its graph first. `moon run harness:check`
@@ -223,10 +222,10 @@ Placement follows [ADR-038](docs/adr/038-frontieres-home-harness-tooling.md).
 
 ## Arnes Doctor
 
-In dotfiles, Arnes is only used to check the harness configuration; install hooks manually.
-See the [Arnes guide](docs/arnes.md) for diagnosis, measurement and
-observation limits. The [documentation index](docs/README.md) also covers Agent-Reach,
-deployment cleanup and harness evaluations.
+La tâche `harness:arnes` déploie le lanceur du paquet npm publié et le manifeste.
+Les hooks sont installés manuellement ; Arnes vérifie leur configuration sans les modifier.
+Le [guide Arnes](docs/arnes.md) décrit les diagnostics et leurs limites.
+L’[index documentaire](docs/README.md) couvre aussi Agent-Reach et les évaluations du harnais.
 
 ## Harness project export
 
@@ -242,7 +241,6 @@ Upload every Markdown file from `.harness-export/`, including `00-MANIFEST.md`. 
 temporary ignored build artifact: never edit or commit it. The check command performs no writes and
 fails when local sources, bundles, or the manifest drift, or when an obsolete artifact remains.
 
-The export contains every non-ignored source under `harness/`, except the generated skills index and
-operating-system metadata, plus the canonical hook declarations in `home/.arnes.yaml`. Source
-categories are defined once in `tooling/arnes/src/export/sources.rs`; extend that selector
-and its tests to add a category, then regenerate the snapshot.
+L’export contient les sources non ignorées sous `harness/`, sauf l’index généré des skills et
+les métadonnées du système, ainsi que les déclarations de hooks dans `home/.arnes.yaml`.
+La sélection des sources et ses tests appartiennent au paquet Arnes publié.

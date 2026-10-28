@@ -124,7 +124,7 @@ test("the CI Moon task refuses a fictitious token committed then deleted", async
   );
 });
 
-test("a known fictitious AWS false positive is allowed but an adjacent token is refused", async () => {
+test("une ancienne fixture AWS est acceptée dans l’historique et un jeton voisin est refusé", async () => {
   const root = await repository();
   const path =
     "tooling/arnes/tests/measure_hook/collection_boundaries/redaction.rs";
@@ -137,7 +137,10 @@ test("a known fictitious AWS false positive is allowed but an adjacent token is 
   await writeFile(join(root, path), example);
   git(root, "add", path);
   git(root, "commit", "-qm", "known harmless fixture");
+  git(root, "rm", "-q", path);
+  git(root, "commit", "-qm", "supprimer la fixture historique");
   expect(moon(root, "secret-scan").exitCode).toBe(0);
+  await mkdir(join(root, path, ".."), { recursive: true });
   await writeFile(join(root, path), `${example}\n${token}\n`);
   git(root, "add", path);
   expect(

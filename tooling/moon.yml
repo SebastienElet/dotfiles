@@ -34,7 +34,6 @@ fileGroups:
     - deployment-test-support.ts
     - deployment-test-command.ts
     - deploy-link*.ts
-    - /tooling/arnes/moon.yml
     - check-docker-cli
     - /.moon/tasks/docker.yml
     - assemble-agent-instructions*.ts

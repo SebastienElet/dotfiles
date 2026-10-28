@@ -20,7 +20,6 @@ fileGroups:
     - .cargo/**/*
     - rust-toolchain.toml
     - .moon/toolchains.yml
-    - .moon/tasks/rust.yml
     - .moon/tasks/workstation.yml
     - .moon/tasks/javascript.yml
     - .moon/tasks/checks.yml
@@ -38,7 +37,6 @@ tasks:
     command: bun --config=/dev/null --no-env-file test --timeout 15000 --path-ignore-patterns "tooling/{deployment-*,deploy-*,assemble-agent-instructions*,install-agent-skills*,install-hunspell-dictionary*,design-claim-audit*,gitleaks.test}.ts"
     deps:
       - fish-setup
-      - rust
       - node-runtime-check
     inputs:
       - "@group(generalTypeScriptTests)"
