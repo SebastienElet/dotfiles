@@ -3,7 +3,6 @@ alias :q='exit'
 # Git aliases have been moved to home/.config/fish/conf.d/git-abbreviations.fish
 # Git abbreviations are preferred over aliases in Fish shell
 alias gpsup='git push --set-upstream origin (git branch --show-current)'
-alias oc='OCO_AI_PROVIDER="ollama" OCO_MODEL=mistral OCO_LOCAL_MODEL_LLAMA=mistral opencommit'
 alias t='tmux'
 alias tm='tmux'
 alias upgrade='~/.dotfiles/tooling/upgrade'
