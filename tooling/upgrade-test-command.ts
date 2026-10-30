@@ -18,6 +18,7 @@ const environment = z
       .string()
       .default('[{"id":"first@fixture"},{"id":"second@fixture"}]'),
     UPGRADE_LOCK: z.string().default("updated\n"),
+    UPGRADE_BREW_VERSION: z.string().default(""),
     UPGRADE_NODE_EFFECT: z.enum(["", "publication", "cleanup"]).default(""),
     REAL_GIT: z.string(),
     REAL_INSTALL: z.string(),
@@ -93,7 +94,21 @@ if (command === "bun") {
   await chmod(selected, executableMode);
 }
 if (command === "brew" && commandArguments[0] === "info") {
-  process.stdout.write('{"formulae":[],"casks":[]}\n');
+  const version = environment.UPGRADE_BREW_VERSION;
+  const formulae =
+    version === ""
+      ? []
+      : [
+          {
+            name: "awscli",
+            full_name: "awscli",
+            versions: { stable: version },
+            revision: 0,
+            linked_keg: version,
+            installed: [{ version }],
+          },
+        ];
+  process.stdout.write(`${JSON.stringify({ formulae, casks: [] })}\n`);
 }
 if (command === "date") {
   process.stdout.write("2026-09-07T00:00:00Z\n");

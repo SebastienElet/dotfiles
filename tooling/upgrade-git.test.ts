@@ -101,9 +101,13 @@ test.each(["main", "master", "trunk"])(
 
 test("commits the refreshed Homebrew lockfile without unrelated changes", async () => {
   const fixture = await upgradeFixture();
+  await Bun.write(
+    join(fixture.repository, "homebrew.lock.json"),
+    '{"formulae":{"awscli":"1.0.0"},"casks":{}}\n',
+  );
   await Bun.write(join(fixture.repository, "unrelated"), "staged\n");
   await fixture.git("add", "unrelated");
-  const result = await fixture.run();
+  const result = await fixture.run({ UPGRADE_BREW_VERSION: "2.0.0" });
   expect(result.status).toBe(0);
   const commit = await fixture.git(
     "log",

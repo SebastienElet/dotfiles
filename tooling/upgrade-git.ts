@@ -131,7 +131,7 @@ async function commitLockfile(
     () => repositoryExists(repository),
   );
   if (repositoryState.state !== "succeeded" || !repositoryState.value) {
-    runner.skip(action, "~/.dotfiles not a git repo");
+    runner.skip(action, "repository unavailable");
     return;
   }
   if (!(await onMainBranch(runner, repository, action))) {

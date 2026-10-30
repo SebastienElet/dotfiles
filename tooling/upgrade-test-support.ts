@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 const repositoryRoot = join(import.meta.dir, "..");
 const temporaryRoots: string[] = [];
 const executableMode = 0o755;
+const jsonIndentation = 2;
 const realGit = Bun.which("git") ?? "git";
 
 interface CommandResult {
@@ -158,7 +159,7 @@ async function prepareFixtureFiles(
   );
   await Bun.write(
     join(repository, "homebrew.lock.json"),
-    '{"formulae":{},"casks":{}}\n',
+    `${JSON.stringify({ formulae: {}, casks: {} }, null, jsonIndentation)}\n`,
   );
   await symlink(
     join(repositoryRoot, "node_modules"),

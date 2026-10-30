@@ -34,34 +34,22 @@ function homebrewLockCommand(
   ];
 }
 
-async function refreshHomebrewLock(
-  runner: UpgradeRunner,
-  repository: string,
-  metadataAvailable: boolean,
-): Promise<void> {
-  if (metadataAvailable) {
-    const refreshed = await runner.command(
-      "Homebrew lock refresh",
-      homebrewLockCommand(repository, "refresh"),
-    );
-    if (refreshed.state === "succeeded") {
-      await commitHomebrewLockfile(runner, repository);
-    } else {
-      runner.skip("Homebrew lockfile commit", "lock refresh did not succeed");
-    }
-  } else {
-    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
-    runner.skip("Homebrew lockfile commit", "lock refresh did not succeed");
-  }
-}
-
-async function upgradePackages(
+async function upgradeHomebrewPackages(
   runner: UpgradeRunner,
   repository: string,
 ): Promise<void> {
   process.stdout.write("ℹ️  Brew\n");
   const metadata = await runner.command("Brew metadata", ["brew", "update"]);
-  await refreshHomebrewLock(runner, repository, metadata.state === "succeeded");
+  const refreshed =
+    metadata.state === "succeeded"
+      ? await runner.command(
+          "Homebrew lock refresh",
+          homebrewLockCommand(repository, "refresh"),
+        )
+      : undefined;
+  if (refreshed === undefined) {
+    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
+  }
   await runner.command("Brew packages", [
     "brew",
     "upgrade",
@@ -75,14 +63,31 @@ async function upgradePackages(
     "--greedy",
     "--yes",
   ]);
-  if (metadata.state === "not-attempted") {
+  const verified =
+    metadata.state === "not-attempted"
+      ? undefined
+      : await runner.command(
+          "Homebrew lock verification",
+          homebrewLockCommand(repository, "verify-installed"),
+        );
+  if (verified === undefined) {
     runner.skip("Homebrew lock verification", "Homebrew unavailable");
+  }
+  if (refreshed?.state === "succeeded" && verified?.state === "succeeded") {
+    await commitHomebrewLockfile(runner, repository);
   } else {
-    await runner.command(
-      "Homebrew lock verification",
-      homebrewLockCommand(repository, "verify-installed"),
+    runner.skip(
+      "Homebrew lockfile commit",
+      "lock refresh and verification did not succeed",
     );
   }
+}
+
+async function upgradePackages(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  await upgradeHomebrewPackages(runner, repository);
   await runner.command("Brew cleanup", ["brew", "cleanup", "-s"], {
     env: { HOMEBREW_CLEANUP_MAX_AGE_DAYS: "7" },
   });
