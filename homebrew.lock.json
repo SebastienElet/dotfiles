@@ -1,7 +1,7 @@
 {
   "formulae": {
     "actionlint": "1.7.12",
-    "awscli": "2.38.6_1",
+    "awscli": "2.39.1",
     "bat": "0.26.1",
     "bottom": "0.14.9",
     "broot": "1.61.0",
@@ -39,7 +39,7 @@
     "uv": "0.13.6",
     "vale": "3.25.1",
     "volta": "2.0.2",
-    "yt-dlp": "2026.10.21_1",
+    "yt-dlp": "2026.10.26",
     "zoxide": "0.10.0"
   },
   "casks": {
@@ -52,9 +52,9 @@
     "entireio/tap/entire": "0.12.2",
     "font-jetbrains-mono-nerd-font": "3.5.1",
     "google-chrome": "156.0.8078.74",
-    "grok-bot": "0.77.0",
+    "grok-bot": "0.78.1",
     "handy": "0.9.8",
-    "helium-browser": "0.20.1.1",
+    "helium-browser": "0.20.2.1",
     "languagetool-desktop": "3.4.1",
     "obsidian": "1.14.5",
     "orbstack": "2.2.5,21124",

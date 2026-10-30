@@ -15,233 +15,129 @@ agents:
   - id: codex
     scopes: [user, project]
     user_config:
-      model: gpt-5.6-sol
+      model: gpt-6.1-sol
       effort: high
       context_window: 512000
 skills:
   - slug: design-taste-frontend
     source: node_modules/@sebastienelet/agent-skills/skills/design-taste-frontend
-    installations:
+    installations: &user-skill-installations
       - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - slug: bug-fix
     source: node_modules/@sebastienelet/agent-skills/skills/bug-fix
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: implement
     source: node_modules/@sebastienelet/agent-skills/skills/implement
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: orchestrate
     source: node_modules/@sebastienelet/agent-skills/skills/orchestrate
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: plan
     source: node_modules/@sebastienelet/agent-skills/skills/plan
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: assertledger
     source: node_modules/@sebastienelet/agent-skills/skills/assertledger
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: prepare-next
     source: node_modules/@sebastienelet/agent-skills/skills/prepare-next
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: visual-explanation
     source: node_modules/@sebastienelet/agent-skills/skills/visual-explanation
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: archify
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: wayfinder
     source: node_modules/@sebastienelet/agent-skills/skills/wayfinder
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: improve-codebase-architecture
     source: node_modules/@sebastienelet/agent-skills/skills/improve-codebase-architecture
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: grill-me
     source: node_modules/@sebastienelet/agent-skills/skills/grill-me
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: grilling
     source: node_modules/@sebastienelet/agent-skills/skills/grilling
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: tdd
     source: node_modules/@sebastienelet/agent-skills/skills/tdd
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: diagnosing-bugs
     source: node_modules/@sebastienelet/agent-skills/skills/diagnosing-bugs
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: code-review
     source: node_modules/@sebastienelet/agent-skills/skills/code-review
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: code-review-fix
     source: node_modules/@sebastienelet/agent-skills/skills/code-review-fix
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: codebase-design
     source: node_modules/@sebastienelet/agent-skills/skills/codebase-design
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: output-discipline
     source: node_modules/@sebastienelet/agent-skills/skills/output-discipline
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: prose-edit
     source: node_modules/@sebastienelet/agent-skills/skills/prose-edit
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: agent-instructions
     source: node_modules/@sebastienelet/agent-skills/skills/agent-instructions
-    installations:
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: claude-developer
     source: node_modules/@sebastienelet/agent-skills/skills/claude-developer
-    installations:
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: harness-reflection
     source: node_modules/@sebastienelet/agent-skills/skills/harness-reflection
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: harness-simplify
     source: node_modules/@sebastienelet/agent-skills/skills/harness-simplify
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: code-enforcement
     source: node_modules/@sebastienelet/agent-skills/skills/code-enforcement
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: pr-verdict
     source: node_modules/@sebastienelet/agent-skills/skills/pr-verdict
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: pr-fix
     source: node_modules/@sebastienelet/agent-skills/skills/pr-fix
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: pr-feedback
     source: node_modules/@sebastienelet/agent-skills/skills/pr-feedback
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: code-simplify
     source: node_modules/@sebastienelet/agent-skills/skills/code-simplify
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: design-claim-audit
     source: node_modules/@sebastienelet/agent-skills/skills/design-claim-audit
-    installations:
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: skill-manager
     source: node_modules/@sebastienelet/agent-skills/skills/skill-manager
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: issue-spec
     source: node_modules/@sebastienelet/agent-skills/skills/issue-spec
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: issue-workflow
     source: node_modules/@sebastienelet/agent-skills/skills/issue-workflow
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: issue-start
     source: node_modules/@sebastienelet/agent-skills/skills/issue-start
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: issue-sync
     source: node_modules/@sebastienelet/agent-skills/skills/issue-sync
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: obsidian-retrieval
     source: node_modules/@sebastienelet/agent-skills/skills/obsidian-retrieval
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: issue-creation
     source: node_modules/@sebastienelet/agent-skills/skills/issue-creation
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: workflow-automation
     source: node_modules/@sebastienelet/agent-skills/skills/workflow-automation
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
   - slug: requirements-clarification
     source: node_modules/@sebastienelet/agent-skills/skills/requirements-clarification
-    installations:
-      - { agent: claude, scope: user }
-      - { agent: cursor, scope: user }
-      - { agent: codex, scope: user }
+    installations: *user-skill-installations
 hooks:
   - id: output-discipline
     installations:
@@ -281,6 +177,9 @@ external:
         required: true,
       }
     - { agent: cursor, scope: user, id: agent-reach, required: true }
+    - { agent: codex, scope: user, id: browser@openai-bundled }
+    - { agent: codex, scope: user, id: visualize@openai-bundled }
+    - { agent: cursor, scope: user, id: dotfiles-harness }
     - { agent: codex, scope: user, id: chrome@openai-bundled }
     - { agent: codex, scope: user, id: code-review@openai-bundled }
     - { agent: codex, scope: user, id: codex-app-tools@openai-bundled }
@@ -290,6 +189,11 @@ external:
     - { agent: codex, scope: user, id: sites@openai-bundled }
     - { agent: codex, scope: user, id: unified-computer-use@openai-bundled }
   skills:
+    - { agent: claude, scope: user, origin: managed, slug: autoproject }
+    - { agent: codex, scope: user, origin: managed, slug: autoproject }
+    - { agent: claude, scope: user, origin: managed, slug: pr-consolidate }
+    - { agent: cursor, scope: user, origin: managed, slug: pr-consolidate }
+    - { agent: codex, scope: user, origin: managed, slug: pr-consolidate }
     - { agent: claude, scope: user, origin: managed, slug: handoff }
     - { agent: codex, scope: user, origin: managed, slug: handoff }
     - {
@@ -380,16 +284,35 @@ statuslines:
       - context-used
       - context-window-size
 mcp:
-  - name: context7
+  - name: context7-http
     agent: codex
     scope: user
     url: https://mcp.context7.com/mcp
+  - name: linear
+    agent: codex
+    scope: user
+    url: https://mcp.linear.app/mcp
+  - name: datadog
+    agent: codex
+    scope: user
+    url: https://mcp.datadoghq.com/v1/mcp
+    enabled: false
   - name: apple-notes
     agent: claude
     scope: project
     command: /Applications/Apple Notes Exporter.app/Contents/SharedSupport/notes-export-mcp
     enabled: true
 resources:
+  - id: cursor-user-plugin-manifest
+    kind: config
+    agent: cursor
+    scope: user
+    source:
+      root: repository
+      path: home/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json
+    destination:
+      root: home
+      path: .cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json
   - id: claude-user-instructions
     kind: instructions
     agent: claude
