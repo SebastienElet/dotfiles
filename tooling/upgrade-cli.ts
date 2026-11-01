@@ -1,4 +1,8 @@
-import { commitNeovimLockfile, upgradeRepository } from "./upgrade-git.ts";
+import {
+  commitHomebrewLockfile,
+  commitNeovimLockfile,
+  upgradeRepository,
+} from "./upgrade-git.ts";
 import type { UpgradeRunner } from "./upgrade-runner.ts";
 import { createUpgradeRunner } from "./upgrade-runner.ts";
 import { join } from "node:path";
@@ -30,20 +34,34 @@ function homebrewLockCommand(
   ];
 }
 
+async function refreshHomebrewLock(
+  runner: UpgradeRunner,
+  repository: string,
+  metadataAvailable: boolean,
+): Promise<void> {
+  if (metadataAvailable) {
+    const refreshed = await runner.command(
+      "Homebrew lock refresh",
+      homebrewLockCommand(repository, "refresh"),
+    );
+    if (refreshed.state === "succeeded") {
+      await commitHomebrewLockfile(runner, repository);
+    } else {
+      runner.skip("Homebrew lockfile commit", "lock refresh did not succeed");
+    }
+  } else {
+    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
+    runner.skip("Homebrew lockfile commit", "lock refresh did not succeed");
+  }
+}
+
 async function upgradePackages(
   runner: UpgradeRunner,
   repository: string,
 ): Promise<void> {
   process.stdout.write("ℹ️  Brew\n");
   const metadata = await runner.command("Brew metadata", ["brew", "update"]);
-  if (metadata.state === "succeeded") {
-    await runner.command(
-      "Homebrew lock refresh",
-      homebrewLockCommand(repository, "refresh"),
-    );
-  } else {
-    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
-  }
+  await refreshHomebrewLock(runner, repository, metadata.state === "succeeded");
   await runner.command("Brew packages", [
     "brew",
     "upgrade",

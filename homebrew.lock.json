@@ -1,9 +1,9 @@
 {
   "formulae": {
     "actionlint": "1.7.12",
-    "awscli": "2.39.1",
+    "awscli": "2.39.3",
     "bat": "0.26.1",
-    "bottom": "0.14.9",
+    "bottom": "0.15.0",
     "broot": "1.61.0",
     "bun": "1.4.4_1",
     "eza": "0.23.5",
@@ -37,28 +37,28 @@
     "tmux": "3.8",
     "tokei": "15.0.0",
     "uv": "0.13.6",
-    "vale": "3.25.1",
+    "vale": "3.26.0",
     "volta": "2.0.2",
     "yt-dlp": "2026.10.26",
     "zoxide": "0.10.0"
   },
   "casks": {
     "calibre": "9.17.0",
-    "chatgpt": "26.1023.51421",
-    "codexbar": "0.82.0",
+    "chatgpt": "26.1027.51404",
+    "codexbar": "0.83.0",
     "cursor-cli": "2026.10.22-27dcf5f",
     "discord": "0.0.420",
     "dopplerhq/cli/doppler": "3.77.1",
     "entireio/tap/entire": "0.12.2",
     "font-jetbrains-mono-nerd-font": "3.5.1",
-    "google-chrome": "156.0.8078.74",
+    "google-chrome": "156.0.8078.80",
     "grok-bot": "0.78.1",
     "handy": "0.9.8",
-    "helium-browser": "0.20.2.1",
+    "helium-browser": "0.20.3.1",
     "languagetool-desktop": "3.4.1",
     "obsidian": "1.14.5",
     "orbstack": "2.2.5,21124",
     "vibe-island": "1.0.55",
-    "whatsapp": "26.43.20"
+    "whatsapp": "26.43.27"
   }
 }
