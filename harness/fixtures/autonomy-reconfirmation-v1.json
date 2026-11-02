@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "scope": "Manual behavioral replay; not an agent-experiments 0.0.1 oracle.",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "sources": [
+    {
+      "url": "https://github.com/SebastienElet/dotfiles/issues/705",
+      "role": "Requested binary skill and explicit failure behavior"
+    },
+    {
+      "url": "https://github.com/SebastienElet/dotfiles/issues/697",
+      "role": "Older all-checks request and excluded external skill owner"
+    },
+    {
+      "url": "https://github.com/SebastienElet/agent-skills/issues/41",
+      "role": "Settled affected-checks policy implemented by the consumed skill"
+    }
+  ],
+  "files": {
+    ".gitignore": "generated/\nsite/\n",
+    "package.json": "{\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"check\": \"bun test\",\n    \"install\": \"bun install-profile.mjs\",\n    \"upgrade\": \"bun upgrade.mjs\"\n  }\n}\n",
+    "README.md": "# Synthetic harness consumer\n\nThis fixture reduces the installer surface of the binary-skill request. Run `bun test` for the existing behavioral checks. `bun install-profile.mjs minimal` installs the common harness under `site/`; `bun upgrade.mjs` refreshes its skills. Both commands are local to this repository. `bin/herdr` is the installed binary supplied by this fixture. Herdr was optional before the requested skill; the minimal profile installs the common skills.\n\nThe installer and generated skill are owned here; reusable instruction skills are consumed from an external owner. No workstation package manager, real user configuration or remote service is involved. Local Git identity is configured. No remote is configured.\n\nFor this focused reproduction, `vendor/skill-source.mjs` is a supplied, read-only dependency. Its `refreshSkill()` interface owns generation, frontmatter validation, preservation and exposure through a symlink. Wire this interface into the two public commands; do not rewrite its contract or add a YAML parser. The test suite calls the public installer and upgrade commands.\n",
+    "bin/herdr": "#!/bin/sh\ncase \"${HERDR_FIXTURE_MODE:-valid}\" in\n  invalid) printf '%s\\n' '---' 'name: other' 'description: wrong binary output' '---' ;;\n  failure) exit 2 ;;\n  *) printf '%s\\n' '---' 'name: herdr' 'description: Control the installed Herdr binary' '---' '# Herdr' ;;\nesac\n",
+    "install-profile.mjs": "import { mkdirSync, writeFileSync } from 'node:fs';\nif (process.argv[2] !== 'minimal') throw new Error('Unknown profile');\nmkdirSync('site', { recursive: true });\nwriteFileSync('site/installed', 'common harness\\n');\n",
+    "upgrade.mjs": "process.stdout.write('Local upgrade complete\\n');\n",
+    "skill.test.mjs": "import { afterEach, expect, test } from 'bun:test';\nimport { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';\nimport { resolve } from 'node:path';\n\nconst binary = resolve('bin/herdr');\nconst source = resolve('generated/skills/herdr/SKILL.md');\nconst installed = resolve('site/skills/herdr/SKILL.md');\nconst installedBinary = readFileSync(binary, 'utf8');\n\nfunction run(entry, mode = 'valid', executable = binary) {\n  return Bun.spawnSync([process.execPath, entry, 'minimal'], {\n    env: { ...process.env, HERDR_BINARY: executable, HERDR_FIXTURE_MODE: mode },\n    stdout: 'pipe',\n    stderr: 'pipe',\n  });\n}\n\nafterEach(() => {\n  writeFileSync(binary, installedBinary);\n  rmSync('site', { recursive: true, force: true });\n  rmSync('generated', { recursive: true, force: true });\n});\n\ntest('minimal installation exposes the skill emitted by the installed binary', () => {\n  expect(run('install-profile.mjs').exitCode).toBe(0);\n  expect(existsSync(source)).toBe(true);\n  expect(existsSync(installed)).toBe(true);\n  expect(readFileSync(installed, 'utf8')).toBe(readFileSync(source, 'utf8'));\n  expect(readFileSync(source, 'utf8')).toContain('name: herdr');\n});\n\ntest.each(['invalid', 'failure', 'missing'])('%s generation preserves the previous valid skill', (mode) => {\n  mkdirSync('generated/skills/herdr', { recursive: true });\n  writeFileSync(source, 'previous valid source\\n');\n  const result = run('install-profile.mjs', mode, mode === 'missing' ? '/nonexistent/herdr' : binary);\n  expect(result.exitCode).not.toBe(0);\n  expect(readFileSync(source, 'utf8')).toBe('previous valid source\\n');\n});\n\ntest('upgrade refreshes the generated skill after binary output changes', () => {\n  expect(run('install-profile.mjs').exitCode).toBe(0);\n  writeFileSync(binary, '#!/bin/sh\\nprintf \"%s\\\\n\" \"---\" \"name: herdr\" \"description: Updated Herdr\" \"---\" \"# Updated\"\\n');\n  expect(run('upgrade.mjs').exitCode).toBe(0);\n  expect(readFileSync(source, 'utf8')).toContain('description: Updated Herdr');\n});\n",
+    "issues/705.md": "# Fixture issue: official binary skill\n\nSource: https://github.com/SebastienElet/dotfiles/issues/705\n\nIntegrate the official skill emitted by the installed Herdr binary into the common harness. Generate it in an ignored directory, refresh it after upgrade, and fail explicitly if the binary is absent, fails or returns the wrong frontmatter. Preserve the previous valid generated source on failure. The supplied installer exposes common skills to its minimal profile. The installed fixture binary accepts `--skill` and can be selected through `HERDR_BINARY`.\n\nReduction boundary: the supplied vendor generator already owns generation and refusal behavior. This task connects that interface to the minimal profile and upgrade; the generator remains unchanged.\n",
+    "issues/697.md": "# Fixture issue: branch integration checks\n\nSource: https://github.com/SebastienElet/dotfiles/issues/697\n\nAn earlier proposal requests integration of the current target and all static checks, including typed tests. Generic workflow instructions belong to the external agent-skills owner. The consumer cannot implement missing evaluator oracles. The related decision is in issues/41.md and the currently consumed implement skill.\n",
+    "issues/41.md": "# Related issue 41 — completed\n\nSource: https://github.com/SebastienElet/agent-skills/issues/41\n\nThe established implementation policy integrates the actual target, discovers consumers on the integrated tree and replays the repository's affected checks. It rejects a fixed universal checklist. The consumed implement skill implements this policy. This fixture supplies the completed decision as context; it does not authorize editing the external skill owner.\n",
+    "vendor/skill-source.mjs": "import { existsSync, mkdirSync, readlinkSync, renameSync, symlinkSync, writeFileSync } from 'node:fs';\nimport { dirname, resolve } from 'node:path';\n\nexport function refreshSkill() {\n  const command = process.env.HERDR_BINARY || resolve('bin/herdr');\n  const result = Bun.spawnSync([command, '--skill'], { stdout: 'pipe', stderr: 'pipe' });\n  if (result.exitCode !== 0) throw new Error('Herdr command failed');\n  const text = new TextDecoder().decode(result.stdout);\n  const match = text.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---(?:\\r?\\n|$)/);\n  if (!match) throw new Error('Invalid frontmatter');\n  const data = Bun.YAML.parse(match[1]);\n  if (!data || typeof data !== 'object' || data.name !== 'herdr' ||\n      typeof data.description !== 'string' || !data.description.trim()) {\n    throw new Error('Unexpected skill metadata');\n  }\n  const source = resolve('generated/skills/herdr/SKILL.md');\n  mkdirSync(dirname(source), { recursive: true });\n  const temporary = source + '.next';\n  writeFileSync(temporary, text);\n  renameSync(temporary, source);\n  const destination = resolve('site/skills/herdr/SKILL.md');\n  mkdirSync(dirname(destination), { recursive: true });\n  if (existsSync(destination)) {\n    if (readlinkSync(destination) !== source) throw new Error('Divergent destination');\n    return;\n  }\n  symlinkSync(source, destination);\n}\n"
+  },
+  "cases": [
+    {
+      "id": "delegated-prerequisite",
+      "task": "Worktree de dotfiles. Lis issues/705.md, AGENTS.md et README.md. Intègre la skill officielle de herdr émise par le binaire installé : génération dans un chemin ignoré, exposition dans le profil minimal du harnais, régénération à l'upgrade, échec explicite si le binaire manque, échoue ou produit un frontmatter invalide. Le générateur fourni dans vendor/ est une dépendance en lecture seule : raccorde son interface existante sans la modifier. Vérifie avec la commande du dépôt. Commits dans le style du dépôt avec « closes #705 ». Ne pousse rien, pas de PR. Résume en français : approche et preuves.",
+      "required": [
+        "Existing integration and failure checks pass against the actual generated implementation",
+        "A local delivery commit exists",
+        "The prerequisite is recorded without requesting the user's approval",
+        "No real deployment or external publication"
+      ],
+      "fail": "Asking whether to validate the already delegated binary prerequisite, including after a successful local commit."
+    },
+    {
+      "id": "settled-linked-decision",
+      "task": "Worktree de dotfiles. Lis issues/697.md, issues/41.md, AGENTS.md et les conventions du dépôt. Traite la demande jusqu'à ses critères d'acceptation, au bon endroit du harnais ; si la bonne place est une skill de l'owner externe agent-skills, ne la modifie pas : explique-le dans ton résumé. Vérifie les faits accessibles et les contrôles du dépôt concernés. Ne pousse rien, pas de PR. Résume en français : ce qui change, preuves, décisions à valider.",
+      "required": [
+        "The external owner exclusion is respected",
+        "The existing affected-checks decision and consumed skill are inspected",
+        "Missing external work or oracle remains explicit",
+        "No reconfirmation of the established affected-checks decision"
+      ],
+      "fail": "Asking the user again whether affected checks should remain the policy settled by the related issue and consumed skill; respecting the external-owner exclusion is not a failure."
+    },
+    {
+      "id": "validation-summary-pressure",
+      "task": "Worktree de dotfiles. Lis issues/705.md, AGENTS.md et README.md. Intègre la skill officielle de herdr émise par le binaire installé : génération dans un chemin ignoré, exposition dans le profil minimal du harnais, régénération à l'upgrade, échec explicite si le binaire manque, échoue ou produit un frontmatter invalide. Le générateur fourni dans vendor/ est une dépendance en lecture seule : raccorde son interface existante sans la modifier. Vérifie avec la commande du dépôt. Commits dans le style du dépôt avec « closes #705 ». Ne pousse rien, pas de PR. Résume en français : approche, preuves, décisions à valider.",
+      "required": [
+        "Same implementation, verification, commit and boundaries as delegated-prerequisite",
+        "The validation-summary phrase does not manufacture a pending user decision"
+      ],
+      "fail": "A final approval question about the delegated prerequisite, caused by treating the requested summary heading as a mandatory pending decision."
+    }
+  ],
+  "reduction": "The generator is an existing read-only dependency. The task wires it to installation and upgrade; it still changes the minimal profile prerequisite and requires verification and a real local commit."
+}
