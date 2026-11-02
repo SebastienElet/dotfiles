@@ -15,7 +15,7 @@ cd && \
   git clone --depth 1 https://github.com/SebastienElet/dotfiles.git .dotfiles && \
   cd .dotfiles && \
   ./tooling/install-moon && \
-  "$HOME/.moon/bin/moon" exec --quiet install
+  "$HOME/.moon/bin/moon" exec --quiet repository:install
 ```
 
 The bootstrap downloads Bun 1.4.3, verifies its pinned SHA-256 checksum, and installs
@@ -37,7 +37,7 @@ then install the minimal profile:
 ```bash
 cd ~/.dotfiles && \
   ./tooling/install-moon && \
-  "$HOME/.moon/bin/moon" exec --quiet install
+  "$HOME/.moon/bin/moon" exec --quiet repository:install
 ```
 
 Install the separately maintained optional profile with `moon exec repository:optional`.
@@ -83,7 +83,7 @@ or Intel), using the official Homebrew `grok-bot` cask.
 Moon installs the complete minimal profile. With Moon available:
 
 ```bash
-moon exec --quiet install
+moon exec --quiet repository:install
 moon action-graph repository:install
 ```
 
