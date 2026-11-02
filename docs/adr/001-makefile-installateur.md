@@ -14,7 +14,7 @@ certains outils et exécutaient leurs contrôles directement.
 ## Décision
 
 Moon est l'orchestrateur unique pour l'installation et les tâches de développement.
-Le point d'entrée `moon exec --quiet install` porte le profil minimal complet ; `check`
+Le point d'entrée `moon exec --quiet repository:install` porte le profil minimal complet ; `check`
 et `test` agrègent les contrôles statiques et comportementaux.
 Une tâche appelle directement sa commande, jamais une cible Make.
 
