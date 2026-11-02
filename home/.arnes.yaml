@@ -48,6 +48,9 @@ skills:
     installations: *user-skill-installations
   - slug: archify
     installations: *user-skill-installations
+  - slug: herdr
+    source: harness/generated/skills/herdr
+    installations: *user-skill-installations
   - slug: wayfinder
     source: node_modules/@sebastienelet/agent-skills/skills/wayfinder
     installations: *user-skill-installations

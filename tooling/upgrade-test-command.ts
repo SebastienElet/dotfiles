@@ -19,6 +19,11 @@ const environment = z
       .default('[{"id":"first@fixture"},{"id":"second@fixture"}]'),
     UPGRADE_LOCK: z.string().default("updated\n"),
     UPGRADE_BREW_VERSION: z.string().default(""),
+    UPGRADE_HERDR_SKILL: z
+      .string()
+      .default(
+        '---\nname: herdr\ndescription: "Control Herdr"\n---\n# Herdr\n',
+      ),
     UPGRADE_NODE_EFFECT: z.enum(["", "publication", "cleanup"]).default(""),
     REAL_GIT: z.string(),
     REAL_INSTALL: z.string(),
@@ -46,6 +51,20 @@ if (command === "git") {
     stderr: "inherit",
   });
   process.exit(await child.exited);
+}
+if (invocation === "brew upgrade --formula --yes") {
+  await Bun.write(
+    join(environment.HOME, "herdr-skill"),
+    environment.UPGRADE_HERDR_SKILL,
+  );
+}
+if (invocation === "herdr --skill") {
+  const skill = Bun.file(join(environment.HOME, "herdr-skill"));
+  process.stdout.write(
+    (await skill.exists())
+      ? await skill.text()
+      : environment.UPGRADE_HERDR_SKILL,
+  );
 }
 if (command === "uname") {
   process.stdout.write(commandArguments[0] === "-s" ? "Darwin\n" : "arm64\n");

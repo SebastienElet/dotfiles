@@ -6,6 +6,7 @@ import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
+  createHarnessDeploymentFixture,
   project,
   requireCommand,
 } from "../deployment-test-support.ts";
@@ -19,6 +20,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { runDeploymentMoon } from "../deployment-moon-runner.ts";
+import { withoutMoonTaskContext } from "../deployment-moon-test-support.ts";
 
 const cursorDeploymentAndReplayTimeout = 30_000;
 const doctorFailureStatus = 9;
@@ -29,7 +31,7 @@ function cursorFixture(): Readonly<{
   fixture: DeploymentFixture;
   trace: string;
 }> {
-  const fixture = createDeploymentFixture("optional-cursor");
+  const fixture = createHarnessDeploymentFixture("optional-cursor");
   const trace = join(fixture.root, "arnes-trace");
   const arnes = join(fixture.home, ".local", "bin", "arnes");
   mkdirSync(dirname(arnes), { recursive: true });
@@ -53,9 +55,9 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
       "harness:cursor",
     ],
     {
-      cwd: project,
+      cwd: fixture.workspace,
       env: {
-        ...process.env,
+        ...withoutMoonTaskContext(process.env),
         HOME: fixture.home,
         FAKE_FAIL_ON: "doctor hooks",
         FAKE_TRACE: trace,
@@ -93,18 +95,18 @@ test(
 
     expect(runCursor(fixture, trace).exitCode).toBe(0);
     expect(readlinkSync(rule)).toBe(
-      join(project, "harness", "visual-presentation.md"),
+      join(fixture.workspace, "harness", "visual-presentation.md"),
     );
     expect(readlinkSync(skill)).toBe(
       join(
-        project,
+        fixture.workspace,
         "node_modules/@sebastienelet/agent-skills/skills/skill-manager",
       ),
     );
     expect(lstatSync(plugin).isDirectory()).toBeTrue();
     expect(readlinkSync(join(plugin, ".cursor-plugin/plugin.json"))).toBe(
       join(
-        project,
+        fixture.workspace,
         "home/.cursor/plugins/local/dotfiles-harness/.cursor-plugin/plugin.json",
       ),
     );

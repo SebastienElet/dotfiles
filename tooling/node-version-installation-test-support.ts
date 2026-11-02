@@ -91,6 +91,10 @@ async function createUpgradeFakes(
     await writeExecutable(join(bin, command), "exit 0");
   }
   await writeExecutable(
+    join(bin, "herdr"),
+    String.raw`printf '%s\n' '---' 'name: herdr' 'description: "Control Herdr"' '---' '# Herdr'`,
+  );
+  await writeExecutable(
     join(bin, "brew"),
     String.raw`if [ "$1" = info ]; then printf '%s\n' '{"formulae":[],"casks":[]}'; fi`,
   );

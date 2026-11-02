@@ -196,6 +196,7 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
       name === "install-moon" ||
       name === "node-version-contract.ts" ||
       name === "homebrew-lock.ts" ||
+      name === "generate-herdr-skill.ts" ||
       (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );
   for (const file of files) {
@@ -216,6 +217,7 @@ async function installFakeCommands(bin: string, home: string): Promise<void> {
   for (const command of [
     "git",
     "brew",
+    "herdr",
     "mas",
     "volta",
     "npm",

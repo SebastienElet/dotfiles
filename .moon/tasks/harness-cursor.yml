@@ -41,4 +41,5 @@ tasks:
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/proof-integrity-review/skills/proof-integrity-review" "$HOME/.cursor/skills/proof-integrity-review"
     deps:
       - repository:dependencies
+      - repository:herdr-setup
     toolchains: bun

@@ -1,10 +1,12 @@
 import {
   chmodSync,
+  cpSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -16,6 +18,7 @@ type DeploymentFixture = Readonly<{
   home: string;
   repository: string;
   bin: string;
+  workspace: string;
 }>;
 
 type CommandResult = Readonly<{
@@ -36,13 +39,69 @@ function createDeploymentFixture(name: string): DeploymentFixture {
     home: join(root, "home"),
     repository: join(root, "repository"),
     root,
+    workspace: project,
   };
   fixtures.push(root);
   mkdirSync(fixture.home, { recursive: true });
   prepareMoonCompilationCache(fixture.home);
   mkdirSync(fixture.repository, { recursive: true });
   mkdirSync(fixture.bin, { recursive: true });
+  const herdr = join(fixture.bin, "herdr");
+  writeFileSync(
+    herdr,
+    `#!${process.execPath}\nprocess.stdout.write('---\\nname: herdr\\ndescription: "Control Herdr"\\n---\\n# Herdr\\n');\n`,
+  );
+  chmodSync(herdr, executableFileMode);
   return fixture;
+}
+
+function createHarnessDeploymentFixture(name: string): DeploymentFixture {
+  const fixture = createDeploymentFixture(name);
+  for (const path of [
+    ".moon/tasks",
+    ".moon/toolchains.yml",
+    ".moon/workspace.yml",
+    "moon.yml",
+    "home",
+    "harness",
+    "tooling",
+    "package.json",
+    "bun.lock",
+    "node_modules",
+  ]) {
+    cpSync(join(project, path), join(fixture.repository, path), {
+      recursive: true,
+      verbatimSymlinks: true,
+      filter: (source) => source !== join(project, "harness/generated"),
+    });
+  }
+  for (const argumentsToGit of [
+    ["init", "--quiet", fixture.repository],
+    [
+      "-C",
+      fixture.repository,
+      "-c",
+      "core.hooksPath=/dev/null",
+      "-c",
+      "user.name=Deployment test",
+      "-c",
+      "user.email=deployment@example.test",
+      "commit",
+      "--quiet",
+      "--allow-empty",
+      "-m",
+      "fixture",
+    ],
+  ]) {
+    const initialized = Bun.spawnSync(["git", ...argumentsToGit], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    if (initialized.exitCode !== 0) {
+      throw new Error(initialized.stderr.toString());
+    }
+  }
+  return { ...fixture, workspace: realpathSync(fixture.repository) };
 }
 
 function prepareMoonCompilationCache(home: string): void {
@@ -165,6 +224,7 @@ function decode(bytes: Readonly<ArrayLike<number>>): string {
 export {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
+  createHarnessDeploymentFixture,
   expectSuccess,
   fileIdentity,
   installProvider,

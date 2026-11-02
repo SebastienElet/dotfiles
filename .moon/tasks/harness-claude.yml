@@ -63,4 +63,5 @@ tasks:
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/@sebastienelet/agent-handoff/skills/handoff" "$HOME/.claude/skills/handoff"
     deps:
       - repository:dependencies
+      - repository:herdr-setup
     toolchains: bun

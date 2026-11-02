@@ -88,6 +88,18 @@ async function upgradePackages(
   repository: string,
 ): Promise<void> {
   await upgradeHomebrewPackages(runner, repository);
+  await runner.command(
+    "Herdr skill generation",
+    [
+      process.execPath,
+      "--config=/dev/null",
+      "--no-env-file",
+      "--no-install",
+      join(import.meta.dir, "generate-herdr-skill.ts"),
+      repository,
+    ],
+    { required: true },
+  );
   await runner.command("Brew cleanup", ["brew", "cleanup", "-s"], {
     env: { HOMEBREW_CLEANUP_MAX_AGE_DAYS: "7" },
   });

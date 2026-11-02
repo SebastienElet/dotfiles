@@ -2,6 +2,7 @@ import { isAbsolute, join, relative, sep } from "node:path";
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { skillSource, skillSourceSchema } from "./agent-skill-source.ts";
 import { deployLink } from "./deploy-link.ts";
+import { generateHerdrSkill } from "./generate-herdr-skill.ts";
 import { z } from "zod";
 
 const agentSchema = z.enum(["claude", "codex", "cursor"]);
@@ -47,6 +48,9 @@ function installAgentSkills(
         installation.agent === agent && installation.scope === "user",
     ),
   );
+  if (selected.some((skill) => skill.slug === "herdr")) {
+    generateHerdrSkill(repository);
+  }
   const sources = selected.map((skill) => ({
     source: skillSource(repository, skill),
     destination: join(home, skillDirectories[agent], skill.slug),
