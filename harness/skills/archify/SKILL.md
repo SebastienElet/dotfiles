@@ -27,7 +27,7 @@ This companion changes upstream's storage and runtime defaults to match the loca
 
 1. Resolve this skill's deployed symlink to its canonical directory. From that directory,
    `../../../node_modules/archify-upstream/archify/` is the upstream root. Read its
-   [SKILL.md](../../../node_modules/archify-upstream/archify/SKILL.md) and the authoring references
+   `SKILL.md` and the authoring references
    for the requested diagram type. Resolve upstream examples and resources from that root.
    If the distribution is missing, run `moon run repository:dependencies` in the canonical
    dotfiles checkout; do not install a second copy or fetch floating sources.
@@ -57,8 +57,7 @@ This companion changes upstream's storage and runtime defaults to match the loca
 ## Constraints
 
 - Use Bun only, the pinned distribution and the existing Moon deployment; add no global installer.
-- Preserve the upstream [MIT license](../../../node_modules/archify-upstream/archify/LICENSE),
-  [third-party notices](../../../node_modules/archify-upstream/archify/THIRD_PARTY_NOTICES.md),
+- Preserve the upstream `LICENSE` and `THIRD_PARTY_NOTICES.md` in that root,
   and bundled font and vendor licenses. Brand marks retain their own terms.
 - Never modify global instructions, enable proactive modes, publish artifacts or overwrite
   divergent destinations as part of diagram generation.

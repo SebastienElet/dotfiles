@@ -2,6 +2,7 @@ import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import {
   cleanupDeploymentFixtures,
   createDeploymentFixture,
+  createHarnessDeploymentFixture,
   expectSuccess,
   fileIdentity,
   linkTarget,
@@ -184,7 +185,7 @@ test("preserves a divergent Starship symlink", () => {
 });
 
 test("deploys shared instructions and skills and replays idempotently", () => {
-  const fixture = createDeploymentFixture("agent-instructions");
+  const fixture = createHarnessDeploymentFixture("agent-instructions");
   const claudeRule = join(
     fixture.home,
     ".claude",
@@ -207,13 +208,13 @@ test("deploys shared instructions and skills and replays idempotently", () => {
   );
   expect(linkTarget(claudeRule)).toBe(
     join(
-      project,
+      fixture.workspace,
       "node_modules/@sebastienelet/agent-skills/skills/agent-instructions/references/maintenance.md",
     ),
   );
   expect(linkTarget(codexSkill)).toBe(
     join(
-      project,
+      fixture.workspace,
       "node_modules/@sebastienelet/agent-skills/skills/agent-instructions",
     ),
   );

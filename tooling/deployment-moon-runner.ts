@@ -2,14 +2,14 @@ import type {
   CommandResult,
   DeploymentFixture,
 } from "./deployment-test-support.ts";
-import { project, requireCommand } from "./deployment-test-support.ts";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { requireCommand } from "./deployment-test-support.ts";
 import { withoutMoonTaskContext } from "./deployment-moon-test-support.ts";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 function runDeploymentMoon(
-  fixture: Pick<DeploymentFixture, "home">,
+  fixture: Pick<DeploymentFixture, "home" | "bin" | "workspace">,
   tasks: readonly string[],
   environment: Readonly<NodeJS.ProcessEnv> = {},
 ): CommandResult {
@@ -25,10 +25,12 @@ function runDeploymentMoon(
       ...tasks,
     ],
     {
-      cwd: project,
+      cwd: fixture.workspace,
       env: {
         ...withoutMoonTaskContext(process.env),
         HOME: fixture.home,
+        PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
+        HOMEBREW_PREFIX: dirname(fixture.bin),
         MOON_HOME:
           process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
         PROTO_HOME:

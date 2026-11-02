@@ -4,7 +4,7 @@ import { stat } from "node:fs/promises";
 import { z } from "zod";
 
 const branchSchema = z.string().trim().regex(/^\S+$/u);
-const lockfile = "home/.config/nvim/lazy-lock.json";
+
 const fishMainBranchCommand = [
   "fish",
   "--no-config",
@@ -116,21 +116,34 @@ async function repositoryExists(repository: string): Promise<boolean> {
   }
 }
 
-async function commitNeovimLockfile(
+async function commitLockfile(
   runner: UpgradeRunner,
   repository: string,
+  {
+    lockfile,
+    name,
+    message,
+  }: Readonly<{ lockfile: string; name: string; message: string }>,
 ): Promise<void> {
-  const action = "NeoVim lockfile commit";
+  const action = `${name} lockfile commit`;
+  const repositoryState = await runner.attempt(
+    "Dotfiles repository inspection",
+    () => repositoryExists(repository),
+  );
+  if (repositoryState.state !== "succeeded" || !repositoryState.value) {
+    runner.skip(action, "repository unavailable");
+    return;
+  }
   if (!(await onMainBranch(runner, repository, action))) {
     return;
   }
   const status = await runner.command(
-    "NeoVim lockfile inspection",
+    `${name} lockfile inspection`,
     ["git", "-C", repository, "status", "--porcelain", "--", lockfile],
     { capture: true, required: true },
   );
   if (status.state !== "succeeded") {
-    runner.skip(action, "unable to inspect the NeoVim lockfile");
+    runner.skip(action, `unable to inspect the ${name} lockfile`);
     return;
   }
   if (status.value.trim() === "") {
@@ -139,18 +152,31 @@ async function commitNeovimLockfile(
   }
   await runner.command(
     action,
-    [
-      "git",
-      "-C",
-      repository,
-      "commit",
-      "-m",
-      "chore(nvim): update plugins",
-      "--",
-      lockfile,
-    ],
+    ["git", "-C", repository, "commit", "-m", message, "--", lockfile],
     { required: true },
   );
 }
 
-export { commitNeovimLockfile, upgradeRepository };
+async function commitNeovimLockfile(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  await commitLockfile(runner, repository, {
+    lockfile: "home/.config/nvim/lazy-lock.json",
+    name: "NeoVim",
+    message: "chore(nvim): update plugins",
+  });
+}
+
+async function commitHomebrewLockfile(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  await commitLockfile(runner, repository, {
+    lockfile: "homebrew.lock.json",
+    name: "Homebrew",
+    message: "chore(homebrew): update lockfile",
+  });
+}
+
+export { commitHomebrewLockfile, commitNeovimLockfile, upgradeRepository };

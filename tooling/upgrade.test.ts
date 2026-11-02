@@ -205,69 +205,39 @@ test("updates only the unpinned Codex CLI among npm global packages", async () =
   ).toEqual(["npm update -g @openai/codex"]);
 });
 
-const lockedBeforeUpgrade = '{"formulae":{"git":"1.0"},"casks":{}}\n';
-const catalogWithNewerGit = JSON.stringify({
-  formulae: [
-    {
-      name: "git",
-      full_name: "git",
-      versions: { stable: "2.0" },
-      revision: 0,
-      linked_keg: null,
-      installed: [],
-    },
-  ],
-  casks: [],
+test("regenerates the skill from the binary upgraded by Homebrew", async () => {
+  const fixture = await upgradeFixture();
+  const destination = join(
+    fixture.repository,
+    "harness/generated/skills/herdr/SKILL.md",
+  );
+  await Bun.write(destination, "previous skill\n");
+  const skill =
+    '---\nname: herdr\ndescription: "Herdr upgraded by Homebrew"\n---\n# Herdr 0.9.6\n';
+  const result = await fixture.run({ UPGRADE_HERDR_SKILL: skill });
+  expect(result.status).toBe(0);
+  expect(await Bun.file(destination).text()).toBe(skill);
+  expect(result.calls.indexOf("herdr --skill")).toBeGreaterThan(
+    result.calls.indexOf("brew upgrade --formula"),
+  );
 });
 
-test.each(["brew upgrade --formula --yes", "brew upgrade --cask"])(
-  "keeps the Homebrew lock unchanged when %s fails",
-  async (failure) => {
+test.each(["missing", "failure", "invalid"])(
+  "reports %s Herdr skill generation and continues independent upgrades",
+  async (mode) => {
     const fixture = await upgradeFixture();
-    const lock = join(fixture.repository, "homebrew.lock.json");
-    await Bun.write(lock, lockedBeforeUpgrade);
+    if (mode === "missing") {
+      await rm(join(fixture.bin, "herdr"));
+    }
     const result = await fixture.run({
-      UPGRADE_CATALOG: catalogWithNewerGit,
-      UPGRADE_FAILURE: failure,
+      UPGRADE_FAILURE: mode === "failure" ? "herdr --skill" : "",
+      UPGRADE_HERDR_SKILL:
+        mode === "invalid"
+          ? "invalid skill"
+          : '---\nname: herdr\ndescription: "Herdr"\n---\n# Herdr\n',
     });
     expect(result.status).toBe(1);
-    expect(await Bun.file(lock).text()).toBe(lockedBeforeUpgrade);
-    expect(result.output).toContain("[not-attempted] Homebrew lock refresh");
+    expect(result.output).toContain("[failed] Herdr skill generation");
+    expect(result.calls).toContain("nvim --headless");
   },
 );
-
-test("keeps the Homebrew lock unchanged when the Brew metadata update fails", async () => {
-  const fixture = await upgradeFixture();
-  const lock = join(fixture.repository, "homebrew.lock.json");
-  await Bun.write(lock, lockedBeforeUpgrade);
-  const result = await fixture.run({
-    UPGRADE_CATALOG: catalogWithNewerGit,
-    UPGRADE_FAILURE: "brew update",
-  });
-  expect(result.status).toBe(1);
-  expect(await Bun.file(lock).text()).toBe(lockedBeforeUpgrade);
-  expect(result.output).toContain("[not-attempted] Homebrew lock refresh");
-});
-
-test("rewrites the Homebrew lock only after both upgrades succeed", async () => {
-  const fixture = await upgradeFixture();
-  const lock = join(fixture.repository, "homebrew.lock.json");
-  await Bun.write(lock, lockedBeforeUpgrade);
-  const result = await fixture.run({ UPGRADE_CATALOG: catalogWithNewerGit });
-  expect(result.status).toBe(0);
-  expect(JSON.parse(await Bun.file(lock).text())).toEqual({
-    formulae: { git: "2.0" },
-    casks: {},
-  });
-  const calls = result.calls.split("\n");
-  const refresh = calls.lastIndexOf("brew info --json=v2 --formula git");
-  expect(refresh).toBeGreaterThan(
-    calls.indexOf("brew upgrade --formula --yes"),
-  );
-  expect(refresh).toBeGreaterThan(
-    calls.indexOf("brew upgrade --cask --greedy --yes"),
-  );
-  expect(refresh).toBeLessThan(
-    calls.indexOf("brew info --json=v2 --installed"),
-  );
-});

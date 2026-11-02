@@ -17,11 +17,10 @@ réponses de l'agent (annonce : −65 % de tokens de sortie). Le retrait
 - **Le coût était payé quand même** : 2,5 Ko de descriptions, soit environ
   620 tokens injectés dans la liste des skills à chaque démarrage de session.
 - **Le gain serait négatif ici de toute façon.** `SOUL.md` plafonne déjà les
-  réponses à cinq phrases, ce qui place l'usage dans le régime que l'auteur
-  documente lui-même dans `docs/HONEST-NUMBERS.md` : en dessous d'environ
-  1 500 tokens de sortie par réponse, les règles injectées coûtent plus que la
-  compression ne rapporte. Une mesure indépendante plafonne par ailleurs le
-  gain réel à −8,5 %, contre les −65 % annoncés.
+  réponses à cinq phrases. Selon l'analyse ayant motivé le retrait, en dessous
+  d'environ 1 500 tokens de sortie par réponse, les règles injectées coûtent
+  plus que la compression ne rapporte. Une mesure indépendante plafonne par
+  ailleurs le gain réel à −8,5 %, contre les −65 % annoncés.
 
 ## Décision
 

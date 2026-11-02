@@ -3,7 +3,6 @@ inheritedBy:
     - repository
 fileGroups:
   shellSources:
-    - "harness/plugins/**/<[!.]:1,>"
     - "tooling/**/<[!.]:1,>"
     - install.sh
     - "**/*.sh"

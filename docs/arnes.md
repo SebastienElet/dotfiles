@@ -30,6 +30,13 @@ Ce diagnostic ne les installe pas et ne les exécute pas.
 Les évaluations appartiennent à
 [`@sebastienelet/agent-experiments`](arnes-eval.md).
 
+La skill officielle `herdr` est générée par `herdr --skill` dans
+`harness/generated/skills/herdr/`, ignoré par Git, puis liée pour les trois agents.
+Le déploiement des skills installe le binaire via sa tâche Homebrew ; `upgrade`
+régénère la source après la mise à jour des paquets. Un binaire absent, un échec
+de commande ou un frontmatter sans `name: herdr` et description non vide fait
+échouer l’opération sans remplacer la dernière source valide.
+
 ## Limites et vérification
 
 Le manifeste est `$HOME/.arnes.yaml`. `ARNES_MANIFEST` permet de sélectionner

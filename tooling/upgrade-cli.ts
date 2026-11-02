@@ -1,4 +1,8 @@
-import { commitNeovimLockfile, upgradeRepository } from "./upgrade-git.ts";
+import {
+  commitHomebrewLockfile,
+  commitNeovimLockfile,
+  upgradeRepository,
+} from "./upgrade-git.ts";
 import type { UpgradeRunner } from "./upgrade-runner.ts";
 import { createUpgradeRunner } from "./upgrade-runner.ts";
 import { join } from "node:path";
@@ -30,12 +34,7 @@ function homebrewLockCommand(
   ];
 }
 
-async function upgradePackages(
-  runner: UpgradeRunner,
-  repository: string,
-): Promise<void> {
-  process.stdout.write("ℹ️  Brew\n");
-  const metadata = await runner.command("Brew metadata", ["brew", "update"]);
+async function upgradeBrewPackages(runner: UpgradeRunner): Promise<boolean> {
   const formulae = await runner.command("Brew packages", [
     "brew",
     "upgrade",
@@ -49,24 +48,68 @@ async function upgradePackages(
     "--greedy",
     "--yes",
   ]);
-  if (metadata.state !== "succeeded") {
-    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
-  } else if (formulae.state !== "succeeded" || casks.state !== "succeeded") {
-    runner.skip("Homebrew lock refresh", "a Brew upgrade did not succeed");
-  } else {
-    await runner.command(
+  return formulae.state === "succeeded" && casks.state === "succeeded";
+}
+
+async function upgradeHomebrewPackages(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  process.stdout.write("ℹ️  Brew\n");
+  const metadata = await runner.command("Brew metadata", ["brew", "update"]);
+  const upgraded = await upgradeBrewPackages(runner);
+  const refreshed =
+    metadata.state === "succeeded" && upgraded
+      ? await runner.command(
+          "Homebrew lock refresh",
+          homebrewLockCommand(repository, "refresh"),
+        )
+      : undefined;
+  if (refreshed === undefined) {
+    runner.skip(
       "Homebrew lock refresh",
-      homebrewLockCommand(repository, "refresh"),
+      metadata.state === "succeeded"
+        ? "a Brew upgrade did not succeed"
+        : "Homebrew metadata unavailable",
     );
   }
-  if (metadata.state === "not-attempted") {
+  const verified =
+    metadata.state === "not-attempted"
+      ? undefined
+      : await runner.command(
+          "Homebrew lock verification",
+          homebrewLockCommand(repository, "verify-installed"),
+        );
+  if (verified === undefined) {
     runner.skip("Homebrew lock verification", "Homebrew unavailable");
+  }
+  if (refreshed?.state === "succeeded" && verified?.state === "succeeded") {
+    await commitHomebrewLockfile(runner, repository);
   } else {
-    await runner.command(
-      "Homebrew lock verification",
-      homebrewLockCommand(repository, "verify-installed"),
+    runner.skip(
+      "Homebrew lockfile commit",
+      "lock refresh and verification did not succeed",
     );
   }
+}
+
+async function upgradePackages(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  await upgradeHomebrewPackages(runner, repository);
+  await runner.command(
+    "Herdr skill generation",
+    [
+      process.execPath,
+      "--config=/dev/null",
+      "--no-env-file",
+      "--no-install",
+      join(import.meta.dir, "generate-herdr-skill.ts"),
+      repository,
+    ],
+    { required: true },
+  );
   await runner.command("Brew cleanup", ["brew", "cleanup", "-s"], {
     env: { HOMEBREW_CLEANUP_MAX_AGE_DAYS: "7" },
   });

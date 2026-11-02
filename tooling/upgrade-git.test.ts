@@ -99,6 +99,59 @@ test.each(["main", "master", "trunk"])(
   },
 );
 
+test("commits the refreshed Homebrew lockfile without unrelated changes", async () => {
+  const fixture = await upgradeFixture();
+  await Bun.write(
+    join(fixture.repository, "homebrew.lock.json"),
+    '{"formulae":{"awscli":"1.0.0"},"casks":{}}\n',
+  );
+  await Bun.write(join(fixture.repository, "unrelated"), "staged\n");
+  await fixture.git("add", "unrelated");
+  const result = await fixture.run({ UPGRADE_BREW_VERSION: "2.0.0" });
+  expect(result.status).toBe(0);
+  const commit = await fixture.git(
+    "log",
+    "--format=%s",
+    "--",
+    "homebrew.lock.json",
+  );
+  expect(commit.stdout.split("\n")[0]).toBe("chore(homebrew): update lockfile");
+  const files = await fixture.git("show", "--format=", "--name-only", "HEAD^");
+  expect(files.stdout.trim()).toBe("homebrew.lock.json");
+  const staged = await fixture.git("diff", "--cached", "--name-only");
+  expect(staged.stdout.trim()).toBe("unrelated");
+});
+
+test("does not commit the Homebrew lockfile when metadata refresh fails", async () => {
+  const fixture = await upgradeFixture();
+  const result = await fixture.run({ UPGRADE_FAILURE: "brew update" });
+  expect(result.status).toBe(1);
+  expect(result.output).toContain("[not-attempted] Homebrew lockfile commit");
+  const commits = await fixture.git(
+    "log",
+    "--format=%s",
+    "--",
+    "homebrew.lock.json",
+  );
+  expect(commits.stdout.trim()).toBe("base");
+});
+
+test("does not commit the Homebrew lockfile when lock refresh fails", async () => {
+  const fixture = await upgradeFixture();
+  await Bun.write(join(fixture.repository, "homebrew.lock.json"), "invalid\n");
+  const result = await fixture.run();
+  expect(result.status).toBe(1);
+  expect(result.output).toContain("[failed] Homebrew lock refresh");
+  expect(result.output).toContain("[not-attempted] Homebrew lockfile commit");
+  const commits = await fixture.git(
+    "log",
+    "--format=%s",
+    "--",
+    "homebrew.lock.json",
+  );
+  expect(commits.stdout.trim()).toBe("base");
+});
+
 test("failed pull leaves deployment unattempted and other domains run", async () => {
   const fixture = await upgradeFixture();
   const result = await fixture.run({ UPGRADE_FAILURE: "pull" });
@@ -117,7 +170,13 @@ test("failed sync does not commit a partial lockfile", async () => {
   );
   const result = await fixture.run({ UPGRADE_FAILURE: "nvim --headless" });
   expect(result.status).toBe(1);
-  expect(result.calls).not.toContain(" commit");
+  const committed = await fixture.git(
+    "log",
+    "--format=%s",
+    "--",
+    "home/.config/nvim/lazy-lock.json",
+  );
+  expect(committed.stdout.trim()).toBe("base");
   expect(result.output).toContain("[not-attempted] NeoVim lockfile commit");
 });
 

@@ -230,6 +230,12 @@ tasks:
     deps:
       - repository:dependencies
     toolchains: bun
+  output-discipline:
+    description: Deploy the published output discipline hook executable
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/output-discipline-hook" "$HOME/.local/bin/output-discipline-hook"
+    deps:
+      - repository:dependencies
+    toolchains: bun
   assertledger:
     description: Install the pinned AssertLedger CLI and its managed Node launcher
     command: bun --config=/dev/null --no-env-file tooling/install-assertledger.ts "$workspaceRoot" "$HOME"

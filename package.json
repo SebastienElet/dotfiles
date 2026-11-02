@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "bun@1.4.3",
   "volta": {
-    "node": "24.22.1"
+    "node": "26.13.0"
   },
   "scripts": {
     "format:typescript": "bun tooling/format-typescript.ts",
@@ -17,7 +17,7 @@
     "@sebastienelet/agent-experiments": "0.0.1",
     "@sebastienelet/agent-handoff": "0.0.2",
     "@sebastienelet/agent-reach-adapter": "0.0.1",
-    "@sebastienelet/agent-skills": "0.4.0",
+    "@sebastienelet/agent-skills": "0.5.0",
     "@sebastienelet/arnes": "0.0.3",
     "@sebastienelet/proof-integrity-review": "0.0.1",
     "archify-upstream": "https://github.com/tt-a1i/archify/archive/208acba8d412335185b2056fedf54b3405df43fb.tar.gz",
@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
-    "oxfmt": "0.74.0",
-    "oxlint": "1.89.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
     "oxlint-tsgolint": "7.0.2005",
     "prettier": "3.9.10",
     "typescript": "7.0.2",

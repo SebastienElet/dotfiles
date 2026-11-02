@@ -13,6 +13,7 @@ PRODUCTIVITY_REVIEW.md
 .moon/cache/
 node_modules/
 .harness-export/
+/harness/generated/
 
 # Claude Code
 .claude/*
