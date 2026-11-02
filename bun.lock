@@ -7,6 +7,7 @@
       "dependencies": {
         "@sebastienelet/agent-experiments": "0.0.1",
         "@sebastienelet/agent-handoff": "0.0.2",
+        "@sebastienelet/agent-measure": "0.0.1",
         "@sebastienelet/agent-reach-adapter": "0.0.1",
         "@sebastienelet/agent-skills": "git+https://github.com/SebastienElet/agent-skills.git#main",
         "@sebastienelet/arnes": "0.0.3",
@@ -269,6 +270,12 @@
     "@sebastienelet/agent-handoff-darwin-arm64": ["@sebastienelet/agent-handoff-darwin-arm64@0.0.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-fUCwwTRfPnubuPKW2gyCMduiXhzDE0F11X+jIcya8cDvpYvX2oK6J6lQ8yEaeOwhilwJYyr/QZ6RbVDP1kiKIA=="],
 
     "@sebastienelet/agent-handoff-linux-x64-gnu": ["@sebastienelet/agent-handoff-linux-x64-gnu@0.0.2", "", { "os": "linux", "cpu": "x64" }, "sha512-Z9MqYHUeKp7Vxf7iTStQi0v9nzaFneNjaQ0rDAyHvPbf/pXWVuv0JbQlRKja3TRcYryQ9W8nIVyd9fwS25YzRw=="],
+
+    "@sebastienelet/agent-measure": ["@sebastienelet/agent-measure@0.0.1", "", { "optionalDependencies": { "@sebastienelet/agent-measure-darwin-arm64": "0.0.1", "@sebastienelet/agent-measure-linux-x64-gnu": "0.0.1" }, "bin": { "agent-measure": "bin/agent-measure.mjs" } }, "sha512-xFAHQ8bzOYHmOirtGHhJ0deOr3JxtM2/e9evRmSL1VUo4uus4OU9ZjJ7SI9OSwyoyDfPyMTUvtKh4PVF39xXdg=="],
+
+    "@sebastienelet/agent-measure-darwin-arm64": ["@sebastienelet/agent-measure-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-9uC5XzFr6DzlBIqJ2yjeD0WhIPb7uW12WzQzsANsGRwMGTe+4w11sRra9iL3UNk/kyr7dRlzNYYQeOKxjXNIng=="],
+
+    "@sebastienelet/agent-measure-linux-x64-gnu": ["@sebastienelet/agent-measure-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64", "libc": "glibc" }, "sha512-3LBaDIDsh+TkLXf/DOWufE1+KNHOj9M26XosbOfh+2qL2+tk0JAKjGSC2XxBvJ4FxOBXqHYfi89zz8lPnCjJQg=="],
 
     "@sebastienelet/agent-reach-adapter": ["@sebastienelet/agent-reach-adapter@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64", "bin": { "agent-reach-adapter": "src/agent-reach.ts" } }, "sha512-U5b54vmOZ4pkPVH7neWNsxcXv61wodcOqDiPTYmv47A1YC9MtnudzOTPKIpQ4d118oQRBryxc9rKYXpr6XDNAQ=="],
 
