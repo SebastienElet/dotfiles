@@ -39,6 +39,7 @@ fileGroups:
     - assemble-agent-instructions*.ts
     - agent-skill-source.ts
     - install-agent-skills*.ts
+    - generate-herdr-skill.ts
     - /home/moon.yml
     - /home/.psqlrc
     - /home/.arnes.yaml
@@ -115,6 +116,7 @@ tasks:
       - "@group(bunTestSupport)"
       - upgrade
       - upgrade*.ts
+      - generate-herdr-skill.ts
       - node-version-*.ts
       - /home/.config/fish/conf.d/git_main_branch.fish
       - /package.json
@@ -137,6 +139,7 @@ tasks:
       - "@group(bunTestSupport)"
       - upgrade
       - upgrade*.ts
+      - generate-herdr-skill.ts
       - node-version-*.ts
       - /home/.config/fish/conf.d/git_main_branch.fish
       - /home/.config/nvim/**/*

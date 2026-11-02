@@ -204,3 +204,40 @@ test("updates only the unpinned Codex CLI among npm global packages", async () =
     result.calls.split("\n").filter((call) => call.startsWith("npm ")),
   ).toEqual(["npm update -g @openai/codex"]);
 });
+
+test("regenerates the skill from the binary upgraded by Homebrew", async () => {
+  const fixture = await upgradeFixture();
+  const destination = join(
+    fixture.repository,
+    "harness/generated/skills/herdr/SKILL.md",
+  );
+  await Bun.write(destination, "previous skill\n");
+  const skill =
+    '---\nname: herdr\ndescription: "Herdr upgraded by Homebrew"\n---\n# Herdr 0.9.6\n';
+  const result = await fixture.run({ UPGRADE_HERDR_SKILL: skill });
+  expect(result.status).toBe(0);
+  expect(await Bun.file(destination).text()).toBe(skill);
+  expect(result.calls.indexOf("herdr --skill")).toBeGreaterThan(
+    result.calls.indexOf("brew upgrade --formula"),
+  );
+});
+
+test.each(["missing", "failure", "invalid"])(
+  "reports %s Herdr skill generation and continues independent upgrades",
+  async (mode) => {
+    const fixture = await upgradeFixture();
+    if (mode === "missing") {
+      await rm(join(fixture.bin, "herdr"));
+    }
+    const result = await fixture.run({
+      UPGRADE_FAILURE: mode === "failure" ? "herdr --skill" : "",
+      UPGRADE_HERDR_SKILL:
+        mode === "invalid"
+          ? "invalid skill"
+          : '---\nname: herdr\ndescription: "Herdr"\n---\n# Herdr\n',
+    });
+    expect(result.status).toBe(1);
+    expect(result.output).toContain("[failed] Herdr skill generation");
+    expect(result.calls).toContain("nvim --headless");
+  },
+);

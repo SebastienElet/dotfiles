@@ -91,6 +91,7 @@ async function upgradeFixture(): Promise<UpgradeFixture> {
   const env = {
     HOME: home,
     PATH: bin,
+    HOMEBREW_PREFIX: root,
     REAL_GIT: realGit,
     REAL_INSTALL: Bun.which("install") ?? "install",
     UPGRADE_BUN_STUB: join(bin, "bun-install"),
@@ -196,6 +197,7 @@ async function copyUpgradeFiles(repository: string): Promise<void> {
       name === "install-moon" ||
       name === "node-version-contract.ts" ||
       name === "homebrew-lock.ts" ||
+      name === "generate-herdr-skill.ts" ||
       (name.startsWith("upgrade-") && name.endsWith(".ts")),
   );
   for (const file of files) {
@@ -216,6 +218,7 @@ async function installFakeCommands(bin: string, home: string): Promise<void> {
   for (const command of [
     "git",
     "brew",
+    "herdr",
     "mas",
     "volta",
     "npm",

@@ -114,7 +114,7 @@ tasks:
       os: macos
       runInCI: false
   herdr-setup:
-    description: Install the optional Herdr agent multiplexer
+    description: Install the Herdr binary required by its harness skill
     deps:
       - homebrew-catalog
     checks:
