@@ -8,3 +8,9 @@ light_name = "catppuccin-latte"
 
 [ui.sound]
 enabled = false
+
+[ui]
+status_indicators = "dots"
+
+[ui.toast]
+delivery = "herdr"
