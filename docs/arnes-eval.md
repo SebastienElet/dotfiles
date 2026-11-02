@@ -44,6 +44,13 @@ Examiner les résultats et restituer les observations dans la PR ou la conversat
 Ne pas versionner ces rapports ponctuels. Le répertoire `harness/evidence/`
 reste requis par le validateur ; aucun rapport n'est nécessaire pour réussir.
 
+Les [sept scénarios d'autonomie](../harness/evals/autonomy-scenarios.md) forment un corpus manuel
+distinct des deux cas exécutables de `cases.json`. Leur protocole compare les instructions
+complètes avant/après dans des environnements jetables, avec modèle et effort identiques.
+Relever les décisions, questions, commits et effets réellement observés ; conserver les preuves
+hors dépôt. Le runner `agent-experiments@0.0.1` ne sait pas juger ces observations : ne pas leur
+attribuer un oracle de recherche pour obtenir un `PASS`, ni présenter la CI comme leur exécution.
+
 ## Limites et vérification
 
 Le preflight vérifie le démarrage du CLI, pas l'authentification ni l'accès au modèle.

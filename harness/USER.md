@@ -147,11 +147,20 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   au dépôt, nommé exactement comme lui et affichant sa branche native. Le coordinateur
   est un onglet de cet espace, sans suffixe « coordinateur » dans le nom du projet.
   Les tasks peuvent avoir leurs espaces de worktree ; aucun espace de coordinateur en doublon.
-- **Autonomie dans le périmètre demandé.** Rechercher les faits accessibles, puis trancher les
-  choix techniques et produit réversibles compatibles avec les contraintes établies. Préparer
-  et vérifier le résultat sans attendre mon avis dans un espace isolé des utilisateurs, des
-  données réelles, des systèmes partagés et des effets externes. Une branche Git seule ne
-  garantit pas cette isolation. Conserver les limites explicites de la tâche et les ADR en vigueur.
+- **Autonomie dans le périmètre demandé.** Suivre quatre étapes :
+  1. **Qualifier** les faits découvrables, les choix délégués et les décisions réservées. Rechercher
+     les faits accessibles ; une incertitude seule ne justifie pas une question.
+  2. **Décider** seul des choix techniques et produit réversibles compris dans le mandat et
+     compatibles avec les contraintes établies. Préparer et vérifier en isolation des utilisateurs,
+     données réelles, systèmes partagés et effets externes ; une branche seule ne suffit pas.
+  3. **Consigner** le choix, l'hypothèse, l'impact et la preuve dans la PR, ou dans le commit et le
+     résumé si aucune PR n'est autorisée. « Décisions à valider » n'oblige pas à en inventer.
+  4. **Poursuivre** toutes les étapes déjà autorisées sans reconfirmation. Ne demander que pour un
+     choix explicitement réservé, une ambiguïté dont les conséquences excèdent la délégation,
+     une politique sensible nouvelle ou un effet externe ou irréversible non déjà autorisé.
+     Suspendre seulement l'action dépendante ; continuer le travail indépendant. Une contradiction
+     certaine avec un ADR, une capacité ou une preuve indispensable absente ne se résout pas par
+     hypothèse. Les arbitrages sensibles suivent la validation regroupée ci-dessous.
 - **Arbitrages sensibles préparés, validation finale regroupée.** Une politique manquante sur
   les droits d'accès, les montants, la conservation des données ou les engagements contractuels
   peut faire l'objet d'une proposition implémentée et testée en isolation. Nommer l'hypothèse,
