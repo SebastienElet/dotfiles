@@ -204,3 +204,70 @@ test("updates only the unpinned Codex CLI among npm global packages", async () =
     result.calls.split("\n").filter((call) => call.startsWith("npm ")),
   ).toEqual(["npm update -g @openai/codex"]);
 });
+
+const lockedBeforeUpgrade = '{"formulae":{"git":"1.0"},"casks":{}}\n';
+const catalogWithNewerGit = JSON.stringify({
+  formulae: [
+    {
+      name: "git",
+      full_name: "git",
+      versions: { stable: "2.0" },
+      revision: 0,
+      linked_keg: null,
+      installed: [],
+    },
+  ],
+  casks: [],
+});
+
+test.each(["brew upgrade --formula --yes", "brew upgrade --cask"])(
+  "keeps the Homebrew lock unchanged when %s fails",
+  async (failure) => {
+    const fixture = await upgradeFixture();
+    const lock = join(fixture.repository, "homebrew.lock.json");
+    await Bun.write(lock, lockedBeforeUpgrade);
+    const result = await fixture.run({
+      UPGRADE_CATALOG: catalogWithNewerGit,
+      UPGRADE_FAILURE: failure,
+    });
+    expect(result.status).toBe(1);
+    expect(await Bun.file(lock).text()).toBe(lockedBeforeUpgrade);
+    expect(result.output).toContain("[not-attempted] Homebrew lock refresh");
+  },
+);
+
+test("keeps the Homebrew lock unchanged when the Brew metadata update fails", async () => {
+  const fixture = await upgradeFixture();
+  const lock = join(fixture.repository, "homebrew.lock.json");
+  await Bun.write(lock, lockedBeforeUpgrade);
+  const result = await fixture.run({
+    UPGRADE_CATALOG: catalogWithNewerGit,
+    UPGRADE_FAILURE: "brew update",
+  });
+  expect(result.status).toBe(1);
+  expect(await Bun.file(lock).text()).toBe(lockedBeforeUpgrade);
+  expect(result.output).toContain("[not-attempted] Homebrew lock refresh");
+});
+
+test("rewrites the Homebrew lock only after both upgrades succeed", async () => {
+  const fixture = await upgradeFixture();
+  const lock = join(fixture.repository, "homebrew.lock.json");
+  await Bun.write(lock, lockedBeforeUpgrade);
+  const result = await fixture.run({ UPGRADE_CATALOG: catalogWithNewerGit });
+  expect(result.status).toBe(0);
+  expect(JSON.parse(await Bun.file(lock).text())).toEqual({
+    formulae: { git: "2.0" },
+    casks: {},
+  });
+  const calls = result.calls.split("\n");
+  const refresh = calls.lastIndexOf("brew info --json=v2 --formula git");
+  expect(refresh).toBeGreaterThan(
+    calls.indexOf("brew upgrade --formula --yes"),
+  );
+  expect(refresh).toBeGreaterThan(
+    calls.indexOf("brew upgrade --cask --greedy --yes"),
+  );
+  expect(refresh).toBeLessThan(
+    calls.indexOf("brew info --json=v2 --installed"),
+  );
+});

@@ -18,6 +18,7 @@ const environment = z
       .string()
       .default('[{"id":"first@fixture"},{"id":"second@fixture"}]'),
     UPGRADE_LOCK: z.string().default("updated\n"),
+    UPGRADE_CATALOG: z.string().default('{"formulae":[],"casks":[]}'),
     UPGRADE_NODE_EFFECT: z.enum(["", "publication", "cleanup"]).default(""),
     REAL_GIT: z.string(),
     REAL_INSTALL: z.string(),
@@ -93,7 +94,7 @@ if (command === "bun") {
   await chmod(selected, executableMode);
 }
 if (command === "brew" && commandArguments[0] === "info") {
-  process.stdout.write('{"formulae":[],"casks":[]}\n');
+  process.stdout.write(`${environment.UPGRADE_CATALOG}\n`);
 }
 if (command === "date") {
   process.stdout.write("2026-09-07T00:00:00Z\n");
