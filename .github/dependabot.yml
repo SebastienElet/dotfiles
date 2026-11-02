@@ -1,7 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: bun
-    directory: /
+    directories:
+      - /
+      - /.github/actions/setup-moon
     schedule:
       interval: weekly
       day: monday
