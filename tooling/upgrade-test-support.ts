@@ -91,6 +91,7 @@ async function upgradeFixture(): Promise<UpgradeFixture> {
   const env = {
     HOME: home,
     PATH: bin,
+    HOMEBREW_PREFIX: root,
     REAL_GIT: realGit,
     REAL_INSTALL: Bun.which("install") ?? "install",
     UPGRADE_BUN_STUB: join(bin, "bun-install"),

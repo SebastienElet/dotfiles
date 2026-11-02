@@ -140,6 +140,7 @@ async function runUpgrade(scenario: UpgradeScenario): Promise<CommandResult> {
     FAIL_VOLTA_COMMAND: scenario.failVoltaCommand ?? "",
     HOME: home,
     PATH: bin,
+    HOMEBREW_PREFIX: root,
     PINNED_PACKAGE: pinnedPackagePath,
     VOLTA_LOG: voltaLog,
   });

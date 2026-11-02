@@ -21,7 +21,6 @@ const concurrencyTestMilliseconds = 30_000;
 const concurrencyRounds = 12;
 const officialSkill =
   '---\nname: herdr\ndescription: "Control Herdr from its managed panes."\n---\n\n# Herdr\n';
-
 afterEach(() => {
   for (const root of fixtures.splice(0)) {
     rmSync(root, { recursive: true, force: true });
@@ -73,11 +72,22 @@ function install(
       agent,
     ],
     {
-      env: { ...process.env, PATH: paths.bin, HERDR_SKILL: output },
+      env: { ...herdrEnvironment(paths), HERDR_SKILL: output },
       stdout: "pipe",
       stderr: "pipe",
     },
   );
+}
+
+function herdrEnvironment(
+  paths: ReturnType<typeof fixture>,
+): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    PATH: paths.bin,
+    HOMEBREW_PREFIX: dirname(paths.bin),
+    HERDR_SKILL: officialSkill,
+  };
 }
 
 test.each([
@@ -173,12 +183,7 @@ function generate(
     ],
     {
       cwd: paths.home,
-      env: {
-        ...process.env,
-        PATH: paths.bin,
-        HERDR_SKILL: officialSkill,
-        ...environment,
-      },
+      env: { ...herdrEnvironment(paths), ...environment },
       stdout: "pipe",
       stderr: "pipe",
     },
@@ -274,12 +279,7 @@ test(
             agent,
           ],
           {
-            env: {
-              ...process.env,
-              PATH: paths.bin,
-              HERDR_SKILL: officialSkill,
-              HERDR_BARRIER: barrier,
-            },
+            env: { ...herdrEnvironment(paths), HERDR_BARRIER: barrier },
             stdout: "ignore",
             stderr: "pipe",
           },

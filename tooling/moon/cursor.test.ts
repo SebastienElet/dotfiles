@@ -64,6 +64,7 @@ function runCursor(fixture: DeploymentFixture, trace: string): CommandResult {
         MOON_HOME:
           process.env.MOON_HOME ?? join(process.env.HOME ?? "", ".moon"),
         PATH: `${fixture.bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
+        HOMEBREW_PREFIX: dirname(fixture.bin),
         PROTO_HOME:
           process.env.PROTO_HOME ?? join(process.env.HOME ?? "", ".proto"),
         PROTO_OFFLINE: "true",

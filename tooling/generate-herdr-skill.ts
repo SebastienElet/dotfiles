@@ -1,4 +1,4 @@
-import { isAbsolute, join, relative, sep } from "node:path";
+import { delimiter, isAbsolute, join, relative, sep } from "node:path";
 import {
   lstatSync,
   mkdirSync,
@@ -11,12 +11,30 @@ import {
 import { z } from "zod";
 
 const argumentsSchema = z.tuple([z.string().min(1)]);
+const environmentSchema = z.object({
+  PATH: z.string().optional(),
+  HOMEBREW_PREFIX: z
+    .string()
+    .refine(isAbsolute, "HOMEBREW_PREFIX must be absolute")
+    .optional(),
+});
 const frontmatterSchema = z.object({
   name: z.literal("herdr"),
   description: z.string().trim().min(1),
 });
 const skillTimeoutMilliseconds = 10_000;
 const argumentOffset = 2;
+
+function findInstalledHerdr(): string | null {
+  const environment = environmentSchema.parse(process.env);
+  const homebrewBins =
+    environment.HOMEBREW_PREFIX === undefined
+      ? ["/opt/homebrew/bin", "/usr/local/bin"]
+      : [join(environment.HOMEBREW_PREFIX, "bin")];
+  return Bun.which("herdr", {
+    PATH: [environment.PATH ?? "", ...homebrewBins].join(delimiter),
+  });
+}
 
 function prepareHerdrSkillDirectory(repository: string): string {
   const root = realpathSync(repository);
@@ -41,7 +59,7 @@ function prepareHerdrSkillDirectory(repository: string): string {
 }
 
 function generateHerdrSkill(repository: string): void {
-  const herdr = Bun.which("herdr");
+  const herdr = findInstalledHerdr();
   if (herdr === null) {
     throw new Error("herdr not found, unable to generate its skill");
   }

@@ -76,7 +76,7 @@ function createHarnessDeploymentFixture(name: string): DeploymentFixture {
     });
   }
   for (const argumentsToGit of [
-    ["init", "--quiet", fixture.repository],
+    ["init", "--quiet", "--initial-branch", "main", fixture.repository],
     [
       "-C",
       fixture.repository,
