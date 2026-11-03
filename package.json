@@ -16,6 +16,7 @@
   "dependencies": {
     "@sebastienelet/agent-experiments": "0.0.1",
     "@sebastienelet/agent-handoff": "0.0.2",
+    "@sebastienelet/agent-measure": "0.0.1",
     "@sebastienelet/agent-reach-adapter": "0.0.1",
     "@sebastienelet/agent-skills": "0.5.0",
     "@sebastienelet/arnes": "0.0.3",
