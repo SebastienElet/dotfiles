@@ -1,0 +1,56 @@
+{
+  "skill": "coordinator",
+  "version": "1.0",
+  "queries": [
+    {
+      "query": "Coordinate this prepared issue in Herdr with Codex until its PR is verified and ready.",
+      "should_activate": true,
+      "reason": "Single-unit supervision."
+    },
+    {
+      "query": "/coordinator Supervise the prepared children of ENG-200 with Claude Code.",
+      "should_activate": true,
+      "reason": "Explicit invocation."
+    },
+    {
+      "query": "$coordinator Resume the existing batch and its pending CI in Herdr.",
+      "should_activate": true,
+      "reason": "Explicit resumption."
+    },
+    {
+      "query": "Launch Claude Code and Codex for these prepared independent units in Herdr and keep supervising every PR.",
+      "should_activate": true,
+      "reason": "Batch ownership without naming the skill."
+    },
+    {
+      "query": "The Herdr executor stopped after opening a Draft PR; supervise it until verification and readiness.",
+      "should_activate": true,
+      "reason": "Unfinished coordination."
+    },
+    {
+      "query": "Use Wayfinder to split this vague feature and decide what can run in parallel.",
+      "should_activate": false,
+      "reason": "Upstream shaping owns this request."
+    },
+    {
+      "query": "Implement this issue yourself without delegated agents.",
+      "should_activate": false,
+      "reason": "Direct implementation is outside coordinator scope."
+    },
+    {
+      "query": "Show the active Herdr panes.",
+      "should_activate": false,
+      "reason": "Herdr inspection alone."
+    },
+    {
+      "query": "Design a model router using quotas and model prices.",
+      "should_activate": false,
+      "reason": "Routing is explicitly external."
+    },
+    {
+      "query": "Review this open PR and give a merge verdict.",
+      "should_activate": false,
+      "reason": "Review has its own activation contract."
+    }
+  ]
+}

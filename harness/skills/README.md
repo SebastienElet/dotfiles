@@ -11,6 +11,7 @@ This directory is the canonical source for user-scoped agent skills.
 
 ## Dev
 
-| Skill     | Description                                      |
-| --------- | ------------------------------------------------ |
-| `archify` | Generate interactive HTML diagrams with Archify. |
+| Skill         | Description                                                                     |
+| ------------- | ------------------------------------------------------------------------------- |
+| `archify`     | Generate interactive HTML diagrams with Archify.                                |
+| `coordinator` | Supervise prepared issue batches through verified, delivery-ready PRs in Herdr. |
