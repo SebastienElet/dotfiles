@@ -5,7 +5,7 @@ agents:
     user_config:
       model: sonnet
       effort: high
-      auto_compact_window: 600000
+      auto_compact_window: 700000
       sync_claude_ai_skills: false
   - id: cursor
     scopes: [user, project]
@@ -17,7 +17,8 @@ agents:
     user_config:
       model: gpt-6.1-sol
       effort: high
-      context_window: 512000
+      context_window: 800000
+      auto_compact_window: 700000
 skills:
   - slug: design-taste-frontend
     source: node_modules/@sebastienelet/agent-skills/skills/design-taste-frontend

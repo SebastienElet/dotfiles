@@ -36,7 +36,7 @@
     "starship": "1.27.0",
     "tmux": "3.8",
     "tokei": "15.0.0",
-    "uv": "0.13.6",
+    "uv": "0.13.7",
     "vale": "3.26.0",
     "volta": "2.0.2",
     "yt-dlp": "2026.10.26",
@@ -47,17 +47,17 @@
     "chatgpt": "26.1027.61615",
     "codexbar": "0.83.0",
     "cursor-cli": "2026.10.22-27dcf5f",
-    "discord": "0.0.420",
+    "discord": "0.0.421",
     "dopplerhq/cli/doppler": "3.77.1",
     "entireio/tap/entire": "0.12.2",
     "font-jetbrains-mono-nerd-font": "3.5.1",
     "google-chrome": "156.0.8078.80",
-    "grok-bot": "0.78.1",
-    "handy": "0.9.8",
+    "grok-bot": "0.78.4",
+    "handy": "0.10.0",
     "helium-browser": "0.20.3.1",
     "languagetool-desktop": "3.4.1",
-    "obsidian": "1.14.5",
+    "obsidian": "1.15.0",
     "orbstack": "2.2.5,21124",
-    "whatsapp": "26.43.27"
+    "whatsapp": "26.44.12"
   }
 }
