@@ -11,6 +11,13 @@ enabled = false
 
 [ui]
 status_indicators = "dots"
+agent_panel_sort = "spaces"
+
+[ui.sidebar.agents]
+rows = [
+  ["state_icon", { token = "workspace", bold = true }],
+  ["tab", "agent", "state_text"],
+]
 
 [ui.toast]
 delivery = "herdr"
