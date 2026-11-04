@@ -10,7 +10,6 @@ tasks:
     deps:
       - applications-install
       - grokbot
-      - codex-quota
       - pnpm
       - home:install
       - harness:install
