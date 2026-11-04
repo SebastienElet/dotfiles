@@ -32,6 +32,9 @@ skills:
   - slug: implement
     source: node_modules/@sebastienelet/agent-skills/skills/implement
     installations: *user-skill-installations
+  - slug: coordinator
+    source: node_modules/@sebastienelet/agent-skills/skills/coordinator
+    installations: *user-skill-installations
   - slug: orchestrate
     source: node_modules/@sebastienelet/agent-skills/skills/orchestrate
     installations: *user-skill-installations
@@ -88,17 +91,11 @@ skills:
   - slug: agent-instructions
     source: node_modules/@sebastienelet/agent-skills/skills/agent-instructions
     installations: *user-skill-installations
-  - slug: claude-developer
-    source: node_modules/@sebastienelet/agent-skills/skills/claude-developer
-    installations: *user-skill-installations
   - slug: harness-reflection
     source: node_modules/@sebastienelet/agent-skills/skills/harness-reflection
     installations: *user-skill-installations
   - slug: harness-simplify
     source: node_modules/@sebastienelet/agent-skills/skills/harness-simplify
-    installations: *user-skill-installations
-  - slug: code-enforcement
-    source: node_modules/@sebastienelet/agent-skills/skills/code-enforcement
     installations: *user-skill-installations
   - slug: pr-verdict
     source: node_modules/@sebastienelet/agent-skills/skills/pr-verdict
