@@ -10,8 +10,8 @@ light_name = "catppuccin-latte"
 enabled = false
 
 [ui]
-status_indicators = "dots"
-agent_panel_sort = "spaces"
+status_indicators = "symbols"
+agent_panel_sort = "priority"
 
 [ui.sidebar.agents]
 rows = [
