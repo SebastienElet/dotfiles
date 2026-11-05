@@ -4,6 +4,7 @@
 - **Date** : 2026-08
 - **Révision** : 2026-10-18 — consommation du paquet publié, décisions #546 et #548, lot #549.
 - **Révision** : 2026-10-19 — retrait du lanceur d'issues inutilisé et de son compagnon, décision #554.
+- **Révision** : 2026-11-05 — consommation du dépôt Git pour les skills génériques.
 
 ## Contexte
 
@@ -22,8 +23,8 @@ que l'ADR-038 place les capacités partagées du harnais sous `harness/`.
 
 Séparer les sources par portée :
 
-- les skills génériques proviennent du paquet npm `@sebastienelet/agent-skills`, acquis par Bun
-  à version exacte et verrouillé dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
+- les skills génériques proviennent de la branche `main` du dépôt Git `agent-skills`, acquise par
+  Bun et verrouillée dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
 - `proof-integrity-review` et `handoff` proviennent respectivement des paquets npm
   `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.2`,
   acquis par Bun à version exacte et verrouillés dans `bun.lock` ;

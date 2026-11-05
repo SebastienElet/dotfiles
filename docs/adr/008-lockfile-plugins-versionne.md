@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Dates** : 2024-10, 2026-08
-- **Révision** : 2026-10-13
+- **Révision** : 2026-11-05
 - **Commits** : `bef7198`
 
 ## Contexte
@@ -20,7 +20,7 @@ commit précis, et les mises à jour produisent un commit dédié
 (`chore(nvim): update plugins`) généré par le script d'upgrade.
 
 Dependabot propose chaque semaine les mises à jour des dépendances directes du
-projet Bun racine. Les dépendances directes présentes et futures restent
+projet Bun racine, sauf `agent-skills` suivi depuis Git selon l'ADR-040. Les dépendances npm directes restent
 éligibles après une fenêtre de refroidissement explicite d'au moins trois jours
 suivant la publication d'une version. `semctx` est exclu de cette fenêtre, par
 décision utilisateur du 2026-10-13 ; sa mise à jour reste proposée au rythme
@@ -36,7 +36,7 @@ couvre aucun autre écosystème ni les mises à jour du runtime Bun.
   trois cents sur douze ans — ce qui nuit à sa lisibilité.
 - Un poste neuf installe exactement les versions validées sur le poste
   courant.
-- Hors `semctx`, une nouvelle version attend au moins trois jours avant de
+- Hors `semctx` et la source Git `agent-skills`, une nouvelle version attend au moins trois jours avant de
   devenir éligible à une proposition, ce qui laisse apparaître les
   compromissions détectées rapidement au lieu de suivre immédiatement la
   publication. L'exception `semctx` renonce à ce délai d'observation.

@@ -32,7 +32,7 @@ Adopter trois frontières :
    exécutables placés directement sous ce répertoire sont sans extension et
    nommés en kebab-case.
 
-Les skills génériques sont consommées depuis leur paquet publié selon l'ADR-040 ;
+Les skills génériques sont consommées depuis leur dépôt Git selon l'ADR-040 ;
 leurs sources, tests et ressources appartiennent au dépôt autonome. Les capacités
 `proof-integrity-review` et `handoff` sont fournies respectivement par les paquets npm
 `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.2`,

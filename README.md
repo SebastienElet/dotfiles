@@ -102,7 +102,7 @@ or installing anything at launch. It requires that runtime and the pinned global
 rerun the installation after updating the Node pin to refresh the launcher. Installation preserves
 and reports a conflicting destination.
 
-The [published skill](https://www.npmjs.com/package/@sebastienelet/agent-skills/v/0.3.0) is deployed to Claude Code
+The [skill](https://github.com/SebastienElet/agent-skills) is deployed to Claude Code
 and Codex with the minimal profile, and to Cursor with the optional profile. Start with
 `"$HOME/.local/bin/assertledger" --version` and
 `"$HOME/.local/bin/assertledger" doctor /path/to/repository --json`.
@@ -117,7 +117,7 @@ backend; installation does not initialize projects or register an MCP server.
 
 - Add workstation configuration under `home/` and its deployment to the owning Moon project; validate with the tool's native check and `tooling:deployment-test`.
 - Add packages to their Brewfile or owning Moon task, with exact versions in `homebrew.lock.json`; Bun dependencies belong in `package.json` and `bun.lock`, validated by a frozen install.
-- Change generic skills in [agent-skills](https://github.com/SebastienElet/agent-skills), run its checks, then update the pinned consumer; repository skills stay in `.agents/skills/`.
+- Change generic skills in [agent-skills](https://github.com/SebastienElet/agent-skills), run its checks, then update the locked Git revision with `bun update @sebastienelet/agent-skills`; repository skills stay in `.agents/skills/`.
 - Change extracted tools in their own repositories ([Arnes](https://github.com/SebastienElet/arnes), [agent-handoff](https://github.com/SebastienElet/agent-handoff), [agent-experiments](https://github.com/SebastienElet/agent-experiments), [agent-reach-adapter](https://github.com/SebastienElet/agent-reach-adapter), [proof-integrity-review](https://github.com/SebastienElet/proof-integrity-review), [agent-measure](https://github.com/SebastienElet/agent-measure)); run their checks before updating the dotfiles consumer.
 - Resume work with the published `handoff` skill from agent-handoff: it writes a resume prompt; the user or enclosing workflow starts the next session.
 
