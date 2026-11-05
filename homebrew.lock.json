@@ -1,7 +1,7 @@
 {
   "formulae": {
     "actionlint": "1.7.12",
-    "awscli": "2.39.3",
+    "awscli": "2.39.4_1",
     "bat": "0.26.1",
     "bottom": "0.15.0",
     "broot": "1.62.0",
@@ -44,9 +44,9 @@
   },
   "casks": {
     "calibre": "9.17.0",
-    "chatgpt": "26.1029.61003",
+    "chatgpt": "26.1029.70936",
     "codexbar": "0.83.0",
-    "cursor-cli": "2026.10.22-27dcf5f",
+    "cursor-cli": "2026.11.05-86047df",
     "discord": "0.0.421",
     "dopplerhq/cli/doppler": "3.77.1",
     "entireio/tap/entire": "0.12.2",
