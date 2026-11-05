@@ -1,7 +1,7 @@
 {
   "CopilotChat.nvim": { "branch": "main", "commit": "2b7da97d655416462d4d5c38d0eb1f1eacc900a2" },
   "LazyVim": { "branch": "main", "commit": "999700997f72227187d49d8b92667183dc7fc809" },
-  "SchemaStore.nvim": { "branch": "main", "commit": "a7a40007c34b784585811dace3b7e1cc16669228" },
+  "SchemaStore.nvim": { "branch": "main", "commit": "4794bb7a4cf66b894f0029c3094b7936a8c0e8fe" },
   "auto-dark-mode.nvim": { "branch": "main", "commit": "2b16a24c202892e61fca7df4d2d7c4c872a44165" },
   "blink-copilot": { "branch": "main", "commit": "7ad8209b2f880a2840c94cdcd80ab4dc511d4f39" },
   "blink.cmp": { "branch": "main", "commit": "78336bc89ee5365633bcf754d93df01678b5c08f" },
@@ -12,7 +12,7 @@
   "cspell.nvim": { "branch": "main", "commit": "5feecef8d109f5460c576596aba44a6253127aa4" },
   "flash.nvim": { "branch": "main", "commit": "5f0f270fdc7c5b0c21d903ee85b9cb06f2ac636a" },
   "friendly-snippets": { "branch": "main", "commit": "b2ea5c41a150ba72fb656eedb4ed0a86d138d945" },
-  "fzf-lua": { "branch": "main", "commit": "07fce8ac8dffba4e11f1cbe5490d730a2cc5ec7a" },
+  "fzf-lua": { "branch": "main", "commit": "11357ee24a9f092b1db503237eb57e2a11e48434" },
   "gitsigns.nvim": { "branch": "main", "commit": "4bcd99167c265f135886b282baad77afe06206b2" },
   "grug-far.nvim": { "branch": "main", "commit": "91b7e58b6ffc6ddad5acb7a7c1df21257724449e" },
   "lazy.nvim": { "branch": "main", "commit": "85c7ff3711b730b4030d03144f6db6375044ae82" },
