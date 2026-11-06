@@ -1,7 +1,7 @@
 {
   "formulae": {
     "actionlint": "1.7.12",
-    "awscli": "2.39.4_1",
+    "awscli": "2.39.5",
     "bat": "0.26.1",
     "bottom": "0.15.0",
     "broot": "1.62.0",
@@ -43,8 +43,8 @@
     "zoxide": "0.10.0"
   },
   "casks": {
-    "calibre": "9.17.0",
-    "chatgpt": "26.1029.70936",
+    "calibre": "9.18.0",
+    "chatgpt": "26.1103.31037",
     "codexbar": "0.83.0",
     "cursor-cli": "2026.11.05-86047df",
     "discord": "0.0.421",
@@ -52,13 +52,13 @@
     "entireio/tap/entire": "0.12.2",
     "font-jetbrains-mono-nerd-font": "3.5.1",
     "google-chrome": "157.0.8103.39",
-    "grok-bot": "0.78.5",
+    "grok-bot": "0.79.2",
     "handy": "0.10.0",
-    "helium-browser": "0.20.3.1",
+    "helium-browser": "0.21.1.1",
     "languagetool-desktop": "3.4.1",
     "obsidian": "1.15.0",
     "orbstack": "2.2.5,21124",
     "vibe-island": "1.0.55",
-    "whatsapp": "26.44.15"
+    "whatsapp": "26.44.21"
   }
 }
