@@ -1,9 +1,9 @@
-# ADR-017 — npm pour les paquets globaux
+# ADR-017 — Bun pour les paquets globaux
 
 - **Statut** : accepté
 - **Date** : 2026-01
 - **Commits** : `8e91200`
-- **Révision** : 2026-10-27 (décision de Sébastien : rien de flottant sauf Codex et Claude)
+- **Révision** : 2026-11-06 (Bun comme cible des installations globales)
 
 ## Contexte
 
@@ -14,23 +14,25 @@ l'exportation des variables, sans jamais devenir fiable en CI.
 
 ## Décision
 
-Revenir à npm pour les installations globales. Le commit `8e91200` l'explique :
-« Replace pnpm with npm for global package installation to avoid Volta shim
-issues in CI. npm is bundled with Node and works seamlessly. » pnpm reste
-installé pour le développement de projets locaux.
+Adopter Bun comme gestionnaire cible des paquets npm installés globalement par le dépôt.
+La migration des installations existantes est progressive : chaque paquet conserve son
+installation actuelle jusqu'à sa migration explicite. Volta reste le gestionnaire de Node
+conformément à l'ADR-016 ; installer un paquet avec Bun ne signifie pas qu'il s'exécute avec Bun.
 
 Les paquets globaux installés par le dépôt portent une version exacte. `tooling/upgrade` ne met à
 jour que Codex, qui suit sa dernière version par décision ; les autres changent par le dépôt.
 
 ## Conséquences
 
-- Aucun répertoire global ni variable d'environnement supplémentaire à
-  configurer.
-- Installations globales plus lentes et plus volumineuses qu'avec pnpm.
-- La CI installe la chaîne Node sans étape de contournement.
+- Chaque migration vérifie le runtime requis, la version et le binaire effectivement résolu dans
+  le `PATH`, ainsi que le comportement de réinstallation, avant de retirer l'ancien chemin.
+- Les paquets non migrés continuent d'utiliser leurs mécanismes existants ; aucun nettoyage global
+  n'est implicite.
+- Les mutations globales Bun sont sérialisées par le mutex Moon `bun-global`.
 
 ## Alternatives écartées
 
 - pnpm en global : source du problème, retiré.
+- npm ou Volta pour les nouveaux paquets globaux : maintient plusieurs mécanismes cibles.
 - Installation par Homebrew des CLI Node : version découplée du runtime du
   projet.

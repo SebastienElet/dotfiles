@@ -61,7 +61,7 @@ ici sont les dates d'auteur.
 | [014](014-theme-catppuccin-unique.md)                  | Thème Catppuccin unique et bascule automatique                   | 2026-01 |
 | [015](015-cli-modernes.md)                             | CLI modernes en remplacement des historiques                     | 2026-01 |
 | [016](016-volta-gestionnaire-node.md)                  | Volta comme gestionnaire Node                                    | 2021-05 |
-| [017](017-npm-pour-paquets-globaux.md)                 | npm pour les paquets globaux                                     | 2026-01 |
+| [017](017-npm-pour-paquets-globaux.md)                 | Bun pour les paquets globaux                                     | 2026-01 |
 | [018](018-orbstack-runtime-conteneurs.md)              | OrbStack comme runtime de conteneurs                             | 2024-02 |
 | [019](019-pas-de-tiling-window-manager.md)             | Aucun gestionnaire de fenêtres en tuiles                         | 2025-12 |
 | [021](021-branche-main-detectee.md)                    | `main` détectée dynamiquement                                    | 2023-12 |
