@@ -15,8 +15,32 @@ env:
   MOON_HEAD: ${{ github.sha }}
 
 jobs:
+  select:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      macos: ${{ fromJSON(steps.macos.outputs.result).tasks.repository['macos-ci'] != null }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: ./.github/actions/setup-moon
+      - run: moon action-graph --json repository:macos-ci > /dev/null
+      - id: macos
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^repository$' --id '^macos-ci$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
+
   minimal:
     name: Minimal macOS profile
+    needs: select
+    if: needs.select.outputs.macos == 'true'
     runs-on: macos-26
     timeout-minutes: 30
     steps:
@@ -42,11 +66,14 @@ jobs:
 
   required:
     name: Smoke required
-    needs: minimal
+    needs: [select, minimal]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: test "$PASSED" = true
         env:
-          PASSED: ${{ needs.minimal.result == 'success' }}
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.macos == 'true' && needs.minimal.result == 'success') ||
+            (needs.select.outputs.macos == 'false' && needs.minimal.result == 'skipped')) }}

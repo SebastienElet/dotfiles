@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
+      macos: ${{ fromJSON(steps.macos.outputs.result).tasks.repository['macos-ci'] != null }}
       affected: ${{ fromJSON(steps.query.outputs.result).tasks.repository != null || fromJSON(steps.query.outputs.result).tasks.tooling != null }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,6 +28,15 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: ./.github/actions/setup-moon
+      - run: moon action-graph --json repository:macos-ci > /dev/null
+      - id: macos
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^repository$' --id '^macos-ci$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
       - run: >-
           moon action-graph --json repository:shell-ci repository:workflows-lint tooling:installer-test tooling:upgrade-test > /dev/null
       - id: query
@@ -40,7 +50,7 @@ jobs:
   shellcheck:
     name: Shell scripts
     needs: select
-    if: needs.select.outputs.affected == 'true'
+    if: needs.select.outputs.affected == 'true' && needs.select.outputs.macos == 'true'
     runs-on: macos-26
     timeout-minutes: 15
     steps:
@@ -64,5 +74,5 @@ jobs:
         env:
           PASSED: >-
             ${{ needs.select.result == 'success' &&
-            ((needs.select.outputs.affected == 'true' && needs.shellcheck.result == 'success') ||
-            (needs.select.outputs.affected == 'false' && needs.shellcheck.result == 'skipped')) }}
+            ((needs.select.outputs.affected == 'true' && needs.select.outputs.macos == 'true' && needs.shellcheck.result == 'success') ||
+            ((needs.select.outputs.affected == 'false' || needs.select.outputs.macos == 'false') && needs.shellcheck.result == 'skipped')) }}
