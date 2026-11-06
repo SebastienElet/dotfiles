@@ -58,6 +58,56 @@ Ignored files do not prevent removal and are deleted with an otherwise clean che
 Keep valuable ignored artifacts elsewhere or explicitly lock the worktree; any additional
 ignored-file protection requires a separate decision.
 
+Lantern is separately optional: `moon exec repository:lantern` installs the pinned
+plugin, Herdr and the Codex CLI, and deploys its portable `helper.conf` and composed
+instructions. Run this only when installation is authorized. `harness/lantern-revision`
+pins the plugin for both acquisition and composition. `harness:lantern` reads its
+registration through Herdr, verifies the installed prompt against that Git revision,
+and combines the complete upstream bytes with `harness/lantern.md` in
+`harness/generated/lantern/prompt.md`. The user config links to this generated file;
+do not edit it. Identical content is not rewritten. A missing registration, different
+revision, modified upstream prompt or redirected generation path causes refusal.
+No runtime environment variable is needed to load the upstream instructions.
+The instructions require a dedicated worktree for each requested
+agent, preserving existing tasks and active agents. These are agent instructions,
+not an enforced worktree allocation mechanism.
+The Lantern Codex process receives `model_auto_compact_token_limit=450000` at its
+next launch; other agents' compaction settings are unchanged. No running chat is
+reconfigured or restarted. The effective threshold still depends on Codex and the
+selected model's context limits.
+Existing divergent configuration files are preserved and cause deployment to fail;
+review and explicitly migrate them before retrying. Do not copy plugin registries,
+credentials or session state. Change these managed preferences in dotfiles rather
+than through Lantern's configuration-writing commands.
+For an already installed pinned plugin and prepared toolchain, inspect the action
+graph, then deploy only configuration with
+`moon run home:lantern harness:lantern --upstream none --no-actions` from the
+canonical checkout. First preserve existing config files in a private backup and
+move the conflicting destinations aside; the tasks never migrate them automatically.
+Stop on any failure before reopening Lantern. Restore the saved originals after
+removing only the newly created expected links to roll back. Reopen only the Lantern
+chat, not the Herdr server, and verify the new process arguments and generated
+instructions; opening an already running chat merely focuses it. Local plugin state
+and private decisions are not part of configuration rollback.
+New Codex tasks without an explicit model use GPT-6.1 Sol, resolved and preflighted
+through the live catalog; explicit choices are preserved, with no silent fallback
+to Astra. The helper itself starts with the configured Sol ID; the upstream launcher
+does not preflight that helper launch.
+New Claude tasks default to Sonnet 5.5 through the same live resolution and
+preflight process. Explicit choices and verified models of resumed sessions remain
+unchanged unless the user requests a change.
+Lantern's instructions retain concise user decisions in the private local file
+`${XDG_STATE_HOME:-$HOME/.local/state}/lantern/preferences.md` and request its
+reading at every fresh launch. Decisions retain their dates, concise context and
+active, superseded or withdrawn status, with links to replacements so they can be
+retrieved and reconsidered. Requests to forget remove the relevant history.
+This file is neither installed nor replicated.
+It excludes sensitive information and transcripts; local permissions are not
+encryption, and reading it exposes its contents to the model. Only explicitly
+selected, generalized preferences may be proposed for voluntary replication through
+dotfiles. Memory collection and startup reading depend on the agent following
+the instructions; they are not automatic launcher hooks.
+
 Persistent deployments must use the canonical checkout at `~/.dotfiles` as their source.
 For exceptional validation from a worktree, use isolated destinations and invoke only
 fixture-safe Moon tasks after inspecting their dependencies; an isolated `HOME` alone

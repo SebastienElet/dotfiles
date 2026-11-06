@@ -113,6 +113,33 @@ tasks:
       cache: false
       os: macos
       runInCI: false
+  lantern:
+    description: Install pinned Lantern with portable user configuration
+    command: noop
+    deps:
+      - herdr
+      - harness:codex-binary
+      - home:lantern
+      - harness:lantern
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
+  lantern-plugin:
+    description: Install the pinned Lantern plugin
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      set -e
+      revision=$(cat "$workspaceRoot/harness/lantern-revision")
+      herdr plugin install aigorahub/herdr-lantern --ref "$revision"
+    deps:
+      - herdr-setup
+    toolchains: system
+    options:
+      cache: false
+      os: macos
+      runInCI: false
   herdr-setup:
     description: Install the Herdr binary required by its harness skill
     deps:

@@ -26,6 +26,15 @@ taskOptions:
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
+  lantern:
+    description: Compose and deploy the pinned Lantern prompt with user preferences
+    script: |-
+      export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+      bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-lantern.ts" "$workspaceRoot" "$HOME"
+    deps:
+      - repository:dependencies
+      - repository:lantern-plugin
+    toolchains: bun
   doctor:
     description: Check manually installed user hooks for all agents
     script: '"$HOME/.local/bin/arnes" doctor hooks --scope user --color never'
