@@ -15,8 +15,19 @@ type Installation = Readonly<{
   url: string;
 }>;
 
+type DownloadLimits = Readonly<{
+  maximumBytes: number;
+  timeoutMilliseconds: number;
+}>;
+
 const sha256HexLength = 64;
 const usageFailureExitCode = 64;
+const maximumDownloadBytes = 33_554_432;
+const downloadTimeoutMilliseconds = 120_000;
+const downloadLimits: DownloadLimits = {
+  maximumBytes: maximumDownloadBytes,
+  timeoutMilliseconds: downloadTimeoutMilliseconds,
+};
 
 function parseInstallation(
   commandArguments: readonly string[],
@@ -54,25 +65,47 @@ function parseInstallation(
   return { destination, expectedChecksum, home, url };
 }
 
-async function download(url: string): Promise<Uint8Array> {
-  const response = await requestDictionary(url);
-  if (!response.ok) {
-    throw new DictionaryInstallationError(
-      `Dictionary download failed with HTTP ${response.status}: ${url}`,
-    );
+async function readWithinLimit(
+  body: Readonly<ReadableStream<Uint8Array>> | null,
+  limits: DownloadLimits,
+  url: string,
+): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of body ?? []) {
+    size += chunk.length;
+    if (size > limits.maximumBytes) {
+      throw new DictionaryInstallationError(
+        `Dictionary download exceeds ${limits.maximumBytes} bytes: ${url}`,
+      );
+    }
+    chunks.push(chunk);
   }
-  try {
-    return new Uint8Array(await response.arrayBuffer());
-  } catch {
-    throw new DictionaryInstallationError(`Dictionary download failed: ${url}`);
-  }
+  return Uint8Array.from(Buffer.concat(chunks));
 }
 
-async function requestDictionary(url: string): Promise<Response> {
+async function download(
+  url: string,
+  limits: DownloadLimits,
+): Promise<Uint8Array> {
+  const signal = AbortSignal.timeout(limits.timeoutMilliseconds);
   try {
-    return await fetch(url);
-  } catch {
-    throw new DictionaryInstallationError(`Dictionary download failed: ${url}`);
+    const response = await fetch(url, { signal });
+    if (!response.ok) {
+      throw new DictionaryInstallationError(
+        `Dictionary download failed with HTTP ${response.status}: ${url}`,
+      );
+    }
+    return await readWithinLimit(response.body, limits, url);
+  } catch (error) {
+    if (error instanceof DictionaryInstallationError) {
+      throw error;
+    }
+    throw new DictionaryInstallationError(
+      signal.aborted
+        ? `Dictionary download timed out after ${limits.timeoutMilliseconds} ms: ${url}`
+        : `Dictionary download failed: ${url}`,
+    );
   }
 }
 
@@ -104,7 +137,7 @@ async function install(installation: Installation): Promise<void> {
       `Refusing to replace existing dictionary: ${installation.destination}`,
     );
   }
-  const content = await download(installation.url);
+  const content = await download(installation.url, downloadLimits);
   verifyChecksum(content, installation.expectedChecksum, installation.url);
   await publishDictionary(
     {
@@ -116,7 +149,7 @@ async function install(installation: Installation): Promise<void> {
   );
 }
 
-export async function runDictionaryInstallation(
+async function runDictionaryInstallation(
   commandArguments: readonly string[],
   environment: Readonly<NodeJS.ProcessEnv>,
 ): Promise<number> {
@@ -134,3 +167,5 @@ export async function runDictionaryInstallation(
     return failure.exitCode;
   }
 }
+
+export { download, runDictionaryInstallation };

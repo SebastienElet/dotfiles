@@ -16,12 +16,17 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { download } from "./install-hunspell-dictionary.ts";
 import { join } from "node:path";
+import { rejects } from "node:assert/strict";
 
 const content = "dictionary\n";
 const checksum = sha256(content);
 const servers: ReturnType<typeof Bun.serve>[] = [];
 const usageFailureExitCode = 64;
+const defaultMaximumBytes = 33_554_432;
+const limits = { maximumBytes: 16, timeoutMilliseconds: 200 };
+const stallMilliseconds = 2000;
 
 afterEach(async () => {
   for (const server of servers.splice(0)) {
@@ -91,6 +96,21 @@ test("removes temporary content after a network failure", async () => {
 
   expect(installation.exitCode).not.toBe(0);
   expect(installation.stderr).toContain("Dictionary download failed");
+  expect(Bun.file(fixture.destination).size).toBe(0);
+  expect(temporaryFiles(fixture)).toEqual([]);
+});
+
+test("refuses a download above the default byte limit", async () => {
+  const fixture = createFixture();
+  const server = trackedServer(
+    () => new Response(new Uint8Array(defaultMaximumBytes + 1)),
+  );
+  const installation = await runInstaller(fixture, url(server), checksum);
+
+  expect(installation.exitCode).toBe(1);
+  expect(installation.stderr).toContain(
+    `Dictionary download exceeds ${defaultMaximumBytes} bytes`,
+  );
   expect(Bun.file(fixture.destination).size).toBe(0);
   expect(temporaryFiles(fixture)).toEqual([]);
 });
@@ -196,4 +216,67 @@ test("cleans up when publication loses to a directory", async () => {
   expect(installation.exitCode).toBe(1);
   expect(installation.stderr).toContain("concurrent dictionary destination");
   expect(temporaryFiles(fixture)).toEqual([]);
+});
+
+async function* chunks(
+  parts: readonly string[],
+  stall: boolean,
+): AsyncGenerator<string> {
+  yield* parts;
+  if (stall) {
+    await Bun.sleep(stallMilliseconds);
+  }
+}
+
+function exceedsLimit(address: string): Readonly<{ message: string }> {
+  return {
+    message: `Dictionary download exceeds ${limits.maximumBytes} bytes: ${address}`,
+  };
+}
+
+function timesOut(address: string): Readonly<{ message: string }> {
+  return {
+    message: `Dictionary download timed out after ${limits.timeoutMilliseconds} ms: ${address}`,
+  };
+}
+
+test("returns a body within the limits", async () => {
+  const server = trackedServer(
+    () => new Response(chunks(["0123", "4567"], false)),
+  );
+
+  const downloaded = await download(url(server), limits);
+
+  expect(new TextDecoder().decode(downloaded)).toBe("01234567");
+});
+
+test("rejects a streamed body that grows past the byte limit", async () => {
+  const server = trackedServer(
+    () => new Response(chunks(["0123456789", "0123456789"], false)),
+  );
+
+  await rejects(download(url(server), limits), exceedsLimit(url(server)));
+});
+
+test("rejects a body announced above the byte limit", async () => {
+  const server = trackedServer(
+    () => new Response("x".repeat(limits.maximumBytes + 1)),
+  );
+
+  await rejects(download(url(server), limits), exceedsLimit(url(server)));
+});
+
+test("rejects a download that stalls before any response", async () => {
+  const server = trackedServer(async (): Promise<Response> => {
+    await Bun.sleep(stallMilliseconds);
+    return new Response("late");
+  });
+
+  await rejects(download(url(server), limits), timesOut(url(server)));
+});
+
+test("rejects a download that stalls in the middle of the body", async () => {
+  const server = trackedServer(() => new Response(chunks(["0123"], true)));
+
+  await rejects(download(url(server), limits), timesOut(url(server)));
 });
