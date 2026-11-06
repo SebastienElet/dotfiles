@@ -1,0 +1,50 @@
+inheritedBy:
+  tags:
+    - repository
+tasks:
+  macos-ci:
+    description: Select macOS runners for workstation and platform changes
+    command: noop
+    toolchains: system
+    inputs:
+      - Brewfile*
+      - homebrew.lock.json
+      - install.sh
+      - moon.yml
+      - home/moon.yml
+      - harness/moon.yml
+      - tooling/moon.yml
+      - .moon/**/*
+      - package.json
+      - bun.lock
+      - tsconfig.json
+      - .github/actions/setup-moon/**/*
+      - .github/workflows/test.yml
+      - .github/workflows/check-shell.yml
+      - .github/workflows/test-deployment.yml
+      - .github/workflows/test-fish.yml
+      - .github/workflows/check-lua.yml
+      - tooling/install-homebrew
+      - tooling/install-moon
+      - tooling/install-apple-notes-exporter*.ts
+      - tooling/install-lumen*.ts
+      - tooling/install-claude-codex*.ts
+      - tooling/paid-apps-install*.ts
+      - tooling/homebrew-lock*.ts
+      - tooling/node-version-*.ts
+      - tooling/agent-reach*.ts
+      - tooling/smoke-minimal*.ts
+      - tooling/moon/bootstrap*.ts
+      - tooling/moon/homebrew-install.test.ts
+      - tooling/upgrade
+      - tooling/upgrade*.ts
+      - tooling/generate-herdr-skill.ts
+      - tooling/deployment-test-support.ts
+      - home/.config/nvim/upgrade.lua
+      - home/.config/nvim/lazy-lock.json
+      - home/.config/wezterm/**/*
+      - home/.config/fish/conf.d/homebrew.fish
+      - home/.config/fish/conf.d/python.fish
+      - home/.config/fish/conf.d/postgresql.fish
+      - home/.config/fish/conf.d/ruby.fish
+      - home/.config/fish/tests/path_test.fish

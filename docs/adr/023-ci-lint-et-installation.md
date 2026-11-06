@@ -2,7 +2,7 @@
 
 - **Statut** : accepté
 - **Date** : 2026-08
-- **Révision** : 2026-09-07
+- **Révision** : 2026-11-06
 - **Issue** : [#257](https://github.com/SebastienElet/dotfiles/issues/257)
 
 ## Contexte
@@ -16,8 +16,12 @@ Les workflows choisissent les runners, amorcent leurs runtimes et invoquent les 
 Leur préparation des outils de contrôle appartient au graphe Moon. Les plateformes existantes
 sont conservées : le poste complet est macOS ; les suites portables continuent sur Ubuntu.
 
-Le workflow d'installation conserve un job sur `macos-latest`, pour chaque pull request
-et push vers `main`, et appelle `tooling:smoke-minimal`.
+Pour chaque pull request et push vers `main`, les workflows sélectionnent les runners macOS
+avec les entrées de `repository:macos-ci`, indépendamment des tâches portables affectées.
+Cette sélection couvre l'installation du poste, Homebrew, l'amorçage partagé et les chemins
+propres à macOS ; les suites portables affectées conservent Ubuntu.
+Le workflow d'installation appelle `tooling:smoke-minimal` sur `macos-26` uniquement si cette
+sélection est affectée, selon la décision validée dans [#729](https://github.com/SebastienElet/dotfiles/issues/729).
 Cet oracle exerce le point d'entrée public `repository:install` avec l'entrée standard fermée.
 Il contrôle le Brewfile, les exécutables observés et le défaut Node hors projet, relève les
 artefacts possédés déjà observés par le smoke, puis capture un second passage du même profil.
@@ -27,6 +31,8 @@ postconditions et laisser les artefacts relevés identiques.
 ## Conséquences
 
 - Le smoke exerce le profil minimal public sans sélection des installations à partir du diff.
+- Les agrégateurs `required` acceptent un skip macOS prévu par la sélection, mais restent en
+  échec si la sélection ou un job attendu échoue ou est annulé.
 - Les tests spécialisés continuent d'exercer leurs erreurs et comportements sur leurs runners.
 - Le résultat d'un graphe ou d'une validation de syntaxe ne remplace pas le smoke exécuté.
 - La preuve reste limitée au runner nommé et aux observations effectuées ; elle ne couvre pas

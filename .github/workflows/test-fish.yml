@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
+      macos: ${{ fromJSON(steps.macos.outputs.result).tasks.repository['macos-ci'] != null }}
       affected: ${{ fromJSON(steps.query.outputs.result).tasks.repository != null }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,6 +28,15 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - uses: ./.github/actions/setup-moon
+      - run: moon action-graph --json repository:macos-ci > /dev/null
+      - id: macos
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^repository$' --id '^macos-ci$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
       - run: >-
           moon action-graph --json repository:fish-syntax repository:fish-format repository:fish-test > /dev/null
       - id: query
@@ -45,9 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-26
-          - ubuntu-24.04
+        os: ${{ fromJSON(needs.select.outputs.macos == 'true' && '["macos-26", "ubuntu-24.04"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
