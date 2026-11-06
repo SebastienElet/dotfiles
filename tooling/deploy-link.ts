@@ -11,19 +11,26 @@ import { z } from "zod";
 const argumentsSchema = z.tuple([z.string().min(1), z.string().min(1)]);
 const argumentOffset = 2;
 
-function deployLink(source: string, destination: string): void {
-  statSync(source);
+function needsDeploymentLink(source: string, destination: string): boolean {
   const metadata = lstatSync(destination, { throwIfNoEntry: false });
   if (
     metadata?.isSymbolicLink() === true &&
     readlinkSync(destination) === source
   ) {
-    return;
+    return false;
   }
   if (metadata !== undefined) {
     throw new Error(
       `${destination} exists and is not the expected symbolic link`,
     );
+  }
+  return true;
+}
+
+function deployLink(source: string, destination: string): void {
+  statSync(source);
+  if (!needsDeploymentLink(source, destination)) {
+    return;
   }
   mkdirSync(dirname(destination), { recursive: true });
   symlinkSync(source, destination);
@@ -43,4 +50,4 @@ if (import.meta.main) {
   }
 }
 
-export { deployLink };
+export { deployLink, needsDeploymentLink };

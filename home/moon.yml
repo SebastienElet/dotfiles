@@ -111,6 +111,14 @@ tasks:
     options:
       cache: false
       runInCI: false
+  lantern:
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$projectRoot/.config/herdr/plugins/config/aigora.lantern/helper.conf" "$HOME/.config/herdr/plugins/config/aigora.lantern/helper.conf"
+    deps:
+      - repository:dependencies
+    toolchains: bun
+    options:
+      cache: false
+      runInCI: false
   git-delta:
     script: |
       set -e
