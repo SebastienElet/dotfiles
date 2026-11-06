@@ -26,6 +26,17 @@ taskOptions:
   runFromWorkspaceRoot: true
   runInCI: false
 tasks:
+  pi:
+    description: Install the pinned Pi coding agent
+    script: bun --config=/dev/null --no-env-file install --global --exact --ignore-scripts @earendil-works/pi-coding-agent@1.5.0
+    deps: [repository:node]
+    checks:
+      - check: condition
+        script: |-
+          test -x "$HOME/.bun/bin/pi" &&
+          test "$(PATH="$HOME/.volta/bin:$PATH" "$HOME/.bun/bin/pi" --version)" = 1.5.0
+    toolchains: bun
+    options: { os: macos, mutex: bun-global }
   doctor:
     description: Check manually installed user hooks for all agents
     script: '"$HOME/.local/bin/arnes" doctor hooks --scope user --color never'

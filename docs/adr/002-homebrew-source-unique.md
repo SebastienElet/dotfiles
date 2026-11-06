@@ -42,7 +42,7 @@ dans les tâches Moon. La configuration Fish existante privilégie `~/.cargo/bin
 interactives. La migration n'installe pas de toolchain par défaut hors du dépôt.
 
 Une source non prise en charge par Bundle est exécutée directement par Moon une fois migrée :
-Volta/npm, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink.
+Volta/npm, Bun, installateur éditeur, build Rust, téléchargement avec intégrité ou symlink.
 Leurs sources, versions et contrôles de rejeu restent dans les déclarations Moon et les
 lockfiles concernés, sans inventaire documentaire ni gate miroir.
 
