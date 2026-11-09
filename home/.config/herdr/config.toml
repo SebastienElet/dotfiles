@@ -20,4 +20,4 @@ rows = [
 ]
 
 [ui.toast]
-delivery = "herdr"
+delivery = "off"
