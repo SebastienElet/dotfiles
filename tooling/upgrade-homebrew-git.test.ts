@@ -86,6 +86,40 @@ test.each([
 });
 
 test.each([
+  "brew update",
+  "brew upgrade --formula --yes",
+  "brew upgrade --cask",
+])("leaves the Homebrew lock file unchanged when %s fails", async (failure) => {
+  const fixture = await upgradeFixtureWithHomebrewLock();
+  const lock = join(fixture.repository, "homebrew.lock.json");
+  const before = await Bun.file(lock).text();
+  const result = await fixture.run({
+    UPGRADE_BREW_VERSION: "2.0.0",
+    UPGRADE_FAILURE: failure,
+  });
+  expect(result.status).toBe(1);
+  expect(await Bun.file(lock).text()).toBe(before);
+  expect(result.output).toContain("[not-attempted] Homebrew lock refresh");
+});
+
+test("refreshes the Homebrew lock after both upgrades and before verifying the installed versions", async () => {
+  const fixture = await upgradeFixtureWithHomebrewLock();
+  const result = await fixture.run({ UPGRADE_BREW_VERSION: "2.0.0" });
+  expect(result.status).toBe(0);
+  const calls = result.calls.split("\n");
+  const refresh = calls.indexOf("brew info --json=v2 --formula awscli");
+  expect(refresh).toBeGreaterThan(
+    calls.indexOf("brew upgrade --formula --yes"),
+  );
+  expect(refresh).toBeGreaterThan(
+    calls.indexOf("brew upgrade --cask --greedy --yes"),
+  );
+  expect(refresh).toBeLessThan(
+    calls.indexOf("brew info --json=v2 --installed"),
+  );
+});
+
+test.each([
   "status --porcelain -- homebrew.lock.json",
   "commit -m chore(homebrew): update lockfile",
 ])("keeps Homebrew %s failures visible and replayable", async (failure) => {

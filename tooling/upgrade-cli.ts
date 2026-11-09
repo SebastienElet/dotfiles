@@ -34,35 +34,45 @@ function homebrewLockCommand(
   ];
 }
 
-async function upgradeHomebrewPackages(
-  runner: UpgradeRunner,
-  repository: string,
-): Promise<void> {
-  process.stdout.write("ℹ️  Brew\n");
-  const metadata = await runner.command("Brew metadata", ["brew", "update"]);
-  const refreshed =
-    metadata.state === "succeeded"
-      ? await runner.command(
-          "Homebrew lock refresh",
-          homebrewLockCommand(repository, "refresh"),
-        )
-      : undefined;
-  if (refreshed === undefined) {
-    runner.skip("Homebrew lock refresh", "Homebrew metadata unavailable");
-  }
-  await runner.command("Brew packages", [
+async function upgradeBrewPackages(runner: UpgradeRunner): Promise<boolean> {
+  const formulae = await runner.command("Brew packages", [
     "brew",
     "upgrade",
     "--formula",
     "--yes",
   ]);
-  await runner.command("Brew casks", [
+  const casks = await runner.command("Brew casks", [
     "brew",
     "upgrade",
     "--cask",
     "--greedy",
     "--yes",
   ]);
+  return formulae.state === "succeeded" && casks.state === "succeeded";
+}
+
+async function upgradeHomebrewPackages(
+  runner: UpgradeRunner,
+  repository: string,
+): Promise<void> {
+  process.stdout.write("ℹ️  Brew\n");
+  const metadata = await runner.command("Brew metadata", ["brew", "update"]);
+  const upgraded = await upgradeBrewPackages(runner);
+  const refreshed =
+    metadata.state === "succeeded" && upgraded
+      ? await runner.command(
+          "Homebrew lock refresh",
+          homebrewLockCommand(repository, "refresh"),
+        )
+      : undefined;
+  if (refreshed === undefined) {
+    runner.skip(
+      "Homebrew lock refresh",
+      metadata.state === "succeeded"
+        ? "a Brew upgrade did not succeed"
+        : "Homebrew metadata unavailable",
+    );
+  }
   const verified =
     metadata.state === "not-attempted"
       ? undefined
