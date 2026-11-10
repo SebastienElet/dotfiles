@@ -168,13 +168,13 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
   continuer le travail indépendant. Une autorisation absente, une contradiction avec un ADR ou
   une preuve indispensable manquante ne se résolvent pas par une hypothèse.
 - **Arrêt sur blocage dans Herdr.** Si un blocage impose l'arrêt avant l'objectif,
-  produire un seul signalement par arrêt dans la sortie finale, destiné à Amélioration
-  continue (analyse et propositions seulement, sans changement automatique du harnais)
-  et à Harnais · Développeur (préparer l'amélioration du harnais). Le bot qui a lancé
-  l'agent CLI le relaie ; ne pas inventer de transport direct vers les bots. Limiter le
-  contenu à l'objectif, l'avancement, le blocage et la référence de session, sans secret
-  ni historique massif. Un stop délibéré de l'utilisateur n'est pas un blocage : aucun
-  signalement, jamais de relance contre ce stop.
+  produire un seul signalement par arrêt dans la sortie finale : objectif, avancement,
+  blocage et référence de session, sans secret ni historique massif. Il sert à l'analyse,
+  aux propositions et à la préparation d'améliorations du harnais, sans changement automatique.
+  Sa production ne dépend d'aucun bot ni service particulier. Un éventuel relais relève
+  du lanceur selon les capacités de l'instance ; ne pas inventer de transport.
+  Un stop délibéré de l'utilisateur n'est pas un blocage : aucun signalement, jamais
+  de relance contre ce stop.
 - **Validation concise.** Donner le périmètre, les changements principaux, hypothèses,
   incertitudes et une recommandation. Exécuter les étapes déjà autorisées sans me demander de
   relancer. Si une suite utile est identifiée mais nécessite mon intervention, terminer par une
