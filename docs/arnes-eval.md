@@ -44,6 +44,25 @@ Examiner les résultats et restituer les observations dans la PR ou la conversat
 Ne pas versionner ces rapports ponctuels. Le répertoire `harness/evidence/`
 reste requis par le validateur ; aucun rapport n'est nécessaire pour réussir.
 
+Les [scénarios d'autonomie](../harness/evals/autonomy-scenarios.md) forment un corpus manuel
+distinct des deux cas exécutables de `cases.json`. Les trois premiers utilisent une
+[fixture de reconfirmation](../harness/fixtures/autonomy-reconfirmation-v1.json) et des prompts
+français, dont la formule « décisions à valider ». Exécuter d'abord le texte de référence avec
+`gpt-6.1-sol`, effort `xhigh`, dans des environnements jetables. Une règle candidate n'est comparée
+sur les mêmes entrées qu'après reproduction d'un échec ciblé ; un timeout ou un défaut de fixture
+ne remplace pas cet échec. Relever décisions, questions, commits et effets réellement observés ;
+conserver les preuves hors dépôt. Le runner `agent-experiments@0.0.1` ne sait pas juger ces
+observations : ne pas leur attribuer un oracle de recherche pour obtenir un `PASS`, ni présenter
+la CI comme leur exécution.
+
+Les cas E8–E10 utilisent la [fixture d'autorisations locales](../harness/fixtures/autonomy-local-authority-v1.json) :
+droits fictifs, commit autorisé ou interdit, droit produit établi ou nouveau et destination dont
+l'isolation n'est pas démontrée. Charger les skills applicables dans l'environnement jetable et
+enregistrer leurs empreintes, sans modifier le paquet installé ni les liens actifs. Leurs sources
+anonymisées n'établissent pas le diagnostic des sessions signalées. Exercer les comptes réellement
+préparés et vérifier les commits ; les tests du composant fourni seuls ne suffisent pas. Si la
+sandbox ne peut pas être établie, ne pas lancer l'agent sans isolation : l'essai reste inconclusif.
+
 ## Limites et vérification
 
 Le preflight vérifie le démarrage du CLI, pas l'authentification ni l'accès au modèle.

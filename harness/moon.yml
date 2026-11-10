@@ -7,6 +7,7 @@ fileGroups:
     - selection.json
     - instructions.md
     - fixtures/**/*
+    - evals/**/*
     - variants/**/*
     - evidence/**/*
     - skills/**/*
