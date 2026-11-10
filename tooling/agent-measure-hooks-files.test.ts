@@ -133,15 +133,21 @@ test("creates private files and preserves existing permissions", () => {
   const existingMode = 0o640;
   const privateMode = 0o600;
   const permissionMask = 0o777;
+  const restrictiveMask = 0o077;
   writeSettings(home, ".claude/settings.json", { model: "keep-model" });
   chmodSync(join(home, ".claude/settings.json"), existingMode);
 
-  deployAgentMeasureHooks(home);
+  const previousMask = process.umask(restrictiveMask);
+  try {
+    deployAgentMeasureHooks(home);
 
-  expect(
-    lstatSync(join(home, ".claude/settings.json")).mode & permissionMask,
-  ).toBe(existingMode);
-  expect(lstatSync(join(home, ".codex/hooks.json")).mode & permissionMask).toBe(
-    privateMode,
-  );
+    expect(
+      lstatSync(join(home, ".claude/settings.json")).mode & permissionMask,
+    ).toBe(existingMode);
+    expect(
+      lstatSync(join(home, ".codex/hooks.json")).mode & permissionMask,
+    ).toBe(privateMode);
+  } finally {
+    process.umask(previousMask);
+  }
 });

@@ -1,5 +1,5 @@
-import { dirname, isAbsolute, join } from "node:path";
 import {
+  chmodSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -9,6 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { dirname, isAbsolute, join } from "node:path";
 import { z } from "zod";
 
 const nestedEvents = [
@@ -242,6 +243,7 @@ function writeDeployment(plan: Deployment): void {
   const staged = join(temporary, "settings");
   try {
     writeFileSync(staged, plan.contents, { mode: plan.mode });
+    chmodSync(staged, plan.mode);
     renameSync(staged, plan.path);
   } finally {
     rmSync(temporary, { force: true, recursive: true });
