@@ -69,6 +69,14 @@ content, report the limitation. Keep private or sensitive resources out of hoste
   check that runs. This requirement never authorizes a mirror gate; weaken the claim when no
   behaviorally relevant oracle exists.
 
+- **Observe assertion capabilities before replay.** An assertion that reads an environment API
+  (resident memory, clocks, filesystem) requires an observed availability boolean or stable digest
+  in the executor witness and replay fingerprint; image/runtime identity alone is insufficient.
+  For RSS, set `residentMemoryAvailable` only when the read returns a positive safe integer;
+  absent, invalid or throwing reads mean false. Hash the capability, never the volatile measurement.
+  Missing or non-true capability disables replay: execute fresh, preserve the assertions and report
+  the uncovered prerequisite (`resident memory measurement` for RSS).
+
 ## Code Style
 
 - Prefer names and structure that express intent directly.
