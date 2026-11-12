@@ -44,11 +44,26 @@ Examiner les résultats et restituer les observations dans la PR ou la conversat
 Ne pas versionner ces rapports ponctuels. Le répertoire `harness/evidence/`
 reste requis par le validateur ; aucun rapport n'est nécessaire pour réussir.
 
+Le [cas de disponibilité RSS](../harness/fixtures/executor-capabilities/case.json)
+est un mini-dépôt autonome, hors des deux cas pris en charge par
+`agent-experiments@0.0.1`. Matérialiser `files` dans un dépôt temporaire et `oracle`
+dans un répertoire séparé, puis exécuter `setup` avant l'essai. Pour chaque condition,
+utiliser une copie neuve, un HOME isolé et les instructions canoniques assemblées ;
+seule l'instruction candidate diffère. Conserver modèle, effort, versions et prompt
+identiques. Vérifier avant le modèle que le sandbox permet `git add` dans ce seul
+dépôt jetable. Après chaque exécution terminée, lancer `node /chemin/oracle/check.mjs`
+depuis le mini-dépôt : code 0 signifie PASS, code 10 signifie FAIL comportemental.
+Un prérequis bloquant, une sortie agent non nulle, un timeout, une assertion d'origine
+modifiée ou un crash d'oracle rendent l'essai INVALID. Conserver séparément stdout, stderr, diff et
+résultat d'oracle hors du dépôt. Un contrôle déterministe sur la fixture initiale
+ou une correction écrite à la main ne prouve pas l'effet de l'instruction.
+
 ## Limites et vérification
 
 Le preflight vérifie le démarrage du CLI, pas l'authentification ni l'accès au modèle.
-Les réplicats utilisent des HOME et workspaces synthétiques isolés, avec uniquement
-la section `Context Management` des instructions. Les shims `cat`, `rg` et `fd`
+Les réplicats du runner `agent-experiments` utilisent des HOME et workspaces
+synthétiques isolés, avec uniquement la section `Context Management` des instructions.
+Les shims `cat`, `rg` et `fd`
 mesurent les observations prévues ; d'autres lectures peuvent produire des faux négatifs.
 Ils ne sont pas protégés contre un agent qui les altère volontairement.
 
