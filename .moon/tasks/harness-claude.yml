@@ -17,6 +17,8 @@ tasks:
       - claude-skills
     toolchains: system
   claude-binary:
+    deps:
+      - home:agent-measure-config
     script: |-
       set -euo pipefail
       curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 https://claude.ai/install.sh | bash -s latest
