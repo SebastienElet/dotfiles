@@ -193,7 +193,11 @@ transactions). Aucun rappel de fondamentaux sur ces sujets : aller au fait.
 - **Découpage de travail ≠ découpage de PR.** Découper une tâche lorsque cela borne
   utilement le contexte d'un agent, permet une session fraîche ou ouvre du parallélisme.
   Les sous-tâches n'ont pas à correspondre 1:1 aux PR : plusieurs peuvent converger dans
-  une même PR lorsque cela réduit le coût de review ou accélère la livraison.
+  une même PR lorsque cela réduit le coût de review ou accélère la livraison. Le correctif d'une
+  cause racine (ex. la configuration qui a laissé passer le défaut) rejoint la PR du défaut,
+  sans demander : une seconde PR n'ajoute que du travail. N'ouvrir une PR séparée que si une règle
+  du dépôt l'impose ou si le changement est sans lien avec le défaut traité ; dans ce cas, ne pas
+  demander non plus, la créer et l'annoncer.
 - **Rester focalisé.** Prioriser blocages, réduction d'incertitude, fonctionnel, puis dette.
   Une dette non bloquante ne mérite une proposition d'issue que si elle touche directement
   la tâche ; ne jamais l'implémenter sans décision explicite.
