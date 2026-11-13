@@ -146,7 +146,6 @@ hooks:
       - { agent: codex, scope: user }
   - id: measurement
     installations:
-      - { agent: claude, scope: user }
       - { agent: cursor, scope: user }
       - { agent: codex, scope: user }
   - id: handoff
