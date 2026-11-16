@@ -28,7 +28,7 @@
     "@types/bun": "1.4.4",
     "oxfmt": "0.76.0",
     "oxlint": "1.93.0",
-    "oxlint-tsgolint": "7.0.2006",
+    "oxlint-tsgolint": "7.0.2007",
     "prettier": "3.10.1",
     "typescript": "7.0.2",
     "cspell": "10.4.1"
