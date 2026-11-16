@@ -21,7 +21,7 @@
         "oxfmt": "0.76.0",
         "oxlint": "1.91.0",
         "oxlint-tsgolint": "7.0.2006",
-        "prettier": "3.9.10",
+        "prettier": "3.10.1",
         "typescript": "7.0.2",
       },
     },
@@ -275,7 +275,7 @@
 
     "@sebastienelet/agent-measure-darwin-arm64": ["@sebastienelet/agent-measure-darwin-arm64@0.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-9uC5XzFr6DzlBIqJ2yjeD0WhIPb7uW12WzQzsANsGRwMGTe+4w11sRra9iL3UNk/kyr7dRlzNYYQeOKxjXNIng=="],
 
-    "@sebastienelet/agent-measure-linux-x64-gnu": ["@sebastienelet/agent-measure-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64", "libc": "glibc" }, "sha512-3LBaDIDsh+TkLXf/DOWufE1+KNHOj9M26XosbOfh+2qL2+tk0JAKjGSC2XxBvJ4FxOBXqHYfi89zz8lPnCjJQg=="],
+    "@sebastienelet/agent-measure-linux-x64-gnu": ["@sebastienelet/agent-measure-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-3LBaDIDsh+TkLXf/DOWufE1+KNHOj9M26XosbOfh+2qL2+tk0JAKjGSC2XxBvJ4FxOBXqHYfi89zz8lPnCjJQg=="],
 
     "@sebastienelet/agent-reach-adapter": ["@sebastienelet/agent-reach-adapter@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64", "bin": { "agent-reach-adapter": "src/agent-reach.ts" } }, "sha512-U5b54vmOZ4pkPVH7neWNsxcXv61wodcOqDiPTYmv47A1YC9MtnudzOTPKIpQ4d118oQRBryxc9rKYXpr6XDNAQ=="],
 
@@ -401,7 +401,7 @@
 
     "picomatch": ["picomatch@4.0.7", "", {}, "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA=="],
 
-    "prettier": ["prettier@3.9.10", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA=="],
+    "prettier": ["prettier@3.10.1", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-70vp3ZUYoPlFbF9uiTdXHUUCGEIp7d4+6p+8DYbkm2jP7x/3i/paXVF6dopSI3zd/CEitrZN1rc4i85xWmmXlg=="],
 
     "resolve-from": ["resolve-from@5.0.0", "", {}, "sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw=="],
 
