@@ -1,0 +1,6 @@
+#!/usr/bin/env bun
+
+import { codexProfile } from "./codex-profile.ts";
+
+const argumentOffset = 2;
+await codexProfile(process.argv.slice(argumentOffset));

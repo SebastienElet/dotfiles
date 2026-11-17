@@ -11,6 +11,7 @@ tasks:
     deps:
       - codex-binary
       - codex-instructions
+      - codex-profile
       - codex-agents
       - codex-skills
     toolchains: system
@@ -31,6 +32,19 @@ tasks:
       bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/assemble-agent-instructions.ts" "$workspaceRoot/harness" "$HOME/.codex/AGENTS.md"
     deps:
       - repository:dependencies
+    toolchains: bun
+  codex-profile:
+    description: Deploy the launcher for explicitly requested Codex profiles
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/tooling/codex-profile" "$HOME/.local/bin/codex-profile"
+    deps: [repository:dependencies]
+    inputs:
+      - /tooling/codex-profile
+      - /tooling/codex-profile.ts
+      - /tooling/codex-profile-observation.ts
+      - /tooling/codex-profile-git.ts
+      - /tooling/codex-profile-launch.ts
+      - /tooling/codex-profile-relay.ts
+      - /tooling/deploy-link.ts
     toolchains: bun
   codex-agents:
     script: |-
