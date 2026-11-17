@@ -40,7 +40,11 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
 6. Keep installation of the workstation macOS-only and preserve the existing portable checks.
    Homebrew mutations share the homebrew mutex; tests must not assume a runtime exists merely
    because one CI runner currently provides it.
-7. In a worktree, inspect the task and its action graph before execution. Execute only deployment
+7. Before validation creates or cleans local resources, follow
+   [references/validation-resources.md](references/validation-resources.md). Establish ownership,
+   retention and any resource reservation before execution; a required check may create private
+   fixtures, but does not authorize changing shared resources.
+8. In a worktree, inspect the task and its action graph before execution. Execute only deployment
    tasks proven to mutate fixture-local links or configuration, without their global installation
    dependencies; the macOS CI smoke exercises the full minimal installation graph.
    Persistent deployments use the canonical checkout at `~/.dotfiles`. For exceptional validation,
@@ -50,10 +54,10 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
    deploying. Keep it locked until the change is integrated into the canonical checkout, explicitly
    redirect the affected links there, verify their resolved targets, then unlock it. Herdr cleanup
    does not discover or repair deployed links; ignored files do not prevent removal.
-8. Validate declarative changes with Moon's native configuration and action graph, then run the
+9. Validate declarative changes with Moon's native configuration and action graph, then run the
    relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
-9. Before adding or updating documentation, apply the repository's `docs/README.md` policy and
-   shared guide template. Return one-off findings in the conversation or PR.
+10. Before adding or updating documentation, apply the repository's `docs/README.md` policy and
+    shared guide template. Return one-off findings in the conversation or PR.
 
 ## Gotchas
 
