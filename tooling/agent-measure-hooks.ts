@@ -58,6 +58,7 @@ const profiles = [
       "afterAgentResponse",
       "stop",
       "preCompact",
+      "postCompact",
       "sessionEnd",
     ],
   },

@@ -20,7 +20,10 @@ const claudeSchema = z.object({
   hooks: z.object({ PreToolUse: z.array(groupSchema) }),
 });
 const cursorSchema = z.object({
-  hooks: z.object({ preToolUse: z.array(commandSchema) }),
+  hooks: z.object({
+    preToolUse: z.array(commandSchema),
+    postCompact: z.array(commandSchema).optional(),
+  }),
 });
 
 afterEach(() => {
@@ -79,6 +82,25 @@ test("keeps the native Cursor collector active in Cursor", () => {
   const command = settings.hooks.preToolUse[0]?.command;
   if (command === undefined) {
     throw new Error("Cursor command is missing");
+  }
+
+  const result = cursorInvocation(home, command);
+
+  expect(result.exitCode).toBe(0);
+  expect(readFileSync(join(home, "arguments"), "utf8")).toBe(
+    "hook\n--agent\ncursor\n",
+  );
+});
+
+test("collects Cursor events after compaction", () => {
+  const home = collectorHome();
+  const settings = cursorSchema.parse(
+    JSON.parse(readFileSync(join(home, ".cursor/hooks.json"), "utf8")),
+  );
+  const command = settings.hooks.postCompact?.[0]?.command;
+  expect(command).toBeDefined();
+  if (command === undefined) {
+    throw new Error("Cursor post-compaction command is missing");
   }
 
   const result = cursorInvocation(home, command);
