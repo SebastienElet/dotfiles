@@ -7,11 +7,12 @@ directement exploitable par un humain comme par un agent.
 
 ## Guides
 
-| Sujet                                                | Guide                         |
-| ---------------------------------------------------- | ----------------------------- |
-| Diagnostic de la configuration du harnais            | [Arnes](arnes.md)             |
-| Installation optionnelle et connexion des canaux web | [Agent-Reach](agent-reach.md) |
-| Évaluations déterministes et essais live manuels     | [Évaluations](arnes-eval.md)  |
+| Sujet                                                | Guide                            |
+| ---------------------------------------------------- | -------------------------------- |
+| Diagnostic de la configuration du harnais            | [Arnes](arnes.md)                |
+| Observation d’un profil de session Codex             | [Profil Codex](codex-profile.md) |
+| Installation optionnelle et connexion des canaux web | [Agent-Reach](agent-reach.md)    |
+| Évaluations déterministes et essais live manuels     | [Évaluations](arnes-eval.md)     |
 
 ## Structure
 
