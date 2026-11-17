@@ -1,14 +1,7 @@
-import { type BigIntStats, constants } from "node:fs";
-import {
-  type FileHandle,
-  link,
-  lstat,
-  mkdir,
-  open,
-  unlink,
-} from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
+import { link, lstat, mkdir, open, unlink } from "node:fs/promises";
 import { DictionaryInstallationError } from "./install-hunspell-dictionary-error.ts";
+import { constants } from "node:fs";
 import { join } from "node:path";
 
 type DirectoryIdentity = Readonly<{
@@ -42,17 +35,16 @@ async function inspectDirectory(
   path: string,
   label: "home" | "dictionary",
 ): Promise<DirectoryIdentity> {
-  let status: BigIntStats | undefined = undefined;
-  try {
-    status = await lstat(path, { bigint: true });
-  } catch (error) {
-    if (!hasCode(error, "ENOENT")) {
-      const directoryLabel = label === "home" ? "home" : "dictionary";
-      throw new DictionaryInstallationError(
-        `Cannot inspect ${directoryLabel} directory ${path}: ${errorMessage(error)}`,
-      );
-    }
-  }
+  const status = await lstat(path, { bigint: true }).catch(
+    (error: unknown): undefined => {
+      if (!hasCode(error, "ENOENT")) {
+        const directoryLabel = label === "home" ? "home" : "dictionary";
+        throw new DictionaryInstallationError(
+          `Cannot inspect ${directoryLabel} directory ${path}: ${errorMessage(error)}`,
+        );
+      }
+    },
+  );
   if (
     status === undefined ||
     status.isSymbolicLink() ||
@@ -90,24 +82,19 @@ async function assertDirectoryIdentity(
 }
 
 async function readRegularFile(path: string): Promise<Uint8Array | undefined> {
-  let file: FileHandle | undefined = undefined;
-  try {
-    file = await open(
-      path,
-      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
-    );
-  } catch (error) {
+  const file = await open(
+    path,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+  ).catch((error: unknown): undefined => {
     if (hasCode(error, "ENOENT")) {
-      return undefined;
+      return;
     }
     throw new DictionaryInstallationError(
       `Refusing non-regular dictionary destination: ${path}`,
     );
-  }
+  });
   if (file === undefined) {
-    throw new DictionaryInstallationError(
-      `Refusing non-regular dictionary destination: ${path}`,
-    );
+    return undefined;
   }
   try {
     const before = await file.stat({ bigint: true });
@@ -129,16 +116,15 @@ async function assertFileIdentity(
   expectedDevice: bigint,
   expectedInode: bigint,
 ): Promise<void> {
-  let after: BigIntStats | undefined = undefined;
-  try {
-    after = await lstat(path, { bigint: true });
-  } catch (error) {
-    if (!hasCode(error, "ENOENT")) {
-      throw new DictionaryInstallationError(
-        `Cannot inspect dictionary destination ${path}: ${errorMessage(error)}`,
-      );
-    }
-  }
+  const after = await lstat(path, { bigint: true }).catch(
+    (error: unknown): undefined => {
+      if (!hasCode(error, "ENOENT")) {
+        throw new DictionaryInstallationError(
+          `Cannot inspect dictionary destination ${path}: ${errorMessage(error)}`,
+        );
+      }
+    },
+  );
   if (
     after === undefined ||
     after.isSymbolicLink() ||
@@ -210,17 +196,14 @@ async function linkVerifiedTemporary(
         `Dictionary publication failed: ${destination}: ${errorMessage(error)}`,
       );
     }
-    let concurrentMatch: boolean | undefined = undefined;
-    try {
-      concurrentMatch = await existingDictionaryMatches(
-        destination,
-        expectedChecksum,
-      );
-    } catch (inspectionError) {
+    const concurrentMatch = await existingDictionaryMatches(
+      destination,
+      expectedChecksum,
+    ).catch((inspectionError: unknown) => {
       throw new DictionaryInstallationError(
         `Refusing to replace concurrent dictionary destination: ${destination}: ${errorMessage(inspectionError)}`,
       );
-    }
+    });
     if (concurrentMatch === true) {
       return;
     }
