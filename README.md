@@ -121,6 +121,11 @@ backend; installation does not initialize projects or register an MCP server.
 - Change extracted tools in their own repositories ([Arnes](https://github.com/SebastienElet/arnes), [agent-handoff](https://github.com/SebastienElet/agent-handoff), [agent-experiments](https://github.com/SebastienElet/agent-experiments), [agent-reach-adapter](https://github.com/SebastienElet/agent-reach-adapter), [proof-integrity-review](https://github.com/SebastienElet/proof-integrity-review), [agent-measure](https://github.com/SebastienElet/agent-measure)); run their checks before updating the dotfiles consumer.
 - Resume work with the published `handoff` skill from agent-handoff: it writes a resume prompt; the user or enclosing workflow starts the next session.
 
+For explicitly enrolled non-interactive Codex tasks, the opt-in
+[task supervisor](docs/superviseur.md) persists the mandate and checkpoint outside the worktree,
+starts fresh sessions after a handoff, and bounds capacity waits. Install it from the canonical
+checkout with `moon exec harness:agent-supervisor`; it does not attach to existing interactive sessions.
+
 Use `tooling/install-moon` to install the locked Moon version and start with the
 smallest relevant task below. Workstation installation is macOS-only; portable
 checks also run on Ubuntu. Inspect the task definition and its native action graph before running
