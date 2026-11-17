@@ -1,5 +1,12 @@
 {
-  projects: { repository: ".", harness: harness, home: home, tooling: tooling },
+  projects:
+    {
+      repository: ".",
+      harness: harness,
+      home: home,
+      tooling: tooling,
+      supervisor: tooling/agent-supervisor,
+    },
   defaultProject: repository,
   vcs: { defaultBranch: main },
 }

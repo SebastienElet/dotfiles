@@ -1,0 +1,31 @@
+language: rust
+taskOptions:
+  cache: false
+tasks:
+  check:
+    deps: [repository:rust]
+    toolchains: system
+    inputs:
+      - src/**/*.rs
+      - tests/**/*.rs
+      - Cargo.toml
+      - Cargo.lock
+      - moon.yml
+      - /rust-toolchain.toml
+      - /rustfmt.toml
+      - /clippy.toml
+      - /.github/workflows/test-supervisor.yml
+    script: |-
+      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+      set -e
+      cargo fmt --check
+      cargo clippy --locked --all-targets --features test-support -- -D warnings
+      cargo test --locked --features test-support
+  build:
+    deps: [repository:rust]
+    toolchains: system
+    options:
+      runInCI: false
+    script: |-
+      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+      cargo build --locked --release --bin agent-supervisor

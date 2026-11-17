@@ -1,0 +1,29 @@
+[package]
+name = "agent-supervisor"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+signal-hook = "=0.4.6"
+nix = { version = "=0.31.3", features = ["signal"] }
+
+[dev-dependencies]
+tempfile = "=3.27.0"
+
+[features]
+test-support = []
+
+[[bin]]
+name = "supervisor-test-agent"
+path = "tests/support/agent.rs"
+required-features = ["test-support"]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+too_many_lines = "deny"
