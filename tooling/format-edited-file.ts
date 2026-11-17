@@ -29,15 +29,13 @@ function singleLine(text: string): string {
 }
 
 function deadline(formatter: Formatter, milliseconds: number): Deadline {
-  let timer: ReturnType<typeof setTimeout> | undefined = undefined;
-  const expired = new Promise<Transformation>((resolve) => {
-    timer = setTimeout(() => {
-      resolve({
-        kind: "failed",
-        reason: `${formatter.name} timed out after ${milliseconds} ms`,
-      });
-    }, milliseconds);
-  });
+  const { promise: expired, resolve } = Promise.withResolvers<Transformation>();
+  const timer = setTimeout(() => {
+    resolve({
+      kind: "failed",
+      reason: `${formatter.name} timed out after ${milliseconds} ms`,
+    });
+  }, milliseconds);
   return {
     cancel: () => {
       clearTimeout(timer);
