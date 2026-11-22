@@ -2,14 +2,14 @@ use serde::Deserialize;
 use std::{
     cell::RefCell,
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     time::Duration,
 };
 
 use crate::{
-    Result, ensure,
-    model::{self, Checkpoint, Phase, State},
+    Result, ensure, handoff,
+    model::{self, Checkpoint, Outcome, Phase, State},
     process::{self, Cancellation},
     store,
 };
@@ -27,6 +27,8 @@ struct Receipt {
     started: bool,
     completed: bool,
     failed: bool,
+    active: bool,
+    turns_started: u32,
 }
 
 impl Receipt {
@@ -49,14 +51,21 @@ impl Receipt {
                 }
                 "turn.started" => {
                     ensure(
-                        self.thread_id.is_some() && !self.started,
+                        self.thread_id.is_some() && !self.active,
                         "unattributed turn",
                     )?;
                     self.started = true;
+                    self.completed = false;
+                    self.active = true;
+                    self.turns_started = self
+                        .turns_started
+                        .checked_add(1)
+                        .ok_or("turn count overflow")?;
                 }
                 "turn.completed" => {
-                    ensure(self.started && !self.completed, "unexpected completion")?;
+                    ensure(self.active, "unexpected completion")?;
                     self.completed = true;
+                    self.active = false;
                 }
                 "turn.failed" | "error" => self.failed = true,
                 _ => {}
@@ -77,6 +86,7 @@ impl Receipt {
         if proof.thread_id == self.thread_id
             && proof.started == self.started
             && proof.completed == self.completed
+            && proof.turns_started == self.turns_started
         {
             return Ok(());
         }
@@ -84,6 +94,7 @@ impl Receipt {
         proof.fresh_thread = fresh_thread;
         proof.started = self.started;
         proof.completed = self.completed;
+        proof.turns_started = self.turns_started;
         store::save(directory, state)
     }
 }
@@ -93,40 +104,7 @@ pub fn turn(
     state: &mut State,
     cancellation: &Cancellation,
 ) -> Result<Checkpoint> {
-    let attempt = store::create_directory(&directory.join(format!("attempt-{}", state.attempts)))?;
-    store::write_json(&attempt.join("schema.json"), &model::checkpoint_schema())?;
-    let prompt_path = attempt.join("prompt");
-    use std::io::Write;
-    store::create_file(&prompt_path)?
-        .write_all(model::prompt(state, &directory.join("drafts"))?.as_bytes())?;
-    let mut command = Command::new(&state.mandate.codex);
-    command
-        .args([
-            "--ask-for-approval",
-            "never",
-            "exec",
-            "--config",
-            "model_provider=\"openai\"",
-            "--json",
-            "--color",
-            "never",
-            "--ephemeral",
-            "--model",
-            &state.mandate.model,
-            "--sandbox",
-            state.mandate.sandbox.argument(),
-            "--cd",
-        ])
-        .arg(&state.mandate.repository)
-        .arg("--add-dir")
-        .arg(directory.join("drafts"))
-        .arg("--output-schema")
-        .arg(attempt.join("schema.json"))
-        .arg("--output-last-message")
-        .arg(attempt.join("result.json"))
-        .arg("-")
-        .stdin(fs::File::open(&prompt_path)?)
-        .current_dir(&state.mandate.repository);
+    let mut attempt = prepare(directory, state, cancellation)?;
     let mut receipt = Receipt::default();
     let timeout = state
         .mandate
@@ -135,7 +113,7 @@ pub fn turn(
     let expires_at = state.mandate.expires_at;
     let shared = RefCell::new(state);
     process::run(
-        &mut command,
+        &mut attempt.command,
         directory,
         cancellation,
         Duration::from_secs(timeout),
@@ -166,9 +144,83 @@ pub fn turn(
             .is_some_and(|proof| proof.fresh_thread),
         "old thread cannot confirm a new attempt",
     )?;
-    let checkpoint: Checkpoint = store::read_json(&attempt.join("result.json"))?;
-    checkpoint.validate()?;
+    let has_note = attempt.note.exists();
+    let path = if has_note {
+        &attempt.note
+    } else {
+        &attempt.reply
+    };
+    let checkpoint = handoff::checkpoint(path, directory, state, cancellation)?;
+    ensure(
+        checkpoint.outcome != Outcome::Handoff || has_note,
+        "handoff requires a published durable note",
+    )?;
     Ok(checkpoint)
+}
+
+struct Attempt {
+    command: Command,
+    note: PathBuf,
+    reply: PathBuf,
+}
+
+fn prepare(directory: &Path, state: &State, cancellation: &Cancellation) -> Result<Attempt> {
+    let attempt = store::create_directory(&directory.join(format!("attempt-{}", state.attempts)))?;
+    let notes = store::create_directory(&attempt.join("notes"))?;
+    let note = notes.join("note.json");
+    let reply = attempt.join("result.json");
+    store::write_json(
+        &attempt.join("schema.json"),
+        &handoff::schema(directory, state, cancellation)?,
+    )?;
+    store::write_json(&attempt.join("context.json"), &handoff::context(state))?;
+    let prompt_path = attempt.join("prompt");
+    use std::io::Write;
+    store::create_file(&prompt_path)?.write_all(
+        model::prompt(
+            state,
+            &directory.join("drafts"),
+            &handoff::skill_path(directory, state, cancellation)?,
+        )?
+        .as_bytes(),
+    )?;
+    let mut command = Command::new(&state.mandate.codex);
+    command
+        .args([
+            "--ask-for-approval",
+            "never",
+            "exec",
+            "--config",
+            "model_provider=\"openai\"",
+            "--json",
+            "--color",
+            "never",
+            "--model",
+            &state.mandate.model,
+            "--sandbox",
+            state.mandate.sandbox.argument(),
+            "--cd",
+        ])
+        .arg(&state.mandate.repository)
+        .arg("--add-dir")
+        .arg(directory.join("drafts"))
+        .arg("--add-dir")
+        .arg(notes)
+        .arg("--output-schema")
+        .arg(attempt.join("schema.json"))
+        .arg("--output-last-message")
+        .arg(&reply)
+        .arg("-")
+        .stdin(fs::File::open(&prompt_path)?)
+        .current_dir(&state.mandate.repository)
+        .env("HANDOFF_NOTE_PATH", &note)
+        .env("HANDOFF_CONTEXT_PATH", attempt.join("context.json"))
+        .env("HANDOFF_EXECUTABLE", &state.mandate.handoff);
+    Ok(Attempt {
+        command,
+        note,
+        reply,
+    })
 }
 
 #[derive(Deserialize)]

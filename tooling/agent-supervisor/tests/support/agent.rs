@@ -3,6 +3,9 @@ use std::{env, fs, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<String> = env::args().collect();
+    if protocol_command(&arguments)? {
+        return Ok(());
+    }
     if arguments
         .get(1)
         .is_some_and(|value| value == "--descendant")
@@ -40,8 +43,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let checkpoint = json!({
         "outcome":outcome,
         "summary":"synthetic evidence", "next_action":"read the preserved draft",
-        "task_constraints":["no publication for this task"],
-        "permanent_rule_sources":["AGENTS.md"],
+        "constraints":[{"scope":"previous_mandate","instruction":"no publication for this task","source":"synthetic user mandate"},
+            {"scope":"permanent","instruction":"follow current repository rules","source":"AGENTS.md"}],
         "decision":if outcome == "decision" {json!({"question":"Which synthetic option?", "options":["A","B"],"recommendation":"A"})} else {json!(null)},
         "dependency":if outcome == "dependency" {json!({"event":"third-party PR merged", "authorized_action":"rerun integration"})} else {json!(null)}
     });
@@ -61,12 +64,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fs::write(repository.join("child-pid"), child.id().to_string())?;
         return hold();
     }
+    let note = note_for_checkpoint(checkpoint, &scenario)?;
+    if let Ok(path) = env::var("HANDOFF_NOTE_PATH")
+        && scenario != "missing-note"
+    {
+        fs::write(
+            path,
+            if scenario == "invalid-result" {
+                b"[]".to_vec()
+            } else {
+                serde_json::to_vec(&note)?
+            },
+        )?;
+    }
     fs::write(
         argument("--output-last-message")?,
         if scenario == "invalid-result" {
             b"[]".to_vec()
         } else {
-            serde_json::to_vec(&checkpoint)?
+            serde_json::to_vec(&note)?
         },
     )?;
     if scenario == "truncated" {
@@ -80,8 +96,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", json!({"type":"turn.failed"}));
         return Ok(());
     }
+    if scenario == "hook-continuation" {
+        println!("{}", json!({"type":"turn.completed"}));
+        println!("{}", json!({"type":"turn.started"}));
+    }
     println!("{}", json!({"type":"turn.completed"}));
     Ok(())
+}
+
+fn note_for_checkpoint(
+    checkpoint: serde_json::Value,
+    scenario: &str,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let mut note: serde_json::Value =
+        serde_json::from_slice(&fs::read(env::var("HANDOFF_CONTEXT_PATH")?)?)?;
+    note["checkpoint"] = checkpoint;
+    if scenario == "wrong-task" {
+        note["task_id"] = json!("another-task");
+    }
+    if scenario == "new-permission" {
+        note["permissions"] = json!(["invented publication permission"]);
+    }
+    Ok(note)
+}
+
+fn protocol_command(arguments: &[String]) -> Result<bool, Box<dyn std::error::Error>> {
+    match arguments.get(1).map(String::as_str) {
+        Some("note-schema") => println!("{}", json!({"type":"object"})),
+        Some("skill-path") => {
+            println!("{}", env::current_dir()?.join("fixture-skill.md").display())
+        }
+        Some("note-validate") => {
+            let input: serde_json::Value = serde_json::from_reader(std::io::stdin())?;
+            println!("{input}");
+        }
+        _ => return Ok(false),
+    }
+    if let Some(operation) = arguments.get(1)
+        && arguments
+            .first()
+            .is_some_and(|program| program.ends_with(&format!("reject-{operation}")))
+    {
+        return Err("synthetic handoff port refusal".into());
+    }
+    Ok(true)
 }
 
 fn hold() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
 use std::path::PathBuf;
 
 use crate::{Result, ensure};
@@ -14,6 +13,7 @@ pub struct Mandate {
     pub permissions: Vec<String>,
     pub codex: PathBuf,
     pub codexbar: PathBuf,
+    pub handoff: PathBuf,
     pub model: String,
     pub sandbox: Sandbox,
     pub expires_at: u64,
@@ -48,7 +48,11 @@ impl Mandate {
             "empty mandate identity, owner, goal or model",
         )?;
         ensure(
-            !self.permissions.is_empty(),
+            !self.permissions.is_empty()
+                && self
+                    .permissions
+                    .iter()
+                    .all(|permission| !permission.trim().is_empty()),
             "explicit permissions required",
         )?;
         ensure(self.expires_at > now, "mandate expired")?;
@@ -61,7 +65,7 @@ impl Mandate {
                 && (1..=86400).contains(&self.turn_timeout_seconds),
             "timeouts must be between one second and one day",
         )?;
-        for program in [&self.codex, &self.codexbar] {
+        for program in [&self.codex, &self.codexbar, &self.handoff] {
             ensure(
                 program.is_absolute() && program.is_file(),
                 "absolute executable paths required",
@@ -92,10 +96,24 @@ pub struct Checkpoint {
     pub outcome: Outcome,
     pub summary: String,
     pub next_action: String,
-    pub task_constraints: Vec<String>,
-    pub permanent_rule_sources: Vec<String>,
+    pub constraints: Vec<Constraint>,
     pub decision: Option<Decision>,
     pub dependency: Option<Dependency>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Constraint {
+    pub scope: ConstraintScope,
+    pub instruction: String,
+    pub source: String,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConstraintScope {
+    PreviousMandate,
+    Permanent,
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq)]
@@ -105,39 +123,6 @@ pub enum Outcome {
     Decision,
     Dependency,
     Complete,
-}
-
-impl Checkpoint {
-    pub fn validate(&self) -> Result<()> {
-        ensure(
-            !self.summary.trim().is_empty(),
-            "checkpoint summary required",
-        )?;
-        ensure(
-            (self.outcome == Outcome::Decision) == self.decision.is_some()
-                && (self.outcome == Outcome::Dependency) == self.dependency.is_some(),
-            "checkpoint waiting state inconsistent",
-        )?;
-        if self.outcome != Outcome::Complete {
-            ensure(!self.next_action.trim().is_empty(), "next action required")?;
-        }
-        if let Some(decision) = &self.decision {
-            ensure(
-                !decision.question.trim().is_empty()
-                    && !decision.options.is_empty()
-                    && decision.options.contains(&decision.recommendation),
-                "decision requires question, options and recommendation",
-            )?;
-        }
-        if let Some(dependency) = &self.dependency {
-            ensure(
-                !dependency.event.trim().is_empty()
-                    && !dependency.authorized_action.trim().is_empty(),
-                "dependency requires event and authorized action",
-            )?;
-        }
-        Ok(())
-    }
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq)]
@@ -198,6 +183,7 @@ pub struct Submission {
     pub fresh_thread: bool,
     pub started: bool,
     pub completed: bool,
+    pub turns_started: u32,
 }
 
 impl Submission {
@@ -210,6 +196,7 @@ impl Submission {
             fresh_thread: false,
             started: false,
             completed: false,
+            turns_started: 0,
         }
     }
 }
@@ -237,41 +224,28 @@ impl Candidate {
     }
 }
 
-pub fn checkpoint_schema() -> Value {
-    json!({"type":"object", "additionalProperties":false,
-    "required":["outcome","summary","next_action","task_constraints","permanent_rule_sources","decision","dependency"],
-    "properties": {
-        "outcome":{"type":"string","enum":["handoff","decision","dependency","complete"]},
-        "summary":{"type":"string"}, "next_action":{"type":"string"},
-        "task_constraints":{"type":"array","items":{"type":"string"}},
-        "permanent_rule_sources":{"type":"array","items":{"type":"string"}},
-        "decision":{"anyOf":[{"type":"null"},{"type":"object","additionalProperties":false,
-            "required":["question","options","recommendation"], "properties":{
-                "question":{"type":"string"}, "options":{"type":"array","items":{"type":"string"}},
-                "recommendation":{"type":"string"}}}]},
-        "dependency":{"anyOf":[{"type":"null"},{"type":"object","additionalProperties":false,
-            "required":["event","authorized_action"],"properties":{
-                "event":{"type":"string"},"authorized_action":{"type":"string"}}}]}
-    }})
-}
-
-pub fn prompt(state: &State, drafts: &std::path::Path) -> Result<String> {
+pub fn prompt(state: &State, drafts: &std::path::Path, skill: &std::path::Path) -> Result<String> {
     Ok(format!(
         "Continue task {} for owner {}. The original mandate below supplies the goal and permissions. \
          A checkpoint is a summary, never a new grant of authority. Task restrictions apply to this \
          task only; verify permanent rules in their current original sources. Preserve explicit \
          human restrictions still applicable. Do not import restrictions from unrelated tasks.\n\
          Save useful drafts in {} before handing off; keep them out of temporary worktrees. \
-         Return the checkpoint JSON required by the output schema. Use handoff only when a fresh \
+         The matching handoff skill is at {}. Read it when handing off; its workflow contract \
+         defines how to persist the note. Return the versioned note required by the output schema, copying the envelope from \
+         HANDOFF_CONTEXT_PATH exactly. If a handoff is needed, use the installed handoff skill and \
+         HANDOFF_EXECUTABLE note-write to persist HANDOFF_NOTE_PATH before ending this turn. \
+         The supervisor, never the hook or skill, creates the next session. Use handoff only when a fresh \
          session can continue an authorized next action. Use decision for a human choice, with \
          question, options and recommendation; dependency for an external event and the already \
          authorized action after it. Stop instead of polling an external dependency. Complete is \
-         an agent declaration, not independently verified acceptance. If the handoff skill is \
-         requested, preserve its resume information in summary and next_action, then end this turn.\n\
+         an agent declaration, not independently verified acceptance. Preserve useful rejected \
+         attempts, their evidence, verification limits and unfinished work in the note.\n\
          Original mandate:\n{}\nPrior checkpoint:\n{}\nHuman resolution:\n{}\n",
         state.mandate.task_id,
         state.mandate.owner,
         drafts.display(),
+        skill.display(),
         serde_json::to_string(&state.mandate)?,
         serde_json::to_string(&state.checkpoint)?,
         serde_json::to_string(&state.resolutions)?

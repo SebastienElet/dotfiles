@@ -81,6 +81,7 @@ impl Fixture {
             "goal":"finish the synthetic task", "permissions":["edit this repository"],
             "codex":env!("CARGO_BIN_EXE_supervisor-test-agent"),
             "codexbar":env!("CARGO_BIN_EXE_supervisor-test-agent"),
+            "handoff":env!("CARGO_BIN_EXE_supervisor-test-agent"),
             "model":"test-model", "sandbox":"read-only",
             "expires_at":SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs()+60,
             "max_turns":2, "max_capacity_probes":4, "retry_seconds":1, "turn_timeout_seconds":10
@@ -100,6 +101,10 @@ impl Fixture {
             "{}",
             String::from_utf8_lossy(&result.stderr)
         );
+        fs::write(
+            std::path::Path::new(&self.directory).join("fixture-skill.md"),
+            "Synthetic handoff skill\n",
+        )?;
         Ok(())
     }
 

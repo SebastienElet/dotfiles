@@ -14,6 +14,21 @@ fn fresh_sessions_continue_one_task_once() -> Result<()> {
     assert_eq!(fixture.count()?, "2");
     fixture.run()?;
     assert_eq!(fixture.count()?, "2");
+    assert_eq!(result["receipts"][0]["turns_started"], 1);
+    assert_eq!(result["receipts"][1]["turns_started"], 1);
+    Ok(())
+}
+
+#[test]
+fn hook_continuations_stay_in_one_owned_process_before_the_fresh_session() -> Result<()> {
+    let fixture = Fixture::new()?;
+    fixture.scenario("hook-continuation")?;
+    fixture.init()?;
+    let result = fixture.run()?;
+    assert_eq!(result["phase"], "complete");
+    assert_eq!(fixture.count()?, "2");
+    assert_eq!(result["receipts"][0]["turns_started"], 2);
+    assert_eq!(result["receipts"][1]["turns_started"], 2);
     Ok(())
 }
 
@@ -25,6 +40,9 @@ fn uncertain_or_invalid_turns_are_never_resent() -> Result<()> {
         "invalid-result",
         "truncated",
         "failed",
+        "wrong-task",
+        "new-permission",
+        "missing-note",
     ] {
         let fixture = Fixture::new()?;
         fixture.scenario(scenario)?;
@@ -34,6 +52,32 @@ fn uncertain_or_invalid_turns_are_never_resent() -> Result<()> {
         let count = fixture.count()?;
         fixture.run()?;
         assert_eq!(fixture.count()?, count, "{scenario}");
+    }
+    Ok(())
+}
+
+#[test]
+fn handoff_port_refusals_preserve_valid_output_but_prevent_continuation() -> Result<()> {
+    for command in [
+        "reject-note-validate",
+        "reject-note-schema",
+        "reject-skill-path",
+    ] {
+        let mut fixture = Fixture::new()?;
+        let executable = fixture.root.path().join(command);
+        std::os::unix::fs::symlink(env!("CARGO_BIN_EXE_supervisor-test-agent"), &executable)?;
+        fixture.manifest["handoff"] = json!(executable);
+        fixture.init()?;
+        assert_eq!(fixture.run()?["phase"], "unconfirmed", "{command}");
+        if command == "reject-note-validate" {
+            assert_eq!(fixture.count()?, "1");
+        } else {
+            assert!(!fixture.repository.join("count").exists());
+        }
+        fixture.run()?;
+        if command == "reject-note-validate" {
+            assert_eq!(fixture.count()?, "1");
+        }
     }
     Ok(())
 }
@@ -128,6 +172,19 @@ fn state_cannot_live_inside_the_worktree_even_from_a_subdirectory() -> Result<()
     )?;
     assert!(!result.status.success());
     assert!(!directory.exists());
+    Ok(())
+}
+
+#[test]
+fn empty_permission_entries_are_refused_before_creating_the_task() -> Result<()> {
+    for permission in ["", " ", "\n"] {
+        let mut fixture = Fixture::new()?;
+        fixture.manifest["permissions"] = json!([permission]);
+        let output = invoke(&["init", &fixture.directory], Some(&fixture.manifest))?;
+        assert!(!output.status.success());
+        assert!(!Path::new(&fixture.directory).exists());
+        assert!(!fixture.repository.join("count").exists());
+    }
     Ok(())
 }
 

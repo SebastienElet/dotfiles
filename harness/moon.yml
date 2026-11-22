@@ -244,7 +244,7 @@ tasks:
   agent-supervisor:
     description: Deploy the opt-in durable Codex task supervisor
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/tooling/agent-supervisor/target/release/agent-supervisor" "$HOME/.local/bin/agent-supervisor"
-    deps: [repository:dependencies, supervisor:build]
+    deps: [agent-handoff, supervisor:build]
     toolchains: bun
     options: { os: macos }
   output-discipline:
