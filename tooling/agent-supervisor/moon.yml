@@ -3,13 +3,15 @@ taskOptions:
   cache: false
 tasks:
   check:
-    deps: [repository:rust]
-    toolchains: system
+    deps: [repository:rust, repository:dependencies]
+    toolchains: [system, bun]
     inputs:
       - src/**/*.rs
       - tests/**/*.rs
       - Cargo.toml
       - Cargo.lock
+      - /package.json
+      - /bun.lock
       - moon.yml
       - /rust-toolchain.toml
       - /rustfmt.toml

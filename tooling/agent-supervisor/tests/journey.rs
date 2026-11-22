@@ -20,6 +20,21 @@ fn fresh_sessions_continue_one_task_once() -> Result<()> {
 }
 
 #[test]
+fn published_owner_contract_runs_the_same_complete_journey() -> Result<()> {
+    let mut fixture = Fixture::new()?;
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("tooling path")?
+        .parent()
+        .ok_or("workspace path")?;
+    fixture.manifest["handoff"] = json!(workspace.join("node_modules/.bin/agent-handoff"));
+    fixture.init()?;
+    assert_eq!(fixture.run()?["phase"], "complete");
+    assert_eq!(fixture.count()?, "2");
+    Ok(())
+}
+
+#[test]
 fn hook_continuations_stay_in_one_owned_process_before_the_fresh_session() -> Result<()> {
     let fixture = Fixture::new()?;
     fixture.scenario("hook-continuation")?;
