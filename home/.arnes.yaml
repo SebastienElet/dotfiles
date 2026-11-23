@@ -15,7 +15,7 @@ agents:
   - id: codex
     scopes: [user, project]
     user_config:
-      model: gpt-6.1-sol
+      model: gpt-6.2-sol
       effort: high
       context_window: 800000
       auto_compact_window: 700000
