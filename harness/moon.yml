@@ -241,6 +241,12 @@ tasks:
     deps:
       - repository:dependencies
     toolchains: bun
+  agent-supervisor:
+    description: Deploy the opt-in durable Codex task supervisor
+    command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/tooling/agent-supervisor/target/release/agent-supervisor" "$HOME/.local/bin/agent-supervisor"
+    deps: [agent-handoff, supervisor:build]
+    toolchains: bun
+    options: { os: macos }
   output-discipline:
     description: Deploy the published output discipline hook executable
     command: bun --config=/dev/null --no-env-file "$workspaceRoot/tooling/deploy-link.ts" "$workspaceRoot/node_modules/.bin/output-discipline-hook" "$HOME/.local/bin/output-discipline-hook"

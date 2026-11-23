@@ -1,0 +1,68 @@
+name: Supervisor check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MOON_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+  MOON_HEAD: ${{ github.sha }}
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      affected: ${{ fromJSON(steps.query.outputs.result).tasks['supervisor'] != null }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: ./.github/actions/setup-moon
+      - run: moon action-graph --json supervisor:check > /dev/null
+      - id: query
+        run: |
+          {
+            printf 'result<<MOON_QUERY_RESULT\n'
+            moon query tasks --affected remote --upstream none --downstream none \
+              --project '^supervisor$' --id '^check$'
+            printf 'MOON_QUERY_RESULT\n'
+          } >> "$GITHUB_OUTPUT"
+  check:
+    needs: select
+    if: needs.select.outputs.affected == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - uses: ./.github/actions/setup-moon
+      - run: moon ci --downstream none supervisor:check
+  required:
+    name: Supervisor required
+    needs: [select, check]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: test "$PASSED" = true
+        env:
+          PASSED: >-
+            ${{ needs.select.result == 'success' &&
+            ((needs.select.outputs.affected == 'true' && needs.check.result == 'success') ||
+            (needs.select.outputs.affected == 'false' && needs.check.result == 'skipped')) }}

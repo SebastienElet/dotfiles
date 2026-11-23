@@ -6,7 +6,7 @@
       "name": "dotfiles",
       "dependencies": {
         "@sebastienelet/agent-experiments": "0.0.1",
-        "@sebastienelet/agent-handoff": "0.0.2",
+        "@sebastienelet/agent-handoff": "0.0.3",
         "@sebastienelet/agent-measure": "0.0.1",
         "@sebastienelet/agent-reach-adapter": "0.0.1",
         "@sebastienelet/agent-skills": "git+https://github.com/SebastienElet/agent-skills.git#main",
@@ -265,11 +265,11 @@
 
     "@sebastienelet/agent-experiments-linux-x64-gnu": ["@sebastienelet/agent-experiments-linux-x64-gnu@0.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-gTG8uEZO2ZelvnY8o6XrovL72N8hpjo2iSs4yuUnaYxXMJGtkan9fwClkweD9s1I1o+IaBswxi8tJc5QCwSClA=="],
 
-    "@sebastienelet/agent-handoff": ["@sebastienelet/agent-handoff@0.0.2", "", { "dependencies": { "zod": "4.6.7" }, "optionalDependencies": { "@sebastienelet/agent-handoff-darwin-arm64": "0.0.2", "@sebastienelet/agent-handoff-linux-x64-gnu": "0.0.2" }, "bin": { "agent-handoff": "bin/agent-handoff.ts" } }, "sha512-XtA1emObCyU1yAwT1SR035g+xMyKFu2oTxSjIOUw/NNfbvzvP3qF7X9WkhrTszkxkDLA8aWWn+tp2ecd9AdtOA=="],
+    "@sebastienelet/agent-handoff": ["@sebastienelet/agent-handoff@0.0.3", "", { "dependencies": { "zod": "4.6.7" }, "optionalDependencies": { "@sebastienelet/agent-handoff-darwin-arm64": "0.0.3", "@sebastienelet/agent-handoff-linux-x64-gnu": "0.0.3" }, "bin": { "agent-handoff": "bin/agent-handoff.ts" } }, "sha512-Ggjc9LIu3zBdIDeVunefnos09vuU1mnQu75LqiVbl1BjA1Bws3UX3QIOjntpw2ox4lqx0e2PNpJ7QFXJTkXANQ=="],
 
-    "@sebastienelet/agent-handoff-darwin-arm64": ["@sebastienelet/agent-handoff-darwin-arm64@0.0.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-fUCwwTRfPnubuPKW2gyCMduiXhzDE0F11X+jIcya8cDvpYvX2oK6J6lQ8yEaeOwhilwJYyr/QZ6RbVDP1kiKIA=="],
+    "@sebastienelet/agent-handoff-darwin-arm64": ["@sebastienelet/agent-handoff-darwin-arm64@0.0.3", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Y2iMTi8JmQoOPwumLFQ4+bGbUedCaDdksbHN4St4/wIaBCfXqM02EPh1jvcH84ANf2K/QNnJvCe23xWbMPRPYA=="],
 
-    "@sebastienelet/agent-handoff-linux-x64-gnu": ["@sebastienelet/agent-handoff-linux-x64-gnu@0.0.2", "", { "os": "linux", "cpu": "x64" }, "sha512-Z9MqYHUeKp7Vxf7iTStQi0v9nzaFneNjaQ0rDAyHvPbf/pXWVuv0JbQlRKja3TRcYryQ9W8nIVyd9fwS25YzRw=="],
+    "@sebastienelet/agent-handoff-linux-x64-gnu": ["@sebastienelet/agent-handoff-linux-x64-gnu@0.0.3", "", { "os": "linux", "cpu": "x64" }, "sha512-UTNyQR0DfEBRYLR5r0CF+H4yjkEG2ZksRgrRE7O4/V/jAoBgfiMVLJfTj6ClQyDAvP30ejy4kUBsdjUVcBFU/Q=="],
 
     "@sebastienelet/agent-measure": ["@sebastienelet/agent-measure@0.0.1", "", { "optionalDependencies": { "@sebastienelet/agent-measure-darwin-arm64": "0.0.1", "@sebastienelet/agent-measure-linux-x64-gnu": "0.0.1" }, "bin": { "agent-measure": "bin/agent-measure.mjs" } }, "sha512-xFAHQ8bzOYHmOirtGHhJ0deOr3JxtM2/e9evRmSL1VUo4uus4OU9ZjJ7SI9OSwyoyDfPyMTUvtKh4PVF39xXdg=="],
 

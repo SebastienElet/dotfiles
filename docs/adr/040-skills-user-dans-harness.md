@@ -26,7 +26,7 @@ Séparer les sources par portée :
 - les skills génériques proviennent de la branche `main` du dépôt Git `agent-skills`, acquise par
   Bun et verrouillée dans `bun.lock` ; leurs sources restent dans leur dépôt autonome ;
 - `proof-integrity-review` et `handoff` proviennent respectivement des paquets npm
-  `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.2`,
+  `@sebastienelet/proof-integrity-review@0.0.1` et `@sebastienelet/agent-handoff@0.0.3`,
   acquis par Bun à version exacte et verrouillés dans `bun.lock` ;
 - `harness/skills/` reste l'emplacement des skills user locales ; le compagnon
   `herdr-issue-worktree` est retiré avec le lanceur inutilisé selon la décision #554 ;
