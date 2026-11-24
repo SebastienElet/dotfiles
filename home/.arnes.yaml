@@ -82,17 +82,17 @@ skills:
   - slug: output-discipline
     source: node_modules/@sebastienelet/agent-skills/skills/output-discipline
     installations: *user-skill-installations
-  - slug: prose-edit
-    source: node_modules/@sebastienelet/agent-skills/skills/prose-edit
+  - slug: writing-style
+    source: node_modules/@sebastienelet/agent-skills/skills/writing-style
+    installations: *user-skill-installations
+  - slug: unslop
+    source: node_modules/@sebastienelet/agent-skills/skills/unslop
     installations: *user-skill-installations
   - slug: agent-instructions
     source: node_modules/@sebastienelet/agent-skills/skills/agent-instructions
     installations: *user-skill-installations
   - slug: harness-reflection
     source: node_modules/@sebastienelet/agent-skills/skills/harness-reflection
-    installations: *user-skill-installations
-  - slug: harness-simplify
-    source: node_modules/@sebastienelet/agent-skills/skills/harness-simplify
     installations: *user-skill-installations
   - slug: pr-verdict
     source: node_modules/@sebastienelet/agent-skills/skills/pr-verdict
@@ -120,9 +120,6 @@ skills:
     installations: *user-skill-installations
   - slug: issue-start
     source: node_modules/@sebastienelet/agent-skills/skills/issue-start
-    installations: *user-skill-installations
-  - slug: issue-sync
-    source: node_modules/@sebastienelet/agent-skills/skills/issue-sync
     installations: *user-skill-installations
   - slug: obsidian-retrieval
     source: node_modules/@sebastienelet/agent-skills/skills/obsidian-retrieval
