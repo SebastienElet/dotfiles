@@ -49,7 +49,8 @@ Examples: add a managed CLI, deploy a home configuration, or gate a platform-spe
    `git worktree lock --reason 'temporary deployment source' /absolute/worktree/path` before
    deploying. Keep it locked until the change is integrated into the canonical checkout, explicitly
    redirect the affected links there, verify their resolved targets, then unlock it. Herdr cleanup
-   does not discover or repair deployed links; ignored files do not prevent removal.
+   does not discover or repair deployed links. The plugin protects ignored files outside disposable
+   directories. Other Git cleanup can still remove ignored files.
 8. Validate declarative changes with Moon's native configuration and action graph, then run the
    relevant behavioral oracle. Do not add tests that parse task declarations or copy inventories.
 9. Before adding or updating documentation, apply the repository's `docs/README.md` policy and
