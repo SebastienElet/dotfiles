@@ -46,17 +46,18 @@ Install the separately maintained optional profile with `moon exec repository:op
 with `moon exec repository:herdr` on macOS ARM64, using the official Homebrew formula.
 The task also deploys `~/.config/herdr/config.toml` with automatic Catppuccin
 dark/Latte switching when the host terminal reports a light/dark appearance change.
-It installs `@sebastienelet/herdr-worktree-cleanup@1.0.1` with Bun in
-`~/.local/share/herdr-worktree-cleanup` and links its `dotfiles.worktree-cleanup` plugin,
-which removes a linked worktree's checkout when its workspace closes.
+It installs `@sebastienelet/herdr-worktree-cleanup@1.0.4` with Bun in
+`~/.local/share/herdr-worktree-cleanup` and links `dotfiles.worktree-cleanup` from the
+native macOS ARM64 package. The plugin removes eligible linked worktree checkouts when
+their workspaces close.
 The plugin explicitly enables untracked-file visibility
 for Git's removal check, including when `status.showUntrackedFiles=no` is configured.
 Git refuses modified tracked files, non-ignored untracked files, and locked worktrees;
 the plugin also skips detached HEADs. Removal failures are reported with a nonzero exit,
 and a removed checkout's branch is retained. No removal uses `--force`.
-Ignored files do not prevent removal and are deleted with an otherwise clean checkout.
-Keep valuable ignored artifacts elsewhere or explicitly lock the worktree; any additional
-ignored-file protection requires a separate decision.
+Ignored files prevent removal except inside the root-relative `node_modules/`, `target/`,
+and `.moon/cache/` directories. Keep valuable ignored artifacts outside disposable
+directories and lock worktrees that supply deployed links.
 
 Persistent deployments must use the canonical checkout at `~/.dotfiles` as their source.
 For exceptional validation from a worktree, use isolated destinations and invoke only

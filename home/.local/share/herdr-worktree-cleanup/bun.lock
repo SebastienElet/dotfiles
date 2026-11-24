@@ -5,13 +5,13 @@
     "": {
       "name": "dotfiles-herdr-worktree-cleanup",
       "dependencies": {
-        "@sebastienelet/herdr-worktree-cleanup": "1.0.1",
+        "@sebastienelet/herdr-worktree-cleanup": "1.0.4",
       },
     },
   },
   "packages": {
-    "@sebastienelet/herdr-worktree-cleanup": ["@sebastienelet/herdr-worktree-cleanup@1.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64" }, "sha512-vDQDzIRZVP4I1eOcsRtHa7Q4mHqZm3lli0POWViDs/84cVqybCBT4EbkCAJLybnSo8b24FdPIZvpLcS92ZuUgA=="],
+    "@sebastienelet/herdr-worktree-cleanup": ["@sebastienelet/herdr-worktree-cleanup@1.0.4", "", { "optionalDependencies": { "@sebastienelet/herdr-worktree-cleanup-darwin-arm64": "1.0.4" }, "os": "darwin", "cpu": "arm64", "bin": { "herdr-worktree-cleanup": "bin/herdr-worktree-cleanup.mjs" } }, "sha512-M7WuboSvMm745wN6uwzNMI+Cg1UJCcwfOnRXxFm6PnS4VmRzqFTYs7Hl3kOcNhY4Fp0Z39F99y/7PaK3uhrvkQ=="],
 
-    "zod": ["zod@4.6.6", "", {}, "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="],
+    "@sebastienelet/herdr-worktree-cleanup-darwin-arm64": ["@sebastienelet/herdr-worktree-cleanup-darwin-arm64@1.0.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-7QbG/aXYyzcDcv0cdaqLRoxe7rnuZnKGl0a84fxeKcqOGM09y+Hpqnj8EsMNCQkalJgf125NK6zKoT1UvilOrw=="],
   }
 }

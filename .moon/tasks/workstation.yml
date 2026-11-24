@@ -164,7 +164,7 @@ tasks:
       runInCI: false
     script: |-
       export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
-      herdr plugin link "$HOME/.local/share/herdr-worktree-cleanup/node_modules/@sebastienelet/herdr-worktree-cleanup"
+      herdr plugin link "$HOME/.local/share/herdr-worktree-cleanup/node_modules/@sebastienelet/herdr-worktree-cleanup-darwin-arm64"
   grokbot:
     description: Install the Grok Bot desktop app
     deps:
