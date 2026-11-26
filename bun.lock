@@ -279,7 +279,7 @@
 
     "@sebastienelet/agent-reach-adapter": ["@sebastienelet/agent-reach-adapter@0.0.1", "", { "dependencies": { "zod": "4.6.6" }, "os": "darwin", "cpu": "arm64", "bin": { "agent-reach-adapter": "src/agent-reach.ts" } }, "sha512-U5b54vmOZ4pkPVH7neWNsxcXv61wodcOqDiPTYmv47A1YC9MtnudzOTPKIpQ4d118oQRBryxc9rKYXpr6XDNAQ=="],
 
-    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@github:SebastienElet/agent-skills#af20af2", { "dependencies": { "design-taste-frontend": "github:Leonxlnx/taste-skill#12af471f627f866411b4bd785b19646d3672784c", "zod": "4.6.7" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "SebastienElet-agent-skills-af20af2", "sha512-g7rt9uijLbBI/xwpikwvH1oVzsi5Lw08m2SbQtKm74BMgDSl2LtBmIEcsde2Ek7zcx06ZCCHd4bQVsSqpkCoGQ=="],
+    "@sebastienelet/agent-skills": ["@sebastienelet/agent-skills@github:SebastienElet/agent-skills#ad7702c", { "dependencies": { "design-taste-frontend": "github:Leonxlnx/taste-skill#12af471f627f866411b4bd785b19646d3672784c", "zod": "4.6.7" }, "bin": { "output-discipline-hook": "skills/output-discipline/scripts/output-discipline-hook.ts" } }, "SebastienElet-agent-skills-ad7702c", "sha512-hLYMy6pX2x4ikBjFi4UYDUIT/fDjM+VNl0Gve1khAvCATjjAXp+lvM3yrwJGauA8efv/1UciBJEwb473sYlnmw=="],
 
     "@sebastienelet/arnes": ["@sebastienelet/arnes@0.0.3", "", { "optionalDependencies": { "@sebastienelet/arnes-darwin-arm64": "0.0.3", "@sebastienelet/arnes-linux-x64-gnu": "0.0.3" }, "bin": { "arnes": "bin/arnes.mjs" } }, "sha512-a9i2J/K5q5NvAi9kJBkKYJOgbKkr9lDiofAvG6U+O3dEIEJz2DAoSpCXQeRavRT6UfzyiCxZU3Q6khr+66P5zQ=="],
 
