@@ -19,7 +19,11 @@ function git_cleanup_worktree --argument-names command_name branch
         return 0
     end
 
-    set -l index_state (command git -C "$worktree" ls-files -v)
+    set -l inspect_worktree env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_INDEX_FILE \
+        -u GIT_LITERAL_PATHSPECS -u GIT_GLOB_PATHSPECS -u GIT_NOGLOB_PATHSPECS -u GIT_ICASE_PATHSPECS \
+        git -C "$worktree" --work-tree="$worktree"
+
+    set -l index_state (command $inspect_worktree ls-files -v)
     if test $status -ne 0
         echo "git: keeping worktree for $branch: worktree index lookup failed after $command_name" >&2
         return 1
@@ -29,7 +33,7 @@ function git_cleanup_worktree --argument-names command_name branch
         return 1
     end
 
-    set -l worktree_state (command git -C "$worktree" status --porcelain --untracked-files=all --ignore-submodules=none)
+    set -l worktree_state (command $inspect_worktree status --porcelain --untracked-files=all --ignore-submodules=none)
     if test $status -ne 0
         echo "git: keeping worktree for $branch: worktree status failed after $command_name" >&2
         return 1
@@ -46,6 +50,13 @@ function git_cleanup_worktree --argument-names command_name branch
     end
     if test (path resolve "$worktree") = (path resolve "$invocation_worktree")
         echo "git: keeping worktree for $branch: refusing to remove the invoking worktree" >&2
+        return 1
+    end
+
+    set -l protected_ignored (command $inspect_worktree ls-files --others --ignored --exclude-standard -- \
+        ':(top,exclude,glob)node_modules/**' ':(top,exclude,glob)target/**' ':(top,exclude,glob).moon/cache/**' 2>&1)
+    if test $status -ne 0; or set -q protected_ignored[1]
+        echo "git: keeping worktree for $branch: worktree may contain protected ignored files" >&2
         return 1
     end
 
