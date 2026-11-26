@@ -43,7 +43,7 @@ echo "ok - fetch retries cleanup after a worktree becomes clean"
 create_repository ignored-worktree
 create_tracked_branch feature
 must git -C "$repository_path" switch --quiet feature
-echo ignored >"$repository_path/.gitignore"
+printf 'protected/\nnode_modules/\n/Target/\n' >"$repository_path/.gitignore"
 must git -C "$repository_path" add .gitignore
 must git -C "$repository_path" commit --quiet --message ignore
 must git -C "$repository_path" push --quiet
@@ -51,49 +51,93 @@ must git -C "$repository_path" switch --quiet main
 must mkdir "$repository_path/.worktrees"
 set worktree_path "$repository_path/.worktrees/ignored-feature"
 must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
-echo local >"$worktree_path/ignored"
+must mkdir -p "$worktree_path/protected" "$worktree_path/package/node_modules" "$worktree_path/Target"
+echo local >"$worktree_path/protected/data"
+echo dependency >"$worktree_path/package/node_modules/data"
+echo local >"$worktree_path/Target/data"
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
 
 cd "$repository_path"
 or fail "could not enter $repository_path"
-set fetch_output (git fetch 2>&1)
+set fetch_output (GIT_LITERAL_PATHSPECS=1 git fetch 2>&1)
 or fail "fetch failed in ignored-worktree"
 
-not test -e "$worktree_path"
-or fail "fetch removes a worktree containing only ignored files"
+test "$(cat "$worktree_path/protected/data")" = local
+or fail "fetch preserves protected ignored files"
+test "$(cat "$worktree_path/package/node_modules/data")" = dependency
+or fail "fetch preserves nested caches"
 command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch preserves the branch of a removed ignored worktree"
-not command git config --get-regexp '^branch\.feature\.' >/dev/null
-or fail "fetch detaches the branch of a removed ignored worktree"
+or fail "fetch preserves the branch with protected ignored files"
+string match --quiet -- '*protected ignored files*' $fetch_output
+or fail "fetch reports why the worktree with protected ignored files is preserved"
+command git config --get branch.feature.cleanup-base >/dev/null
+or fail "fetch records the upstream tip for a cleanup retry"
 
-echo "ok - fetch removes a worktree containing only ignored files"
+must rm "$worktree_path/protected/data"
+git fetch
+or fail "second fetch failed in ignored-worktree"
 
-create_repository external-ignored-worktree
+test "$(cat "$worktree_path/package/node_modules/data")" = dependency
+or fail "a nested cache still prevents cleanup on retry"
+
+must rm "$worktree_path/package/node_modules/data"
+GIT_ICASE_PATHSPECS=1 git fetch
+or fail "fetch failed with case-insensitive Git pathspecs"
+test "$(cat "$worktree_path/Target/data")" = local
+or fail "fetch preserves ignored paths whose case differs from disposable caches"
+
+echo "ok - fetch preserves protected ignored files despite Git pathspec settings"
+
+create_repository disposable-cache-worktree
 create_tracked_branch feature
 must git -C "$repository_path" switch --quiet feature
-echo ignored >"$repository_path/.gitignore"
+printf '/node_modules/\n/target/\n/.moon/\n' >"$repository_path/.gitignore"
 must git -C "$repository_path" add .gitignore
 must git -C "$repository_path" commit --quiet --message ignore
 must git -C "$repository_path" push --quiet
 must git -C "$repository_path" switch --quiet main
-set worktree_path "$test_root/external-ignored-feature"
+set worktree_path "$test_root/disposable-cache-feature"
+must git -C "$repository_path" merge --quiet --ff-only feature
 must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
-echo local >"$worktree_path/ignored"
+for cache in node_modules target .moon/cache
+    must mkdir -p "$worktree_path/$cache"
+    echo cache >"$worktree_path/$cache/data"
+end
+echo local >"$worktree_path/.moon/data"
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
 
 cd "$repository_path"
 or fail "could not enter $repository_path"
+GIT_WORK_TREE="$repository_path" git fetch
+or fail "fetch failed with an explicit Git worktree"
+
+test "$(cat "$worktree_path/.moon/data")" = local
+or fail "fetch inspects the cleanup target despite an explicit Git worktree"
+must rm "$worktree_path/.moon/data"
+must mkdir "$worktree_path/.moon/unreadable"
+echo local >"$worktree_path/.moon/unreadable/data"
+must chmod 000 "$worktree_path/.moon/unreadable"
+set fetch_output (git fetch 2>&1)
+set -l fetch_status $status
+must chmod 700 "$worktree_path/.moon/unreadable"
+test $fetch_status -eq 0
+or fail "fetch failed with an unreadable ignored directory"
+test "$(cat "$worktree_path/.moon/unreadable/data")" = local
+or fail "fetch preserves unreadable ignored directories"
+string match --quiet -- '*protected ignored files*' $fetch_output
+or fail "fetch reports why the worktree with an unreadable ignored directory is preserved"
+must rm "$worktree_path/.moon/unreadable/data"
 git fetch
-or fail "fetch failed in external-ignored-worktree"
+or fail "final fetch failed in disposable-cache-worktree"
 
 not test -e "$worktree_path"
-or fail "fetch removes an external worktree containing only ignored files"
+or fail "fetch removes an external worktree containing only disposable caches"
 command git show-ref --verify --quiet refs/heads/feature
-or fail "fetch preserves the branch of a removed external worktree"
+or fail "fetch preserves the branch of the worktree with disposable caches"
 not command git config --get-regexp '^branch\.feature\.' >/dev/null
-or fail "fetch detaches the branch of a removed external worktree"
+or fail "fetch detaches the branch of the worktree with disposable caches"
 
-echo "ok - fetch removes an external worktree containing only ignored files"
+echo "ok - fetch removes an external worktree containing only disposable caches"
 
 create_repository active-ignored-worktree
 create_tracked_branch feature
@@ -125,14 +169,15 @@ echo "ok - fetch preserves its invoking linked worktree"
 create_repository locked-ignored-worktree
 create_tracked_branch feature
 must git -C "$repository_path" switch --quiet feature
-echo ignored >"$repository_path/.gitignore"
+echo /target/ >"$repository_path/.gitignore"
 must git -C "$repository_path" add .gitignore
 must git -C "$repository_path" commit --quiet --message ignore
 must git -C "$repository_path" push --quiet
 must git -C "$repository_path" switch --quiet main
 set worktree_path "$test_root/locked-ignored-feature"
 must git -C "$repository_path" worktree add --quiet "$worktree_path" feature
-echo local >"$worktree_path/ignored"
+must mkdir "$worktree_path/target"
+echo local >"$worktree_path/target/data"
 must git -C "$repository_path" worktree lock "$worktree_path"
 must git --git-dir="$remote_path" update-ref -d refs/heads/feature
 
@@ -141,7 +186,7 @@ or fail "could not enter locked-ignored-worktree"
 set fetch_output (git fetch 2>&1)
 or fail "fetch failed in locked-ignored-worktree"
 
-test -e "$worktree_path/ignored"
+test -e "$worktree_path/target/data"
 or fail "fetch preserves ignored files in a locked worktree"
 command git show-ref --verify --quiet refs/heads/feature
 or fail "fetch preserves the branch of a locked worktree"
